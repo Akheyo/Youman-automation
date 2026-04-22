@@ -1,0 +1,89 @@
+{
+  "id": "action-create-note",
+  "tenantId": null,
+  "name": "create_note",
+  "displayName": "Notiz erfassen",
+  "description": "Erfasst eine Notiz oder einen Gesprächslog und speichert ihn im ERP.",
+  "icon": "StickyNote",
+  "category": "crm",
+  "targetSystem": "SAP",
+  "version": "1.0.0",
+  "enabled": true,
+  "allowedRoles": ["TENANT_ADMIN", "MANAGER", "SALES", "INNENDIENST", "SUPPORT"],
+  "sortOrder": 8,
+  "offlineBehavior": "queue",
+  "fieldGroups": [
+    { "id": "basic", "label": "Notiz", "order": 1 }
+  ],
+  "fields": [
+    {
+      "id": "f-customer",
+      "actionId": "action-create-note",
+      "key": "customerId",
+      "label": "Kunde (optional)",
+      "type": "searchable_select",
+      "required": false,
+      "placeholder": "Kunde suchen...",
+      "order": 1,
+      "groupId": "basic",
+      "width": "full",
+      "dynamicSource": {
+        "endpoint": "/api/v1/search/customers",
+        "searchParam": "query",
+        "valueField": "id",
+        "labelField": "name",
+        "descriptionField": "customerNumber",
+        "minChars": 2,
+        "debounceMs": 300,
+        "pageSize": 20
+      }
+    },
+    {
+      "id": "f-content",
+      "actionId": "action-create-note",
+      "key": "content",
+      "label": "Notiz",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "Gesprächsinhalt, Hinweise, wichtige Informationen...",
+      "order": 2,
+      "groupId": "basic",
+      "width": "full",
+      "constraints": [
+        { "id": "c-max-content", "fieldId": "f-content", "type": "max", "value": 5000, "message": "Max. 5000 Zeichen" }
+      ]
+    },
+    {
+      "id": "f-tags",
+      "actionId": "action-create-note",
+      "key": "tags",
+      "label": "Tags",
+      "type": "multi_select",
+      "required": false,
+      "order": 3,
+      "groupId": "basic",
+      "width": "full",
+      "options": [
+        { "value": "phone", "label": "Telefonat" },
+        { "value": "meeting", "label": "Meeting" },
+        { "value": "email", "label": "E-Mail" },
+        { "value": "complaint", "label": "Reklamation" },
+        { "value": "followup", "label": "Nachfassen" },
+        { "value": "internal", "label": "Intern" }
+      ]
+    }
+  ],
+  "apiMapping": {
+    "method": "POST",
+    "endpoint": "/api/v1/actions/execute",
+    "bodyMapping": { "actionId": "action-create-note" },
+    "responseMapping": { "noteId": "result.id" }
+  },
+  "successActions": [
+    { "type": "toast", "config": { "message": "Notiz erfolgreich gespeichert.", "variant": "success" } }
+  ],
+  "failureHandling": { "showErrorToast": true, "logToAudit": true, "retryable": true },
+  "tags": ["crm", "note"],
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}

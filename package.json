@@ -1,0 +1,28 @@
+{
+  "name": "youman-automation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Universal Business Process Automation Platform – Windows Desktop App",
+  "scripts": {
+    "dev:backend": "pnpm --filter @youman/backend dev",
+    "dev:desktop": "pnpm --filter @youman/desktop dev",
+    "dev": "concurrently \"pnpm dev:backend\" \"pnpm dev:desktop\"",
+    "build:shared": "pnpm --filter @youman/shared build",
+    "build:config-engine": "pnpm --filter @youman/config-engine build",
+    "build:sap": "pnpm --filter @youman/connector-sap build",
+    "build:backend": "pnpm --filter @youman/backend build",
+    "build:desktop": "pnpm --filter @youman/desktop build",
+    "build": "pnpm build:shared && pnpm build:config-engine && pnpm build:sap && pnpm build:backend && pnpm build:desktop",
+    "test": "pnpm --recursive test",
+    "lint": "pnpm --recursive lint",
+    "typecheck": "pnpm --recursive typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

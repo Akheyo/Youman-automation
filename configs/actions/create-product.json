@@ -1,0 +1,183 @@
+{
+  "id": "action-create-product",
+  "tenantId": null,
+  "name": "create_product",
+  "displayName": "Artikel anlegen",
+  "description": "Legt einen neuen Artikel im ERP-System an.",
+  "icon": "Package",
+  "category": "inventory",
+  "targetSystem": "SAP",
+  "version": "1.0.0",
+  "enabled": true,
+  "allowedRoles": ["TENANT_ADMIN", "MANAGER", "INNENDIENST"],
+  "sortOrder": 6,
+  "offlineBehavior": "queue",
+  "fieldGroups": [
+    { "id": "basic", "label": "Artikeldaten", "order": 1 },
+    { "id": "pricing", "label": "Preise & Steuern", "order": 2 },
+    { "id": "details", "label": "Weitere Details", "order": 3, "collapsible": true, "defaultCollapsed": true }
+  ],
+  "fields": [
+    {
+      "id": "f-designation",
+      "actionId": "action-create-product",
+      "key": "designation",
+      "label": "Bezeichnung",
+      "type": "text",
+      "required": true,
+      "placeholder": "Artikel-Bezeichnung",
+      "order": 1,
+      "groupId": "basic",
+      "width": "full"
+    },
+    {
+      "id": "f-article-number",
+      "actionId": "action-create-product",
+      "key": "articleNumber",
+      "label": "Artikelnummer",
+      "type": "text",
+      "required": false,
+      "placeholder": "Wird automatisch vergeben",
+      "order": 2,
+      "groupId": "basic",
+      "width": "half"
+    },
+    {
+      "id": "f-ean",
+      "actionId": "action-create-product",
+      "key": "ean",
+      "label": "EAN / Barcode",
+      "type": "text",
+      "required": false,
+      "placeholder": "1234567890123",
+      "order": 3,
+      "groupId": "basic",
+      "width": "half"
+    },
+    {
+      "id": "f-manufacturer",
+      "actionId": "action-create-product",
+      "key": "manufacturer",
+      "label": "Hersteller",
+      "type": "text",
+      "required": false,
+      "order": 4,
+      "groupId": "basic",
+      "width": "half"
+    },
+    {
+      "id": "f-manufacturer-art-nr",
+      "actionId": "action-create-product",
+      "key": "manufacturerArticleNumber",
+      "label": "Hersteller-Artikelnummer",
+      "type": "text",
+      "required": false,
+      "order": 5,
+      "groupId": "basic",
+      "width": "half"
+    },
+    {
+      "id": "f-unit",
+      "actionId": "action-create-product",
+      "key": "unit",
+      "label": "Einheit",
+      "type": "dropdown",
+      "required": true,
+      "defaultValue": "ST",
+      "order": 6,
+      "groupId": "basic",
+      "width": "third",
+      "options": [
+        { "value": "ST", "label": "Stück (ST)" },
+        { "value": "KG", "label": "Kilogramm (KG)" },
+        { "value": "L", "label": "Liter (L)" },
+        { "value": "M", "label": "Meter (M)" },
+        { "value": "M2", "label": "Quadratmeter (M²)" },
+        { "value": "PAL", "label": "Palette (PAL)" },
+        { "value": "PKG", "label": "Paket (PKG)" }
+      ]
+    },
+    {
+      "id": "f-base-price",
+      "actionId": "action-create-product",
+      "key": "basePrice",
+      "label": "Basispreis (netto)",
+      "type": "number",
+      "required": true,
+      "defaultValue": 0,
+      "order": 7,
+      "groupId": "pricing",
+      "width": "half"
+    },
+    {
+      "id": "f-currency",
+      "actionId": "action-create-product",
+      "key": "currency",
+      "label": "Währung",
+      "type": "dropdown",
+      "required": true,
+      "defaultValue": "EUR",
+      "order": 8,
+      "groupId": "pricing",
+      "width": "third",
+      "options": [
+        { "value": "EUR", "label": "EUR" },
+        { "value": "USD", "label": "USD" },
+        { "value": "GBP", "label": "GBP" },
+        { "value": "CHF", "label": "CHF" }
+      ]
+    },
+    {
+      "id": "f-tax-class",
+      "actionId": "action-create-product",
+      "key": "taxClass",
+      "label": "Steuerklasse",
+      "type": "dropdown",
+      "required": true,
+      "defaultValue": "STANDARD",
+      "order": 9,
+      "groupId": "pricing",
+      "width": "third",
+      "options": [
+        { "value": "STANDARD", "label": "19% (Standard)" },
+        { "value": "REDUCED", "label": "7% (Ermäßigt)" },
+        { "value": "ZERO", "label": "0% (Steuerbefreit)" }
+      ]
+    },
+    {
+      "id": "f-description",
+      "actionId": "action-create-product",
+      "key": "description",
+      "label": "Beschreibung",
+      "type": "textarea",
+      "required": false,
+      "order": 10,
+      "groupId": "details",
+      "width": "full"
+    }
+  ],
+  "apiMapping": {
+    "method": "POST",
+    "endpoint": "/api/v1/actions/execute",
+    "bodyMapping": { "actionId": "action-create-product" },
+    "responseMapping": {
+      "productId": "result.id",
+      "articleNumber": "result.articleNumber"
+    }
+  },
+  "successActions": [
+    {
+      "type": "toast",
+      "config": { "message": "Artikel {articleNumber} erfolgreich angelegt!", "variant": "success" }
+    }
+  ],
+  "failureHandling": {
+    "showErrorToast": true,
+    "logToAudit": true,
+    "retryable": true,
+    "userMessage": "Der Artikel konnte nicht angelegt werden."
+  },
+  "tags": ["inventory", "product"],
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}

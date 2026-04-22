@@ -1,0 +1,219 @@
+{
+  "id": "action-create-quote",
+  "tenantId": null,
+  "name": "create_quote",
+  "displayName": "Angebot erstellen",
+  "description": "Erstellt ein neues Angebot im ERP-System für einen Kunden mit Artikelpositionen.",
+  "icon": "FileText",
+  "category": "sales",
+  "targetSystem": "SAP",
+  "version": "1.0.0",
+  "enabled": true,
+  "allowedRoles": ["TENANT_ADMIN", "MANAGER", "SALES", "INNENDIENST"],
+  "sortOrder": 1,
+  "offlineBehavior": "queue",
+  "fieldGroups": [
+    { "id": "customer", "label": "Kunde", "order": 1 },
+    { "id": "items", "label": "Positionen", "order": 2 },
+    { "id": "details", "label": "Details", "order": 3, "collapsible": true, "defaultCollapsed": false }
+  ],
+  "fields": [
+    {
+      "id": "f-customer-id",
+      "actionId": "action-create-quote",
+      "key": "customerId",
+      "label": "Kunde",
+      "type": "searchable_select",
+      "required": true,
+      "placeholder": "Kunde suchen (Name, Kundennr., Telefon, E-Mail)...",
+      "description": "Wählen Sie einen Kunden oder legen Sie einen neuen an.",
+      "order": 1,
+      "groupId": "customer",
+      "width": "full",
+      "dynamicSource": {
+        "endpoint": "/api/v1/search/customers",
+        "searchParam": "query",
+        "valueField": "id",
+        "labelField": "name",
+        "descriptionField": "customerNumber",
+        "minChars": 2,
+        "debounceMs": 300,
+        "pageSize": 20
+      }
+    },
+    {
+      "id": "f-delivery-address",
+      "actionId": "action-create-quote",
+      "key": "deliveryAddressId",
+      "label": "Lieferadresse",
+      "type": "dynamic_dropdown",
+      "required": false,
+      "placeholder": "Standard-Lieferadresse",
+      "order": 2,
+      "groupId": "customer",
+      "width": "full",
+      "constraints": [
+        {
+          "id": "c-dep-customer",
+          "fieldId": "f-delivery-address",
+          "type": "dependency",
+          "value": null,
+          "message": "",
+          "condition": { "fieldId": "customerId", "operator": "exists", "value": null }
+        }
+      ],
+      "dynamicSource": {
+        "endpoint": "/api/v1/customers/{customerId}/addresses",
+        "searchParam": "q",
+        "valueField": "id",
+        "labelField": "city",
+        "descriptionField": "street",
+        "minChars": 0,
+        "debounceMs": 0,
+        "pageSize": 50
+      }
+    },
+    {
+      "id": "f-line-items",
+      "actionId": "action-create-quote",
+      "key": "lineItems",
+      "label": "Positionen",
+      "type": "table_line_items",
+      "required": true,
+      "order": 3,
+      "groupId": "items",
+      "width": "full",
+      "lineItemColumns": [
+        {
+          "key": "productId",
+          "label": "Artikel",
+          "type": "searchable_select",
+          "required": true,
+          "width": 280,
+          "dynamicSource": {
+            "endpoint": "/api/v1/search/products",
+            "searchParam": "query",
+            "valueField": "id",
+            "labelField": "designation",
+            "descriptionField": "articleNumber",
+            "minChars": 2,
+            "debounceMs": 300,
+            "pageSize": 20
+          }
+        },
+        { "key": "quantity", "label": "Menge", "type": "number", "required": true, "width": 90 },
+        { "key": "unit", "label": "Einheit", "type": "text", "required": false, "width": 70 },
+        { "key": "pricePerUnit", "label": "Einzelpreis", "type": "number", "required": true, "width": 110 },
+        { "key": "discount", "label": "Rabatt %", "type": "number", "required": false, "width": 90 },
+        { "key": "deliveryDate", "label": "Lieferdatum", "type": "date", "required": false, "width": 130 },
+        { "key": "notes", "label": "Notiz", "type": "text", "required": false, "width": 180 }
+      ],
+      "constraints": [
+        {
+          "id": "c-min-items",
+          "fieldId": "f-line-items",
+          "type": "min",
+          "value": 1,
+          "message": "Mindestens eine Position erforderlich"
+        }
+      ]
+    },
+    {
+      "id": "f-currency",
+      "actionId": "action-create-quote",
+      "key": "currency",
+      "label": "Währung",
+      "type": "dropdown",
+      "required": true,
+      "defaultValue": "EUR",
+      "order": 4,
+      "groupId": "details",
+      "width": "third",
+      "options": [
+        { "value": "EUR", "label": "EUR – Euro" },
+        { "value": "USD", "label": "USD – US-Dollar" },
+        { "value": "GBP", "label": "GBP – Britisches Pfund" },
+        { "value": "CHF", "label": "CHF – Schweizer Franken" }
+      ]
+    },
+    {
+      "id": "f-valid-until",
+      "actionId": "action-create-quote",
+      "key": "validUntil",
+      "label": "Gültig bis",
+      "type": "date",
+      "required": false,
+      "order": 5,
+      "groupId": "details",
+      "width": "third"
+    },
+    {
+      "id": "f-notes",
+      "actionId": "action-create-quote",
+      "key": "notes",
+      "label": "Anmerkungen",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "Interne Anmerkungen oder Kundenhinweise...",
+      "order": 6,
+      "groupId": "details",
+      "width": "full"
+    }
+  ],
+  "apiMapping": {
+    "method": "POST",
+    "endpoint": "/api/v1/actions/execute",
+    "bodyMapping": {
+      "actionId": "action-create-quote",
+      "customerId": "customerId",
+      "deliveryAddressId": "deliveryAddressId",
+      "lineItems": "lineItems",
+      "currency": "currency",
+      "validUntil": "validUntil",
+      "notes": "notes"
+    },
+    "responseMapping": {
+      "quoteNumber": "result.erpQuoteNumber",
+      "quoteId": "result.erpQuoteId",
+      "pdfUrl": "result.pdfUrl"
+    }
+  },
+  "successActions": [
+    {
+      "type": "toast",
+      "config": {
+        "message": "Angebot {quoteNumber} erfolgreich erstellt!",
+        "variant": "success",
+        "durationMs": 5000
+      }
+    },
+    {
+      "type": "open_pdf",
+      "config": { "urlField": "pdfUrl" }
+    },
+    {
+      "type": "prepare_email",
+      "config": {
+        "subject": "Angebot {quoteNumber}",
+        "body": "Sehr geehrte Damen und Herren,\n\nim Anhang finden Sie unser Angebot {quoteNumber}.\n\nMit freundlichen Grüßen"
+      }
+    },
+    {
+      "type": "create_followup",
+      "config": {
+        "title": "Nachfassen: Angebot {quoteNumber}",
+        "daysUntilDue": 7,
+        "priority": "medium"
+      }
+    }
+  ],
+  "failureHandling": {
+    "showErrorToast": true,
+    "logToAudit": true,
+    "retryable": true,
+    "userMessage": "Das Angebot konnte nicht erstellt werden. Bitte prüfen Sie die Eingaben und versuchen Sie es erneut."
+  },
+  "tags": ["sales", "quote", "sap"],
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}

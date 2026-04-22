@@ -1,0 +1,211 @@
+{
+  "id": "action-create-customer",
+  "tenantId": null,
+  "name": "create_customer",
+  "displayName": "Kunden anlegen",
+  "description": "Legt einen neuen Kunden im ERP-System an.",
+  "icon": "UserPlus",
+  "category": "crm",
+  "targetSystem": "SAP",
+  "version": "1.0.0",
+  "enabled": true,
+  "allowedRoles": ["TENANT_ADMIN", "MANAGER", "SALES", "INNENDIENST"],
+  "sortOrder": 5,
+  "offlineBehavior": "queue",
+  "fieldGroups": [
+    { "id": "basic", "label": "Stammdaten", "order": 1 },
+    { "id": "contact", "label": "Kontakt", "order": 2 },
+    { "id": "address", "label": "Adresse", "order": 3 },
+    { "id": "commercial", "label": "Handelsdaten", "order": 4, "collapsible": true, "defaultCollapsed": true }
+  ],
+  "fields": [
+    {
+      "id": "f-name",
+      "actionId": "action-create-customer",
+      "key": "name",
+      "label": "Firmenname / Name",
+      "type": "text",
+      "required": true,
+      "placeholder": "Mustermann GmbH",
+      "order": 1,
+      "groupId": "basic",
+      "width": "full",
+      "constraints": [
+        { "id": "c-max-name", "fieldId": "f-name", "type": "max", "value": 200, "message": "Max. 200 Zeichen" }
+      ]
+    },
+    {
+      "id": "f-name2",
+      "actionId": "action-create-customer",
+      "key": "name2",
+      "label": "Namenszusatz",
+      "type": "text",
+      "required": false,
+      "placeholder": "Abteilung, Ansprechpartner...",
+      "order": 2,
+      "groupId": "basic",
+      "width": "full"
+    },
+    {
+      "id": "f-email",
+      "actionId": "action-create-customer",
+      "key": "email",
+      "label": "E-Mail",
+      "type": "email",
+      "required": false,
+      "placeholder": "info@mustermann.de",
+      "order": 3,
+      "groupId": "contact",
+      "width": "half"
+    },
+    {
+      "id": "f-phone",
+      "actionId": "action-create-customer",
+      "key": "phone",
+      "label": "Telefon",
+      "type": "phone",
+      "required": false,
+      "placeholder": "+49 89 12345678",
+      "order": 4,
+      "groupId": "contact",
+      "width": "half"
+    },
+    {
+      "id": "f-mobile",
+      "actionId": "action-create-customer",
+      "key": "mobile",
+      "label": "Mobil",
+      "type": "phone",
+      "required": false,
+      "placeholder": "+49 170 12345678",
+      "order": 5,
+      "groupId": "contact",
+      "width": "half"
+    },
+    {
+      "id": "f-street",
+      "actionId": "action-create-customer",
+      "key": "address.street",
+      "label": "Straße",
+      "type": "text",
+      "required": true,
+      "placeholder": "Musterstraße",
+      "order": 6,
+      "groupId": "address",
+      "width": "half"
+    },
+    {
+      "id": "f-street-nr",
+      "actionId": "action-create-customer",
+      "key": "address.streetNumber",
+      "label": "Nr.",
+      "type": "text",
+      "required": false,
+      "placeholder": "12a",
+      "order": 7,
+      "groupId": "address",
+      "width": "third"
+    },
+    {
+      "id": "f-zip",
+      "actionId": "action-create-customer",
+      "key": "address.zip",
+      "label": "PLZ",
+      "type": "text",
+      "required": true,
+      "placeholder": "80331",
+      "order": 8,
+      "groupId": "address",
+      "width": "third"
+    },
+    {
+      "id": "f-city",
+      "actionId": "action-create-customer",
+      "key": "address.city",
+      "label": "Ort",
+      "type": "text",
+      "required": true,
+      "placeholder": "München",
+      "order": 9,
+      "groupId": "address",
+      "width": "half"
+    },
+    {
+      "id": "f-country",
+      "actionId": "action-create-customer",
+      "key": "address.countryCode",
+      "label": "Land",
+      "type": "dropdown",
+      "required": true,
+      "defaultValue": "DE",
+      "order": 10,
+      "groupId": "address",
+      "width": "third",
+      "options": [
+        { "value": "DE", "label": "Deutschland" },
+        { "value": "AT", "label": "Österreich" },
+        { "value": "CH", "label": "Schweiz" },
+        { "value": "FR", "label": "Frankreich" },
+        { "value": "GB", "label": "Großbritannien" },
+        { "value": "US", "label": "USA" }
+      ]
+    },
+    {
+      "id": "f-currency",
+      "actionId": "action-create-customer",
+      "key": "currency",
+      "label": "Währung",
+      "type": "dropdown",
+      "required": true,
+      "defaultValue": "EUR",
+      "order": 11,
+      "groupId": "commercial",
+      "width": "third",
+      "options": [
+        { "value": "EUR", "label": "EUR" },
+        { "value": "USD", "label": "USD" },
+        { "value": "GBP", "label": "GBP" },
+        { "value": "CHF", "label": "CHF" }
+      ]
+    },
+    {
+      "id": "f-vat-id",
+      "actionId": "action-create-customer",
+      "key": "vatId",
+      "label": "USt-IdNr.",
+      "type": "text",
+      "required": false,
+      "placeholder": "DE123456789",
+      "order": 12,
+      "groupId": "commercial",
+      "width": "half"
+    }
+  ],
+  "apiMapping": {
+    "method": "POST",
+    "endpoint": "/api/v1/actions/execute",
+    "bodyMapping": { "actionId": "action-create-customer" },
+    "responseMapping": {
+      "customerId": "result.id",
+      "customerNumber": "result.customerNumber"
+    }
+  },
+  "successActions": [
+    {
+      "type": "toast",
+      "config": {
+        "message": "Kunde {customerNumber} erfolgreich angelegt!",
+        "variant": "success"
+      }
+    }
+  ],
+  "failureHandling": {
+    "showErrorToast": true,
+    "logToAudit": true,
+    "retryable": true,
+    "userMessage": "Der Kunde konnte nicht angelegt werden."
+  },
+  "tags": ["crm", "customer"],
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}

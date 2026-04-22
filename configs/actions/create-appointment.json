@@ -1,0 +1,113 @@
+{
+  "id": "action-create-appointment",
+  "tenantId": null,
+  "name": "create_appointment",
+  "displayName": "Termin erstellen",
+  "description": "Erstellt einen neuen Termin und synchronisiert ihn mit dem ERP-System.",
+  "icon": "Calendar",
+  "category": "crm",
+  "targetSystem": "SAP",
+  "version": "1.0.0",
+  "enabled": true,
+  "allowedRoles": ["TENANT_ADMIN", "MANAGER", "SALES", "INNENDIENST", "SUPPORT"],
+  "sortOrder": 7,
+  "offlineBehavior": "queue",
+  "fieldGroups": [
+    { "id": "basic", "label": "Termin", "order": 1 },
+    { "id": "details", "label": "Details", "order": 2, "collapsible": true, "defaultCollapsed": false }
+  ],
+  "fields": [
+    {
+      "id": "f-title",
+      "actionId": "action-create-appointment",
+      "key": "title",
+      "label": "Betreff",
+      "type": "text",
+      "required": true,
+      "placeholder": "z.B. Erstgespräch Mustermann GmbH",
+      "order": 1,
+      "groupId": "basic",
+      "width": "full"
+    },
+    {
+      "id": "f-start",
+      "actionId": "action-create-appointment",
+      "key": "startAt",
+      "label": "Start",
+      "type": "datetime",
+      "required": true,
+      "order": 2,
+      "groupId": "basic",
+      "width": "half"
+    },
+    {
+      "id": "f-end",
+      "actionId": "action-create-appointment",
+      "key": "endAt",
+      "label": "Ende",
+      "type": "datetime",
+      "required": true,
+      "order": 3,
+      "groupId": "basic",
+      "width": "half"
+    },
+    {
+      "id": "f-customer",
+      "actionId": "action-create-appointment",
+      "key": "customerId",
+      "label": "Kunde (optional)",
+      "type": "searchable_select",
+      "required": false,
+      "placeholder": "Kunde suchen...",
+      "order": 4,
+      "groupId": "details",
+      "width": "full",
+      "dynamicSource": {
+        "endpoint": "/api/v1/search/customers",
+        "searchParam": "query",
+        "valueField": "id",
+        "labelField": "name",
+        "descriptionField": "customerNumber",
+        "minChars": 2,
+        "debounceMs": 300,
+        "pageSize": 20
+      }
+    },
+    {
+      "id": "f-location",
+      "actionId": "action-create-appointment",
+      "key": "location",
+      "label": "Ort / Online-Link",
+      "type": "text",
+      "required": false,
+      "placeholder": "Besprechungsraum 1 / Teams-Link",
+      "order": 5,
+      "groupId": "details",
+      "width": "full"
+    },
+    {
+      "id": "f-description",
+      "actionId": "action-create-appointment",
+      "key": "description",
+      "label": "Beschreibung",
+      "type": "textarea",
+      "required": false,
+      "order": 6,
+      "groupId": "details",
+      "width": "full"
+    }
+  ],
+  "apiMapping": {
+    "method": "POST",
+    "endpoint": "/api/v1/actions/execute",
+    "bodyMapping": { "actionId": "action-create-appointment" },
+    "responseMapping": { "appointmentId": "result.id", "erpId": "result.erpAppointmentId" }
+  },
+  "successActions": [
+    { "type": "toast", "config": { "message": "Termin erfolgreich erstellt!", "variant": "success" } }
+  ],
+  "failureHandling": { "showErrorToast": true, "logToAudit": true, "retryable": true },
+  "tags": ["crm", "calendar"],
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}

@@ -1,0 +1,33 @@
+import { Controller, Post, Get, Body, UseGuards, HttpCode, HttpStatus } from "@nestjs/common";
+import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
+import { ActionsService } from "./actions.service";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { CurrentUser } from "../../common/decorators/tenant.decorator";
+import { ActionExecutionSchema } from "@youman/shared";
+
+interface JwtUser { sub: string; tenantId: string; role: string }
+
+@ApiTags("actions")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+@Controller("actions")
+export class ActionsController {
+  constructor(private readonly actionsService: ActionsService) {}
+
+  @Get("definitions")
+  getDefinitions(@CurrentUser() user: JwtUser) {
+    return this.actionsService.getActionDefinitions(user.tenantId);
+  }
+
+  @Post("execute")
+  @HttpCode(HttpStatus.OK)
+  execute(@Body() body: unknown, @CurrentUser() user: JwtUser) {
+    const dto = ActionExecutionSchema.parse({
+      ...(body as Record<string, unknown>),
+      tenantId: user.tenantId,
+      userId: user.sub,
+      clientTimestamp: (body as Record<string, unknown>)["clientTimestamp"] ?? new Date().toISOString(),
+    });
+    return this.actionsService.executeAction(dto);
+  }
+}

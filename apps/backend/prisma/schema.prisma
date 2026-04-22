@@ -1,0 +1,329 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Tenant ──────────────────────────────────────────────────────────────────
+
+model Tenant {
+  id        String       @id @default(uuid())
+  slug      String       @unique
+  name      String
+  plan      TenantPlan   @default(STARTER)
+  status    TenantStatus @default(TRIAL)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  settings       TenantSettings?
+  branding        TenantBranding?
+  connectorConfig ConnectorConfig?
+  users           User[]
+  actionDefs      ActionDefinition[]
+  executions      ActionExecution[]
+  queueItems      QueueItem[]
+  auditLogs       AuditLog[]
+
+  @@index([slug])
+  @@map("tenants")
+}
+
+enum TenantPlan {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum TenantStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+model TenantSettings {
+  id                    String  @id @default(uuid())
+  tenantId              String  @unique
+  defaultLocale         String  @default("de-DE")
+  defaultCurrency       String  @default("EUR")
+  timezone              String  @default("Europe/Berlin")
+  dateFormat            String  @default("DD.MM.YYYY")
+  enableOfflineMode     Boolean @default(true)
+  sessionTimeoutMinutes Int     @default(480)
+  maxRetryAttempts      Int     @default(3)
+  retryBackoffMs        Int     @default(2000)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_settings")
+}
+
+model TenantBranding {
+  id             String  @id @default(uuid())
+  tenantId       String  @unique
+  primaryColor   String  @default("#2563EB")
+  secondaryColor String  @default("#1E40AF")
+  accentColor    String  @default("#10B981")
+  logoUrl        String?
+  appName        String  @default("Youman")
+  favicon        String?
+  customCss      String?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_branding")
+}
+
+// ─── Auth / Users ─────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(uuid())
+  tenantId     String
+  email        String
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         UserRole  @default(VIEWER)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+  executions    ActionExecution[]
+  queueItems    QueueItem[]
+  auditLogs     AuditLog[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("users")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  MANAGER
+  SALES
+  INNENDIENST
+  SUPPORT
+  VIEWER
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ─── Connector ────────────────────────────────────────────────────────────────
+
+model ConnectorConfig {
+  id            String        @id @default(uuid())
+  tenantId      String        @unique
+  connectorType ConnectorType @default(MOCK)
+  displayName   String        @default("ERP Connector")
+  enabled       Boolean       @default(false)
+  config        Json          @default("{}")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("connector_configs")
+}
+
+enum ConnectorType {
+  SAP_RFC
+  SAP_ODATA
+  SAP_BAPI
+  REST_GENERIC
+  MOCK
+}
+
+// ─── Actions ──────────────────────────────────────────────────────────────────
+
+model ActionDefinition {
+  id             String           @id @default(uuid())
+  tenantId       String?
+  name           String
+  displayName    String
+  description    String           @default("")
+  icon           String           @default("Zap")
+  category       ActionCategory   @default(SALES)
+  targetSystem   String           @default("SAP")
+  version        String           @default("1.0.0")
+  enabled        Boolean          @default(true)
+  allowedRoles   UserRole[]
+  configJson     Json
+  sortOrder      Int              @default(0)
+  offlineBehavior OfflineBehavior @default(QUEUE)
+  tags           String[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  tenant     Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  executions ActionExecution[]
+
+  @@index([tenantId])
+  @@index([name])
+  @@map("action_definitions")
+}
+
+enum ActionCategory {
+  SALES
+  PURCHASING
+  INVENTORY
+  CRM
+  ADMINISTRATION
+  LOGISTICS
+}
+
+enum OfflineBehavior {
+  QUEUE
+  REJECT
+  LOCAL_ONLY
+}
+
+model ActionExecution {
+  id          String          @id @default(uuid())
+  tenantId    String
+  userId      String
+  actionId    String
+  actionName  String
+  status      ExecutionStatus @default(PENDING)
+  payload     Json
+  result      Json?
+  error       String?
+  retryCount  Int             @default(0)
+  executedAt  DateTime        @default(now())
+  completedAt DateTime?
+  durationMs  Int?
+  queueItemId String?
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id])
+  user   User             @relation(fields: [userId], references: [id])
+  action ActionDefinition @relation(fields: [actionId], references: [id])
+
+  @@index([tenantId, userId])
+  @@index([tenantId, actionId])
+  @@index([status])
+  @@map("action_executions")
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  QUEUED_OFFLINE
+  RETRYING
+  DEAD_LETTER
+}
+
+// ─── Queue ────────────────────────────────────────────────────────────────────
+
+model QueueItem {
+  id               String          @id @default(uuid())
+  tenantId         String
+  userId           String
+  actionId         String
+  actionName       String
+  payload          Json
+  status           QueueStatus     @default(PENDING)
+  priority         Int             @default(5)
+  retryCount       Int             @default(0)
+  maxRetries       Int             @default(3)
+  nextRetryAt      DateTime?
+  error            String?
+  errorCode        String?
+  createdAt        DateTime        @default(now())
+  processedAt      DateTime?
+  completedAt      DateTime?
+  result           Json?
+  clientId         String
+  isOfflineCreated Boolean         @default(false)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([status, nextRetryAt])
+  @@map("queue_items")
+}
+
+enum QueueStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  RETRYING
+  DEAD_LETTER
+  CANCELLED
+}
+
+// ─── Audit ────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id           String         @id @default(uuid())
+  tenantId     String
+  userId       String?
+  userEmail    String?
+  eventType    AuditEventType
+  resourceType String?
+  resourceId   String?
+  description  String
+  metadata     Json           @default("{}")
+  ipAddress    String?
+  userAgent    String?
+  severity     AuditSeverity  @default(INFO)
+  createdAt    DateTime       @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User?  @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, eventType])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+enum AuditEventType {
+  USER_LOGIN
+  USER_LOGOUT
+  USER_LOGIN_FAILED
+  ACTION_EXECUTED
+  ACTION_FAILED
+  ACTION_QUEUED
+  ACTION_SYNCED
+  CUSTOMER_CREATED
+  CUSTOMER_UPDATED
+  PRODUCT_CREATED
+  PRODUCT_UPDATED
+  QUOTE_CREATED
+  QUOTE_SUBMITTED
+  ORDER_CREATED
+  TENANT_SETTINGS_CHANGED
+  USER_CREATED
+  USER_ROLE_CHANGED
+  CONNECTOR_CONFIGURED
+  SYSTEM_ERROR
+}
+
+enum AuditSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
