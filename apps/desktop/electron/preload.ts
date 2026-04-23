@@ -29,6 +29,8 @@ contextBridge.exposeInMainWorld("youman", {
     maximize: () => ipcRenderer.invoke("app:maximize"),
     close: () => ipcRenderer.invoke("app:close"),
     checkOnline: () => ipcRenderer.invoke("app:checkOnline"),
+    checkForUpdates: () => ipcRenderer.invoke("app:checkForUpdates"),
+    installUpdate: () => ipcRenderer.invoke("app:installUpdate"),
   },
 
   // PDF
@@ -39,7 +41,7 @@ contextBridge.exposeInMainWorld("youman", {
 
   // Events from main to renderer
   on: (channel: string, callback: (...args: unknown[]) => void) => {
-    const validChannels = ["sync:status", "network:changed", "app:update"];
+    const validChannels = ["sync:status", "network:changed", "app:update", "app:updateAvailable", "app:updateDownloaded"];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (_event, ...args) => callback(...args));
     }

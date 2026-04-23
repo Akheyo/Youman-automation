@@ -1,0 +1,41 @@
+name: Build & Release Windows App
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build shared packages
+        run: |
+          pnpm build:shared
+          pnpm build:config-engine
+          pnpm build:sap
+
+      - name: Build & publish installer
+        run: pnpm --filter @youman/desktop release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

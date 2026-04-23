@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell, nativeTheme } from "electron";
 import path from "path";
+import { autoUpdater } from "electron-updater";
 import { setupIpcHandlers } from "./ipc/handlers";
 import { OfflineQueueStore } from "./store/OfflineQueueStore";
 import { SecureStorage } from "./store/SecureStorage";
@@ -9,6 +10,27 @@ const queueStore = new OfflineQueueStore();
 const secureStorage = new SecureStorage();
 
 let mainWindow: BrowserWindow | null = null;
+
+function setupAutoUpdater(): void {
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on("update-available", (info) => {
+    mainWindow?.webContents.send("app:update", { type: "available", version: info.version });
+  });
+
+  autoUpdater.on("update-downloaded", (info) => {
+    mainWindow?.webContents.send("app:update", { type: "downloaded", version: info.version });
+  });
+
+  autoUpdater.on("error", (err) => {
+    mainWindow?.webContents.send("app:update", { type: "error", message: err.message });
+  });
+
+  // Check on startup, then every 4 hours
+  autoUpdater.checkForUpdatesAndNotify();
+  setInterval(() => autoUpdater.checkForUpdatesAndNotify(), 4 * 60 * 60 * 1000);
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -56,6 +78,18 @@ app.whenReady().then(() => {
   nativeTheme.themeSource = "dark";
   createWindow();
   setupIpcHandlers(ipcMain, queueStore, secureStorage);
+
+  if (!isDev) {
+    setupAutoUpdater();
+  }
+
+  ipcMain.handle("app:checkForUpdates", () => {
+    if (!isDev) autoUpdater.checkForUpdatesAndNotify();
+  });
+
+  ipcMain.handle("app:installUpdate", () => {
+    autoUpdater.quitAndInstall();
+  });
 });
 
 app.on("window-all-closed", () => {
@@ -66,7 +100,6 @@ app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
-// Security: prevent new window creation
 app.on("web-contents-created", (_, contents) => {
   contents.on("will-navigate", (event, url) => {
     const allowed = isDev ? ["http://localhost:5173"] : ["app://localhost"];
