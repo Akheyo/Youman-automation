@@ -44,7 +44,7 @@ export class ActionsService {
         actionId: req.actionId,
         actionName: req.actionId,
         status: "RUNNING",
-        payload: req.payload,
+        payload: req.payload as unknown as import("@prisma/client").Prisma.InputJsonValue,
       },
     });
 
@@ -55,7 +55,7 @@ export class ActionsService {
         where: { id: executionId },
         data: {
           status: "SUCCESS",
-          result: result as Record<string, unknown>,
+          result: result as unknown as import("@prisma/client").Prisma.InputJsonValue,
           completedAt: new Date(),
           durationMs: Date.now() - start,
         },
@@ -64,7 +64,7 @@ export class ActionsService {
       await this.audit.log({
         tenantId: req.tenantId,
         userId: req.userId,
-        eventType: "ACTION_EXECUTED",
+        eventType: "action.executed",
         description: `Aktion '${req.actionId}' erfolgreich ausgeführt`,
         metadata: { actionId: req.actionId, result },
       });
@@ -101,7 +101,7 @@ export class ActionsService {
       await this.audit.log({
         tenantId: req.tenantId,
         userId: req.userId,
-        eventType: "ACTION_FAILED",
+        eventType: "action.failed",
         description: `Aktion '${req.actionId}' fehlgeschlagen: ${errorMsg}`,
         severity: "ERROR",
         metadata: { actionId: req.actionId, error: errorMsg },

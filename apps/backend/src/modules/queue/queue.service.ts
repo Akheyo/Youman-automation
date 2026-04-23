@@ -28,7 +28,7 @@ export class QueueService {
         userId: item.userId,
         actionId: item.actionId,
         actionName: item.actionName,
-        payload: item.payload,
+        payload: item.payload as unknown as import("@prisma/client").Prisma.InputJsonValue,
         status: "PENDING",
         priority: item.priority ?? 5,
         maxRetries: 3,
@@ -170,7 +170,8 @@ export class QueueService {
       where: {
         tenantId,
         userId,
-        ...(status ? { status: status as Parameters<typeof this.prisma.queueItem.findMany>[0]["where"]["status"] } : {}),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...(status ? { status: status as any } : {}),
       },
       orderBy: { createdAt: "desc" },
       take: 100,

@@ -57,7 +57,7 @@ export class AuditService {
           resourceType: params.resourceType ?? null,
           resourceId: params.resourceId ?? null,
           description: params.description,
-          metadata: params.metadata ?? {},
+          metadata: (params.metadata ?? {}) as unknown as import("@prisma/client").Prisma.InputJsonValue,
           ipAddress: params.ipAddress ?? null,
           userAgent: params.userAgent ?? null,
           severity: (params.severity ?? "INFO") as "INFO" | "WARNING" | "ERROR" | "CRITICAL",
@@ -89,9 +89,11 @@ export class AuditService {
     }
 
     const [total, items] = await Promise.all([
-      this.prisma.auditLog.count({ where: where as Parameters<typeof this.prisma.auditLog.count>[0]["where"] }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      this.prisma.auditLog.count({ where: where as any }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this.prisma.auditLog.findMany({
-        where: where as Parameters<typeof this.prisma.auditLog.findMany>[0]["where"],
+        where: where as any,
         orderBy: { createdAt: "desc" },
         skip,
         take: pageSize,
