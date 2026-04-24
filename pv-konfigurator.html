@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Photovoltaik-Konfigurator — A&amp;B Solarenergy</title>
+
+<!-- Heebo: r-energy-Theme nutzt Heebo exklusiv; wir laden nur die Gewichte die wir tatsaechlich brauchen -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+/* ---------- Design-Tokens (1:1 aus r-energy-Theme der A&B-Seite) ---------- */
+:root{
+  --blue:#0D73FC;
+  --blue-h:#056EB9;
+  --text:#1d1d2e;
+  --muted:#7a8393;
+  --bg:#ffffff;
+  --bg-s:#f4f6fa;
+  --border:#e4e8ef;
+  --gruen:#22c55e;
+  --gelb:#f59e0b;
+  --rot:#ef4444;
+  --font:'Heebo',system-ui,Arial,sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--font);
+  font-size:15px;
+  line-height:1.7;
+  color:var(--text);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+
+/* ---------- Buttons (r-energy Konvention: kantig, uppercase, tracking) ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-size:13px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.09em;
+  padding:13px 32px;
+  border-radius:0;               /* bewusst kantig: r-energy verwendet nirgendwo runde Ecken */
+  transition:background .2s,color .2s,border-color .2s;
+  white-space:nowrap;
+}
+.btn-fill{background:var(--blue);color:#fff}
+.btn-fill:hover{background:var(--blue-h)}
+.btn-fill:disabled{background:#b8c6de;cursor:not-allowed}
+.btn-out{background:transparent;color:var(--blue);border:2px solid var(--blue);padding:11px 30px}
+.btn-out:hover{background:var(--blue);color:#fff}
+.btn-ghost{background:var(--bg-s);color:var(--text)}
+.btn-ghost:hover{background:#e9edf4}
+
+/* ---------- Header ---------- */
+.hdr{
+  height:72px;
+  background:#fff;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;
+  position:sticky;top:0;z-index:20;
+}
+.hdr-inner{
+  width:100%;max-width:1240px;margin:0 auto;padding:0 32px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{
+  font-weight:900;font-size:22px;letter-spacing:.02em;
+  color:var(--text);
+}
+/* A und B (und der Slash) werden blau eingefaerbt – das ist das eingetragene Wortmarken-Muster */
+.logo .bl{color:var(--blue)}
+.hdr-meta{
+  font-size:12px;font-weight:500;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.14em;
+}
+
+/* ---------- Step-Bar ---------- */
+.steps{
+  background:#fff;
+  border-bottom:1px solid var(--border);
+}
+.steps-inner{
+  max-width:1240px;margin:0 auto;
+  display:grid;grid-template-columns:repeat(3,1fr);
+}
+.step{
+  position:relative;
+  display:flex;align-items:center;gap:14px;
+  padding:22px 24px;
+  font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);
+  border-bottom:3px solid transparent;
+  background:var(--bg-s);
+  transition:color .2s,background .2s,border-color .2s;
+}
+.step + .step{border-left:1px solid var(--border)}
+.step .dot{
+  flex:0 0 28px;width:28px;height:28px;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:2px solid var(--border);
+  font-size:12px;font-weight:900;
+  color:var(--muted);
+  background:#fff;
+}
+/* Aktiver Step: weiss, blaue Underline, dunkler Text */
+.step.is-active{
+  color:var(--text);
+  background:#fff;
+  border-bottom-color:var(--blue);
+}
+.step.is-active .dot{border-color:var(--blue);color:var(--blue)}
+/* Erledigter Step: blauer Kreis mit weissem Haken */
+.step.is-done{color:var(--text);background:#fff}
+.step.is-done .dot{
+  background:var(--blue);border-color:var(--blue);color:#fff;
+  font-size:0;                    /* Zahl verstecken, Pseudo-Haken einsetzen */
+}
+.step.is-done .dot::before{
+  content:"";
+  display:block;width:12px;height:6px;
+  border-left:2px solid #fff;border-bottom:2px solid #fff;
+  transform:rotate(-45deg) translate(1px,-2px);
+}
+
+/* ---------- Panels (nur eines sichtbar) ---------- */
+.panel{display:none}
+.panel.is-active{display:block}
+
+/* ---------- Step 1: Split-Layout ---------- */
+.step1{
+  max-width:1240px;margin:0 auto;
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  min-height:calc(100vh - 72px - 66px);
+}
+.step1-left{
+  padding:72px 56px 56px;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.eyebrow{
+  font-size:12px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--blue);
+  margin-bottom:18px;
+}
+.h1{
+  font-size:44px;line-height:1.15;font-weight:700;
+  letter-spacing:-.01em;color:var(--text);
+  margin-bottom:18px;
+}
+.lead{
+  font-size:17px;color:var(--muted);
+  max-width:520px;margin-bottom:44px;
+}
+
+/* Eingabefeld: nur Bottom-Border, bewusst kein Kasten (wirkt editorial, nicht wie ein Formular) */
+.field{position:relative;margin-bottom:28px;max-width:520px}
+.field-label{
+  display:block;
+  font-size:11px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);
+  margin-bottom:10px;
+}
+.field input{
+  width:100%;
+  background:transparent;border:0;
+  border-bottom:1px solid var(--border);
+  padding:10px 0 14px;
+  font-size:18px;font-weight:400;color:var(--text);
+  outline:none;
+  transition:border-color .2s;
+}
+.field input::placeholder{color:#a9b1c1}
+.field input:focus{border-bottom-color:var(--blue)}
+.field-hint{
+  font-size:12px;color:var(--muted);margin-top:10px;
+}
+.field-error{
+  font-size:12px;color:var(--rot);margin-top:10px;display:none;
+}
+.field.has-error input{border-bottom-color:var(--rot)}
+.field.has-error .field-error{display:block}
+
+/* Hero-Bild: volle Hoehe, rechts, ohne Rundungen */
+.step1-right{
+  position:relative;
+  background:#000 url('https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+  min-height:480px;
+}
+/* Sanfter Verlauf von links, damit das Foto am Uebergang zum Text nicht hart schneidet */
+.step1-right::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(255,255,255,.35),rgba(255,255,255,0) 35%);
+  pointer-events:none;
+}
+
+/* Action-Reihe unter dem Input */
+.actions{display:flex;gap:12px;align-items:center;margin-top:8px}
+
+/* ---------- Responsive ---------- */
+@media (max-width:860px){
+  .step1{grid-template-columns:1fr}
+  .step1-left{padding:48px 24px}
+  .step1-right{min-height:280px;order:-1}
+  .h1{font-size:32px}
+  .step{padding:16px 14px;font-size:11px;gap:10px}
+  .step .dot{flex-basis:24px;width:24px;height:24px;font-size:11px}
+}
+@media (max-width:600px){
+  .hdr-meta{display:none}
+  .step1-left{padding:36px 20px}
+  .h1{font-size:26px}
+  .lead{font-size:15px;margin-bottom:32px}
+  .field input{font-size:16px}        /* >=16px verhindert iOS-Auto-Zoom bei Fokus */
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header class="hdr">
+  <div class="hdr-inner">
+    <!-- Logo-Text folgt dem A&B-Branding: A/B blau, Rest dunkel -->
+    <a href="/" class="logo" aria-label="A&amp;B Solarenergy Startseite">
+      <span class="bl">A</span><span class="bl">/</span><span class="bl">B</span> SOLARENERGY
+    </a>
+    <div class="hdr-meta">Elektromeisterbetrieb · Borken</div>
+  </div>
+</header>
+
+<!-- ===== Step-Bar ===== -->
+<nav class="steps" aria-label="Konfigurator-Schritte">
+  <div class="steps-inner">
+    <div class="step is-active" data-step="1"><span class="dot">1</span>Adresse eingeben</div>
+    <div class="step"            data-step="2"><span class="dot">2</span>Dach &amp; Verbrauch</div>
+    <div class="step"            data-step="3"><span class="dot">3</span>Ergebnis</div>
+  </div>
+</nav>
+
+<!-- ===== Step 1: Adresse ===== -->
+<section class="panel is-active" data-panel="1">
+  <div class="step1">
+    <div class="step1-left">
+      <div class="eyebrow">In 3 Schritten zur Solaranlage</div>
+      <h1 class="h1">Wie viel Strom liefert Ihr Dach?</h1>
+      <p class="lead">
+        Geben Sie Ihre Adresse ein und wir analysieren Ihr Dach per Satellit – inklusive
+        Kostenersparnis, Amortisation und CO<sub>2</sub>-Einsparung.
+      </p>
+
+      <div class="field" id="fieldAddress">
+        <label class="field-label" for="address">Ihre Adresse</label>
+        <input id="address" type="text" autocomplete="street-address"
+               placeholder="Straße, Hausnummer, PLZ, Ort">
+        <div class="field-hint">Wir unterstützen deutsche Adressen.</div>
+        <div class="field-error" id="addressError">Adresse nicht gefunden – bitte prüfen.</div>
+      </div>
+
+      <div class="actions">
+        <!-- Weiter ist bis zur Adress-Bestaetigung deaktiviert (Logik folgt in Phase 2) -->
+        <button id="btnNext1" class="btn btn-fill" disabled>Weiter</button>
+      </div>
+    </div>
+
+    <div class="step1-right" aria-hidden="true"></div>
+  </div>
+</section>
+
+<!-- Platzhalter-Panels fuer Steps 2 & 3 – werden in den folgenden Phasen befuellt -->
+<section class="panel" data-panel="2"></section>
+<section class="panel" data-panel="3"></section>
+
+</body>
+</html>
