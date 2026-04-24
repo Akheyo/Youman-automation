@@ -203,6 +203,128 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 /* Action-Reihe unter dem Input */
 .actions{display:flex;gap:12px;align-items:center;margin-top:8px}
 
+/* ---------- Step 2: Dach-Vorschau + Verbrauch ---------- */
+.step2{
+  max-width:1240px;margin:0 auto;
+  padding:48px 32px 24px;
+  display:grid;grid-template-columns:1fr 420px;gap:48px;
+  align-items:start;
+}
+.h2{
+  font-size:28px;line-height:1.2;font-weight:700;
+  letter-spacing:-.005em;margin-bottom:6px;
+}
+.sub{
+  font-size:14px;color:var(--muted);margin-bottom:22px;
+}
+
+/* Canvas-Platzhalter: in Phase 3 wird hier RGB+Flux-Heatmap reingezeichnet */
+.roof{
+  position:relative;
+  width:100%;aspect-ratio:4/3;
+  background:var(--bg-s);
+  border:1px solid var(--border);
+  overflow:hidden;
+}
+.roof-placeholder{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;text-align:center;padding:24px;
+  color:var(--muted);font-size:13px;
+}
+.spinner{
+  width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--blue);
+  border-radius:50%;animation:spin .9s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Adressanzeige unter der Vorschau */
+.addr-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--blue);background:#eaf2ff;padding:8px 12px;margin-bottom:14px;
+}
+.addr-tag::before{
+  content:"";width:8px;height:8px;background:var(--blue);border-radius:50%;
+}
+
+/* Solar-Potenzial-Box: 3 Zahlen direkt aus buildingInsights */
+.solar-box{
+  margin-top:20px;
+  background:#fff;border:1px solid var(--border);
+  display:grid;grid-template-columns:repeat(3,1fr);
+}
+.solar-stat{padding:22px 24px;border-right:1px solid var(--border)}
+.solar-stat:last-child{border-right:0}
+.solar-stat .k{
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;
+}
+.solar-stat .v{font-size:26px;font-weight:700;line-height:1.1}
+.solar-stat .u{font-size:14px;font-weight:500;color:var(--muted);margin-left:4px}
+.solar-stat.is-dim .v{color:var(--border)}
+
+/* Rechte Seite: Verbrauchs-Inputs */
+.form-col{display:flex;flex-direction:column;gap:26px}
+.form-block h3{
+  font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--text);margin-bottom:12px;
+}
+.quick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.quick button{
+  font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:9px 14px;
+  background:var(--bg-s);color:var(--text);
+  border:1px solid var(--border);
+  transition:border-color .15s,background .15s,color .15s;
+}
+.quick button:hover{border-color:var(--blue);color:var(--blue)}
+.quick button.is-active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+.input-num{
+  width:100%;
+  border:1px solid var(--border);
+  background:#fff;padding:13px 14px;
+  font-size:16px;font-weight:500;
+  outline:none;transition:border-color .15s;
+}
+.input-num:focus{border-color:var(--blue)}
+.input-suffix{position:relative}
+.input-suffix .suf{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  font-size:13px;color:var(--muted);font-weight:500;pointer-events:none;
+}
+
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end}
+
+.toggle{display:inline-flex;border:1px solid var(--border);overflow:hidden}
+.toggle button{
+  padding:11px 22px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+  background:#fff;color:var(--muted);transition:background .15s,color .15s;
+}
+.toggle button.is-active{background:var(--blue);color:#fff}
+
+/* Step-Nav (Zurueck/Weiter) unter dem Grid */
+.step-nav{
+  max-width:1240px;margin:0 auto;padding:20px 32px 64px;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  border-top:1px solid var(--border);
+}
+
+/* Banner-System: API-Key fehlt, Solar keine Abdeckung, Billing-Problem */
+.banner{
+  max-width:1240px;margin:0 auto;
+  padding:14px 22px;
+  font-size:13px;line-height:1.55;
+  display:flex;align-items:flex-start;gap:12px;
+}
+.banner-info{background:#eaf2ff;color:#0a4da8;border-bottom:1px solid #cfe0fb}
+.banner-warn{background:#fff6e6;color:#7a4a00;border-bottom:1px solid #f2d9a1}
+.banner-err {background:#ffecec;color:#991b1b;border-bottom:1px solid #f4bcbc}
+.banner strong{font-weight:700;margin-right:4px}
+.banner .x{margin-left:auto;cursor:pointer;font-weight:700;opacity:.6}
+.banner .x:hover{opacity:1}
+
 /* ---------- Responsive ---------- */
 @media (max-width:860px){
   .step1{grid-template-columns:1fr}
@@ -211,6 +333,10 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   .h1{font-size:32px}
   .step{padding:16px 14px;font-size:11px;gap:10px}
   .step .dot{flex-basis:24px;width:24px;height:24px;font-size:11px}
+  .step2{grid-template-columns:1fr;padding:32px 20px;gap:36px}
+  .solar-box{grid-template-columns:1fr}
+  .solar-stat{border-right:0;border-bottom:1px solid var(--border)}
+  .solar-stat:last-child{border-bottom:0}
 }
 @media (max-width:600px){
   .hdr-meta{display:none}
@@ -218,6 +344,9 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   .h1{font-size:26px}
   .lead{font-size:15px;margin-bottom:32px}
   .field input{font-size:16px}        /* >=16px verhindert iOS-Auto-Zoom bei Fokus */
+  .h2{font-size:22px}
+  .step-nav{padding:20px;flex-direction:column-reverse;align-items:stretch}
+  .step-nav .btn{width:100%}
 }
 </style>
 </head>
@@ -242,6 +371,9 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     <div class="step"            data-step="3"><span class="dot">3</span>Ergebnis</div>
   </div>
 </nav>
+
+<!-- Banner-Slot: wird von Shell.banner() dynamisch befuellt (API-Key fehlt, kein Solar-Coverage, Billing) -->
+<div id="bannerSlot"></div>
 
 <!-- ===== Step 1: Adresse ===== -->
 <section class="panel is-active" data-panel="1">
@@ -272,9 +404,521 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   </div>
 </section>
 
-<!-- Platzhalter-Panels fuer Steps 2 & 3 – werden in den folgenden Phasen befuellt -->
-<section class="panel" data-panel="2"></section>
+<!-- ===== Step 2: Dach-Analyse + Verbrauch ===== -->
+<section class="panel" data-panel="2">
+  <div class="step2">
+
+    <!-- LINKS: Adress-Tag + Canvas-Platzhalter + Solar-Potenzial-Box -->
+    <div>
+      <h2 class="h2">Ihr Dach aus der Satellitenansicht</h2>
+      <p class="sub">Wir analysieren Sonneneinstrahlung, Ausrichtung und Verschattung mit Google Solar API.</p>
+
+      <div class="addr-tag" id="addrTag">Adresse</div>
+
+      <div class="roof" id="roof">
+        <!-- Canvas-Visualisierung kommt in Phase 3. Jetzt nur Zustands-Placeholder. -->
+        <div class="roof-placeholder" id="roofPlaceholder">
+          <div class="spinner"></div>
+          <div>Satellitendaten werden geladen …</div>
+        </div>
+      </div>
+
+      <!-- Zahlen direkt aus buildingInsights.solarPotential (wholeRoofStats, maxArrayPanelsCount, solarPanelConfigs) -->
+      <div class="solar-box" id="solarBox">
+        <div class="solar-stat is-dim" data-stat="kwp">
+          <div class="k">Max. Anlagengröße</div>
+          <div class="v">–<span class="u"> kWp</span></div>
+        </div>
+        <div class="solar-stat is-dim" data-stat="ertrag">
+          <div class="k">Max. Jahresertrag</div>
+          <div class="v">–<span class="u"> kWh</span></div>
+        </div>
+        <div class="solar-stat is-dim" data-stat="flaeche">
+          <div class="k">Dachfläche</div>
+          <div class="v">–<span class="u"> m²</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECHTS: Verbrauchs-Formular -->
+    <div class="form-col">
+
+      <div class="form-block">
+        <h3>Ihr Stromverbrauch pro Jahr</h3>
+        <!-- Quick-Buttons setzen nur den kWh-Wert; E-Auto zieht zusaetzlich den Toggle mit -->
+        <div class="quick" id="quick">
+          <button type="button" data-kwh="2500">1–2 Personen</button>
+          <button type="button" data-kwh="4500">3–4 Personen</button>
+          <button type="button" data-kwh="6500">5+ Personen</button>
+          <button type="button" data-kwh="12000" data-eauto="1">Mit E-Auto</button>
+        </div>
+        <div class="input-suffix">
+          <input id="kwh" class="input-num" type="number" min="500" max="50000" step="100" value="4500" inputmode="numeric">
+          <span class="suf">kWh / Jahr</span>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="form-block" style="margin-bottom:0">
+          <h3>Strompreis</h3>
+          <div class="input-suffix">
+            <input id="price" class="input-num" type="number" min="10" max="80" step="0.5" value="35" inputmode="decimal">
+            <span class="suf">ct/kWh</span>
+          </div>
+        </div>
+        <div class="form-block" style="margin-bottom:0">
+          <h3>E-Auto</h3>
+          <div class="toggle" role="group" aria-label="E-Auto vorhanden">
+            <button type="button" id="eAutoNo"  class="is-active">Nein</button>
+            <button type="button" id="eAutoYes">Ja</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step-Navigation -->
+  <div class="step-nav">
+    <button id="btnBack2" class="btn btn-ghost">Zurück</button>
+    <button id="btnNext2" class="btn btn-fill" disabled>Ergebnis berechnen</button>
+  </div>
+</section>
+
+<!-- Step 3 Platzhalter – wird in Phase 3 befuellt -->
 <section class="panel" data-panel="3"></section>
+
+
+<!--
+  geotiff.js wird erst in Phase 3 benoetigt (Canvas-Rendering der Solar-Layer).
+  Google Maps JS wird in Search.init() dynamisch nachgeladen, sobald PV_CONFIG.apiKey vorliegt.
+-->
+<script>
+(function(){
+  'use strict';
+
+  /* ============================================================
+   *  Konfiguration
+   *  ------------------------------------------------------------
+   *  API-Key NICHT hart kodieren – immer ueber window.PV_CONFIG.
+   *  So kann die HTML-Datei 1:1 in WordPress eingebunden werden
+   *  und der Key wird vom Template vor dem Custom-HTML gesetzt.
+   * ============================================================ */
+  window.PV_CONFIG = window.PV_CONFIG || {};
+  const CFG = window.PV_CONFIG;
+  CFG.apiKey      = CFG.apiKey      || '';
+  CFG.leadWebhook = CFG.leadWebhook || '';
+  // Radius fuer dataLayers: 40m ist der Sweet Spot fuer Einfamilienhaeuser
+  // (zu klein = Dach abgeschnitten, zu gross = teurer & Nachbarn im Bild).
+  CFG.solarRadius = CFG.solarRadius || 40;
+
+  const SOLAR_BASE = 'https://solar.googleapis.com/v1';
+
+  /* ============================================================
+   *  State — zentrale Datenhaltung zwischen den Modulen
+   * ============================================================ */
+  const State = {
+    step: 1,
+    address: { text:'', lat:null, lng:null, confirmed:false },
+    solar:   { building:null, layers:null, status:'idle', error:null },
+    // status: idle | loading | ok | no-coverage | billing | error
+    consumption: { kwh:4500, price:35, eAuto:false },
+  };
+
+  /* ============================================================
+   *  Shell — Step-Navigation, Banner, DOM-Helfer
+   * ============================================================ */
+  const Shell = {
+    init(){
+      // Step-1 Weiter
+      document.getElementById('btnNext1').addEventListener('click', ()=>{
+        if(!State.address.confirmed) return;
+        Shell.goto(2);
+      });
+      // Step-2 Zurueck / Weiter
+      document.getElementById('btnBack2').addEventListener('click', ()=>Shell.goto(1));
+      document.getElementById('btnNext2').addEventListener('click', ()=>{
+        // Ergebnis-Berechnung / Step 3 kommt in der naechsten Phase.
+        // Jetzt: Solar-Daten + Verbrauch landen im State, naechste Phase rechnet daraus.
+        console.info('[PV] State beim Uebergang Step 2→3:', JSON.parse(JSON.stringify(State)));
+        alert('Ergebnis-Seite folgt in Phase 3.');
+      });
+
+      if(!CFG.apiKey){
+        Shell.banner('warn',
+          'Kein Google API-Key konfiguriert.',
+          'Setze <code>window.PV_CONFIG.apiKey</code> vor dem Einbinden dieser Datei. ' +
+          'Benötigt werden: Maps JavaScript API, Places API, Geocoding API, Solar API.'
+        );
+      }
+    },
+
+    goto(n){
+      State.step = n;
+      document.querySelectorAll('.panel').forEach(p=>{
+        p.classList.toggle('is-active', p.dataset.panel===String(n));
+      });
+      document.querySelectorAll('.step').forEach(s=>{
+        const num = Number(s.dataset.step);
+        s.classList.toggle('is-active', num===n);
+        s.classList.toggle('is-done',   num<n);
+      });
+      window.scrollTo({top:0,behavior:'smooth'});
+
+      if(n===2) Solar.loadForAddress();
+    },
+
+    banner(type, title, html){
+      const slot = document.getElementById('bannerSlot');
+      const cls  = { info:'banner-info', warn:'banner-warn', err:'banner-err' }[type] || 'banner-info';
+      const el = document.createElement('div');
+      el.className = 'banner '+cls;
+      el.innerHTML = '<div><strong>'+title+'</strong>'+(html||'')+'</div><span class="x" title="Schließen">×</span>';
+      el.querySelector('.x').addEventListener('click', ()=>el.remove());
+      slot.appendChild(el);
+      return el;
+    },
+  };
+
+  /* ============================================================
+   *  Search — Google Places Autocomplete + Geocoding-Fallback
+   *  ------------------------------------------------------------
+   *  Wir laden Maps JS nur wenn ein API-Key vorliegt. Places JS
+   *  liefert direkt lat/lng aus der Nutzerauswahl. Wenn der Nutzer
+   *  ohne Auswahl blurrt, triggern wir Geocoding als Fallback.
+   * ============================================================ */
+  const Search = {
+    loaded:false, autocomplete:null, geocoder:null,
+
+    init(){
+      const input = document.getElementById('address');
+      input.addEventListener('input', ()=>{
+        // Jede Texteingabe setzt die Bestaetigung zurueck – der Nutzer
+        // muss entweder eine Suggestion waehlen oder per Blur validieren.
+        State.address.confirmed = false;
+        State.address.text = input.value;
+        Search.toggleNext(false);
+        document.getElementById('fieldAddress').classList.remove('has-error');
+      });
+      input.addEventListener('blur', ()=>{
+        // Geocoding-Fallback: Nutzer tippt Adresse ohne Dropdown-Auswahl
+        if(!State.address.confirmed && input.value.trim().length>6){
+          Search.geocodeFallback(input.value.trim());
+        }
+      });
+      input.addEventListener('keydown', (e)=>{
+        // Enter soll kein Form submitten (wir haben kein Form),
+        // aber auch nicht die Google-Suggestion vorzeitig schliessen.
+        if(e.key==='Enter' && State.address.confirmed){
+          e.preventDefault();
+          Shell.goto(2);
+        }
+      });
+
+      if(CFG.apiKey) Search.loadScript();
+    },
+
+    loadScript(){
+      if(Search.loaded) return;
+      Search.loaded = true;
+      // Callback global registrieren, damit Maps JS uns aufruft wenn bereit
+      window.__pvMapsReady = Search.onMapsReady;
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(CFG.apiKey)+
+              '&libraries=places&callback=__pvMapsReady&v=weekly&language=de&region=DE';
+      s.onerror = ()=>Shell.banner('err','Google Maps konnte nicht geladen werden.',
+        'Prüfe API-Key und Netzwerk.');
+      document.head.appendChild(s);
+    },
+
+    onMapsReady(){
+      const input = document.getElementById('address');
+      // Country-Restriction DE, nur Adressen (keine POIs) – das liefert
+      // die saubersten Treffer fuer einen Wohn-Solar-Konfigurator.
+      Search.autocomplete = new google.maps.places.Autocomplete(input, {
+        componentRestrictions: { country:['de'] },
+        fields: ['geometry','formatted_address','address_components'],
+        types: ['address'],
+      });
+      Search.geocoder = new google.maps.Geocoder();
+
+      Search.autocomplete.addListener('place_changed', ()=>{
+        const place = Search.autocomplete.getPlace();
+        if(!place || !place.geometry || !place.geometry.location){
+          Search.showError('Bitte wählen Sie eine vorgeschlagene Adresse.');
+          return;
+        }
+        Search.setAddress(
+          place.formatted_address || input.value,
+          place.geometry.location.lat(),
+          place.geometry.location.lng()
+        );
+      });
+    },
+
+    geocodeFallback(text){
+      if(!Search.geocoder){
+        // Maps noch nicht geladen → stumm ignorieren, Autocomplete uebernimmt spaeter
+        return;
+      }
+      Search.geocoder.geocode({
+        address: text,
+        componentRestrictions: { country:'DE' },
+      }, (results, status)=>{
+        if(status==='OK' && results && results.length){
+          const r = results[0];
+          Search.setAddress(r.formatted_address, r.geometry.location.lat(), r.geometry.location.lng());
+          document.getElementById('address').value = r.formatted_address;
+        } else {
+          Search.showError('Adresse nicht gefunden – bitte prüfen.');
+        }
+      });
+    },
+
+    setAddress(text, lat, lng){
+      State.address = { text, lat, lng, confirmed:true };
+      document.getElementById('fieldAddress').classList.remove('has-error');
+      Search.toggleNext(true);
+    },
+
+    showError(msg){
+      const f = document.getElementById('fieldAddress');
+      f.classList.add('has-error');
+      f.querySelector('.field-error').textContent = msg;
+      Search.toggleNext(false);
+    },
+
+    toggleNext(on){
+      document.getElementById('btnNext1').disabled = !on;
+    },
+  };
+
+  /* ============================================================
+   *  Solar — buildingInsights + dataLayers parallel
+   *  ------------------------------------------------------------
+   *  Response-Struktur, auf die wir uns stuetzen:
+   *
+   *  buildingInsights:findClosest
+   *    .center.{latitude,longitude}
+   *    .boundingBox.{sw,ne}.{latitude,longitude}
+   *    .imageryDate
+   *    .imageryQuality            // HIGH | MEDIUM | LOW
+   *    .solarPotential
+   *      .maxArrayPanelsCount     // physisch maximal moegliche Panels
+   *      .maxArrayAreaMeters2     // davon belegte Flaeche
+   *      .panelCapacityWatts      // i.d.R. ~250–430
+   *      .panelHeightMeters / .panelWidthMeters
+   *      .wholeRoofStats.areaMeters2     // gesamte Dach-Grundflaeche
+   *      .maxSunshineHoursPerYear
+   *      .solarPanels[]           // Einzelpanel-Polygone (fuer Overlay spaeter)
+   *      .roofSegmentStats[]      // je Segment: pitch, azimuth, boundingBox, stats
+   *      .solarPanelConfigs[]     // sortiert aufsteigend nach panelsCount;
+   *                                  letzter Eintrag = Maximalkonfiguration mit
+   *                                  yearlyEnergyDcKwh
+   *
+   *  dataLayers:get (view=FULL_LAYERS)
+   *    .imageryDate, .imageryQuality
+   *    .rgbUrl                    // Luftbild (3-Band GeoTIFF)
+   *    .maskUrl                   // Dach-Maske (1-Band, 0/1)
+   *    .annualFluxUrl             // kWh/kW/Jahr pro Pixel (1-Band Float32)
+   *    .monthlyFluxUrl            // optional
+   *    .dsmUrl, .hourlyShadeUrls
+   *
+   *  Alle *Url-Felder sind signierte URLs – sie brauchen beim Fetch
+   *  den API-Key via ?key= (siehe Phase 3).
+   * ============================================================ */
+  const Solar = {
+    async loadForAddress(){
+      // Adresse auf Step 2 anzeigen
+      document.getElementById('addrTag').textContent = State.address.text || 'Adresse';
+
+      if(!CFG.apiKey){
+        Solar.showPlaceholder('Kein API-Key – Schätzwerte werden im Ergebnis verwendet.');
+        return;
+      }
+      if(State.solar.status==='loading') return;
+
+      State.solar.status = 'loading';
+      Solar.showPlaceholder('Satellitendaten werden geladen …', true);
+
+      // Parallel fetchen: der User soll nicht sequentiell warten
+      const {lat, lng} = State.address;
+      const [bi, dl] = await Promise.allSettled([
+        Solar.buildingInsights(lat,lng),
+        Solar.dataLayers(lat,lng),
+      ]);
+
+      // buildingInsights ist Pflicht fuer die Stats. Wenn es fehlt,
+      // fahren wir mit Schaetzwerten weiter, statt den Flow zu blocken.
+      if(bi.status==='fulfilled'){
+        State.solar.building = bi.value;
+        Solar.renderStats(bi.value);
+      } else {
+        Solar.handleError(bi.reason, 'building');
+      }
+
+      if(dl.status==='fulfilled'){
+        State.solar.layers = dl.value;
+      } else {
+        // Kein Hartfehler: die Layer brauchen wir nur fuer die Visualisierung.
+        console.warn('[PV] dataLayers nicht verfuegbar:', dl.reason);
+      }
+
+      // Weiter-Button aktivieren sobald wir entweder echte Daten haben
+      // oder zumindest Schaetzwerte nutzbar sind.
+      document.getElementById('btnNext2').disabled = false;
+      State.solar.status = State.solar.building ? 'ok' : (State.solar.status || 'error');
+
+      // Platzhalter im Canvas-Bereich aktualisieren
+      if(State.solar.status==='ok' && State.solar.layers){
+        Solar.showPlaceholder('Satellitendaten geladen. Visualisierung folgt.', false);
+      } else if(State.solar.status==='ok'){
+        Solar.showPlaceholder('Keine Luftbild-Layer verfügbar – Zahlen aus Gebäudemodell.', false);
+      }
+    },
+
+    async buildingInsights(lat,lng){
+      const url = SOLAR_BASE+'/buildingInsights:findClosest'
+        + '?location.latitude='+lat+'&location.longitude='+lng
+        + '&requiredQuality=HIGH&key='+encodeURIComponent(CFG.apiKey);
+      const res = await fetch(url);
+      if(!res.ok){
+        const body = await res.json().catch(()=>({}));
+        throw Object.assign(new Error('buildingInsights '+res.status), { status:res.status, body });
+      }
+      return res.json();
+    },
+
+    async dataLayers(lat,lng){
+      const url = SOLAR_BASE+'/dataLayers:get'
+        + '?location.latitude='+lat+'&location.longitude='+lng
+        + '&radiusMeters='+CFG.solarRadius
+        + '&view=FULL_LAYERS'
+        + '&requiredQuality=HIGH'
+        + '&pixelSizeMeters=0.25'     // HIGH-Quality Default; Gebaeude sind scharf abgebildet
+        + '&key='+encodeURIComponent(CFG.apiKey);
+      const res = await fetch(url);
+      if(!res.ok){
+        const body = await res.json().catch(()=>({}));
+        throw Object.assign(new Error('dataLayers '+res.status), { status:res.status, body });
+      }
+      return res.json();
+    },
+
+    handleError(err, where){
+      const status = err && err.status;
+      const msg = err && err.body && err.body.error && err.body.error.message || '';
+      if(status===404){
+        State.solar.status = 'no-coverage';
+        Shell.banner('info','Keine Satelliten-Dachanalyse für diese Adresse verfügbar.',
+          'Wir arbeiten mit Schätzwerten weiter – die Dach-Analyse vor Ort übernimmt unser Experte kostenlos.');
+      } else if(status===403 || /billing|api has not been used|PERMISSION_DENIED/i.test(msg)){
+        State.solar.status = 'billing';
+        Shell.banner('err','Solar API nicht aktiviert oder Billing-Problem.',
+          'In der Google Cloud Console: Solar API aktivieren und Billing-Account verknüpfen.');
+      } else {
+        State.solar.status = 'error';
+        console.error('[PV]', where, err);
+        Shell.banner('warn','Solar-Daten konnten nicht geladen werden.',
+          'Wir nutzen für Ihre Berechnung Durchschnittswerte.');
+      }
+      Solar.showPlaceholder('Dach-Analyse vor Ort durch unseren Experten.', false);
+    },
+
+    renderStats(bi){
+      const sp = bi && bi.solarPotential;
+      if(!sp) return;
+      const panelW = sp.panelCapacityWatts || 430;
+      const maxKwp = (sp.maxArrayPanelsCount * panelW) / 1000;
+      const cfgs   = sp.solarPanelConfigs || [];
+      // solarPanelConfigs sind aufsteigend sortiert; der letzte = Maximalbelegung
+      const maxErtrag = cfgs.length ? cfgs[cfgs.length-1].yearlyEnergyDcKwh : (maxKwp*950);
+      const flaeche   = (sp.wholeRoofStats && sp.wholeRoofStats.areaMeters2) || 0;
+
+      Solar.setStat('kwp',     fmt(maxKwp,1),   ' kWp');
+      Solar.setStat('ertrag',  fmt(maxErtrag,0),' kWh');
+      Solar.setStat('flaeche', fmt(flaeche,0),  ' m²');
+    },
+
+    setStat(key, value, unit){
+      const el = document.querySelector('[data-stat="'+key+'"]');
+      if(!el) return;
+      el.classList.remove('is-dim');
+      el.querySelector('.v').innerHTML = value+'<span class="u">'+unit+'</span>';
+    },
+
+    showPlaceholder(text, loading){
+      const ph = document.getElementById('roofPlaceholder');
+      if(!ph) return;
+      ph.innerHTML = (loading?'<div class="spinner"></div>':'')+'<div>'+text+'</div>';
+    },
+  };
+
+  /* ============================================================
+   *  Consumption — Verbrauchs-Inputs, Quick-Presets, E-Auto-Toggle
+   * ============================================================ */
+  const Consumption = {
+    init(){
+      const kwh   = document.getElementById('kwh');
+      const price = document.getElementById('price');
+      const yes   = document.getElementById('eAutoYes');
+      const no    = document.getElementById('eAutoNo');
+      const quick = document.getElementById('quick');
+
+      kwh  .addEventListener('input', ()=>{ State.consumption.kwh   = num(kwh.value,4500); Consumption.syncQuick(); });
+      price.addEventListener('input', ()=>{ State.consumption.price = num(price.value,35); });
+      yes  .addEventListener('click', ()=>Consumption.setEauto(true));
+      no   .addEventListener('click', ()=>Consumption.setEauto(false));
+
+      quick.querySelectorAll('button').forEach(b=>{
+        b.addEventListener('click', ()=>{
+          kwh.value = b.dataset.kwh;
+          State.consumption.kwh = Number(b.dataset.kwh);
+          if(b.dataset.eauto) Consumption.setEauto(true);
+          Consumption.syncQuick();
+        });
+      });
+
+      Consumption.syncQuick();
+    },
+
+    setEauto(on){
+      State.consumption.eAuto = !!on;
+      document.getElementById('eAutoYes').classList.toggle('is-active', on);
+      document.getElementById('eAutoNo') .classList.toggle('is-active', !on);
+    },
+
+    syncQuick(){
+      // Active-State der Quick-Buttons rein visuell an kWh binden –
+      // so sieht der Nutzer sofort, welche Kategorie seinem Wert entspricht.
+      const v = State.consumption.kwh;
+      document.querySelectorAll('#quick button').forEach(b=>{
+        b.classList.toggle('is-active', Number(b.dataset.kwh)===v);
+      });
+    },
+  };
+
+  /* ============================================================
+   *  Utilities
+   * ============================================================ */
+  function num(v, fb){ const n=Number(v); return Number.isFinite(n)?n:fb; }
+  function fmt(n, digits){
+    return new Intl.NumberFormat('de-DE',{
+      minimumFractionDigits:digits, maximumFractionDigits:digits
+    }).format(n);
+  }
+
+  /* ============================================================
+   *  Boot
+   * ============================================================ */
+  document.addEventListener('DOMContentLoaded', ()=>{
+    Shell.init();
+    Search.init();
+    Consumption.init();
+  });
+
+})();
+</script>
 
 </body>
 </html>
