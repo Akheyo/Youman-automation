@@ -1264,15 +1264,34 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     },
 
     async buildingInsights(lat,lng){
-      const url = SOLAR_BASE+'/buildingInsights:findClosest'
-        + '?location.latitude='+lat+'&location.longitude='+lng
-        + '&requiredQuality=HIGH&key='+encodeURIComponent(CFG.apiKey);
-      const res = await fetch(url);
-      if(!res.ok){
-        const body = await res.json().catch(()=>({}));
-        throw Object.assign(new Error('buildingInsights '+res.status), { status:res.status, body });
+      // Quality-Cascade: HIGH → MEDIUM → LOW.
+      // In laendlichen Gebieten (NRW-Aussenlagen, Eifel etc.) gibt's oft nur MEDIUM/LOW.
+      // Vorher haben wir mit "HIGH only" 404 bekommen, jetzt akzeptieren wir die beste
+      // verfuegbare Qualitaet und faerben die Stats entsprechend ein.
+      const tryQuality = async (q) => {
+        const url = SOLAR_BASE+'/buildingInsights:findClosest'
+          + '?location.latitude='+lat+'&location.longitude='+lng
+          + '&requiredQuality='+q
+          + '&key='+encodeURIComponent(CFG.apiKey);
+        const res = await fetch(url);
+        if(!res.ok){
+          const body = await res.json().catch(()=>({}));
+          const err = Object.assign(new Error('buildingInsights '+res.status), { status:res.status, body });
+          throw err;
+        }
+        return res.json();
+      };
+      try {
+        return await tryQuality('HIGH');
+      } catch(e){
+        if(e.status !== 404) throw e;
+        try {
+          return await tryQuality('MEDIUM');
+        } catch(e2){
+          if(e2.status !== 404) throw e2;
+          return await tryQuality('LOW');
+        }
       }
-      return res.json();
     },
 
     async dataLayers(lat,lng){
