@@ -11,8 +11,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
 
 <!-- geotiff.js: dekodiert die 3 Solar-API-Layer (rgbUrl, maskUrl, annualFluxUrl) im Browser.
-     v2.1.3 fixiert wegen API-Stabilitaet (fromArrayBuffer, getImage, readRasters). -->
+     v2.1.3 fixiert wegen API-Stabilitaet (fromArrayBuffer, getImage, readRasters).
+     Wird in Phase 3 nicht mehr aktiv genutzt (Visualisierung ueber CesiumJS),
+     bleibt drin als Reserve fuer Heatmap-Overlays in spaeteren Phasen. -->
 <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+
+<!-- CesiumJS: Photorealistic 3D Tiles von Google + interaktive Dach-Polygone.
+     v1.122 fixiert. KEIN Cesium-ion-Token noetig – wir laden tile.googleapis.com direkt. -->
+<link href="https://cdn.jsdelivr.net/npm/cesium@1.122.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.122.0/Build/Cesium/Cesium.js"></script>
 
 <style>
 /* ---------- Design-Tokens (1:1 aus r-energy-Theme der A&B-Seite) ---------- */
@@ -30,17 +37,22 @@
   --font:'Heebo',system-ui,Arial,sans-serif;
 }
 
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{
+/* WordPress-Isolation: nur INHALTE des Konfigurators bekommen den Reset.
+   So beeinflussen wir nicht die margins/paddings des umgebenden Themes. */
+#konfig,
+#konfig *,
+#konfig *::before,
+#konfig *::after{box-sizing:border-box;margin:0;padding:0}
+#konfig{
   font-family:var(--font);
   font-size:15px;
   line-height:1.7;
   color:var(--text);
   background:var(--bg);
   -webkit-font-smoothing:antialiased;
+  width:100%;
 }
-a{color:inherit;text-decoration:none}
+#konfig a{color:inherit;text-decoration:none}
 img{max-width:100%;display:block}
 button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
 input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
@@ -209,11 +221,13 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 
 /* ---------- Step 2: Dach-Vorschau + Verbrauch ---------- */
 .step2{
-  max-width:1240px;margin:0 auto;
+  max-width:1320px;margin:0 auto;
   padding:48px 32px 24px;
-  display:grid;grid-template-columns:1fr 420px;gap:48px;
+  display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:36px;
   align-items:start;
 }
+.step2 > .step2-main{display:flex;flex-direction:column;gap:14px;min-width:0}
+.step2 > .form-col{gap:22px}
 .h2{
   font-size:28px;line-height:1.2;font-weight:700;
   letter-spacing:-.005em;margin-bottom:6px;
@@ -346,6 +360,92 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   position:absolute;inset:0;
   background-size:cover;background-position:center;
 }
+
+/* ---------- Cesium 3D-Viewer (Phase 3) ----------
+   Container: festes Aspect, dunkler Hintergrund waehrend Tile-Load.
+   Cesium-eigene UI-Elemente bleiben aus – nur das Canvas selber, Fullscreen-Button und Navigations-Hint sind sichtbar. */
+.cesium-wrap{
+  position:relative;
+  width:100%;
+  aspect-ratio:4/3;
+  background:#0d1424;
+  border:1px solid var(--border);
+  overflow:hidden;
+}
+#cesium-container{position:absolute;inset:0}
+#cesium-container .cesium-viewer{position:absolute;inset:0}
+#cesium-container .cesium-viewer-bottom,
+#cesium-container .cesium-viewer-toolbar,
+#cesium-container .cesium-viewer-animationContainer,
+#cesium-container .cesium-viewer-timelineContainer,
+#cesium-container .cesium-widget-credits{display:none !important}
+#cesium-container .cesium-viewer-fullscreenContainer{
+  bottom:8px;right:8px;background:rgba(13,20,36,.7);
+}
+#cesium-container .cesium-credit-lightbox-overlay{z-index:5}
+.cesium-overlay{
+  position:absolute;left:0;right:0;bottom:0;
+  display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
+  padding:10px 12px;
+  pointer-events:none;
+  z-index:2;
+}
+.cesium-overlay > *{pointer-events:auto}
+.legend-3d{
+  background:rgba(255,255,255,.96);
+  padding:10px 12px;
+  border:1px solid var(--border);
+  display:flex;flex-direction:column;gap:6px;
+  font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text);
+}
+.cesium-tip{
+  background:rgba(13,115,252,.96);color:#fff;
+  font-size:12px;font-weight:600;letter-spacing:.02em;
+  padding:8px 12px;
+  border:1px solid var(--blue-h);
+  display:flex;align-items:center;gap:8px;
+  max-width:62%;
+}
+.cesium-tip::before{content:"\1F4A1";font-size:14px;line-height:1}
+.cesium-loading{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:10px;
+  color:#cbd5e1;font-size:13px;font-weight:500;letter-spacing:.04em;
+  background:rgba(13,20,36,.85);
+  z-index:4;
+}
+.cesium-loading.is-hidden{display:none}
+
+/* ---------- Selection-Box (Phase 3 Sidebar) ---------- */
+.sel-box{
+  background:#fff;border:1px solid var(--border);
+  padding:18px 20px;
+}
+.sel-box h3{
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px;
+}
+.sel-box .sel-stat{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+.sel-box .sel-k{font-size:13px;color:var(--muted)}
+.sel-box .sel-v{font-size:18px;font-weight:700;color:var(--text)}
+.sel-box .sel-clear{
+  margin-top:12px;width:100%;
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  background:var(--bg-s);color:var(--text);
+  padding:10px 12px;border:1px solid var(--border);
+  transition:border-color .15s,background .15s,color .15s;
+}
+.sel-box .sel-clear:hover{border-color:var(--rot);color:var(--rot);background:#fff}
+.sel-box .sel-clear:disabled{opacity:.45;cursor:not-allowed}
+
+/* Solar-Box als Sidebar-Variante: vertikales Stack statt 3-Spalten */
+.solar-box.solar-box--side{grid-template-columns:1fr;margin-top:0}
+.solar-box.solar-box--side .solar-stat{
+  border-right:0;border-bottom:1px solid var(--border);padding:14px 18px;
+}
+.solar-box.solar-box--side .solar-stat:last-child{border-bottom:0}
+.solar-box.solar-box--side .solar-stat .v{font-size:22px}
 
 /* ---------- Step 3: Ergebnis-Grid, Chart, CTA, Lead-Form ---------- */
 .step3{max-width:1240px;margin:0 auto;padding:48px 32px 64px}
@@ -521,6 +621,10 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 </head>
 <body>
 
+<!-- WordPress-Isolation: alle CSS-Regeln und JS-DOM-Lookups bleiben in diesem Wrapper.
+     Dadurch kann die Datei 1:1 als Custom-HTML in einem r-energy-Theme eingebunden werden. -->
+<div id="konfig">
+
 <!-- ===== Header ===== -->
 <header class="hdr">
   <div class="hdr-inner">
@@ -577,35 +681,48 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 <section class="panel" data-panel="2">
   <div class="step2">
 
-    <!-- LINKS: Adress-Tag + Canvas-Platzhalter + Solar-Potenzial-Box -->
-    <div>
-      <h2 class="h2">Ihr Dach aus der Satellitenansicht</h2>
-      <p class="sub">Wir analysieren Sonneneinstrahlung, Ausrichtung und Verschattung mit Google Solar API.</p>
+    <!-- LINKS: Cesium-3D-Viewer mit klickbaren Dachsegmenten -->
+    <div class="step2-main">
+      <h2 class="h2">Ihr Dach in 3D</h2>
+      <p class="sub">Klicken Sie eine farbige Dachfläche an, um Solarmodule zu platzieren. Drehen mit Rechtsklick, Zoomen mit Mausrad.</p>
 
       <div class="addr-tag" id="addrTag">Adresse</div>
 
-      <div class="roof" id="roof">
-        <!-- 2 Canvas uebereinander: RGB als Hintergrund, Flux als multiply-Heatmap.
-             Die Canvas-Pixelgroesse setzen wir spaeter aus den GeoTIFF-Dimensionen. -->
-        <canvas id="rgb-canvas"  width="1" height="1"></canvas>
-        <canvas id="flux-canvas" width="1" height="1"></canvas>
+      <!-- Cesium-Container.
+           Beibehalten: #roof + #rgb-canvas + #flux-canvas + #roofPlaceholder als display:none-Stubs,
+           damit die alten MapView-Referenzen nicht crashen falls sie aus Reserve-Pfaden aufgerufen werden. -->
+      <div class="cesium-wrap">
+        <div id="cesium-container"></div>
 
-        <!-- Legende fuer die 3 Heatmap-Zonen, zunaechst versteckt -->
-        <div class="legend is-hidden" id="legend">
-          <div class="legend-item"><span class="legend-sw" style="background:#22c55e"></span>Sehr geeignet</div>
-          <div class="legend-item"><span class="legend-sw" style="background:#f59e0b"></span>Bedingt geeignet</div>
-          <div class="legend-item"><span class="legend-sw" style="background:#ef4444"></span>Ungeeignet</div>
+        <div class="cesium-loading" id="cesiumLoading">
+          <div class="spinner"></div>
+          <div>3D-Modell wird geladen …</div>
         </div>
 
-        <!-- Loading- und Fehler-Zustaende -->
-        <div class="roof-placeholder" id="roofPlaceholder">
-          <div class="spinner"></div>
-          <div>Satellitendaten werden geladen …</div>
+        <div class="cesium-overlay">
+          <div class="legend-3d" id="legend3d">
+            <div class="legend-item"><span class="legend-sw" style="background:#22c55e"></span>Sehr geeignet</div>
+            <div class="legend-item"><span class="legend-sw" style="background:#f59e0b"></span>Bedingt geeignet</div>
+            <div class="legend-item"><span class="legend-sw" style="background:#ef4444"></span>Ungeeignet</div>
+          </div>
+          <div class="cesium-tip">Klick auf eine Dachfläche setzt Module darauf</div>
         </div>
       </div>
 
-      <!-- Zahlen direkt aus buildingInsights.solarPotential (wholeRoofStats, maxArrayPanelsCount, solarPanelConfigs) -->
-      <div class="solar-box" id="solarBox">
+      <!-- Stub-Container fuer ehemalige MapView-Pfade (display:none); verhindert Null-Refs. -->
+      <div class="roof" id="roof" style="display:none">
+        <canvas id="rgb-canvas"  width="1" height="1"></canvas>
+        <canvas id="flux-canvas" width="1" height="1"></canvas>
+        <div class="legend is-hidden" id="legend"></div>
+        <div class="roof-placeholder" id="roofPlaceholder"></div>
+      </div>
+    </div>
+
+    <!-- RECHTS: Solar-Info + Verbrauchs-Formular + Auswahl-Zusammenfassung -->
+    <div class="form-col">
+
+      <!-- Solar-Info (Werte aus buildingInsights.solarPotential) -->
+      <div class="solar-box solar-box--side" id="solarBox">
         <div class="solar-stat is-dim" data-stat="kwp">
           <div class="k">Max. Anlagengröße</div>
           <div class="v">–<span class="u"> kWp</span></div>
@@ -619,10 +736,6 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           <div class="v">–<span class="u"> m²</span></div>
         </div>
       </div>
-    </div>
-
-    <!-- RECHTS: Verbrauchs-Formular -->
-    <div class="form-col">
 
       <div class="form-block">
         <h3>Ihr Stromverbrauch pro Jahr</h3>
@@ -654,6 +767,24 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
             <button type="button" id="eAutoYes">Ja</button>
           </div>
         </div>
+      </div>
+
+      <!-- Modul-Auswahl-Box: live aus Roof3D.getActiveModules() befuellt -->
+      <div class="sel-box">
+        <h3>Ihre Auswahl</h3>
+        <div class="sel-stat">
+          <span class="sel-k">Module</span>
+          <span class="sel-v" id="selModules">0</span>
+        </div>
+        <div class="sel-stat">
+          <span class="sel-k">Anlagengröße</span>
+          <span class="sel-v" id="selKwp">0,0 kWp</span>
+        </div>
+        <div class="sel-stat">
+          <span class="sel-k">Geschätzter Ertrag</span>
+          <span class="sel-v" id="selErtrag">0 kWh</span>
+        </div>
+        <button type="button" id="btnClearSel" class="sel-clear" disabled>Auswahl zurücksetzen</button>
       </div>
     </div>
   </div>
@@ -784,6 +915,8 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   </div>
 </section>
 
+</div><!-- /#konfig -->
+
 
 <!--
   geotiff.js wird erst in Phase 3 benoetigt (Canvas-Rendering der Solar-Layer).
@@ -843,13 +976,20 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       if(!CFG.apiKey){
         Shell.banner('warn',
           'Kein Google API-Key konfiguriert.',
-          'Setze <code>AIzaSyArhLNxY335q52fCFXcQWLNQlU9qEfhXfk</code> vor dem Einbinden dieser Datei. ' +
-          'Benötigt werden: Maps JavaScript API, Places API, Geocoding API, Solar API.'
+          'Setze <code>window.PV_CONFIG.apiKey</code> vor dem Einbinden dieser Datei. ' +
+          'Benötigt werden: Maps JavaScript API, Places API, Geocoding API, Solar API, Map Tiles API.'
         );
+      }
+
+      // Cesium ion-Token leeren – wir nutzen ausschliesslich Google Photorealistic 3D Tiles.
+      // Ohne diesen Reset versucht Cesium beim Default-Imagery-Provider gegen die ion-API zu reden.
+      if(typeof Cesium !== 'undefined'){
+        Cesium.Ion.defaultAccessToken = '';
       }
     },
 
     goto(n){
+      const prev = State.step;
       State.step = n;
       document.querySelectorAll('.panel').forEach(p=>{
         p.classList.toggle('is-active', p.dataset.panel===String(n));
@@ -861,7 +1001,12 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       });
       window.scrollTo({top:0,behavior:'smooth'});
 
-      if(n===2) Solar.loadForAddress();
+      // Step-2 verlassen: Cesium-Speicher freigeben
+      if(prev===2 && n!==2){
+        Map3D.destroy();
+      }
+
+      if(n===2) Step2.enter();
       if(n===3) Calculator.run();
     },
 
@@ -1032,48 +1177,28 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 
       if(!CFG.apiKey){
         Solar.showPlaceholder('Kein API-Key – Schätzwerte werden im Ergebnis verwendet.');
-        return;
+        document.getElementById('btnNext2').disabled = false;
+        return null;
       }
-      if(State.solar.status==='loading') return;
+      if(State.solar.status==='loading') return null;
 
       State.solar.status = 'loading';
-      Solar.showPlaceholder('Satellitendaten werden geladen …', true);
 
-      // Parallel fetchen: der User soll nicht sequentiell warten
+      // Phase 3: Wir brauchen nur noch buildingInsights – die GeoTIFF-Layer
+      // werden durch Cesium 3D-Tiles + Roof3D-Polygone ersetzt.
       const {lat, lng} = State.address;
-      const [bi, dl] = await Promise.allSettled([
-        Solar.buildingInsights(lat,lng),
-        Solar.dataLayers(lat,lng),
-      ]);
-
-      // buildingInsights ist Pflicht fuer die Stats. Wenn es fehlt,
-      // fahren wir mit Schaetzwerten weiter, statt den Flow zu blocken.
-      if(bi.status==='fulfilled'){
-        State.solar.building = bi.value;
-        Solar.renderStats(bi.value);
-      } else {
-        Solar.handleError(bi.reason, 'building');
+      try{
+        const bi = await Solar.buildingInsights(lat, lng);
+        State.solar.building = bi;
+        Solar.renderStats(bi);
+        State.solar.status = 'ok';
+        document.getElementById('btnNext2').disabled = false;
+        return bi;
+      } catch(err){
+        Solar.handleError(err, 'building');
+        document.getElementById('btnNext2').disabled = false;
+        return null;
       }
-
-      // Weiter-Button frei: auch ohne Layer ist die Berechnung moeglich (Schaetzwerte).
-      document.getElementById('btnNext2').disabled = false;
-
-      if(dl.status==='fulfilled'){
-        State.solar.layers = dl.value;
-        // GeoTIFFs decodieren + Visualisierung. Wenn das schiefgeht, nicht den Flow blocken.
-        try{
-          await Solar.processLayers(dl.value, lat, lng);
-        }catch(err){
-          console.error('[PV] Visualisierung fehlgeschlagen:', err);
-          MapView.fallback(lat, lng);
-        }
-      } else {
-        // Kein Layer-Coverage: Static-Maps-Luftbild als Ersatz, Stats kommen ggf. aus building.
-        console.warn('[PV] dataLayers nicht verfuegbar:', dl.reason);
-        MapView.fallback(lat, lng);
-      }
-
-      State.solar.status = State.solar.building ? 'ok' : (State.solar.status || 'error');
     },
 
     /* GeoTIFFs parallel laden + dekodieren, bbox in WGS84 berechnen,
@@ -1402,6 +1527,432 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   };
 
   /* ============================================================
+   *  Map3D — CesiumJS-Viewer mit Google Photorealistic 3D Tiles
+   *  ------------------------------------------------------------
+   *  Wir nutzen NICHT Cesium-ion (kein Token noetig), sondern
+   *  laden direkt tile.googleapis.com/v1/3dtiles/root.json mit
+   *  unserem Google API-Key. Dazu in Cloud Console aktivieren:
+   *    - Map Tiles API
+   *  Default-Imagery + Globe sind aus, damit der dunkle Tile-Hintergrund
+   *  nicht durch das Default-Bing-Layer ueberlagert wird.
+   * ============================================================ */
+  const Map3D = {
+    viewer: null,
+    tileset: null,
+
+    async init(lat, lng){
+      const container = document.getElementById('cesium-container');
+      if(!container) return;
+
+      // Loading-Overlay einblenden (wird in onTileLoad-Progress wieder ausgeblendet)
+      const loading = document.getElementById('cesiumLoading');
+      if(loading) loading.classList.remove('is-hidden');
+
+      // Bestehenden Viewer entsorgen falls man Step 2 zweimal betritt
+      if(this.viewer){
+        this.destroy();
+      }
+
+      try{
+        this.viewer = new Cesium.Viewer('cesium-container', {
+          timeline: false,
+          animation: false,
+          baseLayerPicker: false,
+          geocoder: false,
+          homeButton: false,
+          sceneModePicker: false,
+          navigationHelpButton: false,
+          infoBox: false,
+          selectionIndicator: false,
+          shouldAnimate: true,
+          // Default-Imagery aus: ohne ion-Token wuerde das Default-Bing-Layer scheitern
+          baseLayer: false,
+          // Aelter-API-kompatibel:
+          imageryProvider: false,
+        });
+      } catch(e){
+        console.error('[Map3D] Viewer-Init fehlgeschlagen:', e);
+        Shell.banner('err', '3D-Viewer konnte nicht initialisiert werden.', 'Bitte Seite neu laden oder einen anderen Browser versuchen.');
+        if(loading) loading.classList.add('is-hidden');
+        return;
+      }
+
+      // Atmosphere/Globe aus – Google-Tiles enthalten ihre eigene Beleuchtung
+      this.viewer.scene.skyAtmosphere.show = false;
+      this.viewer.scene.globe.show = false;
+      // Boden-Transparenz fuer den Fall, dass ein Tile zu spaet kommt
+      this.viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#0d1424');
+
+      // Google Photorealistic 3D Tiles
+      try{
+        const url = 'https://tile.googleapis.com/v1/3dtiles/root.json?key=' + encodeURIComponent(CFG.apiKey);
+        this.tileset = await Cesium.Cesium3DTileset.fromUrl(url, {
+          showCreditsOnScreen: true,
+        });
+        this.viewer.scene.primitives.add(this.tileset);
+
+        // Loading-Overlay erst ausblenden, wenn die ersten Tiles tatsaechlich gerendert wurden
+        const removeLoadingWhenReady = () => {
+          if(loading) loading.classList.add('is-hidden');
+          this.tileset.initialTilesLoaded.removeEventListener(removeLoadingWhenReady);
+        };
+        this.tileset.initialTilesLoaded.addEventListener(removeLoadingWhenReady);
+        // Safety-Timeout, falls das Event nie feuert
+        setTimeout(()=>{ if(loading) loading.classList.add('is-hidden'); }, 6000);
+
+      } catch(e){
+        console.error('[Map3D] 3D Tiles Fehler:', e);
+        const status = e && (e.statusCode || (e.message||'').match(/\b(403|404)\b/)?.[1]);
+        if(String(status)==='403'){
+          Shell.banner('err', '3D-Modell nicht verfügbar.',
+            'Bitte <strong>Map Tiles API</strong> in der Google Cloud Console aktivieren und Billing-Account verknüpfen.');
+        } else {
+          Shell.banner('warn', '3D-Modell konnte nicht geladen werden.',
+            'Wir berechnen die Solar-Potenziale anhand der API-Daten weiter – die 3D-Vorschau ist optional.');
+        }
+        if(loading) loading.classList.add('is-hidden');
+        return;
+      }
+
+      // Kameraflug zur Adresse: Sued-Ost-Perspektive, leichter Tilt
+      const offset = 0.0003;
+      this.viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromDegrees(lng - offset, lat - offset, 80),
+        orientation: {
+          heading: Cesium.Math.toRadians(45),
+          pitch:   Cesium.Math.toRadians(-30),
+          roll:    0,
+        },
+        duration: 2.5,
+      });
+    },
+
+    destroy(){
+      if(this.viewer){
+        try{ this.viewer.destroy(); } catch(_){}
+        this.viewer = null;
+        this.tileset = null;
+      }
+      // Roof3D-Zustand mitraeumen, damit der Step bei erneutem Betreten frisch ist
+      Roof3D._reset();
+    },
+  };
+
+  /* ============================================================
+   *  Roof3D — Klickbare Dach-Polygone + Modul-Platzierung
+   *  ------------------------------------------------------------
+   *  Wir nehmen die solarPanels[] aus buildingInsights, gruppieren
+   *  sie nach segmentIndex und legen pro Segment ein begehbares
+   *  Polygon (konkave Huelle aller Panel-Eckpunkte) auf das Dach.
+   *  Klick toggled die Module fuer dieses Segment.
+   * ============================================================ */
+  const Roof3D = {
+    segmentEntities: [],
+    _activePanels: null,
+    _handler: null,
+
+    buildSegments(viewer, solarData){
+      const sp = solarData && solarData.solarPotential;
+      if(!sp || !sp.solarPanels || !sp.roofSegmentStats){
+        Shell.banner('warn',
+          'Keine Dachsegmente erkannt — Vor-Ort-Termin empfohlen.',
+          'Wir berechnen mit Schätzwerten weiter; ein Experte vermisst Ihr Dach kostenlos.');
+        return;
+      }
+
+      const segs    = sp.roofSegmentStats;
+      const panels  = sp.solarPanels;
+      const panelW  = sp.panelWidthMeters  || 1.046;
+      const panelH  = sp.panelHeightMeters || 1.879;
+
+      // Panels nach segmentIndex gruppieren
+      const bySegment = new Map();
+      panels.forEach(p => {
+        const idx = (p.segmentIndex == null) ? 0 : p.segmentIndex;
+        if(!bySegment.has(idx)) bySegment.set(idx, []);
+        bySegment.get(idx).push(p);
+      });
+
+      bySegment.forEach((segPanels, segIdx) => {
+        const seg   = segs[segIdx] || {};
+        const az    = (seg.azimuthDegrees == null) ? 180 : seg.azimuthDegrees;
+        const pitch = (seg.pitchDegrees   == null) ? 20  : seg.pitchDegrees;
+        const type  = this._typeFromSegment(az, pitch);
+
+        // Konkave Huelle aller Panel-Eckpunkte = Dach-Umriss-Approximation
+        const pts = [];
+        segPanels.forEach(p => {
+          const isLand = p.orientation === 'LANDSCAPE';
+          const w = isLand ? panelH : panelW;
+          const h = isLand ? panelW : panelH;
+          const corners = this._rotatedRect(
+            p.center.latitude, p.center.longitude, w, h, az
+          );
+          corners.forEach(c => pts.push(c));
+        });
+        const hull = this._concaveHull(pts, 0.000018);
+        if(hull.length < 3) return;
+
+        const altitude = (seg.planeHeightAtCenterMeters || 30) + 0.3;
+        const positions = hull.map(p =>
+          Cesium.Cartesian3.fromDegrees(p.lng, p.lat, altitude)
+        );
+
+        const colors = {
+          good: Cesium.Color.fromCssColorString('#22c55e').withAlpha(0.55),
+          ok:   Cesium.Color.fromCssColorString('#f59e0b').withAlpha(0.55),
+          bad:  Cesium.Color.fromCssColorString('#ef4444').withAlpha(0.50),
+        };
+
+        const entity = viewer.entities.add({
+          name: 'seg-' + segIdx,
+          polygon: {
+            hierarchy: positions,
+            material: colors[type],
+            outline: true,
+            outlineColor: Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.7),
+            outlineWidth: 2,
+            height: altitude,
+            perPositionHeight: true,
+            classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
+          },
+          properties: {
+            segIdx, type, panels: segPanels, az, pitch,
+          },
+        });
+
+        this.segmentEntities.push(entity);
+      });
+
+      // Klick-Handler fuer Segmente
+      const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+      handler.setInputAction((click) => {
+        const picked = viewer.scene.pick(click.position);
+        if(!picked || !picked.id || !picked.id.properties) return;
+        const props = picked.id.properties;
+        const segIdxProp = props.segIdx;
+        if(!segIdxProp) return;
+        const segIdx = segIdxProp.getValue();
+        if(segIdx === undefined) return;
+        this._toggleSegment(viewer, picked.id, segIdx);
+      }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+      this._handler = handler;
+    },
+
+    _toggleSegment(viewer, entity, segIdx){
+      const props = entity.properties;
+      const type = props.type.getValue();
+      if(type === 'bad'){
+        Shell.banner('info', 'Diese Dachfläche ist nicht für PV geeignet.',
+          'Zu wenig Sonneneinstrahlung oder zu steile/flache Neigung.');
+        return;
+      }
+
+      if(!this._activePanels) this._activePanels = new Map();
+      const hasModules = (this._activePanels.get(segIdx)?.length || 0) > 0;
+      if(hasModules){
+        this._removeModulesForSegment(viewer, segIdx);
+      } else {
+        this._addModulesForSegment(viewer, segIdx, props.panels.getValue(), props.az.getValue());
+      }
+      Calculator.recalc();
+    },
+
+    _addModulesForSegment(viewer, segIdx, segPanels, az){
+      const sp = State.solar.building && State.solar.building.solarPotential;
+      if(!sp) return;
+      const panelW = sp.panelWidthMeters  || 1.046;
+      const panelH = sp.panelHeightMeters || 1.879;
+
+      if(!this._activePanels) this._activePanels = new Map();
+      const list = [];
+
+      segPanels.forEach(p => {
+        const isLand = p.orientation === 'LANDSCAPE';
+        const w = isLand ? panelH : panelW;
+        const h = isLand ? panelW : panelH;
+        const corners = this._rotatedRect(p.center.latitude, p.center.longitude, w, h, az);
+        const seg = sp.roofSegmentStats[(p.segmentIndex == null) ? 0 : p.segmentIndex] || {};
+        const altitude = (seg.planeHeightAtCenterMeters || 30) + 0.4;
+        const positions = corners.map(c =>
+          Cesium.Cartesian3.fromDegrees(c.lng, c.lat, altitude)
+        );
+
+        const moduleEntity = viewer.entities.add({
+          polygon: {
+            hierarchy: positions,
+            material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.92),
+            outline: true,
+            outlineColor: Cesium.Color.fromCssColorString('#93c5fd'),
+            outlineWidth: 1,
+            height: altitude,
+            perPositionHeight: true,
+            classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
+          },
+          properties: { isModule: true, segIdx, panel: p },
+        });
+        list.push({ entity: moduleEntity, panel: p });
+      });
+
+      this._activePanels.set(segIdx, list);
+    },
+
+    _removeModulesForSegment(viewer, segIdx){
+      const list = (this._activePanels && this._activePanels.get(segIdx)) || [];
+      list.forEach(m => viewer.entities.remove(m.entity));
+      if(this._activePanels) this._activePanels.delete(segIdx);
+    },
+
+    getActiveModules(){
+      if(!this._activePanels) return [];
+      const all = [];
+      this._activePanels.forEach(list => list.forEach(m => all.push(m.panel)));
+      return all;
+    },
+
+    clearAll(){
+      const v = Map3D.viewer;
+      if(!v || !this._activePanels) return;
+      this._activePanels.forEach(list => list.forEach(m => v.entities.remove(m.entity)));
+      this._activePanels.clear();
+      Calculator.recalc();
+    },
+
+    _reset(){
+      this.segmentEntities = [];
+      this._activePanels = null;
+      if(this._handler){
+        try{ this._handler.destroy(); }catch(_){}
+        this._handler = null;
+      }
+    },
+
+    // ---- Helpers --------------------------------------------------
+
+    // Heuristik: Sued-Ausrichtung (az~180) und Neigung 10-55deg = optimal
+    _typeFromSegment(az, pitch){
+      const southBias = Math.cos((az - 180) * Math.PI / 180);
+      const pitchOk = pitch >= 10 && pitch <= 55;
+      const score = southBias + (pitchOk ? 0.2 : -0.15);
+      if(score > 0.45) return 'good';
+      if(score > 0.05) return 'ok';
+      return 'bad';
+    },
+
+    // Rechteck um (centerLat,centerLng), gedreht um rotDeg, Kantenlaenge widthM/heightM
+    _rotatedRect(centerLat, centerLng, widthM, heightM, rotDeg){
+      const rad = rotDeg * Math.PI / 180;
+      const cos = Math.cos(rad), sin = Math.sin(rad);
+      const hw = widthM/2, hh = heightM/2;
+      const mPerLat = 111320;
+      const mPerLng = 111320 * Math.cos(centerLat * Math.PI / 180);
+      return [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]].map(([x,y]) => ({
+        lat: centerLat + (x*sin + y*cos) / mPerLat,
+        lng: centerLng + (x*cos - y*sin) / mPerLng,
+      }));
+    },
+
+    // "Gift-Wrap"-aehnliche konkave Huelle, alpha = max. Edge-Distanz in Grad
+    _concaveHull(points, alpha){
+      if(points.length < 3) return points.slice();
+      const seen = new Set();
+      const unique = [];
+      points.forEach(p => {
+        const key = p.lat.toFixed(7) + ',' + p.lng.toFixed(7);
+        if(!seen.has(key)){ seen.add(key); unique.push(p); }
+      });
+      if(unique.length < 3) return unique;
+      const start = unique.reduce((a,b) => a.lat < b.lat ? a : b);
+      const hull = [start];
+      let current = start, prevAngle = -Math.PI/2;
+      const maxIter = unique.length * 3;
+      let iter = 0;
+      while(iter++ < maxIter){
+        let candidates = unique.filter(p => {
+          if(p === current) return false;
+          const dLat = p.lat - current.lat, dLng = p.lng - current.lng;
+          return (dLat*dLat + dLng*dLng) <= alpha*alpha;
+        });
+        if(candidates.length === 0) candidates = unique.filter(p => p !== current);
+        let best = null, bestTurn = Infinity;
+        candidates.forEach(p => {
+          const ang = Math.atan2(p.lat - current.lat, p.lng - current.lng);
+          let turn = prevAngle - ang;
+          while(turn < 0) turn += 2*Math.PI;
+          while(turn >= 2*Math.PI) turn -= 2*Math.PI;
+          if(turn < bestTurn && turn > 0.001){ bestTurn = turn; best = p; }
+        });
+        if(!best || best === start) break;
+        hull.push(best);
+        prevAngle = Math.atan2(current.lat - best.lat, current.lng - best.lng);
+        current = best;
+        if(hull.length > unique.length) break;
+      }
+      return hull;
+    },
+  };
+
+  /* ============================================================
+   *  Step2 — Orchestrator: 3D-Init + Solar-Daten + Dach-Polygone
+   *  ------------------------------------------------------------
+   *  Cesium-Init und Solar-API-Call laufen parallel. Sobald beides
+   *  fertig ist, legen wir die Dach-Polygone auf das geladene 3D-Modell.
+   * ============================================================ */
+  const Step2 = {
+    init(){
+      const btnClear = document.getElementById('btnClearSel');
+      if(btnClear){
+        btnClear.addEventListener('click', () => Roof3D.clearAll());
+      }
+      Step2.updateSelection();
+    },
+
+    async enter(){
+      const {lat, lng} = State.address;
+      Step2.updateSelection();
+
+      const tasks = [
+        Solar.loadForAddress(),
+      ];
+      if(typeof Cesium !== 'undefined' && CFG.apiKey){
+        tasks.push(Map3D.init(lat, lng));
+      } else if(!CFG.apiKey){
+        // Banner haben wir bereits im Shell.init()
+      } else {
+        Shell.banner('warn', '3D-Bibliothek nicht geladen.', 'Cesium konnte nicht eingebunden werden – wir setzen mit Schätzwerten fort.');
+      }
+
+      const [bi] = await Promise.all(tasks);
+
+      if(Map3D.viewer && bi){
+        Roof3D.buildSegments(Map3D.viewer, bi);
+      } else if(!bi){
+        // Solar-API hat versagt — der genaue Fehlercode wurde bereits via Shell.banner gemeldet.
+      }
+    },
+
+    // Sidebar-Werte "Ihre Auswahl" aktualisieren – wird live von Calculator.recalc gerufen
+    updateSelection(){
+      const sp = State.solar.building && State.solar.building.solarPotential;
+      const panelW = (sp && sp.panelCapacityWatts) || 430;
+      const selected = Roof3D.getActiveModules();
+      const count = selected.length;
+      const kwp = (count * panelW) / 1000;
+      const ertrag = selected.reduce((s, p) => s + (p.yearlyEnergyDcKwh || 0), 0);
+
+      const elM  = document.getElementById('selModules');
+      const elK  = document.getElementById('selKwp');
+      const elE  = document.getElementById('selErtrag');
+      const elB  = document.getElementById('btnClearSel');
+      if(elM) elM.textContent = String(count);
+      if(elK) elK.textContent = fmt(kwp, 1) + ' kWp';
+      if(elE) elE.textContent = fmt(Math.round(ertrag), 0) + ' kWh';
+      if(elB) elB.disabled = count === 0;
+    },
+  };
+
+  /* ============================================================
    *  Calculator — Wirtschaftlichkeits-Berechnung
    *  ------------------------------------------------------------
    *  Formeln 1:1 aus dem Pflichtenheft:
@@ -1414,6 +1965,10 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
    *    amortisation  = investition / ersparnis
    *    co2           = ertrag * 0.000434 t
    *    baeume        = co2 * 80
+   *
+   *  In Phase 3 hat der Nutzer die Module auf dem 3D-Dach selbst
+   *  gewaehlt – wir verwenden seine Auswahl und fallen nur dann
+   *  auf die Heuristik zurueck, wenn er nichts angeklickt hat.
    * ============================================================ */
   const Calculator = {
     run(){
@@ -1424,11 +1979,27 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       const panelW   = (sp && sp.panelCapacityWatts) || 430;
       const maxKwp   = sp ? (sp.maxArrayPanelsCount * panelW) / 1000 : 30;
 
-      // Optimale Anlage: 20% Reserve gegenueber dem nominellen Eigenverbrauchsbedarf,
-      // gedeckelt durch das physisch moegliche Dach-Maximum und 30 kWp (EEG-Schwelle).
-      const optKwp   = Math.min(c.kwh / 950 * 1.2, maxKwp, 30);
-      const module   = Math.round(optKwp * 1000 / panelW);
-      const ertrag   = optKwp * 950;
+      // Hat der Nutzer in Step 2 Module auf dem 3D-Dach platziert?
+      const selected = (typeof Roof3D !== 'undefined') ? Roof3D.getActiveModules() : [];
+      let optKwp, module, ertrag, source;
+
+      if(selected.length > 0){
+        // Aus echter Nutzer-Auswahl
+        module = selected.length;
+        optKwp = (module * panelW) / 1000;
+        ertrag = selected.reduce((s, p) => s + (p.yearlyEnergyDcKwh || 0), 0);
+        if(!ertrag) ertrag = optKwp * 950;
+        source = 'Auf Basis Ihrer Modul-Auswahl auf dem 3D-Dach.';
+      } else {
+        // Empfehlung: 20% Reserve gegenueber dem nominellen Eigenverbrauchsbedarf,
+        // gedeckelt durch das physisch moegliche Dach-Maximum und 30 kWp (EEG-Schwelle).
+        optKwp = Math.min(c.kwh / 950 * 1.2, maxKwp, 30);
+        module = Math.round(optKwp * 1000 / panelW);
+        ertrag = optKwp * 950;
+        source = sp ? 'Empfehlung auf Basis Ihrer Solar-API-Dachdaten.' :
+                      'Empfehlung auf Basis Ihrer Adresse (Schätzwerte – wir prüfen vor Ort).';
+      }
+
       const eigen    = Math.min(ertrag * 0.32, c.kwh);
       const einspeis = Math.max(0, ertrag - eigen);
       const preis    = c.price / 100;       // ct/kWh → €/kWh
@@ -1442,13 +2013,17 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         optKwp, module, ertrag, eigen, einspeis,
         ersparnis, investition: investi, amort, co2, baeume,
         panelW, maxKwp,
-        sourceLabel: sp ? 'Auf Basis Ihrer Solar-API-Dachdaten.' :
-                          'Auf Basis Ihrer Adresse (Schätzwerte – wir prüfen vor Ort).',
+        sourceLabel: source,
       };
       State.result = r;
 
       Calculator.write(r);
       Chart.draw(r, c);
+    },
+
+    // Live-Update der Auswahl-Sidebar in Step 2 (nicht das Vollbild-Ergebnis)
+    recalc(){
+      Step2.updateSelection();
     },
 
     write(r){
@@ -1709,6 +2284,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     Shell.init();
     Search.init();
     Consumption.init();
+    Step2.init();
     Lead.init();
   });
 
