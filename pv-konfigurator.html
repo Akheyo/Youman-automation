@@ -438,8 +438,17 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 .sel-box .sel-stat{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
 .sel-box .sel-k{font-size:13px;color:var(--muted)}
 .sel-box .sel-v{font-size:18px;font-weight:700;color:var(--text)}
+.sel-box .sel-max{
+  margin-top:14px;width:100%;
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  background:var(--blue);color:#fff;
+  padding:11px 12px;border:1px solid var(--blue);
+  transition:background .15s;
+}
+.sel-box .sel-max:hover{background:var(--blue-h)}
+.sel-box .sel-max:disabled{opacity:.45;cursor:not-allowed;background:var(--blue)}
 .sel-box .sel-clear{
-  margin-top:12px;width:100%;
+  margin-top:8px;width:100%;
   font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
   background:var(--bg-s);color:var(--text);
   padding:10px 12px;border:1px solid var(--border);
@@ -793,6 +802,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           <span class="sel-k">Geschätzter Ertrag</span>
           <span class="sel-v" id="selErtrag">0 kWh</span>
         </div>
+        <button type="button" id="btnPlaceMax" class="sel-max" disabled>Maximum-Belegung</button>
         <button type="button" id="btnClearSel" class="sel-clear" disabled>Auswahl zurücksetzen</button>
       </div>
     </div>
@@ -1016,7 +1026,11 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       }
 
       if(n===2) Step2.enter();
-      if(n===3) Calculator.run();
+      if(n===3) {
+        // Calculator.run ist async (PVGIS-Fetch). Wir zeigen sofort Step 3,
+        // die Werte aktualisieren sich kurz darauf.
+        Calculator.run().catch(err => console.error('[Calculator]', err));
+      }
     },
 
     banner(type, title, html){
@@ -1642,13 +1656,16 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         return;
       }
 
-      // Kameraflug zur Adresse: Sued-Ost-Perspektive, leichter Tilt
-      const offset = 0.0003;
+      // Kameraflug zur Adresse: Sued-West-Position, blickt Nord-Ost auf das Haus.
+      // Position ~70m SW + 70m hoch, Pitch -45° => Target sitzt mittig im Frame
+      // bei guter Sicht auf Dach + suedlich/westliche Hausfront.
+      const dLat = -0.00065;          // ~72m sueden
+      const dLng = -0.00105;          // ~72m westen (cos(51.8°) ≈ 0.62)
       this.viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(lng - offset, lat - offset, 80),
+        destination: Cesium.Cartesian3.fromDegrees(lng + dLng, lat + dLat, 70),
         orientation: {
-          heading: Cesium.Math.toRadians(45),
-          pitch:   Cesium.Math.toRadians(-30),
+          heading: Cesium.Math.toRadians(45),   // Nord-Ost: schaut auf das Haus
+          pitch:   Cesium.Math.toRadians(-45),
           roll:    0,
         },
         duration: 2.5,
@@ -1701,6 +1718,13 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         bySegment.get(idx).push(p);
       });
 
+      const colors = {
+        good: Cesium.Color.fromCssColorString('#22c55e').withAlpha(0.65),
+        ok:   Cesium.Color.fromCssColorString('#f59e0b').withAlpha(0.65),
+        bad:  Cesium.Color.fromCssColorString('#ef4444').withAlpha(0.55),
+      };
+
+      let built = 0;
       bySegment.forEach((segPanels, segIdx) => {
         const seg   = segs[segIdx] || {};
         const az    = (seg.azimuthDegrees == null) ? 180 : seg.azimuthDegrees;
@@ -1721,38 +1745,43 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         const hull = this._concaveHull(pts, 0.000018);
         if(hull.length < 3) return;
 
-        const altitude = (seg.planeHeightAtCenterMeters || 30) + 0.3;
+        // WICHTIG: Polygon-Positionen OHNE Hoehe (auf dem WGS84-Ellipsoid).
+        // Mit classificationType=CESIUM_3D_TILE projiziert Cesium die 2D-Form
+        // wie einen Stempel von oben auf die Dachflaeche der 3D-Tiles. Die
+        // tatsaechliche Dach-Hoehe ist dabei egal -> kein Geoid-vs-Ellipsoid-Bug.
         const positions = hull.map(p =>
-          Cesium.Cartesian3.fromDegrees(p.lng, p.lat, altitude)
+          Cesium.Cartesian3.fromDegrees(p.lng, p.lat)
         );
-
-        const colors = {
-          good: Cesium.Color.fromCssColorString('#22c55e').withAlpha(0.55),
-          ok:   Cesium.Color.fromCssColorString('#f59e0b').withAlpha(0.55),
-          bad:  Cesium.Color.fromCssColorString('#ef4444').withAlpha(0.50),
-        };
 
         const entity = viewer.entities.add({
           name: 'seg-' + segIdx,
           polygon: {
-            hierarchy: positions,
+            hierarchy: new Cesium.PolygonHierarchy(positions),
             material: colors[type],
-            outline: true,
-            outlineColor: Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.7),
-            outlineWidth: 2,
-            height: altitude,
-            perPositionHeight: true,
             classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
           },
           properties: {
             segIdx, type, panels: segPanels, az, pitch,
+            baseColor: colors[type],
+            hoverColor: colors[type].withAlpha(0.88),
           },
         });
 
         this.segmentEntities.push(entity);
+        built++;
       });
 
-      // Klick-Handler fuer Segmente
+      console.info('[Roof3D] '+built+' Dachsegmente aufgelegt (Quality: '+(solarData.imageryQuality||'?')+')');
+
+      if(built === 0){
+        Shell.banner('warn',
+          'Keine darstellbaren Dachsegmente.',
+          'Wir wechseln in den manuellen Modus — zeichnen Sie Ihr Dach selbst.');
+        ManualRoof.start(viewer);
+        return;
+      }
+
+      // Klick + Hover-Handler fuer Segmente
       const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
       handler.setInputAction((click) => {
         const picked = viewer.scene.pick(click.position);
@@ -1764,6 +1793,31 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         if(segIdx === undefined) return;
         this._toggleSegment(viewer, picked.id, segIdx);
       }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+      // Hover-Effekt: Cursor wird zur Zeigehand und Segment-Farbe heller
+      handler.setInputAction((move) => {
+        const picked = viewer.scene.pick(move.endPosition);
+        const canvas = viewer.scene.canvas;
+        if(picked && picked.id && picked.id.properties && picked.id.properties.segIdx){
+          canvas.style.cursor = 'pointer';
+          if(this._hovered !== picked.id){
+            if(this._hovered){
+              const baseColor = this._hovered.properties.baseColor.getValue();
+              this._hovered.polygon.material = baseColor;
+            }
+            this._hovered = picked.id;
+            const hoverColor = picked.id.properties.hoverColor.getValue();
+            picked.id.polygon.material = hoverColor;
+          }
+        } else {
+          canvas.style.cursor = 'default';
+          if(this._hovered){
+            const baseColor = this._hovered.properties.baseColor.getValue();
+            this._hovered.polygon.material = baseColor;
+            this._hovered = null;
+          }
+        }
+      }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
       this._handler = handler;
     },
@@ -1801,21 +1855,14 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         const w = isLand ? panelH : panelW;
         const h = isLand ? panelW : panelH;
         const corners = this._rotatedRect(p.center.latitude, p.center.longitude, w, h, az);
-        const seg = sp.roofSegmentStats[(p.segmentIndex == null) ? 0 : p.segmentIndex] || {};
-        const altitude = (seg.planeHeightAtCenterMeters || 30) + 0.4;
         const positions = corners.map(c =>
-          Cesium.Cartesian3.fromDegrees(c.lng, c.lat, altitude)
+          Cesium.Cartesian3.fromDegrees(c.lng, c.lat)
         );
 
         const moduleEntity = viewer.entities.add({
           polygon: {
-            hierarchy: positions,
-            material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.92),
-            outline: true,
-            outlineColor: Cesium.Color.fromCssColorString('#93c5fd'),
-            outlineWidth: 1,
-            height: altitude,
-            perPositionHeight: true,
+            hierarchy: new Cesium.PolygonHierarchy(positions),
+            material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.95),
             classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
           },
           properties: { isModule: true, segIdx, panel: p },
@@ -1922,6 +1969,208 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   };
 
   /* ============================================================
+   *  ManualRoof — Manuelles Dach-Zeichnen wenn Solar API kein Coverage hat
+   *  ------------------------------------------------------------
+   *  Nutzer klickt nacheinander die Eckpunkte seines Daches auf dem
+   *  3D-Modell an. Wir picken den Welt-Punkt aus den Cesium 3D Tiles
+   *  (scene.pickPosition), zeichnen ein wachsendes Polygon, und
+   *  berechnen am Ende Flaeche + kWp aus der gezeichneten Form.
+   *  Doppelklick beendet die Eingabe.
+   * ============================================================ */
+  const ManualRoof = {
+    points: [],          // Array<Cartesian3>
+    polygon: null,       // Live-Polygon-Entity
+    markers: [],         // Punkt-Markierungen
+    handler: null,
+    viewer: null,
+    finalized: false,
+
+    start(viewer){
+      this.viewer = viewer;
+      this.points = [];
+      this.markers = [];
+      this.polygon = null;
+      this.finalized = false;
+
+      const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+      handler.setInputAction((click) => {
+        if(this.finalized) return;
+        const pos = viewer.scene.pickPosition(click.position);
+        if(!Cesium.defined(pos)) return;
+        this._addPoint(pos);
+      }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+      handler.setInputAction(() => {
+        if(this.finalized) return;
+        this._finalize();
+      }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+
+      viewer.scene.canvas.style.cursor = 'crosshair';
+      this.handler = handler;
+
+      // Tip-Banner ueberlagern (falls vorhanden) durch Manual-Hinweis
+      const tip = document.querySelector('.cesium-tip');
+      if(tip) tip.textContent = 'Klicken Sie die Eckpunkte Ihres Daches an — Doppelklick beendet die Eingabe';
+    },
+
+    _addPoint(cart){
+      this.points.push(cart);
+
+      // Punkt-Marker (kleiner blauer Kreis)
+      const marker = this.viewer.entities.add({
+        position: cart,
+        point: {
+          pixelSize: 12,
+          color: Cesium.Color.fromCssColorString('#0D73FC'),
+          outlineColor: Cesium.Color.WHITE,
+          outlineWidth: 2,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+      });
+      this.markers.push(marker);
+
+      // Live-Polygon-Update (ab 3 Punkten)
+      if(this.points.length >= 3){
+        if(this.polygon){
+          this.polygon.polygon.hierarchy = new Cesium.PolygonHierarchy(this.points.slice());
+        } else {
+          this.polygon = this.viewer.entities.add({
+            polygon: {
+              hierarchy: new Cesium.PolygonHierarchy(this.points.slice()),
+              material: Cesium.Color.fromCssColorString('#22c55e').withAlpha(0.55),
+              classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
+            },
+            properties: { isManualRoof: true },
+          });
+        }
+      }
+
+      const tip = document.querySelector('.cesium-tip');
+      if(tip) tip.textContent = this.points.length + ' Punkt' + (this.points.length===1?'':'e') + ' gesetzt — weiter klicken oder Doppelklick zum Beenden';
+    },
+
+    _finalize(){
+      if(this.points.length < 3){
+        Shell.banner('warn', 'Mindestens 3 Punkte erforderlich.', 'Bitte umrunden Sie Ihre Dachfläche mit mindestens drei Klicks.');
+        return;
+      }
+      this.finalized = true;
+
+      // Cleanup interactions
+      if(this.handler){ try{ this.handler.destroy(); }catch(_){} this.handler = null; }
+      this.viewer.scene.canvas.style.cursor = 'default';
+
+      // Flaeche berechnen mit shoelace-Formel auf lokalem Tangentialebene
+      const area = this._computeAreaM2(this.points);
+
+      // kWp aus Flaeche: ~6 m²/kWp fuer moderne Module (~16% Effizienz, ~400Wp Module 1.7m²)
+      const kwp = Math.max(0, area / 6);
+
+      // State befuellen wie wenn Solar API geantwortet haette
+      State.solar.manualRoof = { areaM2: area, kwp };
+
+      const tip = document.querySelector('.cesium-tip');
+      if(tip) tip.textContent = 'Dachfläche: ' + fmt(area, 0) + ' m² · ca. ' + fmt(kwp, 1) + ' kWp möglich';
+
+      // Step2-Sidebar updaten + Weiter-Button frei
+      Step2.updateSelection();
+      document.getElementById('btnNext2').disabled = false;
+
+      Shell.banner('info',
+        'Dach erfasst: ' + fmt(area, 0) + ' m² · max. ca. ' + fmt(kwp, 1) + ' kWp.',
+        'Sie können jetzt zum Ergebnis weitergehen — wir berechnen die Erträge mit dem PVGIS-Modell der EU-Kommission und Ihren Ortsdaten.');
+    },
+
+    // Heron-Triangulation in lokaler Tangentialebene → flaechentreue Naeherung
+    _computeAreaM2(cartPoints){
+      if(cartPoints.length < 3) return 0;
+      const carto = cartPoints.map(c => Cesium.Cartographic.fromCartesian(c));
+      const lat0 = carto[0].latitude;
+      const lng0 = carto[0].longitude;
+      const cosLat = Math.cos(lat0);
+      // Lokale Meter-Koordinaten: x = dLng * cos(lat) * R, y = dLat * R
+      const R = 6378137;
+      const local = carto.map(c => ({
+        x: (c.longitude - lng0) * cosLat * R,
+        y: (c.latitude  - lat0) * R,
+      }));
+      // Shoelace
+      let s = 0;
+      for(let i=0; i<local.length; i++){
+        const j = (i+1) % local.length;
+        s += local[i].x * local[j].y - local[j].x * local[i].y;
+      }
+      return Math.abs(s) / 2;
+    },
+
+    getKwp(){
+      return State.solar.manualRoof ? State.solar.manualRoof.kwp : 0;
+    },
+
+    getAreaM2(){
+      return State.solar.manualRoof ? State.solar.manualRoof.areaM2 : 0;
+    },
+
+    isActive(){
+      return !!(State.solar.manualRoof && this.finalized);
+    },
+
+    reset(){
+      const v = this.viewer;
+      if(v){
+        if(this.polygon) try{ v.entities.remove(this.polygon); }catch(_){}
+        this.markers.forEach(m => { try{ v.entities.remove(m); }catch(_){} });
+      }
+      this.points = [];
+      this.markers = [];
+      this.polygon = null;
+      this.finalized = false;
+      State.solar.manualRoof = null;
+      if(this.handler){ try{ this.handler.destroy(); }catch(_){} this.handler = null; }
+    },
+  };
+
+  /* ============================================================
+   *  PVGIS — EU-Kommission Photovoltaic Geographical Information System
+   *  ------------------------------------------------------------
+   *  Freie API ohne Key, deckt ganz Europa ab.
+   *  Liefert realistische Jahreserträge basierend auf 10+ Jahren
+   *  Wettermessdaten, Hangneigung, Verschattung etc.
+   *  Wir nutzen das, wenn Solar API für die Adresse keine Daten hat
+   *  (manuell gezeichnetes Dach) oder als Cross-Check.
+   * ============================================================ */
+  const PVGIS = {
+    async yearlyEnergyKwh(lat, lng, kwp, opts){
+      opts = opts || {};
+      const params = new URLSearchParams({
+        lat: lat.toFixed(5),
+        lon: lng.toFixed(5),
+        peakpower: kwp.toFixed(2),
+        loss: '14',                     // System-Verluste (Standard 14%)
+        outputformat: 'json',
+        pvtechchoice: 'crystSi',        // Standard kristallines Silizium
+        mountingplace: 'building',      // Aufdach
+        angle: String(opts.tilt || 30),
+        aspect: String(opts.aspect || 0),  // 0 = Sued, +90 West, -90 Ost
+      });
+      const url = 'https://re.jrc.ec.europa.eu/api/v5_2/PVcalc?' + params.toString();
+      try {
+        const res = await fetch(url);
+        if(!res.ok) throw new Error('PVGIS HTTP '+res.status);
+        const d = await res.json();
+        const t = d.outputs && d.outputs.totals && d.outputs.totals.fixed;
+        if(!t || typeof t.E_y !== 'number') throw new Error('PVGIS: Kein E_y-Feld');
+        return t.E_y;
+      } catch(err){
+        console.warn('[PVGIS] Fehler, nutze NRW-Default:', err.message);
+        // Fallback: NRW-Durchschnitt 950 kWh/kWp
+        return kwp * 950;
+      }
+    },
+  };
+
+  /* ============================================================
    *  Step2 — Orchestrator: 3D-Init + Solar-Daten + Dach-Polygone
    *  ------------------------------------------------------------
    *  Cesium-Init und Solar-API-Call laufen parallel. Sobald beides
@@ -1931,7 +2180,21 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     init(){
       const btnClear = document.getElementById('btnClearSel');
       if(btnClear){
-        btnClear.addEventListener('click', () => Roof3D.clearAll());
+        btnClear.addEventListener('click', () => {
+          if(ManualRoof.isActive()){
+            ManualRoof.reset();
+            // Bei manuellem Modus: Manual-Drawing erneut starten falls Viewer da
+            if(Map3D.viewer) ManualRoof.start(Map3D.viewer);
+            document.getElementById('btnNext2').disabled = true;
+          } else {
+            Roof3D.clearAll();
+          }
+          Step2.updateSelection();
+        });
+      }
+      const btnMax = document.getElementById('btnPlaceMax');
+      if(btnMax){
+        btnMax.addEventListener('click', () => Step2.placeMaximum());
       }
       Step2.updateSelection();
     },
@@ -1955,8 +2218,14 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 
       if(Map3D.viewer && bi){
         Roof3D.buildSegments(Map3D.viewer, bi);
-      } else if(!bi){
-        // Solar-API hat versagt — der genaue Fehlercode wurde bereits via Shell.banner gemeldet.
+      } else if(Map3D.viewer && !bi){
+        // Solar-API hatte keine Dachdaten — User darf manuell sein Dach zeichnen.
+        // (Banner wurde bereits in Solar.handleError ausgegeben.)
+        Shell.banner('info',
+          'Dach manuell vermessen.',
+          'Klicken Sie nacheinander die <strong>Eckpunkte Ihres Daches</strong> auf dem 3D-Modell. ' +
+          'Mindestens 3 Punkte. Doppelklick beendet die Eingabe.');
+        ManualRoof.start(Map3D.viewer);
       }
     },
 
@@ -1964,19 +2233,62 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     updateSelection(){
       const sp = State.solar.building && State.solar.building.solarPotential;
       const panelW = (sp && sp.panelCapacityWatts) || 430;
-      const selected = Roof3D.getActiveModules();
-      const count = selected.length;
-      const kwp = (count * panelW) / 1000;
-      const ertrag = selected.reduce((s, p) => s + (p.yearlyEnergyDcKwh || 0), 0);
+
+      let count, kwp, ertrag, manual = false;
+      if(ManualRoof.isActive()){
+        // Manueller Modus: User hat Dach selbst gezeichnet → kein Modul-Count, nur kWp/Ertrag
+        kwp = ManualRoof.getKwp();
+        count = Math.round(kwp * 1000 / panelW);
+        ertrag = kwp * 950;            // optimistischer Default; PVGIS uebernimmt in Step 3
+        manual = true;
+      } else {
+        const selected = Roof3D.getActiveModules();
+        count = selected.length;
+        kwp = (count * panelW) / 1000;
+        ertrag = selected.reduce((s, p) => s + (p.yearlyEnergyDcKwh || 0), 0);
+      }
 
       const elM  = document.getElementById('selModules');
       const elK  = document.getElementById('selKwp');
       const elE  = document.getElementById('selErtrag');
       const elB  = document.getElementById('btnClearSel');
-      if(elM) elM.textContent = String(count);
+      const elMax= document.getElementById('btnPlaceMax');
+      if(elM) elM.textContent = manual ? '~' + count : String(count);
       if(elK) elK.textContent = fmt(kwp, 1) + ' kWp';
       if(elE) elE.textContent = fmt(Math.round(ertrag), 0) + ' kWh';
-      if(elB) elB.disabled = count === 0;
+      if(elB) elB.disabled = count === 0 && !manual;
+      if(elMax){
+        // Auto-Belegung nur sinnvoll wenn Solar API Daten geliefert hat
+        const sp2 = State.solar.building && State.solar.building.solarPotential;
+        elMax.disabled = !sp2 || !sp2.solarPanels || sp2.solarPanels.length === 0;
+      }
+    },
+
+    // Auto-Belegung: alle "good" und "ok" Segmente mit allen Modulen belegen.
+    // Wird vom "MAXIMUM" Button getriggert.
+    placeMaximum(){
+      if(!Map3D.viewer || !State.solar.building) return;
+      const sp = State.solar.building.solarPotential;
+      if(!sp || !sp.solarPanels) return;
+
+      // Roof3D-State zuerst zuruecksetzen, damit wir nicht doppelt belegen
+      Roof3D.clearAll();
+
+      // Per Segment: alle Panels, sofern type != 'bad'
+      const bySegment = new Map();
+      sp.solarPanels.forEach(p => {
+        const idx = (p.segmentIndex == null) ? 0 : p.segmentIndex;
+        if(!bySegment.has(idx)) bySegment.set(idx, []);
+        bySegment.get(idx).push(p);
+      });
+      bySegment.forEach((panels, segIdx) => {
+        const seg = sp.roofSegmentStats[segIdx] || {};
+        const az  = (seg.azimuthDegrees == null) ? 180 : seg.azimuthDegrees;
+        const type = Roof3D._typeFromSegment(az, (seg.pitchDegrees == null) ? 20 : seg.pitchDegrees);
+        if(type === 'bad') return;
+        Roof3D._addModulesForSegment(Map3D.viewer, segIdx, panels, az);
+      });
+      Calculator.recalc();
     },
   };
 
@@ -1999,7 +2311,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
    *  auf die Heuristik zurueck, wenn er nichts angeklickt hat.
    * ============================================================ */
   const Calculator = {
-    run(){
+    async run(){
       const c = State.consumption;
       const sp = State.solar.building && State.solar.building.solarPotential;
 
@@ -2007,17 +2319,28 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       const panelW   = (sp && sp.panelCapacityWatts) || 430;
       const maxKwp   = sp ? (sp.maxArrayPanelsCount * panelW) / 1000 : 30;
 
-      // Hat der Nutzer in Step 2 Module auf dem 3D-Dach platziert?
+      // 3 Eingangsquellen, in Prioritaets-Reihenfolge:
+      //  1. Klick-Auswahl auf 3D-Dach (Roof3D.getActiveModules)
+      //  2. Manuell gezeichnetes Dach (ManualRoof.isActive)
+      //  3. Heuristik aus Verbrauch + Solar-API-Maximum
       const selected = (typeof Roof3D !== 'undefined') ? Roof3D.getActiveModules() : [];
       let optKwp, module, ertrag, source;
+      let usePvgis = false, pvgisAspect = 0, pvgisTilt = 30;
 
       if(selected.length > 0){
-        // Aus echter Nutzer-Auswahl
+        // Aus echter Nutzer-Auswahl: Solar API hat yearlyEnergyDcKwh pro Panel
         module = selected.length;
         optKwp = (module * panelW) / 1000;
         ertrag = selected.reduce((s, p) => s + (p.yearlyEnergyDcKwh || 0), 0);
         if(!ertrag) ertrag = optKwp * 950;
         source = 'Auf Basis Ihrer Modul-Auswahl auf dem 3D-Dach.';
+      } else if(ManualRoof.isActive()){
+        // Manueller Modus: kWp aus Flaeche × Effizienz, Ertrag aus PVGIS
+        optKwp = ManualRoof.getKwp();
+        module = Math.round(optKwp * 1000 / panelW);
+        ertrag = optKwp * 950;          // wird gleich von PVGIS ueberschrieben
+        usePvgis = true;
+        source = 'Manuell vermessenes Dach (' + fmt(ManualRoof.getAreaM2(), 0) + ' m²) — Erträge per PVGIS-Modell.';
       } else {
         // Empfehlung: 20% Reserve gegenueber dem nominellen Eigenverbrauchsbedarf,
         // gedeckelt durch das physisch moegliche Dach-Maximum und 30 kWp (EEG-Schwelle).
@@ -2026,6 +2349,30 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         ertrag = optKwp * 950;
         source = sp ? 'Empfehlung auf Basis Ihrer Solar-API-Dachdaten.' :
                       'Empfehlung auf Basis Ihrer Adresse (Schätzwerte – wir prüfen vor Ort).';
+        if(!sp) usePvgis = true;        // ohne Solar-API auch hier PVGIS holen
+      }
+
+      // PVGIS-Cross-Check / Ersatz fuer Ertrag — async, daher Calculator.run async geworden
+      if(usePvgis && State.address.lat && State.address.lng && optKwp > 0){
+        // Tilt/Aspect aus Solar-API (falls vorhanden) sonst Default 30°/Süd
+        if(sp && sp.roofSegmentStats && sp.roofSegmentStats.length){
+          const s0 = sp.roofSegmentStats[0];
+          pvgisTilt = s0.pitchDegrees || 30;
+          // PVGIS-Aspect: 0=Süd, +90=West, -90=Ost. Solar-API-Azimuth: 0=Nord, 180=Süd.
+          pvgisAspect = ((s0.azimuthDegrees || 180) - 180);
+          if(pvgisAspect > 180)  pvgisAspect -= 360;
+          if(pvgisAspect < -180) pvgisAspect += 360;
+        }
+        try {
+          const pvgisErtrag = await PVGIS.yearlyEnergyKwh(
+            State.address.lat, State.address.lng, optKwp,
+            { tilt: pvgisTilt, aspect: pvgisAspect }
+          );
+          if(pvgisErtrag > 0) ertrag = pvgisErtrag;
+          source += ' Ertrag: PVGIS (EU-Kommission), ' + fmt(pvgisTilt, 0) + '° Neigung, ' + fmt(pvgisAspect, 0) + '° von Süd.';
+        } catch(_){
+          // Fallback bleibt der vorhandene Wert
+        }
       }
 
       const eigen    = Math.min(ertrag * 0.32, c.kwh);
