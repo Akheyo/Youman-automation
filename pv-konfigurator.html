@@ -10,6 +10,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
 
+<!-- geotiff.js: dekodiert die 3 Solar-API-Layer (rgbUrl, maskUrl, annualFluxUrl) im Browser.
+     v2.1.3 fixiert wegen API-Stabilitaet (fromArrayBuffer, getImage, readRasters). -->
+<script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+
 <style>
 /* ---------- Design-Tokens (1:1 aus r-energy-Theme der A&B-Seite) ---------- */
 :root{
@@ -311,6 +315,157 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   border-top:1px solid var(--border);
 }
 
+/* ---------- Step 2: Canvas-Layer + Legende ---------- */
+/* Beide Canvases liegen absolut uebereinander. Flux blendet auf RGB via multiply,
+   damit das Luftbild als Textur erhalten bleibt und die Heatmap nur die Farbe einfaerbt. */
+.roof canvas{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  display:block;
+  image-rendering:pixelated;     /* Solar-Tiles sind 0.25 m/Pixel – upscaled scharf zeigen */
+}
+#flux-canvas{
+  mix-blend-mode:multiply;
+  opacity:.85;
+  pointer-events:none;
+}
+.legend{
+  position:absolute;top:12px;right:12px;z-index:3;
+  background:rgba(255,255,255,.96);
+  padding:10px 12px;
+  border:1px solid var(--border);
+  display:flex;flex-direction:column;gap:6px;
+  font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text);
+}
+.legend.is-hidden{display:none}
+.legend-item{display:flex;align-items:center;gap:8px}
+.legend-sw{width:12px;height:12px;display:inline-block}
+/* Image-Fallback wenn dataLayers nicht verfuegbar (Static Maps) */
+.roof-fallback{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+}
+
+/* ---------- Step 3: Ergebnis-Grid, Chart, CTA, Lead-Form ---------- */
+.step3{max-width:1240px;margin:0 auto;padding:48px 32px 64px}
+.result-head{margin-bottom:8px}
+.result-head .h2{margin-bottom:6px}
+.result-head .sub{font-size:14px;color:var(--muted);margin-bottom:0}
+
+.result-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:16px;
+  margin:28px 0 36px;
+}
+.r-card{
+  background:#fff;border:1px solid var(--border);
+  padding:26px 24px;
+  display:flex;flex-direction:column;
+}
+.r-card .k{
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px;
+}
+.r-card .v{
+  font-size:34px;line-height:1.1;font-weight:700;color:var(--text);
+}
+.r-card .v .u{font-size:15px;font-weight:500;color:var(--muted);margin-left:4px}
+.r-card .extra{font-size:12px;color:var(--muted);margin-top:8px}
+.r-card.is-hl{background:var(--blue);border-color:var(--blue)}
+.r-card.is-hl .k,
+.r-card.is-hl .v,
+.r-card.is-hl .v .u,
+.r-card.is-hl .extra{color:#fff}
+.r-card.is-hl .v .u{color:#cfe2ff}
+.r-card.is-hl .extra{color:#cfe2ff}
+
+.chart-wrap{
+  background:#fff;border:1px solid var(--border);
+  padding:32px;
+  margin-bottom:36px;
+}
+.chart-wrap h3{
+  font-size:18px;font-weight:700;margin-bottom:4px;
+}
+.chart-wrap .sub{font-size:13px;color:var(--muted);margin-bottom:18px}
+.chart-canvas-wrap{position:relative;width:100%;height:280px}
+#chart{width:100%;height:100%;display:block}
+.chart-legend{display:flex;gap:20px;margin-top:14px;font-size:13px;flex-wrap:wrap}
+.chart-legend .sw{display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:middle}
+
+/* CTA-Banner ueber dem Lead-Form */
+.cta{
+  background:var(--blue);color:#fff;
+  padding:44px 48px;
+  display:flex;align-items:center;justify-content:space-between;gap:32px;
+  margin-bottom:0;
+}
+.cta h3{font-size:30px;line-height:1.15;font-weight:700;margin-bottom:6px}
+.cta p{font-size:15px;color:#cfe2ff;max-width:520px}
+
+/* Lead-Form: weisse Karte, kantig */
+.lead-form{
+  background:#fff;border:1px solid var(--border);border-top:0;
+  padding:40px 48px;
+}
+.lead-form .row-2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.lead-form .field{margin-bottom:18px;max-width:none}
+.lead-form .field input,
+.lead-form .field select,
+.lead-form .field textarea{
+  width:100%;
+  background:#fff;
+  border:1px solid var(--border);
+  padding:12px 14px;
+  font-size:15px;font-weight:400;color:var(--text);
+  outline:none;transition:border-color .15s;
+  border-radius:0;
+  font-family:inherit;
+}
+.lead-form .field textarea{min-height:90px;resize:vertical}
+.lead-form .field input:focus,
+.lead-form .field select:focus,
+.lead-form .field textarea:focus{border-color:var(--blue)}
+.lead-form .field-label{
+  display:block;
+  font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;
+}
+.lead-form .check{
+  display:flex;gap:10px;align-items:flex-start;
+  font-size:13px;color:var(--muted);line-height:1.55;
+  margin:8px 0 24px;
+}
+.lead-form .check input[type=checkbox]{
+  width:18px;height:18px;flex-shrink:0;margin-top:3px;accent-color:var(--blue);
+}
+.lead-form .field.has-error input,
+.lead-form .field.has-error select,
+.lead-form .field.has-error textarea,
+.lead-form .check.has-error input{border-color:var(--rot)}
+.lead-form .field-error{display:none;font-size:12px;color:var(--rot);margin-top:6px}
+.lead-form .field.has-error .field-error{display:block}
+.lead-form .submit-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.lead-form .submit-note{font-size:12px;color:var(--muted)}
+
+/* Erfolgs-Status nach Lead-Submit */
+.success{
+  background:#eaf8ee;border:1px solid #c7ecd0;
+  padding:48px 36px;text-align:center;
+}
+.success .check-circle{
+  display:inline-flex;width:54px;height:54px;
+  background:var(--gruen);align-items:center;justify-content:center;
+  margin-bottom:18px;
+}
+.success .check-circle::after{
+  content:"";display:block;width:18px;height:9px;
+  border-left:3px solid #fff;border-bottom:3px solid #fff;
+  transform:rotate(-45deg) translate(2px,-3px);
+}
+.success h3{font-size:24px;font-weight:700;margin-bottom:8px;color:var(--text)}
+.success p{color:var(--text);max-width:480px;margin:0 auto}
+
 /* Banner-System: API-Key fehlt, Solar keine Abdeckung, Billing-Problem */
 .banner{
   max-width:1240px;margin:0 auto;
@@ -337,6 +492,12 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   .solar-box{grid-template-columns:1fr}
   .solar-stat{border-right:0;border-bottom:1px solid var(--border)}
   .solar-stat:last-child{border-bottom:0}
+  .step3{padding:32px 20px}
+  .result-grid{grid-template-columns:repeat(2,1fr)}
+  .cta{flex-direction:column;align-items:flex-start;padding:32px}
+  .cta h3{font-size:24px}
+  .lead-form{padding:28px 20px}
+  .lead-form .row-2{grid-template-columns:1fr}
 }
 @media (max-width:600px){
   .hdr-meta{display:none}
@@ -347,6 +508,14 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   .h2{font-size:22px}
   .step-nav{padding:20px;flex-direction:column-reverse;align-items:stretch}
   .step-nav .btn{width:100%}
+  .result-grid{grid-template-columns:1fr;gap:12px}
+  .r-card .v{font-size:28px}
+  .chart-wrap{padding:22px}
+  .chart-canvas-wrap{height:240px}
+  .cta{padding:24px}
+  .cta h3{font-size:20px}
+  .lead-form .submit-row{flex-direction:column;align-items:stretch}
+  .lead-form .submit-row .btn{width:100%}
 }
 </style>
 </head>
@@ -416,7 +585,19 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       <div class="addr-tag" id="addrTag">Adresse</div>
 
       <div class="roof" id="roof">
-        <!-- Canvas-Visualisierung kommt in Phase 3. Jetzt nur Zustands-Placeholder. -->
+        <!-- 2 Canvas uebereinander: RGB als Hintergrund, Flux als multiply-Heatmap.
+             Die Canvas-Pixelgroesse setzen wir spaeter aus den GeoTIFF-Dimensionen. -->
+        <canvas id="rgb-canvas"  width="1" height="1"></canvas>
+        <canvas id="flux-canvas" width="1" height="1"></canvas>
+
+        <!-- Legende fuer die 3 Heatmap-Zonen, zunaechst versteckt -->
+        <div class="legend is-hidden" id="legend">
+          <div class="legend-item"><span class="legend-sw" style="background:#22c55e"></span>Sehr geeignet</div>
+          <div class="legend-item"><span class="legend-sw" style="background:#f59e0b"></span>Bedingt geeignet</div>
+          <div class="legend-item"><span class="legend-sw" style="background:#ef4444"></span>Ungeeignet</div>
+        </div>
+
+        <!-- Loading- und Fehler-Zustaende -->
         <div class="roof-placeholder" id="roofPlaceholder">
           <div class="spinner"></div>
           <div>Satellitendaten werden geladen …</div>
@@ -484,8 +665,124 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   </div>
 </section>
 
-<!-- Step 3 Platzhalter – wird in Phase 3 befuellt -->
-<section class="panel" data-panel="3"></section>
+<!-- ===== Step 3: Ergebnis + Lead-Form ===== -->
+<section class="panel" data-panel="3">
+  <div class="step3">
+
+    <div class="result-head">
+      <h2 class="h2">Ihr Solar-Potenzial im Überblick</h2>
+      <p class="sub" id="resultSub">Berechnung auf Basis Ihrer Adresse, Ihres Verbrauchs und der Solar-API-Dachdaten.</p>
+    </div>
+
+    <!-- 4er-Grid: Anlage, Ersparnis, Amortisation, CO2 -->
+    <div class="result-grid">
+      <div class="r-card" data-r="kwp">
+        <div class="k">Empfohlene Anlage</div>
+        <div class="v">–<span class="u"> kWp</span></div>
+        <div class="extra" id="rcModule">– Module</div>
+      </div>
+      <div class="r-card is-hl" data-r="ersparnis">
+        <div class="k">Ersparnis pro Jahr</div>
+        <div class="v">–<span class="u"> €</span></div>
+        <div class="extra" id="rcInvest">Investition: – €</div>
+      </div>
+      <div class="r-card" data-r="amort">
+        <div class="k">Amortisation</div>
+        <div class="v">–<span class="u"> Jahre</span></div>
+        <div class="extra" id="rcLifetime">Anlagen-Lebensdauer ca. 25 Jahre</div>
+      </div>
+      <div class="r-card" data-r="co2">
+        <div class="k">CO₂-Einsparung</div>
+        <div class="v">–<span class="u"> t / Jahr</span></div>
+        <div class="extra" id="rcTrees">≈ – Bäume jährlich</div>
+      </div>
+    </div>
+
+    <!-- Balken-Diagramm: kumulierte Stromkosten mit/ohne PV ueber 5/10/15/20 Jahre -->
+    <div class="chart-wrap">
+      <h3>Stromkosten im Vergleich</h3>
+      <p class="sub">Kumulierte Kosten über die nächsten 5, 10, 15 und 20 Jahre – inkl. 3 % Strompreissteigerung pro Jahr.</p>
+      <div class="chart-canvas-wrap">
+        <canvas id="chart"></canvas>
+      </div>
+      <div class="chart-legend">
+        <span><span class="sw" style="background:#cbd5e1"></span>Ohne PV</span>
+        <span><span class="sw" style="background:#0D73FC"></span>Mit PV (inkl. Investition)</span>
+      </div>
+    </div>
+
+    <!-- CTA + Lead-Form -->
+    <div class="cta">
+      <div>
+        <h3>Bereit für Ihre Solaranlage?</h3>
+        <p>Wir melden uns innerhalb eines Werktags mit einem unverbindlichen Festpreis-Angebot.</p>
+      </div>
+    </div>
+
+    <form class="lead-form" id="leadForm" novalidate>
+      <div class="row-2">
+        <div class="field">
+          <label class="field-label" for="leadName">Name *</label>
+          <input id="leadName" name="name" type="text" autocomplete="name" required>
+          <div class="field-error">Bitte Namen angeben.</div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="leadPhone">Telefon *</label>
+          <input id="leadPhone" name="phone" type="tel" autocomplete="tel" required inputmode="tel">
+          <div class="field-error">Bitte Telefonnummer angeben.</div>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label class="field-label" for="leadEmail">E-Mail *</label>
+          <input id="leadEmail" name="email" type="email" autocomplete="email" required>
+          <div class="field-error">Bitte gültige E-Mail-Adresse angeben.</div>
+        </div>
+        <div class="field">
+          <label class="field-label" for="leadWhen">Wunsch-Zeitraum</label>
+          <select id="leadWhen" name="when">
+            <option value="">Bitte wählen</option>
+            <option>So schnell wie möglich</option>
+            <option>In den nächsten 3 Monaten</option>
+            <option>In den nächsten 6 Monaten</option>
+            <option>Später / unklar</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="leadMsg">Nachricht (optional)</label>
+        <textarea id="leadMsg" name="message" placeholder="Anmerkungen zum Dach, Fragen, Wünsche …"></textarea>
+      </div>
+
+      <label class="check" id="leadConsent">
+        <input type="checkbox" id="leadDsgvo" required>
+        <span>Ich willige ein, dass A&amp;B Solarenergy meine Angaben zur Kontaktaufnahme verarbeitet.
+              Die Einwilligung kann jederzeit widerrufen werden.
+              <span class="field-error">Bitte Einwilligung bestätigen.</span></span>
+      </label>
+
+      <div class="submit-row">
+        <button type="submit" class="btn btn-fill" id="leadSubmit">Angebot anfordern</button>
+        <span class="submit-note">Antwort innerhalb eines Werktags · Borken &amp; Umgebung</span>
+      </div>
+    </form>
+
+    <!-- Success-State (initial versteckt, wird nach Submit eingeblendet) -->
+    <div class="success" id="leadSuccess" style="display:none">
+      <span class="check-circle" aria-hidden="true"></span>
+      <h3>Vielen Dank für Ihre Anfrage!</h3>
+      <p>Wir haben Ihre Daten erhalten und melden uns innerhalb eines Werktags telefonisch oder per E-Mail.</p>
+    </div>
+
+  </div>
+
+  <div class="step-nav">
+    <button id="btnBack3" class="btn btn-ghost">Zurück</button>
+    <span></span>
+  </div>
+</section>
 
 
 <!--
@@ -519,9 +816,12 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   const State = {
     step: 1,
     address: { text:'', lat:null, lng:null, confirmed:false },
-    solar:   { building:null, layers:null, status:'idle', error:null },
-    // status: idle | loading | ok | no-coverage | billing | error
+    solar:   { building:null, layers:null, decoded:null, bbox:null, status:'idle', error:null },
+    // status:  idle | loading | ok | no-coverage | billing | error
+    // decoded: { rgb:{w,h,r,g,b}, mask:{w,h,data}, flux:{w,h,data,min,max} }
+    // bbox:    selbst berechnete WGS84-Box {sw:{lat,lng}, ne:{lat,lng}}
     consumption: { kwh:4500, price:35, eAuto:false },
+    result: null,           // gefuellt von Calculator.run() – letzter Berechnungs-Output
   };
 
   /* ============================================================
@@ -536,12 +836,9 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       });
       // Step-2 Zurueck / Weiter
       document.getElementById('btnBack2').addEventListener('click', ()=>Shell.goto(1));
-      document.getElementById('btnNext2').addEventListener('click', ()=>{
-        // Ergebnis-Berechnung / Step 3 kommt in der naechsten Phase.
-        // Jetzt: Solar-Daten + Verbrauch landen im State, naechste Phase rechnet daraus.
-        console.info('[PV] State beim Uebergang Step 2→3:', JSON.parse(JSON.stringify(State)));
-        alert('Ergebnis-Seite folgt in Phase 3.');
-      });
+      document.getElementById('btnNext2').addEventListener('click', ()=>Shell.goto(3));
+      // Step-3 Zurueck
+      document.getElementById('btnBack3').addEventListener('click', ()=>Shell.goto(2));
 
       if(!CFG.apiKey){
         Shell.banner('warn',
@@ -565,6 +862,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       window.scrollTo({top:0,behavior:'smooth'});
 
       if(n===2) Solar.loadForAddress();
+      if(n===3) Calculator.run();
     },
 
     banner(type, title, html){
@@ -757,24 +1055,78 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         Solar.handleError(bi.reason, 'building');
       }
 
+      // Weiter-Button frei: auch ohne Layer ist die Berechnung moeglich (Schaetzwerte).
+      document.getElementById('btnNext2').disabled = false;
+
       if(dl.status==='fulfilled'){
         State.solar.layers = dl.value;
+        // GeoTIFFs decodieren + Visualisierung. Wenn das schiefgeht, nicht den Flow blocken.
+        try{
+          await Solar.processLayers(dl.value, lat, lng);
+        }catch(err){
+          console.error('[PV] Visualisierung fehlgeschlagen:', err);
+          MapView.fallback(lat, lng);
+        }
       } else {
-        // Kein Hartfehler: die Layer brauchen wir nur fuer die Visualisierung.
+        // Kein Layer-Coverage: Static-Maps-Luftbild als Ersatz, Stats kommen ggf. aus building.
         console.warn('[PV] dataLayers nicht verfuegbar:', dl.reason);
+        MapView.fallback(lat, lng);
       }
 
-      // Weiter-Button aktivieren sobald wir entweder echte Daten haben
-      // oder zumindest Schaetzwerte nutzbar sind.
-      document.getElementById('btnNext2').disabled = false;
       State.solar.status = State.solar.building ? 'ok' : (State.solar.status || 'error');
+    },
 
-      // Platzhalter im Canvas-Bereich aktualisieren
-      if(State.solar.status==='ok' && State.solar.layers){
-        Solar.showPlaceholder('Satellitendaten geladen. Visualisierung folgt.', false);
-      } else if(State.solar.status==='ok'){
-        Solar.showPlaceholder('Keine Luftbild-Layer verfügbar – Zahlen aus Gebäudemodell.', false);
+    /* GeoTIFFs parallel laden + dekodieren, bbox in WGS84 berechnen,
+       MapView mit den 3 Layern befuellen. */
+    async processLayers(dl, lat, lng){
+      if(!dl.rgbUrl || !dl.maskUrl || !dl.annualFluxUrl){
+        throw new Error('Layer-URLs unvollstaendig');
       }
+      Solar.showPlaceholder('Dach-Analyse wird gerendert …', true);
+
+      const [rgb, mask, flux] = await Promise.all([
+        Solar.fetchTiff(dl.rgbUrl),
+        Solar.fetchTiff(dl.maskUrl),
+        Solar.fetchTiff(dl.annualFluxUrl),
+      ]);
+
+      // bbox NICHT aus img.getBoundingBox() – das liefert Web-Mercator-Meter.
+      // Stattdessen aus (lat, lng, radiusMeters) in WGS84:
+      //   dLat = radius / 111320         (Meter pro Breitengrad-Grad)
+      //   dLng = radius / (111320 * cos(lat))   (Längengrad schrumpft Richtung Pol)
+      const bbox = Solar.computeBbox(lat, lng, CFG.solarRadius);
+
+      State.solar.decoded = { rgb, mask, flux };
+      State.solar.bbox    = bbox;
+
+      MapView.render(lat, lng);
+    },
+
+    async fetchTiff(url){
+      // Solar-API-URLs sind signiert, brauchen aber zusaetzlich den API-Key.
+      // Nicht doppelt anhaengen falls die URL ihn schon traegt.
+      const sep = url.includes('?') ? '&' : '?';
+      const full = /[?&]key=/.test(url) ? url : (url + sep + 'key=' + encodeURIComponent(CFG.apiKey));
+      const res = await fetch(full);
+      if(!res.ok) throw new Error('TIFF '+res.status+' '+url.split('?')[0]);
+      const ab   = await res.arrayBuffer();
+      const tiff = await GeoTIFF.fromArrayBuffer(ab);
+      const img  = await tiff.getImage();
+      const rasters = await img.readRasters();
+      return {
+        width:   img.getWidth(),
+        height:  img.getHeight(),
+        rasters,                 // Array von TypedArrays (1 Band fuer mask/flux, 3 fuer rgb)
+      };
+    },
+
+    computeBbox(lat, lng, radius){
+      const dLat = radius / 111320;
+      const dLng = radius / (111320 * Math.cos(lat * Math.PI / 180));
+      return {
+        sw: { lat: lat - dLat, lng: lng - dLng },
+        ne: { lat: lat + dLat, lng: lng + dLng },
+      };
     },
 
     async buildingInsights(lat,lng){
@@ -852,6 +1204,448 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       if(!ph) return;
       ph.innerHTML = (loading?'<div class="spinner"></div>':'')+'<div>'+text+'</div>';
     },
+
+    hidePlaceholder(){
+      const ph = document.getElementById('roofPlaceholder');
+      if(ph) ph.style.display = 'none';
+    },
+  };
+
+  /* ============================================================
+   *  MapView — Canvas-Rendering der Solar-Layer
+   *  ------------------------------------------------------------
+   *  Zwei Canvas uebereinander:
+   *    #rgb-canvas   : Luftbild aus rgb.rasters[0..2]
+   *    #flux-canvas  : 3-Zonen-Heatmap (gruen/gelb/rot), nur fuer
+   *                    die per Floodfill isolierten Pixel des
+   *                    Nutzer-Daches – Nachbargebaeude bleiben weiss
+   *                    und damit (multiply) unsichtbar.
+   * ============================================================ */
+  const MapView = {
+
+    /* WGS84-bbox + lat/lng → Pixelkoordinate im Bild.
+       Bilder haben Origin oben-links; Latitude waechst nach Norden,
+       deswegen y aus (ne.lat - lat). */
+    latLngToPx(lat, lng, bbox, w, h){
+      const x = Math.floor((lng - bbox.sw.lng) / (bbox.ne.lng - bbox.sw.lng) * w);
+      const y = Math.floor((bbox.ne.lat - lat) / (bbox.ne.lat - bbox.sw.lat) * h);
+      return {
+        x: Math.max(0, Math.min(w-1, x)),
+        y: Math.max(0, Math.min(h-1, y)),
+      };
+    },
+
+    /* Nearest-Neighbor-Resample. mask/flux koennen pro Layer in
+       unterschiedlichen Aufloesungen kommen; wir bringen sie auf
+       die RGB-Groesse, weil die immer am hoechsten ist. */
+    resample(src, srcW, srcH, dstW, dstH){
+      if(srcW===dstW && srcH===dstH) return src;
+      const out = new src.constructor(dstW*dstH);
+      const xRatio = srcW / dstW, yRatio = srcH / dstH;
+      for(let y=0; y<dstH; y++){
+        const sy = Math.min(srcH-1, Math.floor(y*yRatio));
+        const off = sy*srcW;
+        const dOff = y*dstW;
+        for(let x=0; x<dstW; x++){
+          const sx = Math.min(srcW-1, Math.floor(x*xRatio));
+          out[dOff+x] = src[off+sx];
+        }
+      }
+      return out;
+    },
+
+    /* BFS-Floodfill (4-Nachbarschaft) auf der Maske.
+       Wenn der Startpixel selbst keine Maske hat (z.B. Geocoding
+       trifft den Vorgarten), suchen wir spiralfoermig den naechsten
+       Roof-Pixel im Umkreis von ~30 Pixeln. */
+    floodFill(mask, w, h, sx, sy){
+      const out = new Uint8Array(w*h);
+      let start = sy*w + sx;
+      if(!mask[start]){
+        let found = -1;
+        for(let r=1; r<=30 && found<0; r++){
+          for(let dy=-r; dy<=r && found<0; dy++){
+            for(let dx=-r; dx<=r; dx++){
+              if(Math.abs(dx)!==r && Math.abs(dy)!==r) continue;   // nur Ringkante
+              const nx=sx+dx, ny=sy+dy;
+              if(nx<0||ny<0||nx>=w||ny>=h) continue;
+              const idx = ny*w+nx;
+              if(mask[idx]){ found = idx; break; }
+            }
+          }
+        }
+        if(found<0) return out;
+        start = found;
+      }
+
+      // Klassisches BFS mit Queue + Visited-Map (= out selbst).
+      const queue = new Int32Array(w*h);
+      let qHead=0, qTail=0;
+      queue[qTail++] = start;
+      out[start] = 1;
+      while(qHead < qTail){
+        const i = queue[qHead++];
+        const x = i % w;
+        const y = (i - x) / w;
+        if(x>0)    { const n=i-1; if(!out[n] && mask[n]){ out[n]=1; queue[qTail++]=n; } }
+        if(x<w-1)  { const n=i+1; if(!out[n] && mask[n]){ out[n]=1; queue[qTail++]=n; } }
+        if(y>0)    { const n=i-w; if(!out[n] && mask[n]){ out[n]=1; queue[qTail++]=n; } }
+        if(y<h-1)  { const n=i+w; if(!out[n] && mask[n]){ out[n]=1; queue[qTail++]=n; } }
+      }
+      return out;
+    },
+
+    /* Min/Max Flux nur ueber das User-Dach – sonst dominiert
+       die Hintergrund-0-Region die Skala und alle Daecher werden gruen. */
+    fluxRange(flux, userRoof){
+      let min = Infinity, max = -Infinity;
+      for(let i=0; i<flux.length; i++){
+        if(!userRoof[i]) continue;
+        const v = flux[i];
+        if(!isFinite(v)) continue;
+        if(v<min) min=v;
+        if(v>max) max=v;
+      }
+      if(!isFinite(min) || !isFinite(max) || min===max){
+        // Fallback: feste NRW-Range, damit Heatmap ueberhaupt Farben kriegt
+        return { min:600, max:1200 };
+      }
+      return { min, max };
+    },
+
+    render(lat, lng){
+      const dec = State.solar.decoded;
+      const bbox = State.solar.bbox;
+      if(!dec || !bbox) return;
+
+      const w = dec.rgb.width, h = dec.rgb.height;
+
+      // Alle Layer auf RGB-Groesse bringen
+      const r = dec.rgb.rasters[0];
+      const g = dec.rgb.rasters[1];
+      const b = dec.rgb.rasters[2];
+      const mask0 = dec.mask.rasters[0];
+      const flux0 = dec.flux.rasters[0];
+      const mask  = MapView.resample(mask0, dec.mask.width, dec.mask.height, w, h);
+      const flux  = MapView.resample(flux0, dec.flux.width, dec.flux.height, w, h);
+
+      // Floodfill ab Geocoding-Punkt
+      const px = MapView.latLngToPx(lat, lng, bbox, w, h);
+      const userRoof = MapView.floodFill(mask, w, h, px.x, px.y);
+
+      // requestAnimationFrame um die putImageData-Last vom Layout-Pfad zu trennen.
+      // Bei ~640x640 px (40m@0.25m, ggf. upscaled) sind das ~400k Pixel pro Layer.
+      requestAnimationFrame(()=>{
+        const rgbCanvas  = document.getElementById('rgb-canvas');
+        const fluxCanvas = document.getElementById('flux-canvas');
+        rgbCanvas.width = w; rgbCanvas.height = h;
+        fluxCanvas.width = w; fluxCanvas.height = h;
+        const rgbCtx  = rgbCanvas.getContext('2d');
+        const fluxCtx = fluxCanvas.getContext('2d');
+
+        // RGB-Layer
+        const rgbData = rgbCtx.createImageData(w, h);
+        for(let i=0, j=0; i<w*h; i++, j+=4){
+          rgbData.data[j]   = r[i];
+          rgbData.data[j+1] = g[i];
+          rgbData.data[j+2] = b[i];
+          rgbData.data[j+3] = 255;
+        }
+        rgbCtx.putImageData(rgbData, 0, 0);
+
+        // Flux-Heatmap mit harten Zonen
+        const { min:fmin, max:fmax } = MapView.fluxRange(flux, userRoof);
+        const range = (fmax - fmin) || 1;
+        const fluxData = fluxCtx.createImageData(w, h);
+        for(let i=0, j=0; i<w*h; i++, j+=4){
+          if(!userRoof[i]){
+            // weiss: bei multiply unsichtbar → Luftbild bleibt original
+            fluxData.data[j]=255; fluxData.data[j+1]=255; fluxData.data[j+2]=255; fluxData.data[j+3]=255;
+            continue;
+          }
+          const t = (flux[i] - fmin) / range;
+          let cR, cG, cB;
+          if(t > 0.72){      cR=0x22; cG=0xc5; cB=0x5e; }   // gruen #22c55e
+          else if(t > 0.42){ cR=0xf5; cG=0x9e; cB=0x0b; }   // gelb  #f59e0b
+          else {             cR=0xef; cG=0x44; cB=0x44; }   // rot   #ef4444
+          fluxData.data[j]=cR; fluxData.data[j+1]=cG; fluxData.data[j+2]=cB; fluxData.data[j+3]=255;
+        }
+        fluxCtx.putImageData(fluxData, 0, 0);
+
+        Solar.hidePlaceholder();
+        document.getElementById('legend').classList.remove('is-hidden');
+      });
+    },
+
+    /* Fallback wenn dataLayers fehlen: Google Static Maps Satellitenbild als
+       reines Hintergrundbild. Keine Heatmap, aber der Nutzer sieht sein Haus. */
+    fallback(lat, lng){
+      const root = document.getElementById('roof');
+      // alte Canvases ausblenden, Static-Map als Background-Layer einfuegen
+      root.querySelectorAll('canvas').forEach(c=>c.style.display='none');
+      let fb = root.querySelector('.roof-fallback');
+      if(!fb){
+        fb = document.createElement('div');
+        fb.className = 'roof-fallback';
+        root.insertBefore(fb, root.firstChild);
+      }
+      if(CFG.apiKey){
+        const url = 'https://maps.googleapis.com/maps/api/staticmap'
+          + '?center='+lat+','+lng
+          + '&zoom=20&size=800x600&scale=2&maptype=satellite'
+          + '&key='+encodeURIComponent(CFG.apiKey);
+        fb.style.backgroundImage = 'url('+url+')';
+      }
+      Solar.showPlaceholder('Detaillierte Dach-Analyse vor Ort durch unseren Experten.', false);
+      document.getElementById('legend').classList.add('is-hidden');
+    },
+  };
+
+  /* ============================================================
+   *  Calculator — Wirtschaftlichkeits-Berechnung
+   *  ------------------------------------------------------------
+   *  Formeln 1:1 aus dem Pflichtenheft:
+   *    optKwp        = min(verbrauch/950 * 1.2, maxKwpAusSolar, 30)
+   *    module        = kwp*1000 / panelCapacityWatts
+   *    ertrag        = kwp * 950          (NRW-Wert)
+   *    eigenverbrauch= min(ertrag*0.32, verbrauch)
+   *    ersparnis     = eigenverbrauch*preis + einspeisung*8ct
+   *    investition   = kwp * 1400 €
+   *    amortisation  = investition / ersparnis
+   *    co2           = ertrag * 0.000434 t
+   *    baeume        = co2 * 80
+   * ============================================================ */
+  const Calculator = {
+    run(){
+      const c = State.consumption;
+      const sp = State.solar.building && State.solar.building.solarPotential;
+
+      // Panel-Daten aus Solar-API, sonst Default
+      const panelW   = (sp && sp.panelCapacityWatts) || 430;
+      const maxKwp   = sp ? (sp.maxArrayPanelsCount * panelW) / 1000 : 30;
+
+      // Optimale Anlage: 20% Reserve gegenueber dem nominellen Eigenverbrauchsbedarf,
+      // gedeckelt durch das physisch moegliche Dach-Maximum und 30 kWp (EEG-Schwelle).
+      const optKwp   = Math.min(c.kwh / 950 * 1.2, maxKwp, 30);
+      const module   = Math.round(optKwp * 1000 / panelW);
+      const ertrag   = optKwp * 950;
+      const eigen    = Math.min(ertrag * 0.32, c.kwh);
+      const einspeis = Math.max(0, ertrag - eigen);
+      const preis    = c.price / 100;       // ct/kWh → €/kWh
+      const ersparnis= eigen*preis + einspeis*0.08;
+      const investi  = optKwp * 1400;
+      const amort    = ersparnis>0 ? investi/ersparnis : 0;
+      const co2      = ertrag * 0.000434;
+      const baeume   = co2 * 80;
+
+      const r = {
+        optKwp, module, ertrag, eigen, einspeis,
+        ersparnis, investition: investi, amort, co2, baeume,
+        panelW, maxKwp,
+        sourceLabel: sp ? 'Auf Basis Ihrer Solar-API-Dachdaten.' :
+                          'Auf Basis Ihrer Adresse (Schätzwerte – wir prüfen vor Ort).',
+      };
+      State.result = r;
+
+      Calculator.write(r);
+      Chart.draw(r, c);
+    },
+
+    write(r){
+      // 4er-Grid befuellen
+      const grid = document.querySelector('.result-grid');
+      const set = (sel, val, unit)=>{
+        const card = grid.querySelector('[data-r="'+sel+'"]');
+        card.querySelector('.v').innerHTML = val+'<span class="u">'+unit+'</span>';
+      };
+      set('kwp',       fmt(r.optKwp,1),    ' kWp');
+      set('ersparnis', fmt(r.ersparnis,0), ' €');
+      set('amort',     fmt(r.amort,1),     ' Jahre');
+      set('co2',       fmt(r.co2,1),       ' t / Jahr');
+
+      document.getElementById('rcModule').textContent = fmt(r.module,0)+' Module à '+r.panelW+' Wp';
+      document.getElementById('rcInvest').textContent = 'Investition: '+fmt(r.investition,0)+' €';
+      document.getElementById('rcTrees').textContent  = '≈ '+fmt(Math.round(r.baeume),0)+' Bäume jährlich';
+      document.getElementById('resultSub').textContent= r.sourceLabel;
+    },
+  };
+
+  /* ============================================================
+   *  Chart — Balken-Diagramm 5/10/15/20 Jahre, ohne PV vs. mit PV
+   *  ------------------------------------------------------------
+   *  Strompreissteigerung 3% p.a.:
+   *    Kosten ohne PV (kumuliert) = sum_{t=0..N-1} verbrauch * preis_0 * 1.03^t
+   *    Kosten mit PV  (kumuliert) = investition
+   *                                 + sum_{t=0..N-1} (verbrauch-eigen) * preis_0 * 1.03^t
+   *                                 - sum_{t=0..N-1}  einspeis * 0.08
+   *
+   *  Wir zeichnen direkt auf #chart (Canvas), kein Chart-Lib –
+   *  spart 50+ KB und das Layout ist trivial (4 Gruppen, 2 Bars).
+   * ============================================================ */
+  const Chart = {
+    draw(r, c){
+      const years    = [5, 10, 15, 20];
+      const inflate  = 1.03;
+      const preis0   = c.price / 100;
+
+      const series = years.map(N=>{
+        let costNoPV = 0, costPV = 0;
+        for(let t=0; t<N; t++){
+          const p = preis0 * Math.pow(inflate, t);
+          costNoPV += c.kwh * p;
+          costPV   += (c.kwh - r.eigen) * p - r.einspeis * 0.08;
+        }
+        costPV += r.investition;
+        return { N, noPV: Math.max(0, costNoPV), pv: Math.max(0, costPV) };
+      });
+
+      // requestAnimationFrame: direkt nach goto(3) ist das Layout
+      // teilweise noch nicht angewendet → clientHeight kann 0 sein.
+      requestAnimationFrame(()=>Chart._paint(series));
+    },
+
+    _paint(series){
+      const canvas = document.getElementById('chart');
+      const wrap   = canvas.parentElement;
+      // HiDPI: Canvas in CSS-Pixel * dpr, sonst pixelig auf Retina
+      const dpr = window.devicePixelRatio || 1;
+      const cw = wrap.clientWidth || 600;
+      const ch = wrap.clientHeight || 280;
+      canvas.width  = cw * dpr; canvas.height = ch * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0,0,cw,ch);
+
+      // Layout
+      const padL=56, padR=20, padT=18, padB=36;
+      const innerW = cw - padL - padR, innerH = ch - padT - padB;
+      const max = Math.max(...series.flatMap(s=>[s.noPV, s.pv])) * 1.08 || 1;
+
+      // Y-Gridlines + Achsenbeschriftung
+      ctx.font = "500 11px 'Heebo', sans-serif";
+      ctx.fillStyle = '#7a8393';
+      ctx.strokeStyle = '#e4e8ef';
+      ctx.lineWidth = 1;
+      const lines = 4;
+      for(let i=0; i<=lines; i++){
+        const y = padT + innerH*(1 - i/lines);
+        ctx.beginPath();
+        ctx.moveTo(padL, y); ctx.lineTo(padL+innerW, y); ctx.stroke();
+        const v = max * i/lines;
+        ctx.fillText(fmt(Math.round(v/1000),0)+'k €', 8, y+4);
+      }
+
+      // Bars
+      const groupW = innerW / series.length;
+      const barW   = Math.min(38, groupW*0.32);
+      const gap    = 6;
+      series.forEach((s, i)=>{
+        const cx = padL + groupW*i + groupW/2;
+        const x1 = cx - barW - gap/2;
+        const x2 = cx + gap/2;
+        const h1 = innerH * (s.noPV/max);
+        const h2 = innerH * (s.pv  /max);
+        const y1 = padT + innerH - h1;
+        const y2 = padT + innerH - h2;
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(x1, y1, barW, h1);
+        ctx.fillStyle = '#0D73FC';
+        ctx.fillRect(x2, y2, barW, h2);
+
+        // Label
+        ctx.fillStyle = '#1d1d2e';
+        ctx.font = "700 12px 'Heebo', sans-serif";
+        ctx.textAlign = 'center';
+        ctx.fillText(s.N+' Jahre', cx, padT+innerH+22);
+        ctx.textAlign = 'start';
+      });
+    },
+  };
+
+  /* ============================================================
+   *  Lead — Formular-Validierung + Webhook-Submit
+   * ============================================================ */
+  const Lead = {
+    init(){
+      const form = document.getElementById('leadForm');
+      form.addEventListener('submit', Lead.submit);
+    },
+
+    validate(form){
+      let ok = true;
+      const setErr = (id, on, msg)=>{
+        const f = document.getElementById(id).closest('.field');
+        f.classList.toggle('has-error', on);
+        if(on && msg) f.querySelector('.field-error').textContent = msg;
+        if(on) ok = false;
+      };
+      const v = id => document.getElementById(id).value.trim();
+      setErr('leadName',  !v('leadName'));
+      setErr('leadPhone', !v('leadPhone'));
+      const email = v('leadEmail');
+      setErr('leadEmail', !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+                          'Bitte gültige E-Mail-Adresse angeben.');
+      const consent = document.getElementById('leadDsgvo');
+      const consentBox = document.getElementById('leadConsent');
+      consentBox.classList.toggle('has-error', !consent.checked);
+      if(!consent.checked) ok = false;
+      return ok;
+    },
+
+    async submit(e){
+      e.preventDefault();
+      const form = e.currentTarget;
+      if(!Lead.validate(form)) return;
+
+      const r = State.result || {};
+      const payload = {
+        name:    document.getElementById('leadName').value.trim(),
+        phone:   document.getElementById('leadPhone').value.trim(),
+        email:   document.getElementById('leadEmail').value.trim(),
+        zeitraum:document.getElementById('leadWhen').value,
+        nachricht:document.getElementById('leadMsg').value.trim(),
+        address: State.address.text,
+        lat:     State.address.lat,
+        lng:     State.address.lng,
+        verbrauch:        State.consumption.kwh,
+        strompreis:       State.consumption.price,
+        eAuto:            State.consumption.eAuto,
+        empfohlene_kwp:   r.optKwp,
+        ersparnis_jahr:   r.ersparnis,
+        amortisation:     r.amort,
+        timestamp:        new Date().toISOString(),
+      };
+
+      const btn = document.getElementById('leadSubmit');
+      btn.disabled = true; btn.textContent = 'Wird gesendet …';
+
+      let delivered = false;
+      if(CFG.leadWebhook){
+        try{
+          const res = await fetch(CFG.leadWebhook, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(payload),
+          });
+          delivered = res.ok;
+          if(!res.ok) console.error('[PV] Lead-Webhook HTTP', res.status);
+        }catch(err){
+          console.error('[PV] Lead-Webhook Fehler:', err);
+        }
+      }
+      if(!delivered){
+        // Fallback: kein Webhook konfiguriert oder Netzfehler – Daten zumindest in
+        // der Console + localStorage sichern, damit nichts verloren geht.
+        console.info('[PV] Lead (Fallback):', payload);
+        try{ localStorage.setItem('pv_lead_'+Date.now(), JSON.stringify(payload)); }catch(_){}
+      }
+
+      // Form ausblenden, Success zeigen
+      form.style.display = 'none';
+      document.querySelector('.cta').style.display = 'none';
+      document.getElementById('leadSuccess').style.display = 'block';
+      document.getElementById('leadSuccess').scrollIntoView({behavior:'smooth', block:'center'});
+    },
   };
 
   /* ============================================================
@@ -915,6 +1709,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     Shell.init();
     Search.init();
     Consumption.init();
+    Lead.init();
   });
 
 })();
