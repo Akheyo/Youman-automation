@@ -426,6 +426,31 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 }
 .cesium-loading.is-hidden{display:none}
 
+/* ---------- Add-on Buttons (Speicher / Wallbox / Waermepumpe) ---------- */
+.addons{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.addon{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 12px;
+  background:var(--bg-s);color:var(--text);
+  border:1px solid var(--border);
+  text-align:left;
+  transition:border-color .15s,background .15s;
+}
+.addon:hover{border-color:var(--blue)}
+.addon.is-active{
+  background:#eaf2ff;border-color:var(--blue);
+}
+.addon .addon-ic{
+  flex:0 0 36px;width:36px;height:36px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:#fff;border:1px solid var(--border);
+  font-size:18px;line-height:1;
+}
+.addon.is-active .addon-ic{border-color:var(--blue)}
+.addon strong{display:block;font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--text)}
+.addon em{display:block;font-size:11px;font-weight:500;letter-spacing:.04em;color:var(--muted);font-style:normal;margin-top:2px}
+.addon.is-active em{color:var(--blue)}
+
 /* ---------- Selection-Box (Phase 3 Sidebar) ---------- */
 .sel-box{
   background:#fff;border:1px solid var(--border);
@@ -496,6 +521,31 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 .r-card.is-hl .extra{color:#fff}
 .r-card.is-hl .v .u{color:#cfe2ff}
 .r-card.is-hl .extra{color:#cfe2ff}
+
+/* ---------- Metric-Strip: Autarkie + Eigenverbrauch + Ertrag ---------- */
+.metric-strip{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:16px;
+  margin:0 0 36px;
+}
+.metric{
+  background:#fff;border:1px solid var(--border);
+  padding:20px 22px;
+}
+.metric-bar{
+  position:relative;
+  height:6px;background:var(--bg-s);
+  margin-bottom:14px;
+}
+.metric-bar-fill{
+  position:absolute;left:0;top:0;bottom:0;
+  background:var(--blue);
+  transition:width .8s cubic-bezier(.2,.8,.2,1);
+}
+.metric-bar-fill--alt{background:var(--gruen)}
+.metric-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+.metric-k{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.metric-v{font-size:24px;font-weight:700;color:var(--text)}
+.metric-extra{font-size:12px;color:var(--muted);line-height:1.45}
 
 .chart-wrap{
   background:#fff;border:1px solid var(--border);
@@ -612,6 +662,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   .solar-stat:last-child{border-bottom:0}
   .step3{padding:32px 20px}
   .result-grid{grid-template-columns:repeat(2,1fr)}
+  .metric-strip{grid-template-columns:1fr}
   .cta{flex-direction:column;align-items:flex-start;padding:32px}
   .cta h3{font-size:24px}
   .lead-form{padding:28px 20px}
@@ -787,6 +838,35 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         </div>
       </div>
 
+      <!-- Geplante Erweiterungen: Speicher / Wallbox / Waermepumpe.
+           Aktivierte Items wirken auf Verbrauch & Eigenverbrauchsquote in Calculator. -->
+      <div class="form-block" style="margin-bottom:0">
+        <h3>Optionen für Ihre Anlage</h3>
+        <div class="addons" id="addons">
+          <button type="button" class="addon" data-addon="storage">
+            <span class="addon-ic">🔋</span>
+            <span>
+              <strong>Stromspeicher</strong>
+              <em>+ Eigenverbrauch ~70 %</em>
+            </span>
+          </button>
+          <button type="button" class="addon" data-addon="wallbox">
+            <span class="addon-ic">🚗</span>
+            <span>
+              <strong>Wallbox geplant</strong>
+              <em>+ ca. 3.000 kWh / Jahr</em>
+            </span>
+          </button>
+          <button type="button" class="addon" data-addon="heatpump">
+            <span class="addon-ic">🔥</span>
+            <span>
+              <strong>Wärmepumpe geplant</strong>
+              <em>+ ca. 4.500 kWh / Jahr</em>
+            </span>
+          </button>
+        </div>
+      </div>
+
       <!-- Modul-Auswahl-Box: live aus Roof3D.getActiveModules() befuellt -->
       <div class="sel-box">
         <h3>Ihre Auswahl</h3>
@@ -845,6 +925,37 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         <div class="k">CO₂-Einsparung</div>
         <div class="v">–<span class="u"> t / Jahr</span></div>
         <div class="extra" id="rcTrees">≈ – Bäume jährlich</div>
+      </div>
+    </div>
+
+    <!-- Sekundaerer Stripe: Autarkie + Eigenverbrauchsquote + Jahresertrag -->
+    <div class="metric-strip">
+      <div class="metric">
+        <div class="metric-bar">
+          <div class="metric-bar-fill" id="barAutark" style="width:0%"></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-k">Autarkiegrad</div>
+          <div class="metric-v" id="rcAutark">– %</div>
+        </div>
+        <div class="metric-extra">Anteil Ihres Strombedarfs aus eigener Erzeugung</div>
+      </div>
+      <div class="metric">
+        <div class="metric-bar">
+          <div class="metric-bar-fill metric-bar-fill--alt" id="barEvq" style="width:0%"></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-k">Eigenverbrauchsquote</div>
+          <div class="metric-v" id="rcEvq">– %</div>
+        </div>
+        <div class="metric-extra">Anteil Ihres Sonnenstroms den Sie selbst nutzen</div>
+      </div>
+      <div class="metric">
+        <div class="metric-row">
+          <div class="metric-k">Jahresertrag</div>
+          <div class="metric-v" id="rcErtrag">– kWh</div>
+        </div>
+        <div class="metric-extra" id="rcErtragSrc">Berechnet aus Solar-API-Daten</div>
       </div>
     </div>
 
@@ -972,7 +1083,11 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     // status:  idle | loading | ok | no-coverage | billing | error
     // decoded: { rgb:{w,h,r,g,b}, mask:{w,h,data}, flux:{w,h,data,min,max} }
     // bbox:    selbst berechnete WGS84-Box {sw:{lat,lng}, ne:{lat,lng}}
-    consumption: { kwh:4500, price:35, eAuto:false },
+    consumption: {
+      kwh:4500, price:35, eAuto:false,
+      // Add-ons: Stromspeicher, Wallbox-geplant, Waermepumpe-geplant
+      addons: { storage:false, wallbox:false, heatpump:false },
+    },
     result: null,           // gefuellt von Calculator.run() – letzter Berechnungs-Output
   };
 
@@ -1198,23 +1313,43 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       // Adresse auf Step 2 anzeigen
       document.getElementById('addrTag').textContent = State.address.text || 'Adresse';
 
+      if(State.solar.status==='loading') return null;
+      State.solar.status = 'loading';
+
+      const {lat, lng} = State.address;
+
+      // ----- Tier 1: NRW Solarkataster (LANUK) — fuer Adressen in NRW -----
+      // Genauigkeit: Laserscan 0,5 m, kostenlos, deckt das gesamte Bundesland ab.
+      // Geht via CORS-Proxy (corsproxy.io default oder eigener Worker via PV_CONFIG.nrwProxy).
+      if(NRWSolar.enabled(lat, lng)){
+        try{
+          const nrw = await NRWSolar.loadForAddress(lat, lng);
+          State.solar.building = nrw;
+          State.solar.source   = 'NRW';
+          Solar.renderStats(nrw);
+          State.solar.status   = 'ok';
+          document.getElementById('btnNext2').disabled = false;
+          console.info('[Solar] NRW Solarkataster geliefert: '+
+            (nrw.solarPotential.roofSegmentStats || []).length + ' Segmente, '+
+            (nrw.solarPotential.solarPanels || []).length + ' Panels-aequivalent');
+          return nrw;
+        } catch(err){
+          console.warn('[Solar] NRW Solarkataster fehlgeschlagen, Fallback auf Google:', err.message);
+        }
+      }
+
+      // ----- Tier 2: Google Solar API -----
       if(!CFG.apiKey){
         Solar.showPlaceholder('Kein API-Key – Schätzwerte werden im Ergebnis verwendet.');
         document.getElementById('btnNext2').disabled = false;
         return null;
       }
-      if(State.solar.status==='loading') return null;
-
-      State.solar.status = 'loading';
-
-      // Phase 3: Wir brauchen nur noch buildingInsights – die GeoTIFF-Layer
-      // werden durch Cesium 3D-Tiles + Roof3D-Polygone ersetzt.
-      const {lat, lng} = State.address;
       try{
         const bi = await Solar.buildingInsights(lat, lng);
         State.solar.building = bi;
+        State.solar.source   = 'GOOGLE';
         Solar.renderStats(bi);
-        State.solar.status = 'ok';
+        State.solar.status   = 'ok';
         document.getElementById('btnNext2').disabled = false;
         return bi;
       } catch(err){
@@ -1725,30 +1860,51 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       };
 
       let built = 0;
+      // NRW-Daten haben echte Polygon-Ringe; Google-Daten haben Panel-Listen,
+      // aus denen wir eine konkave Huelle bauen muessen.
+      const isNRW = !!sp._nrw;
+
       bySegment.forEach((segPanels, segIdx) => {
         const seg   = segs[segIdx] || {};
         const az    = (seg.azimuthDegrees == null) ? 180 : seg.azimuthDegrees;
         const pitch = (seg.pitchDegrees   == null) ? 20  : seg.pitchDegrees;
-        const type  = this._typeFromSegment(az, pitch);
 
-        // Konkave Huelle aller Panel-Eckpunkte = Dach-Umriss-Approximation
-        const pts = [];
-        segPanels.forEach(p => {
-          const isLand = p.orientation === 'LANDSCAPE';
-          const w = isLand ? panelH : panelW;
-          const h = isLand ? panelW : panelH;
-          const corners = this._rotatedRect(
-            p.center.latitude, p.center.longitude, w, h, az
-          );
-          corners.forEach(c => pts.push(c));
-        });
-        const hull = this._concaveHull(pts, 0.000018);
-        if(hull.length < 3) return;
+        // Eignung: bei NRW kommt die Quelle direkt aus dem Kataster, sonst Heuristik
+        let type;
+        if(isNRW && seg._nrw && seg._nrw.eignung){
+          const e = seg._nrw.eignung;
+          if(/sehr gut|sehr_gut|hoch/.test(e))      type = 'good';
+          else if(/^gut|^geeignet|mittel/.test(e))   type = 'ok';
+          else if(/bedingt|niedrig/.test(e))         type = 'ok';
+          else if(/ungeeignet|nicht/.test(e))        type = 'bad';
+          else type = this._typeFromSegment(az, pitch);
+        } else {
+          type = this._typeFromSegment(az, pitch);
+        }
+
+        let hull;
+        if(isNRW && seg._nrw && seg._nrw.ring){
+          // NRW: GeoJSON-Ring direkt verwenden ([lng,lat] Paare → {lat,lng})
+          hull = seg._nrw.ring.map(c => ({ lng: c[0], lat: c[1] }));
+        } else {
+          // Google: konkave Huelle ueber alle Panel-Eckpunkte
+          const pts = [];
+          segPanels.forEach(p => {
+            const isLand = p.orientation === 'LANDSCAPE';
+            const w = isLand ? panelH : panelW;
+            const h = isLand ? panelW : panelH;
+            const corners = this._rotatedRect(
+              p.center.latitude, p.center.longitude, w, h, az
+            );
+            corners.forEach(c => pts.push(c));
+          });
+          hull = this._concaveHull(pts, 0.000018);
+        }
+        if(!hull || hull.length < 3) return;
 
         // WICHTIG: Polygon-Positionen OHNE Hoehe (auf dem WGS84-Ellipsoid).
         // Mit classificationType=CESIUM_3D_TILE projiziert Cesium die 2D-Form
-        // wie einen Stempel von oben auf die Dachflaeche der 3D-Tiles. Die
-        // tatsaechliche Dach-Hoehe ist dabei egal -> kein Geoid-vs-Ellipsoid-Bug.
+        // wie einen Stempel von oben auf die Dachflaeche der 3D-Tiles.
         const positions = hull.map(p =>
           Cesium.Cartesian3.fromDegrees(p.lng, p.lat)
         );
@@ -2171,6 +2327,177 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   };
 
   /* ============================================================
+   *  NRWSolar — Solarkataster NRW (LANUK / Energieatlas)
+   *  ------------------------------------------------------------
+   *  Frei verfuegbares Solarpotenzial-Kataster der LANUK auf Basis
+   *  hochaufgeloester Laserscan-Daten (0,5 m Aufloesung). Liefert
+   *  exakte Dachflaechen-Polygone mit Eignung, Ausrichtung, Neigung
+   *  und Jahresertrag fuer JEDE Adresse in NRW – auch wo Google's
+   *  Solar API nichts findet.
+   *
+   *  WICHTIG: NRW WFS sendet keine CORS-Header, deshalb brauchen wir
+   *  einen Proxy. Standard ist ein oeffentlicher (corsproxy.io) als
+   *  Quick-Start; fuer Produktion eigenen Cloudflare Worker
+   *  einrichten und in PV_CONFIG.nrwProxy hinterlegen.
+   *
+   *  Konfiguration in window.PV_CONFIG:
+   *    nrwProxy:    URL-Praefix vor dem WFS-Aufruf (z.B. eigener Worker)
+   *    nrwEnabled:  bool, default true fuer NRW-Adressen
+   * ============================================================ */
+  const NRWSolar = {
+    // Bbox-Padding um lat/lng (in Grad) — ~50m je Seite reicht fuer ein Einfamilienhaus.
+    BBOX_PADDING: 0.0005,
+
+    // Geheime Layer-Namen aus dem LANUK-WFS. Bei Aenderungen kann das ueber
+    // PV_CONFIG.nrwLayer ueberschrieben werden.
+    LAYER: 'sk_dachflaechen',
+
+    // Heuristik: NRW deckt Bundesland NRW komplett ab. Ungefaehre Bbox.
+    isInNRW(lat, lng){
+      return lat >= 50.32 && lat <= 52.53 && lng >= 5.86 && lng <= 9.46;
+    },
+
+    enabled(lat, lng){
+      if(CFG.nrwEnabled === false) return false;
+      return this.isInNRW(lat, lng);
+    },
+
+    async fetchRoofs(lat, lng){
+      const minLat = lat - this.BBOX_PADDING;
+      const maxLat = lat + this.BBOX_PADDING;
+      const minLng = lng - this.BBOX_PADDING;
+      const maxLng = lng + this.BBOX_PADDING;
+      const layer  = CFG.nrwLayer || this.LAYER;
+
+      // WFS GetFeature-URL — GeoJSON output. WFS nutzt typischerweise
+      // EPSG:25832 (UTM 32N) oder EPSG:4326 (WGS84). Wir bitten um 4326.
+      const params = new URLSearchParams({
+        SERVICE: 'WFS',
+        VERSION: '2.0.0',
+        REQUEST: 'GetFeature',
+        TYPENAMES: layer,
+        OUTPUTFORMAT: 'application/json',
+        SRSNAME: 'EPSG:4326',
+        BBOX: minLat + ',' + minLng + ',' + maxLat + ',' + maxLng + ',EPSG:4326',
+        COUNT: '50',
+      });
+      const baseUrl = 'https://www.wfs.nrw.de/umwelt/erneuerbare_energien_wfs?' + params.toString();
+      // CORS-Proxy: ohne kommt der Browser-Call beim Government-WFS nicht durch
+      const proxy = CFG.nrwProxy || 'https://corsproxy.io/?';
+      const url = proxy + encodeURIComponent(baseUrl);
+
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('NRW WFS HTTP '+res.status);
+      const ct = res.headers.get('content-type') || '';
+      if(!ct.includes('json')){
+        // GeoServer liefert manchmal XML-ServiceException als 200. Erkennen + werfen.
+        const txt = await res.text();
+        throw new Error('NRW WFS unerwarteter Content-Type: '+ct+' / Body: '+txt.slice(0,200));
+      }
+      const d = await res.json();
+      if(!d.features || !d.features.length) throw new Error('NRW WFS: keine Features in Bbox');
+      return d.features;
+    },
+
+    /* GeoJSON-Features → Solar-API-aehnliches Format, damit Roof3D ohne
+       Aenderungen damit arbeiten kann. Wir mappen die NRW-Attribute
+       auf das, was Google Solar API liefert. Felder werden defensiv gelesen,
+       weil das LANUK gelegentlich Schema-Renames macht. */
+    toSolarPotential(features){
+      const segs = [];
+      const panels = [];
+
+      features.forEach((feat, idx) => {
+        const p = feat.properties || {};
+
+        // Eignung – LANUK nutzt z.B. "sehr gut", "gut", "bedingt", "ungeeignet"
+        const eignung = String(p.eignung || p.Eignung || p.suitability || '').toLowerCase();
+
+        // Ausrichtung in Grad (0-360, wobei 180 = Süd)
+        const az = num(p.azimuth || p.azimut || p.ausrichtung || p.exposition, 180);
+        // Neigung in Grad
+        const tilt = num(p.neigung || p.tilt || p.pitch || p.dachneigung, 30);
+        // Flaeche in m² (geeignete Fläche)
+        const area = num(p.geeignete_flaeche_m2 || p.flaeche || p.area || p.nutzbare_flaeche, 0);
+        // Jahresertrag in kWh/Jahr
+        const ertrag = num(p.ertrag_kwh || p.ertrag || p.yearly_kwh || p.solarertrag, 0);
+        // Modul-Anzahl
+        const nModules = num(p.module_anzahl || p.modulanzahl || p.modules, 0);
+
+        // Polygon-Geometrie: NRW liefert MultiPolygon oder Polygon
+        const geom = feat.geometry;
+        if(!geom || !geom.coordinates) return;
+        const rings = (geom.type === 'MultiPolygon') ? geom.coordinates[0] : geom.coordinates;
+        if(!rings || !rings[0]) return;
+        const ring = rings[0]; // Aussenring
+
+        // Centroid berechnen fuer Segmentmittelpunkt
+        let cLat=0, cLng=0;
+        ring.forEach(c => { cLng += c[0]; cLat += c[1]; });
+        cLat /= ring.length; cLng /= ring.length;
+
+        segs.push({
+          // Schema kompatibel mit Google Solar API
+          azimuthDegrees: az,
+          pitchDegrees:   tilt,
+          stats: { areaMeters2: area, sunshineQuantiles: [] },
+          center: { latitude: cLat, longitude: cLng },
+          // Wichtig fuer Roof3D: kein Hoehen-Wert noetig, Cesium classification zieht's
+          planeHeightAtCenterMeters: 0,
+          // Custom-Feld fuer NRW-Zugriff
+          _nrw: { eignung, ring, ertragKwh: ertrag, nModules },
+        });
+
+        // Wir generieren synthetische Panel-Markers im Inneren des Polygons:
+        // verteilen nModules-Punkte gleichmaessig im Bounding Polygon. Das reicht
+        // damit Roof3D die Hülle ueber die Panels nicht braucht — wir liefern
+        // direkt eine eigene Hülle.
+        const pPerSeg = nModules > 0 ? nModules : Math.max(1, Math.round(area / 1.7 / 6));
+        // Vereinfachte Verteilung: gleichmaessig auf der Polygonflaeche (Centroid)
+        // Echte Verteilung waere komplexer — fuer die Berechnung egal,
+        // weil wir den Polygon-Umriss direkt aus NRW haben.
+        for(let i=0; i<pPerSeg; i++){
+          panels.push({
+            center: { latitude: cLat, longitude: cLng },
+            orientation: 'PORTRAIT',
+            yearlyEnergyDcKwh: ertrag / Math.max(1, pPerSeg),
+            segmentIndex: idx,
+          });
+        }
+      });
+
+      const totalKwp = panels.length * 0.4;        // 400Wp Default
+      const totalArea = segs.reduce((s, x) => s + (x.stats.areaMeters2 || 0), 0);
+
+      return {
+        imageryQuality: 'NRW_KATASTER',
+        solarPotential: {
+          maxArrayPanelsCount: panels.length,
+          maxArrayAreaMeters2: totalArea,
+          panelCapacityWatts: 400,
+          panelHeightMeters: 1.722,
+          panelWidthMeters: 1.134,
+          wholeRoofStats: { areaMeters2: totalArea },
+          roofSegmentStats: segs,
+          solarPanels: panels,
+          // Stash der Rohdaten fuer Roof3D._buildSegmentsFromNRW-Spezialfall
+          _nrw: true,
+        },
+      };
+    },
+
+    /* Komfortable End-to-End-Funktion: Adresse rein, Solar-API-aehnliches
+       Result raus. Wirft bei Fehlern → Caller faellt auf Google Solar API zurueck. */
+    async loadForAddress(lat, lng){
+      if(!this.enabled(lat, lng)){
+        throw new Error('NRWSolar: Adresse außerhalb NRW oder deaktiviert');
+      }
+      const features = await this.fetchRoofs(lat, lng);
+      return this.toSolarPotential(features);
+    },
+  };
+
+  /* ============================================================
    *  Step2 — Orchestrator: 3D-Init + Solar-Daten + Dach-Polygone
    *  ------------------------------------------------------------
    *  Cesium-Init und Solar-API-Call laufen parallel. Sobald beides
@@ -2375,11 +2702,37 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         }
       }
 
-      const eigen    = Math.min(ertrag * 0.32, c.kwh);
+      // ----- Add-on-Effekte auf Verbrauch und Eigenverbrauchsquote -----
+      // Wallbox + Waermepumpe vergroessern den Verbrauch (mehr Eigenstrom-Potenzial).
+      // Speicher hebt die Eigenverbrauchsquote von ~32% auf ~70% an.
+      const a = c.addons || {};
+      const baseKwh = c.kwh;
+      let totalKwh = baseKwh;
+      if(a.wallbox)  totalKwh += 3000;
+      if(a.heatpump) totalKwh += 4500;
+
+      // Eigenverbrauchsquote: ohne Speicher ~32%, mit ~70%; je nach Anlage etwas variabel.
+      // Der "Sweet Spot" ist wenn die Anlage etwa zum Verbrauch passt; Ueberschuss skaliert nach unten.
+      let evqBase = a.storage ? 0.70 : 0.32;
+      // Wenn die Anlage deutlich groesser ist als der Verbrauch, sinkt die Quote relativ
+      const ratio = ertrag / Math.max(totalKwh, 1);
+      if(ratio > 1.3) evqBase *= (1 - (ratio - 1.3) * 0.25);
+      const evq = Math.max(0.15, Math.min(0.95, evqBase));
+
+      const eigen    = Math.min(ertrag * evq, totalKwh);
       const einspeis = Math.max(0, ertrag - eigen);
+      // Autarkiegrad = Anteil des Strombedarfs der durch eigene Erzeugung gedeckt wird
+      const autark   = Math.min(1, eigen / Math.max(totalKwh, 1));
+
       const preis    = c.price / 100;       // ct/kWh → €/kWh
       const ersparnis= eigen*preis + einspeis*0.08;
-      const investi  = optKwp * 1400;
+
+      // Investitions-Aufschlag je Add-on
+      let investi = optKwp * 1400;
+      if(a.storage)  investi += 8000;       // 10 kWh Speicher Pauschale
+      if(a.wallbox)  investi += 1500;       // 11 kW Wallbox + Installation
+      // Waermepumpe gehoert nicht zur PV-Anlage, daher kein Aufschlag
+
       const amort    = ersparnis>0 ? investi/ersparnis : 0;
       const co2      = ertrag * 0.000434;
       const baeume   = co2 * 80;
@@ -2388,12 +2741,14 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         optKwp, module, ertrag, eigen, einspeis,
         ersparnis, investition: investi, amort, co2, baeume,
         panelW, maxKwp,
+        evq, autark, totalKwh,
+        addons: { ...a },
         sourceLabel: source,
       };
       State.result = r;
 
       Calculator.write(r);
-      Chart.draw(r, c);
+      Chart.draw(r, { kwh: totalKwh, price: c.price });
     },
 
     // Live-Update der Auswahl-Sidebar in Step 2 (nicht das Vollbild-Ergebnis)
@@ -2417,6 +2772,29 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       document.getElementById('rcInvest').textContent = 'Investition: '+fmt(r.investition,0)+' €';
       document.getElementById('rcTrees').textContent  = '≈ '+fmt(Math.round(r.baeume),0)+' Bäume jährlich';
       document.getElementById('resultSub').textContent= r.sourceLabel;
+
+      // Metric-Strip (Autarkie / Eigenverbrauch / Ertrag)
+      const elAutark = document.getElementById('rcAutark');
+      const elEvq    = document.getElementById('rcEvq');
+      const elErtrag = document.getElementById('rcErtrag');
+      const elBarA   = document.getElementById('barAutark');
+      const elBarE   = document.getElementById('barEvq');
+      if(elAutark) elAutark.textContent = fmt(r.autark*100, 0) + ' %';
+      if(elEvq)    elEvq.textContent    = fmt(r.evq*100, 0) + ' %';
+      if(elErtrag) elErtrag.textContent = fmt(Math.round(r.ertrag), 0) + ' kWh';
+      if(elBarA)   elBarA.style.width   = (r.autark*100).toFixed(1) + '%';
+      if(elBarE)   elBarE.style.width   = (r.evq*100).toFixed(1) + '%';
+
+      // Add-on-Hinweis im Untertitel
+      const addonsActive = r.addons && (r.addons.storage || r.addons.wallbox || r.addons.heatpump);
+      if(addonsActive){
+        const parts = [];
+        if(r.addons.storage)  parts.push('Speicher');
+        if(r.addons.wallbox)  parts.push('Wallbox');
+        if(r.addons.heatpump) parts.push('Wärmepumpe');
+        const note = ' · Inkl. ' + parts.join(' + ') + '.';
+        document.getElementById('resultSub').textContent = r.sourceLabel + note;
+      }
     },
   };
 
@@ -2608,6 +2986,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       const yes   = document.getElementById('eAutoYes');
       const no    = document.getElementById('eAutoNo');
       const quick = document.getElementById('quick');
+      const addons= document.getElementById('addons');
 
       kwh  .addEventListener('input', ()=>{ State.consumption.kwh   = num(kwh.value,4500); Consumption.syncQuick(); });
       price.addEventListener('input', ()=>{ State.consumption.price = num(price.value,35); });
@@ -2623,7 +3002,26 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         });
       });
 
+      // Add-on Toggles
+      if(addons){
+        addons.querySelectorAll('.addon').forEach(b=>{
+          b.addEventListener('click', ()=>Consumption.toggleAddon(b.dataset.addon));
+        });
+      }
+
       Consumption.syncQuick();
+    },
+
+    toggleAddon(name){
+      const a = State.consumption.addons;
+      a[name] = !a[name];
+      const btn = document.querySelector('.addon[data-addon="'+name+'"]');
+      if(btn) btn.classList.toggle('is-active', a[name]);
+      // Wallbox-Add-on hat semantische Ueberlappung mit eAuto-Toggle:
+      // wer "Wallbox geplant" anklickt, hat ja eigentlich auch ein E-Auto.
+      if(name === 'wallbox' && a.wallbox && !State.consumption.eAuto){
+        Consumption.setEauto(true);
+      }
     },
 
     setEauto(on){
