@@ -1,0 +1,42 @@
+<!--
+  A&B Solarenergy PV-Konfigurator — Standalone-HTML-Bundle.
+
+  Falls iframe nicht erwünscht ist (z.B. Theme-Restriktionen),
+  kann der Konfigurator auch auf dem WP-Seitencontainer in einem
+  bereits vorbereiteten Section-Element eingebettet werden.
+
+  Voraussetzung: Custom-Domain konfig.ab-solarenergy.de zeigt auf Vercel.
+-->
+<div id="ab-pv-mount" style="width:100%; min-height: 720px;"></div>
+<noscript>
+  <p>
+    Der PV-Konfigurator benötigt JavaScript.
+    Sie erreichen uns auch direkt unter
+    <a href="https://www.ab-solarenergy.de/kontakt">ab-solarenergy.de/kontakt</a>.
+  </p>
+</noscript>
+<script>
+(function () {
+  var mount = document.getElementById('ab-pv-mount');
+  if (!mount) return;
+
+  // Spawn an iframe pointing at the embed page. Same UX as the iframe-snippet,
+  // but we keep it inline-named for theme-CSS compatibility.
+  var iframe = document.createElement('iframe');
+  iframe.src = 'https://konfig.ab-solarenergy.de/embed';
+  iframe.title = 'A&B Solarenergy PV-Konfigurator';
+  iframe.setAttribute('loading', 'lazy');
+  iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+  iframe.setAttribute('allow', 'geolocation; fullscreen');
+  iframe.style.cssText = 'width:100%; border:0; display:block; min-height:720px; background:#f9fafc;';
+  mount.appendChild(iframe);
+
+  window.addEventListener('message', function (e) {
+    if (e.origin !== 'https://konfig.ab-solarenergy.de') return;
+    if (!e.data || e.data.type !== 'ab-pv-resize') return;
+    if (typeof e.data.height === 'number' && e.data.height > 400) {
+      iframe.style.height = e.data.height + 'px';
+    }
+  });
+})();
+</script>
