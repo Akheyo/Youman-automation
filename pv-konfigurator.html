@@ -17,9 +17,16 @@
 <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
 
 <!-- CesiumJS: Photorealistic 3D Tiles von Google + interaktive Dach-Polygone.
-     v1.122 fixiert. KEIN Cesium-ion-Token noetig – wir laden tile.googleapis.com direkt. -->
+     v1.122 fixiert. KEIN Cesium-ion-Token noetig – wir laden tile.googleapis.com direkt.
+     ACHTUNG: Google blockiert seit 2025/26 in der EEA Map Tiles API ohne Sales-Freigabe.
+     Bei 403 faellt der Code automatisch auf Leaflet + ESRI World Imagery zurueck. -->
 <link href="https://cdn.jsdelivr.net/npm/cesium@1.122.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.122.0/Build/Cesium/Cesium.js"></script>
+
+<!-- Leaflet: 2D-Fallback wenn 3D Tiles nicht verfuegbar.
+     Verwendet ESRI World Imagery (frei nutzbar, kein API-Key). -->
+<link href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- TEST-KEY: vor Produktiv-Einsatz durch Referrer-restricted Key der WordPress-Domain ersetzen.
      Solar API + Map Tiles API + Maps JS + Places + Geocoding muessen aktiviert sein. -->
@@ -426,6 +433,12 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 }
 .cesium-loading.is-hidden{display:none}
 
+/* Leaflet 2D-Fallback: Container fuellt den selben cesium-wrap aus */
+#leaflet-container{position:absolute;inset:0;background:#0d1424}
+#leaflet-container.is-hidden{display:none}
+.leaflet-container{font-family:var(--font);background:#0d1424}
+/* Polygon-Hover wirkt nicht durch CSS, sondern via JS-Material-Wechsel */
+
 /* ---------- Add-on Buttons (Speicher / Wallbox / Waermepumpe) ---------- */
 .addons{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .addon{
@@ -762,6 +775,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
            damit die alten MapView-Referenzen nicht crashen falls sie aus Reserve-Pfaden aufgerufen werden. -->
       <div class="cesium-wrap">
         <div id="cesium-container"></div>
+        <div id="leaflet-container" class="is-hidden"></div>
 
         <div class="cesium-loading" id="cesiumLoading">
           <div class="spinner"></div>
@@ -1779,10 +1793,18 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 
       } catch(e){
         console.error('[Map3D] 3D Tiles Fehler:', e);
-        const status = e && (e.statusCode || (e.message||'').match(/\b(403|404)\b/)?.[1]);
-        if(String(status)==='403'){
-          Shell.banner('err', '3D-Modell nicht verfügbar.',
-            'Bitte <strong>Map Tiles API</strong> in der Google Cloud Console aktivieren und Billing-Account verknüpfen.');
+        const msg = (e && e.message) || '';
+        const status = e && (e.statusCode || msg.match(/\b(403|404)\b/)?.[1]);
+        // Bekanntes EEA-Problem: Google liefert 3D Tiles in der EU teils nicht aus.
+        // Statt Banner + leerer Hintergrund: 2D-Fallback mit ESRI-Satellitenbildern.
+        if(String(status)==='403' || /EEA|not available for your account|PERMISSION_DENIED/i.test(msg)){
+          console.info('[Map3D] 3D Tiles 403 → Wechsel auf 2D Leaflet/ESRI');
+          Shell.banner('info',
+            '2D-Satellitenansicht aktiv.',
+            'Google 3D-Tiles sind für deinen Account/Region nicht freigegeben — wir zeigen die Dachflächen auf hochaufgelöstem Satellitenbild. Funktional 1:1 wie 3D.');
+          // Cesium-Viewer zerstoeren, Leaflet uebernimmt
+          if(this.viewer){ try{ this.viewer.destroy(); }catch(_){} this.viewer = null; }
+          Map2D.init(lat, lng);
         } else {
           Shell.banner('warn', '3D-Modell konnte nicht geladen werden.',
             'Wir berechnen die Solar-Potenziale anhand der API-Daten weiter – die 3D-Vorschau ist optional.');
@@ -1815,6 +1837,237 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       }
       // Roof3D-Zustand mitraeumen, damit der Step bei erneutem Betreten frisch ist
       Roof3D._reset();
+      // Auch Leaflet-Fallback aufraeumen, falls aktiv
+      if(Map2D.isActive()) Map2D.destroy();
+    },
+  };
+
+  /* ============================================================
+   *  Map2D — 2D-Fallback mit Leaflet + ESRI World Imagery
+   *  ------------------------------------------------------------
+   *  Wird automatisch verwendet wenn Google Map Tiles API ausfaellt
+   *  (EEA-Restriction, Billing, oder Quota). Zeigt Satellitenbild
+   *  von ESRI/Maxar (kostenlos, kein API-Key) und zeichnet Roof-
+   *  Polygone als Leaflet L.Polygon. Click-Toggle wie in 3D.
+   * ============================================================ */
+  const Map2D = {
+    map: null,
+    segmentLayers: [],
+    moduleLayers: new Map(), // segIdx -> L.Polygon[]
+    activePanels: new Map(), // segIdx -> panel[]
+
+    init(lat, lng){
+      const cesiumEl  = document.getElementById('cesium-container');
+      const leafletEl = document.getElementById('leaflet-container');
+      const loading   = document.getElementById('cesiumLoading');
+      if(!leafletEl) return;
+
+      // Cesium ausblenden, Leaflet einblenden
+      if(cesiumEl) cesiumEl.style.display = 'none';
+      leafletEl.classList.remove('is-hidden');
+      if(loading) loading.classList.add('is-hidden');
+
+      this.map = L.map(leafletEl, {
+        zoomControl: true,
+        attributionControl: true,
+      }).setView([lat, lng], 19);
+
+      // ESRI World Imagery — frei nutzbar, sehr gute Auflösung in DE
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 21,
+        attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
+      }).addTo(this.map);
+
+      // Address-Marker
+      L.marker([lat, lng]).addTo(this.map);
+
+      // Tip im 3D-Overlay anpassen — Drag/Zoom statt Rechts-Klick-Drehen
+      const tip = document.querySelector('.cesium-tip');
+      if(tip) tip.textContent = 'Klick auf Dachfläche setzt Module · Ziehen zum Verschieben · Mausrad zum Zoomen';
+    },
+
+    isActive(){
+      return !!this.map;
+    },
+
+    destroy(){
+      this.segmentLayers.forEach(l => { try{ this.map.removeLayer(l); }catch(_){} });
+      this.moduleLayers.forEach(arr => arr.forEach(l => { try{ this.map.removeLayer(l); }catch(_){} }));
+      this.segmentLayers = [];
+      this.moduleLayers.clear();
+      this.activePanels.clear();
+      if(this.map){
+        try{ this.map.remove(); }catch(_){}
+        this.map = null;
+      }
+      const cesiumEl  = document.getElementById('cesium-container');
+      const leafletEl = document.getElementById('leaflet-container');
+      if(cesiumEl) cesiumEl.style.display = '';
+      if(leafletEl){
+        leafletEl.classList.add('is-hidden');
+        leafletEl.innerHTML = '';
+      }
+    },
+
+    /* Build segments aus dem gleichen solarData-Format wie Roof3D */
+    buildSegments(solarData){
+      if(!this.map) return;
+      const sp = solarData && solarData.solarPotential;
+      if(!sp || !sp.solarPanels || !sp.roofSegmentStats){
+        Shell.banner('warn', 'Keine Dachsegmente erkannt.', 'Sie können trotzdem weitermachen — wir berechnen mit Schätzwerten.');
+        return;
+      }
+      const segs = sp.roofSegmentStats;
+      const panels = sp.solarPanels;
+      const isNRW = !!sp._nrw;
+
+      const bySegment = new Map();
+      panels.forEach(p => {
+        const idx = (p.segmentIndex == null) ? 0 : p.segmentIndex;
+        if(!bySegment.has(idx)) bySegment.set(idx, []);
+        bySegment.get(idx).push(p);
+      });
+
+      const colors = {
+        good: '#22c55e',
+        ok:   '#f59e0b',
+        bad:  '#ef4444',
+      };
+
+      let built = 0;
+      bySegment.forEach((segPanels, segIdx) => {
+        const seg = segs[segIdx] || {};
+        const az    = (seg.azimuthDegrees == null) ? 180 : seg.azimuthDegrees;
+        const pitch = (seg.pitchDegrees   == null) ? 20  : seg.pitchDegrees;
+        let type;
+        if(isNRW && seg._nrw && seg._nrw.eignung){
+          const e = seg._nrw.eignung;
+          if(/sehr gut|sehr_gut|hoch/.test(e))      type = 'good';
+          else if(/^gut|^geeignet|mittel/.test(e))   type = 'ok';
+          else if(/bedingt|niedrig/.test(e))         type = 'ok';
+          else if(/ungeeignet|nicht/.test(e))        type = 'bad';
+          else type = Roof3D._typeFromSegment(az, pitch);
+        } else {
+          type = Roof3D._typeFromSegment(az, pitch);
+        }
+
+        let latlngs;
+        if(isNRW && seg._nrw && seg._nrw.ring){
+          latlngs = seg._nrw.ring.map(c => [c[1], c[0]]);  // GeoJSON ist [lng,lat], Leaflet [lat,lng]
+        } else {
+          // Aus Panel-Listen → konkave Huelle (selbe Logik wie Roof3D)
+          const panelW = sp.panelWidthMeters  || 1.046;
+          const panelH = sp.panelHeightMeters || 1.879;
+          const pts = [];
+          segPanels.forEach(p => {
+            const isLand = p.orientation === 'LANDSCAPE';
+            const w = isLand ? panelH : panelW;
+            const h = isLand ? panelW : panelH;
+            const corners = Roof3D._rotatedRect(p.center.latitude, p.center.longitude, w, h, az);
+            corners.forEach(c => pts.push(c));
+          });
+          const hull = Roof3D._concaveHull(pts, 0.000018);
+          if(hull.length < 3) return;
+          latlngs = hull.map(p => [p.lat, p.lng]);
+        }
+        if(!latlngs || latlngs.length < 3) return;
+
+        const poly = L.polygon(latlngs, {
+          color: '#0d1424',
+          weight: 2,
+          opacity: 0.7,
+          fillColor: colors[type],
+          fillOpacity: 0.55,
+        }).addTo(this.map);
+
+        // Eigene Properties für click-Handler
+        poly._meta = { segIdx, type, panels: segPanels, az, pitch };
+
+        poly.on('click', () => Map2D._toggleSegment(poly));
+        poly.on('mouseover', () => poly.setStyle({ fillOpacity: 0.78, weight: 3 }));
+        poly.on('mouseout',  () => poly.setStyle({ fillOpacity: 0.55, weight: 2 }));
+
+        this.segmentLayers.push(poly);
+        built++;
+      });
+
+      console.info('[Map2D] '+built+' Dachsegmente aufgelegt');
+
+      // Karte auf alle Segmente zoomen
+      if(this.segmentLayers.length){
+        const bounds = L.latLngBounds([]);
+        this.segmentLayers.forEach(l => bounds.extend(l.getBounds()));
+        this.map.fitBounds(bounds.pad(0.4));
+      }
+
+      if(built === 0){
+        Shell.banner('warn',
+          'Keine darstellbaren Dachsegmente.',
+          'Wir berechnen mit Schätzwerten weiter.');
+      }
+    },
+
+    _toggleSegment(poly){
+      const m = poly._meta;
+      if(!m) return;
+      if(m.type === 'bad'){
+        Shell.banner('info', 'Diese Dachfläche ist nicht für PV geeignet.', 'Zu wenig Sonneneinstrahlung oder ungünstige Neigung.');
+        return;
+      }
+      const has = (this.activePanels.get(m.segIdx) || []).length > 0;
+      if(has){
+        this._removeModulesForSegment(m.segIdx);
+      } else {
+        this._addModulesForSegment(m.segIdx, m.panels, m.az);
+      }
+      Calculator.recalc();
+    },
+
+    _addModulesForSegment(segIdx, segPanels, az){
+      const sp = State.solar.building && State.solar.building.solarPotential;
+      if(!sp) return;
+      const panelW = sp.panelWidthMeters  || 1.046;
+      const panelH = sp.panelHeightMeters || 1.879;
+
+      const arr = [];
+      const list = [];
+      segPanels.forEach(p => {
+        const isLand = p.orientation === 'LANDSCAPE';
+        const w = isLand ? panelH : panelW;
+        const h = isLand ? panelW : panelH;
+        const corners = Roof3D._rotatedRect(p.center.latitude, p.center.longitude, w, h, az);
+        const latlngs = corners.map(c => [c.lat, c.lng]);
+        const m = L.polygon(latlngs, {
+          color: '#93c5fd',
+          weight: 1,
+          fillColor: '#1e3a8a',
+          fillOpacity: 0.92,
+        }).addTo(this.map);
+        arr.push(m);
+        list.push(p);
+      });
+      this.moduleLayers.set(segIdx, arr);
+      this.activePanels.set(segIdx, list);
+    },
+
+    _removeModulesForSegment(segIdx){
+      const arr = this.moduleLayers.get(segIdx) || [];
+      arr.forEach(l => { try{ this.map.removeLayer(l); }catch(_){} });
+      this.moduleLayers.delete(segIdx);
+      this.activePanels.delete(segIdx);
+    },
+
+    getActiveModules(){
+      const all = [];
+      this.activePanels.forEach(list => list.forEach(p => all.push(p)));
+      return all;
+    },
+
+    clearAll(){
+      this.moduleLayers.forEach((arr) => arr.forEach(l => { try{ this.map.removeLayer(l); }catch(_){} }));
+      this.moduleLayers.clear();
+      this.activePanels.clear();
+      Calculator.recalc();
     },
   };
 
@@ -2345,8 +2598,11 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
    *    nrwEnabled:  bool, default true fuer NRW-Adressen
    * ============================================================ */
   const NRWSolar = {
-    // Bbox-Padding um lat/lng (in Grad) — ~50m je Seite reicht fuer ein Einfamilienhaus.
-    BBOX_PADDING: 0.0005,
+    // Bbox-Padding um lat/lng (in Grad) — ~12m je Seite, gross genug fuer ein
+    // Einfamilienhaus aber knapp genug um Nachbarhaeuser draussen zu lassen.
+    // Wir filtern danach zusaetzlich auf das Polygon das den Klick-Punkt enthaelt
+    // bzw. sonst das raeumlich naechste.
+    BBOX_PADDING: 0.00012,
 
     // Geheime Layer-Namen aus dem LANUK-WFS. Bei Aenderungen kann das ueber
     // PV_CONFIG.nrwLayer ueberschrieben werden.
@@ -2396,7 +2652,70 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       }
       const d = await res.json();
       if(!d.features || !d.features.length) throw new Error('NRW WFS: keine Features in Bbox');
-      return d.features;
+
+      // Filter: nur Polygone die zu DIESEM Haus gehoeren.
+      // Praeferenz: Polygon das den Klick-Punkt enthaelt; Fallback: alle Polygone
+      // die mit dem ENTHALTENEN Polygon raeumlich verbunden sind (selbe Footprint-Gruppe).
+      const containing = d.features.filter(f => this._featureContains(f, lat, lng));
+      if(containing.length){
+        // Plus alle Features die dem Container raeumlich nahe sind (zusammenhaengendes Dach
+        // mit mehreren Segmenten = mehrere Polygone fuer dasselbe Haus)
+        const ref = this._featureCentroid(containing[0]);
+        const close = d.features.filter(f => {
+          if(containing.includes(f)) return true;
+          const c = this._featureCentroid(f);
+          // 15m Distanz: gleiches Haus, nicht der Nachbar
+          const dLat = (c.lat - ref.lat) * 111320;
+          const dLng = (c.lng - ref.lng) * 111320 * Math.cos(ref.lat * Math.PI / 180);
+          return Math.sqrt(dLat*dLat + dLng*dLng) < 15;
+        });
+        return close;
+      }
+      // Kein Polygon enthaelt den Punkt → naechstes Polygon nehmen + dessen Nachbarn
+      let best = d.features[0], bestD = Infinity;
+      d.features.forEach(f => {
+        const c = this._featureCentroid(f);
+        const dLat = (c.lat - lat) * 111320;
+        const dLng = (c.lng - lng) * 111320 * Math.cos(lat * Math.PI / 180);
+        const dist = Math.sqrt(dLat*dLat + dLng*dLng);
+        if(dist < bestD){ bestD = dist; best = f; }
+      });
+      const refC = this._featureCentroid(best);
+      return d.features.filter(f => {
+        const c = this._featureCentroid(f);
+        const dLat = (c.lat - refC.lat) * 111320;
+        const dLng = (c.lng - refC.lng) * 111320 * Math.cos(refC.lat * Math.PI / 180);
+        return Math.sqrt(dLat*dLat + dLng*dLng) < 15;
+      });
+    },
+
+    _featureCentroid(feat){
+      const geom = feat.geometry;
+      if(!geom || !geom.coordinates) return { lat:0, lng:0 };
+      const rings = (geom.type === 'MultiPolygon') ? geom.coordinates[0] : geom.coordinates;
+      const ring = rings && rings[0];
+      if(!ring) return { lat:0, lng:0 };
+      let cLat=0, cLng=0;
+      ring.forEach(c => { cLng += c[0]; cLat += c[1]; });
+      return { lat: cLat/ring.length, lng: cLng/ring.length };
+    },
+
+    // Ray-Casting Punkt-im-Polygon-Test (nimmt nur den Aussenring)
+    _featureContains(feat, lat, lng){
+      const geom = feat.geometry;
+      if(!geom || !geom.coordinates) return false;
+      const rings = (geom.type === 'MultiPolygon') ? geom.coordinates[0] : geom.coordinates;
+      const ring = rings && rings[0];
+      if(!ring) return false;
+      let inside = false;
+      for(let i=0, j=ring.length-1; i<ring.length; j=i++){
+        const xi = ring[i][0], yi = ring[i][1];
+        const xj = ring[j][0], yj = ring[j][1];
+        const intersect = ((yi > lat) !== (yj > lat)) &&
+          (lng < (xj - xi) * (lat - yi) / (yj - yi + 1e-12) + xi);
+        if(intersect) inside = !inside;
+      }
+      return inside;
     },
 
     /* GeoJSON-Features → Solar-API-aehnliches Format, damit Roof3D ohne
@@ -2510,9 +2829,10 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         btnClear.addEventListener('click', () => {
           if(ManualRoof.isActive()){
             ManualRoof.reset();
-            // Bei manuellem Modus: Manual-Drawing erneut starten falls Viewer da
             if(Map3D.viewer) ManualRoof.start(Map3D.viewer);
             document.getElementById('btnNext2').disabled = true;
+          } else if(Map2D.isActive()){
+            Map2D.clearAll();
           } else {
             Roof3D.clearAll();
           }
@@ -2524,6 +2844,13 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         btnMax.addEventListener('click', () => Step2.placeMaximum());
       }
       Step2.updateSelection();
+    },
+
+    // Aktive Modul-Liste, je nachdem welcher Viewer (3D, 2D oder Manual) gerade aktiv ist.
+    getActiveModules(){
+      if(ManualRoof.isActive()) return [];     // Manual liefert keine einzelnen Panels
+      if(Map2D.isActive())      return Map2D.getActiveModules();
+      return Roof3D.getActiveModules();
     },
 
     async enter(){
@@ -2543,16 +2870,26 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 
       const [bi] = await Promise.all(tasks);
 
-      if(Map3D.viewer && bi){
-        Roof3D.buildSegments(Map3D.viewer, bi);
-      } else if(Map3D.viewer && !bi){
-        // Solar-API hatte keine Dachdaten — User darf manuell sein Dach zeichnen.
-        // (Banner wurde bereits in Solar.handleError ausgegeben.)
-        Shell.banner('info',
-          'Dach manuell vermessen.',
-          'Klicken Sie nacheinander die <strong>Eckpunkte Ihres Daches</strong> auf dem 3D-Modell. ' +
-          'Mindestens 3 Punkte. Doppelklick beendet die Eingabe.');
-        ManualRoof.start(Map3D.viewer);
+      // Welcher Viewer ist aktiv? 3D Cesium ODER 2D Leaflet (Fallback bei 403).
+      if(bi){
+        if(Map3D.viewer){
+          Roof3D.buildSegments(Map3D.viewer, bi);
+        } else if(Map2D.isActive()){
+          Map2D.buildSegments(bi);
+        }
+      } else if(Map3D.viewer || Map2D.isActive()){
+        // Solar-API hatte keine Dachdaten — manueller Modus (nur 3D unterstuetzt das aktuell)
+        if(Map3D.viewer){
+          Shell.banner('info',
+            'Dach manuell vermessen.',
+            'Klicken Sie nacheinander die <strong>Eckpunkte Ihres Daches</strong> auf dem 3D-Modell. ' +
+            'Mindestens 3 Punkte. Doppelklick beendet die Eingabe.');
+          ManualRoof.start(Map3D.viewer);
+        } else {
+          Shell.banner('warn',
+            'Keine Dachdaten verfügbar.',
+            'Wir berechnen mit Schätzwerten weiter — der Vor-Ort-Termin durch unseren Experten ist kostenlos.');
+        }
       }
     },
 
@@ -2569,7 +2906,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         ertrag = kwp * 950;            // optimistischer Default; PVGIS uebernimmt in Step 3
         manual = true;
       } else {
-        const selected = Roof3D.getActiveModules();
+        const selected = Step2.getActiveModules();
         count = selected.length;
         kwp = (count * panelW) / 1000;
         ertrag = selected.reduce((s, p) => s + (p.yearlyEnergyDcKwh || 0), 0);
@@ -2592,16 +2929,19 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     },
 
     // Auto-Belegung: alle "good" und "ok" Segmente mit allen Modulen belegen.
-    // Wird vom "MAXIMUM" Button getriggert.
+    // Wird vom "MAXIMUM" Button getriggert. Funktioniert in 3D und 2D Modus.
     placeMaximum(){
-      if(!Map3D.viewer || !State.solar.building) return;
+      if(!State.solar.building) return;
       const sp = State.solar.building.solarPotential;
       if(!sp || !sp.solarPanels) return;
 
-      // Roof3D-State zuerst zuruecksetzen, damit wir nicht doppelt belegen
-      Roof3D.clearAll();
+      // Erst zuruecksetzen, damit wir nicht doppelt belegen
+      if(Map2D.isActive()){
+        Map2D.clearAll();
+      } else {
+        Roof3D.clearAll();
+      }
 
-      // Per Segment: alle Panels, sofern type != 'bad'
       const bySegment = new Map();
       sp.solarPanels.forEach(p => {
         const idx = (p.segmentIndex == null) ? 0 : p.segmentIndex;
@@ -2613,7 +2953,11 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         const az  = (seg.azimuthDegrees == null) ? 180 : seg.azimuthDegrees;
         const type = Roof3D._typeFromSegment(az, (seg.pitchDegrees == null) ? 20 : seg.pitchDegrees);
         if(type === 'bad') return;
-        Roof3D._addModulesForSegment(Map3D.viewer, segIdx, panels, az);
+        if(Map2D.isActive()){
+          Map2D._addModulesForSegment(segIdx, panels, az);
+        } else if(Map3D.viewer){
+          Roof3D._addModulesForSegment(Map3D.viewer, segIdx, panels, az);
+        }
       });
       Calculator.recalc();
     },
@@ -2650,7 +2994,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       //  1. Klick-Auswahl auf 3D-Dach (Roof3D.getActiveModules)
       //  2. Manuell gezeichnetes Dach (ManualRoof.isActive)
       //  3. Heuristik aus Verbrauch + Solar-API-Maximum
-      const selected = (typeof Roof3D !== 'undefined') ? Roof3D.getActiveModules() : [];
+      const selected = (typeof Step2 !== 'undefined') ? Step2.getActiveModules() : [];
       let optKwp, module, ertrag, source;
       let usePvgis = false, pvgisAspect = 0, pvgisTilt = 30;
 
