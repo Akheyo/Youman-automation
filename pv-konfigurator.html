@@ -1936,13 +1936,24 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           baseLayer: false,
         });
 
-        // ESRI World Imagery als einzigen Layer hinzufuegen
+        // Imagery-Provider: Google Maps Satellite via inoffizielles mt-Endpoint
+        // (gleiche Tiles wie maps.google.com, hochaufgeloest fuer Deutschland,
+        // funktionieren im EEA, kein Map-Tiles-API-Key noetig). Falls das mal
+        // bricht: ESRI World Imagery als Fallback.
+        const google = new Cesium.UrlTemplateImageryProvider({
+          url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+          subdomains: ['0','1','2','3'],
+          maximumLevel: 21,
+          credit: 'Map data ©Google',
+        });
         const esri = new Cesium.UrlTemplateImageryProvider({
           url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          maximumLevel: 19,
+          maximumLevel: 22,
           credit: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
         });
+        // Google zuerst (oben), ESRI darunter als Fallback fuer Tiles die Google nicht hat
         this.viewer.imageryLayers.addImageryProvider(esri);
+        this.viewer.imageryLayers.addImageryProvider(google);
 
         // Atmosphaere + Globus an (wir brauchen den Globus als Traeger fuer ESRI)
         this.viewer.scene.skyAtmosphere.show = true;
@@ -1984,14 +1995,14 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         },
       });
 
-      // Kamera schraeg von Sued-West, ~80m hoch, eher top-down
-      const dLat = -0.00030;
-      const dLng = -0.00048;
+      // Kamera schraeg von Sued-West, ~55m hoch fuer mehr Detail
+      const dLat = -0.00020;
+      const dLng = -0.00033;
       this.viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(lng + dLng, lat + dLat, 80),
+        destination: Cesium.Cartesian3.fromDegrees(lng + dLng, lat + dLat, 55),
         orientation: {
           heading: Cesium.Math.toRadians(45),
-          pitch:   Cesium.Math.toRadians(-65),
+          pitch:   Cesium.Math.toRadians(-68),
           roll:    0,
         },
         duration: 1.8,
