@@ -1835,14 +1835,13 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         });
     },
 
-    /* Rendert Gebaeude als extrudierte Polygone in Cesium.
-       Liefert das Gebaeude zurueck, das die User-Adresse enthaelt
-       (oder das raeumlich naechste). */
+    /* Bestimmt das User-Haus (Polygon das die Adresse enthaelt oder am
+       naechsten dran ist) und rendert NUR DIESES als 3D-Box. Nachbarn
+       bleiben unsichtbar — die Satellitenbild-Ansicht ist klar genug. */
     render(viewer, buildings, userLat, userLng){
       let userBldg = null;
       let userBldgDist = Infinity;
 
-      // Erst userBldg bestimmen
       buildings.forEach(b => {
         const contains = this._pointInRing(b.coords, userLng, userLat);
         if(contains){ userBldg = b; userBldgDist = -1; return; }
@@ -1852,30 +1851,26 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         if(dist < userBldgDist){ userBldgDist = dist; userBldg = b; }
       });
 
-      // Dann rendern (User-Haus farblich hervorgehoben)
-      buildings.forEach(b => {
-        const positions = b.coords.slice(0, -1).map(c =>
+      if(userBldg){
+        const positions = userBldg.coords.slice(0, -1).map(c =>
           Cesium.Cartesian3.fromDegrees(c[0], c[1])
         );
-        const isUser = (b === userBldg);
-        const material = isUser
-          ? Cesium.Color.fromCssColorString('#fff8e6').withAlpha(0.92)
-          : Cesium.Color.fromCssColorString('#dde2e8').withAlpha(0.85);
-
+        // User-Haus: helle Wand, kraftiges Outline, leicht transparent
+        // damit die Satellitendach-Textur durchschimmert
         viewer.entities.add({
           polygon: {
             hierarchy: positions,
-            extrudedHeight: b.height,
+            extrudedHeight: userBldg.height,
             height: 0,
-            material: material,
+            material: Cesium.Color.fromCssColorString('#f5efe1').withAlpha(0.78),
             outline: true,
-            outlineColor: Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.55),
+            outlineColor: Cesium.Color.fromCssColorString('#1d1d2e').withAlpha(0.85),
           },
-          properties: { isOsmBuilding: true, buildingId: b.id, height: b.height },
+          properties: { isOsmBuilding: true, buildingId: userBldg.id, height: userBldg.height, isUser: true },
         });
-      });
+      }
 
-      console.info('[OSMBuildings] '+buildings.length+' Gebaeude geladen (User-Haus '+(userBldg?'gefunden, '+userBldg.height.toFixed(1)+'m':'NICHT gefunden')+')');
+      console.info('[OSMBuildings] '+buildings.length+' im Umkreis, User-Haus '+(userBldg?'gefunden ('+userBldg.height.toFixed(1)+'m)':'NICHT gefunden — nur Satellitenbild'));
       return userBldg;
     },
 
@@ -2289,9 +2284,9 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       });
 
       const colors = {
-        good: Cesium.Color.fromCssColorString('#22c55e').withAlpha(0.65),
-        ok:   Cesium.Color.fromCssColorString('#f59e0b').withAlpha(0.65),
-        bad:  Cesium.Color.fromCssColorString('#ef4444').withAlpha(0.55),
+        good: Cesium.Color.fromCssColorString('#16a34a').withAlpha(0.82),
+        ok:   Cesium.Color.fromCssColorString('#f59e0b').withAlpha(0.82),
+        bad:  Cesium.Color.fromCssColorString('#dc2626').withAlpha(0.72),
       };
 
       let built = 0;
@@ -2337,12 +2332,10 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         }
         if(!hull || hull.length < 3) return;
 
-        // Polygon liegt flach auf der Dachhoehe des OSM-Gebaeudes.
-        // Ohne Google-3D-Tiles brauchen wir explizite Hoehen statt Classification.
+        // Polygon mit kleiner Extrusion (40cm) damit es im 3D-Bild plastisch
+        // wirkt — wie ein farbiger Sticker auf der Dachflaeche.
         const roofH = Map3D.roofHeight();
-        const positions = hull.map(p =>
-          Cesium.Cartesian3.fromDegrees(p.lng, p.lat, roofH)
-        );
+        const positions = hull.map(p => Cesium.Cartesian3.fromDegrees(p.lng, p.lat));
 
         const entity = viewer.entities.add({
           name: 'seg-' + segIdx,
@@ -2350,13 +2343,14 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
             hierarchy: new Cesium.PolygonHierarchy(positions),
             material: colors[type],
             height: roofH,
+            extrudedHeight: roofH + 0.4,
             outline: true,
-            outlineColor: Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.7),
+            outlineColor: Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.85),
           },
           properties: {
             segIdx, type, panels: segPanels, az, pitch,
             baseColor: colors[type],
-            hoverColor: colors[type].withAlpha(0.88),
+            hoverColor: colors[type].withAlpha(0.95),
           },
         });
 
@@ -2443,7 +2437,8 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       if(!this._activePanels) this._activePanels = new Map();
       const list = [];
 
-      const roofH = Map3D.roofHeight() + 0.05;     // 5cm ueber den Segmenten
+      // Module liegen 5cm ueber den extrudierten Segment-Polygonen (die enden bei roofH+0.4m)
+      const roofH = Map3D.roofHeight() + 0.45;
       segPanels.forEach(p => {
         const isLand = p.orientation === 'LANDSCAPE';
         const w = isLand ? panelH : panelW;
@@ -2456,10 +2451,10 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         const moduleEntity = viewer.entities.add({
           polygon: {
             hierarchy: new Cesium.PolygonHierarchy(positions),
-            material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.95),
+            material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.96),
             height: roofH,
             outline: true,
-            outlineColor: Cesium.Color.fromCssColorString('#93c5fd').withAlpha(0.95),
+            outlineColor: Cesium.Color.fromCssColorString('#bfdbfe').withAlpha(0.95),
           },
           properties: { isModule: true, segIdx, panel: p },
         });
