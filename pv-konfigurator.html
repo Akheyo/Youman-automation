@@ -2289,16 +2289,17 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       };
 
       let built = 0;
-      // NRW-Daten haben echte Polygon-Ringe; Google-Daten haben Panel-Listen,
-      // aus denen wir eine konkave Huelle bauen muessen.
       const isNRW = !!sp._nrw;
 
+      // Erst alle Segmente sammeln + nach type sortieren (good unten, ok mitte,
+      // bad oben). So ueberdecken Schornsteine/Gauben (rot) NICHT die guten Flaechen,
+      // sondern liegen sichtbar darueber.
+      const renderOrder = { good: 0, ok: 1, bad: 2 };
+      const items = [];
       bySegment.forEach((segPanels, segIdx) => {
         const seg   = segs[segIdx] || {};
         const az    = (seg.azimuthDegrees == null) ? 180 : seg.azimuthDegrees;
         const pitch = (seg.pitchDegrees   == null) ? 20  : seg.pitchDegrees;
-
-        // Eignung: bei NRW kommt die Quelle direkt aus dem Kataster, sonst Heuristik
         let type;
         if(isNRW && seg._nrw && seg._nrw.eignung){
           const e = seg._nrw.eignung;
@@ -2313,46 +2314,50 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 
         let hull;
         if(isNRW && seg._nrw && seg._nrw.ring){
-          // NRW: GeoJSON-Ring direkt verwenden ([lng,lat] Paare → {lat,lng})
-          hull = seg._nrw.ring.map(c => ({ lng: c[0], lat: c[1] }));
+          // NRW-Ring direkt + Douglas-Peucker (~30cm Toleranz) gegen Laser-Scan-Zacken
+          const raw = seg._nrw.ring.map(c => ({ lng: c[0], lat: c[1] }));
+          hull = this._simplifyRing(raw, 0.0000027);
         } else {
-          // Google: konkave Huelle ueber alle Panel-Eckpunkte
           const pts = [];
           segPanels.forEach(p => {
             const isLand = p.orientation === 'LANDSCAPE';
             const w = isLand ? panelH : panelW;
             const h = isLand ? panelW : panelH;
-            const corners = this._rotatedRect(
-              p.center.latitude, p.center.longitude, w, h, az
-            );
+            const corners = this._rotatedRect(p.center.latitude, p.center.longitude, w, h, az);
             corners.forEach(c => pts.push(c));
           });
           hull = this._concaveHull(pts, 0.000018);
         }
         if(!hull || hull.length < 3) return;
+        items.push({ segIdx, type, hull, segPanels, az, pitch });
+      });
+      items.sort((a, b) => renderOrder[a.type] - renderOrder[b.type]);
 
-        // Polygon mit kleiner Extrusion (40cm) damit es im 3D-Bild plastisch
-        // wirkt — wie ein farbiger Sticker auf der Dachflaeche.
-        const roofH = Map3D.roofHeight();
-        const positions = hull.map(p => Cesium.Cartesian3.fromDegrees(p.lng, p.lat));
+      const roofH = Map3D.roofHeight();
+      items.forEach((it, i) => {
+        const positions = it.hull.map(p => Cesium.Cartesian3.fromDegrees(p.lng, p.lat));
+        // Z-Stacking: good 0.10m, ok 0.20m, bad 0.30m. Bad oben sichtbar,
+        // 10cm Extrusion macht's plastisch ohne dass die Slabs ueberlappen.
+        const baseH  = roofH + i * 0.0001 + (renderOrder[it.type] * 0.1);
+        const topH   = baseH + 0.1;
 
         const entity = viewer.entities.add({
-          name: 'seg-' + segIdx,
+          name: 'seg-' + it.segIdx,
           polygon: {
             hierarchy: new Cesium.PolygonHierarchy(positions),
-            material: colors[type],
-            height: roofH,
-            extrudedHeight: roofH + 0.4,
+            material: colors[it.type],
+            height: baseH,
+            extrudedHeight: topH,
             outline: true,
-            outlineColor: Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.85),
+            outlineColor: Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.92),
+            outlineWidth: 2,
           },
           properties: {
-            segIdx, type, panels: segPanels, az, pitch,
-            baseColor: colors[type],
-            hoverColor: colors[type].withAlpha(0.95),
+            segIdx: it.segIdx, type: it.type, panels: it.segPanels, az: it.az, pitch: it.pitch,
+            baseColor: colors[it.type],
+            hoverColor: colors[it.type].withAlpha(0.98),
           },
         });
-
         this.segmentEntities.push(entity);
         built++;
       });
@@ -2516,6 +2521,43 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         lat: centerLat + (x*sin + y*cos) / mPerLat,
         lng: centerLng + (x*cos - y*sin) / mPerLng,
       }));
+    },
+
+    /* Douglas-Peucker-Simplifizierung eines Polygon-Rings (Punkte mit lng/lat).
+       tolerance ist max. Abstand in Grad — 0.0000027 ≈ 30cm. Glaettet die
+       Laser-Scan-Zacken ohne die Form zu verfaelschen. */
+    _simplifyRing(ring, tolerance){
+      if(!ring || ring.length < 4) return ring;
+      const sqTol = tolerance * tolerance;
+      // perpendicular distance squared between point p and segment a–b
+      const sqSegDist = (p, a, b) => {
+        let x = a.lng, y = a.lat;
+        let dx = b.lng - x, dy = b.lat - y;
+        if(dx !== 0 || dy !== 0){
+          const t = ((p.lng - x) * dx + (p.lat - y) * dy) / (dx*dx + dy*dy);
+          if(t > 1){ x = b.lng; y = b.lat; }
+          else if(t > 0){ x += dx*t; y += dy*t; }
+        }
+        dx = p.lng - x; dy = p.lat - y;
+        return dx*dx + dy*dy;
+      };
+      const simplifyDP = (pts, first, last, simplified) => {
+        let maxSq = sqTol, idx = -1;
+        for(let i=first+1; i<last; i++){
+          const d = sqSegDist(pts[i], pts[first], pts[last]);
+          if(d > maxSq){ maxSq = d; idx = i; }
+        }
+        if(idx !== -1){
+          if(idx - first > 1) simplifyDP(pts, first, idx, simplified);
+          simplified.push(pts[idx]);
+          if(last - idx > 1) simplifyDP(pts, idx, last, simplified);
+        }
+      };
+      const last = ring.length - 1;
+      const simplified = [ring[0]];
+      simplifyDP(ring, 0, last, simplified);
+      simplified.push(ring[last]);
+      return simplified.length >= 4 ? simplified : ring;
     },
 
     // "Gift-Wrap"-aehnliche konkave Huelle, alpha = max. Edge-Distanz in Grad
