@@ -16,15 +16,14 @@
      bleibt drin als Reserve fuer Heatmap-Overlays in spaeteren Phasen. -->
 <script src="https://cdn.jsdelivr.net/npm/geotiff@2.1.3/dist-browser/geotiff.js"></script>
 
-<!-- CesiumJS: Photorealistic 3D Tiles von Google + interaktive Dach-Polygone.
-     v1.122 fixiert. KEIN Cesium-ion-Token noetig – wir laden tile.googleapis.com direkt.
-     ACHTUNG: Google blockiert seit 2025/26 in der EEA Map Tiles API ohne Sales-Freigabe.
-     Bei 403 faellt der Code automatisch auf Leaflet + ESRI World Imagery zurueck. -->
+<!-- CesiumJS: 3D-Viewer mit ESRI World Imagery + Overpass-OSM-Buildings.
+     v1.122 fixiert. KEIN Cesium-Ion-Token noetig — wir nutzen ausschliesslich
+     freie Tile-Server (ESRI) und Overpass-API fuer 3D-Gebaeudeumrisse.
+     Damit umgehen wir die EEA-Sperre von Google Map Tiles komplett. -->
 <link href="https://cdn.jsdelivr.net/npm/cesium@1.122.0/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/cesium@1.122.0/Build/Cesium/Cesium.js"></script>
 
-<!-- Leaflet: 2D-Fallback wenn 3D Tiles nicht verfuegbar.
-     Verwendet ESRI World Imagery (frei nutzbar, kein API-Key). -->
+<!-- Leaflet: nur als Hard-Fallback wenn Cesium komplett crasht. -->
 <link href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -1335,9 +1334,11 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       // ----- Tier 1: NRW Solarkataster (LANUK) — fuer Adressen in NRW -----
       // Genauigkeit: Laserscan 0,5 m, kostenlos, deckt das gesamte Bundesland ab.
       // Geht via CORS-Proxy (corsproxy.io default oder eigener Worker via PV_CONFIG.nrwProxy).
+      // OSM-Clip aus Map3D (falls bereits geladen) macht den Filter haus-praezise.
       if(NRWSolar.enabled(lat, lng)){
         try{
-          const nrw = await NRWSolar.loadForAddress(lat, lng);
+          const clipPoly = (Map3D.userBuilding && Map3D.userBuilding.coords) || null;
+          const nrw = await NRWSolar.loadForAddress(lat, lng, clipPoly);
           State.solar.building = nrw;
           State.solar.source   = 'NRW';
           Solar.renderStats(nrw);
@@ -1718,33 +1719,141 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   };
 
   /* ============================================================
-   *  Map3D — CesiumJS-Viewer mit Google Photorealistic 3D Tiles
+   *  OSMBuildings — 3D-Gebaeude aus OpenStreetMap (Overpass API)
    *  ------------------------------------------------------------
-   *  Wir nutzen NICHT Cesium-ion (kein Token noetig), sondern
-   *  laden direkt tile.googleapis.com/v1/3dtiles/root.json mit
-   *  unserem Google API-Key. Dazu in Cloud Console aktivieren:
-   *    - Map Tiles API
-   *  Default-Imagery + Globe sind aus, damit der dunkle Tile-Hintergrund
-   *  nicht durch das Default-Bing-Layer ueberlagert wird.
+   *  Kostenlos, kein API-Key, keine EEA-Sperre. Gibt das Gebaeude
+   *  zurueck das die Adresse enthaelt — wird als Clip-Maske fuer
+   *  den NRW-Solarkataster-Filter verwendet.
+   * ============================================================ */
+  const OSMBuildings = {
+    /* Holt alle Gebaeude im Umkreis (Default 60m) um die Adresse */
+    async fetch(lat, lng, radiusM){
+      radiusM = radiusM || 60;
+      const q = '[out:json][timeout:25];('
+              + 'way[building](around:'+radiusM+','+lat+','+lng+');'
+              + 'relation[building](around:'+radiusM+','+lat+','+lng+');'
+              + ');out geom tags;';
+      const baseUrl = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q);
+      // Overpass hat in der Regel CORS — falls nicht: Proxy via Config
+      const proxy = CFG.osmProxy || '';
+      const url = proxy ? proxy + encodeURIComponent(baseUrl) : baseUrl;
+
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('Overpass HTTP '+res.status);
+      const d = await res.json();
+      if(!d.elements || !d.elements.length) return [];
+
+      return d.elements
+        .filter(el => el.geometry && el.geometry.length >= 3)
+        .map(el => {
+          const coords = el.geometry.map(p => [p.lon, p.lat]);
+          // Ring schliessen wenn noetig
+          const first = coords[0], last = coords[coords.length-1];
+          if(first[0] !== last[0] || first[1] !== last[1]) coords.push([first[0], first[1]]);
+          const tags = el.tags || {};
+          // Hoehe aus Tags ableiten — sonst residential-default 7m
+          const explicit = parseFloat(tags['height']) || parseFloat(tags['building:height']);
+          const levels = parseFloat(tags['building:levels']) || parseFloat(tags['levels']);
+          const height = explicit || (levels ? levels * 3.2 : 7);
+          return { id: el.id, type: el.type, coords, height, tags };
+        });
+    },
+
+    /* Rendert Gebaeude als extrudierte Polygone in Cesium.
+       Liefert das Gebaeude zurueck, das die User-Adresse enthaelt
+       (oder das raeumlich naechste). */
+    render(viewer, buildings, userLat, userLng){
+      let userBldg = null;
+      let userBldgDist = Infinity;
+
+      // Erst userBldg bestimmen
+      buildings.forEach(b => {
+        const contains = this._pointInRing(b.coords, userLng, userLat);
+        if(contains){ userBldg = b; userBldgDist = -1; return; }
+        if(userBldgDist <= -1) return;
+        const c = this._centroid(b.coords);
+        const dist = this._distMeters(c[1], c[0], userLat, userLng);
+        if(dist < userBldgDist){ userBldgDist = dist; userBldg = b; }
+      });
+
+      // Dann rendern (User-Haus farblich hervorgehoben)
+      buildings.forEach(b => {
+        const positions = b.coords.slice(0, -1).map(c =>
+          Cesium.Cartesian3.fromDegrees(c[0], c[1])
+        );
+        const isUser = (b === userBldg);
+        const material = isUser
+          ? Cesium.Color.fromCssColorString('#fff8e6').withAlpha(0.92)
+          : Cesium.Color.fromCssColorString('#dde2e8').withAlpha(0.85);
+
+        viewer.entities.add({
+          polygon: {
+            hierarchy: positions,
+            extrudedHeight: b.height,
+            height: 0,
+            material: material,
+            outline: true,
+            outlineColor: Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.55),
+          },
+          properties: { isOsmBuilding: true, buildingId: b.id, height: b.height },
+        });
+      });
+
+      console.info('[OSMBuildings] '+buildings.length+' Gebaeude geladen (User-Haus '+(userBldg?'gefunden, '+userBldg.height.toFixed(1)+'m':'NICHT gefunden')+')');
+      return userBldg;
+    },
+
+    _centroid(ring){
+      let cx=0, cy=0, n=0;
+      // Letzten Punkt (= erster) ueberspringen
+      for(let i=0; i<ring.length-1; i++){ cx += ring[i][0]; cy += ring[i][1]; n++; }
+      return [cx/n, cy/n];
+    },
+
+    _pointInRing(ring, x, y){
+      let inside = false;
+      for(let i=0, j=ring.length-1; i<ring.length; j=i++){
+        const xi=ring[i][0], yi=ring[i][1];
+        const xj=ring[j][0], yj=ring[j][1];
+        const intersect = ((yi > y) !== (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / (yj - yi + 1e-12) + xi);
+        if(intersect) inside = !inside;
+      }
+      return inside;
+    },
+
+    _distMeters(lat1, lng1, lat2, lng2){
+      const dLat = (lat2 - lat1) * 111320;
+      const dLng = (lng2 - lng1) * 111320 * Math.cos(lat1 * Math.PI / 180);
+      return Math.sqrt(dLat*dLat + dLng*dLng);
+    },
+  };
+
+  /* ============================================================
+   *  Map3D — Cesium-3D-Viewer ohne Google
+   *  ------------------------------------------------------------
+   *  ESRI World Imagery (kostenlos, kein Key) auf dem Cesium-Globus
+   *  + 3D-extrudierte OSM-Gebaeude. Kameraflug schraeg von Sued-West.
    * ============================================================ */
   const Map3D = {
     viewer: null,
-    tileset: null,
+    userBuilding: null,    // OSMBuildings.fetch-Eintrag des User-Hauses (oder null)
 
     async init(lat, lng){
       const container = document.getElementById('cesium-container');
       if(!container) return;
 
-      // Loading-Overlay einblenden (wird in onTileLoad-Progress wieder ausgeblendet)
       const loading = document.getElementById('cesiumLoading');
       if(loading) loading.classList.remove('is-hidden');
 
-      // Bestehenden Viewer entsorgen falls man Step 2 zweimal betritt
-      if(this.viewer){
-        this.destroy();
-      }
+      if(this.viewer) this.destroy();
 
       try{
+        const esri = new Cesium.UrlTemplateImageryProvider({
+          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          maximumLevel: 19,
+          credit: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
+        });
         this.viewer = new Cesium.Viewer('cesium-container', {
           timeline: false,
           animation: false,
@@ -1756,88 +1865,76 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           infoBox: false,
           selectionIndicator: false,
           shouldAnimate: true,
-          // Default-Imagery aus: ohne ion-Token wuerde das Default-Bing-Layer scheitern
-          baseLayer: false,
-          // Aelter-API-kompatibel:
-          imageryProvider: false,
+          baseLayer: new Cesium.ImageryLayer(esri),
         });
       } catch(e){
         console.error('[Map3D] Viewer-Init fehlgeschlagen:', e);
-        Shell.banner('err', '3D-Viewer konnte nicht initialisiert werden.', 'Bitte Seite neu laden oder einen anderen Browser versuchen.');
         if(loading) loading.classList.add('is-hidden');
+        // Hard-Fallback Leaflet 2D
+        Shell.banner('warn', 'Cesium konnte nicht starten.', 'Wir zeigen die 2D-Satellitenansicht stattdessen.');
+        Map2D.init(lat, lng);
         return;
       }
 
-      // Atmosphere/Globe aus – Google-Tiles enthalten ihre eigene Beleuchtung
-      this.viewer.scene.skyAtmosphere.show = false;
-      this.viewer.scene.globe.show = false;
-      // Boden-Transparenz fuer den Fall, dass ein Tile zu spaet kommt
+      // Atmosphaere + Globus an (wir brauchen den Globus fuer ESRI-Imagery)
+      this.viewer.scene.skyAtmosphere.show = true;
+      this.viewer.scene.globe.show = true;
       this.viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#0d1424');
 
-      // Google Photorealistic 3D Tiles
+      // OSM-Buildings holen (parallel, blockiert Camera nicht zu lange)
       try{
-        const url = 'https://tile.googleapis.com/v1/3dtiles/root.json?key=' + encodeURIComponent(CFG.apiKey);
-        this.tileset = await Cesium.Cesium3DTileset.fromUrl(url, {
-          showCreditsOnScreen: true,
-        });
-        this.viewer.scene.primitives.add(this.tileset);
-
-        // Loading-Overlay erst ausblenden, wenn die ersten Tiles tatsaechlich gerendert wurden
-        const removeLoadingWhenReady = () => {
-          if(loading) loading.classList.add('is-hidden');
-          this.tileset.initialTilesLoaded.removeEventListener(removeLoadingWhenReady);
-        };
-        this.tileset.initialTilesLoaded.addEventListener(removeLoadingWhenReady);
-        // Safety-Timeout, falls das Event nie feuert
-        setTimeout(()=>{ if(loading) loading.classList.add('is-hidden'); }, 6000);
-
-      } catch(e){
-        console.error('[Map3D] 3D Tiles Fehler:', e);
-        const msg = (e && e.message) || '';
-        const status = e && (e.statusCode || msg.match(/\b(403|404)\b/)?.[1]);
-        // Bekanntes EEA-Problem: Google liefert 3D Tiles in der EU teils nicht aus.
-        // Statt Banner + leerer Hintergrund: 2D-Fallback mit ESRI-Satellitenbildern.
-        if(String(status)==='403' || /EEA|not available for your account|PERMISSION_DENIED/i.test(msg)){
-          console.info('[Map3D] 3D Tiles 403 → Wechsel auf 2D Leaflet/ESRI');
-          Shell.banner('info',
-            '2D-Satellitenansicht aktiv.',
-            'Google 3D-Tiles sind für deinen Account/Region nicht freigegeben — wir zeigen die Dachflächen auf hochaufgelöstem Satellitenbild. Funktional 1:1 wie 3D.');
-          // Cesium-Viewer zerstoeren, Leaflet uebernimmt
-          if(this.viewer){ try{ this.viewer.destroy(); }catch(_){} this.viewer = null; }
-          Map2D.init(lat, lng);
+        const buildings = await OSMBuildings.fetch(lat, lng, 60);
+        if(buildings.length){
+          this.userBuilding = OSMBuildings.render(this.viewer, buildings, lat, lng);
         } else {
-          Shell.banner('warn', '3D-Modell konnte nicht geladen werden.',
-            'Wir berechnen die Solar-Potenziale anhand der API-Daten weiter – die 3D-Vorschau ist optional.');
+          console.warn('[Map3D] Keine OSM-Buildings im Umkreis');
         }
-        if(loading) loading.classList.add('is-hidden');
-        return;
+      } catch(e){
+        console.warn('[Map3D] OSM-Buildings konnten nicht geladen werden:', e.message);
       }
 
-      // Kameraflug zur Adresse: Sued-West-Position, blickt Nord-Ost auf das Haus.
-      // Position ~70m SW + 70m hoch, Pitch -45° => Target sitzt mittig im Frame
-      // bei guter Sicht auf Dach + suedlich/westliche Hausfront.
-      const dLat = -0.00065;          // ~72m sueden
-      const dLng = -0.00105;          // ~72m westen (cos(51.8°) ≈ 0.62)
+      // Adress-Pin (Cesium Billboard)
+      this.viewer.entities.add({
+        position: Cesium.Cartesian3.fromDegrees(lng, lat, (this.userBuilding && this.userBuilding.height || 0) + 1),
+        point: {
+          pixelSize: 12,
+          color: Cesium.Color.fromCssColorString('#0D73FC'),
+          outlineColor: Cesium.Color.WHITE,
+          outlineWidth: 2,
+          heightReference: Cesium.HeightReference.NONE,
+        },
+      });
+
+      // Kamera schraeg von Sued-West
+      const dLat = -0.00060;
+      const dLng = -0.00095;
       this.viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(lng + dLng, lat + dLat, 70),
+        destination: Cesium.Cartesian3.fromDegrees(lng + dLng, lat + dLat, 90),
         orientation: {
-          heading: Cesium.Math.toRadians(45),   // Nord-Ost: schaut auf das Haus
-          pitch:   Cesium.Math.toRadians(-45),
+          heading: Cesium.Math.toRadians(45),
+          pitch:   Cesium.Math.toRadians(-40),
           roll:    0,
         },
-        duration: 2.5,
+        duration: 2.0,
       });
+
+      if(loading) loading.classList.add('is-hidden');
+    },
+
+    /* Hoehe ueber Boden, auf der NRW-/Solar-Polygone gerendert werden sollen.
+       Standard 6.5m (typisches Einfamilienhaus-Traufdach), sonst OSM-Hoehe. */
+    roofHeight(){
+      if(this.userBuilding && this.userBuilding.height) return this.userBuilding.height + 0.05;
+      return 6.55;
     },
 
     destroy(){
       if(this.viewer){
         try{ this.viewer.destroy(); } catch(_){}
         this.viewer = null;
-        this.tileset = null;
+        this.userBuilding = null;
       }
-      // Roof3D-Zustand mitraeumen, damit der Step bei erneutem Betreten frisch ist
       Roof3D._reset();
-      // Auch Leaflet-Fallback aufraeumen, falls aktiv
       if(Map2D.isActive()) Map2D.destroy();
     },
   };
@@ -2155,11 +2252,11 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         }
         if(!hull || hull.length < 3) return;
 
-        // WICHTIG: Polygon-Positionen OHNE Hoehe (auf dem WGS84-Ellipsoid).
-        // Mit classificationType=CESIUM_3D_TILE projiziert Cesium die 2D-Form
-        // wie einen Stempel von oben auf die Dachflaeche der 3D-Tiles.
+        // Polygon liegt flach auf der Dachhoehe des OSM-Gebaeudes.
+        // Ohne Google-3D-Tiles brauchen wir explizite Hoehen statt Classification.
+        const roofH = Map3D.roofHeight();
         const positions = hull.map(p =>
-          Cesium.Cartesian3.fromDegrees(p.lng, p.lat)
+          Cesium.Cartesian3.fromDegrees(p.lng, p.lat, roofH)
         );
 
         const entity = viewer.entities.add({
@@ -2167,7 +2264,9 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           polygon: {
             hierarchy: new Cesium.PolygonHierarchy(positions),
             material: colors[type],
-            classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
+            height: roofH,
+            outline: true,
+            outlineColor: Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.7),
           },
           properties: {
             segIdx, type, panels: segPanels, az, pitch,
@@ -2259,20 +2358,23 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       if(!this._activePanels) this._activePanels = new Map();
       const list = [];
 
+      const roofH = Map3D.roofHeight() + 0.05;     // 5cm ueber den Segmenten
       segPanels.forEach(p => {
         const isLand = p.orientation === 'LANDSCAPE';
         const w = isLand ? panelH : panelW;
         const h = isLand ? panelW : panelH;
         const corners = this._rotatedRect(p.center.latitude, p.center.longitude, w, h, az);
         const positions = corners.map(c =>
-          Cesium.Cartesian3.fromDegrees(c.lng, c.lat)
+          Cesium.Cartesian3.fromDegrees(c.lng, c.lat, roofH)
         );
 
         const moduleEntity = viewer.entities.add({
           polygon: {
             hierarchy: new Cesium.PolygonHierarchy(positions),
             material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.95),
-            classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
+            height: roofH,
+            outline: true,
+            outlineColor: Cesium.Color.fromCssColorString('#93c5fd').withAlpha(0.95),
           },
           properties: { isModule: true, segIdx, panel: p },
         });
@@ -2448,7 +2550,8 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
             polygon: {
               hierarchy: new Cesium.PolygonHierarchy(this.points.slice()),
               material: Cesium.Color.fromCssColorString('#22c55e').withAlpha(0.55),
-              classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
+              outline: true,
+              outlineColor: Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.7),
             },
             properties: { isManualRoof: true },
           });
@@ -2618,11 +2721,29 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       return this.isInNRW(lat, lng);
     },
 
-    async fetchRoofs(lat, lng){
-      const minLat = lat - this.BBOX_PADDING;
-      const maxLat = lat + this.BBOX_PADDING;
-      const minLng = lng - this.BBOX_PADDING;
-      const maxLng = lng + this.BBOX_PADDING;
+    async fetchRoofs(lat, lng, clipPoly){
+      // Wenn ein Clip-Polygon (OSM-Building) vorliegt: dessen Bounding-Box +5m Puffer
+      // verwenden statt der Default-Box um lat/lng. So holen wir genau die Polygone
+      // ueber DEM Haus, nicht ueber die Nachbarn.
+      let minLat, maxLat, minLng, maxLng;
+      if(clipPoly && clipPoly.length){
+        let mnLat=Infinity, mxLat=-Infinity, mnLng=Infinity, mxLng=-Infinity;
+        clipPoly.forEach(c => {
+          if(c[1] < mnLat) mnLat = c[1];
+          if(c[1] > mxLat) mxLat = c[1];
+          if(c[0] < mnLng) mnLng = c[0];
+          if(c[0] > mxLng) mxLng = c[0];
+        });
+        // 5m Puffer
+        const padLat = 0.000045, padLng = 0.000072;
+        minLat = mnLat - padLat; maxLat = mxLat + padLat;
+        minLng = mnLng - padLng; maxLng = mxLng + padLng;
+      } else {
+        minLat = lat - this.BBOX_PADDING;
+        maxLat = lat + this.BBOX_PADDING;
+        minLng = lng - this.BBOX_PADDING;
+        maxLng = lng + this.BBOX_PADDING;
+      }
       const layer  = CFG.nrwLayer || this.LAYER;
 
       // WFS GetFeature-URL — GeoJSON output. WFS nutzt typischerweise
@@ -2653,25 +2774,35 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       const d = await res.json();
       if(!d.features || !d.features.length) throw new Error('NRW WFS: keine Features in Bbox');
 
-      // Filter: nur Polygone die zu DIESEM Haus gehoeren.
-      // Praeferenz: Polygon das den Klick-Punkt enthaelt; Fallback: alle Polygone
-      // die mit dem ENTHALTENEN Polygon raeumlich verbunden sind (selbe Footprint-Gruppe).
+      // BESTER Filter: OSM-Gebaeude-Footprint als Clip-Maske.
+      // Nur Polygone behalten deren Mittelpunkt IM User-Hausgrundriss liegt —
+      // funktioniert auch fuer Reihenhaeuser wo Distanz-Filter versagen.
+      if(clipPoly && clipPoly.length >= 3){
+        const inside = d.features.filter(f => {
+          const c = this._featureCentroid(f);
+          return this._pointInRing(clipPoly, c.lng, c.lat);
+        });
+        if(inside.length){
+          console.info('[NRWSolar] OSM-Clip behaelt '+inside.length+'/'+d.features.length+' Polygone');
+          return inside;
+        }
+        console.warn('[NRWSolar] OSM-Clip leer — Fallback Distanz-Filter');
+      }
+
+      // Fallback ohne OSM-Footprint: Polygon das den Klick-Punkt enthaelt + nahe Nachbarn
       const containing = d.features.filter(f => this._featureContains(f, lat, lng));
       if(containing.length){
-        // Plus alle Features die dem Container raeumlich nahe sind (zusammenhaengendes Dach
-        // mit mehreren Segmenten = mehrere Polygone fuer dasselbe Haus)
         const ref = this._featureCentroid(containing[0]);
-        const close = d.features.filter(f => {
+        return d.features.filter(f => {
           if(containing.includes(f)) return true;
           const c = this._featureCentroid(f);
-          // 15m Distanz: gleiches Haus, nicht der Nachbar
           const dLat = (c.lat - ref.lat) * 111320;
           const dLng = (c.lng - ref.lng) * 111320 * Math.cos(ref.lat * Math.PI / 180);
-          return Math.sqrt(dLat*dLat + dLng*dLng) < 15;
+          // Engerer Radius (8m) fuer den Notfall-Fallback
+          return Math.sqrt(dLat*dLat + dLng*dLng) < 8;
         });
-        return close;
       }
-      // Kein Polygon enthaelt den Punkt → naechstes Polygon nehmen + dessen Nachbarn
+      // Letzte Verteidigungslinie: naechstes Polygon + 8m
       let best = d.features[0], bestD = Infinity;
       d.features.forEach(f => {
         const c = this._featureCentroid(f);
@@ -2685,8 +2816,21 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         const c = this._featureCentroid(f);
         const dLat = (c.lat - refC.lat) * 111320;
         const dLng = (c.lng - refC.lng) * 111320 * Math.cos(refC.lat * Math.PI / 180);
-        return Math.sqrt(dLat*dLat + dLng*dLng) < 15;
+        return Math.sqrt(dLat*dLat + dLng*dLng) < 8;
       });
+    },
+
+    /* Ray-Casting Punkt-im-Ring (lon/lat) — fuer Clip-Polygone */
+    _pointInRing(ring, x, y){
+      let inside = false;
+      for(let i=0, j=ring.length-1; i<ring.length; j=i++){
+        const xi=ring[i][0], yi=ring[i][1];
+        const xj=ring[j][0], yj=ring[j][1];
+        const intersect = ((yi > y) !== (yj > y)) &&
+          (x < (xj - xi) * (y - yi) / (yj - yi + 1e-12) + xi);
+        if(intersect) inside = !inside;
+      }
+      return inside;
     },
 
     _featureCentroid(feat){
@@ -2806,12 +2950,13 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     },
 
     /* Komfortable End-to-End-Funktion: Adresse rein, Solar-API-aehnliches
-       Result raus. Wirft bei Fehlern → Caller faellt auf Google Solar API zurueck. */
-    async loadForAddress(lat, lng){
+       Result raus. clipPoly = OSM-Gebaeudefootprint zur Filter-Praezision.
+       Wirft bei Fehlern → Caller faellt auf Google Solar API zurueck. */
+    async loadForAddress(lat, lng, clipPoly){
       if(!this.enabled(lat, lng)){
         throw new Error('NRWSolar: Adresse außerhalb NRW oder deaktiviert');
       }
-      const features = await this.fetchRoofs(lat, lng);
+      const features = await this.fetchRoofs(lat, lng, clipPoly);
       return this.toSolarPotential(features);
     },
   };
@@ -2857,20 +3002,20 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       const {lat, lng} = State.address;
       Step2.updateSelection();
 
-      const tasks = [
-        Solar.loadForAddress(),
-      ];
-      if(typeof Cesium !== 'undefined' && CFG.apiKey){
-        tasks.push(Map3D.init(lat, lng));
-      } else if(!CFG.apiKey){
-        // Banner haben wir bereits im Shell.init()
-      } else {
+      if(typeof Cesium === 'undefined'){
         Shell.banner('warn', '3D-Bibliothek nicht geladen.', 'Cesium konnte nicht eingebunden werden – wir setzen mit Schätzwerten fort.');
+        await Solar.loadForAddress();
+        return;
       }
 
-      const [bi] = await Promise.all(tasks);
+      // 1) Cesium-3D-Viewer + OSM-Buildings ZUERST starten — wir brauchen den
+      //    OSM-Footprint des User-Hauses als Clip-Maske fuer den NRW-Filter.
+      await Map3D.init(lat, lng);
 
-      // Welcher Viewer ist aktiv? 3D Cesium ODER 2D Leaflet (Fallback bei 403).
+      // 2) Solar-Daten holen (NRW nutzt Map3D.userBuilding als Clip)
+      const bi = await Solar.loadForAddress();
+
+      // 3) Polygone auflegen
       if(bi){
         if(Map3D.viewer){
           Roof3D.buildSegments(Map3D.viewer, bi);
@@ -2878,7 +3023,6 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           Map2D.buildSegments(bi);
         }
       } else if(Map3D.viewer || Map2D.isActive()){
-        // Solar-API hatte keine Dachdaten — manueller Modus (nur 3D unterstuetzt das aktuell)
         if(Map3D.viewer){
           Shell.banner('info',
             'Dach manuell vermessen.',
