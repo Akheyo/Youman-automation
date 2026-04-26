@@ -2017,41 +2017,40 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         console.warn('[Map3D] Google 3D Tiles nicht verfuegbar:', e.message);
       }
 
-      // Tier 2: Cesium Ion 3D Tiles (OSM Buildings + World Imagery)
+      // Tier 2: Cesium Ion 3D Tiles (NUR OSM Buildings — KEIN Satellitenbild)
       if(!mode){
         try{
           if(!Cesium.Ion.defaultAccessToken) throw new Error('Kein Cesium-Ion-Token in PV_CONFIG.cesiumIonToken');
-          // World Imagery (Bing Aerial) als Globus-Textur
-          const worldImagery = await Cesium.IonImageryProvider.fromAssetId(2);
-          this.viewer.imageryLayers.addImageryProvider(worldImagery);
-          // OSM Buildings 3D Tileset (offizielle 3D-Gebaeude-Daten weltweit)
+          // OSM Buildings 3D Tileset (offizielle 3D-Gebaeude-Daten weltweit).
+          // KEIN Satellitenbild — sauberer Architektur-Look auf hellem Boden.
           const osmBuildings = await Cesium.createOsmBuildingsAsync();
           this.viewer.scene.primitives.add(osmBuildings);
+          // Heller, neutraler Boden statt Bing-Aerial
+          this.viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#e8eaee');
+          this.viewer.scene.skyAtmosphere.show = true;
+          this.viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#f4f6fa');
           mode = '3D-OSM';
-          console.info('[Map3D] Cesium Ion: World Imagery + OSM Buildings 3D aktiv');
-          Shell.banner('info', '3D-Karte via Cesium Ion aktiv.',
-            'Bing-Aerial-Satellit + offizielles OSM-Buildings-3D-Tileset (alle Gebaeude weltweit als echtes 3D-Modell).');
+          console.info('[Map3D] Cesium Ion: OSM Buildings 3D aktiv (kein Satellitenbild)');
+          Shell.banner('info', '3D-Architektur-Ansicht aktiv.',
+            'Echtes 3D-Gebaeude-Tileset von Cesium Ion (alle Gebaeude weltweit) auf hellem Architektur-Boden, ohne Satellitenbild.');
         } catch(e){
           const errMsg = (e && (e.message || e.toString())) || 'unbekannt';
           console.warn('[Map3D] Cesium Ion fehlgeschlagen:', errMsg, e);
           Shell.banner('warn',
             'Cesium Ion konnte nicht laden.',
-            'Fehler: <code>'+errMsg+'</code>. Pruefe in deinem Cesium-Ion-Dashboard: 1) Token gueltig, 2) Asset-Zugriff erlaubt fuer "Cesium World Imagery" (Asset 2) und "Cesium OSM Buildings" (Asset 96188), 3) Allowed URLs leer oder enthaelt raw.githack.com.');
+            'Fehler: <code>'+errMsg+'</code>. Pruefe in deinem Cesium-Ion-Dashboard: 1) Token gueltig, 2) Asset-Zugriff erlaubt fuer "Cesium OSM Buildings" (Asset 96188), 3) Allowed URLs leer oder enthaelt raw.githack.com.');
         }
       }
 
-      // Tier 3: CAD-Notfall (eigenes Rendering aus Overpass)
+      // Tier 3: 3D-CAD-Notfall (eigenes Rendering aus Overpass) — auch hier kein Satellit
       if(!mode){
-        const esri = new Cesium.UrlTemplateImageryProvider({
-          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          maximumLevel: 22,
-          credit: 'Tiles © Esri',
-        });
-        this.viewer.imageryLayers.addImageryProvider(esri);
+        this.viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#e8eaee');
+        this.viewer.scene.skyAtmosphere.show = true;
+        this.viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#f4f6fa');
         mode = '3D-CAD';
         Shell.banner('warn',
           'Echtes 3D-Tileset nicht erreichbar.',
-          'Weder Google 3D-Tiles noch Cesium Ion — Notfall mit ESRI-Satellit + selbstgebauten OSM-Volumen aktiv.');
+          'Weder Google 3D-Tiles noch Cesium Ion — Notfall mit selbstgebauten OSM-Volumen aktiv.');
       }
       this.mode = mode;
 
