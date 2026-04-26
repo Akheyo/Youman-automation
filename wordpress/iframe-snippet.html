@@ -1,0 +1,37 @@
+<!--
+  A&B Solarenergy PV-Konfigurator — WordPress iframe snippet.
+
+  In WordPress (r-energy theme): einfügen als "Custom HTML" Block auf der
+  Konfigurator-Seite. Die iframe-Höhe passt sich automatisch via postMessage
+  an den Inhalt an.
+
+  WICHTIG: <PRODUCTION_URL> durch die Vercel-URL ersetzen, z.B.:
+    https://konfig.ab-solarenergy.de/embed
+    https://ab-pv-konfigurator.vercel.app/embed
+-->
+<div class="ab-pv-embed" style="width:100%; min-height: 720px;">
+  <iframe
+    id="ab-pv-iframe"
+    src="https://konfig.ab-solarenergy.de/embed"
+    title="A&amp;B Solarenergy PV-Konfigurator"
+    style="width:100%; border:0; display:block; min-height: 720px; background:#f9fafc;"
+    allow="geolocation; fullscreen"
+    loading="lazy"
+    referrerpolicy="no-referrer-when-downgrade"
+  ></iframe>
+</div>
+<script>
+(function () {
+  // Listen for resize messages from the iframe and adjust its height.
+  var iframe = document.getElementById('ab-pv-iframe');
+  if (!iframe) return;
+  window.addEventListener('message', function (e) {
+    var trustedOrigin = 'https://konfig.ab-solarenergy.de';
+    if (e.origin !== trustedOrigin) return;
+    if (!e.data || e.data.type !== 'ab-pv-resize') return;
+    if (typeof e.data.height === 'number' && e.data.height > 400) {
+      iframe.style.height = e.data.height + 'px';
+    }
+  });
+})();
+</script>
