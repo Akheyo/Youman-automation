@@ -32,10 +32,11 @@
 <script>
   window.PV_CONFIG = {
     apiKey: 'AIzaSyArhLNxY335q52fCFXcQWLNQlU9qEfhXfk',
-    // Cesium Ion-Token. Default ist der oeffentliche Sandcastle-Token, der von
-    // Cesium fuer Demos/Sandcastle freigegeben ist. Fuer Produktion gegen einen
-    // eigenen Token tauschen (kostenlos auf cesium.com/ion/signup, 25k MAU/Monat).
-    cesiumIonToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlMzdiZjBkMC0xMmMyLTQ1MzUtYTcyOC1jZmRkOWMyN2YyNjkiLCJpZCI6MzMyMTksImlhdCI6MTU5OTcxMjE3NX0.pVRbQCbdU_C8MZzD7N5cqRMAcXt05Gh9nxlpI6Us9b4',
+    // Cesium Ion-Token. Auf cesium.com erstellt, gibt Zugriff auf Cesium World
+    // Imagery (Bing Aerial) + Cesium OSM Buildings 3D Tileset.
+    // Vor Produktiv-Einsatz: Domain-Restriction in Cesium Ion auf die finale
+    // WordPress-Domain setzen damit der Token nicht von Fremden missbraucht wird.
+    cesiumIonToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIwOWFmNjdiNi0yNDM4LTRmMjgtYTE1My03MjU5ZmM0MTgyNzMiLCJpZCI6NDIzODIwLCJpYXQiOjE3NzcyMjA0OTd9.rqwwynB7xTlzza_OtA_uZ-zCjvyIklHgOMpEMcJ3_HA',
     leadWebhook: ''
   };
 </script>
