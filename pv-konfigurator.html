@@ -1109,6 +1109,15 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
    * ============================================================ */
   const Shell = {
     init(){
+      // file:// erkennen — Browser blockiert dort fast alle fetch()-Calls
+      // (ESRI/Overpass/NRW), daher zeigt sich der schwarze Globus-Effekt.
+      // Wir blockieren die Nutzung mit einem Vollbild-Overlay und liefern
+      // einen direkten Link zur jsDelivr-gehosteten HTTPS-Variante.
+      if(window.location.protocol === 'file:'){
+        Shell._showFileProtocolWarning();
+        return;
+      }
+
       // Step-1 Weiter
       document.getElementById('btnNext1').addEventListener('click', ()=>{
         if(!State.address.confirmed) return;
@@ -1128,11 +1137,49 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         );
       }
 
-      // Cesium ion-Token leeren – wir nutzen ausschliesslich Google Photorealistic 3D Tiles.
-      // Ohne diesen Reset versucht Cesium beim Default-Imagery-Provider gegen die ion-API zu reden.
+      // Cesium-Ion-Token leeren — wir nutzen freie Tile-Server (ESRI, OSM)
       if(typeof Cesium !== 'undefined'){
         Cesium.Ion.defaultAccessToken = '';
       }
+    },
+
+    /* Vollbild-Warnung wenn der Nutzer die Datei mit Doppelklick geoeffnet hat.
+       Erklaert das Problem in einer Sprache und liefert den direkten Online-Link. */
+    _showFileProtocolWarning(){
+      const ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#0d1424;color:#fff;padding:48px 32px;overflow:auto;font-family:Heebo,system-ui,Arial,sans-serif;line-height:1.55';
+      ov.innerHTML = ''
+        + '<div style="max-width:760px;margin:0 auto">'
+        +   '<div style="font-size:14px;letter-spacing:2px;color:#0D73FC;margin-bottom:8px">A&amp;B SOLARENERGY · KONFIGURATOR</div>'
+        +   '<h1 style="font-size:32px;margin:0 0 16px 0">Du hast die Datei direkt geoeffnet — so funktioniert es nicht.</h1>'
+        +   '<p style="font-size:17px;color:#cdd5e1;margin:0 0 24px 0">'
+        +     'Browser blockieren aus <code>file://</code> alle Karten-, Satelliten- und Solardaten. '
+        +     'Du siehst deshalb einen schwarzen Globus mit Stern-Hintergrund.'
+        +   '</p>'
+        +   '<div style="background:#1a2332;border-left:4px solid #22c55e;padding:20px 24px;border-radius:8px;margin-bottom:24px">'
+        +     '<div style="font-size:14px;letter-spacing:1px;color:#22c55e;margin-bottom:8px">EINFACHSTE LOESUNG (KEIN SETUP)</div>'
+        +     '<p style="margin:0 0 12px 0;color:#dde2e8">Oeffne diese URL direkt im Browser — die Datei wird live von GitHub via jsDelivr-CDN geladen, alles funktioniert sofort:</p>'
+        +     '<a href="https://cdn.jsdelivr.net/gh/akheyo/youman-automation@claude/solar-configurator-tool-Q7sGc/pv-konfigurator.html" '
+        +       'style="display:inline-block;background:#0D73FC;color:#fff;padding:14px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:16px">'
+        +       'Konfigurator online oeffnen →'
+        +     '</a>'
+        +     '<div style="margin-top:12px;font-size:13px;color:#7a8393;word-break:break-all">'
+        +       'https://cdn.jsdelivr.net/gh/akheyo/youman-automation@claude/solar-configurator-tool-Q7sGc/pv-konfigurator.html'
+        +     '</div>'
+        +   '</div>'
+        +   '<details style="background:#1a2332;border-radius:8px;padding:16px 24px;margin-bottom:16px">'
+        +     '<summary style="cursor:pointer;font-weight:600">Alternative: Lokaler Server (Python)</summary>'
+        +     '<ol style="color:#cdd5e1;margin:12px 0 0 0;padding-left:20px">'
+        +       '<li>Windows-Taste druecken, "powershell" tippen, Enter</li>'
+        +       '<li>Tippen: <code style="background:#0d1424;padding:2px 6px;border-radius:3px">cd Downloads</code> → Enter</li>'
+        +       '<li>Tippen: <code style="background:#0d1424;padding:2px 6px;border-radius:3px">python -m http.server 8000</code> → Enter</li>'
+        +       '<li>Im Browser oeffnen: <code style="background:#0d1424;padding:2px 6px;border-radius:3px">http://localhost:8000/pv-konfigurator.html</code></li>'
+        +     '</ol>'
+        +   '</details>'
+        +   '<p style="color:#7a8393;font-size:13px;margin:24px 0 0 0">Erkanntes Protokoll: <code>'+window.location.protocol+'</code></p>'
+        + '</div>';
+      document.body.innerHTML = '';
+      document.body.appendChild(ov);
     },
 
     goto(n){
@@ -1735,13 +1782,15 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
               + ');out geom tags;';
 
       // Mehrere Mirrors probieren — Overpass-Hauptserver ist oft ueberlastet,
-      // de.overpass + kumi sind gleichwertig und meistens schneller in DE.
+      // kumi.systems + openstreetmap.fr sind gleichwertig.
       const mirrors = [
         'https://overpass-api.de/api/interpreter',
         'https://overpass.kumi.systems/api/interpreter',
         'https://overpass.openstreetmap.fr/api/interpreter',
       ];
       let lastErr;
+
+      // Versuch 1: direkt POST gegen jeden Mirror
       for(const m of mirrors){
         try {
           const res = await fetch(m, {
@@ -1755,7 +1804,20 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           return this._parseElements(d.elements);
         } catch(e){ lastErr = e; }
       }
-      throw lastErr || new Error('Alle Overpass-Mirrors fehlgeschlagen');
+
+      // Versuch 2: GET via corsproxy.io (falls direkt CORS blockt)
+      const proxy = CFG.osmProxy || 'https://corsproxy.io/?';
+      for(const m of mirrors){
+        try {
+          const fullUrl = m + '?data=' + encodeURIComponent(q);
+          const res = await fetch(proxy + encodeURIComponent(fullUrl));
+          if(!res.ok){ lastErr = new Error('proxy '+m+': HTTP '+res.status); continue; }
+          const d = await res.json();
+          if(!d.elements){ lastErr = new Error('proxy '+m+': no elements'); continue; }
+          return this._parseElements(d.elements);
+        } catch(e){ lastErr = e; }
+      }
+      throw lastErr || new Error('Overpass via direkte Mirrors und Proxy fehlgeschlagen');
     },
 
     _parseElements(elements){
