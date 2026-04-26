@@ -55,14 +55,21 @@ interface CesiumModule {
   };
   ScreenSpaceEventType: { LEFT_CLICK: number };
   createWorldTerrainAsync: () => Promise<unknown>;
+  createOsmBuildingsAsync: () => Promise<unknown>;
 }
 
 interface CesiumViewerInstance {
-  scene: { primitives: { add: (p: unknown) => unknown }; globe: { enableLighting: boolean } };
+  scene: {
+    primitives: { add: (p: unknown) => unknown; remove: (p: unknown) => boolean };
+    globe: { enableLighting: boolean; depthTestAgainstTerrain: boolean };
+    skyAtmosphere: { show: boolean };
+  };
   entities: {
     add: (e: Record<string, unknown>) => { id: string };
     removeAll: () => void;
+    removeById: (id: string) => boolean;
     getById: (id: string) => unknown;
+    values: { id: string }[];
   };
   camera: { flyTo: (opts: Record<string, unknown>) => void };
   destroy: () => void;
@@ -82,6 +89,7 @@ export default function CesiumViewer() {
   const activeSegmentIds = useApp((s) => s.activeSegmentIds);
   const toggleSegment = useApp((s) => s.toggleSegment);
   const layout = useApp((s) => s.layout);
+  const building = useApp((s) => s.building);
 
   const lod2 = getLod2Config();
   const region = address ? regierungsbezirkFor(address.center[1], address.center[0]) : null;
@@ -133,6 +141,7 @@ export default function CesiumViewer() {
           selectionIndicator: false,
         });
         viewer.scene.globe.enableLighting = true;
+        viewer.scene.globe.depthTestAgainstTerrain = true;
 
         // Click handler — use the runtime viewer.scene.pick.
         const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
@@ -162,14 +171,16 @@ export default function CesiumViewer() {
     };
   }, [toggleSegment]);
 
-  // Load LoD2 tileset once Cesium is ready and URL is configured.
+  // Load LoD2 tileset (production path) once Cesium is ready and URL is configured.
+  // Falls back to OSM Buildings (next effect) if the URL is empty.
   useEffect(() => {
     if (!bootReady || !lod2.url || !cesiumRef.current || !viewerRef.current) return;
     let cancelled = false;
+    let tileset: unknown = null;
     (async () => {
       try {
         const Cesium = cesiumRef.current!;
-        const tileset = await Cesium.Cesium3DTileset.fromUrl(lod2.url!, {
+        tileset = await Cesium.Cesium3DTileset.fromUrl(lod2.url!, {
           maximumScreenSpaceError: 12,
           dynamicScreenSpaceError: true,
           dynamicScreenSpaceErrorDensity: 0.00278,
@@ -178,31 +189,64 @@ export default function CesiumViewer() {
         if (cancelled || !viewerRef.current) return;
         viewerRef.current.scene.primitives.add(tileset);
       } catch (err) {
-        // Loading failed — surface the actionable message but don't crash the viewer.
         // eslint-disable-next-line no-console
         console.warn('[Cesium] LoD2 tileset failed to load:', err);
       }
     })();
     return () => {
       cancelled = true;
+      if (tileset && viewerRef.current && !viewerRef.current.isDestroyed()) {
+        viewerRef.current.scene.primitives.remove(tileset);
+      }
     };
   }, [bootReady, lod2.url]);
 
-  // Fly camera to address and re-render solar segments.
+  // Interim 3D: Cesium OSM Buildings — flat-roof boxes for every building in
+  // OSM. Used as a stop-gap until the real LoD2 tileset is hosted, so the
+  // user gets *some* 3D context immediately. Disabled when a real LoD2 URL
+  // is configured (no point overlaying the inferior dataset on top).
+  useEffect(() => {
+    if (!bootReady || lod2.url || !cesiumRef.current || !viewerRef.current) return;
+    let cancelled = false;
+    let osmBuildings: unknown = null;
+    (async () => {
+      try {
+        const Cesium = cesiumRef.current!;
+        osmBuildings = await Cesium.createOsmBuildingsAsync();
+        if (cancelled || !viewerRef.current) return;
+        viewerRef.current.scene.primitives.add(osmBuildings);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('[Cesium] OSM Buildings konnten nicht laden (Cesium-Ion-Token prüfen):', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      if (osmBuildings && viewerRef.current && !viewerRef.current.isDestroyed()) {
+        viewerRef.current.scene.primitives.remove(osmBuildings);
+      }
+    };
+  }, [bootReady, lod2.url]);
+
+  // Fly camera to address. Oblique perspective so the OSM/LoD2 buildings
+  // are visible as 3D mass, not from above.
   useEffect(() => {
     if (!bootReady || !address || !cesiumRef.current || !viewerRef.current) return;
     const Cesium = cesiumRef.current;
     const viewer = viewerRef.current;
     const [lng, lat] = address.center;
 
-    viewer.entities.removeAll();
+    // Camera position: 200m north of and 180m above the target, looking south
+    // and down at -35°. This is the standard "oblique 3D" framing that makes
+    // building masses readable.
     viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(lng, lat, 220),
+      destination: Cesium.Cartesian3.fromDegrees(lng, lat - 0.0018, 180),
       orientation: {
         heading: Cesium.Math.toRadians(0),
-        pitch: Cesium.Math.toRadians(-55),
+        pitch: Cesium.Math.toRadians(-35),
+        roll: 0,
       },
-      duration: 1.2,
+      duration: 1.4,
     });
   }, [bootReady, address]);
 
@@ -212,8 +256,43 @@ export default function CesiumViewer() {
     const Cesium = cesiumRef.current;
     const viewer = viewerRef.current;
 
-    // Clear segment-only entities (keep panel entities by re-keying).
+    // Clear and re-render every entity. Cheap at this scale (<200 polygons).
     viewer.entities.removeAll();
+
+    // Address marker — pin at the geocoded point so the user can verify the
+    // location actually matches their house, not the neighbour's.
+    if (address) {
+      viewer.entities.add({
+        id: `addr_${address.id}`,
+        position: Cesium.Cartesian3.fromDegrees(address.center[0], address.center[1], 50),
+        point: {
+          pixelSize: 12,
+          color: Cesium.Color.fromCssColorString('#0D73FC').withAlpha(0.95),
+          outlineColor: Cesium.Color.fromCssColorString('#ffffff').withAlpha(1),
+          outlineWidth: 2,
+          heightReference: 1, // CLAMP_TO_GROUND
+        } as Record<string, unknown>,
+      });
+    }
+
+    // Auto-detected building outline — gives visual confirmation of which
+    // building was picked. User can click another building if it's wrong
+    // (handled by the click handler at boot via "bldg_" prefix below).
+    if (building && building.coordinates) {
+      const flat = building.coordinates.flatMap((p) => [p[0] as number, p[1] as number]);
+      viewer.entities.add({
+        id: `bldg_${building.id}`,
+        polygon: {
+          hierarchy: new Cesium.PolygonHierarchy(
+            (Cesium.Cartesian3.fromDegrees as unknown as (...a: number[]) => unknown[])(...flat),
+          ),
+          material: Cesium.Color.fromCssColorString('#0D73FC').withAlpha(0.10),
+          outline: true,
+          outlineColor: Cesium.Color.fromCssColorString('#0D73FC').withAlpha(0.95),
+          classificationType: 2,
+        } as Record<string, unknown>,
+      });
+    }
 
     for (const seg of segments) {
       const ring = seg.polygon.geometry.coordinates[0];
@@ -227,13 +306,12 @@ export default function CesiumViewer() {
           hierarchy: new Cesium.PolygonHierarchy(
             (Cesium.Cartesian3.fromDegrees as unknown as (...a: number[]) => unknown[])(...positions),
           ),
-          material: Cesium.Color.fromCssColorString(color).withAlpha(isActive ? 0.65 : 0.45),
+          material: Cesium.Color.fromCssColorString(color).withAlpha(isActive ? 0.7 : 0.5),
           outline: true,
           outlineColor: Cesium.Color.fromCssColorString('#0D73FC').withAlpha(0.9),
-          // When LoD2 is hosted, segments classify the building tiles.
-          // When not, segments lay on terrain — that's the honest 2.5D fallback.
+          // classificationType=2 → CESIUM_3D_TILE: project the polygon onto
+          // the 3D building geometry (works with OSM Buildings and LoD2).
           classificationType: 2,
-          height: lod2.configured ? undefined : 0.5,
         } as Record<string, unknown>,
       });
     }
@@ -249,16 +327,15 @@ export default function CesiumViewer() {
             hierarchy: new Cesium.PolygonHierarchy(
               (Cesium.Cartesian3.fromDegrees as unknown as (...a: number[]) => unknown[])(...positions),
             ),
-            material: Cesium.Color.fromCssColorString('#0D73FC').withAlpha(0.85),
+            material: Cesium.Color.fromCssColorString('#0D73FC').withAlpha(0.92),
             outline: true,
             outlineColor: Cesium.Color.fromCssColorString('#ffffff').withAlpha(0.95),
             classificationType: 2,
-            height: lod2.configured ? undefined : 0.6,
           } as Record<string, unknown>,
         });
       }
     }
-  }, [bootReady, segments, activeSegmentIds, layout, lod2.configured]);
+  }, [bootReady, segments, activeSegmentIds, layout, address, building]);
 
   return (
     <div className="cesium-viewer">
@@ -276,19 +353,22 @@ export default function CesiumViewer() {
       )}
       {!lod2.configured && bootReady && (
         <div className="cesium-viewer__hint">
-          <strong>2.5D-Ansicht</strong> · Solarkataster-Polygone auf Gelände-Mesh.
+          <strong>3D-Vorschau</strong> · OSM-Gebäude (Box-Extrusion) +
+          Solarkataster-Polygone.
           {region && (
             <>
               {' '}
-              LoD2-Tileset für Regierungsbezirk <em>{region.label}</em> noch nicht gehostet —{' '}
+              Echte Dachformen (Walmdach, Sattel, Pult&hellip;) sind verfügbar
+              sobald das NRW-LoD2-Tileset für Regierungsbezirk{' '}
+              <em>{region.label}</em> gehostet ist —{' '}
               <a
                 href="https://github.com/akheyo/youman-automation/blob/claude/pv-configurator-3d-XN7Kb/scripts/lod2-pipeline/README.md"
                 target="_blank"
                 rel="noopener"
               >
                 Pipeline-Anleitung
-              </a>{' '}
-              ausführen für photorealistische Dachformen.
+              </a>
+              .
             </>
           )}
         </div>

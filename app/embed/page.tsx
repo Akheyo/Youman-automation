@@ -1,13 +1,15 @@
 /**
  * /embed — iframe-friendly variant.
  *
- * Strips the outer footer, removes the back-link to /privacy (the host site
- * has its own), and reports its scrollHeight via postMessage so the host can
- * resize the iframe seamlessly.
+ * SSR-off because PVConfigurator is browser-only (Zustand + Cesium).
  */
 
-import PVConfigurator from '@/components/PVConfigurator';
+import dynamic from 'next/dynamic';
 import EmbedResizer from './EmbedResizer';
+
+const PVConfigurator = dynamic(() => import('@/components/PVConfigurator'), {
+  ssr: false,
+});
 
 export const metadata = {
   title: 'PV-Konfigurator',
