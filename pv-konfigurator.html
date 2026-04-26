@@ -1733,25 +1733,39 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
               + 'way[building](around:'+radiusM+','+lat+','+lng+');'
               + 'relation[building](around:'+radiusM+','+lat+','+lng+');'
               + ');out geom tags;';
-      const baseUrl = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q);
-      // Overpass hat in der Regel CORS — falls nicht: Proxy via Config
-      const proxy = CFG.osmProxy || '';
-      const url = proxy ? proxy + encodeURIComponent(baseUrl) : baseUrl;
 
-      const res = await fetch(url);
-      if(!res.ok) throw new Error('Overpass HTTP '+res.status);
-      const d = await res.json();
-      if(!d.elements || !d.elements.length) return [];
+      // Mehrere Mirrors probieren — Overpass-Hauptserver ist oft ueberlastet,
+      // de.overpass + kumi sind gleichwertig und meistens schneller in DE.
+      const mirrors = [
+        'https://overpass-api.de/api/interpreter',
+        'https://overpass.kumi.systems/api/interpreter',
+        'https://overpass.openstreetmap.fr/api/interpreter',
+      ];
+      let lastErr;
+      for(const m of mirrors){
+        try {
+          const res = await fetch(m, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'data=' + encodeURIComponent(q),
+          });
+          if(!res.ok){ lastErr = new Error(m+': HTTP '+res.status); continue; }
+          const d = await res.json();
+          if(!d.elements){ lastErr = new Error(m+': no elements'); continue; }
+          return this._parseElements(d.elements);
+        } catch(e){ lastErr = e; }
+      }
+      throw lastErr || new Error('Alle Overpass-Mirrors fehlgeschlagen');
+    },
 
-      return d.elements
+    _parseElements(elements){
+      return elements
         .filter(el => el.geometry && el.geometry.length >= 3)
         .map(el => {
           const coords = el.geometry.map(p => [p.lon, p.lat]);
-          // Ring schliessen wenn noetig
           const first = coords[0], last = coords[coords.length-1];
           if(first[0] !== last[0] || first[1] !== last[1]) coords.push([first[0], first[1]]);
           const tags = el.tags || {};
-          // Hoehe aus Tags ableiten — sonst residential-default 7m
           const explicit = parseFloat(tags['height']) || parseFloat(tags['building:height']);
           const levels = parseFloat(tags['building:levels']) || parseFloat(tags['levels']);
           const height = explicit || (levels ? levels * 3.2 : 7);
@@ -1849,11 +1863,8 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       if(this.viewer) this.destroy();
 
       try{
-        const esri = new Cesium.UrlTemplateImageryProvider({
-          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          maximumLevel: 19,
-          credit: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
-        });
+        // Cesium-Viewer ohne Default-Imagery (sonst zieht 1.122 das Bing-Default
+        // ueber Cesium-Ion und ohne Token zeigt sich gar nichts -> schwarzer Globus)
         this.viewer = new Cesium.Viewer('cesium-container', {
           timeline: false,
           animation: false,
@@ -1865,57 +1876,69 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           infoBox: false,
           selectionIndicator: false,
           shouldAnimate: true,
-          baseLayer: new Cesium.ImageryLayer(esri),
+          baseLayer: false,
         });
+
+        // ESRI World Imagery als einzigen Layer hinzufuegen
+        const esri = new Cesium.UrlTemplateImageryProvider({
+          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          maximumLevel: 19,
+          credit: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
+        });
+        this.viewer.imageryLayers.addImageryProvider(esri);
+
+        // Atmosphaere + Globus an (wir brauchen den Globus als Traeger fuer ESRI)
+        this.viewer.scene.skyAtmosphere.show = true;
+        this.viewer.scene.globe.show = true;
+        this.viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#1a2332');
+        this.viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#0d1424');
       } catch(e){
         console.error('[Map3D] Viewer-Init fehlgeschlagen:', e);
         if(loading) loading.classList.add('is-hidden');
-        // Hard-Fallback Leaflet 2D
-        Shell.banner('warn', 'Cesium konnte nicht starten.', 'Wir zeigen die 2D-Satellitenansicht stattdessen.');
+        Shell.banner('warn', 'Cesium konnte nicht starten.', 'Wir zeigen die 2D-Satellitenansicht stattdessen. Fehler: '+(e.message||e));
         Map2D.init(lat, lng);
         return;
       }
 
-      // Atmosphaere + Globus an (wir brauchen den Globus fuer ESRI-Imagery)
-      this.viewer.scene.skyAtmosphere.show = true;
-      this.viewer.scene.globe.show = true;
-      this.viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#0d1424');
-
-      // OSM-Buildings holen (parallel, blockiert Camera nicht zu lange)
+      // OSM-Buildings holen — non-blocking. Diagnose-Banner wenn fehlgeschlagen.
       try{
         const buildings = await OSMBuildings.fetch(lat, lng, 60);
         if(buildings.length){
           this.userBuilding = OSMBuildings.render(this.viewer, buildings, lat, lng);
         } else {
           console.warn('[Map3D] Keine OSM-Buildings im Umkreis');
+          Shell.banner('info', 'Keine OSM-Gebaeude im Umkreis gefunden.', 'Du siehst nur das Satellitenbild — Berechnung laeuft trotzdem.');
         }
       } catch(e){
-        console.warn('[Map3D] OSM-Buildings konnten nicht geladen werden:', e.message);
+        console.warn('[Map3D] OSM-Buildings nicht geladen:', e.message);
+        Shell.banner('info', '3D-Gebaeude konnten nicht geladen werden.', 'Overpass-API erreichbar? Wir berechnen mit dem Satellitenbild weiter. ('+e.message+')');
       }
 
-      // Adress-Pin (Cesium Billboard)
+      // Adress-Pin
       this.viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(lng, lat, (this.userBuilding && this.userBuilding.height || 0) + 1),
+        position: Cesium.Cartesian3.fromDegrees(lng, lat, (this.userBuilding && this.userBuilding.height || 0) + 1.5),
         point: {
-          pixelSize: 12,
+          pixelSize: 14,
           color: Cesium.Color.fromCssColorString('#0D73FC'),
           outlineColor: Cesium.Color.WHITE,
           outlineWidth: 2,
           heightReference: Cesium.HeightReference.NONE,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY,
         },
       });
 
-      // Kamera schraeg von Sued-West
-      const dLat = -0.00060;
-      const dLng = -0.00095;
+      // Kamera schraeg von Sued-West, ~120m hoch, steiler Blickwinkel
+      // (mehr Top-Down damit Daecher gut sichtbar sind)
+      const dLat = -0.00045;
+      const dLng = -0.00072;
       this.viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(lng + dLng, lat + dLat, 90),
+        destination: Cesium.Cartesian3.fromDegrees(lng + dLng, lat + dLat, 120),
         orientation: {
           heading: Cesium.Math.toRadians(45),
-          pitch:   Cesium.Math.toRadians(-40),
+          pitch:   Cesium.Math.toRadians(-55),
           roll:    0,
         },
-        duration: 2.0,
+        duration: 1.8,
       });
 
       if(loading) loading.classList.add('is-hidden');
