@@ -1835,9 +1835,10 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         });
     },
 
-    /* Bestimmt das User-Haus (Polygon das die Adresse enthaelt oder am
-       naechsten dran ist) und rendert NUR DIESES als 3D-Box. Nachbarn
-       bleiben unsichtbar — die Satellitenbild-Ansicht ist klar genug. */
+    /* Bestimmt das User-Haus (fuer NRW-Clip) — KEIN 3D-Rendering.
+       Wir zeigen das echte Dach vom Satellitenbild, das ist immer korrekt
+       und sieht photorealistisch aus. Der 3D-Effekt kommt durch die
+       schraege Kamera + die extrudierten NRW-Polygone. */
     render(viewer, buildings, userLat, userLng){
       let userBldg = null;
       let userBldgDist = Infinity;
@@ -1851,26 +1852,25 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         if(dist < userBldgDist){ userBldgDist = dist; userBldg = b; }
       });
 
+      // Nur die UMRANDUNG des User-Hauses rendern (kein extrudierter Block) —
+      // damit man das eigene Haus klar erkennt aber das Dach vom Satellit sieht
       if(userBldg){
-        const positions = userBldg.coords.slice(0, -1).map(c =>
-          Cesium.Cartesian3.fromDegrees(c[0], c[1])
+        const ring = userBldg.coords.slice(0, -1);
+        const positions = ring.map(c =>
+          Cesium.Cartesian3.fromDegrees(c[0], c[1], 0.05)
         );
-        // User-Haus: helle Wand, kraftiges Outline, leicht transparent
-        // damit die Satellitendach-Textur durchschimmert
+        positions.push(positions[0]);
         viewer.entities.add({
-          polygon: {
-            hierarchy: positions,
-            extrudedHeight: userBldg.height,
-            height: 0,
-            material: Cesium.Color.fromCssColorString('#f5efe1').withAlpha(0.78),
-            outline: true,
-            outlineColor: Cesium.Color.fromCssColorString('#1d1d2e').withAlpha(0.85),
+          polyline: {
+            positions: positions,
+            width: 4,
+            material: Cesium.Color.fromCssColorString('#0D73FC').withAlpha(0.95),
           },
-          properties: { isOsmBuilding: true, buildingId: userBldg.id, height: userBldg.height, isUser: true },
+          properties: { isUserBuildingOutline: true },
         });
       }
 
-      console.info('[OSMBuildings] '+buildings.length+' im Umkreis, User-Haus '+(userBldg?'gefunden ('+userBldg.height.toFixed(1)+'m)':'NICHT gefunden — nur Satellitenbild'));
+      console.info('[OSMBuildings] '+buildings.length+' im Umkreis, User-Haus '+(userBldg?'gefunden':'nicht gefunden')+' — keine Extrusion (Satellitendach sichtbar)');
       return userBldg;
     },
 
@@ -1971,9 +1971,9 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         Shell.banner('info', '3D-Gebaeude konnten nicht geladen werden.', 'Overpass-API erreichbar? Wir berechnen mit dem Satellitenbild weiter. ('+e.message+')');
       }
 
-      // Adress-Pin
+      // Adress-Pin auf Bodenhoehe (Satellitenbild zeigt das echte Dach)
       this.viewer.entities.add({
-        position: Cesium.Cartesian3.fromDegrees(lng, lat, (this.userBuilding && this.userBuilding.height || 0) + 1.5),
+        position: Cesium.Cartesian3.fromDegrees(lng, lat, 1),
         point: {
           pixelSize: 14,
           color: Cesium.Color.fromCssColorString('#0D73FC'),
@@ -1984,15 +1984,14 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         },
       });
 
-      // Kamera schraeg von Sued-West, ~120m hoch, steiler Blickwinkel
-      // (mehr Top-Down damit Daecher gut sichtbar sind)
-      const dLat = -0.00045;
-      const dLng = -0.00072;
+      // Kamera schraeg von Sued-West, ~80m hoch, eher top-down
+      const dLat = -0.00030;
+      const dLng = -0.00048;
       this.viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(lng + dLng, lat + dLat, 120),
+        destination: Cesium.Cartesian3.fromDegrees(lng + dLng, lat + dLat, 80),
         orientation: {
           heading: Cesium.Math.toRadians(45),
-          pitch:   Cesium.Math.toRadians(-55),
+          pitch:   Cesium.Math.toRadians(-65),
           roll:    0,
         },
         duration: 1.8,
@@ -2001,11 +2000,11 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       if(loading) loading.classList.add('is-hidden');
     },
 
-    /* Hoehe ueber Boden, auf der NRW-/Solar-Polygone gerendert werden sollen.
-       Standard 6.5m (typisches Einfamilienhaus-Traufdach), sonst OSM-Hoehe. */
+    /* Hoehe ueber Boden fuer NRW-/Solar-Polygone. Da wir das OSM-Gebaeude
+       nicht mehr extrudieren, liegen die Polygone direkt auf dem
+       Satellitenbild (= dem echten Dach). 10cm Offset gegen Z-Fighting. */
     roofHeight(){
-      if(this.userBuilding && this.userBuilding.height) return this.userBuilding.height + 0.05;
-      return 6.55;
+      return 0.1;
     },
 
     destroy(){
