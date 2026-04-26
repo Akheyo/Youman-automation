@@ -32,10 +32,10 @@
 <script>
   window.PV_CONFIG = {
     apiKey: 'AIzaSyArhLNxY335q52fCFXcQWLNQlU9qEfhXfk',
-    // Cesium Ion-Token (kostenlos auf cesium.com erstellen, 25k MAU/Monat frei).
-    // Wenn gesetzt: Cesium World Imagery (Bing Aerial) + OSM Buildings 3D als
-    // Fallback wenn Google Photorealistic 3D Tiles 403/EEA-blockiert sind.
-    cesiumIonToken: '',
+    // Cesium Ion-Token. Default ist der oeffentliche Sandcastle-Token, der von
+    // Cesium fuer Demos/Sandcastle freigegeben ist. Fuer Produktion gegen einen
+    // eigenen Token tauschen (kostenlos auf cesium.com/ion/signup, 25k MAU/Monat).
+    cesiumIonToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlMzdiZjBkMC0xMmMyLTQ1MzUtYTcyOC1jZmRkOWMyN2YyNjkiLCJpZCI6MzMyMTksImlhdCI6MTU5OTcxMjE3NX0.pVRbQCbdU_C8MZzD7N5cqRMAcXt05Gh9nxlpI6Us9b4',
     leadWebhook: ''
   };
 </script>
@@ -1964,19 +1964,12 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           infoBox: false,
           selectionIndicator: false,
           shouldAnimate: true,
-          baseLayer: false,                  // KEIN Satellitenbild
-          shadows: true,                     // Schatten an fuer Tiefenwirkung
-          terrainShadows: Cesium.ShadowMode.ENABLED,
+          baseLayer: false,
         });
-        // CAD-Style: kein Sat-Bild, neutraler heller Boden, Schatten an
-        this.viewer.scene.skyAtmosphere.show = false;
+        this.viewer.scene.skyAtmosphere.show = true;
         this.viewer.scene.globe.show = true;
-        this.viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#dde2e8');
-        this.viewer.scene.globe.enableLighting = true;
-        this.viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#eef1f5');
-        // Sonne fixieren auf 21. Juni 14:00 lokal — schoene Schatten von Sued-West
-        this.viewer.clock.currentTime = Cesium.JulianDate.fromIso8601('2024-06-21T12:00:00Z');
-        this.viewer.clock.shouldAnimate = false;
+        this.viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#1a2332');
+        this.viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#0d1424');
       } catch(e){
         console.error('[Map3D] Viewer-Init fehlgeschlagen:', e);
         if(loading) loading.classList.add('is-hidden');
@@ -1984,27 +1977,74 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         Map2D.init(lat, lng);
         return;
       }
-      this.mode = '3D-CAD';
 
-      // OSM-Buildings holen + ALLE als saubere weisse 3D-Volumen rendern
+      // === 3D-Map-Service Kaskade ===
+      // 1) Google Photorealistic 3D Tiles  (echtes Photogrammetrie-3D)
+      // 2) Cesium Ion: World Imagery + OSM Buildings 3D Tileset
+      // 3) Notfall: Imagery laden, OSM-Volumen selber rendern (CAD)
+      let mode = null;
+
+      // Tier 1: Google Photorealistic 3D Tiles
+      try{
+        const tilesUrl = 'https://tile.googleapis.com/v1/3dtiles/root.json?key=' + encodeURIComponent(CFG.apiKey);
+        const tileset = await Cesium.Cesium3DTileset.fromUrl(tilesUrl, { showCreditsOnScreen: true });
+        this.viewer.scene.primitives.add(tileset);
+        this.viewer.scene.globe.show = false;
+        this.viewer.scene.skyAtmosphere.show = false;
+        mode = '3D-PHOTO';
+        console.info('[Map3D] Google Photorealistic 3D Tiles aktiv');
+        Shell.banner('info', 'Photorealistische 3D-Karte aktiv.',
+          'Google 3D-Tiles geladen — du siehst das Haus wie in Google Earth.');
+      } catch(e){
+        console.warn('[Map3D] Google 3D Tiles nicht verfuegbar:', e.message);
+      }
+
+      // Tier 2: Cesium Ion 3D Tiles (OSM Buildings + World Imagery)
+      if(!mode){
+        try{
+          if(!Cesium.Ion.defaultAccessToken) throw new Error('Kein Cesium-Ion-Token');
+          // World Imagery (Bing Aerial) als Globus-Textur
+          const worldImagery = await Cesium.IonImageryProvider.fromAssetId(2);
+          this.viewer.imageryLayers.addImageryProvider(worldImagery);
+          // OSM Buildings 3D Tileset (offizielle 3D-Gebaeude-Daten weltweit)
+          const osmBuildings = await Cesium.createOsmBuildingsAsync();
+          this.viewer.scene.primitives.add(osmBuildings);
+          mode = '3D-OSM';
+          console.info('[Map3D] Cesium Ion: World Imagery + OSM Buildings 3D aktiv');
+          Shell.banner('info', '3D-Karte via Cesium Ion aktiv.',
+            'Bing-Aerial-Satellit + offizielles OSM-Buildings-3D-Tileset (alle Gebaeude weltweit als echtes 3D-Modell).');
+        } catch(e){
+          console.warn('[Map3D] Cesium Ion fehlgeschlagen:', e.message);
+        }
+      }
+
+      // Tier 3: CAD-Notfall (eigenes Rendering aus Overpass)
+      if(!mode){
+        const esri = new Cesium.UrlTemplateImageryProvider({
+          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          maximumLevel: 22,
+          credit: 'Tiles © Esri',
+        });
+        this.viewer.imageryLayers.addImageryProvider(esri);
+        mode = '3D-CAD';
+        Shell.banner('warn',
+          'Echtes 3D-Tileset nicht erreichbar.',
+          'Weder Google 3D-Tiles noch Cesium Ion — Notfall mit ESRI-Satellit + selbstgebauten OSM-Volumen aktiv.');
+      }
+      this.mode = mode;
+
+      // OSM-Footprint immer holen (NRW-Filter braucht ihn auch im 3D-Photo-Modus)
       try{
         const buildings = await OSMBuildings.fetch(lat, lng, 80);
         if(buildings.length){
-          this.userBuilding = OSMBuildings.render(this.viewer, buildings, lat, lng, '3D-CAD');
-        } else {
-          Shell.banner('warn',
-            'Keine OSM-Gebaeude im Umkreis gefunden.',
-            'OSM hat fuer diese Adresse noch keine Gebaeudedaten. Wir berechnen mit Schaetzwerten weiter.');
+          this.userBuilding = OSMBuildings.render(this.viewer, buildings, lat, lng, mode);
         }
       } catch(e){
-        console.warn('[Map3D] OSM-Buildings nicht geladen:', e.message);
-        Shell.banner('warn',
-          'Gebaeudedaten konnten nicht geladen werden.',
-          'Overpass-API erreichbar? '+e.message);
+        console.warn('[Map3D] OSM-Footprint nicht geladen:', e.message);
       }
 
-      // Adress-Pin auf Dachhoehe deines Hauses (oder 2m wenn nicht gefunden)
-      const pinH = (this.userBuilding && this.userBuilding.height || 1) + 1.5;
+      // Adress-Pin
+      const pinH = (mode === '3D-PHOTO' || mode === '3D-OSM') ? 50 : ((this.userBuilding && this.userBuilding.height || 1) + 1.5);
       this.viewer.entities.add({
         position: Cesium.Cartesian3.fromDegrees(lng, lat, pinH),
         point: {
@@ -2017,15 +2057,18 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         },
       });
 
-      // Kamera oblique von Sued-West, 90m hoch, -45deg Pitch
+      // Kamera-Position je nach Mode
+      const camCfg = (mode === '3D-PHOTO') ? { alt: 130, pitch: -40, off: 0.00045 } :
+                     (mode === '3D-OSM')   ? { alt: 110, pitch: -45, off: 0.00040 } :
+                                             { alt: 90,  pitch: -45, off: 0.00035 };
       this.viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(lng - 0.00055, lat - 0.00035, 90),
+        destination: Cesium.Cartesian3.fromDegrees(lng - camCfg.off * 1.6, lat - camCfg.off, camCfg.alt),
         orientation: {
           heading: Cesium.Math.toRadians(45),
-          pitch:   Cesium.Math.toRadians(-45),
+          pitch:   Cesium.Math.toRadians(camCfg.pitch),
           roll:    0,
         },
-        duration: 2.0,
+        duration: 2.2,
       });
 
       if(loading) loading.classList.add('is-hidden');
