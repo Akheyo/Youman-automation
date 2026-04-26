@@ -1858,21 +1858,20 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       });
 
       if(mode === '3D-CAD'){
-        // Saubere Architektur-Optik: weisse Volumen, dunkles Outline, Schatten.
-        // User-Haus nur bis zur TRAUFE extrudieren — die Dachform kommt aus
-        // den NRW-Polygonen (Azimuth+Neigung), nicht aus OSM.
-        const wallUser   = Cesium.Color.fromCssColorString('#fff8e6');
-        const wallNeighb = Cesium.Color.fromCssColorString('#f5f6f8');
-        const outlineCol = Cesium.Color.fromCssColorString('#1d1d2e').withAlpha(0.9);
+        // User-Haus prominent, Nachbarn dezent zurueckhaltend
+        const wallUser    = Cesium.Color.fromCssColorString('#fff8e6');           // Cremeweiss
+        const wallNeighb  = Cesium.Color.fromCssColorString('#e8eaee').withAlpha(0.55); // dezent transparent
+        const outlineUser = Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.95);
+        const outlineNeig = Cesium.Color.fromCssColorString('#7a8393').withAlpha(0.55);
 
         buildings.forEach(b => {
           const positions = b.coords.slice(0, -1).map(c =>
             Cesium.Cartesian3.fromDegrees(c[0], c[1])
           );
           const isUser = (b === userBldg);
-          // Eave: 70% der OSM-Hoehe fuer das User-Haus (Dach kommt drueber);
-          // Nachbarn behalten volle Hoehe (sehen wir eh nur als Hintergrund)
-          const wallTop = isUser ? b.height * 0.70 : b.height;
+          // User-Wand bis 70% (Dach kommt aus NRW-Polygonen drueber).
+          // Nachbar-Waende auf MAX 6m gekappt damit sie nicht ueber dem User-Haus liegen.
+          const wallTop = isUser ? b.height * 0.70 : Math.min(b.height, 6.5);
           viewer.entities.add({
             polygon: {
               hierarchy: positions,
@@ -1880,7 +1879,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
               height: 0,
               material: isUser ? wallUser : wallNeighb,
               outline: true,
-              outlineColor: outlineCol,
+              outlineColor: isUser ? outlineUser : outlineNeig,
               shadows: Cesium.ShadowMode.ENABLED,
             },
             properties: { isOsmBuilding: true, buildingId: b.id, height: b.height, isUser },
@@ -2065,7 +2064,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       // Kamera-Position je nach Mode
       const camCfg = (mode === '3D-PHOTO') ? { alt: 130, pitch: -40, off: 0.00045 } :
                      (mode === '3D-OSM')   ? { alt: 110, pitch: -45, off: 0.00040 } :
-                                             { alt: 90,  pitch: -45, off: 0.00035 };
+                                             { alt: 50,  pitch: -42, off: 0.00018 };
       this.viewer.camera.flyTo({
         destination: Cesium.Cartesian3.fromDegrees(lng - camCfg.off * 1.6, lat - camCfg.off, camCfg.alt),
         orientation: {
@@ -2422,6 +2421,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       const isClassify = (m === '3D-PHOTO' || m === '3D-OSM');
       const isCad      = (m === '3D-CAD');
       const eave       = Map3D.eaveHeight ? Map3D.eaveHeight() : 4.5;
+      const ridge      = (Map3D.userBuilding && Map3D.userBuilding.height) || 7.5;
 
       items.forEach((it, i) => {
         let polyOptions;
@@ -2434,10 +2434,8 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
             classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
           };
         } else if(isCad){
-          // RAYDRAFT-STYLE: Polygon als GENEIGTE Flaeche im 3D-Raum konstruieren.
-          // Jeder Vertex bekommt eine individuelle Hoehe basierend auf Position
-          // entlang der Azimuth-Achse → es entsteht ein echtes Satteldach/Walm.
-          const pitchedRing = this._pitchedRoofVertices(it.hull, it.az, it.pitch, eave);
+          // Polygon als GENEIGTE Flaeche, Hoehen skaliert sodass First = OSM-Oberkante
+          const pitchedRing = this._pitchedRoofVertices(it.hull, it.az, it.pitch, eave, ridge);
           const positions = pitchedRing.map(p =>
             Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.height)
           );
@@ -2561,6 +2559,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       const isClassify = (m === '3D-PHOTO' || m === '3D-OSM');
       const isCad      = (m === '3D-CAD');
       const eave       = Map3D.eaveHeight ? Map3D.eaveHeight() : 4.5;
+      const ridge      = (Map3D.userBuilding && Map3D.userBuilding.height) || 7.5;
       const seg        = sp.roofSegmentStats && sp.roofSegmentStats[segIdx];
       const tilt       = (seg && seg.pitchDegrees) || 30;
 
@@ -2580,7 +2579,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           };
         } else if(isCad){
           // Module entlang derselben geneigten Flaeche wie das Dachsegment
-          const pitched = this._pitchedRoofVertices(corners, az, tilt, eave + 0.05);
+          const pitched = this._pitchedRoofVertices(corners, az, tilt, eave + 0.05, ridge + 0.05);
           const positions = pitched.map(p2 =>
             Cesium.Cartesian3.fromDegrees(p2.lng, p2.lat, p2.height + 0.05)
           );
@@ -2671,21 +2670,17 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
        tolerance ist max. Abstand in Grad — 0.0000027 ≈ 30cm. Glaettet die
        Laser-Scan-Zacken ohne die Form zu verfaelschen. */
     /* Konstruiert die 3D-Dachsegment-Geometrie aus dem 2D-Polygon-Ring +
-       Azimuth + Neigung. Jeder Ring-Punkt bekommt eine individuelle Hoehe,
-       sodass das Polygon als geneigte Flaeche im Raum steht — hoch am
-       First, niedrig an der Traufe.
-       Ergebnis: Array von { lng, lat, height } die mit perPositionHeight
-       als geneigtes 3D-Polygon gerendert werden. */
-    _pitchedRoofVertices(ring, azimuthDeg, tiltDeg, eaveHeight){
+       Azimuth + Neigung. Jeder Ring-Punkt bekommt eine individuelle Hoehe.
+       SCALE-Modus: alle Hoehen werden so skaliert dass das hoechste Vertex
+       genau bei ridgeHeight (= OSM-Hausoberkante) liegt. So bleibt das
+       Dach immer im Volumen des OSM-Gebaeudes. */
+    _pitchedRoofVertices(ring, azimuthDeg, tiltDeg, eaveHeight, ridgeHeight){
       if(!tiltDeg || tiltDeg < 1){
-        // Flaches Dach
         return ring.map(p => ({ lng: p.lng, lat: p.lat, height: eaveHeight }));
       }
-      // Cesium-Konvention: Azimuth 0=Nord, 90=Ost, 180=Sued. Das Dach
-      // "blickt" in azimuth-Richtung — DOWNHILL ist also = azimuth-Richtung.
       const azRad = azimuthDeg * Math.PI / 180;
-      const downhillLat = Math.cos(azRad);   // +1 fuer N, -1 fuer S
-      const downhillLng = Math.sin(azRad);   // +1 fuer O, -1 fuer W
+      const downhillLat = Math.cos(azRad);
+      const downhillLng = Math.sin(azRad);
 
       let cLat=0, cLng=0;
       ring.forEach(p => { cLat += p.lat; cLng += p.lng; });
@@ -2694,19 +2689,27 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       const mPerLat = 111320;
       const mPerLng = 111320 * Math.cos(cLat * Math.PI / 180);
 
-      // Jeden Vertex auf die Downhill-Achse projizieren (in Metern vom Centroid)
       const proj = ring.map(p => {
         const dLat = (p.lat - cLat) * mPerLat;
         const dLng = (p.lng - cLng) * mPerLng;
         return dLat * downhillLat + dLng * downhillLng;
       });
-      const maxProj = Math.max(...proj);    // weitester Punkt downhill = Traufe
-      const tanT = Math.tan(tiltDeg * Math.PI / 180);
+      const maxProj = Math.max(...proj);
+      const minProj = Math.min(...proj);
+      const span = maxProj - minProj;
+      if(span < 0.5){
+        // Polygon ist degeneriert — flach auf Eave-Hoehe legen
+        return ring.map(p => ({ lng: p.lng, lat: p.lat, height: eaveHeight }));
+      }
+
+      // Ziel: Vertex am Traufenrand = eaveHeight, Vertex am First = ridgeHeight.
+      // Statt freier tan(tilt)-Berechnung skalieren wir linear ueber den span.
+      // → das Dach passt immer ins OSM-Volumen.
+      const targetRise = ridgeHeight - eaveHeight;
 
       return ring.map((p, i) => {
-        // Distanz vom Traufen-Rand uphill (= positive Hoehe ueber Eave)
-        const distUp = maxProj - proj[i];
-        const h = eaveHeight + distUp * tanT;
+        const distUp = maxProj - proj[i];   // 0 an der Traufe, span am First
+        const h = eaveHeight + (distUp / span) * targetRise;
         return { lng: p.lng, lat: p.lat, height: h };
       });
     },
