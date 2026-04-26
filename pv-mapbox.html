@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PV-Konfigurator (Mapbox-Style) · A&amp;B Solarenergy</title>
+
+<!-- MapLibre GL JS — open-source fork of Mapbox GL, no token required -->
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+<!-- Turf.js — area, polygon math, panel grid -->
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.1.0/turf.min.js"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1d1d2e;background:#f4f6fa;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer}
+input{font:inherit}
+
+.page{display:flex;flex-direction:column;height:100vh;width:100vw}
+
+.topbar{display:flex;align-items:center;gap:24px;padding:12px 20px;background:#fff;border-bottom:1px solid #e4e8ef;z-index:5;flex-shrink:0}
+.topbar__brand{font-weight:700;font-size:16px;color:#0D73FC;flex-shrink:0;letter-spacing:.2px}
+.topbar__search{flex:1;max-width:560px;position:relative}
+
+.search-input{width:100%;padding:10px 14px;border:1px solid #e4e8ef;border-radius:8px;outline:none;font-size:14px;background:#fff}
+.search-input:focus{border-color:#0D73FC;box-shadow:0 0 0 3px rgba(13,115,252,.18)}
+.search-spinner{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;border:2px solid #e4e8ef;border-top-color:#0D73FC;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.search-spinner.is-active{display:block}
+@keyframes spin{to{transform:translateY(-50%) rotate(360deg)}}
+.search-results{position:absolute;top:calc(100% + 4px);left:0;right:0;margin:0;padding:4px;list-style:none;background:#fff;border:1px solid #e4e8ef;border-radius:8px;box-shadow:0 8px 28px rgba(15,23,42,.12);max-height:320px;overflow-y:auto;z-index:10;display:none}
+.search-results.is-open{display:block}
+.search-results li{display:block}
+.search-results button{display:block;width:100%;text-align:left;background:transparent;border:0;padding:8px 10px;border-radius:6px;font-size:13px;color:inherit}
+.search-results button:hover{background:#f4f6fa}
+
+.content{flex:1;display:grid;grid-template-columns:1fr 360px;min-height:0}
+.map-wrap{position:relative;min-height:0}
+#map{position:absolute;inset:0}
+.map-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(244,246,250,.8);color:#7a8393;z-index:2;display:none}
+.map-loading.is-active{display:flex}
+
+.sidebar{background:#fff;border-left:1px solid #e4e8ef;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:18px}
+.sb-brand{font-weight:700;font-size:14px;letter-spacing:1px;color:#0D73FC}
+.sb-sub{font-size:12px;color:#7a8393;margin-top:4px}
+.sb-alert{background:#fff5f5;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:10px 12px;font-size:13px;display:none}
+.sb-alert.is-active{display:block}
+.sb-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:8px;padding:10px 12px;font-size:13px;display:none}
+.sb-info.is-active{display:block}
+.sb-section{border-bottom:1px solid #f0f2f6;padding-bottom:14px}
+.sb-section:last-of-type{border-bottom:0}
+.sb-h3{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#7a8393;margin:0 0 8px}
+.sb-metric{display:flex;align-items:baseline;gap:6px}
+.sb-big{font-size:28px;font-weight:700;line-height:1}
+.sb-unit{font-size:13px;color:#7a8393}
+.sb-addr{font-size:14px;line-height:1.4;color:#1d1d2e;word-break:break-word}
+.sb-field{display:grid;grid-template-columns:70px 1fr 40px;align-items:center;gap:8px;margin:8px 0;font-size:13px}
+.sb-field input[type=range]{width:100%}
+.sb-field-val{text-align:right;color:#7a8393}
+.sb-hint{font-size:11px;color:#7a8393;margin-top:4px}
+.sb-actions{display:flex;flex-direction:column;gap:8px}
+.sb-btn{width:100%;padding:10px;border:1px solid #e4e8ef;border-radius:8px;background:#fff;font-size:13px;transition:border-color .15s,background .15s}
+.sb-btn:hover:not(:disabled){border-color:#0D73FC}
+.sb-btn:disabled{opacity:.5;cursor:not-allowed}
+.sb-btn.primary{background:#0D73FC;color:#fff;border-color:#0D73FC}
+.sb-btn.primary:hover:not(:disabled){background:#056EB9;border-color:#056EB9}
+.sb-footer{margin-top:auto;font-size:11px;color:#7a8393;line-height:1.5}
+
+@media(max-width:880px){.content{grid-template-columns:1fr;grid-template-rows:60vh 1fr}.sidebar{border-left:0;border-top:1px solid #e4e8ef}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div class="topbar__brand">A&amp;B Solarenergy · PV-Konfigurator</div>
+    <div class="topbar__search">
+      <input id="search" class="search-input" type="text" placeholder="Adresse eingeben (Straße Hausnr, PLZ Ort)" autocomplete="off" spellcheck="false">
+      <span id="searchSpinner" class="search-spinner"></span>
+      <ul id="searchResults" class="search-results"></ul>
+    </div>
+  </header>
+  <main class="content">
+    <div class="map-wrap">
+      <div id="map"></div>
+      <div id="mapLoading" class="map-loading">3D-Modell wird geladen …</div>
+    </div>
+    <aside class="sidebar">
+      <div>
+        <div class="sb-brand">PV-KONFIGURATOR</div>
+        <div class="sb-sub">Adresse → 3D-Haus → PV-Belegung</div>
+      </div>
+
+      <div id="sbAlert" class="sb-alert"></div>
+      <div id="sbInfo" class="sb-info"></div>
+
+      <section class="sb-section">
+        <h3 class="sb-h3">Adresse</h3>
+        <div id="sbAddr" class="sb-addr">Bitte oben eingeben.</div>
+      </section>
+
+      <section class="sb-section">
+        <h3 class="sb-h3">Dachfläche</h3>
+        <div class="sb-metric"><span id="sbArea" class="sb-big">—</span><span class="sb-unit">m²</span></div>
+      </section>
+
+      <section class="sb-section">
+        <h3 class="sb-h3">Module</h3>
+        <div class="sb-metric"><span id="sbCount" class="sb-big">—</span><span class="sb-unit">Stk · 1,7 × 1,1 m</span></div>
+      </section>
+
+      <section class="sb-section">
+        <h3 class="sb-h3">Anlagengröße</h3>
+        <div class="sb-metric"><span id="sbKwp" class="sb-big">—</span><span class="sb-unit">kWp</span></div>
+      </section>
+
+      <section class="sb-section">
+        <h3 class="sb-h3">Jahresertrag (geschätzt)</h3>
+        <div class="sb-metric"><span id="sbYield" class="sb-big">—</span><span class="sb-unit">kWh / Jahr</span></div>
+      </section>
+
+      <section class="sb-section">
+        <h3 class="sb-h3">Ausrichtung</h3>
+        <label class="sb-field">
+          <span>Neigung</span>
+          <input id="rngTilt" type="range" min="0" max="60" step="1" value="35">
+          <span id="rngTiltVal" class="sb-field-val">35°</span>
+        </label>
+        <label class="sb-field">
+          <span>Azimut</span>
+          <input id="rngAz" type="range" min="0" max="360" step="5" value="180">
+          <span id="rngAzVal" class="sb-field-val">180°</span>
+        </label>
+        <div class="sb-hint">0° = Nord · 90° = Ost · 180° = Süd · 270° = West</div>
+      </section>
+
+      <section class="sb-actions">
+        <button id="btnReset" class="sb-btn">Auswahl zurücksetzen</button>
+      </section>
+
+      <div class="sb-footer">
+        Karte: MapLibre GL · Daten: OpenStreetMap (Overpass) · Geocoding: Nominatim · Berechnung: Turf.js. Alles über öffentliche APIs ohne Login.
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* =================================================================
+   * State
+   * ================================================================= */
+  const State = {
+    address: null,        // { id, placeName, center:[lng,lat] }
+    building: null,       // OSM building footprint feature
+    layout: null,         // { panels, count, totalKwp }
+    orientation: { tiltDeg: 35, azimuthDeg: 180 },
+  };
+
+  /* =================================================================
+   * UI helpers
+   * ================================================================= */
+  const $ = (id) => document.getElementById(id);
+  const fmt = (v, d) => v.toLocaleString('de-DE', { minimumFractionDigits: d||0, maximumFractionDigits: d||0 });
+  function showAlert(html){ const el = $('sbAlert'); el.innerHTML = html; el.classList.add('is-active'); }
+  function clearAlert(){ $('sbAlert').classList.remove('is-active'); }
+  function showInfo(html){ const el = $('sbInfo'); el.innerHTML = html; el.classList.add('is-active'); }
+  function clearInfo(){ $('sbInfo').classList.remove('is-active'); }
+
+  /* =================================================================
+   * MapLibre setup
+   * Uses OSM raster tiles for the basemap + we render 3D buildings
+   * ourselves from Overpass data, so no vector tile provider/key needed.
+   * ================================================================= */
+  const map = new maplibregl.Map({
+    container: 'map',
+    style: {
+      version: 8,
+      sources: {
+        osm: {
+          type: 'raster',
+          tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '© OpenStreetMap contributors',
+          maxzoom: 19,
+        },
+      },
+      layers: [
+        { id: 'osm', type: 'raster', source: 'osm' },
+      ],
+      glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+    },
+    center: [6.858, 51.844],   // Borken / NRW until user picks
+    zoom: 13,
+    pitch: 50,
+    bearing: -10,
+    attributionControl: true,
+    antialias: true,
+  });
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+  map.addControl(new maplibregl.FullscreenControl(), 'top-right');
+
+  // Wait for map to load before adding our overlay sources/layers.
+  map.on('load', () => {
+    // OSM Buildings (3D) — populated whenever the address changes.
+    map.addSource('buildings3d', { type: 'geojson', data: empty() });
+    map.addLayer({
+      id: 'buildings3d-fill',
+      type: 'fill-extrusion',
+      source: 'buildings3d',
+      paint: {
+        'fill-extrusion-color': ['case', ['boolean', ['get', 'isUser'], false], '#fff8e6', '#dfe3ea'],
+        'fill-extrusion-height': ['get', 'height'],
+        'fill-extrusion-base': 0,
+        'fill-extrusion-opacity': 0.92,
+      },
+    });
+
+    // User building outline (highlighted polygon).
+    map.addSource('roof', { type: 'geojson', data: empty() });
+    map.addLayer({
+      id: 'roof-fill',
+      type: 'fill',
+      source: 'roof',
+      paint: { 'fill-color': '#0D73FC', 'fill-opacity': 0.18 },
+    });
+    map.addLayer({
+      id: 'roof-outline',
+      type: 'line',
+      source: 'roof',
+      paint: { 'line-color': '#0D73FC', 'line-width': 2.5 },
+    });
+
+    // Solar panels — small dark blue rectangles.
+    map.addSource('panels', { type: 'geojson', data: empty() });
+    map.addLayer({
+      id: 'panels-fill',
+      type: 'fill',
+      source: 'panels',
+      paint: { 'fill-color': '#1e3a8a', 'fill-opacity': 0.9 },
+    });
+    map.addLayer({
+      id: 'panels-outline',
+      type: 'line',
+      source: 'panels',
+      paint: { 'line-color': '#bfdbfe', 'line-width': 0.6 },
+    });
+  });
+
+  function empty(){ return { type: 'FeatureCollection', features: [] }; }
+  function setSrc(id, data){
+    const s = map.getSource(id);
+    if (s) s.setData(data);
+  }
+
+  /* =================================================================
+   * Address search via Nominatim (OSM, free, no token)
+   * ================================================================= */
+  const Search = {
+    timer: null,
+    abortCtl: null,
+    init(){
+      const input = $('search');
+      const results = $('searchResults');
+      input.addEventListener('input', () => {
+        const q = input.value.trim();
+        clearTimeout(this.timer);
+        if (q.length < 3) { results.classList.remove('is-open'); return; }
+        this.timer = setTimeout(() => this.fetch(q), 350);
+      });
+      document.addEventListener('mousedown', (e) => {
+        if (!input.contains(e.target) && !results.contains(e.target)) results.classList.remove('is-open');
+      });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') results.classList.remove('is-open'); });
+    },
+    async fetch(q){
+      this.abortCtl?.abort();
+      this.abortCtl = new AbortController();
+      $('searchSpinner').classList.add('is-active');
+      try {
+        // Nominatim usage policy asks for a sensible User-Agent + 1 req/s max
+        const url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=de&q=' + encodeURIComponent(q);
+        const res = await fetch(url, { signal: this.abortCtl.signal, headers: { 'Accept-Language': 'de' } });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const arr = await res.json();
+        this.render(arr);
+      } catch (err) {
+        if (err.name !== 'AbortError') console.warn('[Search]', err);
+      } finally {
+        $('searchSpinner').classList.remove('is-active');
+      }
+    },
+    render(arr){
+      const ul = $('searchResults');
+      ul.innerHTML = '';
+      if (!arr || !arr.length) { ul.classList.remove('is-open'); return; }
+      arr.forEach((row) => {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = row.display_name;
+        btn.onclick = () => Search.select(row);
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+      ul.classList.add('is-open');
+    },
+    select(row){
+      $('search').value = row.display_name;
+      $('searchResults').classList.remove('is-open');
+      const lng = parseFloat(row.lon), lat = parseFloat(row.lat);
+      State.address = { id: row.place_id, placeName: row.display_name, center: [lng, lat] };
+      $('sbAddr').textContent = row.display_name;
+      map.flyTo({ center: [lng, lat], zoom: 18, pitch: 55, bearing: -10, duration: 1500 });
+      Pipeline.run();
+    },
+  };
+
+  /* =================================================================
+   * Overpass — fetch building footprints around the address
+   * ================================================================= */
+  const Overpass = {
+    MIRRORS: [
+      'https://overpass-api.de/api/interpreter',
+      'https://overpass.kumi.systems/api/interpreter',
+      'https://overpass.openstreetmap.fr/api/interpreter',
+    ],
+    async fetchBuildings(lat, lng, radiusM){
+      radiusM = radiusM || 100;
+      const q = '[out:json][timeout:25];('
+              + 'way[building](around:'+radiusM+','+lat+','+lng+');'
+              + 'relation[building](around:'+radiusM+','+lat+','+lng+');'
+              + ');out geom tags;';
+      let lastErr;
+      const fetchT = (url, opts, ms) => {
+        const c = new AbortController();
+        const t = setTimeout(() => c.abort(), ms);
+        return fetch(url, Object.assign({}, opts, { signal: c.signal })).finally(() => clearTimeout(t));
+      };
+      for (const m of this.MIRRORS) {
+        try {
+          const res = await fetchT(m, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'data=' + encodeURIComponent(q),
+          }, 8000);
+          if (!res.ok) { lastErr = new Error('HTTP ' + res.status); continue; }
+          const d = await res.json();
+          return this.parse(d.elements || []);
+        } catch (e) { lastErr = e; }
+      }
+      throw lastErr || new Error('Overpass nicht erreichbar');
+    },
+    parse(elements){
+      return elements.map((el) => {
+        const geom = el.geometry || (el.members && (el.members.find(m => !m.role || m.role === 'outer') || {}).geometry);
+        if (!geom || geom.length < 3) return null;
+        const ring = geom.map((p) => [p.lon, p.lat]);
+        if (ring[0][0] !== ring[ring.length-1][0] || ring[0][1] !== ring[ring.length-1][1]) ring.push([ring[0][0], ring[0][1]]);
+        const tags = el.tags || {};
+        const explicit = parseFloat(tags.height || tags['building:height']);
+        const levels = parseFloat(tags['building:levels'] || tags.levels);
+        const height = explicit || (levels ? levels * 3.2 : 7);
+        return turf.polygon([ring], { osmId: el.id, height, isUser: false });
+      }).filter(Boolean);
+    },
+  };
+
+  /* =================================================================
+   * Geo helpers — closest building, panel grid (Turf.js)
+   * ================================================================= */
+  function pickClosest(buildings, lng, lat){
+    if (!buildings.length) return null;
+    const point = turf.point([lng, lat]);
+    for (const b of buildings) {
+      if (turf.booleanPointInPolygon(point, b)) return b;
+    }
+    let best = null, bestD = Infinity;
+    for (const b of buildings) {
+      const d = turf.distance(point, turf.centroid(b), { units: 'meters' });
+      if (d < bestD) { bestD = d; best = b; }
+    }
+    return best;
+  }
+
+  function longestEdgeBearing(ring){
+    let maxLen = 0, bearing = 0;
+    for (let i = 0; i < ring.length - 1; i++) {
+      const a = turf.point(ring[i]);
+      const b = turf.point(ring[i + 1]);
+      const len = turf.distance(a, b, { units: 'meters' });
+      if (len > maxLen) { maxLen = len; bearing = turf.bearing(a, b); }
+    }
+    return ((bearing % 180) + 180) % 180;
+  }
+
+  /* Fit 1.7 × 1.1m panels into the polygon.
+   * 1) rotate polygon so longest edge is horizontal
+   * 2) shrink by 0.5m setback
+   * 3) iterate grid of panel rectangles
+   * 4) keep ones fully inside (booleanWithin)
+   * 5) rotate back
+   */
+  function fitPanels(polygon){
+    const PANEL_W = 1.7, PANEL_H = 1.1, GAP = 0.05, SETBACK = 0.5, WP = 400;
+    const ring = polygon.geometry.coordinates[0];
+    if (!ring || ring.length < 4) return { panels: [], count: 0, totalKwp: 0 };
+    const bearing = longestEdgeBearing(ring);
+    const pivot = turf.centroid(polygon);
+    const aligned = turf.transformRotate(polygon, -bearing, { pivot });
+    let inset;
+    try { inset = turf.buffer(aligned, -SETBACK / 1000, { units: 'kilometers' }); }
+    catch (e) { inset = aligned; }
+    if (!inset || !inset.geometry || !inset.geometry.coordinates.length) return { panels: [], count: 0, totalKwp: 0 };
+    const bbox = turf.bbox(inset);
+    const sw = turf.point([bbox[0], bbox[1]]);
+    const dx = turf.destination(sw, (PANEL_W + GAP) / 1000, 90, { units: 'kilometers' }).geometry.coordinates[0] - bbox[0];
+    const dy = turf.destination(sw, (PANEL_H + GAP) / 1000, 0, { units: 'kilometers' }).geometry.coordinates[1] - bbox[1];
+    const wDeg = turf.destination(sw, PANEL_W / 1000, 90, { units: 'kilometers' }).geometry.coordinates[0] - bbox[0];
+    const hDeg = turf.destination(sw, PANEL_H / 1000, 0, { units: 'kilometers' }).geometry.coordinates[1] - bbox[1];
+    const aligned_panels = [];
+    let i = 0;
+    for (let y = bbox[1]; y + hDeg <= bbox[3] + 1e-12; y += dy) {
+      for (let x = bbox[0]; x + wDeg <= bbox[2] + 1e-12; x += dx) {
+        const p = turf.polygon([[[x,y],[x+wDeg,y],[x+wDeg,y+hDeg],[x,y+hDeg],[x,y]]], { i });
+        if (turf.booleanWithin(p, inset)) { aligned_panels.push(p); i++; }
+      }
+    }
+    const panels = aligned_panels.map((p) => turf.transformRotate(p, bearing, { pivot }));
+    return { panels, count: panels.length, totalKwp: (panels.length * WP) / 1000 };
+  }
+
+  // Yield-Heuristik kalibriert auf DE (~1000 kWh/kWp Optimum bei 35° / Süd)
+  function estimateYearlyKwh(kwp, tilt, az){
+    const tiltP = Math.cos(((tilt - 35) * Math.PI) / 180);
+    const azDelta = Math.abs(((az - 180 + 540) % 360) - 180);
+    const azP = Math.cos((azDelta * Math.PI) / 180);
+    return Math.round(kwp * 1000 * Math.max(0.4, tiltP) * Math.max(0.5, azP));
+  }
+
+  /* =================================================================
+   * Pipeline — orchestrates address → buildings → polygon → panels → render
+   * ================================================================= */
+  const Pipeline = {
+    running: false,
+    async run(){
+      if (this.running) return;
+      this.running = true;
+      clearAlert(); clearInfo();
+      $('mapLoading').classList.add('is-active');
+      try {
+        const [lng, lat] = State.address.center;
+        const buildings = await Overpass.fetchBuildings(lat, lng, 100);
+        if (!buildings.length) {
+          showAlert('Keine OSM-Gebäude im Umkreis. Adresse evtl. zu neu.');
+          this.clearAll();
+          return;
+        }
+        const user = pickClosest(buildings, lng, lat);
+        if (!user) { showAlert('Kein Gebäude gefunden.'); this.clearAll(); return; }
+        user.properties.isUser = true;
+
+        // Render alle Gebäude als 3D-Boxen, User-Haus hervorgehoben
+        setSrc('buildings3d', { type: 'FeatureCollection', features: buildings });
+        setSrc('roof', { type: 'FeatureCollection', features: [user] });
+        State.building = user;
+
+        // Panel-Layout
+        const layout = fitPanels(user);
+        State.layout = layout;
+        setSrc('panels', { type: 'FeatureCollection', features: layout.panels });
+
+        // Sidebar aktualisieren
+        const area = turf.area(user);
+        $('sbArea').textContent = fmt(Math.round(area));
+        $('sbCount').textContent = fmt(layout.count);
+        $('sbKwp').textContent = fmt(layout.totalKwp, 1);
+        this.updateYield();
+
+        if (layout.count === 0) {
+          showInfo('Polygon zu klein für Module mit 0,5 m Abstand. Versuche eine andere Adresse.');
+        }
+      } catch (err) {
+        console.error('[Pipeline]', err);
+        showAlert('Fehler: ' + (err.message || err));
+      } finally {
+        $('mapLoading').classList.remove('is-active');
+        this.running = false;
+      }
+    },
+    updateYield(){
+      if (!State.layout) return;
+      const kwh = estimateYearlyKwh(State.layout.totalKwp, State.orientation.tiltDeg, State.orientation.azimuthDeg);
+      $('sbYield').textContent = fmt(kwh);
+    },
+    clearAll(){
+      setSrc('buildings3d', empty());
+      setSrc('roof', empty());
+      setSrc('panels', empty());
+      $('sbArea').textContent = '—';
+      $('sbCount').textContent = '—';
+      $('sbKwp').textContent = '—';
+      $('sbYield').textContent = '—';
+      State.building = null;
+      State.layout = null;
+    },
+  };
+
+  /* =================================================================
+   * Wire UI
+   * ================================================================= */
+  Search.init();
+
+  $('rngTilt').addEventListener('input', (e) => {
+    State.orientation.tiltDeg = Number(e.target.value);
+    $('rngTiltVal').textContent = State.orientation.tiltDeg + '°';
+    Pipeline.updateYield();
+  });
+  $('rngAz').addEventListener('input', (e) => {
+    State.orientation.azimuthDeg = Number(e.target.value);
+    $('rngAzVal').textContent = State.orientation.azimuthDeg + '°';
+    Pipeline.updateYield();
+  });
+  $('btnReset').addEventListener('click', () => {
+    $('search').value = '';
+    State.address = null;
+    $('sbAddr').textContent = 'Bitte oben eingeben.';
+    Pipeline.clearAll();
+    map.flyTo({ center: [6.858, 51.844], zoom: 13, pitch: 50, duration: 1000 });
+  });
+})();
+</script>
+</body>
+</html>
