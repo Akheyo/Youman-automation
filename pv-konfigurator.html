@@ -32,6 +32,10 @@
 <script>
   window.PV_CONFIG = {
     apiKey: 'AIzaSyArhLNxY335q52fCFXcQWLNQlU9qEfhXfk',
+    // Cesium Ion-Token (kostenlos auf cesium.com erstellen, 25k MAU/Monat frei).
+    // Wenn gesetzt: Cesium World Imagery (Bing Aerial) + OSM Buildings 3D als
+    // Fallback wenn Google Photorealistic 3D Tiles 403/EEA-blockiert sind.
+    cesiumIonToken: '',
     leadWebhook: ''
   };
 </script>
@@ -1835,11 +1839,12 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         });
     },
 
-    /* Bestimmt das User-Haus (fuer NRW-Clip) — KEIN 3D-Rendering.
-       Wir zeigen das echte Dach vom Satellitenbild, das ist immer korrekt
-       und sieht photorealistisch aus. Der 3D-Effekt kommt durch die
-       schraege Kamera + die extrudierten NRW-Polygone. */
-    render(viewer, buildings, userLat, userLng){
+    /* Bestimmt das User-Haus (fuer NRW-Clip).
+       Im 2D-DRAPE-Modus: rendert blaue Polyline-Umrandung damit man das
+       eigene Haus auf dem Satellitenbild klar erkennt.
+       In 3D-Modi (3D-PHOTO/3D-OSM): kein Outline — das Haus ist sowieso
+       als 3D-Geometrie sichtbar. */
+    render(viewer, buildings, userLat, userLng, mode){
       let userBldg = null;
       let userBldgDist = Infinity;
 
@@ -1852,9 +1857,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         if(dist < userBldgDist){ userBldgDist = dist; userBldg = b; }
       });
 
-      // Nur die UMRANDUNG des User-Hauses rendern (kein extrudierter Block) —
-      // damit man das eigene Haus klar erkennt aber das Dach vom Satellit sieht
-      if(userBldg){
+      if(userBldg && mode === '2D-DRAPE'){
         const ring = userBldg.coords.slice(0, -1);
         const positions = ring.map(c =>
           Cesium.Cartesian3.fromDegrees(c[0], c[1], 0.05)
@@ -1870,7 +1873,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         });
       }
 
-      console.info('[OSMBuildings] '+buildings.length+' im Umkreis, User-Haus '+(userBldg?'gefunden':'nicht gefunden')+' — keine Extrusion (Satellitendach sichtbar)');
+      console.info('[OSMBuildings] '+buildings.length+' im Umkreis, User-Haus '+(userBldg?'gefunden':'nicht gefunden')+', mode='+mode);
       return userBldg;
     },
 
@@ -1909,6 +1912,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   const Map3D = {
     viewer: null,
     userBuilding: null,    // OSMBuildings.fetch-Eintrag des User-Hauses (oder null)
+    mode: '2D-DRAPE',      // '3D-PHOTO' | '3D-OSM' | '2D-DRAPE'
 
     async init(lat, lng){
       const container = document.getElementById('cesium-container');
@@ -1919,9 +1923,12 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 
       if(this.viewer) this.destroy();
 
+      // Cesium-Ion-Token setzen falls vorhanden (fuer OSM Buildings + Bing)
+      if(CFG.cesiumIonToken && typeof Cesium !== 'undefined'){
+        Cesium.Ion.defaultAccessToken = CFG.cesiumIonToken;
+      }
+
       try{
-        // Cesium-Viewer ohne Default-Imagery (sonst zieht 1.122 das Bing-Default
-        // ueber Cesium-Ion und ohne Token zeigt sich gar nichts -> schwarzer Globus)
         this.viewer = new Cesium.Viewer('cesium-container', {
           timeline: false,
           animation: false,
@@ -1935,27 +1942,6 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           shouldAnimate: true,
           baseLayer: false,
         });
-
-        // Imagery-Provider: Google Maps Satellite via inoffizielles mt-Endpoint
-        // (gleiche Tiles wie maps.google.com, hochaufgeloest fuer Deutschland,
-        // funktionieren im EEA, kein Map-Tiles-API-Key noetig). Falls das mal
-        // bricht: ESRI World Imagery als Fallback.
-        const google = new Cesium.UrlTemplateImageryProvider({
-          url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-          subdomains: ['0','1','2','3'],
-          maximumLevel: 21,
-          credit: 'Map data ©Google',
-        });
-        const esri = new Cesium.UrlTemplateImageryProvider({
-          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          maximumLevel: 22,
-          credit: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
-        });
-        // Google zuerst (oben), ESRI darunter als Fallback fuer Tiles die Google nicht hat
-        this.viewer.imageryLayers.addImageryProvider(esri);
-        this.viewer.imageryLayers.addImageryProvider(google);
-
-        // Atmosphaere + Globus an (wir brauchen den Globus als Traeger fuer ESRI)
         this.viewer.scene.skyAtmosphere.show = true;
         this.viewer.scene.globe.show = true;
         this.viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString('#1a2332');
@@ -1963,23 +1949,85 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       } catch(e){
         console.error('[Map3D] Viewer-Init fehlgeschlagen:', e);
         if(loading) loading.classList.add('is-hidden');
-        Shell.banner('warn', 'Cesium konnte nicht starten.', 'Wir zeigen die 2D-Satellitenansicht stattdessen. Fehler: '+(e.message||e));
+        Shell.banner('warn', 'Cesium konnte nicht starten.', 'Fehler: '+(e.message||e));
         Map2D.init(lat, lng);
         return;
       }
 
-      // OSM-Buildings holen — non-blocking. Diagnose-Banner wenn fehlgeschlagen.
+      // ===== Tile-Kaskade =====
+      // 1) Google Photorealistic 3D Tiles (echtes 3D, EEA-Sperre koennte
+      //    bei deinem Account inzwischen aufgehoben sein)
+      // 2) Cesium Ion + OSM Buildings 3D (wenn Token gesetzt)
+      // 3) Google Maps Satellite + ESRI als 2D-Drape mit extrudierten
+      //    NRW-Polygonen (das was du jetzt siehst)
+      let mode = '2D-DRAPE';
+      try{
+        const tilesUrl = 'https://tile.googleapis.com/v1/3dtiles/root.json?key=' + encodeURIComponent(CFG.apiKey);
+        const tileset = await Cesium.Cesium3DTileset.fromUrl(tilesUrl, { showCreditsOnScreen: true });
+        this.viewer.scene.primitives.add(tileset);
+        // Globus + Atmosphaere aus, da Photo-3D-Tiles ihre eigene Erde mitbringen
+        this.viewer.scene.globe.show = false;
+        this.viewer.scene.skyAtmosphere.show = false;
+        mode = '3D-PHOTO';
+        console.info('[Map3D] Google Photorealistic 3D Tiles aktiv');
+        Shell.banner('info', 'Photorealistische 3D-Ansicht aktiv.', 'Google 3D-Tiles geladen — du siehst das Haus genau wie in Google Earth.');
+      } catch(eGoogle){
+        const msg = (eGoogle && eGoogle.message) || '';
+        console.warn('[Map3D] Google 3D Tiles fehlgeschlagen:', msg);
+
+        // Fallback 2: Cesium Ion + OSM Buildings (wenn Token gesetzt)
+        if(CFG.cesiumIonToken){
+          try{
+            const worldImagery = await Cesium.IonImageryProvider.fromAssetId(2);
+            this.viewer.imageryLayers.addImageryProvider(worldImagery);
+            const osmTiles = await Cesium.createOsmBuildingsAsync();
+            this.viewer.scene.primitives.add(osmTiles);
+            mode = '3D-OSM';
+            console.info('[Map3D] Cesium Ion + OSM Buildings 3D aktiv');
+            Shell.banner('info', '3D-Ansicht via Cesium Ion aktiv.', 'OpenStreetMap-Gebaeude in 3D + Bing-Satellit.');
+          } catch(eIon){
+            console.warn('[Map3D] Cesium Ion fehlgeschlagen:', eIon.message);
+            mode = '2D-DRAPE';
+          }
+        }
+
+        // Fallback 3: 2D-Drape (Google Maps + ESRI auf der Cesium-Kugel)
+        if(mode === '2D-DRAPE'){
+          const google = new Cesium.UrlTemplateImageryProvider({
+            url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+            subdomains: ['0','1','2','3'],
+            maximumLevel: 21,
+            credit: 'Map data ©Google',
+          });
+          const esri = new Cesium.UrlTemplateImageryProvider({
+            url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            maximumLevel: 22,
+            credit: 'Tiles © Esri',
+          });
+          this.viewer.imageryLayers.addImageryProvider(esri);
+          this.viewer.imageryLayers.addImageryProvider(google);
+          if(/403|PERMISSION_DENIED|EEA|not available/i.test(msg)){
+            Shell.banner('info',
+              'Echtes 3D nicht verfuegbar.',
+              'Google Photorealistic 3D Tiles sind fuer deinen Account/Region gesperrt. ' +
+              'Optionen: <a href="https://console.cloud.google.com/apis/library/tile.googleapis.com" target="_blank">Map Tiles API in Cloud Console aktivieren</a> ' +
+              'ODER kostenlosen <a href="https://cesium.com/ion/signup" target="_blank">Cesium-Ion-Token</a> in PV_CONFIG eintragen. ' +
+              'Bis dahin: hochaufgeloestes 2D-Satellit.');
+          } else if(msg){
+            Shell.banner('info', 'Photorealistic 3D nicht geladen.', 'Fallback auf 2D-Satellit aktiv. Fehler: '+msg);
+          }
+        }
+      }
+      this.mode = mode;
+
+      // OSM-Footprint fuer NRW-Filter immer holen (auch im 3D-Photo-Modus)
       try{
         const buildings = await OSMBuildings.fetch(lat, lng, 60);
         if(buildings.length){
-          this.userBuilding = OSMBuildings.render(this.viewer, buildings, lat, lng);
-        } else {
-          console.warn('[Map3D] Keine OSM-Buildings im Umkreis');
-          Shell.banner('info', 'Keine OSM-Gebaeude im Umkreis gefunden.', 'Du siehst nur das Satellitenbild — Berechnung laeuft trotzdem.');
+          this.userBuilding = OSMBuildings.render(this.viewer, buildings, lat, lng, mode);
         }
       } catch(e){
         console.warn('[Map3D] OSM-Buildings nicht geladen:', e.message);
-        Shell.banner('info', '3D-Gebaeude konnten nicht geladen werden.', 'Overpass-API erreichbar? Wir berechnen mit dem Satellitenbild weiter. ('+e.message+')');
       }
 
       // Adress-Pin auf Bodenhoehe (Satellitenbild zeigt das echte Dach)
@@ -1995,17 +2043,23 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         },
       });
 
-      // Kamera schraeg von Sued-West, ~55m hoch fuer mehr Detail
-      const dLat = -0.00020;
-      const dLng = -0.00033;
+      // Kamera-Position je nach Mode:
+      //  - 3D-PHOTO: 130m hoch, -40deg Pitch (oblique Sicht auf echte Gebaeude)
+      //  - 3D-OSM:   100m hoch, -50deg Pitch
+      //  - 2D-DRAPE: 55m hoch,  -68deg Pitch (eher top-down)
+      const camCfg = (mode === '3D-PHOTO') ? { alt: 130, pitch: -40, off: 0.00045 } :
+                     (mode === '3D-OSM')   ? { alt: 100, pitch: -50, off: 0.00035 } :
+                                             { alt: 55,  pitch: -68, off: 0.00020 };
+      const dLat = -camCfg.off;
+      const dLng = -camCfg.off * 1.6;
       this.viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromDegrees(lng + dLng, lat + dLat, 55),
+        destination: Cesium.Cartesian3.fromDegrees(lng + dLng, lat + dLat, camCfg.alt),
         orientation: {
           heading: Cesium.Math.toRadians(45),
-          pitch:   Cesium.Math.toRadians(-68),
+          pitch:   Cesium.Math.toRadians(camCfg.pitch),
           roll:    0,
         },
-        duration: 1.8,
+        duration: 2.2,
       });
 
       if(loading) loading.classList.add('is-hidden');
@@ -2344,25 +2398,36 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       });
       items.sort((a, b) => renderOrder[a.type] - renderOrder[b.type]);
 
+      const is3D = (Map3D.mode === '3D-PHOTO' || Map3D.mode === '3D-OSM');
       const roofH = Map3D.roofHeight();
       items.forEach((it, i) => {
         const positions = it.hull.map(p => Cesium.Cartesian3.fromDegrees(p.lng, p.lat));
-        // Z-Stacking: good 0.10m, ok 0.20m, bad 0.30m. Bad oben sichtbar,
-        // 10cm Extrusion macht's plastisch ohne dass die Slabs ueberlappen.
-        const baseH  = roofH + i * 0.0001 + (renderOrder[it.type] * 0.1);
-        const topH   = baseH + 0.1;
-
-        const entity = viewer.entities.add({
-          name: 'seg-' + it.segIdx,
-          polygon: {
+        let polyOptions;
+        if(is3D){
+          // 3D-Modus: Polygon wird wie ein Stempel auf die echte Dachgeometrie
+          // (Google 3D Tiles oder OSM Buildings) projiziert.
+          polyOptions = {
+            hierarchy: new Cesium.PolygonHierarchy(positions),
+            material: colors[it.type],
+            classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
+          };
+        } else {
+          // 2D-DRAPE: Z-Stacking + 10cm-Extrusion
+          const baseH = roofH + i * 0.0001 + (renderOrder[it.type] * 0.1);
+          polyOptions = {
             hierarchy: new Cesium.PolygonHierarchy(positions),
             material: colors[it.type],
             height: baseH,
-            extrudedHeight: topH,
+            extrudedHeight: baseH + 0.1,
             outline: true,
             outlineColor: Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.92),
             outlineWidth: 2,
-          },
+          };
+        }
+
+        const entity = viewer.entities.add({
+          name: 'seg-' + it.segIdx,
+          polygon: polyOptions,
           properties: {
             segIdx: it.segIdx, type: it.type, panels: it.segPanels, az: it.az, pitch: it.pitch,
             baseColor: colors[it.type],
@@ -2452,7 +2517,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       if(!this._activePanels) this._activePanels = new Map();
       const list = [];
 
-      // Module liegen 5cm ueber den extrudierten Segment-Polygonen (die enden bei roofH+0.4m)
+      const is3D = (Map3D.mode === '3D-PHOTO' || Map3D.mode === '3D-OSM');
       const roofH = Map3D.roofHeight() + 0.45;
       segPanels.forEach(p => {
         const isLand = p.orientation === 'LANDSCAPE';
@@ -2460,17 +2525,26 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         const h = isLand ? panelW : panelH;
         const corners = this._rotatedRect(p.center.latitude, p.center.longitude, w, h, az);
         const positions = corners.map(c =>
-          Cesium.Cartesian3.fromDegrees(c.lng, c.lat, roofH)
+          Cesium.Cartesian3.fromDegrees(c.lng, c.lat)
         );
 
+        const polyOpts = is3D ? {
+          hierarchy: new Cesium.PolygonHierarchy(positions),
+          material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.96),
+          classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
+        } : {
+          hierarchy: new Cesium.PolygonHierarchy(positions.map(pos => {
+            const c = Cesium.Cartographic.fromCartesian(pos);
+            return Cesium.Cartesian3.fromRadians(c.longitude, c.latitude, roofH);
+          })),
+          material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.96),
+          height: roofH,
+          outline: true,
+          outlineColor: Cesium.Color.fromCssColorString('#bfdbfe').withAlpha(0.95),
+        };
+
         const moduleEntity = viewer.entities.add({
-          polygon: {
-            hierarchy: new Cesium.PolygonHierarchy(positions),
-            material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.96),
-            height: roofH,
-            outline: true,
-            outlineColor: Cesium.Color.fromCssColorString('#bfdbfe').withAlpha(0.95),
-          },
+          polygon: polyOpts,
           properties: { isModule: true, segIdx, panel: p },
         });
         list.push({ entity: moduleEntity, panel: p });
