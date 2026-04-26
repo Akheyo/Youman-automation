@@ -688,6 +688,23 @@ a:hover { text-decoration: underline; }
   font-size: 0.875rem;
 }
 
+/* ----- Page skeleton (SSR placeholder) ----- */
+.page-skeleton { min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg-softer); }
+.page-skeleton__bar {
+  height: 56px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.page-skeleton__main { flex: 1; display: grid; grid-template-columns: 1fr; }
+@media (min-width: 960px) { .page-skeleton__main { grid-template-columns: 1fr 380px; } }
+.page-skeleton__viewer {
+  background: linear-gradient(90deg, var(--bg-soft) 0%, var(--border) 50%, var(--bg-soft) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  min-height: 60vh;
+}
+.page-skeleton__sidebar { background: var(--bg); border-left: 1px solid var(--border); }
+
 /* ----- Reduced motion ----- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

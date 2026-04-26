@@ -24,8 +24,22 @@ const WFS_BASE = 'https://www.wfs.nrw.de/umwelt/erneuerbare_energien_wfs';
 const DEFAULT_LAYER = 'sk_dachflaechen';
 const PUBLIC_CORS_PROXY = 'https://corsproxy.io/?';
 
-/** Bounding box around (lat, lng) ≈ 12 m on each side (single-family home). */
-const BBOX_PADDING_M = 12;
+/** Bounding box around (lat, lng) — needs to be wide enough that the whole
+ *  building plus a small surround is captured (segments often extend a few m
+ *  past the OSM footprint). */
+const BBOX_PADDING_M = 30;
+
+/**
+ * Layer-name variants tried in order. NRW has renamed and reorganised the
+ * Solarkataster a few times; we try the most common names so a single rename
+ * doesn't kill the integration.
+ */
+const LAYER_FALLBACKS = [
+  'sk_dachflaechen',
+  'erneuerbare_energien:sk_dachflaechen',
+  'sk:dachflaechen',
+  'dachflaechen',
+];
 
 export interface FetchNrwSegmentsOptions {
   /** Override layer name (default `sk_dachflaechen`). */
@@ -95,36 +109,66 @@ export async function fetchNrwSegments(
     throw new Error('Adresse liegt außerhalb NRW. Solarkataster nur für NRW verfügbar.');
   }
 
-  const layer = opts.layer ?? DEFAULT_LAYER;
   const padding = opts.paddingM ?? BBOX_PADDING_M;
   const proxyPrefix = opts.proxyPrefix ?? PUBLIC_CORS_PROXY;
 
   const [minLng, minLat, maxLng, maxLat] = bboxAround(lat, lng, padding);
-  const params = new URLSearchParams({
-    SERVICE: 'WFS',
-    VERSION: '2.0.0',
-    REQUEST: 'GetFeature',
-    TYPENAMES: layer,
-    OUTPUTFORMAT: 'application/json',
-    SRSNAME: 'EPSG:4326',
-    BBOX: `${minLat},${minLng},${maxLat},${maxLng},EPSG:4326`,
-    COUNT: '50',
-  });
 
-  const directUrl = `${WFS_BASE}?${params.toString()}`;
-  const url = proxyPrefix ? proxyPrefix + encodeURIComponent(directUrl) : directUrl;
+  // We try every layer-name variant + both BBOX axis orderings. NRW WFS has
+  // shipped both interpretations of EPSG:4326 over the years, so we don't
+  // assume — we probe.
+  const layerCandidates = opts.layer ? [opts.layer] : LAYER_FALLBACKS;
+  const bboxCandidates = [
+    `${minLat},${minLng},${maxLat},${maxLng},EPSG:4326`, // WFS 2.0 spec: lat,lng for EPSG:4326
+    `${minLng},${minLat},${maxLng},${maxLat},EPSG:4326`, // legacy lng,lat axis order
+  ];
 
-  const res = await fetch(url, { signal: opts.signal });
-  if (!res.ok) {
-    throw new Error(`NRW WFS HTTP ${res.status}`);
+  let lastError = 'unknown';
+  let data: FeatureCollection | null = null;
+
+  outer: for (const layer of layerCandidates) {
+    for (const bbox of bboxCandidates) {
+      const params = new URLSearchParams({
+        SERVICE: 'WFS',
+        VERSION: '2.0.0',
+        REQUEST: 'GetFeature',
+        TYPENAMES: layer,
+        OUTPUTFORMAT: 'application/json',
+        SRSNAME: 'EPSG:4326',
+        BBOX: bbox,
+        COUNT: '100',
+      });
+      const directUrl = `${WFS_BASE}?${params.toString()}`;
+      const url = proxyPrefix ? proxyPrefix + encodeURIComponent(directUrl) : directUrl;
+
+      try {
+        const res = await fetch(url, { signal: opts.signal });
+        if (!res.ok) {
+          const body = await res.text().catch(() => '');
+          lastError = `HTTP ${res.status} bei layer="${layer}" — ${body.slice(0, 250).replace(/\s+/g, ' ').trim() || '(kein Body)'}`;
+          continue;
+        }
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.includes('json')) {
+          const body = await res.text();
+          lastError = `Content-Type=${ct} bei layer="${layer}". Body: ${body.slice(0, 200)}`;
+          continue;
+        }
+        const parsed = (await res.json()) as FeatureCollection;
+        if (parsed.features && parsed.features.length > 0) {
+          data = parsed;
+          break outer;
+        }
+        lastError = `Layer "${layer}" lieferte keine Features in der BBOX.`;
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : String(err);
+      }
+    }
   }
-  const ct = res.headers.get('content-type') || '';
-  if (!ct.includes('json')) {
-    const txt = await res.text();
-    throw new Error(`NRW WFS unerwarteter Content-Type: ${ct} / Body: ${txt.slice(0, 200)}`);
-  }
 
-  const data = (await res.json()) as FeatureCollection;
+  if (!data) {
+    throw new Error(`NRW WFS lieferte keine nutzbaren Daten. Letzter Fehler: ${lastError}`);
+  }
   const features = data.features ?? [];
   if (features.length === 0) {
     throw new Error('NRW WFS: keine Dachflächen in der Umgebung gefunden.');
