@@ -1795,14 +1795,21 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       ];
       let lastErr;
 
-      // Versuch 1: direkt POST gegen jeden Mirror
+      // Helper: fetch mit JS-seitigem Timeout (Overpass kann sonst minutenlang hangen)
+      const fetchWithTimeout = (url, opts, ms) => {
+        const ctl = new AbortController();
+        const timer = setTimeout(()=>ctl.abort(), ms);
+        return fetch(url, { ...opts, signal: ctl.signal }).finally(()=>clearTimeout(timer));
+      };
+
+      // Versuch 1: direkt POST gegen jeden Mirror, je 6s Timeout
       for(const m of mirrors){
         try {
-          const res = await fetch(m, {
+          const res = await fetchWithTimeout(m, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'data=' + encodeURIComponent(q),
-          });
+          }, 6000);
           if(!res.ok){ lastErr = new Error(m+': HTTP '+res.status); continue; }
           const d = await res.json();
           if(!d.elements){ lastErr = new Error(m+': no elements'); continue; }
@@ -1810,12 +1817,12 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         } catch(e){ lastErr = e; }
       }
 
-      // Versuch 2: GET via corsproxy.io (falls direkt CORS blockt)
+      // Versuch 2: GET via corsproxy.io (falls direkt CORS blockt), je 6s Timeout
       const proxy = CFG.osmProxy || 'https://corsproxy.io/?';
       for(const m of mirrors){
         try {
           const fullUrl = m + '?data=' + encodeURIComponent(q);
-          const res = await fetch(proxy + encodeURIComponent(fullUrl));
+          const res = await fetchWithTimeout(proxy + encodeURIComponent(fullUrl), {}, 6000);
           if(!res.ok){ lastErr = new Error('proxy '+m+': HTTP '+res.status); continue; }
           const d = await res.json();
           if(!d.elements){ lastErr = new Error('proxy '+m+': no elements'); continue; }
@@ -1950,12 +1957,18 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       const loading = document.getElementById('cesiumLoading');
       if(loading) loading.classList.remove('is-hidden');
 
+      // Safety-Timeout: Spinner spaetestens nach 12s ausblenden, egal was passiert
+      const safetyHide = setTimeout(() => {
+        if(loading) loading.classList.add('is-hidden');
+      }, 12000);
+
       if(this.viewer) this.destroy();
 
       // Cesium-Ion-Token setzen falls vorhanden (fuer OSM Buildings + Bing)
       if(CFG.cesiumIonToken && typeof Cesium !== 'undefined'){
         Cesium.Ion.defaultAccessToken = CFG.cesiumIonToken;
       }
+      this._safetyHide = safetyHide;
 
       try{
         this.viewer = new Cesium.Viewer('cesium-container', {
@@ -2007,7 +2020,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       // Tier 2: Cesium Ion 3D Tiles (OSM Buildings + World Imagery)
       if(!mode){
         try{
-          if(!Cesium.Ion.defaultAccessToken) throw new Error('Kein Cesium-Ion-Token');
+          if(!Cesium.Ion.defaultAccessToken) throw new Error('Kein Cesium-Ion-Token in PV_CONFIG.cesiumIonToken');
           // World Imagery (Bing Aerial) als Globus-Textur
           const worldImagery = await Cesium.IonImageryProvider.fromAssetId(2);
           this.viewer.imageryLayers.addImageryProvider(worldImagery);
@@ -2019,7 +2032,11 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           Shell.banner('info', '3D-Karte via Cesium Ion aktiv.',
             'Bing-Aerial-Satellit + offizielles OSM-Buildings-3D-Tileset (alle Gebaeude weltweit als echtes 3D-Modell).');
         } catch(e){
-          console.warn('[Map3D] Cesium Ion fehlgeschlagen:', e.message);
+          const errMsg = (e && (e.message || e.toString())) || 'unbekannt';
+          console.warn('[Map3D] Cesium Ion fehlgeschlagen:', errMsg, e);
+          Shell.banner('warn',
+            'Cesium Ion konnte nicht laden.',
+            'Fehler: <code>'+errMsg+'</code>. Pruefe in deinem Cesium-Ion-Dashboard: 1) Token gueltig, 2) Asset-Zugriff erlaubt fuer "Cesium World Imagery" (Asset 2) und "Cesium OSM Buildings" (Asset 96188), 3) Allowed URLs leer oder enthaelt raw.githack.com.');
         }
       }
 
@@ -2077,6 +2094,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       });
 
       if(loading) loading.classList.add('is-hidden');
+      if(this._safetyHide){ clearTimeout(this._safetyHide); this._safetyHide = null; }
     },
 
     /* Im 3D-CAD-Modus: Walls werden bis zur Traufe extrudiert (70% der
@@ -3309,41 +3327,47 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     },
 
     async enter(){
-      const {lat, lng} = State.address;
-      Step2.updateSelection();
+      // Guard gegen Doppel-Aufruf (Race wenn User schnell zwischen Steps wechselt).
+      // Ohne dieses Guard liefert der zweite Solar.loadForAddress null und triggert
+      // ManualRoof fuer kein Grund.
+      if(this._entering) return;
+      this._entering = true;
+      try {
+        const {lat, lng} = State.address;
+        Step2.updateSelection();
 
-      if(typeof Cesium === 'undefined'){
-        Shell.banner('warn', '3D-Bibliothek nicht geladen.', 'Cesium konnte nicht eingebunden werden – wir setzen mit Schätzwerten fort.');
-        await Solar.loadForAddress();
-        return;
-      }
-
-      // 1) Cesium-3D-Viewer + OSM-Buildings ZUERST starten — wir brauchen den
-      //    OSM-Footprint des User-Hauses als Clip-Maske fuer den NRW-Filter.
-      await Map3D.init(lat, lng);
-
-      // 2) Solar-Daten holen (NRW nutzt Map3D.userBuilding als Clip)
-      const bi = await Solar.loadForAddress();
-
-      // 3) Polygone auflegen
-      if(bi){
-        if(Map3D.viewer){
-          Roof3D.buildSegments(Map3D.viewer, bi);
-        } else if(Map2D.isActive()){
-          Map2D.buildSegments(bi);
+        if(typeof Cesium === 'undefined'){
+          Shell.banner('warn', '3D-Bibliothek nicht geladen.', 'Cesium konnte nicht eingebunden werden – wir setzen mit Schätzwerten fort.');
+          await Solar.loadForAddress();
+          return;
         }
-      } else if(Map3D.viewer || Map2D.isActive()){
-        if(Map3D.viewer){
-          Shell.banner('info',
-            'Dach manuell vermessen.',
-            'Klicken Sie nacheinander die <strong>Eckpunkte Ihres Daches</strong> auf dem 3D-Modell. ' +
-            'Mindestens 3 Punkte. Doppelklick beendet die Eingabe.');
-          ManualRoof.start(Map3D.viewer);
-        } else {
-          Shell.banner('warn',
-            'Keine Dachdaten verfügbar.',
-            'Wir berechnen mit Schätzwerten weiter — der Vor-Ort-Termin durch unseren Experten ist kostenlos.');
+
+        await Map3D.init(lat, lng);
+        const bi = await Solar.loadForAddress();
+
+        if(bi){
+          if(Map3D.viewer){
+            Roof3D.buildSegments(Map3D.viewer, bi);
+          } else if(Map2D.isActive()){
+            Map2D.buildSegments(bi);
+          }
+        } else if(State.solar.status !== 'loading' && (Map3D.viewer || Map2D.isActive())){
+          // ManualRoof NUR wenn Solar wirklich keine Daten hatte — nicht wenn ein
+          // anderer Aufruf gerade lief und wir 'null' bekommen haben.
+          if(Map3D.viewer){
+            Shell.banner('info',
+              'Dach manuell vermessen.',
+              'Klicken Sie nacheinander die <strong>Eckpunkte Ihres Daches</strong> auf dem 3D-Modell. ' +
+              'Mindestens 3 Punkte. Doppelklick beendet die Eingabe.');
+            ManualRoof.start(Map3D.viewer);
+          } else {
+            Shell.banner('warn',
+              'Keine Dachdaten verfügbar.',
+              'Wir berechnen mit Schätzwerten weiter — der Vor-Ort-Termin durch unseren Experten ist kostenlos.');
+          }
         }
+      } finally {
+        this._entering = false;
       }
     },
 
