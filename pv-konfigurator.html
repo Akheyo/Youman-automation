@@ -1858,20 +1858,25 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       });
 
       if(mode === '3D-CAD'){
-        // ALLE Gebaeude als weisse 3D-Volumen mit dunklem Outline + Schatten
-        const wallUser   = Cesium.Color.fromCssColorString('#fff8e6'); // dezenter Cremeton
-        const wallNeighb = Cesium.Color.fromCssColorString('#f5f6f8'); // fast weiss
-        const outlineCol = Cesium.Color.fromCssColorString('#1d1d2e').withAlpha(0.85);
+        // Saubere Architektur-Optik: weisse Volumen, dunkles Outline, Schatten.
+        // User-Haus nur bis zur TRAUFE extrudieren — die Dachform kommt aus
+        // den NRW-Polygonen (Azimuth+Neigung), nicht aus OSM.
+        const wallUser   = Cesium.Color.fromCssColorString('#fff8e6');
+        const wallNeighb = Cesium.Color.fromCssColorString('#f5f6f8');
+        const outlineCol = Cesium.Color.fromCssColorString('#1d1d2e').withAlpha(0.9);
 
         buildings.forEach(b => {
           const positions = b.coords.slice(0, -1).map(c =>
             Cesium.Cartesian3.fromDegrees(c[0], c[1])
           );
           const isUser = (b === userBldg);
+          // Eave: 70% der OSM-Hoehe fuer das User-Haus (Dach kommt drueber);
+          // Nachbarn behalten volle Hoehe (sehen wir eh nur als Hintergrund)
+          const wallTop = isUser ? b.height * 0.70 : b.height;
           viewer.entities.add({
             polygon: {
               hierarchy: positions,
-              extrudedHeight: b.height,
+              extrudedHeight: wallTop,
               height: 0,
               material: isUser ? wallUser : wallNeighb,
               outline: true,
@@ -2074,14 +2079,16 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       if(loading) loading.classList.add('is-hidden');
     },
 
-    /* Hoehe ueber Boden fuer NRW-/Solar-Polygone.
-       3D-CAD: liegen oben auf dem User-Haus-Dach (OSM-Hoehe + 5cm).
-       2D-DRAPE: 10cm ueber Boden (Polygone als Slabs auf Satellitenbild).
-       3D-PHOTO/3D-OSM: irrelevant — Classification ignoriert height. */
+    /* Im 3D-CAD-Modus: Walls werden bis zur Traufe extrudiert (70% der
+       OSM-Hoehe), das Dach drueber wird aus den NRW-Polygonen mit ihrem
+       jeweiligen Azimuth+Neigung als gekippte Flaeche konstruiert. */
+    eaveHeight(){
+      if(this.userBuilding && this.userBuilding.height) return this.userBuilding.height * 0.70;
+      return 4.5;
+    },
+
     roofHeight(){
-      if(this.mode === '3D-CAD' && this.userBuilding && this.userBuilding.height){
-        return this.userBuilding.height + 0.05;
-      }
+      if(this.mode === '3D-CAD') return this.eaveHeight();
       return 0.1;
     },
 
@@ -2414,32 +2421,39 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       const m = Map3D.mode;
       const isClassify = (m === '3D-PHOTO' || m === '3D-OSM');
       const isCad      = (m === '3D-CAD');
-      const baseRoofH  = Map3D.roofHeight();
+      const eave       = Map3D.eaveHeight ? Map3D.eaveHeight() : 4.5;
 
       items.forEach((it, i) => {
-        const positions = it.hull.map(p => Cesium.Cartesian3.fromDegrees(p.lng, p.lat));
         let polyOptions;
+
         if(isClassify){
+          const positions = it.hull.map(p => Cesium.Cartesian3.fromDegrees(p.lng, p.lat));
           polyOptions = {
             hierarchy: new Cesium.PolygonHierarchy(positions),
             material: colors[it.type],
             classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
           };
         } else if(isCad){
-          // CAD-Modus: Polygon liegt flach auf dem User-Haus-Dach.
-          // Z-Stacking damit bad ueber good rendert (Schornsteine sichtbar).
-          const h = baseRoofH + (renderOrder[it.type] * 0.05) + i * 0.001;
+          // RAYDRAFT-STYLE: Polygon als GENEIGTE Flaeche im 3D-Raum konstruieren.
+          // Jeder Vertex bekommt eine individuelle Hoehe basierend auf Position
+          // entlang der Azimuth-Achse → es entsteht ein echtes Satteldach/Walm.
+          const pitchedRing = this._pitchedRoofVertices(it.hull, it.az, it.pitch, eave);
+          const positions = pitchedRing.map(p =>
+            Cesium.Cartesian3.fromDegrees(p.lng, p.lat, p.height)
+          );
           polyOptions = {
             hierarchy: new Cesium.PolygonHierarchy(positions),
             material: colors[it.type],
-            height: h,
+            perPositionHeight: true,
             outline: true,
             outlineColor: Cesium.Color.fromCssColorString('#0d1424').withAlpha(0.9),
             outlineWidth: 2,
+            shadows: Cesium.ShadowMode.ENABLED,
           };
         } else {
-          // 2D-DRAPE: Extrusions-Slabs auf Bodenhoehe
-          const h = baseRoofH + (renderOrder[it.type] * 0.1) + i * 0.0001;
+          // Legacy 2D-DRAPE
+          const h = (renderOrder[it.type] * 0.1) + i * 0.0001 + 0.1;
+          const positions = it.hull.map(p => Cesium.Cartesian3.fromDegrees(p.lng, p.lat));
           polyOptions = {
             hierarchy: new Cesium.PolygonHierarchy(positions),
             material: colors[it.type],
@@ -2545,28 +2559,48 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 
       const m = Map3D.mode;
       const isClassify = (m === '3D-PHOTO' || m === '3D-OSM');
-      // Module sitzen knapp ueber den Segment-Polygonen
-      const roofH = Map3D.roofHeight() + (m === '3D-CAD' ? 0.20 : 0.45);
+      const isCad      = (m === '3D-CAD');
+      const eave       = Map3D.eaveHeight ? Map3D.eaveHeight() : 4.5;
+      const seg        = sp.roofSegmentStats && sp.roofSegmentStats[segIdx];
+      const tilt       = (seg && seg.pitchDegrees) || 30;
+
       segPanels.forEach(p => {
         const isLand = p.orientation === 'LANDSCAPE';
         const w = isLand ? panelH : panelW;
         const h = isLand ? panelW : panelH;
         const corners = this._rotatedRect(p.center.latitude, p.center.longitude, w, h, az);
-        const positions = corners.map(c =>
-          Cesium.Cartesian3.fromDegrees(c.lng, c.lat)
-        );
 
-        const polyOpts = isClassify ? {
-          hierarchy: new Cesium.PolygonHierarchy(positions),
-          material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.96),
-          classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
-        } : {
-          hierarchy: new Cesium.PolygonHierarchy(positions),
-          material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.96),
-          height: roofH,
-          outline: true,
-          outlineColor: Cesium.Color.fromCssColorString('#bfdbfe').withAlpha(0.95),
-        };
+        let polyOpts;
+        if(isClassify){
+          const positions = corners.map(c => Cesium.Cartesian3.fromDegrees(c.lng, c.lat));
+          polyOpts = {
+            hierarchy: new Cesium.PolygonHierarchy(positions),
+            material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.96),
+            classificationType: Cesium.ClassificationType.CESIUM_3D_TILE,
+          };
+        } else if(isCad){
+          // Module entlang derselben geneigten Flaeche wie das Dachsegment
+          const pitched = this._pitchedRoofVertices(corners, az, tilt, eave + 0.05);
+          const positions = pitched.map(p2 =>
+            Cesium.Cartesian3.fromDegrees(p2.lng, p2.lat, p2.height + 0.05)
+          );
+          polyOpts = {
+            hierarchy: new Cesium.PolygonHierarchy(positions),
+            material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.96),
+            perPositionHeight: true,
+            outline: true,
+            outlineColor: Cesium.Color.fromCssColorString('#bfdbfe').withAlpha(0.95),
+          };
+        } else {
+          const positions = corners.map(c => Cesium.Cartesian3.fromDegrees(c.lng, c.lat));
+          polyOpts = {
+            hierarchy: new Cesium.PolygonHierarchy(positions),
+            material: Cesium.Color.fromCssColorString('#1e3a8a').withAlpha(0.96),
+            height: 0.5,
+            outline: true,
+            outlineColor: Cesium.Color.fromCssColorString('#bfdbfe').withAlpha(0.95),
+          };
+        }
 
         const moduleEntity = viewer.entities.add({
           polygon: polyOpts,
@@ -2636,6 +2670,47 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     /* Douglas-Peucker-Simplifizierung eines Polygon-Rings (Punkte mit lng/lat).
        tolerance ist max. Abstand in Grad — 0.0000027 ≈ 30cm. Glaettet die
        Laser-Scan-Zacken ohne die Form zu verfaelschen. */
+    /* Konstruiert die 3D-Dachsegment-Geometrie aus dem 2D-Polygon-Ring +
+       Azimuth + Neigung. Jeder Ring-Punkt bekommt eine individuelle Hoehe,
+       sodass das Polygon als geneigte Flaeche im Raum steht — hoch am
+       First, niedrig an der Traufe.
+       Ergebnis: Array von { lng, lat, height } die mit perPositionHeight
+       als geneigtes 3D-Polygon gerendert werden. */
+    _pitchedRoofVertices(ring, azimuthDeg, tiltDeg, eaveHeight){
+      if(!tiltDeg || tiltDeg < 1){
+        // Flaches Dach
+        return ring.map(p => ({ lng: p.lng, lat: p.lat, height: eaveHeight }));
+      }
+      // Cesium-Konvention: Azimuth 0=Nord, 90=Ost, 180=Sued. Das Dach
+      // "blickt" in azimuth-Richtung — DOWNHILL ist also = azimuth-Richtung.
+      const azRad = azimuthDeg * Math.PI / 180;
+      const downhillLat = Math.cos(azRad);   // +1 fuer N, -1 fuer S
+      const downhillLng = Math.sin(azRad);   // +1 fuer O, -1 fuer W
+
+      let cLat=0, cLng=0;
+      ring.forEach(p => { cLat += p.lat; cLng += p.lng; });
+      cLat /= ring.length; cLng /= ring.length;
+
+      const mPerLat = 111320;
+      const mPerLng = 111320 * Math.cos(cLat * Math.PI / 180);
+
+      // Jeden Vertex auf die Downhill-Achse projizieren (in Metern vom Centroid)
+      const proj = ring.map(p => {
+        const dLat = (p.lat - cLat) * mPerLat;
+        const dLng = (p.lng - cLng) * mPerLng;
+        return dLat * downhillLat + dLng * downhillLng;
+      });
+      const maxProj = Math.max(...proj);    // weitester Punkt downhill = Traufe
+      const tanT = Math.tan(tiltDeg * Math.PI / 180);
+
+      return ring.map((p, i) => {
+        // Distanz vom Traufen-Rand uphill (= positive Hoehe ueber Eave)
+        const distUp = maxProj - proj[i];
+        const h = eaveHeight + distUp * tanT;
+        return { lng: p.lng, lat: p.lat, height: h };
+      });
+    },
+
     _simplifyRing(ring, tolerance){
       if(!ring || ring.length < 4) return ring;
       const sqTol = tolerance * tolerance;
