@@ -23,6 +23,24 @@ input{font:inherit}
 .topbar{display:flex;align-items:center;gap:24px;padding:12px 20px;background:#fff;border-bottom:1px solid #e4e8ef;z-index:5;flex-shrink:0}
 .topbar__brand{font-weight:700;font-size:16px;color:#0D73FC;flex-shrink:0;letter-spacing:.2px}
 .topbar__search{flex:1;max-width:560px;position:relative}
+.topbar__btn{padding:8px 14px;border:1px solid #e4e8ef;border-radius:8px;background:#fff;font-size:13px;color:#1d1d2e;flex-shrink:0;transition:border-color .15s,background .15s}
+.topbar__btn:hover{border-color:#0D73FC;color:#0D73FC}
+
+.modal{position:fixed;inset:0;z-index:100;display:none}
+.modal.is-active{display:block}
+.modal__backdrop{position:absolute;inset:0;background:rgba(13,20,36,.5);backdrop-filter:blur(2px)}
+.modal__panel{position:relative;width:min(560px,90vw);margin:8vh auto 0;background:#fff;border-radius:12px;padding:28px;box-shadow:0 24px 60px rgba(15,23,42,.32)}
+.modal__h2{margin:0 0 12px;font-size:20px;font-weight:700}
+.modal__p{font-size:14px;line-height:1.55;color:#3a4252;margin:0 0 16px}
+.modal__steps{margin:0 0 18px;padding-left:18px;font-size:13px;line-height:1.7;color:#3a4252}
+.modal__steps a{color:#0D73FC;text-decoration:underline}
+.modal__field{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}
+.modal__field span{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:#7a8393;font-weight:600}
+.modal__field input{padding:10px 12px;border:1px solid #e4e8ef;border-radius:8px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:13px}
+.modal__field input:focus{outline:none;border-color:#0D73FC;box-shadow:0 0 0 3px rgba(13,115,252,.18)}
+.modal__actions{display:flex;gap:8px;justify-content:flex-end}
+.modal__close{position:absolute;top:14px;right:14px;width:32px;height:32px;border:0;background:transparent;font-size:24px;color:#7a8393;cursor:pointer;border-radius:6px}
+.modal__close:hover{background:#f4f6fa;color:#1d1d2e}
 
 .search-input{width:100%;padding:10px 14px;border:1px solid #e4e8ef;border-radius:8px;outline:none;font-size:14px;background:#fff}
 .search-input:focus{border-color:#0D73FC;box-shadow:0 0 0 3px rgba(13,115,252,.18)}
@@ -79,7 +97,35 @@ input{font:inherit}
       <span id="searchSpinner" class="search-spinner"></span>
       <ul id="searchResults" class="search-results"></ul>
     </div>
+    <button id="btnStyle" class="topbar__btn" type="button">Karten-Stil</button>
   </header>
+
+  <!-- Modal for MapTiler token entry -->
+  <div id="styleModal" class="modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__panel">
+      <h2 class="modal__h2">Karten-Stil verbessern</h2>
+      <p class="modal__p">
+        Standard ist <strong>OpenStreetMap</strong> (kostenlos, kein Login, aber Cartoon-Optik).
+        Mit einem kostenlosen <strong>MapTiler</strong>-Token (100.000 Aufrufe/Monat frei) kriegst du den
+        gleichen 3D-Stil wie kommerzielle Solar-Konfiguratoren — saubere Vektorkarte mit eingebauten 3D-Gebäuden.
+      </p>
+      <ol class="modal__steps">
+        <li>Auf <a href="https://cloud.maptiler.com/auth/widget?mode=signup" target="_blank" rel="noopener">cloud.maptiler.com</a> mit Email registrieren (kostenlos, keine Kreditkarte).</li>
+        <li>Nach Login &rarr; <strong>Account &rarr; API keys</strong> &rarr; Default-Key kopieren.</li>
+        <li>Hier einfügen, Speichern klicken &rarr; Karte lädt neu mit dem neuen Stil.</li>
+      </ol>
+      <label class="modal__field">
+        <span>MapTiler API-Key</span>
+        <input id="mtToken" type="text" placeholder="z.B. abcDEF123xyz..." spellcheck="false" autocomplete="off">
+      </label>
+      <div class="modal__actions">
+        <button id="btnStyleClear" class="sb-btn" type="button">Token entfernen (zurück zu OSM)</button>
+        <button id="btnStyleSave" class="sb-btn sb-btn--primary" type="button">Speichern &amp; Karte neu laden</button>
+      </div>
+      <button id="btnStyleClose" class="modal__close" type="button" aria-label="Schließen">&times;</button>
+    </div>
+  </div>
   <main class="content">
     <div class="map-wrap">
       <div id="map"></div>
@@ -171,29 +217,47 @@ input{font:inherit}
 
   /* =================================================================
    * MapLibre setup
-   * Uses OSM raster tiles for the basemap + we render 3D buildings
-   * ourselves from Overpass data, so no vector tile provider/key needed.
+   *
+   * Two modes:
+   *  - DEFAULT: OSM raster tiles + we extrude 3D buildings ourselves
+   *    from Overpass data. Cartoon-Look, no token, always works.
+   *  - WITH MAPTILER TOKEN: MapTiler "Streets v2" vector style with
+   *    eingebauten 3D-Gebaeuden. Sieht aus wie kommerzielle Konfiguratoren.
+   *    Token: kostenlos auf cloud.maptiler.com (100k Tile-Loads/Monat frei).
    * ================================================================= */
+  const MT_TOKEN_KEY = 'pv.maptiler.token';
+  function getMaptilerToken(){
+    try { return localStorage.getItem(MT_TOKEN_KEY) || ''; } catch(_){ return ''; }
+  }
+  function setMaptilerToken(t){
+    try { if(t) localStorage.setItem(MT_TOKEN_KEY, t); else localStorage.removeItem(MT_TOKEN_KEY); } catch(_){}
+  }
+
+  const mtToken = getMaptilerToken();
+  const useMaptiler = !!mtToken;
+
+  const osmRasterStyle = {
+    version: 8,
+    sources: {
+      osm: {
+        type: 'raster',
+        tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        attribution: '© OpenStreetMap contributors',
+        maxzoom: 19,
+      },
+    },
+    layers: [ { id: 'osm', type: 'raster', source: 'osm' } ],
+    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+  };
+
   const map = new maplibregl.Map({
     container: 'map',
-    style: {
-      version: 8,
-      sources: {
-        osm: {
-          type: 'raster',
-          tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'],
-          tileSize: 256,
-          attribution: '© OpenStreetMap contributors',
-          maxzoom: 19,
-        },
-      },
-      layers: [
-        { id: 'osm', type: 'raster', source: 'osm' },
-      ],
-      glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
-    },
+    style: useMaptiler
+      ? 'https://api.maptiler.com/maps/streets-v2/style.json?key=' + encodeURIComponent(mtToken)
+      : osmRasterStyle,
     center: [6.858, 51.844],   // Borken / NRW until user picks
     zoom: 13,
     pitch: 50,
@@ -207,16 +271,20 @@ input{font:inherit}
   // Wait for map to load before adding our overlay sources/layers.
   map.on('load', () => {
     // OSM Buildings (3D) — populated whenever the address changes.
+    // Im MapTiler-Modus brauchen wir die fuer die NACHBARN nicht (kommen aus
+    // dem Vector-Style). Wir rendern dann nur das User-Haus damit es heller
+    // hervorgehoben ist.
     map.addSource('buildings3d', { type: 'geojson', data: empty() });
     map.addLayer({
       id: 'buildings3d-fill',
       type: 'fill-extrusion',
       source: 'buildings3d',
+      filter: useMaptiler ? ['==', ['get', 'isUser'], true] : ['has', 'height'],
       paint: {
         'fill-extrusion-color': ['case', ['boolean', ['get', 'isUser'], false], '#fff8e6', '#dfe3ea'],
         'fill-extrusion-height': ['get', 'height'],
         'fill-extrusion-base': 0,
-        'fill-extrusion-opacity': 0.92,
+        'fill-extrusion-opacity': useMaptiler ? 0.85 : 0.92,
       },
     });
 
@@ -532,6 +600,44 @@ input{font:inherit}
     Pipeline.clearAll();
     map.flyTo({ center: [6.858, 51.844], zoom: 13, pitch: 50, duration: 1000 });
   });
+
+  /* =================================================================
+   * Map style modal (MapTiler token entry)
+   * ================================================================= */
+  function openStyleModal(){
+    $('mtToken').value = getMaptilerToken();
+    $('styleModal').classList.add('is-active');
+    setTimeout(() => $('mtToken').focus(), 50);
+  }
+  function closeStyleModal(){ $('styleModal').classList.remove('is-active'); }
+
+  $('btnStyle').addEventListener('click', openStyleModal);
+  $('btnStyleClose').addEventListener('click', closeStyleModal);
+  document.querySelector('#styleModal .modal__backdrop').addEventListener('click', closeStyleModal);
+
+  $('btnStyleSave').addEventListener('click', () => {
+    const t = $('mtToken').value.trim();
+    if(!t){ alert('Bitte einen Token eingeben oder "Token entfernen" klicken.'); return; }
+    setMaptilerToken(t);
+    location.reload();
+  });
+  $('btnStyleClear').addEventListener('click', () => {
+    setMaptilerToken('');
+    location.reload();
+  });
+
+  // Show small hint on first load if running on default OSM look
+  if(!useMaptiler){
+    setTimeout(() => {
+      const hint = document.createElement('div');
+      hint.id = 'firstHint';
+      hint.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#1d1d2e;color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.3);z-index:90;display:flex;gap:12px;align-items:center';
+      hint.innerHTML = '<span>Cartoon-Look gefällt dir nicht? Schalte auf den Profi-Stil um.</span><button style="background:#0D73FC;color:#fff;border:0;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px">Karten-Stil verbessern</button><button style="background:transparent;color:#7a8393;border:0;padding:6px;cursor:pointer;font-size:14px">×</button>';
+      hint.querySelectorAll('button')[0].addEventListener('click', openStyleModal);
+      hint.querySelectorAll('button')[1].addEventListener('click', () => hint.remove());
+      document.body.appendChild(hint);
+    }, 4000);
+  }
 })();
 </script>
 </body>
