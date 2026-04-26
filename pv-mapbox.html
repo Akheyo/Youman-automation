@@ -104,23 +104,24 @@ input{font:inherit}
   <div id="styleModal" class="modal">
     <div class="modal__backdrop"></div>
     <div class="modal__panel">
-      <h2 class="modal__h2">Karten-Stil verbessern</h2>
+      <h2 class="modal__h2">Karten-Stil</h2>
       <p class="modal__p">
-        Standard ist <strong>OpenStreetMap</strong> (kostenlos, kein Login, aber Cartoon-Optik).
-        Mit einem kostenlosen <strong>MapTiler</strong>-Token (100.000 Aufrufe/Monat frei) kriegst du den
-        gleichen 3D-Stil wie kommerzielle Solar-Konfiguratoren — saubere Vektorkarte mit eingebauten 3D-Gebäuden.
+        Standard ist die <strong>MapTiler-Vektorkarte</strong> (Streets v2, mit 3D-Gebäuden) über einen
+        eingebauten Test-Token von A&amp;B Solarenergy. Du kannst hier optional einen <strong>eigenen
+        MapTiler-Token</strong> eintragen (z.B. für die Produktion mit Domain-Restriction) oder leer speichern,
+        um auf das einfachere OSM-Raster zu wechseln.
       </p>
       <ol class="modal__steps">
-        <li>Auf <a href="https://cloud.maptiler.com/auth/widget?mode=signup" target="_blank" rel="noopener">cloud.maptiler.com</a> mit Email registrieren (kostenlos, keine Kreditkarte).</li>
+        <li>Eigenen Token holen (optional, kostenlos): auf <a href="https://cloud.maptiler.com/auth/widget?mode=signup" target="_blank" rel="noopener">cloud.maptiler.com</a> registrieren.</li>
         <li>Nach Login &rarr; <strong>Account &rarr; API keys</strong> &rarr; Default-Key kopieren.</li>
-        <li>Hier einfügen, Speichern klicken &rarr; Karte lädt neu mit dem neuen Stil.</li>
+        <li>Hier einfügen, Speichern &rarr; Karte lädt neu mit deinem Token.</li>
       </ol>
       <label class="modal__field">
-        <span>MapTiler API-Key</span>
+        <span>MapTiler API-Key (leer = OSM-Raster)</span>
         <input id="mtToken" type="text" placeholder="z.B. abcDEF123xyz..." spellcheck="false" autocomplete="off">
       </label>
       <div class="modal__actions">
-        <button id="btnStyleClear" class="sb-btn" type="button">Token entfernen (zurück zu OSM)</button>
+        <button id="btnStyleClear" class="sb-btn" type="button">Auf Standard zurücksetzen</button>
         <button id="btnStyleSave" class="sb-btn sb-btn--primary" type="button">Speichern &amp; Karte neu laden</button>
       </div>
       <button id="btnStyleClose" class="modal__close" type="button" aria-label="Schließen">&times;</button>
@@ -225,12 +226,21 @@ input{font:inherit}
    *    eingebauten 3D-Gebaeuden. Sieht aus wie kommerzielle Konfiguratoren.
    *    Token: kostenlos auf cloud.maptiler.com (100k Tile-Loads/Monat frei).
    * ================================================================= */
+  // Default MapTiler-Token (A&B Solarenergy). Vor Produktiv-Einsatz im
+  // MapTiler-Dashboard "Allowed origins" auf eure Domain restriktieren —
+  // sonst kann der Token von Fremden ausgenutzt werden.
+  const DEFAULT_MAPTILER_TOKEN = 'UKDIwqQll1hf1zapR4Qu';
+
   const MT_TOKEN_KEY = 'pv.maptiler.token';
   function getMaptilerToken(){
-    try { return localStorage.getItem(MT_TOKEN_KEY) || ''; } catch(_){ return ''; }
+    try {
+      const stored = localStorage.getItem(MT_TOKEN_KEY);
+      if(stored !== null) return stored;        // user hat eigenen Token gesetzt (auch '' = bewusst leer)
+    } catch(_){}
+    return DEFAULT_MAPTILER_TOKEN;
   }
   function setMaptilerToken(t){
-    try { if(t) localStorage.setItem(MT_TOKEN_KEY, t); else localStorage.removeItem(MT_TOKEN_KEY); } catch(_){}
+    try { localStorage.setItem(MT_TOKEN_KEY, t || ''); } catch(_){}
   }
 
   const mtToken = getMaptilerToken();
@@ -622,7 +632,8 @@ input{font:inherit}
     location.reload();
   });
   $('btnStyleClear').addEventListener('click', () => {
-    setMaptilerToken('');
+    // Eigenen Token loeschen → fallback auf eingebauten Default-Token
+    try { localStorage.removeItem(MT_TOKEN_KEY); } catch(_){}
     location.reload();
   });
 
