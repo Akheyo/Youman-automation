@@ -66,6 +66,7 @@
   "build": {
     "appId": "de.youman.desktop",
     "productName": "Youman",
+    "npmRebuild": false,
     "directories": { "output": "dist-electron" },
     "publish": [
       {
@@ -88,7 +89,9 @@
     "files": [
       "electron/dist/**",
       "dist/**",
-      "!node_modules/**"
+      "node_modules/better-sqlite3/**",
+      "node_modules/bindings/**",
+      "node_modules/file-uri-to-path/**"
     ]
   }
 }
