@@ -27,15 +27,23 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
+        shell: bash
 
       - name: Build shared packages
         run: |
           pnpm build:shared
           pnpm build:config-engine
           pnpm build:sap
+        shell: bash
+
+      - name: Rebuild native modules for Electron
+        run: npx @electron/rebuild -f -w better-sqlite3
+        working-directory: apps/desktop
+        shell: bash
 
       - name: Build & publish installer
         run: pnpm --filter @youman/desktop release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
