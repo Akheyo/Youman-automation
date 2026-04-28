@@ -1,6 +1,6 @@
 {
   "name": "@youman/desktop",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Youman – Universal Business Process Desktop App",
   "main": "./electron/dist/main.js",
   "scripts": {
@@ -28,6 +28,8 @@
     "@tanstack/react-table": "^8.17.3",
     "axios": "^1.7.2",
     "better-sqlite3": "^11.0.0",
+    "bindings": "^1.5.0",
+    "file-uri-to-path": "^2.0.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
