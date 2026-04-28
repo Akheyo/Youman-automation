@@ -1,11 +1,11 @@
 {
   "name": "@youman/desktop",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Youman – Universal Business Process Desktop App",
   "main": "./electron/dist/main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development concurrently \"tsc -p electron/tsconfig.json --watch\" \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-    "build": "tsc -p electron/tsconfig.json && vite build",
+    "build": "tsup && vite build",
     "dist": "pnpm build && electron-builder",
     "release": "pnpm build && electron-builder --publish always",
     "typecheck": "tsc --noEmit",
@@ -89,7 +89,9 @@
     "files": [
       "electron/dist/**",
       "dist/**",
-      "node_modules/**"
+      "node_modules/better-sqlite3/**",
+      "node_modules/bindings/**",
+      "node_modules/file-uri-to-path/**"
     ]
   }
 }
