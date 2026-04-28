@@ -18,12 +18,12 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  sales: "text-blue-400 bg-blue-400/10",
-  crm: "text-purple-400 bg-purple-400/10",
-  inventory: "text-emerald-400 bg-emerald-400/10",
-  purchasing: "text-orange-400 bg-orange-400/10",
-  administration: "text-gray-400 bg-gray-400/10",
-  logistics: "text-cyan-400 bg-cyan-400/10",
+  sales: "text-blue-700 bg-blue-100",
+  crm: "text-violet-700 bg-violet-100",
+  inventory: "text-emerald-700 bg-emerald-100",
+  purchasing: "text-orange-700 bg-orange-100",
+  administration: "text-stone-600 bg-stone-200",
+  logistics: "text-cyan-700 bg-cyan-100",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {

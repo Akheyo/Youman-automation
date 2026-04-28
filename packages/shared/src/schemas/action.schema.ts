@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const ActionExecutionSchema = z.object({
-  actionId: z.string().uuid(),
+  actionId: z.string().min(1),
   tenantId: z.string().uuid(),
   userId: z.string().uuid(),
   payload: z.record(z.unknown()),

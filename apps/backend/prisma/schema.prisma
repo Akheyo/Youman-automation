@@ -68,7 +68,7 @@ model TenantBranding {
   secondaryColor String  @default("#1E40AF")
   accentColor    String  @default("#10B981")
   logoUrl        String?
-  appName        String  @default("Youman")
+  appName        String  @default("adept&")
   favicon        String?
   customCss      String?
 

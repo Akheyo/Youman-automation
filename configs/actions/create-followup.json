@@ -1,0 +1,128 @@
+{
+  "id": "action-create-followup",
+  "tenantId": null,
+  "name": "create_followup",
+  "displayName": "Wiedervorlage erstellen",
+  "description": "Erstellt eine Wiedervorlage oder Aufgabe für den Vertrieb oder Innendienst.",
+  "icon": "ClipboardList",
+  "category": "crm",
+  "targetSystem": "SAP",
+  "version": "1.0.0",
+  "enabled": true,
+  "allowedRoles": ["TENANT_ADMIN", "MANAGER", "SALES", "INNENDIENST", "SUPPORT"],
+  "sortOrder": 6,
+  "offlineBehavior": "queue",
+  "fieldGroups": [
+    { "id": "task", "label": "Aufgabe", "order": 1 },
+    { "id": "relation", "label": "Bezug", "order": 2, "collapsible": true, "defaultCollapsed": false }
+  ],
+  "fields": [
+    {
+      "id": "f-followup-title",
+      "actionId": "action-create-followup",
+      "key": "title",
+      "label": "Titel",
+      "type": "text",
+      "required": true,
+      "placeholder": "Kurze Beschreibung der Aufgabe...",
+      "order": 1,
+      "groupId": "task",
+      "width": "full"
+    },
+    {
+      "id": "f-followup-duedate",
+      "actionId": "action-create-followup",
+      "key": "dueDate",
+      "label": "Fällig am",
+      "type": "date",
+      "required": false,
+      "order": 2,
+      "groupId": "task",
+      "width": "third"
+    },
+    {
+      "id": "f-followup-priority",
+      "actionId": "action-create-followup",
+      "key": "priority",
+      "label": "Priorität",
+      "type": "dropdown",
+      "required": true,
+      "defaultValue": "medium",
+      "order": 3,
+      "groupId": "task",
+      "width": "third",
+      "options": [
+        { "value": "low", "label": "Niedrig" },
+        { "value": "medium", "label": "Mittel" },
+        { "value": "high", "label": "Hoch" },
+        { "value": "urgent", "label": "Dringend" }
+      ]
+    },
+    {
+      "id": "f-followup-description",
+      "actionId": "action-create-followup",
+      "key": "description",
+      "label": "Beschreibung",
+      "type": "textarea",
+      "required": false,
+      "placeholder": "Detaillierte Beschreibung...",
+      "order": 4,
+      "groupId": "task",
+      "width": "full"
+    },
+    {
+      "id": "f-followup-customer",
+      "actionId": "action-create-followup",
+      "key": "relatedCustomerId",
+      "label": "Bezug: Kunde",
+      "type": "searchable_select",
+      "required": false,
+      "placeholder": "Kunden suchen...",
+      "order": 5,
+      "groupId": "relation",
+      "width": "full",
+      "dynamicSource": {
+        "endpoint": "/api/v1/search/customers",
+        "searchParam": "query",
+        "valueField": "id",
+        "labelField": "name",
+        "descriptionField": "customerNumber",
+        "minChars": 2,
+        "debounceMs": 300,
+        "pageSize": 20
+      }
+    }
+  ],
+  "apiMapping": {
+    "method": "POST",
+    "endpoint": "/api/v1/actions/execute",
+    "bodyMapping": {
+      "actionId": "action-create-followup",
+      "title": "title",
+      "description": "description",
+      "dueDate": "dueDate",
+      "priority": "priority",
+      "relatedCustomerId": "relatedCustomerId"
+    },
+    "responseMapping": {}
+  },
+  "successActions": [
+    {
+      "type": "toast",
+      "config": {
+        "message": "Wiedervorlage erfolgreich erstellt!",
+        "variant": "success",
+        "durationMs": 4000
+      }
+    }
+  ],
+  "failureHandling": {
+    "showErrorToast": true,
+    "logToAudit": true,
+    "retryable": true,
+    "userMessage": "Die Wiedervorlage konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+  },
+  "tags": ["crm", "followup", "task"],
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-01T00:00:00Z"
+}
