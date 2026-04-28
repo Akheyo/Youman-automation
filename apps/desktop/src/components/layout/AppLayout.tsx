@@ -1,8 +1,8 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Clock, FileText, Shield, Settings,
-  LogOut, Wifi, WifiOff, Loader2, ChevronDown
+  LogOut, Wifi, WifiOff, Loader2, Download, RefreshCw
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useOfflineStore } from "@/stores/offlineStore";
@@ -20,15 +20,55 @@ const NAV_ITEMS = [
   { to: "/admin", icon: Settings, label: "Administration" },
 ];
 
+type UpdateState = "idle" | "checking" | "available" | "downloading" | "ready" | "error";
+
 export function AppLayout() {
   const { user, tenant, logout } = useAuthStore();
   const { isOnline, syncStatus, isSyncing } = useOfflineStore();
   const navigate = useNavigate();
+  const [updateState, setUpdateState] = useState<UpdateState>("idle");
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+  const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
     syncService.start();
     return () => syncService.stop();
   }, []);
+
+  useEffect(() => {
+    if (!window.adept) return;
+    const handler = (msg: unknown) => {
+      const { type, version } = msg as { type: string; version?: string };
+      if (type === "available") {
+        setUpdateState("downloading");
+        setUpdateVersion(version ?? null);
+      } else if (type === "downloaded") {
+        setUpdateState("ready");
+        setUpdateVersion(version ?? null);
+      } else if (type === "error") {
+        setUpdateState("error");
+      }
+    };
+    window.adept.on("app:update", handler);
+    return () => window.adept?.off("app:update", handler);
+  }, []);
+
+  const handleCheckForUpdates = async () => {
+    if (!window.adept) return;
+    setUpdateState("checking");
+    try {
+      await window.adept.app.checkForUpdates();
+      setTimeout(() => setUpdateState(s => s === "checking" ? "idle" : s), 5000);
+    } catch {
+      setUpdateState("idle");
+    }
+  };
+
+  const handleInstall = async () => {
+    if (!window.adept) return;
+    setIsInstalling(true);
+    await window.adept.app.installUpdate();
+  };
 
   const handleLogout = async () => {
     try {
@@ -105,6 +145,32 @@ export function AppLayout() {
           </div>
         </div>
 
+        {/* Update banner */}
+        {updateState === "ready" && (
+          <div className="mx-3 mb-2 rounded-md bg-primary/8 border border-primary/20 p-2.5 space-y-2">
+            <div className="flex items-center gap-1.5">
+              <Download className="h-3.5 w-3.5 text-primary shrink-0" />
+              <p className="text-xs font-semibold text-primary">Update bereit{updateVersion ? ` (v${updateVersion})` : ""}</p>
+            </div>
+            <Button
+              size="sm"
+              className="w-full h-7 text-xs"
+              onClick={handleInstall}
+              loading={isInstalling}
+            >
+              {isInstalling ? "Wird neu gestartet…" : "Jetzt installieren"}
+            </Button>
+          </div>
+        )}
+        {updateState === "downloading" && (
+          <div className="mx-3 mb-2 rounded-md bg-muted border border-border p-2.5">
+            <div className="flex items-center gap-1.5">
+              <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin shrink-0" />
+              <p className="text-xs text-muted-foreground">Update wird geladen…</p>
+            </div>
+          </div>
+        )}
+
         {/* User */}
         <div className="px-3 py-3 border-t border-border">
           <div className="flex items-center gap-2">
@@ -119,6 +185,18 @@ export function AppLayout() {
               </p>
               <p className="text-xs text-muted-foreground truncate">{user?.role}</p>
             </div>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={handleCheckForUpdates}
+              title={updateState === "checking" ? "Suche…" : "Nach Updates suchen"}
+              className="shrink-0"
+              disabled={updateState === "checking" || updateState === "downloading" || updateState === "ready"}
+            >
+              {updateState === "checking"
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <RefreshCw className="h-3.5 w-3.5" />}
+            </Button>
             <Button
               variant="ghost"
               size="icon-sm"

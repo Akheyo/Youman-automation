@@ -24,6 +24,8 @@ declare global {
         maximize: () => Promise<void>;
         close: () => Promise<void>;
         checkOnline: () => Promise<boolean>;
+        checkForUpdates: () => Promise<void>;
+        installUpdate: () => Promise<void>;
       };
       pdf: {
         open: (url: string) => Promise<void>;
