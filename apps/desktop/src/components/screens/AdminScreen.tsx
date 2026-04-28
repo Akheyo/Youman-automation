@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Settings, Users, Palette, Plug, ChevronRight, Loader2 } from "lucide-react";
+import { Settings, Users, Palette, Plug, ChevronRight, Loader2, CheckCircle2, XCircle, FlaskConical } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/services/api";
 import { Button } from "@/components/ui/button";
@@ -161,31 +161,277 @@ function BrandingSettings() {
   );
 }
 
+type ConnectorType = "MOCK" | "SAP_ODATA" | "REST_GENERIC";
+type AuthType = "none" | "basic" | "bearer" | "apikey";
+
+interface ConnectorFormState {
+  connectorType: ConnectorType;
+  displayName: string;
+  enabled: boolean;
+  baseUrl: string;
+  authType: AuthType;
+  username: string;
+  password: string;
+  token: string;
+  apiKeyHeader: string;
+  apiKeyValue: string;
+  epCustomers: string;
+  epProducts: string;
+  epQuotes: string;
+  epTasks: string;
+  epAppointments: string;
+  epNotes: string;
+  searchParam: string;
+}
+
+const DEFAULTS: ConnectorFormState = {
+  connectorType: "MOCK", displayName: "ERP Connector", enabled: true,
+  baseUrl: "", authType: "none", username: "", password: "", token: "",
+  apiKeyHeader: "X-API-Key", apiKeyValue: "",
+  epCustomers: "/customers", epProducts: "/products", epQuotes: "/quotes",
+  epTasks: "/tasks", epAppointments: "/appointments", epNotes: "/notes",
+  searchParam: "q",
+};
+
 function ConnectorSettings() {
-  const { tenant } = useAuthStore();
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState<ConnectorFormState | null>(null);
+  const [testResult, setTestResult] = useState<{ healthy: boolean; message?: string; latencyMs?: number } | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const { isLoading } = useQuery({
+    queryKey: ["connector-config"],
+    queryFn: async () => {
+      const res = await apiClient.get<Record<string, unknown>>("/tenants/connector");
+      const d = res.data as Record<string, unknown>;
+      const cfg = (d?.["config"] ?? {}) as Record<string, unknown>;
+      const auth = (cfg?.["auth"] ?? {}) as Record<string, unknown>;
+      const endpoints = (cfg?.["endpoints"] ?? {}) as Record<string, unknown>;
+      setForm({
+        connectorType: (d?.["connectorType"] as ConnectorType) ?? "MOCK",
+        displayName: String(d?.["displayName"] ?? "ERP Connector"),
+        enabled: Boolean(d?.["enabled"] ?? true),
+        baseUrl: String(cfg?.["baseUrl"] ?? ""),
+        authType: (auth?.["type"] as AuthType) ?? "none",
+        username: String(auth?.["username"] ?? ""),
+        password: String(auth?.["password"] ?? ""),
+        token: String(auth?.["token"] ?? ""),
+        apiKeyHeader: String(auth?.["apiKeyHeader"] ?? "X-API-Key"),
+        apiKeyValue: String(auth?.["apiKeyValue"] ?? ""),
+        epCustomers: String(endpoints?.["customers"] ?? "/customers"),
+        epProducts: String(endpoints?.["products"] ?? "/products"),
+        epQuotes: String(endpoints?.["quotes"] ?? "/quotes"),
+        epTasks: String(endpoints?.["tasks"] ?? "/tasks"),
+        epAppointments: String(endpoints?.["appointments"] ?? "/appointments"),
+        epNotes: String(endpoints?.["notes"] ?? "/notes"),
+        searchParam: String(cfg?.["searchParam"] ?? "q"),
+      });
+      return d;
+    },
+    onError: () => setForm(DEFAULTS),
+  } as Parameters<typeof useQuery>[0]);
+
+  const saveMutation = useMutation({
+    mutationFn: (f: ConnectorFormState) => apiClient.patch("/tenants/connector", {
+      connectorType: f.connectorType,
+      displayName: f.displayName,
+      enabled: f.enabled,
+      config: f.connectorType === "MOCK" ? {} : {
+        baseUrl: f.baseUrl,
+        searchParam: f.searchParam || "q",
+        auth: f.authType === "none" ? { type: "none" } :
+              f.authType === "basic" ? { type: "basic", username: f.username, password: f.password } :
+              f.authType === "bearer" ? { type: "bearer", token: f.token } :
+              { type: "apikey", apiKeyHeader: f.apiKeyHeader, apiKeyValue: f.apiKeyValue },
+        endpoints: {
+          customers: f.epCustomers, products: f.epProducts, quotes: f.epQuotes,
+          tasks: f.epTasks, appointments: f.epAppointments, notes: f.epNotes,
+        },
+      },
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["connector-config"] });
+      toast({ title: "Connector gespeichert", variant: "success" });
+      setTestResult(null);
+    },
+    onError: () => toast({ title: "Fehler beim Speichern", variant: "error" }),
+  });
+
+  const testMutation = useMutation({
+    mutationFn: () => apiClient.post<{ healthy: boolean; message?: string; latencyMs?: number }>("/tenants/connector/test"),
+    onSuccess: (res) => setTestResult(res.data),
+    onError: () => setTestResult({ healthy: false, message: "Verbindungstest fehlgeschlagen" }),
+  });
+
+  const set = (k: keyof ConnectorFormState, v: unknown) =>
+    setForm((prev) => prev ? { ...prev, [k]: v } : prev);
+
+  if (isLoading || !form) {
+    return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+  }
 
   return (
     <div className="space-y-4">
       <h2 className="text-base font-semibold text-foreground">ERP-Connector</h2>
-      <div className="rounded-lg border border-border bg-card p-4 space-y-3 text-sm">
-        <div className="grid grid-cols-2 gap-2">
-          <span className="text-muted-foreground">Connector-Typ</span>
-          <span className="text-foreground font-medium">
-            {tenant?.connectorConfig?.connectorType ?? "MOCK"}
-          </span>
-          <span className="text-muted-foreground">Status</span>
-          <Badge variant={tenant?.connectorConfig?.enabled ? "success" : "muted"}>
-            {tenant?.connectorConfig?.enabled ? "Aktiv" : "Inaktiv"}
-          </Badge>
-          <span className="text-muted-foreground">Bezeichnung</span>
-          <span className="text-foreground font-medium">
-            {tenant?.connectorConfig?.displayName ?? "–"}
-          </span>
+
+      <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+        {/* Type + Name */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Connector-Typ</label>
+            <select
+              value={form.connectorType}
+              onChange={(e) => set("connectorType", e.target.value)}
+              className="w-full h-9 rounded-md border border-input bg-input px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="MOCK">Mock (Demo/Test)</option>
+              <option value="SAP_ODATA">SAP OData</option>
+              <option value="REST_GENERIC">REST API (Generic)</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Bezeichnung</label>
+            <Input value={form.displayName} onChange={(e) => set("displayName", e.target.value)} />
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-          Connector-Konfiguration kann nur über das Admin-Backend geändert werden.
-          Bitte wenden Sie sich an Ihren Systemadministrator.
-        </p>
+
+        {form.connectorType !== "MOCK" && (
+          <>
+            {/* Base URL */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Basis-URL</label>
+              <Input
+                value={form.baseUrl}
+                onChange={(e) => set("baseUrl", e.target.value)}
+                placeholder="https://api.example.com"
+                className="font-mono text-sm"
+              />
+            </div>
+
+            {/* Auth */}
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Authentifizierung</label>
+                <select
+                  value={form.authType}
+                  onChange={(e) => set("authType", e.target.value)}
+                  className="w-full h-9 rounded-md border border-input bg-input px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="none">Keine</option>
+                  <option value="basic">Basic Auth</option>
+                  <option value="bearer">Bearer Token</option>
+                  <option value="apikey">API Key</option>
+                </select>
+              </div>
+
+              {form.authType === "basic" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Benutzername</label>
+                    <Input value={form.username} onChange={(e) => set("username", e.target.value)} autoComplete="off" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Passwort</label>
+                    <Input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} autoComplete="new-password" />
+                  </div>
+                </div>
+              )}
+              {form.authType === "bearer" && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Bearer Token</label>
+                  <Input type="password" value={form.token} onChange={(e) => set("token", e.target.value)} placeholder="eyJ..." className="font-mono text-xs" autoComplete="off" />
+                </div>
+              )}
+              {form.authType === "apikey" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Header-Name</label>
+                    <Input value={form.apiKeyHeader} onChange={(e) => set("apiKeyHeader", e.target.value)} placeholder="X-API-Key" className="font-mono text-xs" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">API Key</label>
+                    <Input type="password" value={form.apiKeyValue} onChange={(e) => set("apiKeyValue", e.target.value)} autoComplete="off" />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Advanced endpoints */}
+            {form.connectorType === "REST_GENERIC" && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced((v) => !v)}
+                  className="text-xs text-primary hover:underline flex items-center gap-1"
+                >
+                  <ChevronRight className={cn("h-3 w-3 transition-transform", showAdvanced && "rotate-90")} />
+                  Endpunkt-Pfade konfigurieren
+                </button>
+
+                {showAdvanced && (
+                  <div className="mt-3 grid grid-cols-2 gap-3 rounded-lg bg-muted/40 p-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">Suchparameter</label>
+                      <Input value={form.searchParam} onChange={(e) => set("searchParam", e.target.value)} placeholder="q" className="font-mono text-xs" />
+                    </div>
+                    {[
+                      ["epCustomers", "Kunden"],
+                      ["epProducts", "Artikel"],
+                      ["epQuotes", "Angebote"],
+                      ["epTasks", "Aufgaben"],
+                      ["epAppointments", "Termine"],
+                      ["epNotes", "Notizen"],
+                    ].map(([key, label]) => (
+                      <div key={key} className="space-y-1.5">
+                        <label className="text-xs font-medium text-muted-foreground">{label}</label>
+                        <Input
+                          value={String(form[key as keyof ConnectorFormState])}
+                          onChange={(e) => set(key as keyof ConnectorFormState, e.target.value)}
+                          className="font-mono text-xs"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Test result */}
+        {testResult && (
+          <div className={cn(
+            "flex items-center gap-2 rounded-md px-3 py-2 text-sm",
+            testResult.healthy ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+          )}>
+            {testResult.healthy
+              ? <CheckCircle2 className="h-4 w-4 shrink-0" />
+              : <XCircle className="h-4 w-4 shrink-0" />}
+            <span>
+              {testResult.healthy
+                ? `Verbindung erfolgreich (${testResult.latencyMs ?? "–"} ms)`
+                : (testResult.message ?? "Verbindung fehlgeschlagen")}
+            </span>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-1">
+          <Button onClick={() => form && saveMutation.mutate(form)} loading={saveMutation.isPending} size="sm">
+            Speichern
+          </Button>
+          {form.connectorType !== "MOCK" && (
+            <Button
+              variant="outline" size="sm"
+              onClick={() => { saveMutation.mutate(form); setTimeout(() => testMutation.mutate(), 500); }}
+              loading={testMutation.isPending}
+              className="gap-1.5"
+            >
+              <FlaskConical className="h-3.5 w-3.5" />
+              Verbindung testen
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
