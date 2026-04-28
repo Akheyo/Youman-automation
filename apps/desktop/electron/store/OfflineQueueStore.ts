@@ -30,7 +30,7 @@ export class OfflineQueueStore {
   private db: Database.Database;
 
   constructor() {
-    const dbPath = path.join(app.getPath("userData"), "youman_offline_queue.db");
+    const dbPath = path.join(app.getPath("userData"), "adept_offline_queue.db");
     this.db = new Database(dbPath);
     this.init();
   }

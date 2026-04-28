@@ -132,7 +132,7 @@ export class AuthService {
               secondaryColor: "#1E40AF",
               accentColor: "#10B981",
               logoUrl: null,
-              appName: "Youman",
+              appName: "adept&",
               favicon: null,
               customCss: null,
             },

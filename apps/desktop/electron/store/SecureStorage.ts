@@ -10,7 +10,7 @@ export class SecureStorage {
   private db: Database.Database;
 
   constructor() {
-    const dbPath = path.join(app.getPath("userData"), "youman_secure.db");
+    const dbPath = path.join(app.getPath("userData"), "adept_secure.db");
     this.db = new Database(dbPath);
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS credentials (

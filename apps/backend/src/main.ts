@@ -39,7 +39,7 @@ async function bootstrap() {
   // Swagger (dev only)
   if (process.env.NODE_ENV !== "production") {
     const config = new DocumentBuilder()
-      .setTitle("Youman API")
+      .setTitle("adept& API")
       .setDescription("Universal Business Process Automation Platform API")
       .setVersion("1.0")
       .addBearerAuth()
@@ -50,7 +50,7 @@ async function bootstrap() {
 
   const port = Number(process.env.PORT ?? 3001);
   await app.listen(port);
-  Logger.log(`Youman Backend running on http://localhost:${port}`);
+  Logger.log(`adept& Backend running on http://localhost:${port}`);
 }
 
 bootstrap();

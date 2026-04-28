@@ -129,8 +129,8 @@ export function LoginScreen() {
         {import.meta.env.DEV && (
           <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
             <p className="font-semibold text-foreground">Demo-Zugänge:</p>
-            <p>admin@demo.youman.de / Admin123!</p>
-            <p>sales@demo.youman.de / Sales123!</p>
+            <p>admin@demo.adept.de / Admin123!</p>
+            <p>sales@demo.adept.de / Sales123!</p>
           </div>
         )}
 
