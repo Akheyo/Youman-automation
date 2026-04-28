@@ -48,11 +48,11 @@ export function AppLayout() {
         {/* Logo / App name */}
         <div className="h-14 flex items-center gap-2.5 px-4 border-b border-border titlebar-drag">
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
-            <span className="text-primary-foreground font-bold text-sm">Y</span>
+            <span className="text-primary-foreground font-bold text-sm">&amp;</span>
           </div>
           <div className="titlebar-no-drag min-w-0">
             <p className="text-sm font-semibold text-foreground truncate">
-              {tenant?.branding.appName ?? "Youman"}
+              {tenant?.branding.appName ?? "adept&"}
             </p>
             <p className="text-xs text-muted-foreground truncate">{tenant?.name}</p>
           </div>

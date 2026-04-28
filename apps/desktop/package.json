@@ -1,7 +1,7 @@
 {
   "name": "@youman/desktop",
-  "version": "1.0.5",
-  "description": "Youman – Universal Business Process Desktop App",
+  "version": "1.1.0",
+  "description": "adept& – Universal Business Process Desktop App",
   "main": "./electron/dist/main.js",
   "scripts": {
     "dev": "cross-env NODE_ENV=development concurrently \"tsc -p electron/tsconfig.json --watch\" \"vite\" \"wait-on http://localhost:5173 && electron .\"",
@@ -66,8 +66,8 @@
     "wait-on": "^7.2.0"
   },
   "build": {
-    "appId": "de.youman.desktop",
-    "productName": "Youman",
+    "appId": "de.adept.desktop",
+    "productName": "adept&",
     "npmRebuild": false,
     "directories": { "output": "dist-electron" },
     "publish": [

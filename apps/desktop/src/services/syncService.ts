@@ -20,8 +20,8 @@ export const syncService = {
     }, SYNC_INTERVAL_MS);
 
     // Listen for network changes from Electron
-    if (window.youman) {
-      window.youman.on("network:changed", (isOnline: unknown) => {
+    if (window.adept) {
+      window.adept.on("network:changed", (isOnline: unknown) => {
         useOfflineStore.getState().setOnline(Boolean(isOnline));
         if (isOnline) this.sync();
       });
@@ -34,8 +34,8 @@ export const syncService = {
 
   async checkOnlineStatus() {
     try {
-      if (window.youman) {
-        const online = await window.youman.app.checkOnline();
+      if (window.adept) {
+        const online = await window.adept.app.checkOnline();
         useOfflineStore.getState().setOnline(online);
       } else {
         useOfflineStore.getState().setOnline(navigator.onLine);
@@ -47,8 +47,8 @@ export const syncService = {
 
   async loadLocalQueue() {
     try {
-      if (!window.youman) return;
-      const items = await window.youman.queue.getAll();
+      if (!window.adept) return;
+      const items = await window.adept.queue.getAll();
       useOfflineStore.getState().setLocalQueue(items as QueueItem[]);
     } catch {
       // Ignore – running in browser dev mode
@@ -61,9 +61,9 @@ export const syncService = {
     payload: Record<string, unknown>;
   }): Promise<QueueItem | null> {
     const { user, tenant } = useAuthStore.getState();
-    if (!user || !tenant || !window.youman) return null;
+    if (!user || !tenant || !window.adept) return null;
 
-    const queued = await window.youman.queue.enqueue({
+    const queued = await window.adept.queue.enqueue({
       tenantId: tenant.id,
       userId: user.id,
       actionId: item.actionId,
@@ -101,7 +101,7 @@ export const syncService = {
 
       // Mark synced items locally
       for (const item of pending) {
-        await window.youman?.queue.markSynced(item.id);
+        await window.adept?.queue.markSynced(item.id);
       }
 
       await this.loadLocalQueue();

@@ -2,7 +2,7 @@ export {};
 
 declare global {
   interface Window {
-    youman?: {
+    adept?: {
       queue: {
         enqueue: (item: unknown) => Promise<unknown>;
         getAll: () => Promise<unknown[]>;

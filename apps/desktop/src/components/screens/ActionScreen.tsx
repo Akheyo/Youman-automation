@@ -178,7 +178,7 @@ async function executeSuccessAction(
     case "open_pdf": {
       const urlField = successAction.config["urlField"] as string;
       const url = (result.result as Record<string, string> | null)?.[urlField];
-      if (url && window.youman) await window.youman.pdf.open(url);
+      if (url && window.adept) await window.adept.pdf.open(url);
       break;
     }
     case "prepare_email": {
@@ -188,7 +188,7 @@ async function executeSuccessAction(
       const filledSubject = subject.replace("{quoteNumber}", quoteNumber);
       const filledBody = body.replace("{quoteNumber}", quoteNumber);
       const mailto = `mailto:?subject=${encodeURIComponent(filledSubject)}&body=${encodeURIComponent(filledBody)}`;
-      if (window.youman) await window.youman.app.openExternal(mailto);
+      if (window.adept) await window.adept.app.openExternal(mailto);
       break;
     }
   }

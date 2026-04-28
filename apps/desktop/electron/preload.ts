@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 
 // Expose safe API surface to renderer via context bridge
 // This is the ONLY communication channel between renderer and main process
-contextBridge.exposeInMainWorld("youman", {
+contextBridge.exposeInMainWorld("adept", {
   // Queue operations (offline support)
   queue: {
     enqueue: (item: unknown) => ipcRenderer.invoke("queue:enqueue", item),

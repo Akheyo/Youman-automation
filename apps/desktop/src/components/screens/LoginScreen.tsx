@@ -54,10 +54,10 @@ export function LoginScreen() {
         {/* Logo */}
         <div className="text-center space-y-3">
           <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mx-auto shadow-lg shadow-primary/20">
-            <span className="text-primary-foreground font-bold text-2xl">Y</span>
+            <span className="text-primary-foreground font-bold text-2xl">&amp;</span>
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Youman</h1>
+            <h1 className="text-2xl font-bold text-foreground">adept&amp;</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Business Process Platform
             </p>
@@ -135,7 +135,7 @@ export function LoginScreen() {
         )}
 
         <p className="text-center text-xs text-muted-foreground">
-          Youman v1.0 · Enterprise Business Platform
+          adept&amp; · Enterprise Business Platform
         </p>
       </div>
     </div>

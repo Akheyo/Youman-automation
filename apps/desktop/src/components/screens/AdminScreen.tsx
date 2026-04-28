@@ -131,7 +131,7 @@ function BrandingSettings() {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">App-Name</label>
-            <Input defaultValue={String(data?.["appName"] ?? "Youman")} id="appName" />
+            <Input defaultValue={String(data?.["appName"] ?? "adept&")} id="appName" />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Primärfarbe</label>

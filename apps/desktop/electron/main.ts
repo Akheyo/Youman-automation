@@ -38,7 +38,7 @@ function createWindow(): void {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    title: "Youman",
+    title: "adept&",
     frame: false,
     titleBarStyle: "hidden",
     titleBarOverlay: {

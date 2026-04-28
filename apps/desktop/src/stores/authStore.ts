@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, tenant: null, accessToken: null, refreshToken: null, isAuthenticated: false }),
     }),
     {
-      name: "youman-auth",
+      name: "adept-auth",
       partialize: (state) => ({
         user: state.user,
         tenant: state.tenant,
