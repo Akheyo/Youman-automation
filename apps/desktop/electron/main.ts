@@ -42,8 +42,8 @@ function createWindow(): void {
     frame: false,
     titleBarStyle: "hidden",
     titleBarOverlay: {
-      color: "#0f172a",
-      symbolColor: "#94a3b8",
+      color: "#ffffff",
+      symbolColor: "#3d3835",
       height: 32,
     },
     webPreferences: {
@@ -53,7 +53,7 @@ function createWindow(): void {
       sandbox: true,
       webSecurity: true,
     },
-    backgroundColor: "#0f172a",
+    backgroundColor: "#f9f7f5",
     show: false,
   });
 
@@ -75,7 +75,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  nativeTheme.themeSource = "dark";
+  nativeTheme.themeSource = "light";
   createWindow();
   setupIpcHandlers(ipcMain, queueStore, secureStorage);
 

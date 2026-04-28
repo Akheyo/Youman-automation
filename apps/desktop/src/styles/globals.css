@@ -4,39 +4,39 @@
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 213 31% 91%;
+    --background: 30 20% 97%;
+    --foreground: 20 8% 10%;
 
-    --card: 222 40% 14%;
-    --card-foreground: 213 31% 91%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 8% 10%;
 
-    --popover: 222 40% 13%;
-    --popover-foreground: 213 31% 91%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 8% 10%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 20 7% 22%;
+    --primary-foreground: 30 20% 97%;
 
-    --secondary: 217 32% 17%;
-    --secondary-foreground: 213 31% 91%;
+    --secondary: 25 12% 93%;
+    --secondary-foreground: 20 8% 22%;
 
-    --muted: 217 32% 17%;
-    --muted-foreground: 215 20% 60%;
+    --muted: 25 10% 92%;
+    --muted-foreground: 25 8% 50%;
 
-    --accent: 158 64% 52%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 25 10% 88%;
+    --accent-foreground: 20 8% 22%;
 
-    --destructive: 0 63% 55%;
-    --destructive-foreground: 213 31% 91%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
-    --success-foreground: 213 31% 91%;
+    --success: 142 55% 38%;
+    --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 222 47% 11%;
+    --warning: 38 90% 46%;
+    --warning-foreground: 20 8% 10%;
 
-    --border: 217 32% 20%;
-    --input: 217 32% 18%;
-    --ring: 217 91% 60%;
+    --border: 25 10% 87%;
+    --input: 25 10% 91%;
+    --ring: 20 7% 22%;
 
     --radius: 0.5rem;
   }
@@ -49,20 +49,17 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Disable native selection dragging in Electron */
     user-select: none;
   }
 
-  /* Allow text selection in inputs and content areas */
   input, textarea, [contenteditable], .selectable {
     user-select: text;
   }
 
-  /* Custom scrollbar */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { @apply bg-transparent; }
   ::-webkit-scrollbar-thumb { @apply bg-border rounded-full; }
-  ::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/40; }
 }
 
 @layer utilities {
