@@ -32,11 +32,13 @@ export async function GET(request: Request) {
   }
 
   const proxyPrefix = (process.env.NRW_WFS_PROXY ?? '').trim();
-  const layer = process.env.NRW_WFS_LAYER || 'sk_dachflaechen';
+  // Only force a layer when explicitly overridden — otherwise let
+  // fetchNrwSegments do GetCapabilities discovery + try the 14-name fallback list.
+  const layerOverride = process.env.NRW_WFS_LAYER?.trim();
 
   try {
     const segments = await fetchNrwSegments(lat, lng, {
-      layer,
+      ...(layerOverride ? { layer: layerOverride } : {}),
       // Server-side: no proxy needed (direct call). Empty string opts out of corsproxy.io.
       proxyPrefix: proxyPrefix === '' ? '' : proxyPrefix,
     });

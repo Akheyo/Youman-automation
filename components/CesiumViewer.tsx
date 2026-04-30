@@ -46,6 +46,9 @@ interface CesiumModule {
     fromDegreesArray: (coords: number[]) => unknown[];
     fromDegreesArrayHeights: (coords: number[]) => unknown[];
   };
+  Cartographic: {
+    fromDegrees: (lng: number, lat: number, height?: number) => { latitude: number; longitude: number; height: number };
+  };
   Cesium3DTileset: { fromUrl: (url: string, options?: Record<string, unknown>) => Promise<unknown> };
   HeadingPitchRange: new (heading: number, pitch: number, range: number) => unknown;
   Math: { toRadians: (deg: number) => number };
@@ -67,7 +70,11 @@ interface CesiumModule {
 interface CesiumViewerInstance {
   scene: {
     primitives: { add: (p: unknown) => unknown; remove: (p: unknown) => boolean };
-    globe: { enableLighting: boolean; depthTestAgainstTerrain: boolean };
+    globe: {
+      enableLighting: boolean;
+      depthTestAgainstTerrain: boolean;
+      getHeight: (cartographic: { latitude: number; longitude: number }) => number | undefined;
+    };
     skyAtmosphere: { show: boolean };
   };
   entities: {
@@ -321,21 +328,31 @@ export default function CesiumViewer() {
 
       const house = buildProceduralHouse({
         footprint: building.coordinates as [number, number][],
-        // Raise the eave above typical NRW residential building height (8-10m)
-        // so the orange roof sits *above* the photorealistic 3D mesh instead
-        // of disappearing inside it. Looks like a clearly visible PV planning
-        // overlay rather than a competing roof.
-        eaveHeightM: 11,
+        // Eave height above ground (will be added to terrain elevation).
+        eaveHeightM: 7,
         pitchDeg,
         ridgeBearingDeg: ridgeBearing,
       });
 
+      // Cesium polygon heights are absolute (above WGS84 ellipsoid). Borken
+      // sits at ~50 m above ellipsoid; without offsetting by the terrain
+      // height the entire procedural roof would render UNDERGROUND. Sample
+      // the globe height at the building centroid and add it to every
+      // vertex.
+      const buildingCenter = building.coordinates.reduce(
+        (acc, p) => ({ lng: acc.lng + (p[0] as number), lat: acc.lat + (p[1] as number), n: acc.n + 1 }),
+        { lng: 0, lat: 0, n: 0 },
+      );
+      const cLng = buildingCenter.lng / Math.max(1, buildingCenter.n);
+      const cLat = buildingCenter.lat / Math.max(1, buildingCenter.n);
+      const carto = Cesium.Cartographic.fromDegrees(cLng, cLat);
+      const terrainH = viewer.scene.globe.getHeight(carto) ?? 0;
+
       // Render ONLY the roof slopes — walls and gables would hide the
-      // photorealistic 3D context (Cesium PRT / OSM Buildings) underneath.
-      // The orange roof acts as a "PV planning surface" overlay on top of
-      // the real house — same approach envolta uses.
+      // photorealistic 3D context underneath. The orange roof acts as a
+      // "PV planning surface" overlay sitting on the real house's roof.
       house.roofSlopes.forEach((part, idx) => {
-        const flat = part.positions.flatMap((p) => [p[0], p[1], p[2]]);
+        const flat = part.positions.flatMap((p) => [p[0], p[1], p[2] + terrainH]);
         viewer.entities.add({
           id: `house_${building.id}_roof_${idx}`,
           polygon: {
@@ -371,18 +388,22 @@ export default function CesiumViewer() {
       });
     }
 
-    // Lift solar panels to roof height when we have a procedural house, so
-    // they sit visually on top of the orange roof rather than at ground.
-    const panelHeight = building && building.coordinates.length >= 4 ? 8 : 0.6;
+    // Solar panels: when the procedural orange roof is rendered, lift the
+    // panels to sit visually on top of it. Panel height = eave (7m) + a small
+    // bias (1m) so they read as *on* the roof slope, not below or floating.
+    if (layout && layout.panels.length > 0 && building && building.coordinates.length >= 4) {
+      const cLng2 = building.coordinates.reduce((s, p) => s + (p[0] as number), 0) / building.coordinates.length;
+      const cLat2 = building.coordinates.reduce((s, p) => s + (p[1] as number), 0) / building.coordinates.length;
+      const cartoP = Cesium.Cartographic.fromDegrees(cLng2, cLat2);
+      const terrainHP = viewer.scene.globe.getHeight(cartoP) ?? 0;
+      const panelAbsHeight = terrainHP + 8;
 
-    if (layout && layout.panels.length > 0) {
       for (const p of layout.panels) {
         const ring = p.geometry.coordinates[0];
         if (!ring) continue;
-        // Inject the panel height after every (lng, lat) pair.
         const flat: number[] = [];
         for (const c of ring) {
-          flat.push(c[0] as number, c[1] as number, panelHeight);
+          flat.push(c[0] as number, c[1] as number, panelAbsHeight);
         }
         viewer.entities.add({
           id: `pan_${p.properties.segmentId}_${p.properties.index}`,
