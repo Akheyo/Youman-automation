@@ -18,8 +18,10 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import * as turf from '@turf/turf';
 import { useApp } from '@/lib/store';
 import { getLod2Config, regierungsbezirkFor } from '@/lib/lod2';
+import { buildProceduralHouse } from '@/lib/procedural-house';
 import type { NrwRoofSegment } from '@/types';
 
 const SUITABILITY_COLOR: Record<NrwRoofSegment['suitability'], string> = {
@@ -201,19 +203,27 @@ export default function CesiumViewer() {
     };
   }, [bootReady, lod2.url]);
 
-  // Interim 3D: Cesium OSM Buildings — flat-roof boxes for every building in
-  // OSM. Used as a stop-gap until the real LoD2 tileset is hosted, so the
-  // user gets *some* 3D context immediately. Disabled when a real LoD2 URL
-  // is configured (no point overlaying the inferior dataset on top).
+  // Interim 3D context: Cesium OSM Buildings rendered as translucent blue
+  // boxes — provides "sea of houses" surrounding the user's procedural house.
+  // The user's actual house is then rendered ON TOP via the procedural-house
+  // pipeline below, with a real saddle roof and orange tile material.
   useEffect(() => {
     if (!bootReady || lod2.url || !cesiumRef.current || !viewerRef.current) return;
     let cancelled = false;
-    let osmBuildings: unknown = null;
+    let osmBuildings: { style?: unknown } | null = null;
     (async () => {
       try {
-        const Cesium = cesiumRef.current!;
+        const Cesium = cesiumRef.current as unknown as {
+          createOsmBuildingsAsync: () => Promise<{ style?: unknown }>;
+          Cesium3DTileStyle: new (def: Record<string, unknown>) => unknown;
+        };
         osmBuildings = await Cesium.createOsmBuildingsAsync();
-        if (cancelled || !viewerRef.current) return;
+        if (cancelled || !viewerRef.current || !osmBuildings) return;
+        // Tint every OSM building translucent blue — they are *context*, not
+        // the focus. The user's procedural house sits on top in full colour.
+        osmBuildings.style = new Cesium.Cesium3DTileStyle({
+          color: "color('#a3c4e8', 0.45)",
+        });
         viewerRef.current.scene.primitives.add(osmBuildings);
       } catch (err) {
         // eslint-disable-next-line no-console
@@ -275,26 +285,61 @@ export default function CesiumViewer() {
       });
     }
 
-    // Auto-detected building outline — gives visual confirmation of which
-    // building was picked. User can click another building if it's wrong
-    // (handled by the click handler at boot via "bldg_" prefix below).
-    if (building && building.coordinates) {
-      const flat = building.coordinates.flatMap((p) => [p[0] as number, p[1] as number]);
-      viewer.entities.add({
-        id: `bldg_${building.id}`,
-        polygon: {
-          hierarchy: new Cesium.PolygonHierarchy(
-            (Cesium.Cartesian3.fromDegrees as unknown as (...a: number[]) => unknown[])(...flat),
-          ),
-          material: Cesium.Color.fromCssColorString('#0D73FC').withAlpha(0.10),
-          outline: true,
-          outlineColor: Cesium.Color.fromCssColorString('#0D73FC').withAlpha(0.95),
-          classificationType: 2,
-        } as Record<string, unknown>,
+    // Procedural 3D house — extruded walls + saddle roof — for the user's
+    // selected OSM building. Pitch + ridge bearing come from the NRW cadastre
+    // when available (best fit), else fall back to 35° / longest-edge.
+    if (building && building.coordinates && building.coordinates.length >= 4) {
+      // Pick the dominant tilt + azimuth from the NRW segments belonging to
+      // this building (largest-area segment wins, otherwise defaults).
+      let pitchDeg = 35;
+      let ridgeBearing: number | undefined;
+      if (segments.length > 0) {
+        let maxArea = 0;
+        for (const seg of segments) {
+          let area = 0;
+          try {
+            area = turf.area(seg.polygon);
+          } catch {
+            area = 0;
+          }
+          if (area > maxArea) {
+            maxArea = area;
+            pitchDeg = seg.pitchDeg || 35;
+            // azimuth (0=N) of segment normal → ridge runs perpendicular to it
+            ridgeBearing = (seg.azimuthDeg + 90) % 180;
+          }
+        }
+      }
+
+      const house = buildProceduralHouse({
+        footprint: building.coordinates as [number, number][],
+        eaveHeightM: building.height && building.height > 3 ? Math.min(building.height - 1, 9) : 6,
+        pitchDeg,
+        ridgeBearingDeg: ridgeBearing,
+      });
+
+      house.parts.forEach((part, idx) => {
+        const flat = part.positions.flatMap((p) => [p[0], p[1], p[2]]);
+        viewer.entities.add({
+          id: `house_${building.id}_${part.kind}_${idx}`,
+          polygon: {
+            hierarchy: new Cesium.PolygonHierarchy(
+              (Cesium.Cartesian3.fromDegrees as unknown as (...a: number[]) => unknown[])(...flat),
+            ),
+            perPositionHeight: true,
+            material: Cesium.Color.fromCssColorString(part.color).withAlpha(part.kind === 'roofSlope' ? 0.97 : 0.95),
+            outline: true,
+            outlineColor: Cesium.Color.fromCssColorString('#3a2613').withAlpha(0.55),
+          } as Record<string, unknown>,
+        });
       });
     }
 
-    for (const seg of segments) {
+    // Render the NRW cadastre segments only when we have NO procedural house
+    // (no OSM building detected). With a procedural house the roof is shown
+    // directly in orange — overlaying segment polygons would clash visually.
+    const showSegmentOverlay = !building;
+    for (const seg of showSegmentOverlay ? segments : []) {
       const ring = seg.polygon.geometry.coordinates[0];
       if (!ring) continue;
       const positions = ring.flatMap((p) => [p[0] as number, p[1] as number]);
