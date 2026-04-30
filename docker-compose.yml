@@ -1,0 +1,61 @@
+# Run the full adept& backend stack locally or on any Docker host.
+#
+# Usage:
+#   docker compose up -d        # starts Postgres + Backend
+#   docker compose logs -f backend
+#   docker compose down         # stop (data persists in volume)
+#   docker compose down -v      # stop + drop DB
+#
+# Default credentials after first start:
+#   Mandant: demo
+#   admin@demo.adept.de / Admin123!
+#   sales@demo.adept.de / Sales123!
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: adept-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: adept
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-adept_dev_change_me}
+      POSTGRES_DB: adept
+    volumes:
+      - adept-pgdata:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adept -d adept"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    image: adept-backend:latest
+    container_name: adept-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://adept:${POSTGRES_PASSWORD:-adept_dev_change_me}@postgres:5432/adept?schema=public
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production_please_use_a_long_random_string}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change_me_too_in_production}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173,app://./}
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3001/api/v1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  adept-pgdata:
+    name: adept-pgdata

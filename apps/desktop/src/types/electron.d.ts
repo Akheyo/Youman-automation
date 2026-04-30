@@ -17,6 +17,12 @@ declare global {
         get: (key: string) => Promise<string | null>;
         delete: (key: string) => Promise<void>;
       };
+      settings: {
+        get: (key: string) => Promise<string | null>;
+        set: (key: string, value: string) => Promise<void>;
+        delete: (key: string) => Promise<void>;
+        getAll: () => Promise<Record<string, string>>;
+      };
       app: {
         getVersion: () => Promise<string>;
         openExternal: (url: string) => Promise<void>;

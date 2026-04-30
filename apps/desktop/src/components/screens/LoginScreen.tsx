@@ -134,9 +134,18 @@ export function LoginScreen() {
           </div>
         )}
 
-        <p className="text-center text-xs text-muted-foreground">
-          adept&amp; · Enterprise Business Platform
-        </p>
+        <div className="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate("/settings")}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors underline-offset-2 hover:underline"
+          >
+            Server-Einstellungen
+          </button>
+          <p className="text-center text-xs text-muted-foreground">
+            adept&amp; · Enterprise Business Platform
+          </p>
+        </div>
       </div>
     </div>
   );

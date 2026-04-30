@@ -4,10 +4,12 @@ import { autoUpdater } from "electron-updater";
 import { setupIpcHandlers } from "./ipc/handlers";
 import { OfflineQueueStore } from "./store/OfflineQueueStore";
 import { SecureStorage } from "./store/SecureStorage";
+import { SettingsStore } from "./store/SettingsStore";
 
 const isDev = process.env.NODE_ENV === "development";
 const queueStore = new OfflineQueueStore();
 const secureStorage = new SecureStorage();
+const settingsStore = new SettingsStore();
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -77,7 +79,7 @@ function createWindow(): void {
 app.whenReady().then(() => {
   nativeTheme.themeSource = "light";
   createWindow();
-  setupIpcHandlers(ipcMain, queueStore, secureStorage);
+  setupIpcHandlers(ipcMain, queueStore, secureStorage, settingsStore);
 
   if (!isDev) {
     setupAutoUpdater();

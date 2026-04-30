@@ -97,3 +97,8 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Production backend URL gets baked into the renderer bundle.
+          # Set repo secret VITE_API_URL=https://api.your-domain.com/api/v1
+          # to point all installs at your hosted backend by default.
+          # Users can still override it via the in-app Settings screen.
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}

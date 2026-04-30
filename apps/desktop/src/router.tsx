@@ -7,11 +7,17 @@ import { QueueScreen } from "./components/screens/QueueScreen";
 import { AuditScreen } from "./components/screens/AuditScreen";
 import { AdminScreen } from "./components/screens/AdminScreen";
 import { AuthGuard } from "./components/layout/AuthGuard";
+import { SettingsScreen } from "./components/screens/SettingsScreen";
 
 export const router = createHashRouter([
   {
     path: "/login",
     element: <LoginScreen />,
+  },
+  {
+    // Public so users can fix the backend URL before they can log in.
+    path: "/settings",
+    element: <SettingsScreen />,
   },
   {
     path: "/",

@@ -1,11 +1,13 @@
 import { IpcMain, app, shell, BrowserWindow, net } from "electron";
 import type { OfflineQueueStore } from "../store/OfflineQueueStore";
 import type { SecureStorage } from "../store/SecureStorage";
+import type { SettingsStore } from "../store/SettingsStore";
 
 export function setupIpcHandlers(
   ipcMain: IpcMain,
   queueStore: OfflineQueueStore,
-  secureStorage: SecureStorage
+  secureStorage: SecureStorage,
+  settingsStore: SettingsStore
 ): void {
   // ── Queue ──────────────────────────────────────────────────────────────────
   ipcMain.handle("queue:enqueue", (_, item: unknown) => queueStore.enqueue(item as Parameters<typeof queueStore.enqueue>[0]));
@@ -20,6 +22,12 @@ export function setupIpcHandlers(
   ipcMain.handle("credentials:set", (_, key: string, value: string) => secureStorage.set(key, value));
   ipcMain.handle("credentials:get", (_, key: string) => secureStorage.get(key));
   ipcMain.handle("credentials:delete", (_, key: string) => secureStorage.delete(key));
+
+  // ── Settings ───────────────────────────────────────────────────────────────
+  ipcMain.handle("settings:get", (_, key: string) => settingsStore.get(key));
+  ipcMain.handle("settings:set", (_, key: string, value: string) => settingsStore.set(key, value));
+  ipcMain.handle("settings:delete", (_, key: string) => settingsStore.delete(key));
+  ipcMain.handle("settings:getAll", () => settingsStore.getAll());
 
   // ── App ────────────────────────────────────────────────────────────────────
   ipcMain.handle("app:getVersion", () => app.getVersion());

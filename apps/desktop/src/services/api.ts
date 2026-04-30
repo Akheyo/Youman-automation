@@ -2,10 +2,45 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "../stores/authStore";
 import type { ApiResponse, ApiError } from "@youman/shared";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api/v1";
+const SETTINGS_KEY = "backendUrl";
+const COMPILED_DEFAULT = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api/v1";
+
+/**
+ * Resolve the API base URL.
+ * Priority: user override (electron settings store) > VITE_API_URL > localhost.
+ * The user override lets self-hosted / on-prem customers point at their own server.
+ */
+async function resolveBaseUrl(): Promise<string> {
+  try {
+    const stored = await window.adept?.settings.get(SETTINGS_KEY);
+    if (stored && stored.trim().length > 0) return stored.trim().replace(/\/$/, "");
+  } catch {
+    // settings IPC may not exist yet (older Electron build) — fall through
+  }
+  return COMPILED_DEFAULT;
+}
+
+let cachedBaseUrl = COMPILED_DEFAULT;
+
+export async function initApiClient(): Promise<string> {
+  cachedBaseUrl = await resolveBaseUrl();
+  apiClient.defaults.baseURL = cachedBaseUrl;
+  return cachedBaseUrl;
+}
+
+export function getBaseUrl(): string {
+  return cachedBaseUrl;
+}
+
+export async function setBackendUrl(url: string): Promise<void> {
+  const cleaned = url.trim().replace(/\/$/, "");
+  await window.adept?.settings.set(SETTINGS_KEY, cleaned);
+  cachedBaseUrl = cleaned;
+  apiClient.defaults.baseURL = cleaned;
+}
 
 export const apiClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: COMPILED_DEFAULT,
   timeout: 30_000,
   headers: { "Content-Type": "application/json" },
 });
@@ -36,7 +71,7 @@ apiClient.interceptors.response.use(
 
       try {
         const res = await axios.post<{ accessToken: string; refreshToken: string }>(
-          `${BASE_URL}/auth/refresh`,
+          `${cachedBaseUrl}/auth/refresh`,
           { refreshToken }
         );
         const { accessToken, refreshToken: newRefresh } = res.data;

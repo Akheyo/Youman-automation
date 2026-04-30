@@ -21,6 +21,14 @@ contextBridge.exposeInMainWorld("adept", {
     delete: (key: string) => ipcRenderer.invoke("credentials:delete", key),
   },
 
+  // Plain settings (backend URL, theme, etc — not encrypted)
+  settings: {
+    get: (key: string) => ipcRenderer.invoke("settings:get", key),
+    set: (key: string, value: string) => ipcRenderer.invoke("settings:set", key, value),
+    delete: (key: string) => ipcRenderer.invoke("settings:delete", key),
+    getAll: () => ipcRenderer.invoke("settings:getAll"),
+  },
+
   // App utilities
   app: {
     getVersion: () => ipcRenderer.invoke("app:getVersion"),
