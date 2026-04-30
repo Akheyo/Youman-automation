@@ -114,26 +114,33 @@ export async function fetchNrwSegments(
 
   const [minLng, minLat, maxLng, maxLat] = bboxAround(lat, lng, padding);
 
-  // We try every layer-name variant + both BBOX axis orderings. NRW WFS has
-  // shipped both interpretations of EPSG:4326 over the years, so we don't
-  // assume — we probe.
+  // We try every layer-name variant × axis-order × WFS-version × output-format
+  // combination NRW has shipped over the years. The cadastre service has
+  // migrated several times and we don't assume which variant is current.
   const layerCandidates = opts.layer ? [opts.layer] : LAYER_FALLBACKS;
   const bboxCandidates = [
-    `${minLat},${minLng},${maxLat},${maxLng},EPSG:4326`, // WFS 2.0 spec: lat,lng for EPSG:4326
-    `${minLng},${minLat},${maxLng},${maxLat},EPSG:4326`, // legacy lng,lat axis order
+    `${minLat},${minLng},${maxLat},${maxLng},EPSG:4326`,
+    `${minLng},${minLat},${maxLng},${maxLat},EPSG:4326`,
   ];
+  const versionCandidates: Array<{ version: string; typeKey: 'TYPENAMES' | 'TYPENAME' }> = [
+    { version: '2.0.0', typeKey: 'TYPENAMES' },
+    { version: '1.1.0', typeKey: 'TYPENAME' },
+  ];
+  const formatCandidates = ['application/json', 'json', 'GEOJSON'];
 
   let lastError = 'unknown';
   let data: FeatureCollection | null = null;
 
   outer: for (const layer of layerCandidates) {
+   for (const { version, typeKey } of versionCandidates) {
+    for (const fmt of formatCandidates) {
     for (const bbox of bboxCandidates) {
       const params = new URLSearchParams({
         SERVICE: 'WFS',
-        VERSION: '2.0.0',
+        VERSION: version,
         REQUEST: 'GetFeature',
-        TYPENAMES: layer,
-        OUTPUTFORMAT: 'application/json',
+        [typeKey]: layer,
+        OUTPUTFORMAT: fmt,
         SRSNAME: 'EPSG:4326',
         BBOX: bbox,
         COUNT: '100',
@@ -169,6 +176,8 @@ export async function fetchNrwSegments(
         lastError = err instanceof Error ? err.message : String(err);
       }
     }
+    }
+   }
   }
 
   if (!data) {

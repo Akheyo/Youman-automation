@@ -250,11 +250,10 @@ export default function CesiumViewer() {
     const viewer = viewerRef.current;
     const [lng, lat] = address.center;
 
-    // Camera position: 200m north of and 180m above the target, looking south
-    // and down at -35°. This is the standard "oblique 3D" framing that makes
-    // building masses readable.
+    // Closer-in oblique framing — close enough that the user's specific house
+    // dominates the frame. ~90m offset south, 65m altitude, -35° pitch.
     viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(lng, lat - 0.0018, 180),
+      destination: Cesium.Cartesian3.fromDegrees(lng, lat - 0.0008, 65),
       orientation: {
         heading: Cesium.Math.toRadians(0),
         pitch: Cesium.Math.toRadians(-35),
@@ -323,16 +322,20 @@ export default function CesiumViewer() {
         ridgeBearingDeg: ridgeBearing,
       });
 
-      house.parts.forEach((part, idx) => {
+      // Render ONLY the roof slopes — walls and gables would hide the
+      // photorealistic 3D context (Cesium PRT / OSM Buildings) underneath.
+      // The orange roof acts as a "PV planning surface" overlay on top of
+      // the real house — same approach envolta uses.
+      house.roofSlopes.forEach((part, idx) => {
         const flat = part.positions.flatMap((p) => [p[0], p[1], p[2]]);
         viewer.entities.add({
-          id: `house_${building.id}_${part.kind}_${idx}`,
+          id: `house_${building.id}_roof_${idx}`,
           polygon: {
             hierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(flat)),
             perPositionHeight: true,
-            material: Cesium.Color.fromCssColorString(part.color).withAlpha(part.kind === 'roofSlope' ? 0.97 : 0.95),
+            material: Cesium.Color.fromCssColorString('#ff6b00').withAlpha(0.92),
             outline: true,
-            outlineColor: Cesium.Color.fromCssColorString('#3a2613').withAlpha(0.55),
+            outlineColor: Cesium.Color.fromCssColorString('#7a2900').withAlpha(0.95),
           } as Record<string, unknown>,
         });
       });

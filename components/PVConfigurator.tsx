@@ -25,13 +25,22 @@ import type { BuildingFootprint, PanelFeature, PanelLayout } from '@/types';
  * incomplete OSM coverage). 12m × 8m is a typical Einfamilienhaus.
  */
 function makeFallbackFootprint(lng: number, lat: number): BuildingFootprint {
+  // 18m × 12m oriented N-S — large enough to be obviously visible against
+  // photorealistic context, typical for a German Einfamilienhaus + garage.
   const center = turf.point([lng, lat]);
-  const halfDiag = Math.sqrt(6 ** 2 + 4 ** 2); // ~7.2m to corner
-  const corners = [45, 135, 225, 315].map((bearing) => {
+  const halfWidth = 9; // m east-west
+  const halfDepth = 6; // m north-south
+  const halfDiag = Math.sqrt(halfWidth ** 2 + halfDepth ** 2);
+  const cornerBearing = Math.atan2(halfWidth, halfDepth) * (180 / Math.PI);
+  const corners = [
+    cornerBearing,        // NE
+    180 - cornerBearing,  // SE
+    180 + cornerBearing,  // SW
+    -cornerBearing,       // NW
+  ].map((bearing) => {
     const dest = turf.destination(center, halfDiag / 1000, bearing, { units: 'kilometers' });
     return [dest.geometry.coordinates[0] as number, dest.geometry.coordinates[1] as number] as [number, number];
   });
-  // Close the ring.
   const ring = [corners[0]!, corners[1]!, corners[2]!, corners[3]!, corners[0]!];
   return {
     id: -1,
