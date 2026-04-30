@@ -13,10 +13,31 @@
 
 import { useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import * as turf from '@turf/turf';
 import { useApp } from '@/lib/store';
 import { fitPanels, panelsToFeatureCollection } from '@/lib/panel-grid';
 import { polygonAreaM2 } from '@/lib/geo';
-import type { PanelFeature, PanelLayout } from '@/types';
+import type { BuildingFootprint, PanelFeature, PanelLayout } from '@/types';
+
+/**
+ * Synthesise a small rectangular footprint around an address point.
+ * Used when Overpass finds no OSM building (rural addresses, new builds,
+ * incomplete OSM coverage). 12m × 8m is a typical Einfamilienhaus.
+ */
+function makeFallbackFootprint(lng: number, lat: number): BuildingFootprint {
+  const center = turf.point([lng, lat]);
+  const halfDiag = Math.sqrt(6 ** 2 + 4 ** 2); // ~7.2m to corner
+  const corners = [45, 135, 225, 315].map((bearing) => {
+    const dest = turf.destination(center, halfDiag / 1000, bearing, { units: 'kilometers' });
+    return [dest.geometry.coordinates[0] as number, dest.geometry.coordinates[1] as number] as [number, number];
+  });
+  // Close the ring.
+  const ring = [corners[0]!, corners[1]!, corners[2]!, corners[3]!, corners[0]!];
+  return {
+    id: -1,
+    coordinates: ring,
+  };
+}
 import AddressSearch from './AddressSearch';
 import Stepper from './Stepper';
 import Sidebar from './Sidebar';
@@ -67,8 +88,14 @@ export default function PVConfigurator({ source = 'standalone' }: Props) {
 
         if (buildingsRes.error) {
           setError({ title: buildingsRes.error, action: buildingsRes.action, detail: buildingsRes.detail });
+          setBuilding(makeFallbackFootprint(lng, lat));
+        } else if (buildingsRes.selected) {
+          setBuilding(buildingsRes.selected);
         } else {
-          setBuilding(buildingsRes.selected ?? null);
+          // Overpass succeeded but found no building within 80m — synthesize a
+          // 12m × 8m rectangle around the address point so the procedural
+          // house always has something to render. Better than empty.
+          setBuilding(makeFallbackFootprint(lng, lat));
         }
 
         if (segmentsRes.error) {

@@ -145,7 +145,12 @@ export async function fetchNrwSegments(
         const res = await fetch(url, { signal: opts.signal });
         if (!res.ok) {
           const body = await res.text().catch(() => '');
-          lastError = `HTTP ${res.status} bei layer="${layer}" — ${body.slice(0, 250).replace(/\s+/g, ' ').trim() || '(kein Body)'}`;
+          // Extract the actual exception text from OWS ExceptionReport XML.
+          const exceptionMatch = body.match(/<ows:ExceptionText[^>]*>([^<]+)<\/ows:ExceptionText>/);
+          const detail = exceptionMatch?.[1]?.trim()
+            || body.replace(/\s+/g, ' ').slice(0, 800).trim()
+            || '(kein Body)';
+          lastError = `HTTP ${res.status} bei layer="${layer}" — ${detail}`;
           continue;
         }
         const ct = res.headers.get('content-type') || '';
