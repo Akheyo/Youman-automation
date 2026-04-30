@@ -39,6 +39,23 @@ export async function setBackendUrl(url: string): Promise<void> {
   apiClient.defaults.baseURL = cleaned;
 }
 
+/**
+ * Probe the configured backend's /health endpoint. Returns true if reachable
+ * within the timeout. Used by the first-run wizard to decide whether to send
+ * the user to the settings screen before the login screen.
+ */
+export async function pingBackend(timeoutMs = 4000): Promise<boolean> {
+  try {
+    await axios.get(`${cachedBaseUrl}/health`, {
+      timeout: timeoutMs,
+      validateStatus: (s) => s < 500,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const apiClient = axios.create({
   baseURL: COMPILED_DEFAULT,
   timeout: 30_000,

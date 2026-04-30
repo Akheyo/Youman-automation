@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Building2, Mail, Lock, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Building2, Mail, Lock, Loader2, AlertTriangle } from "lucide-react";
 import { LoginRequestSchema, type LoginRequestDto } from "@youman/shared";
 import { useAuthStore } from "@/stores/authStore";
-import { apiClient } from "@/services/api";
+import { apiClient, pingBackend } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/useToast";
@@ -14,8 +14,20 @@ import type { LoginResponse } from "@youman/shared";
 export function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [backendReachable, setBackendReachable] = useState<boolean | null>(null);
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const ok = await pingBackend();
+      if (!cancelled) setBackendReachable(ok);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const {
     register,
@@ -94,6 +106,25 @@ export function LoginScreen() {
             </p>
           </div>
         </div>
+
+        {backendReachable === false && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 flex gap-2 text-sm text-amber-900">
+            <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <div className="space-y-2">
+              <p className="font-medium">Server nicht erreichbar</p>
+              <p className="text-xs">
+                Die App kann den Backend-Server nicht erreichen. Login wird vermutlich fehlschlagen.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/settings")}
+                className="text-xs font-medium underline-offset-2 underline hover:no-underline"
+              >
+                Server-Einstellungen prüfen →
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

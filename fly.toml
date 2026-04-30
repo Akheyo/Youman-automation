@@ -1,0 +1,33 @@
+# Fly.io deployment config — see https://fly.io/docs/reference/configuration/
+# Run `fly launch --no-deploy` once to claim a unique app name (it will rewrite
+# the `app` field below), then `fly deploy`.
+
+app = "adept-backend"
+primary_region = "fra"
+
+[build]
+  dockerfile = "apps/backend/Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "3001"
+  ALLOWED_ORIGINS = "app://./"
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "30s"
+    method = "GET"
+    path = "/api/v1/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

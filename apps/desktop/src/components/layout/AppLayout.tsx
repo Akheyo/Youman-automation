@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
-  LayoutDashboard, Clock, FileText, Shield, Settings,
+  LayoutDashboard, Clock, FileText, Shield, Settings, Server,
   LogOut, Wifi, WifiOff, Loader2, Download, RefreshCw
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
@@ -185,6 +185,15 @@ export function AppLayout() {
               </p>
               <p className="text-xs text-muted-foreground truncate">{user?.role}</p>
             </div>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => navigate("/settings")}
+              title="Server-Einstellungen"
+              className="shrink-0"
+            >
+              <Server className="h-3.5 w-3.5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon-sm"
