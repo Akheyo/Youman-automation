@@ -38,11 +38,42 @@ export function LoginScreen() {
       navigate("/dashboard", { replace: true });
       toast({ title: `Willkommen, ${user.firstName}!`, variant: "success" });
     } catch (err) {
-      const msg =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ??
-        "Login fehlgeschlagen. Bitte prüfen Sie Ihre Zugangsdaten.";
-      setError("password", { message: msg });
-      toast({ title: "Login fehlgeschlagen", description: msg, variant: "error" });
+      const e = err as {
+        code?: string;
+        message?: string;
+        response?: { status?: number; data?: { error?: { message?: string } } };
+      };
+      const status = e.response?.status;
+      const serverMsg = e.response?.data?.error?.message;
+
+      let title = "Login fehlgeschlagen";
+      let description = "Bitte prüfen Sie Ihre Zugangsdaten.";
+
+      if (!e.response) {
+        // No HTTP response → network / DNS / CORS error
+        title = "Server nicht erreichbar";
+        description =
+          e.code === "ECONNABORTED"
+            ? "Die Verbindung hat zu lange gedauert. Bitte erneut versuchen."
+            : "Backend nicht erreichbar. Prüfen Sie unter Server-Einstellungen, ob die URL stimmt und der Server läuft.";
+      } else if (status === 401) {
+        title = "Falsche Zugangsdaten";
+        description = "E-Mail oder Passwort ist falsch. Mandant-Slug ebenfalls prüfen.";
+      } else if (status === 429) {
+        title = "Zu viele Login-Versuche";
+        description = "Bitte 60 Sekunden warten, dann erneut versuchen.";
+      } else if (status === 404) {
+        title = "Falscher Server-Pfad";
+        description = "Der Server antwortet, aber der Login-Endpoint fehlt. URL inkl. /api/v1 prüfen.";
+      } else if (status && status >= 500) {
+        title = "Server-Fehler";
+        description = serverMsg ?? "Der Server hat einen internen Fehler. Bitte später erneut versuchen.";
+      } else if (serverMsg) {
+        description = serverMsg;
+      }
+
+      setError("password", { message: description });
+      toast({ title, description, variant: "error" });
     } finally {
       setIsLoading(false);
     }

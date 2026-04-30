@@ -37,27 +37,76 @@ enter `http://localhost:3001/api/v1`, then log in.
 
 ## Production Deployment
 
-Build the image and push to any container registry:
+### Generate strong secrets first
 
 ```bash
-docker build -t your-registry/adept-backend:latest -f apps/backend/Dockerfile .
-docker push your-registry/adept-backend:latest
+bash scripts/generate-secrets.sh > .env.production
 ```
 
-Deploy to any Docker host (Railway, Fly.io, Render, your own VPS).
-Set these env vars in your hosting provider:
+This produces a file with cryptographically random `JWT_SECRET`,
+`JWT_REFRESH_SECRET`, and `POSTGRES_PASSWORD`. **Never use the defaults**
+from `.env.example` in production — they are public.
 
+### Option 1: Railway (recommended for first launch)
+
+1. Sign up at https://railway.app — GitHub login works.
+2. **New project → Deploy from GitHub repo** → pick `youman-automation`.
+3. Railway auto-detects the Dockerfile. Set **Build → Dockerfile path** to `apps/backend/Dockerfile` and **Build context** to `/`.
+4. Add a **Postgres** plugin to the same project. Copy the auto-injected
+   `DATABASE_URL` into the backend service's environment.
+5. Set the rest of the env vars (paste from `.env.production`):
+   - `NODE_ENV=production`
+   - `JWT_SECRET=...`
+   - `JWT_REFRESH_SECRET=...`
+   - `ALLOWED_ORIGINS=app://./`
+   - `PORT=3001`
+6. Generate a public domain in Railway → "Settings → Networking → Generate Domain".
+   You get something like `adept-backend-production-a8f2.up.railway.app`.
+7. The full backend URL becomes `https://adept-backend-production-a8f2.up.railway.app/api/v1` —
+   put that into the GitHub repo secret `VITE_API_URL` (see Desktop builds below).
+
+Railway provides HTTPS automatically — no certificate setup needed.
+
+### Option 2: Fly.io
+
+```bash
+flyctl launch --dockerfile apps/backend/Dockerfile
+flyctl postgres create
+flyctl postgres attach <db-name>
+flyctl secrets set JWT_SECRET=$(openssl rand -hex 64) \
+                   JWT_REFRESH_SECRET=$(openssl rand -hex 64) \
+                   ALLOWED_ORIGINS=app://./
+flyctl deploy
 ```
-NODE_ENV=production
-DATABASE_URL=postgresql://user:pass@host:5432/db?schema=public
-JWT_SECRET=<openssl rand -hex 64>
-JWT_REFRESH_SECRET=<openssl rand -hex 64>
-ALLOWED_ORIGINS=app://./,https://your-frontend-host
-PORT=3001
+
+### Option 3: Own VPS via pre-built image
+
+The repo's GitHub Action (`backend-image.yml`) auto-publishes the image to
+GHCR on every push to main / version tag. On your server:
+
+```bash
+docker pull ghcr.io/akheyo/youman-automation/backend:latest
+docker compose up -d
 ```
+
+Use a reverse proxy (Caddy, Traefik, nginx) for HTTPS termination.
+
+### Database backups
+
+For Railway/Fly: enable automatic backups in the provider's dashboard
+(both have one-click daily snapshots in their UI).
+
+For self-hosted Postgres, schedule via cron:
+
+```bash
+# Daily 03:00 UTC, retain 14 days
+0 3 * * * docker exec adept-postgres pg_dump -U adept adept | gzip > /backups/adept-$(date +\%F).sql.gz && find /backups -name 'adept-*.sql.gz' -mtime +14 -delete
+```
+
+Restore: `gunzip < adept-2026-04-30.sql.gz | docker exec -i adept-postgres psql -U adept adept`.
 
 The container's `docker-entrypoint.sh` automatically runs `prisma db push`
-(or `prisma migrate deploy` if migrations exist) and the seed on first start.
+and the seed on first start. **The seed is idempotent** — safe to re-run.
 
 ## Desktop builds
 
@@ -104,27 +153,49 @@ pnpm dev:desktop  # opens Electron, points at localhost:3001
 
 ## Tenant onboarding
 
-Currently the only seeded tenant is `demo`. To add a real customer:
+Each customer firm = one Tenant. Seeded by default: `demo`. Create new
+tenants via the bundled CLI:
 
 ```bash
-# Inside the running backend container:
-docker compose exec backend npx ts-node -e "
-  import { PrismaClient } from '@prisma/client';
-  import argon2 from 'argon2';
-  const p = new PrismaClient();
-  (async () => {
-    const tenant = await p.tenant.create({ data: { slug: 'kundenfirma', name: 'Kundenfirma GmbH' } });
-    await p.tenantSettings.create({ data: { tenantId: tenant.id } });
-    await p.tenantBranding.create({ data: { tenantId: tenant.id, appName: 'Kundenfirma' } });
-    await p.user.create({ data: {
-      tenantId: tenant.id,
-      email: 'admin@kundenfirma.de',
-      passwordHash: await argon2.hash('GenerateAStrongPassword123!'),
-      firstName: 'Max', lastName: 'Mustermann', role: 'TENANT_ADMIN',
-    }});
-    console.log('Tenant created:', tenant.slug);
-  })();
-"
+# Inside the running backend container — auto-generates a strong password:
+docker compose exec backend pnpm tenant:create kundenfirma "Kundenfirma GmbH" admin@kundenfirma.de
+
+# With explicit password:
+docker compose exec backend pnpm tenant:create acme "Acme Corp" admin@acme.com --password=MyStr0ngPwd!
 ```
 
-A proper public signup flow is on the roadmap.
+Output:
+```
+✓ Tenant created successfully
+  Tenant ID  : 187ef2f4-...
+  Slug       : kundenfirma
+  Name       : Kundenfirma GmbH
+
+  Initial admin login:
+    Mandant   : kundenfirma
+    E-Mail    : admin@kundenfirma.de
+    Passwort  : Kj8Hm2VnQpRsTwXz  (auto-generated, store securely)
+```
+
+Send the credentials to the customer. They install the desktop `.exe`,
+log in with `kundenfirma` as Mandant. A public self-service signup flow
+is on the roadmap.
+
+## Health & monitoring
+
+The backend exposes two health endpoints (no auth, no rate-limit):
+
+- `GET /api/v1/health` — liveness (process is up)
+- `GET /api/v1/health/ready` — readiness (process up + DB reachable)
+
+Use `/health/ready` in your hosting platform's health check configuration.
+Returns 503 with diagnostic body if Postgres becomes unreachable.
+
+## Security
+
+- **Rate limiting**: 5 login attempts per minute per IP (brute-force protection),
+  100 requests/min global on other endpoints. Configured in `app.module.ts`.
+- **Password hashing**: argon2id with default parameters (memory-hard).
+- **JWT**: stored in-memory in the renderer; refresh tokens hashed in DB.
+- **HTTPS**: not enforced by the backend itself — terminate TLS at the
+  reverse proxy / hosting platform (Railway/Fly do this automatically).

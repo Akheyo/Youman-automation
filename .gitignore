@@ -3,6 +3,8 @@ dist/
 dist-electron/
 .env
 .env.local
+.env.production
+.env.*.local
 *.db
 *.db-shm
 *.db-wal

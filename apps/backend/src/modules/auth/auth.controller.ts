@@ -1,5 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, Req, UseGuards, Get } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
 import { Request } from "express";
 import { AuthService } from "./auth.service";
 import { LoginRequestSchema, RefreshTokenSchema } from "@youman/shared";
@@ -23,7 +24,10 @@ interface JwtUser {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // Brute-force protection: 5 attempts per minute per IP. The global
+  // ThrottlerModule limit (100/min) does not protect this endpoint enough.
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post("login")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Login mit E-Mail, Passwort und Tenant-Slug" })
@@ -33,6 +37,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Access Token erneuern" })
