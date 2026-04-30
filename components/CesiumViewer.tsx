@@ -321,7 +321,11 @@ export default function CesiumViewer() {
 
       const house = buildProceduralHouse({
         footprint: building.coordinates as [number, number][],
-        eaveHeightM: building.height && building.height > 3 ? Math.min(building.height - 1, 9) : 6,
+        // Raise the eave above typical NRW residential building height (8-10m)
+        // so the orange roof sits *above* the photorealistic 3D mesh instead
+        // of disappearing inside it. Looks like a clearly visible PV planning
+        // overlay rather than a competing roof.
+        eaveHeightM: 11,
         pitchDeg,
         ridgeBearingDeg: ridgeBearing,
       });

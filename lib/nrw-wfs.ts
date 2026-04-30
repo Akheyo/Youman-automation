@@ -31,14 +31,31 @@ const BBOX_PADDING_M = 30;
 
 /**
  * Layer-name variants tried in order. NRW has renamed and reorganised the
- * Solarkataster a few times; we try the most common names so a single rename
- * doesn't kill the integration.
+ * Solarkataster repeatedly. The server actively tells us "TYPENAME ... doesn't
+ * exist in this server. Please check the capabilities and reformulate" — we
+ * probe the names commonly used across the NRW Geobasis stack.
  */
 const LAYER_FALLBACKS = [
+  // sk_* family (Solarkataster legacy)
   'sk_dachflaechen',
-  'erneuerbare_energien:sk_dachflaechen',
   'sk:dachflaechen',
+  'sk_solarkataster:dachflaechen',
+  // ms:/ms_* family (MapServer-prefixed)
+  'ms:sk_dachflaechen',
+  'ms:dachflaechen',
+  // Plain
   'dachflaechen',
+  // LANUV namespace variants
+  'lanuv:dachflaechen',
+  'lanuv:sk_dachflaechen',
+  // erneuerbare_energien namespace
+  'erneuerbare_energien:sk_dachflaechen',
+  'erneuerbare_energien:dachflaechen',
+  // Geobasis NRW namespace
+  'nw_geobasis:dachflaechen',
+  // Title-cased
+  'Dachflaechen',
+  'Solarkataster',
 ];
 
 export interface FetchNrwSegmentsOptions {
@@ -100,6 +117,34 @@ function parseSuitability(value: string | undefined): RoofSuitability {
   return 'gut';
 }
 
+/**
+ * Probe the WFS GetCapabilities response for layer names containing "dach"
+ * or "solar". Used when explicit layer names fail and we need to discover
+ * what the server actually exposes.
+ *
+ * Returns the first matching layer name (with namespace prefix), or null if
+ * we can't reach Capabilities or no candidate matched.
+ */
+async function discoverLayerFromCapabilities(proxyPrefix: string, signal?: AbortSignal): Promise<string | null> {
+  const directUrl = `${WFS_BASE}?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities`;
+  const url = proxyPrefix ? proxyPrefix + encodeURIComponent(directUrl) : directUrl;
+  try {
+    const res = await fetch(url, { signal });
+    if (!res.ok) return null;
+    const xml = await res.text();
+    // Match all <Name>...</Name> elements; in WFS Capabilities they're FeatureType names.
+    const matches = [...xml.matchAll(/<(?:[a-z]+:)?Name>([^<]+)<\/(?:[a-z]+:)?Name>/gi)];
+    const names = matches.map((m) => m[1]).filter((n): n is string => typeof n === 'string');
+    // Prefer ones that look roof-related.
+    const roof = names.find((n) => /dach/i.test(n) && (/sk/i.test(n) || /solar/i.test(n))) ||
+      names.find((n) => /dach/i.test(n)) ||
+      names.find((n) => /solar/i.test(n));
+    return roof ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchNrwSegments(
   lat: number,
   lng: number,
@@ -117,7 +162,14 @@ export async function fetchNrwSegments(
   // We try every layer-name variant × axis-order × WFS-version × output-format
   // combination NRW has shipped over the years. The cadastre service has
   // migrated several times and we don't assume which variant is current.
-  const layerCandidates = opts.layer ? [opts.layer] : LAYER_FALLBACKS;
+  // First, ask the server itself via GetCapabilities — that's the most
+  // accurate source of truth.
+  const discoveredLayer = await discoverLayerFromCapabilities(proxyPrefix, opts.signal);
+  const layerCandidates = opts.layer
+    ? [opts.layer]
+    : discoveredLayer
+      ? [discoveredLayer, ...LAYER_FALLBACKS]
+      : LAYER_FALLBACKS;
   const bboxCandidates = [
     `${minLat},${minLng},${maxLat},${maxLng},EPSG:4326`,
     `${minLng},${minLat},${maxLng},${maxLat},EPSG:4326`,
