@@ -41,7 +41,11 @@ declare global {
 interface CesiumModule {
   Ion: { defaultAccessToken: string };
   Viewer: new (container: HTMLElement, options: Record<string, unknown>) => CesiumViewerInstance;
-  Cartesian3: { fromDegrees: (lng: number, lat: number, height?: number) => unknown };
+  Cartesian3: {
+    fromDegrees: (lng: number, lat: number, height?: number) => unknown;
+    fromDegreesArray: (coords: number[]) => unknown[];
+    fromDegreesArrayHeights: (coords: number[]) => unknown[];
+  };
   Cesium3DTileset: { fromUrl: (url: string, options?: Record<string, unknown>) => Promise<unknown> };
   HeadingPitchRange: new (heading: number, pitch: number, range: number) => unknown;
   Math: { toRadians: (deg: number) => number };
@@ -324,9 +328,7 @@ export default function CesiumViewer() {
         viewer.entities.add({
           id: `house_${building.id}_${part.kind}_${idx}`,
           polygon: {
-            hierarchy: new Cesium.PolygonHierarchy(
-              (Cesium.Cartesian3.fromDegrees as unknown as (...a: number[]) => unknown[])(...flat),
-            ),
+            hierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(flat)),
             perPositionHeight: true,
             material: Cesium.Color.fromCssColorString(part.color).withAlpha(part.kind === 'roofSlope' ? 0.97 : 0.95),
             outline: true,
@@ -349,34 +351,36 @@ export default function CesiumViewer() {
       viewer.entities.add({
         id: `seg_${seg.id}`,
         polygon: {
-          hierarchy: new Cesium.PolygonHierarchy(
-            (Cesium.Cartesian3.fromDegrees as unknown as (...a: number[]) => unknown[])(...positions),
-          ),
+          hierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArray(positions)),
           material: Cesium.Color.fromCssColorString(color).withAlpha(isActive ? 0.7 : 0.5),
           outline: true,
           outlineColor: Cesium.Color.fromCssColorString('#0D73FC').withAlpha(0.9),
-          // classificationType=2 → CESIUM_3D_TILE: project the polygon onto
-          // the 3D building geometry (works with OSM Buildings and LoD2).
           classificationType: 2,
         } as Record<string, unknown>,
       });
     }
 
+    // Lift solar panels to roof height when we have a procedural house, so
+    // they sit visually on top of the orange roof rather than at ground.
+    const panelHeight = building && building.coordinates.length >= 4 ? 8 : 0.6;
+
     if (layout && layout.panels.length > 0) {
       for (const p of layout.panels) {
         const ring = p.geometry.coordinates[0];
         if (!ring) continue;
-        const positions = ring.flatMap((c) => [c[0] as number, c[1] as number]);
+        // Inject the panel height after every (lng, lat) pair.
+        const flat: number[] = [];
+        for (const c of ring) {
+          flat.push(c[0] as number, c[1] as number, panelHeight);
+        }
         viewer.entities.add({
           id: `pan_${p.properties.segmentId}_${p.properties.index}`,
           polygon: {
-            hierarchy: new Cesium.PolygonHierarchy(
-              (Cesium.Cartesian3.fromDegrees as unknown as (...a: number[]) => unknown[])(...positions),
-            ),
+            hierarchy: new Cesium.PolygonHierarchy(Cesium.Cartesian3.fromDegreesArrayHeights(flat)),
+            perPositionHeight: true,
             material: Cesium.Color.fromCssColorString('#0D73FC').withAlpha(0.92),
             outline: true,
             outlineColor: Cesium.Color.fromCssColorString('#ffffff').withAlpha(0.95),
-            classificationType: 2,
           } as Record<string, unknown>,
         });
       }
