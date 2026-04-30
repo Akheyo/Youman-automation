@@ -1,30 +1,21 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import {
-  FileText, UserPlus, Package, Calendar, StickyNote,
-  ClipboardList, ArrowRight, Zap, TrendingUp, Clock
-} from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronDown, WifiOff, Loader2 } from "lucide-react";
+import { FormBuilder } from "@youman/config-engine";
 import { apiClient } from "@/services/api";
+import { syncService } from "@/services/syncService";
 import { useAuthStore } from "@/stores/authStore";
 import { useOfflineStore } from "@/stores/offlineStore";
-import { Badge } from "@/components/ui/badge";
+import { ActionFormRenderer } from "@/components/forms/ActionFormRenderer";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/useToast";
+import { getApiError } from "@/services/api";
 import { cn } from "@/utils/cn";
-import type { ActionDefinition } from "@youman/shared";
-
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  FileText, UserPlus, Package, Calendar,
-  StickyNote, ClipboardList, Zap, TrendingUp,
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  sales: "text-blue-700 bg-blue-100",
-  crm: "text-violet-700 bg-violet-100",
-  inventory: "text-emerald-700 bg-emerald-100",
-  purchasing: "text-orange-700 bg-orange-100",
-  administration: "text-stone-600 bg-stone-200",
-  logistics: "text-cyan-700 bg-cyan-100",
-};
+import type { ActionDefinition, ActionExecution } from "@youman/shared";
 
 const CATEGORY_LABELS: Record<string, string> = {
   sales: "Vertrieb",
@@ -35,10 +26,12 @@ const CATEGORY_LABELS: Record<string, string> = {
   logistics: "Logistik",
 };
 
+const formBuilder = new FormBuilder();
+
 export function DashboardScreen() {
-  const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { syncStatus, isOnline } = useOfflineStore();
+  const { isOnline } = useOfflineStore();
+  const [selectedId, setSelectedId] = useState<string>("");
 
   const { data: actions = [], isLoading } = useQuery({
     queryKey: ["actions", "definitions"],
@@ -49,136 +42,195 @@ export function DashboardScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const filteredActions = actions.filter(
+  const available = actions.filter(
     (a) => a.enabled && a.allowedRoles.includes(user?.role ?? "VIEWER")
   );
 
-  const grouped = filteredActions.reduce<Record<string, ActionDefinition[]>>((acc, a) => {
-    const cat = a.category;
+  const grouped = available.reduce<Record<string, ActionDefinition[]>>((acc, a) => {
+    const cat = a.category.toLowerCase();
     if (!acc[cat]) acc[cat] = [];
     acc[cat]!.push(a);
     return acc;
   }, {});
 
+  const selectedAction = available.find((a) => a.id === selectedId) ?? null;
+
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-8">
-      {/* Header */}
-      <div className="flex items-start justify-between">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-2xl mx-auto px-6 pt-12 pb-24 space-y-8">
+
+        {/* Greeting */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">
             Guten Tag, {user?.firstName}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Was möchten Sie heute erledigen?
+            Wählen Sie eine Aktion aus, um zu beginnen.
           </p>
         </div>
 
-        {/* Status bar */}
-        <div className="flex items-center gap-3">
-          {syncStatus.pendingCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/queue")}
-              className="gap-2"
+        {/* Action selector */}
+        {isLoading ? (
+          <div className="h-11 rounded-lg bg-muted animate-pulse" />
+        ) : (
+          <div className="relative">
+            <select
+              value={selectedId}
+              onChange={(e) => setSelectedId(e.target.value)}
+              className={cn(
+                "w-full h-11 appearance-none rounded-lg border border-input bg-card px-4 pr-10",
+                "text-sm font-medium text-foreground shadow-sm",
+                "focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring",
+                "cursor-pointer transition-colors",
+                !selectedId && "text-muted-foreground"
+              )}
             >
-              <Clock className="h-3.5 w-3.5 text-warning" />
-              {syncStatus.pendingCount} ausstehend
-            </Button>
-          )}
-          {syncStatus.failedCount > 0 && (
-            <Badge variant="destructive">
-              {syncStatus.failedCount} fehlgeschlagen
-            </Badge>
-          )}
-        </div>
+              <option value="" disabled>Aktion auswählen...</option>
+              {Object.entries(grouped).map(([category, acts]) => (
+                <optgroup key={category} label={CATEGORY_LABELS[category] ?? category}>
+                  {acts.map((a) => (
+                    <option
+                      key={a.id}
+                      value={a.id}
+                      disabled={!isOnline && a.offlineBehavior === "reject"}
+                    >
+                      {a.displayName}
+                      {!isOnline && a.offlineBehavior === "queue" ? " (Offline)" : ""}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+          </div>
+        )}
+
+        {/* Inline form */}
+        {selectedAction && (
+          <ActionForm
+            key={selectedAction.id}
+            action={selectedAction}
+            isOnline={isOnline}
+            onDone={() => setSelectedId("")}
+          />
+        )}
+
       </div>
-
-      {/* Quick actions grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-28 rounded-xl bg-card border border-border animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {Object.entries(grouped).map(([category, catActions]) => (
-            <section key={category}>
-              <div className="flex items-center gap-2 mb-3">
-                <span className={cn("text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full", CATEGORY_COLORS[category] ?? "text-muted-foreground bg-muted")}>
-                  {CATEGORY_LABELS[category] ?? category}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {catActions.map((action) => (
-                  <ActionCard
-                    key={action.id}
-                    action={action}
-                    isOnline={isOnline}
-                    onClick={() => navigate(`/action/${action.id}`)}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      )}
-
-      {filteredActions.length === 0 && !isLoading && (
-        <div className="text-center py-16 space-y-2">
-          <Zap className="h-10 w-10 text-muted-foreground mx-auto" />
-          <p className="text-muted-foreground">Keine Aktionen verfügbar</p>
-          <p className="text-xs text-muted-foreground">Bitte wenden Sie sich an Ihren Administrator.</p>
-        </div>
-      )}
     </div>
   );
 }
 
-interface ActionCardProps {
+interface ActionFormProps {
   action: ActionDefinition;
   isOnline: boolean;
-  onClick: () => void;
+  onDone: () => void;
 }
 
-function ActionCard({ action, isOnline, onClick }: ActionCardProps) {
-  const Icon = ICON_MAP[action.icon] ?? Zap;
-  const colorClass = CATEGORY_COLORS[action.category] ?? "text-primary bg-primary/10";
-  const isOfflineDisabled = !isOnline && action.offlineBehavior === "reject";
+function ActionForm({ action, isOnline, onDone }: ActionFormProps) {
+  const navigate = useNavigate();
+  const schema = formBuilder.buildZodSchema(action);
+  const initialValues = formBuilder.getInitialValues(action);
+
+  const methods = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: initialValues,
+  });
+
+  const executeMutation = useMutation({
+    mutationFn: async (payload: Record<string, unknown>) => {
+      if (!isOnline && action.offlineBehavior === "queue") {
+        const queued = await syncService.enqueueOffline({
+          actionId: action.id,
+          actionName: action.displayName,
+          payload,
+        });
+        if (!queued) throw new Error("Offline-Queue nicht verfügbar");
+        return { status: "queued_offline" } as unknown as ActionExecution;
+      }
+
+      const res = await apiClient.post<ActionExecution>("/actions/execute", {
+        actionId: action.id,
+        payload,
+        clientTimestamp: new Date().toISOString(),
+      });
+      return res.data;
+    },
+
+    onSuccess: async (result) => {
+      if ((result as unknown as { status: string }).status === "queued_offline") {
+        toast({
+          title: "Gespeichert",
+          description: "Wird nach Wiederherstellung der Verbindung ausgeführt.",
+          variant: "warning",
+        });
+        onDone();
+        return;
+      }
+
+      for (const sa of action.successActions) {
+        if (sa.type === "open_pdf") {
+          const url = (result.result as Record<string, string> | null)?.[sa.config["urlField"] as string];
+          if (url && window.adept) await window.adept.pdf.open(url);
+        }
+        if (sa.type === "prepare_email") {
+          const qn = (result.result as Record<string, string> | null)?.["erpQuoteNumber"] ?? "";
+          const subject = String(sa.config["subject"] ?? "").replace("{quoteNumber}", qn);
+          const body = String(sa.config["body"] ?? "").replace("{quoteNumber}", qn);
+          if (window.adept) await window.adept.app.openExternal(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+        }
+      }
+
+      toast({ title: "Erfolgreich", description: `${action.displayName} ausgeführt.`, variant: "success" });
+      onDone();
+    },
+
+    onError: (err) => {
+      toast({ title: "Fehler", description: getApiError(err), variant: "error" });
+    },
+  });
+
+  const onSubmit = methods.handleSubmit((data) => {
+    executeMutation.mutate(data as Record<string, unknown>);
+  });
 
   return (
-    <button
-      onClick={onClick}
-      disabled={isOfflineDisabled}
-      className={cn(
-        "group relative flex flex-col items-start gap-3 rounded-xl border border-border bg-card p-4",
-        "hover:border-primary/30 hover:bg-card/80 hover:shadow-md hover:shadow-primary/5",
-        "transition-all duration-200 text-left",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        isOfflineDisabled && "opacity-40 cursor-not-allowed"
-      )}
-    >
-      <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", colorClass)}>
-        <Icon className="h-4.5 w-4.5 h-[18px] w-[18px]" />
+    <div className="space-y-5">
+      {/* Action header */}
+      <div className="flex items-center justify-between pb-2 border-b border-border">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">{action.displayName}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{action.description}</p>
+        </div>
+        {!isOnline && action.offlineBehavior === "queue" && (
+          <div className="flex items-center gap-1.5 text-xs text-warning">
+            <WifiOff className="h-3.5 w-3.5" />
+            Offline speichern
+          </div>
+        )}
       </div>
 
-      <div className="flex-1 min-w-0 space-y-0.5">
-        <p className="text-sm font-semibold text-foreground leading-tight">
-          {action.displayName}
-        </p>
-        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-          {action.description}
-        </p>
-      </div>
+      {/* Form */}
+      <FormProvider {...methods}>
+        <form onSubmit={onSubmit} className="space-y-5">
+          <ActionFormRenderer action={action} isLoading={executeMutation.isPending} />
 
-      <ArrowRight className="absolute bottom-3 right-3 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-150" />
-
-      {!isOnline && action.offlineBehavior === "queue" && (
-        <span className="absolute top-2 right-2">
-          <Badge variant="warning" className="text-[10px] px-1 py-0">Offline</Badge>
-        </span>
-      )}
-    </button>
+          <div className="flex items-center justify-between pt-2 border-t border-border">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onDone}
+              disabled={executeMutation.isPending}
+            >
+              Abbrechen
+            </Button>
+            <Button type="submit" size="lg" loading={executeMutation.isPending}>
+              {!isOnline && action.offlineBehavior === "queue"
+                ? "Offline speichern"
+                : action.displayName}
+            </Button>
+          </div>
+        </form>
+      </FormProvider>
+    </div>
   );
 }
