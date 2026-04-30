@@ -50,6 +50,11 @@ COPY --from=build /app/apps/backend/node_modules apps/backend/node_modules
 COPY --from=build /app/apps/backend/prisma apps/backend/prisma
 COPY --from=build /app/configs configs
 
+# The compiled seed at dist/prisma/seed.js resolves __dirname one level
+# deeper than the source, so it looks for configs/ at /app/apps/configs.
+# Symlink keeps both source and compiled execution paths working.
+RUN ln -sfn /app/configs /app/apps/configs
+
 EXPOSE 3001
 
 # Healthcheck (Nest app must respond on /api/v1)
@@ -63,4 +68,4 @@ COPY apps/backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
  && chmod +x /usr/local/bin/docker-entrypoint.sh
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["node", "apps/backend/dist/main.js"]
+CMD ["node", "apps/backend/dist/src/main.js"]

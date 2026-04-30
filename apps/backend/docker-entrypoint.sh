@@ -13,9 +13,10 @@ else
   npx prisma db push --accept-data-loss --skip-generate
 fi
 
-# Seed uses upsert → idempotent. Failures are non-fatal (e.g. seed.ts not in image).
+# Seed uses upsert → idempotent. Run the compiled JS, not the .ts source —
+# Node 20 won't load .ts directly and ts-node has ESM/CJS quirks in containers.
 echo "[entrypoint] running seed (idempotent)..."
-npx ts-node prisma/seed.ts || echo "[entrypoint] seed step skipped/failed — continuing"
+node dist/prisma/seed.js || echo "[entrypoint] seed step skipped/failed — continuing"
 
 cd /app
 exec "$@"
