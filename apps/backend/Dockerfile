@@ -58,6 +58,9 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 
 # Run migrations + seed (idempotent), then start the server.
 COPY apps/backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# Strip CR if the file was checked out with CRLF line endings on Windows —
+# without this, the Linux kernel cannot find the shebang interpreter.
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
+ && chmod +x /usr/local/bin/docker-entrypoint.sh
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "apps/backend/dist/main.js"]
