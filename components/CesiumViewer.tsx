@@ -290,8 +290,9 @@ export default function CesiumViewer() {
     // when available (best fit), else fall back to 35° / longest-edge.
     if (building && building.coordinates && building.coordinates.length >= 4) {
       // Pick the dominant tilt + azimuth from the NRW segments belonging to
-      // this building (largest-area segment wins, otherwise defaults).
-      let pitchDeg = 35;
+      // this building (largest-area segment wins). Default 40° matches typical
+      // NRW Satteldach when no cadastre data is available.
+      let pitchDeg = 40;
       let ridgeBearing: number | undefined;
       if (segments.length > 0) {
         let maxArea = 0;
@@ -304,7 +305,7 @@ export default function CesiumViewer() {
           }
           if (area > maxArea) {
             maxArea = area;
-            pitchDeg = seg.pitchDeg || 35;
+            pitchDeg = seg.pitchDeg || 40;
             // azimuth (0=N) of segment normal → ridge runs perpendicular to it
             ridgeBearing = (seg.azimuthDeg + 90) % 180;
           }

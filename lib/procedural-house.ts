@@ -56,7 +56,8 @@ export interface ProceduralHouse {
 
 const DEFAULT = {
   eaveHeightM: 6,
-  pitchDeg: 35,
+  /** 40° pro Seite — typisches NRW-Satteldach (60er/70er-Jahre Bauten). */
+  pitchDeg: 40,
 };
 
 const COLOR_WALL = '#e8dfd0';
