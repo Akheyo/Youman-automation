@@ -250,13 +250,17 @@ export default function CesiumViewer() {
     const viewer = viewerRef.current;
     const [lng, lat] = address.center;
 
-    // Closer-in oblique framing — close enough that the user's specific house
-    // dominates the frame. ~90m offset south, 65m altitude, -35° pitch.
+    // Oblique framing close enough that the user's house dominates the
+    // frame, but high enough that we never clip through terrain. NRW
+    // elevation maxes out around 800 m (Eifel), but for the addresses
+    // we typically see (~50-200 m), 220 m WGS84 altitude is a good balance.
+    // The destination's "height" is altitude above the WGS84 ellipsoid,
+    // not above terrain — going too low here clips the camera underground.
     viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(lng, lat - 0.0008, 65),
+      destination: Cesium.Cartesian3.fromDegrees(lng, lat - 0.0012, 220),
       orientation: {
         heading: Cesium.Math.toRadians(0),
-        pitch: Cesium.Math.toRadians(-35),
+        pitch: Cesium.Math.toRadians(-40),
         roll: 0,
       },
       duration: 1.4,

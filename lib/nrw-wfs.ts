@@ -163,7 +163,11 @@ export async function fetchNrwSegments(
         const ct = res.headers.get('content-type') || '';
         if (!ct.includes('json')) {
           const body = await res.text();
-          lastError = `Content-Type=${ct} bei layer="${layer}". Body: ${body.slice(0, 200)}`;
+          const exceptionMatch = body.match(/<ows:ExceptionText[^>]*>([^<]+)<\/ows:ExceptionText>/);
+          const detail = exceptionMatch?.[1]?.trim()
+            || body.replace(/\s+/g, ' ').slice(0, 800).trim()
+            || '(kein Body)';
+          lastError = `${version}/${fmt}/${typeKey}=${layer}: ${detail}`;
           continue;
         }
         const parsed = (await res.json()) as FeatureCollection;
