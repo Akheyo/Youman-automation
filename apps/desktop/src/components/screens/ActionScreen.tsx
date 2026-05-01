@@ -98,9 +98,29 @@ export function ActionScreen() {
     },
   });
 
-  const onSubmit = methods.handleSubmit((data) => {
-    executeMutation.mutate(data as Record<string, unknown>);
-  });
+  const onSubmit = methods.handleSubmit(
+    (data) => {
+      executeMutation.mutate(data as Record<string, unknown>);
+    },
+    (errors) => {
+      const firstKey = Object.keys(errors)[0];
+      const firstMsg = firstKey
+        ? (errors[firstKey] as { message?: string })?.message ?? "Pflichtfeld fehlt"
+        : "Bitte Eingaben prüfen";
+      toast({
+        title: "Eingaben unvollständig",
+        description: firstMsg,
+        variant: "error",
+      });
+      if (firstKey) {
+        const el = document.querySelector(`[name="${firstKey}"]`);
+        if (el && "scrollIntoView" in el) {
+          (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "center" });
+          (el as HTMLElement).focus?.();
+        }
+      }
+    }
+  );
 
   if (isLoading) {
     return (

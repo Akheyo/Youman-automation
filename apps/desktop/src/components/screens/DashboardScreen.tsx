@@ -189,9 +189,33 @@ function ActionForm({ action, isOnline, onDone }: ActionFormProps) {
     },
   });
 
-  const onSubmit = methods.handleSubmit((data) => {
-    executeMutation.mutate(data as Record<string, unknown>);
-  });
+  const onSubmit = methods.handleSubmit(
+    (data) => {
+      executeMutation.mutate(data as Record<string, unknown>);
+    },
+    (errors) => {
+      // Without this branch, react-hook-form silently swallows invalid submits
+      // and the user sees no feedback at all — the most-reported "nothing
+      // happens when I click submit" symptom. Surface it as a toast and
+      // scroll to the first invalid field.
+      const firstKey = Object.keys(errors)[0];
+      const firstMsg = firstKey
+        ? (errors[firstKey] as { message?: string })?.message ?? "Pflichtfeld fehlt"
+        : "Bitte Eingaben prüfen";
+      toast({
+        title: "Eingaben unvollständig",
+        description: firstMsg,
+        variant: "error",
+      });
+      if (firstKey) {
+        const el = document.querySelector(`[name="${firstKey}"]`);
+        if (el && "scrollIntoView" in el) {
+          (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "center" });
+          (el as HTMLElement).focus?.();
+        }
+      }
+    }
+  );
 
   return (
     <div className="space-y-5">
