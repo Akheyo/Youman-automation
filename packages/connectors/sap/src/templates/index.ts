@@ -221,6 +221,56 @@ export const CONNECTOR_TEMPLATES: ConnectorTemplate[] = [
   },
 
   {
+    id: "plentymarkets",
+    name: "Plentymarkets",
+    description:
+      "Plentymarkets E-Commerce-ERP via REST-Login. Tokens werden automatisch erneuert.",
+    helpUrl:
+      "https://developers.plentymarkets.com/en-gb/plentymarkets-rest-api/index.html",
+    credentialFields: [
+      {
+        key: "username",
+        label: "REST-Benutzer",
+        placeholder: "rest-user",
+        helpText:
+          "Plentymarkets → System → Einstellungen → Benutzer → REST-Benutzer anlegen mit den nötigen Rechten",
+      },
+      {
+        key: "password",
+        label: "REST-Passwort",
+        placeholder: "•••••••",
+        helpText: "Wird beim ersten Request gegen /rest/login getauscht und automatisch erneuert",
+      },
+    ],
+    defaultConfig: {
+      // The user's actual host: <subdomain>.plentymarkets-cloud-de.com or
+      // <subdomain>.plentymarkets-cloud-ie.com depending on the data centre.
+      baseUrl: "https://your-subdomain.plentymarkets-cloud-de.com",
+      auth: {
+        type: "login",
+        loginPath: "/rest/login",
+        refreshPath: "/rest/login/refresh",
+        username: "",
+        password: "",
+        accessTokenField: "accessToken",
+        refreshTokenField: "refreshToken",
+        expiresInField: "expiresIn",
+      },
+      searchParam: "with",
+      endpoints: {
+        customers:    "/rest/accounts/contacts",
+        products:     "/rest/items",
+        quotes:       "/rest/orders",
+        tasks:        "/rest/tickets",
+        appointments: "/rest/calendars/events",
+        notes:        "/rest/comments",
+      },
+    },
+    notes:
+      "Plentymarkets-Subdomain in Basis-URL ersetzen (z.B. 'meinshop.plentymarkets-cloud-de.com'). REST-Benutzer braucht Rechte für Contact- und Item-Module. Tokens leben 24h, werden automatisch erneuert.",
+  },
+
+  {
     id: "weclapp",
     name: "weclapp",
     description: "weclapp Cloud-ERP (Deutschland) via API Token.",

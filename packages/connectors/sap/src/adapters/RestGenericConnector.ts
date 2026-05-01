@@ -1,20 +1,26 @@
-import axios, { type AxiosInstance } from "axios";
+import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from "axios";
 import type {
   SearchRequest, SearchResult, Customer, Product,
   PriceInfo, StockInfo, QuoteDraft, FollowUpTask, Appointment, Note, Address,
 } from "@youman/shared";
 import type { IErpConnector, ConnectorHealthResult, QuoteResult, OrderResult, ReservationResult } from "./IErpConnector";
+import { TokenManager, type AutoRefreshAuth } from "../auth/TokenManager";
+
+export type AuthConfig =
+  | { type: "none" }
+  | { type: "basic"; username: string; password: string }
+  | { type: "bearer"; token: string }
+  | { type: "apikey"; apiKeyHeader?: string; apiKeyValue: string }
+  | AutoRefreshAuth;
 
 export interface RestGenericConfig {
   baseUrl: string;
-  auth?: {
-    type: "none" | "basic" | "bearer" | "apikey";
-    username?: string;
-    password?: string;
-    token?: string;
-    apiKeyHeader?: string;
-    apiKeyValue?: string;
-  };
+  /**
+   * Authentication. Static modes (basic/bearer/apikey) attach a fixed value
+   * per request. Dynamic modes (oauth2_*, login) are managed by TokenManager
+   * with caching + auto-refresh on 401.
+   */
+  auth?: AuthConfig;
   searchParam?: string;
   endpoints?: {
     customers?: string;
@@ -50,6 +56,14 @@ function str(v: unknown, fallback = ""): string {
   return v !== undefined && v !== null ? String(v) : fallback;
 }
 
+function isAutoRefreshAuth(auth: AuthConfig | undefined): auth is AutoRefreshAuth {
+  return (
+    auth?.type === "oauth2_client_credentials" ||
+    auth?.type === "oauth2_refresh" ||
+    auth?.type === "login"
+  );
+}
+
 export class RestGenericConnector implements IErpConnector {
   readonly connectorType = "REST_GENERIC";
   readonly tenantId: string;
@@ -58,6 +72,7 @@ export class RestGenericConnector implements IErpConnector {
   private readonly cfg: RestGenericConfig;
   private readonly ep: Required<NonNullable<RestGenericConfig["endpoints"]>>;
   private readonly searchParam: string;
+  private readonly tokenManager: TokenManager | null;
 
   constructor(tenantId: string, config: RestGenericConfig) {
     this.tenantId = tenantId;
@@ -79,6 +94,7 @@ export class RestGenericConnector implements IErpConnector {
     };
 
     const auth = config.auth;
+    // Static auth — fixed value per request, no token management needed.
     if (auth?.type === "bearer" && auth.token) {
       headers["Authorization"] = `Bearer ${auth.token}`;
     } else if (auth?.type === "apikey" && auth.apiKeyValue) {
@@ -89,10 +105,48 @@ export class RestGenericConnector implements IErpConnector {
       baseURL: config.baseUrl,
       timeout: 30_000,
       headers,
-      ...(auth?.type === "basic" && auth.username
+      ...(auth?.type === "basic"
         ? { auth: { username: auth.username, password: auth.password ?? "" } }
         : {}),
     });
+
+    // Dynamic auth — TokenManager handles acquisition + auto-refresh on 401.
+    this.tokenManager = isAutoRefreshAuth(auth)
+      ? new TokenManager(auth, config.baseUrl)
+      : null;
+
+    if (this.tokenManager) {
+      this.installAuthInterceptors(this.tokenManager);
+    }
+  }
+
+  /** Attach a Bearer token before each request, refresh + retry once on 401. */
+  private installAuthInterceptors(tm: TokenManager): void {
+    this.http.interceptors.request.use(async (req: InternalAxiosRequestConfig) => {
+      const token = await tm.getAccessToken();
+      req.headers = req.headers ?? {};
+      (req.headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+      return req;
+    });
+
+    this.http.interceptors.response.use(
+      (res) => res,
+      async (err) => {
+        const original = err?.config as InternalAxiosRequestConfig & { _retried?: boolean };
+        if (err?.response?.status === 401 && original && !original._retried) {
+          original._retried = true;
+          try {
+            const fresh = await tm.forceRefresh();
+            original.headers = original.headers ?? {};
+            (original.headers as Record<string, string>)["Authorization"] = `Bearer ${fresh}`;
+            return this.http(original);
+          } catch {
+            // fall through to original error
+          }
+        }
+        throw err;
+      },
+    );
   }
 
   async healthCheck(): Promise<ConnectorHealthResult> {

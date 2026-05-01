@@ -162,7 +162,14 @@ function BrandingSettings() {
 }
 
 type ConnectorType = "MOCK" | "SAP_ODATA" | "REST_GENERIC";
-type AuthType = "none" | "basic" | "bearer" | "apikey";
+type AuthType =
+  | "none"
+  | "basic"
+  | "bearer"
+  | "apikey"
+  | "login"
+  | "oauth2_client_credentials"
+  | "oauth2_refresh";
 
 interface ConnectorFormState {
   connectorType: ConnectorType;
@@ -175,6 +182,19 @@ interface ConnectorFormState {
   token: string;
   apiKeyHeader: string;
   apiKeyValue: string;
+  // login auth (Plentymarkets-style)
+  loginPath: string;
+  refreshPath: string;
+  accessTokenField: string;
+  refreshTokenField: string;
+  expiresInField: string;
+  // oauth2
+  tokenUrl: string;
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+  scope: string;
+  // endpoints
   epCustomers: string;
   epProducts: string;
   epQuotes: string;
@@ -188,6 +208,9 @@ const DEFAULTS: ConnectorFormState = {
   connectorType: "MOCK", displayName: "ERP Connector", enabled: true,
   baseUrl: "", authType: "none", username: "", password: "", token: "",
   apiKeyHeader: "X-API-Key", apiKeyValue: "",
+  loginPath: "/login", refreshPath: "", accessTokenField: "accessToken",
+  refreshTokenField: "refreshToken", expiresInField: "expiresIn",
+  tokenUrl: "", clientId: "", clientSecret: "", refreshToken: "", scope: "",
   epCustomers: "/customers", epProducts: "/products", epQuotes: "/quotes",
   epTasks: "/tasks", epAppointments: "/appointments", epNotes: "/notes",
   searchParam: "q",
@@ -206,6 +229,47 @@ interface Template {
     endpoints?: Record<string, string>;
   };
   notes?: string;
+}
+
+function buildAuthPayload(f: ConnectorFormState): Record<string, unknown> {
+  switch (f.authType) {
+    case "none":
+      return { type: "none" };
+    case "basic":
+      return { type: "basic", username: f.username, password: f.password };
+    case "bearer":
+      return { type: "bearer", token: f.token };
+    case "apikey":
+      return { type: "apikey", apiKeyHeader: f.apiKeyHeader, apiKeyValue: f.apiKeyValue };
+    case "login":
+      return {
+        type: "login",
+        loginPath: f.loginPath,
+        username: f.username,
+        password: f.password,
+        ...(f.refreshPath ? { refreshPath: f.refreshPath } : {}),
+        accessTokenField: f.accessTokenField || "accessToken",
+        refreshTokenField: f.refreshTokenField || undefined,
+        expiresInField: f.expiresInField || "expiresIn",
+      };
+    case "oauth2_client_credentials":
+      return {
+        type: "oauth2_client_credentials",
+        tokenUrl: f.tokenUrl,
+        clientId: f.clientId,
+        clientSecret: f.clientSecret,
+        ...(f.scope ? { scope: f.scope } : {}),
+      };
+    case "oauth2_refresh":
+      return {
+        type: "oauth2_refresh",
+        tokenUrl: f.tokenUrl,
+        ...(f.clientId ? { clientId: f.clientId } : {}),
+        ...(f.clientSecret ? { clientSecret: f.clientSecret } : {}),
+        refreshToken: f.refreshToken,
+        ...(f.token ? { accessToken: f.token } : {}),
+      };
+  }
 }
 
 function ConnectorSettings() {
@@ -232,14 +296,23 @@ function ConnectorSettings() {
     if (!t) return;
     setAppliedTemplate(t);
     const cfg = t.defaultConfig;
-    const auth = (cfg.auth ?? {}) as { type?: string; apiKeyHeader?: string };
+    const auth = (cfg.auth ?? {}) as Record<string, unknown>;
     setForm({
       ...form,
       connectorType: "REST_GENERIC",
       displayName: t.name,
       baseUrl: cfg.baseUrl,
-      authType: (auth.type as AuthType) ?? "none",
-      apiKeyHeader: auth.apiKeyHeader ?? form.apiKeyHeader,
+      authType: (auth["type"] as AuthType) ?? "none",
+      apiKeyHeader: String(auth["apiKeyHeader"] ?? form.apiKeyHeader),
+      // login auth fields from template
+      loginPath: String(auth["loginPath"] ?? form.loginPath),
+      refreshPath: String(auth["refreshPath"] ?? ""),
+      accessTokenField: String(auth["accessTokenField"] ?? "accessToken"),
+      refreshTokenField: String(auth["refreshTokenField"] ?? "refreshToken"),
+      expiresInField: String(auth["expiresInField"] ?? "expiresIn"),
+      // oauth2 url is template-specific, but client_id/secret come from user
+      tokenUrl: String(auth["tokenUrl"] ?? form.tokenUrl),
+      scope: String(auth["scope"] ?? form.scope),
       searchParam: cfg.searchParam ?? "q",
       epCustomers:    cfg.endpoints?.["customers"]    ?? form.epCustomers,
       epProducts:     cfg.endpoints?.["products"]     ?? form.epProducts,
@@ -247,7 +320,7 @@ function ConnectorSettings() {
       epTasks:        cfg.endpoints?.["tasks"]        ?? form.epTasks,
       epAppointments: cfg.endpoints?.["appointments"] ?? form.epAppointments,
       epNotes:        cfg.endpoints?.["notes"]        ?? form.epNotes,
-      // Don't wipe existing credentials — admin may be re-applying the same template
+      // Credentials stay — admin may be re-applying the same template
     });
     setTestResult(null);
   };
@@ -268,9 +341,19 @@ function ConnectorSettings() {
         authType: (auth?.["type"] as AuthType) ?? "none",
         username: String(auth?.["username"] ?? ""),
         password: String(auth?.["password"] ?? ""),
-        token: String(auth?.["token"] ?? ""),
+        token: String(auth?.["token"] ?? auth?.["accessToken"] ?? ""),
         apiKeyHeader: String(auth?.["apiKeyHeader"] ?? "X-API-Key"),
         apiKeyValue: String(auth?.["apiKeyValue"] ?? ""),
+        loginPath: String(auth?.["loginPath"] ?? "/login"),
+        refreshPath: String(auth?.["refreshPath"] ?? ""),
+        accessTokenField: String(auth?.["accessTokenField"] ?? "accessToken"),
+        refreshTokenField: String(auth?.["refreshTokenField"] ?? "refreshToken"),
+        expiresInField: String(auth?.["expiresInField"] ?? "expiresIn"),
+        tokenUrl: String(auth?.["tokenUrl"] ?? ""),
+        clientId: String(auth?.["clientId"] ?? ""),
+        clientSecret: String(auth?.["clientSecret"] ?? ""),
+        refreshToken: String(auth?.["refreshToken"] ?? ""),
+        scope: String(auth?.["scope"] ?? ""),
         epCustomers: String(endpoints?.["customers"] ?? "/customers"),
         epProducts: String(endpoints?.["products"] ?? "/products"),
         epQuotes: String(endpoints?.["quotes"] ?? "/quotes"),
@@ -292,10 +375,7 @@ function ConnectorSettings() {
       config: f.connectorType === "MOCK" ? {} : {
         baseUrl: f.baseUrl,
         searchParam: f.searchParam || "q",
-        auth: f.authType === "none" ? { type: "none" } :
-              f.authType === "basic" ? { type: "basic", username: f.username, password: f.password } :
-              f.authType === "bearer" ? { type: "bearer", token: f.token } :
-              { type: "apikey", apiKeyHeader: f.apiKeyHeader, apiKeyValue: f.apiKeyValue },
+        auth: buildAuthPayload(f),
         endpoints: {
           customers: f.epCustomers, products: f.epProducts, quotes: f.epQuotes,
           tasks: f.epTasks, appointments: f.epAppointments, notes: f.epNotes,
@@ -422,8 +502,11 @@ function ConnectorSettings() {
                 >
                   <option value="none">Keine</option>
                   <option value="basic">Basic Auth</option>
-                  <option value="bearer">Bearer Token</option>
+                  <option value="bearer">Bearer Token (statisch)</option>
                   <option value="apikey">API Key</option>
+                  <option value="login">Login (User+Passwort, Auto-Refresh)</option>
+                  <option value="oauth2_client_credentials">OAuth2 Client Credentials</option>
+                  <option value="oauth2_refresh">OAuth2 Refresh Token</option>
                 </select>
               </div>
 
@@ -454,6 +537,65 @@ function ConnectorSettings() {
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-muted-foreground">API Key</label>
                     <Input type="password" value={form.apiKeyValue} onChange={(e) => set("apiKeyValue", e.target.value)} autoComplete="off" />
+                  </div>
+                </div>
+              )}
+              {form.authType === "login" && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">Benutzer</label>
+                      <Input value={form.username} onChange={(e) => set("username", e.target.value)} autoComplete="off" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground">Passwort</label>
+                      <Input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} autoComplete="new-password" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Login-Endpoint: <code className="text-foreground">{form.loginPath}</code>
+                    {form.refreshPath && <> · Refresh: <code className="text-foreground">{form.refreshPath}</code></>}
+                    <br />Token wird automatisch beim ersten Request abgeholt und vor Ablauf erneuert.
+                  </p>
+                </div>
+              )}
+              {form.authType === "oauth2_client_credentials" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5 col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground">Token-URL</label>
+                    <Input value={form.tokenUrl} onChange={(e) => set("tokenUrl", e.target.value)} placeholder="https://login.example.com/oauth/token" className="font-mono text-xs" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Client ID</label>
+                    <Input value={form.clientId} onChange={(e) => set("clientId", e.target.value)} autoComplete="off" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Client Secret</label>
+                    <Input type="password" value={form.clientSecret} onChange={(e) => set("clientSecret", e.target.value)} autoComplete="off" />
+                  </div>
+                  <div className="space-y-1.5 col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground">Scope (optional)</label>
+                    <Input value={form.scope} onChange={(e) => set("scope", e.target.value)} placeholder="api offline_access" />
+                  </div>
+                </div>
+              )}
+              {form.authType === "oauth2_refresh" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5 col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground">Token-URL</label>
+                    <Input value={form.tokenUrl} onChange={(e) => set("tokenUrl", e.target.value)} placeholder="https://api.example.com/oauth/token" className="font-mono text-xs" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Client ID (optional)</label>
+                    <Input value={form.clientId} onChange={(e) => set("clientId", e.target.value)} autoComplete="off" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Client Secret (optional)</label>
+                    <Input type="password" value={form.clientSecret} onChange={(e) => set("clientSecret", e.target.value)} autoComplete="off" />
+                  </div>
+                  <div className="space-y-1.5 col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground">Refresh Token</label>
+                    <Input type="password" value={form.refreshToken} onChange={(e) => set("refreshToken", e.target.value)} className="font-mono text-xs" autoComplete="off" />
                   </div>
                 </div>
               )}
