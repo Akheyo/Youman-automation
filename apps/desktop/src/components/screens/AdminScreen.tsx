@@ -193,11 +193,64 @@ const DEFAULTS: ConnectorFormState = {
   searchParam: "q",
 };
 
+interface Template {
+  id: string;
+  name: string;
+  description: string;
+  helpUrl: string;
+  credentialFields: Array<{ key: string; label: string; placeholder?: string; helpText?: string }>;
+  defaultConfig: {
+    baseUrl: string;
+    auth?: { type: string; apiKeyHeader?: string };
+    searchParam?: string;
+    endpoints?: Record<string, string>;
+  };
+  notes?: string;
+}
+
 function ConnectorSettings() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ConnectorFormState | null>(null);
   const [testResult, setTestResult] = useState<{ healthy: boolean; message?: string; latencyMs?: number } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [appliedTemplate, setAppliedTemplate] = useState<Template | null>(null);
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ["connector-templates"],
+    queryFn: async () => {
+      const res = await apiClient.get<Template[]>("/connectors/templates");
+      return res.data;
+    },
+  });
+
+  const applyTemplate = (templateId: string) => {
+    if (!form || !templateId) {
+      setAppliedTemplate(null);
+      return;
+    }
+    const t = templates.find((x) => x.id === templateId);
+    if (!t) return;
+    setAppliedTemplate(t);
+    const cfg = t.defaultConfig;
+    const auth = (cfg.auth ?? {}) as { type?: string; apiKeyHeader?: string };
+    setForm({
+      ...form,
+      connectorType: "REST_GENERIC",
+      displayName: t.name,
+      baseUrl: cfg.baseUrl,
+      authType: (auth.type as AuthType) ?? "none",
+      apiKeyHeader: auth.apiKeyHeader ?? form.apiKeyHeader,
+      searchParam: cfg.searchParam ?? "q",
+      epCustomers:    cfg.endpoints?.["customers"]    ?? form.epCustomers,
+      epProducts:     cfg.endpoints?.["products"]     ?? form.epProducts,
+      epQuotes:       cfg.endpoints?.["quotes"]       ?? form.epQuotes,
+      epTasks:        cfg.endpoints?.["tasks"]        ?? form.epTasks,
+      epAppointments: cfg.endpoints?.["appointments"] ?? form.epAppointments,
+      epNotes:        cfg.endpoints?.["notes"]        ?? form.epNotes,
+      // Don't wipe existing credentials — admin may be re-applying the same template
+    });
+    setTestResult(null);
+  };
 
   const { isLoading } = useQuery({
     queryKey: ["connector-config"],
@@ -275,6 +328,56 @@ function ConnectorSettings() {
       <h2 className="text-base font-semibold text-foreground">ERP-Connector</h2>
 
       <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+        {/* Template picker */}
+        {templates.length > 0 && (
+          <div className="rounded-md bg-primary/5 border border-primary/20 p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <FlaskConical className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-foreground">System wählen (Vorlage)</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Wählen Sie Ihr CRM/ERP — Endpunkte werden automatisch gesetzt, Sie tragen nur noch die Zugangsdaten ein.
+            </p>
+            <select
+              defaultValue=""
+              onChange={(e) => applyTemplate(e.target.value)}
+              className="w-full h-9 rounded-md border border-input bg-input px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">— Vorlage wählen —</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+            {appliedTemplate && (
+              <div className="text-xs space-y-1.5 pt-1">
+                <p className="text-foreground">{appliedTemplate.description}</p>
+                {appliedTemplate.credentialFields.map((f) => (
+                  <p key={f.key} className="text-muted-foreground">
+                    <span className="font-medium">{f.label}:</span> {f.helpText}
+                  </p>
+                ))}
+                {appliedTemplate.helpUrl && (
+                  <a
+                    href={appliedTemplate.helpUrl}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      void window.adept?.app.openExternal(appliedTemplate.helpUrl);
+                    }}
+                    className="text-primary underline-offset-2 hover:underline inline-block"
+                  >
+                    API-Dokumentation öffnen →
+                  </a>
+                )}
+                {appliedTemplate.notes && (
+                  <p className="text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 mt-1">
+                    Hinweis: {appliedTemplate.notes}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Type + Name */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
