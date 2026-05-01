@@ -205,29 +205,19 @@ function extractFromLoginResponse(data: unknown, a: LoginTokenAuth): CachedToken
 }
 
 /**
- * Base64-encode an ASCII string. Avoids depending on Node's `Buffer` global so
- * the package's TS declaration build doesn't need `@types/node`. OAuth2 client
- * credentials are by spec ASCII, so this is sufficient.
+ * Base64-encode a string. Both target runtimes (Node and Electron renderer)
+ * always provide either Buffer or btoa, so we don't need a pure-JS fallback.
+ * Avoids referencing `Buffer` directly so the dts build doesn't need
+ * `@types/node`.
  */
 function base64Encode(input: string): string {
-  // Prefer Node's Buffer when available — handles UTF-8 correctly in the
-  // unlikely case of non-ASCII credentials.
-  const g = globalThis as { Buffer?: { from(s: string, enc?: string): { toString(enc: string): string } }; btoa?: (s: string) => string };
+  const g = globalThis as {
+    Buffer?: { from(s: string, enc?: string): { toString(enc: string): string } };
+    btoa?: (s: string) => string;
+  };
   if (g.Buffer) return g.Buffer.from(input, "utf8").toString("base64");
   if (g.btoa) return g.btoa(input);
-  // Pure-JS fallback (ASCII only)
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-  let out = "";
-  for (let i = 0; i < input.length; i += 3) {
-    const a = input.charCodeAt(i) & 0xff;
-    const b = i + 1 < input.length ? input.charCodeAt(i + 1) & 0xff : 0;
-    const c = i + 2 < input.length ? input.charCodeAt(i + 2) & 0xff : 0;
-    const t = (a << 16) | (b << 8) | c;
-    out += chars[(t >> 18) & 0x3f] + chars[(t >> 12) & 0x3f];
-    out += i + 1 < input.length ? chars[(t >> 6) & 0x3f] : "=";
-    out += i + 2 < input.length ? chars[t & 0x3f] : "=";
-  }
-  return out;
+  throw new Error("Base64 encoder unavailable in this runtime");
 }
 
 function getPath(obj: Record<string, unknown>, path: string): unknown {
