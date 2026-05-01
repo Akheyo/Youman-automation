@@ -32,6 +32,45 @@ export interface RestGenericConfig {
   };
 }
 
+/**
+ * Build a diagnostic error message for connection-test failures. Includes the
+ * resolved URL, HTTP status if any, and a hint when the failure mode points at
+ * a wrong hostname (DNS / TLS-handshake errors).
+ */
+function formatHealthError(err: unknown, baseUrl: string): string {
+  const e = err as {
+    message?: string;
+    code?: string;
+    response?: { status?: number; statusText?: string; data?: unknown };
+    config?: { url?: string; baseURL?: string; method?: string };
+  };
+  const method = e?.config?.method?.toUpperCase() ?? "GET";
+  const path = e?.config?.url ?? "";
+  const url = path.startsWith("http") ? path : `${e?.config?.baseURL ?? baseUrl}${path}`;
+
+  if (e?.response?.status) {
+    const status = e.response.status;
+    const body = typeof e.response.data === "string"
+      ? e.response.data.slice(0, 200)
+      : JSON.stringify(e.response.data ?? {}).slice(0, 200);
+    return `HTTP ${status} ${e.response.statusText ?? ""} bei ${method} ${url}${body ? ` — ${body}` : ""}`;
+  }
+
+  const code = e?.code ?? "";
+  const hint =
+    code === "ENOTFOUND" || code === "EAI_AGAIN"
+      ? " — Hostname existiert nicht. Bitte prüfe die Basis-URL."
+      : code === "ECONNREFUSED"
+        ? " — Server lehnt Verbindung ab. Falscher Port oder Service offline."
+        : code === "ETIMEDOUT" || code === "ECONNABORTED"
+          ? " — Verbindungs-Timeout. Firewall oder erreichbarer Host?"
+          : /TLS|certificate|socket disconnect/i.test(e?.message ?? "")
+            ? " — TLS-Handshake fehlgeschlagen. Host serviert evtl. kein HTTPS unter dieser Domain, oder Firewall blockt."
+            : "";
+
+  return `${e?.message ?? "Unbekannter Fehler"} (${method} ${url})${hint}`;
+}
+
 // Normalize any common REST response shape to an array.
 function toArray(data: unknown): Record<string, unknown>[] {
   if (Array.isArray(data)) return data as Record<string, unknown>[];
@@ -76,7 +115,12 @@ export class RestGenericConnector implements IErpConnector {
 
   constructor(tenantId: string, config: RestGenericConfig) {
     this.tenantId = tenantId;
-    this.cfg = config;
+    // Defensive: strip trailing slash and a trailing "/rest" segment so users
+    // who paste "https://shop.example.com/rest/" don't end up with /rest/rest/.
+    const cleanedBase = config.baseUrl
+      .replace(/\/+$/, "")
+      .replace(/\/rest$/i, "");
+    this.cfg = { ...config, baseUrl: cleanedBase };
     this.searchParam = config.searchParam ?? "q";
 
     this.ep = {
@@ -102,7 +146,7 @@ export class RestGenericConnector implements IErpConnector {
     }
 
     this.http = axios.create({
-      baseURL: config.baseUrl,
+      baseURL: cleanedBase,
       timeout: 30_000,
       headers,
       ...(auth?.type === "basic"
@@ -112,7 +156,7 @@ export class RestGenericConnector implements IErpConnector {
 
     // Dynamic auth — TokenManager handles acquisition + auto-refresh on 401.
     this.tokenManager = isAutoRefreshAuth(auth)
-      ? new TokenManager(auth, config.baseUrl)
+      ? new TokenManager(auth, cleanedBase)
       : null;
 
     if (this.tokenManager) {
@@ -152,13 +196,19 @@ export class RestGenericConnector implements IErpConnector {
   async healthCheck(): Promise<ConnectorHealthResult> {
     const start = Date.now();
     try {
+      // For dynamic auth (login/oauth), test the auth endpoint first — this
+      // gives a clear "auth failed" vs "host unreachable" signal before we
+      // attempt a data query that might fail for unrelated reasons.
+      if (this.tokenManager) {
+        await this.tokenManager.forceRefresh();
+      }
       await this.http.get(this.ep.customers, { params: { [this.searchParam]: "test", limit: 1 } });
       return { healthy: true, latencyMs: Date.now() - start, message: "REST API erreichbar" };
     } catch (err) {
       return {
         healthy: false,
         latencyMs: Date.now() - start,
-        message: err instanceof Error ? err.message : String(err),
+        message: formatHealthError(err, this.cfg.baseUrl),
       };
     }
   }
