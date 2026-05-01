@@ -50,7 +50,7 @@ export const CONNECTOR_TEMPLATES: ConnectorTemplate[] = [
     ],
     defaultConfig: {
       baseUrl: "https://api.hubapi.com",
-      auth: { type: "bearer" },
+      auth: { type: "bearer", token: "" },
       searchParam: "query",
       endpoints: {
         customers:    "/crm/v3/objects/contacts",
@@ -81,7 +81,7 @@ export const CONNECTOR_TEMPLATES: ConnectorTemplate[] = [
     ],
     defaultConfig: {
       baseUrl: "https://your-instance.my.salesforce.com/services/data/v59.0",
-      auth: { type: "bearer" },
+      auth: { type: "bearer", token: "" },
       searchParam: "q",
       endpoints: {
         customers:    "/sobjects/Account",
@@ -111,7 +111,7 @@ export const CONNECTOR_TEMPLATES: ConnectorTemplate[] = [
     ],
     defaultConfig: {
       baseUrl: "https://api.pipedrive.com/v1",
-      auth: { type: "apikey", apiKeyHeader: "x-api-token" },
+      auth: { type: "apikey", apiKeyHeader: "x-api-token", apiKeyValue: "" },
       searchParam: "term",
       endpoints: {
         customers:    "/persons",
@@ -141,7 +141,7 @@ export const CONNECTOR_TEMPLATES: ConnectorTemplate[] = [
     ],
     defaultConfig: {
       baseUrl: "https://my.sevdesk.de/api/v1",
-      auth: { type: "apikey", apiKeyHeader: "Authorization" },
+      auth: { type: "apikey", apiKeyHeader: "Authorization", apiKeyValue: "" },
       searchParam: "name",
       endpoints: {
         customers:    "/Contact",
@@ -171,7 +171,7 @@ export const CONNECTOR_TEMPLATES: ConnectorTemplate[] = [
     ],
     defaultConfig: {
       baseUrl: "https://api.lexoffice.io/v1",
-      auth: { type: "bearer" },
+      auth: { type: "bearer", token: "" },
       searchParam: "name",
       endpoints: {
         customers:    "/contacts",
@@ -205,7 +205,7 @@ export const CONNECTOR_TEMPLATES: ConnectorTemplate[] = [
       // Store the prefix here, the token is appended via header (suboptimal —
       // for now the user needs to bake it into the baseUrl too).
       baseUrl: "https://your-portal.bitrix24.de/rest",
-      auth: { type: "bearer" },
+      auth: { type: "bearer", token: "" },
       searchParam: "FILTER[%]",
       endpoints: {
         customers:    "/crm.contact.list",
@@ -285,7 +285,7 @@ export const CONNECTOR_TEMPLATES: ConnectorTemplate[] = [
     ],
     defaultConfig: {
       baseUrl: "https://your-domain.weclapp.com/webapp/api/v1",
-      auth: { type: "apikey", apiKeyHeader: "AuthenticationToken" },
+      auth: { type: "apikey", apiKeyHeader: "AuthenticationToken", apiKeyValue: "" },
       searchParam: "filter",
       endpoints: {
         customers:    "/customer",
