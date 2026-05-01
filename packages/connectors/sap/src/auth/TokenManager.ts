@@ -121,8 +121,7 @@ export class TokenManager {
     const res = await this.http.post(a.tokenUrl, params.toString(), {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        Authorization:
-          "Basic " + Buffer.from(`${a.clientId}:${a.clientSecret}`).toString("base64"),
+        Authorization: "Basic " + base64Encode(`${a.clientId}:${a.clientSecret}`),
       },
     });
     return parseTokenResponse(res.data);
@@ -203,6 +202,32 @@ function extractFromLoginResponse(data: unknown, a: LoginTokenAuth): CachedToken
     refreshToken: typeof refresh === "string" ? refresh : undefined,
     expiresAt: Date.now() + expires * 1000,
   };
+}
+
+/**
+ * Base64-encode an ASCII string. Avoids depending on Node's `Buffer` global so
+ * the package's TS declaration build doesn't need `@types/node`. OAuth2 client
+ * credentials are by spec ASCII, so this is sufficient.
+ */
+function base64Encode(input: string): string {
+  // Prefer Node's Buffer when available — handles UTF-8 correctly in the
+  // unlikely case of non-ASCII credentials.
+  const g = globalThis as { Buffer?: { from(s: string, enc?: string): { toString(enc: string): string } }; btoa?: (s: string) => string };
+  if (g.Buffer) return g.Buffer.from(input, "utf8").toString("base64");
+  if (g.btoa) return g.btoa(input);
+  // Pure-JS fallback (ASCII only)
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let out = "";
+  for (let i = 0; i < input.length; i += 3) {
+    const a = input.charCodeAt(i) & 0xff;
+    const b = i + 1 < input.length ? input.charCodeAt(i + 1) & 0xff : 0;
+    const c = i + 2 < input.length ? input.charCodeAt(i + 2) & 0xff : 0;
+    const t = (a << 16) | (b << 8) | c;
+    out += chars[(t >> 18) & 0x3f] + chars[(t >> 12) & 0x3f];
+    out += i + 1 < input.length ? chars[(t >> 6) & 0x3f] : "=";
+    out += i + 2 < input.length ? chars[t & 0x3f] : "=";
+  }
+  return out;
 }
 
 function getPath(obj: Record<string, unknown>, path: string): unknown {
