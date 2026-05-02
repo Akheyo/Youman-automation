@@ -1,0 +1,322 @@
+<!--
+  =====================================================================
+  PLENTYMARKETS CMS SNIPPET – Plenty35 Landingpage
+  ---------------------------------------------------------------------
+  EINBAU (funktioniert mit Ceres UND Plenty Shop):
+
+  1. Backend öffnen: CMS → Inhalts-Kategorien (Plenty Shop: "Content")
+  2. Neue Seite anlegen, z. B. URL "/agentur" oder "/plentymarkets"
+  3. Im Editor auf "Quelltext" / "<>" / "Source" umschalten
+  4. Den kompletten Inhalt UNTERHALB dieses Kommentars einfügen
+     (also alles ab <div class="p35-page"> bis </script> inklusive)
+  5. Speichern, Seite veröffentlichen
+
+  HINWEIS: Header und Footer kommen aus dem Shop-Theme – dieser Snippet
+  liefert NUR den Seitenkörper. Alles ist mit ".p35-page" gescopet,
+  damit es keine Konflikte mit Shop-Styles gibt.
+  =====================================================================
+-->
+
+<div class="p35-page">
+
+<style>
+/* ===== SCOPED STYLES (alles unter .p35-page) ===== */
+.p35-page,.p35-page *,.p35-page *::before,.p35-page *::after{box-sizing:border-box}
+.p35-page{font-family:'Lato','Helvetica Neue',Arial,sans-serif;color:#e8e8e8;line-height:1.6;font-size:16px;background:#1a1c20}
+.p35-page h1,.p35-page h2,.p35-page h3{font-family:'Orbitron','Montserrat',Arial,sans-serif;font-weight:700;letter-spacing:.02em;line-height:1.2;margin:0}
+.p35-page p{margin:0 0 14px}
+.p35-page a{color:inherit;text-decoration:none}
+.p35-page img{max-width:100%;display:block}
+
+.p35-page .p35-container{max-width:1300px;margin:0 auto;padding:0 30px}
+.p35-page .p35-uppercase{text-transform:uppercase}
+
+/* ===== HERO ===== */
+.p35-page .p35-hero{position:relative;min-height:560px;background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.p35-page .p35-hero-slide{position:absolute;inset:0;opacity:0;transition:opacity 1.2s ease;display:flex;align-items:center;justify-content:center}
+.p35-page .p35-hero-slide.is-active{opacity:1;position:relative}
+.p35-page .p35-hero-bg{position:absolute;inset:0}
+.p35-page .p35-hero-bg::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:1}
+.p35-page .p35-bg-1{background:linear-gradient(135deg,#0a0a0a 0%,#1a1a1a 50%,#3d3d3d 100%)}
+.p35-page .p35-bg-1::after{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 20% 30%,rgba(255,255,255,.08),transparent 40%),radial-gradient(circle at 80% 70%,rgba(255,255,255,.05),transparent 45%)}
+.p35-page .p35-bg-2{background:linear-gradient(135deg,#000 0%,#262626 50%,#4a4a4a 100%)}
+.p35-page .p35-bg-2::after{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 70% 30%,rgba(255,255,255,.06),transparent 45%),radial-gradient(circle at 30% 75%,rgba(0,0,0,.5),transparent 45%)}
+.p35-page .p35-hero-content{position:relative;z-index:2;max-width:760px;width:90%;background:rgba(36,38,42,.7);padding:50px 40px;text-align:center;border:1px solid rgba(255,255,255,.08);border-radius:6px;margin:60px 0}
+.p35-page .p35-hero-content h1{font-size:clamp(1.6rem,3.5vw,2.6rem);text-transform:uppercase;color:#fff;margin-bottom:18px}
+.p35-page .p35-hero-content p{color:#d8d8d8;margin-bottom:28px}
+
+.p35-page .p35-btn{display:inline-flex;align-items:center;gap:10px;padding:12px 30px;font-family:'Montserrat',Arial,sans-serif;font-weight:700;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;border-radius:5px;cursor:pointer;transition:all .25s;border:2px solid;text-decoration:none}
+.p35-page .p35-btn-outline-white{border-color:#fff;color:#fff;background:transparent}
+.p35-page .p35-btn-outline-white:hover{background:#fff;color:#1a1a1a}
+.p35-page .p35-btn-white{background:#fff;color:#1a1a1a;border-color:#fff}
+.p35-page .p35-btn-white:hover{background:transparent;color:#fff}
+.p35-page .p35-btn-secondary{background:#3d3d3d;color:#fff;border-color:#3d3d3d}
+.p35-page .p35-btn-secondary:hover{background:#1a1a1a;border-color:#1a1a1a}
+
+.p35-page .p35-hero-dots{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:5}
+.p35-page .p35-hero-dot{width:12px;height:12px;border-radius:50%;border:1.5px solid #fff;background:transparent;cursor:pointer;padding:0}
+.p35-page .p35-hero-dot.is-active{background:#fff}
+.p35-page .p35-hero-arrow{position:absolute;top:50%;transform:translateY(-50%);width:50px;height:50px;border-radius:50%;border:1.5px solid rgba(255,255,255,.6);color:#fff;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:5}
+.p35-page .p35-hero-arrow:hover{background:rgba(255,255,255,.15)}
+.p35-page .p35-hero-arrow.p35-prev{left:30px}
+.p35-page .p35-hero-arrow.p35-next{right:30px}
+@media(max-width:768px){.p35-page .p35-hero-arrow{display:none}}
+
+/* ===== LOGOS STRIP ===== */
+.p35-page .p35-logos{background:#282828;padding:30px 0;overflow:hidden}
+.p35-page .p35-logos-track{display:flex;gap:40px;animation:p35Scroll 30s linear infinite;width:max-content}
+@keyframes p35Scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.p35-page .p35-logo-item{flex:0 0 auto;width:140px;height:80px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;font-family:'Montserrat',Arial,sans-serif;font-weight:700;font-size:.95rem;color:#bdbdbd;letter-spacing:.05em}
+
+/* ===== SECTIONS ===== */
+.p35-page .p35-section{padding:80px 0}
+.p35-page .p35-section-cta{background:#dcdcdc;color:#1a1a1a;text-align:center}
+.p35-page .p35-section-cta h2{font-size:1.75rem;text-transform:uppercase;color:#1a1a1a;margin-bottom:20px}
+.p35-page .p35-section-cta p{max-width:780px;margin:0 auto 12px;color:#3a3a3a}
+.p35-page .p35-section-cta .p35-btn{margin-top:24px}
+
+/* ===== SPLIT ===== */
+.p35-page .p35-split{display:grid;grid-template-columns:1fr 1fr;background:#24262a;color:#e8e8e8}
+.p35-page .p35-split-img{position:relative;min-height:420px;background:#111}
+.p35-page .p35-split-text{padding:60px 40px;display:flex;align-items:center}
+.p35-page .p35-split-text-inner{max-width:520px}
+.p35-page .p35-split-text h2{font-size:1.75rem;text-transform:uppercase;color:#fff;margin:18px 0 22px}
+.p35-page .p35-split-text p{color:#cfcfcf}
+.p35-page .p35-divider{width:100px;height:4px;background:#dcdcdc;margin-bottom:6px}
+.p35-page .p35-split.p35-reverse .p35-split-img{order:2}
+@media(max-width:900px){.p35-page .p35-split{grid-template-columns:1fr}.p35-page .p35-split.p35-reverse .p35-split-img{order:0}.p35-page .p35-split-text{padding:50px 30px}}
+
+.p35-page .p35-gphoto{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.45);font-family:'Orbitron',Arial,sans-serif;font-size:.85rem;letter-spacing:.15em;text-transform:uppercase}
+.p35-page .p35-gphoto::after{content:"";position:absolute;inset:0;background-image:linear-gradient(45deg,transparent 48%,rgba(255,255,255,.06) 49%,rgba(255,255,255,.06) 51%,transparent 52%),linear-gradient(-45deg,transparent 48%,rgba(255,255,255,.04) 49%,rgba(255,255,255,.04) 51%,transparent 52%);background-size:60px 60px;opacity:.4}
+.p35-page .p35-gphoto.p35-v1{background:linear-gradient(135deg,#0a0a0a,#2a2a2a)}
+.p35-page .p35-gphoto.p35-v2{background:linear-gradient(135deg,#1a1a1a,#3d3d3d,#1a1a1a)}
+.p35-page .p35-gphoto-label{position:relative;z-index:2;background:rgba(0,0,0,.4);padding:8px 16px;border:1px solid rgba(255,255,255,.2);border-radius:4px}
+
+/* ===== REVIEWS ===== */
+.p35-page .p35-section-reviews{background:#dcdcdc;color:#1a1a1a;text-align:center}
+.p35-page .p35-section-reviews h2{font-size:1.75rem;color:#1a1a1a;text-transform:uppercase;margin-bottom:8px}
+.p35-page .p35-lead{margin-bottom:40px;color:#3a3a3a}
+.p35-page .p35-reviews-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;text-align:left;margin-top:30px}
+@media(max-width:900px){.p35-page .p35-reviews-grid{grid-template-columns:1fr}}
+.p35-page .p35-review-card{background:#fff;padding:26px;border-radius:6px;box-shadow:0 4px 18px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:14px}
+.p35-page .p35-review-head{display:flex;align-items:center;gap:12px}
+.p35-page .p35-review-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#3d3d3d,#000);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Montserrat',Arial,sans-serif}
+.p35-page .p35-review-name{font-weight:700;color:#1a1a1a;font-size:.95rem}
+.p35-page .p35-review-platform{font-size:.72rem;color:#777;letter-spacing:.05em}
+.p35-page .p35-review-stars{color:#fbbc05;letter-spacing:2px;font-size:1.05rem}
+.p35-page .p35-review-text{color:#444;font-size:.92rem;line-height:1.6;margin:0}
+
+/* ===== CONTACT ===== */
+.p35-page .p35-section-contact{position:relative;color:#fff;text-align:center;background:linear-gradient(135deg,rgba(0,0,0,.85),rgba(0,0,0,.85)),linear-gradient(135deg,#1a1a1a,#3d3d3d);padding:90px 0}
+.p35-page .p35-section-contact h2{font-size:2rem;text-transform:uppercase;color:#fff;margin:18px 0 50px}
+.p35-page .p35-contact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;max-width:1100px;margin:0 auto}
+@media(max-width:900px){.p35-page .p35-contact-grid{grid-template-columns:1fr}}
+.p35-page .p35-contact-card{display:flex;flex-direction:column;align-items:center;gap:14px;padding:30px 20px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);transition:all .25s;color:#fff}
+.p35-page .p35-contact-card:hover{background:rgba(255,255,255,.08);transform:translateY(-4px)}
+.p35-page .p35-contact-icon{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15)}
+.p35-page .p35-contact-icon svg{width:32px;height:32px;stroke:#fff;fill:none;stroke-width:1.5}
+.p35-page .p35-contact-card h3{font-size:1.05rem;color:#fff}
+.p35-page .p35-divider-white{width:100px;height:4px;background:#fff;margin:0 auto 20px}
+</style>
+
+<!-- ===== HERO SLIDER ===== -->
+<section class="p35-hero" id="p35Hero">
+  <div class="p35-hero-slide is-active">
+    <div class="p35-hero-bg p35-bg-1"></div>
+    <div class="p35-hero-content">
+      <h1><strong>Ihr E-Commerce Erfolg startet hier!</strong></h1>
+      <p>Plenty35 ist Ihre Plentymarkets-Agentur für Setup, Migration, Plugin-Entwicklung und Multi-Channel-Anbindung. Ein zuverlässiger Partner für Ihren Online-Handel – nur einen Klick entfernt.</p>
+      <a href="#p35-services" class="p35-btn p35-btn-outline-white"><span>Jetzt entdecken</span></a>
+    </div>
+  </div>
+  <div class="p35-hero-slide">
+    <div class="p35-hero-bg p35-bg-2"></div>
+    <div class="p35-hero-content">
+      <h1><strong>Plentymarkets perfekt für Sie eingerichtet!</strong></h1>
+      <p>Ob Migration, Schnittstellen oder individuelle Plugins – wir holen das Beste aus Ihrem Plentymarkets-System heraus. Schnell, transparent und planbar.</p>
+      <a href="#p35-offer" class="p35-btn p35-btn-outline-white"><span>Angebot anfordern</span></a>
+    </div>
+  </div>
+  <button class="p35-hero-arrow p35-prev" type="button" aria-label="Vorherige">&#10094;</button>
+  <button class="p35-hero-arrow p35-next" type="button" aria-label="Nächste">&#10095;</button>
+  <div class="p35-hero-dots">
+    <button class="p35-hero-dot is-active" data-slide="0" type="button" aria-label="Slide 1"></button>
+    <button class="p35-hero-dot" data-slide="1" type="button" aria-label="Slide 2"></button>
+  </div>
+</section>
+
+<!-- ===== LOGOS STRIP ===== -->
+<section class="p35-logos">
+  <div class="p35-logos-track">
+    <div class="p35-logo-item">PLENTYMARKETS</div>
+    <div class="p35-logo-item">AMAZON</div>
+    <div class="p35-logo-item">EBAY</div>
+    <div class="p35-logo-item">OTTO</div>
+    <div class="p35-logo-item">KAUFLAND</div>
+    <div class="p35-logo-item">SHOPWARE</div>
+    <div class="p35-logo-item">DHL</div>
+    <div class="p35-logo-item">DPD</div>
+    <div class="p35-logo-item">DATEV</div>
+    <div class="p35-logo-item">KLARNA</div>
+    <div class="p35-logo-item">PAYPAL</div>
+    <div class="p35-logo-item">GOOGLE&nbsp;ADS</div>
+    <div class="p35-logo-item">PLENTYMARKETS</div>
+    <div class="p35-logo-item">AMAZON</div>
+    <div class="p35-logo-item">EBAY</div>
+    <div class="p35-logo-item">OTTO</div>
+    <div class="p35-logo-item">KAUFLAND</div>
+    <div class="p35-logo-item">SHOPWARE</div>
+    <div class="p35-logo-item">DHL</div>
+    <div class="p35-logo-item">DPD</div>
+    <div class="p35-logo-item">DATEV</div>
+    <div class="p35-logo-item">KLARNA</div>
+    <div class="p35-logo-item">PAYPAL</div>
+    <div class="p35-logo-item">GOOGLE&nbsp;ADS</div>
+  </div>
+</section>
+
+<!-- ===== CTA ===== -->
+<section class="p35-section p35-section-cta" id="p35-offer">
+  <div class="p35-container">
+    <h2>Holen Sie sich ein unverbindliches Angebot</h2>
+    <p>Bei Plenty35 analysieren wir Ihren Plentymarkets-Setup schnell und unkompliziert. Mit unserem transparenten und zuverlässigen Service bekommen Sie schnell ein klares Angebot – fair, planbar und auf den Punkt.</p>
+    <p>Teilen Sie uns einfach Ihren Status quo und Ihr Ziel mit. Unser erfahrenes Team erstellt eine ehrliche Einschätzung auf Basis aktueller Best Practices und liefert ein passgenaues Angebot zurück.</p>
+    <a href="#p35-contact" class="p35-btn p35-btn-secondary"><span>Jetzt Angebot anfordern</span></a>
+  </div>
+</section>
+
+<!-- ===== SPLIT 1 ===== -->
+<section class="p35-split" id="p35-about">
+  <div class="p35-split-img">
+    <div class="p35-gphoto p35-v1"><span class="p35-gphoto-label">Plentymarkets Backend</span></div>
+  </div>
+  <div class="p35-split-text">
+    <div class="p35-split-text-inner">
+      <div class="p35-divider"></div>
+      <h2>Der Plentymarkets-Profi in Ihrer Umgebung</h2>
+      <p>Bei Plenty35 erfüllen wir die Wünsche von Onlinehändlern. Mit moderner Beratung, sauberer Implementierung und verlässlichem Support holen wir aus Ihrem System das Maximum heraus.</p>
+      <p>In unserer Agentur finden Sie ein eingespieltes Team aus Plentymarkets-Spezialisten, Entwicklern und Online-Marketern. Jedes Projekt wird sorgfältig geplant – für maximale Performance, Stabilität und Wachstum.</p>
+      <a href="#p35-contact" class="p35-btn p35-btn-white"><span>Weitere Informationen</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SPLIT 2 ===== -->
+<section class="p35-split p35-reverse" id="p35-services">
+  <div class="p35-split-img">
+    <div class="p35-gphoto p35-v2"><span class="p35-gphoto-label">Multi-Channel Anbindung</span></div>
+  </div>
+  <div class="p35-split-text">
+    <div class="p35-split-text-inner">
+      <div class="p35-divider"></div>
+      <h2>Finden Sie Ihre passende Lösung</h2>
+      <p>Bei Plenty35 stehen wir Ihnen zur Seite, um die passende Plentymarkets-Lösung für Ihre Anforderungen und Ziele zu finden – von schlankem Setup bis zur komplexen Multi-Channel-Architektur.</p>
+      <p>Egal ob Migration aus einem Altsystem, Anbindung von Amazon, eBay, OTTO oder Kaufland, individuelle Plugin-Entwicklung oder laufender Betrieb – unser Team unterstützt Sie auf jedem Schritt.</p>
+      <a href="#p35-contact" class="p35-btn p35-btn-white"><span>Ihr Wachstum beginnt hier</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== REVIEWS ===== -->
+<section class="p35-section p35-section-reviews">
+  <div class="p35-container">
+    <h2>Warum Plenty35?</h2>
+    <p class="p35-lead">Ihre geschätzten Rückmeldungen, liebe Kunden.</p>
+    <div class="p35-reviews-grid">
+      <div class="p35-review-card">
+        <div class="p35-review-head">
+          <div class="p35-review-avatar">PH</div>
+          <div><div class="p35-review-name">Paul Horst</div><div class="p35-review-platform">Google Bewertung</div></div>
+        </div>
+        <div class="p35-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="p35-review-text">War sehr positiv überrascht – alles lief reibungslos. Das Team erklärt alles in Ruhe und nimmt sich für jeden Kunden Zeit.</p>
+      </div>
+      <div class="p35-review-card">
+        <div class="p35-review-head">
+          <div class="p35-review-avatar">SB</div>
+          <div><div class="p35-review-name">Shemsedin Berisha</div><div class="p35-review-platform">Google Bewertung</div></div>
+        </div>
+        <div class="p35-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="p35-review-text">Endlich die passende Plentymarkets-Lösung für unseren Shop gefunden. Persönliche Beratung, schnelle Umsetzung, faire Preise.</p>
+      </div>
+      <div class="p35-review-card">
+        <div class="p35-review-head">
+          <div class="p35-review-avatar">SF</div>
+          <div><div class="p35-review-name">Stefan Frank</div><div class="p35-review-platform">Google Bewertung</div></div>
+        </div>
+        <div class="p35-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="p35-review-text">Habe seit kurzem ein neues Setup am Start – völlig zufrieden mit Service und Freundlichkeit. Plenty35 ist immer einen Anruf wert.</p>
+      </div>
+      <div class="p35-review-card">
+        <div class="p35-review-head">
+          <div class="p35-review-avatar">JB</div>
+          <div><div class="p35-review-name">Johannes Boch</div><div class="p35-review-platform">Google Bewertung</div></div>
+        </div>
+        <div class="p35-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="p35-review-text">Sehr zuvorkommend und fair. Können wir nur weiterempfehlen.</p>
+      </div>
+      <div class="p35-review-card">
+        <div class="p35-review-head">
+          <div class="p35-review-avatar">HK</div>
+          <div><div class="p35-review-name">Haki Kurteshi</div><div class="p35-review-platform">Google Bewertung</div></div>
+        </div>
+        <div class="p35-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="p35-review-text">Sehr nettes und ehrliches Team. Sind mit der Umsetzung sehr zufrieden – ging alles schnell. Klare Empfehlung.</p>
+      </div>
+      <div class="p35-review-card">
+        <div class="p35-review-head">
+          <div class="p35-review-avatar">AB</div>
+          <div><div class="p35-review-name">Andrei Buch</div><div class="p35-review-platform">Google Bewertung</div></div>
+        </div>
+        <div class="p35-review-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p class="p35-review-text">Freundlich, kompetent, verlässlich – und sehr saubere Arbeit. Können wir nur weiterempfehlen!</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CONTACT ===== -->
+<section class="p35-section-contact" id="p35-contact">
+  <div class="p35-container">
+    <div class="p35-divider-white"></div>
+    <h2>Kontaktieren Sie uns</h2>
+    <div class="p35-contact-grid">
+      <a href="mailto:info@plenty35.de" class="p35-contact-card">
+        <div class="p35-contact-icon"><svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><path d="m22 6-10 7L2 6"/></svg></div>
+        <h3>info@plenty35.de</h3>
+      </a>
+      <a href="https://maps.google.com" target="_blank" rel="noopener" class="p35-contact-card">
+        <div class="p35-contact-icon"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <h3>Sachsenstr. 5<br>46395 Bocholt<br>Deutschland</h3>
+      </a>
+      <a href="tel:+491723555506" class="p35-contact-card">
+        <div class="p35-contact-icon"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg></div>
+        <h3>+49 172 3555506<br>+49 287 13479048</h3>
+      </a>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  var root = document.querySelector('.p35-page');
+  if(!root) return;
+  var slides = root.querySelectorAll('.p35-hero-slide');
+  var dots = root.querySelectorAll('.p35-hero-dot');
+  var current = 0;
+  function show(i){
+    slides.forEach(function(s,idx){ s.classList.toggle('is-active', idx===i); });
+    dots.forEach(function(d,idx){ d.classList.toggle('is-active', idx===i); });
+    current = i;
+  }
+  dots.forEach(function(d){ d.addEventListener('click', function(){ show(parseInt(d.getAttribute('data-slide'),10)); }); });
+  var prev = root.querySelector('.p35-hero-arrow.p35-prev');
+  var next = root.querySelector('.p35-hero-arrow.p35-next');
+  if(prev) prev.addEventListener('click', function(){ show((current - 1 + slides.length) % slides.length); });
+  if(next) next.addEventListener('click', function(){ show((current + 1) % slides.length); });
+  setInterval(function(){ show((current + 1) % slides.length); }, 5000);
+})();
+</script>
+
+</div>
+<!-- /.p35-page -->
