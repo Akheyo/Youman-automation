@@ -106,3 +106,15 @@ export function azimuthToPvgisAspect(azimuthDeg: number): number {
   if (aspect < -180) aspect += 360;
   return aspect;
 }
+
+/**
+ * Extrahiert eine fünfstellige deutsche Postleitzahl aus einem Mapbox-/
+ * Nominatim-Place-Name. Liefert null wenn keine PLZ erkennbar.
+ *
+ * Beispiel: "Hauptstraße 1, 46325 Borken, Deutschland" → "46325"
+ */
+export function extractPlz(placeName: string | null | undefined): string | null {
+  if (!placeName) return null;
+  const match = placeName.match(/\b(\d{5})\b/);
+  return match ? match[1] ?? null : null;
+}

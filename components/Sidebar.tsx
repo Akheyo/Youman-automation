@@ -1,8 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useApp } from '@/lib/store';
 import { calculate } from '@/lib/calculator';
+import { computeRoofGeometry } from '@/lib/roof-geometry';
+import { totalYield, regionFromPlz } from '@/lib/yield-table';
+import { extractPlz } from '@/lib/geo';
 import ConsumptionPanel from './ConsumptionPanel';
 import AddonsPanel from './AddonsPanel';
 
@@ -18,9 +21,50 @@ export default function Sidebar() {
   const consumption = useApp((s) => s.consumption);
   const result = useApp((s) => s.result);
   const setResult = useApp((s) => s.setResult);
+  const manualRoof = useApp((s) => s.manualRoof);
+  const address = useApp((s) => s.address);
+
+  // Manual-Roof-Pfad: Wenn der User die Excel-Eingabe verwendet, kommen
+  // kWp und Jahresertrag aus den Sheet-Formeln statt aus NRW-WFS + PVGIS.
+  const manualGeom = useMemo(() => {
+    if (!manualRoof.enabled) return null;
+    return computeRoofGeometry({
+      firstLengthM: manualRoof.firstLengthM,
+      houseWidthM: manualRoof.houseWidthM,
+      pitchDeg: manualRoof.pitchDeg,
+      panelWattPeak: manualRoof.panelWattPeak,
+      panelAreaM2: manualRoof.panelAreaM2,
+      roofType: manualRoof.roofType,
+    });
+  }, [manualRoof]);
+
+  const manualYieldKwh = useMemo(() => {
+    if (!manualGeom) return 0;
+    const region = regionFromPlz(extractPlz(address?.placeName));
+    const sides = manualGeom.sides.map((s) => {
+      const aspect =
+        s.label === 'A' ? manualRoof.aspectA :
+        s.label === 'B' ? manualRoof.aspectB :
+        s.label === 'C' ? (manualRoof.aspectC ?? 'nord') :
+        (manualRoof.aspectD ?? 'sued');
+      return { kwp: s.kwp, aspect };
+    });
+    return totalYield(sides, region);
+  }, [manualGeom, manualRoof, address]);
 
   // Re-calculate whenever inputs change.
   useEffect(() => {
+    // Pfad 1: Manueller Excel-Modus.
+    if (manualRoof.enabled && manualGeom && manualGeom.totalKwp > 0) {
+      const computed = calculate({
+        availableKwp: manualGeom.totalKwp,
+        yearlyYieldKwh: manualYieldKwh,
+        consumption,
+      });
+      setResult(computed);
+      return;
+    }
+    // Pfad 2: NRW-WFS + Cesium-Layout.
     if (!layout || layout.totalKwp === 0) {
       setResult(null);
       return;
@@ -31,7 +75,7 @@ export default function Sidebar() {
       consumption,
     });
     setResult(computed);
-  }, [layout, yearlyYieldKwh, consumption, setResult]);
+  }, [layout, yearlyYieldKwh, consumption, setResult, manualRoof.enabled, manualGeom, manualYieldKwh]);
 
   return (
     <aside className="sidebar">
@@ -40,7 +84,7 @@ export default function Sidebar() {
 
       <section className="panel panel--result" aria-label="Ergebnis">
         <h3>Wirtschaftlichkeit</h3>
-        {!result || !layout ? (
+        {!result || (!layout && !manualRoof.enabled) ? (
           <p className="panel__empty">
             Bitte zuerst Adresse eingeben und Dachflächen auswählen.
           </p>

@@ -11,7 +11,7 @@
  *   - On any user action → keep `result` in sync (handled in <Sidebar/>).
  */
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import * as turf from '@turf/turf';
 import { useApp } from '@/lib/store';
@@ -53,6 +53,9 @@ import Sidebar from './Sidebar';
 import LeadForm from './LeadForm';
 import ResultBanner from './ResultBanner';
 import PdfExportButton from './PdfExportButton';
+import ManualRoofPanel from './ManualRoofPanel';
+import RoofTracer, { type TraceResult } from './RoofTracer';
+import { extractPlz } from '@/lib/geo';
 
 // Cesium is purely client-side; SSR would explode on `window`.
 const CesiumViewer = dynamic(() => import('./CesiumViewer'), { ssr: false, loading: () => <ViewerSkeleton /> });
@@ -79,6 +82,21 @@ export default function PVConfigurator({ source = 'standalone' }: Props) {
   const setLoading = useApp((s) => s.setLoading);
   const setYearlyYieldKwh = useApp((s) => s.setYearlyYieldKwh);
   const setError = useApp((s) => s.setError);
+  const manualRoof = useApp((s) => s.manualRoof);
+  const enableManualRoof = useApp((s) => s.enableManualRoof);
+  const setManualRoof = useApp((s) => s.setManualRoof);
+  const [tracerOpen, setTracerOpen] = useState(false);
+
+  function handleTraceConfirm(t: TraceResult) {
+    setManualRoof({
+      firstLengthM: Math.round(t.firstLengthM * 10) / 10,
+      houseWidthM: Math.round(t.houseWidthM * 10) / 10,
+    });
+    setTracerOpen(false);
+    enableManualRoof(true);
+  }
+
+  const plz = extractPlz(address?.placeName);
 
   // Address-change pipeline.
   useEffect(() => {
@@ -238,35 +256,94 @@ export default function PVConfigurator({ source = 'standalone' }: Props) {
               <div className="configurator__searchbar">
                 <AddressSearch onSelect={setAddress} initialQuery={address?.placeName ?? ''} />
               </div>
-              <CesiumViewer />
-              {step === 'roof' && segments.length > 0 && (
+              {tracerOpen && address ? (
+                <RoofTracer
+                  centerLng={address.center[0]}
+                  centerLat={address.center[1]}
+                  onConfirm={handleTraceConfirm}
+                  onCancel={() => setTracerOpen(false)}
+                />
+              ) : (
+                <CesiumViewer />
+              )}
+              {step === 'roof' && (
                 <div className="configurator__roofbar">
-                  <div className="configurator__roofbar-info">
-                    <strong>{segments.length}</strong> Dachsegmente erkannt
-                    {suitableCount > 0 && (
+                  {!manualRoof.enabled && segments.length > 0 && (
+                    <div className="configurator__roofbar-info">
+                      <strong>{segments.length}</strong> Dachsegmente erkannt
+                      {suitableCount > 0 && (
+                        <>
+                          , davon <strong>{suitableCount}</strong> gut bis sehr gut geeignet
+                        </>
+                      )}
+                      .
+                    </div>
+                  )}
+                  {manualRoof.enabled && (
+                    <div className="configurator__roofbar-info">
+                      Manuelle Excel-Eingabe aktiv
+                      ({manualRoof.firstLengthM} m × {manualRoof.houseWidthM} m, {manualRoof.pitchDeg}°).
+                    </div>
+                  )}
+                  <div className="configurator__roofbar-actions">
+                    {!manualRoof.enabled && segments.length > 0 && (
                       <>
-                        , davon <strong>{suitableCount}</strong> gut bis sehr gut geeignet
+                        <button type="button" className="btn" onClick={fillAllSuitable}>
+                          Maximum-Belegung
+                        </button>
+                        <button type="button" className="btn btn--ghost" onClick={clearSegments}>
+                          Zurücksetzen
+                        </button>
                       </>
                     )}
-                    .
-                  </div>
-                  <div className="configurator__roofbar-actions">
-                    <button type="button" className="btn" onClick={fillAllSuitable}>
-                      Maximum-Belegung
-                    </button>
-                    <button type="button" className="btn btn--ghost" onClick={clearSegments}>
-                      Zurücksetzen
-                    </button>
+                    {address && !tracerOpen && (
+                      <button type="button" className="btn" onClick={() => setTracerOpen(true)}>
+                        Dach auf Satellitenbild zeichnen
+                      </button>
+                    )}
+                    {!manualRoof.enabled ? (
+                      <button
+                        type="button"
+                        className="btn btn--ghost"
+                        onClick={() => enableManualRoof(true)}
+                      >
+                        Maße manuell eingeben
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn--ghost"
+                        onClick={() => enableManualRoof(false)}
+                      >
+                        Zurück zum Solarkataster
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="btn btn--primary"
-                      disabled={activeSegmentIds.size === 0}
+                      disabled={!manualRoof.enabled && activeSegmentIds.size === 0}
                       onClick={nextStep}
                     >
                       Weiter zur Konfiguration →
                     </button>
                   </div>
                 </div>
+              )}
+              {step === 'roof' && manualRoof.enabled && (
+                <ManualRoofPanel
+                  firstLengthM={manualRoof.firstLengthM}
+                  houseWidthM={manualRoof.houseWidthM}
+                  pitchDeg={manualRoof.pitchDeg}
+                  panelWattPeak={manualRoof.panelWattPeak}
+                  panelAreaM2={manualRoof.panelAreaM2}
+                  roofType={manualRoof.roofType}
+                  aspectA={manualRoof.aspectA}
+                  aspectB={manualRoof.aspectB}
+                  aspectC={manualRoof.aspectC}
+                  aspectD={manualRoof.aspectD}
+                  plz={plz}
+                  onChange={setManualRoof}
+                />
               )}
             </>
           )}

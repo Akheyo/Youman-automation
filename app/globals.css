@@ -705,6 +705,100 @@ a:hover { text-decoration: underline; }
 }
 .page-skeleton__sidebar { background: var(--bg); border-left: 1px solid var(--border); }
 
+/* ----- Manual roof panel + 2D tracer ----- */
+.manual-roof {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) 2fr;
+  gap: 1.5rem;
+  padding: 1.25rem;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 880px) {
+  .manual-roof { grid-template-columns: 1fr; }
+}
+.manual-roof h3 { margin: 0 0 0.75rem; font-size: 1.1rem; }
+.manual-roof h4 { margin: 1rem 0 0.5rem; font-size: 0.95rem; color: var(--muted); }
+.manual-roof__field {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.92rem;
+}
+.manual-roof__field input,
+.manual-roof__field select {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  font: inherit;
+}
+.manual-roof__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.manual-roof__table th,
+.manual-roof__table td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+}
+.manual-roof__table th:first-child,
+.manual-roof__table td:first-child { text-align: left; }
+.manual-roof__table thead th {
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--bg-soft);
+}
+.manual-roof__total td { font-weight: 700; background: var(--bg-soft); }
+.manual-roof__region { margin: 0.75rem 0 0; color: var(--muted); font-size: 0.9rem; }
+
+.roof-tracer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+.roof-tracer__canvas {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  user-select: none;
+}
+.roof-tracer__canvas img,
+.roof-tracer__canvas svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.roof-tracer__canvas svg { cursor: crosshair; }
+.roof-tracer__hud {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.roof-tracer__instructions { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.roof-tracer__dimensions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.95rem;
+}
+.roof-tracer__actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.roof-tracer--noToken { padding: 1rem; }
+
 /* ----- Reduced motion ----- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

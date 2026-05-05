@@ -8,8 +8,24 @@
 import { create } from 'zustand';
 import type { AddressResult, BuildingFootprint, NrwRoofSegment, PVCalculation, Consumption } from '@/types';
 import type { PanelLayout } from '@/types';
+import type { Aspect, RoofType } from './roof-geometry';
 
 export type Step = 'address' | 'roof' | 'configure' | 'lead';
+
+export interface ManualRoofState {
+  /** Aktiv: zeigt ManualRoofPanel + RoofTracer statt NRW-Solarkataster. */
+  enabled: boolean;
+  firstLengthM: number;
+  houseWidthM: number;
+  pitchDeg: number;
+  panelWattPeak: number;
+  panelAreaM2: number;
+  roofType: RoofType;
+  aspectA: Aspect;
+  aspectB: Aspect;
+  aspectC?: Aspect;
+  aspectD?: Aspect;
+}
 
 interface AppState {
   step: Step;
@@ -66,6 +82,12 @@ interface AppState {
 
   errorBanner: { title: string; action?: string; detail?: string } | null;
   setError: (e: AppState['errorBanner']) => void;
+
+  /** Manuelle Dach-Geometrie (1:1 nach A&B-Excel-Sheet). */
+  manualRoof: ManualRoofState;
+  setManualRoof: (patch: Partial<ManualRoofState>) => void;
+  /** Aktiviert Manual-Mode (Tracer + Excel-Formeln) statt NRW-WFS. */
+  enableManualRoof: (enabled: boolean) => void;
 }
 
 const STEP_ORDER: Step[] = ['address', 'roof', 'configure', 'lead'];
@@ -158,4 +180,20 @@ export const useApp = create<AppState>((set, get) => ({
 
   errorBanner: null,
   setError: (e) => set({ errorBanner: e }),
+
+  manualRoof: {
+    enabled: false,
+    firstLengthM: 10,
+    houseWidthM: 10,
+    pitchDeg: 40,
+    panelWattPeak: 450,
+    panelAreaM2: 2,
+    roofType: 'satteldach',
+    aspectA: 'ost',
+    aspectB: 'west',
+  },
+  setManualRoof: (patch) =>
+    set((state) => ({ manualRoof: { ...state.manualRoof, ...patch } })),
+  enableManualRoof: (enabled) =>
+    set((state) => ({ manualRoof: { ...state.manualRoof, enabled } })),
 }));
