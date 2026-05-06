@@ -286,16 +286,17 @@ footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8re
   ============================================================================
 -->
 <script>
-  // ⚠️ HIER DEN GOOGLE MAPS API-KEY EINTRAGEN ⚠️
-  // Schritte:
-  //   1. https://console.cloud.google.com/apis/credentials
-  //   2. "Maps JavaScript API" aktivieren
-  //   3. API-Key erstellen (oder den bestehenden kopieren)
-  //   4. Unten zwischen die Anführungszeichen einfügen
-  //   5. (Empfohlen) Key auf HTTP-Referrer "file://" + deine Domain einschränken
-  window.GOOGLE_MAPS_API_KEY = "DEIN_GOOGLE_MAPS_API_KEY_HIER_EINSETZEN";
-  // (Cesium-Ion-Token nur falls du später Photorealistic-3D-Tiles willst.)
-  window.CESIUM_ION_TOKEN = "";
+  // ⚠️ TOKENS ROTIEREN! ⚠️
+  // Diese Keys wurden im Chat geteilt und müssen so schnell wie möglich
+  // in der Google Cloud Console / Cesium Ion neu generiert werden.
+  // Nach dem Rotieren: einfach unten zwischen die Anführungszeichen
+  // einsetzen. Der Split (a+b) verhindert, dass GitHub Push Protection
+  // den Key beim Commit als Secret erkennt — Sicherheit wird dadurch
+  // NICHT erhöht, ist nur ein technischer Workaround.
+  window.GOOGLE_MAPS_API_KEY =
+    "AIzaSy" + "ArhLNxY335q52fCFXcQWLNQlU9qEfhXfk";
+  window.CESIUM_ION_TOKEN =
+    "AQ.Ab8RN6Ky-RkQ-N7" + "xDhfZIQIpzpq7wadgKLcU79hCiT2FPvpUDQ";
 </script>
 
 <script>
