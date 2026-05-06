@@ -1693,8 +1693,84 @@ function makeTri(corners, material) {
   return mesh;
 }
 
+/* ----------- Helper: split polygon along ridge midline ---------- */
+function rotateRingByTheta(ring, theta) {
+  const c = Math.cos(theta), s = Math.sin(theta);
+  return ring.map(p => ({ x: p.x * c - p.z * s, z: p.x * s + p.z * c }));
+}
+function splitAtMidZ(rotatedRing, midZ, side) {
+  // side = +1 → keep z >= midZ (Nord); side = -1 → keep z <= midZ (Süd)
+  const result = [];
+  for (let i = 0; i < rotatedRing.length; i++) {
+    const a = rotatedRing[i];
+    const b = rotatedRing[(i + 1) % rotatedRing.length];
+    const aIn = (side > 0 ? a.z >= midZ : a.z <= midZ);
+    const bIn = (side > 0 ? b.z >= midZ : b.z <= midZ);
+    if (aIn) result.push({ x: a.x, z: a.z });
+    if (aIn !== bIn) {
+      const t = (midZ - a.z) / (b.z - a.z);
+      result.push({ x: a.x + t * (b.x - a.x), z: midZ });
+    }
+  }
+  return result;
+}
+function pointInPolygonXZ(p, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x, zi = poly[i].z;
+    const xj = poly[j].x, zj = poly[j].z;
+    if (((zi > p.z) !== (zj > p.z)) &&
+        (p.x < (xj - xi) * (p.z - zi) / (zj - zi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/* ----------- Slope-Mesh aus echtem Polygon (Excel-Formeln auf den Eckpunkten) ----------- */
+function buildSlopePolygonMesh(slope2DRotated, theta, midZ, halfW, eaveHeight, pitchDeg, profile) {
+  // profile: 'saddle' → y = eaveHeight + (1 - |z-midZ|/halfW) * ridgeRise (Spitze auf Ridge)
+  // profile: 'pultLow' → y = eaveHeight + (z - minZ) / widthZ * fullRise (linear, Norden hoch, Süden tief — wird per Param gesetzt)
+  const ridgeRise = halfW * Math.tan(pitchDeg * Math.PI / 180);
+  const shape = new THREE.Shape();
+  shape.moveTo(slope2DRotated[0].x, slope2DRotated[0].z);
+  for (let i = 1; i < slope2DRotated.length; i++) shape.lineTo(slope2DRotated[i].x, slope2DRotated[i].z);
+  shape.closePath();
+  const geom = new THREE.ShapeGeometry(shape);
+  const positions = geom.attributes.position;
+  const newPos = new Float32Array(positions.count * 3);
+  const uvs = new Float32Array(positions.count * 2);
+  const cosBack = Math.cos(-theta), sinBack = Math.sin(-theta);
+  for (let i = 0; i < positions.count; i++) {
+    const u = positions.getX(i);   // rotated.x
+    const z = positions.getY(i);   // rotated.z
+    let y;
+    if (profile === 'saddle') {
+      const dz = Math.abs(z - midZ);
+      y = halfW > 0.001 ? eaveHeight + (1 - dz / halfW) * ridgeRise : eaveHeight;
+    } else {
+      // 'pult': linearer Anstieg von minZ→maxZ. midZ=minZ, halfW=widthZ, ridgeRise=fullRise
+      y = eaveHeight + ((z - midZ) / Math.max(halfW, 0.001)) * ridgeRise;
+    }
+    const wx = u * cosBack - z * sinBack;
+    const wz = u * sinBack + z * cosBack;
+    newPos[i*3]   = wx;
+    newPos[i*3+1] = y;
+    newPos[i*3+2] = wz;
+    // UV: 1m repeat
+    const dz = Math.abs(z - midZ);
+    const slopeV = dz / Math.max(0.001, Math.cos(pitchDeg * Math.PI / 180));
+    uvs[i*2]   = u;
+    uvs[i*2+1] = slopeV;
+  }
+  geom.setAttribute('position', new THREE.BufferAttribute(newPos, 3));
+  geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  geom.computeVertexNormals();
+  return geom;
+}
+
 /* ----------- Slope mit Dachziegel-Textur + Eignungs-Outline ----------- */
-function buildRoofSlope(corners, aspect) {
+function buildRoofSlope(corners, aspect, polyMeta) {
   const slopeIdx = slopeData.length;
   const widthVec  = new THREE.Vector3().subVectors(corners[1], corners[0]);
   const heightVec = new THREE.Vector3().subVectors(corners[3], corners[0]);
@@ -1704,20 +1780,52 @@ function buildRoofSlope(corners, aspect) {
   const hDir = heightVec.clone().normalize();
   const normal = new THREE.Vector3().crossVectors(wDir, hDir).normalize();
 
-  const mesh = makeQuad(corners, {
-    material: tileMat,
-    uvRepeat: { u: slopeW, v: slopeH },
-  });
+  // Slope-Mesh: echtes Polygon (folgt Footprint-Eckpunkten) wenn polyMeta vorhanden,
+  // sonst Fallback Quad aus OBB-Corners (rechteckig).
+  let mesh;
+  if (polyMeta && polyMeta.slope2D && polyMeta.slope2D.length >= 3) {
+    const geom = buildSlopePolygonMesh(
+      polyMeta.slope2D, polyMeta.theta, polyMeta.midZ, polyMeta.halfW,
+      polyMeta.eaveHeight, polyMeta.pitchDeg, polyMeta.profile || 'saddle'
+    );
+    mesh = new THREE.Mesh(geom, tileMat);
+    mesh.castShadow = true; mesh.receiveShadow = true;
+  } else {
+    mesh = makeQuad(corners, { material: tileMat, uvRepeat: { u: slopeW, v: slopeH } });
+  }
   mesh.userData = { kind: 'slope', slopeIdx };
   houseGroup.add(mesh);
   slopeMeshes.push(mesh);
 
-  // Eignungs-Rand
-  const rim = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints([...corners, corners[0]]),
-    new THREE.LineBasicMaterial({ color: suitabilityRimColor(aspect), linewidth: 2 }),
-  );
-  houseGroup.add(rim);
+  // Eignungs-Rand: bei Polygon entlang der echten Edges, sonst um OBB-Quad
+  if (polyMeta && polyMeta.slope2D && polyMeta.slope2D.length >= 3) {
+    const ridgeRise = polyMeta.halfW * Math.tan(polyMeta.pitchDeg * Math.PI / 180);
+    const cosBack = Math.cos(-polyMeta.theta), sinBack = Math.sin(-polyMeta.theta);
+    const ringPts = polyMeta.slope2D.map(p => {
+      const dz = Math.abs(p.z - polyMeta.midZ);
+      let y;
+      if ((polyMeta.profile || 'saddle') === 'saddle') {
+        y = polyMeta.halfW > 0.001
+          ? polyMeta.eaveHeight + (1 - dz / polyMeta.halfW) * ridgeRise
+          : polyMeta.eaveHeight;
+      } else {
+        y = polyMeta.eaveHeight + ((p.z - polyMeta.midZ) / Math.max(polyMeta.halfW, 0.001)) * ridgeRise;
+      }
+      return new THREE.Vector3(
+        p.x * cosBack - p.z * sinBack,
+        y,
+        p.x * sinBack + p.z * cosBack,
+      );
+    });
+    const lineGeom = new THREE.BufferGeometry().setFromPoints([...ringPts, ringPts[0].clone()]);
+    houseGroup.add(new THREE.Line(lineGeom, new THREE.LineBasicMaterial({ color: suitabilityRimColor(aspect) })));
+  } else {
+    const rim = new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints([...corners, corners[0]]),
+      new THREE.LineBasicMaterial({ color: suitabilityRimColor(aspect), linewidth: 2 }),
+    );
+    houseGroup.add(rim);
+  }
 
   // Panel-Grid berechnen (auch für Nord, damit Manual-Add darauf möglich ist)
   const usableW = slopeW - 2 * PANEL_SETBACK;
@@ -1734,11 +1842,12 @@ function buildRoofSlope(corners, aspect) {
   const data = {
     slopeIdx, aspect, corners, slopeW, slopeH,
     wDir, hDir, normal, cols, rows, startU, startV,
+    polyMeta,  // {slope2D, theta, midZ, halfW, ...} oder null
   };
   slopeData.push(data);
 
   // Default-Belegung: nur auf geeigneten Slopes (Süd/Ost/West), respektiere
-  // disabledPanels/enabledPanels und Gauben.
+  // disabledPanels/enabledPanels, Gauben und das echte Slope-Polygon.
   if (cols > 0 && rows > 0) {
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -1747,6 +1856,7 @@ function buildRoofSlope(corners, aspect) {
         const enabled = enabledPanels.has(key);
         const disabled = disabledPanels.has(key);
         if (panelInsideAnyGaube(slopeIdx, r, c)) continue;
+        if (!panelInsideSlopePolygon(slopeIdx, r, c)) continue;  // Polygon-Clip
         if ((isDefaultOn && !disabled) || enabled) {
           addPanelMesh(slopeIdx, r, c);
         }
@@ -1821,6 +1931,24 @@ function panelInsideAnyGaube(slopeIdx, r, c) {
     if (pointInPolygon2D({ u: cu, v: cv }, g.polyUV)) return true;
   }
   return false;
+}
+
+/* Panel-Center innerhalb des echten Slope-Polygons? Nur wichtig bei
+   nicht-rechteckigen Footprints (L-/T-Form). Bei Rechtecken == OBB == Polygon. */
+function panelInsideSlopePolygon(slopeIdx, r, c) {
+  const s = slopeData[slopeIdx];
+  if (!s) return true;
+  if (!s.polyMeta || !s.polyMeta.slope2D) return true;
+  const cu = s.startU + c * (PANEL_W_M + PANEL_GAP) + PANEL_W_M / 2;
+  const cv = s.startV + r * (PANEL_H_M + PANEL_GAP) + PANEL_H_M / 2;
+  // OBB-Frame → Welt → rotiert in Ridge-Frame → Test gegen slope2D
+  const worldP = s.corners[0].clone()
+    .add(s.wDir.clone().multiplyScalar(cu))
+    .add(s.hDir.clone().multiplyScalar(cv));
+  const cosT = Math.cos(s.polyMeta.theta), sinT = Math.sin(s.polyMeta.theta);
+  const rx = worldP.x * cosT - worldP.z * sinT;
+  const rz = worldP.x * sinT + worldP.z * cosT;
+  return pointInPolygonXZ({ x: rx, z: rz }, s.polyMeta.slope2D);
 }
 function rebuildGaubeMesh(g) {
   const s = slopeData[g.slopeIdx];
@@ -1999,6 +2127,7 @@ function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }
 
   const builtAspects = [];
   if (roofType === 'pultdach') {
+    // Pultdach: gesamtes Footprint = 1 Slope, lineare Steigung von minZ→maxZ
     const highY = eaveHeightM + widthM * Math.tan(pitchDeg * Math.PI / 180);
     const slope = corners3([
       { x: minX, y: eaveHeightM, z: minZ },
@@ -2007,7 +2136,13 @@ function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }
       { x: minX, y: highY,       z: maxZ },
     ]);
     const aspect = aspectFromAzimuth3D(ridgeBearingDeg + 90);
-    buildRoofSlope(slope, aspect);
+    // Polygon = ganzes rotierten Footprint
+    const polyMeta = {
+      slope2D: rotated.map(p => ({ x: p.x, z: p.z })),
+      theta, midZ: minZ, halfW: widthM,
+      eaveHeight: eaveHeightM, pitchDeg, profile: 'pult',
+    };
+    buildRoofSlope(slope, aspect, polyMeta);
     builtAspects.push(aspect);
     houseGroup.add(makeTri(corners3([
       { x: minX, y: eaveHeightM, z: minZ },
@@ -2020,6 +2155,13 @@ function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }
       { x: maxX, y: highY,       z: maxZ },
     ]), gableMat));
   } else {
+    // Satteldach (& Walmdach): Footprint entlang Ridge-Mittellinie splitten,
+    // jede Hälfte wird ein Polygon-Slope, Excel-Formel auf den ECHTEN
+    // Eckpunkten — bei rechteckigen Häusern == OBB-Quad.
+    const southHalf = splitAtMidZ(rotated, midZ, -1);  // z <= midZ → Süd-Seite (in unserem Sys: -Z)
+    const northHalf = splitAtMidZ(rotated, midZ, +1);  // z >= midZ → Nord-Seite
+
+    // OBB-Quads pro Seite (für Panel-Grid + UV-Repeat-Skalierung)
     const slope1 = corners3([
       { x: minX, y: eaveHeightM, z: minZ },
       { x: maxX, y: eaveHeightM, z: minZ },
@@ -2034,9 +2176,21 @@ function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }
     ]);
     const aspect1 = aspectFromAzimuth3D(ridgeBearingDeg + 270);
     const aspect2 = aspectFromAzimuth3D(ridgeBearingDeg + 90);
-    buildRoofSlope(slope1, aspect1);
-    buildRoofSlope(slope2, aspect2);
-    builtAspects.push(aspect1, aspect2);
+    if (southHalf.length >= 3) {
+      buildRoofSlope(slope1, aspect1, {
+        slope2D: southHalf, theta, midZ, halfW,
+        eaveHeight: eaveHeightM, pitchDeg, profile: 'saddle',
+      });
+      builtAspects.push(aspect1);
+    }
+    if (northHalf.length >= 3) {
+      buildRoofSlope(slope2, aspect2, {
+        slope2D: northHalf, theta, midZ, halfW,
+        eaveHeight: eaveHeightM, pitchDeg, profile: 'saddle',
+      });
+      builtAspects.push(aspect2);
+    }
+    // Giebel-Dreiecke an den OBB-Schmalseiten (Approximation für L-Formen)
     houseGroup.add(makeTri(corners3([
       { x: minX, y: eaveHeightM, z: minZ },
       { x: minX, y: eaveHeightM, z: maxZ },
@@ -2303,6 +2457,7 @@ function handleClick(e) {
     const key = `${slopeIdx}:${cell.r}:${cell.c}`;
     if (findPanelMesh(slopeIdx, cell.r, cell.c)) return;  // schon belegt
     if (panelInsideAnyGaube(slopeIdx, cell.r, cell.c)) return;  // in einer Gaube → blockiert
+    if (!panelInsideSlopePolygon(slopeIdx, cell.r, cell.c)) return;  // außerhalb echtem Footprint
     addPanelMesh(slopeIdx, cell.r, cell.c);
     disabledPanels.delete(key);
     enabledPanels.add(key);
