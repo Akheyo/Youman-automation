@@ -3,18 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>A&amp;B PV-Konfigurator — Standalone</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<title>A&amp;B PV-Konfigurator — Standalone (Google Satellite)</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --bg: #f7f9fc; --bg-soft: #eef2f7; --card: #fff; --border: #d8dee9;
   --text: #1f2937; --muted: #6b7280;
   --primary: #0d73fc; --primary-d: #075ad6;
-  --accent: #ff6b00; --good: #22c55e;
+  --accent: #ff6b00; --good: #22c55e; --danger: #dc2626;
   --shadow: 0 2px 8px rgba(0,0,0,.06);
   --radius: 10px;
 }
@@ -25,6 +21,7 @@ body {
 header {
   background: #fff; border-bottom: 1px solid var(--border);
   padding: 14px 20px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow);
+  position: sticky; top: 0; z-index: 1000;
 }
 header .brand {
   width: 36px; height: 36px; border-radius: 8px;
@@ -34,46 +31,57 @@ header .brand {
 header h1 { font-size: 1.15rem; font-weight: 700; }
 header h1 small { color: var(--muted); font-weight: 500; font-size: .85rem; margin-left: 8px; }
 
-main { max-width: 1300px; margin: 0 auto; padding: 20px; display: grid; gap: 20px; grid-template-columns: 1fr 380px; }
+main { max-width: 1400px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; grid-template-columns: 1fr 380px; }
 @media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
 
-.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
-.card h2 { font-size: 1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+.card h2 { font-size: 1rem; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
 .card h2 .step { background: var(--primary); color: #fff; border-radius: 50%; width: 22px; height: 22px; display: grid; place-items: center; font-size: .75rem; font-weight: 700; }
-.card h3 { font-size: .92rem; margin: 14px 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.card h3 { font-size: .85rem; margin: 12px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 
-.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.row > * { flex: 1; min-width: 140px; }
-.row label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 3px; font-weight: 600; }
-input[type=text], input[type=number], select {
-  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+.row { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.row > * { flex: 1; min-width: 130px; }
+label.f { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 3px; font-weight: 600; }
+input[type=text], input[type=number], input[type=password], select {
+  width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
   font: inherit; background: #fff; color: inherit;
 }
 input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: -1px; border-color: var(--primary); }
 
 .btn {
-  background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px;
+  background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px;
   font: inherit; cursor: pointer; font-weight: 600; color: var(--text); transition: all .15s;
+  display: inline-flex; align-items: center; gap: 6px; font-size: .88rem;
 }
 .btn:hover { background: var(--bg-soft); }
 .btn--primary { background: var(--primary); color: #fff; border-color: var(--primary); }
 .btn--primary:hover { background: var(--primary-d); }
+.btn--accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn--danger { background: var(--danger); color: #fff; border-color: var(--danger); }
 .btn--ghost { background: transparent; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.active { box-shadow: 0 0 0 3px rgba(13,115,252,.25); }
 
-#map { height: 500px; border-radius: 8px; border: 1px solid var(--border); }
-.map-hint { font-size: .82rem; color: var(--muted); margin-top: 6px; }
+#map { height: 540px; border-radius: 8px; border: 1px solid var(--border); }
+.map-toolbar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
+.map-hint { font-size: .82rem; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+.map-hint kbd { background: #fff; border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; font-size: .8em; }
 
-table { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: 6px; }
-th, td { padding: 7px 8px; text-align: right; border-bottom: 1px solid var(--border); }
+.legend { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--muted); }
+.legend .swatch { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid; }
+.legend .swatch.main { background: rgba(13,115,252,.3); border-color: var(--primary); }
+.legend .swatch.obstacle { background: rgba(220,38,38,.35); border-color: var(--danger); }
+
+table { width: 100%; border-collapse: collapse; font-size: .88rem; margin-top: 4px; }
+th, td { padding: 6px 7px; text-align: right; border-bottom: 1px solid var(--border); }
 th:first-child, td:first-child { text-align: left; }
-thead th { background: var(--bg-soft); font-weight: 700; color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; }
+thead th { background: var(--bg-soft); font-weight: 700; color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .03em; }
 tr.total td { background: var(--bg-soft); font-weight: 700; }
 
-.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.kpi { background: var(--bg-soft); border-radius: 8px; padding: 10px 12px; }
-.kpi .l { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
-.kpi .v { font-size: 1.15rem; font-weight: 800; margin-top: 2px; color: var(--text); }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kpi { background: var(--bg-soft); border-radius: 8px; padding: 9px 11px; }
+.kpi .l { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
+.kpi .v { font-size: 1.1rem; font-weight: 800; margin-top: 2px; color: var(--text); }
 .kpi.h { background: linear-gradient(135deg, #e0f2fe, #d1fae5); }
 .kpi.h .v { color: var(--good); }
 
@@ -81,33 +89,47 @@ tr.total td { background: var(--bg-soft); font-weight: 700; }
   background: #fff; border: 1px solid var(--border); border-radius: 8px; max-height: 220px; overflow: auto;
   margin-top: 4px; box-shadow: var(--shadow);
 }
-.suggestions div { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--bg-soft); font-size: .9rem; }
+.suggestions div { padding: 7px 10px; cursor: pointer; border-bottom: 1px solid var(--bg-soft); font-size: .88rem; }
 .suggestions div:hover { background: var(--bg-soft); }
 .suggestions div:last-child { border-bottom: none; }
 
-.tag { display: inline-block; background: var(--bg-soft); border-radius: 999px; padding: 3px 10px; font-size: .8rem; color: var(--muted); margin-right: 4px; }
-.tag.ok { background: #d1fae5; color: #065f46; }
+.tag { display: inline-block; background: var(--bg-soft); border-radius: 999px; padding: 3px 10px; font-size: .78rem; color: var(--muted); margin-right: 4px; }
+.tag.ok { background: #d1fae5; color: #065f46; font-weight: 600; }
+.tag.info { background: #dbeafe; color: var(--primary-d); font-weight: 600; }
+.tag.warn { background: #fef3c7; color: #92400e; font-weight: 600; }
 
 .muted { color: var(--muted); font-size: .85rem; }
-.note { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 8px 10px; font-size: .82rem; color: #9a3412; margin-top: 8px; }
+.note { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 8px 10px; font-size: .8rem; color: #9a3412; margin-top: 8px; }
+.warn { background: #fee2e2; border: 1px solid #fecaca; border-radius: 8px; padding: 8px 10px; font-size: .85rem; color: #991b1b; margin-top: 8px; }
 
-footer { text-align: center; color: var(--muted); padding: 20px; font-size: .82rem; }
-footer a { color: var(--primary); }
+footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8rem; }
 
 #dim-readout { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-#dim-readout .tag.ok { background: #dbeafe; color: var(--primary-d); font-weight: 600; }
+#shape-list { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.shape-item { display: flex; gap: 8px; align-items: center; font-size: .85rem; padding: 5px 8px; background: var(--bg-soft); border-radius: 6px; }
+.shape-item .dot { width: 10px; height: 10px; border-radius: 2px; }
+.shape-item .name { flex: 1; }
+.shape-item .x { color: var(--danger); cursor: pointer; padding: 2px 6px; }
+
+#token-bar { background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; font-size: .85rem; display: none; }
+#token-bar input { width: 100%; margin-top: 4px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: .8rem; }
 </style>
 </head>
 <body>
 
 <header>
   <div class="brand">A&amp;B</div>
-  <h1>PV-Konfigurator <small>Standalone-Version &middot; Excel-Formeln + 2D-Satellitenbild</small></h1>
+  <h1>PV-Konfigurator <small>Google Satellite &middot; Excel-Formeln &middot; Hindernis-Erkennung manuell</small></h1>
 </header>
 
 <main>
   <!-- LEFT: Map + Address + Inputs -->
   <div>
+    <div id="token-bar">
+      <strong>Google Maps API-Key fehlt oder ungültig.</strong>
+      Bitte Key oben rechts in die HTML einsetzen — Anleitung im <code>&lt;script&gt;</code>-Tag-Kommentar.
+    </div>
+
     <div class="card">
       <h2><span class="step">1</span> Adresse</h2>
       <input type="text" id="addr" placeholder="Straße Hausnummer, PLZ Ort" autocomplete="off">
@@ -115,26 +137,36 @@ footer a { color: var(--primary); }
       <div id="addr-info" class="muted" style="margin-top:6px"></div>
     </div>
 
-    <div class="card" style="margin-top:16px">
-      <h2><span class="step">2</span> Dach auf Satellitenbild zeichnen</h2>
+    <div class="card" style="margin-top:14px">
+      <h2><span class="step">2</span> Dach &amp; Hindernisse zeichnen</h2>
+      <div class="map-toolbar">
+        <button class="btn btn--primary active" id="mode-main" data-mode="main">▭ Hauptdach</button>
+        <button class="btn btn--danger" id="mode-obstacle" data-mode="obstacle">⊘ Hindernis (Dachfenster, Kamin)</button>
+        <span style="flex:1"></span>
+        <span class="legend"><span class="swatch main"></span>Dach</span>
+        <span class="legend"><span class="swatch obstacle"></span>Hindernis</span>
+      </div>
       <div id="map"></div>
       <div class="map-hint">
-        Linksklick = Eckpunkt. <strong>Doppelklick</strong> oder Button = Polygon schließen.
-        Längste Kante &rarr; First-Länge, kürzeste &rarr; Hausbreite.
+        <strong>Linksklick</strong> = Eckpunkt setzen. <strong>Doppelklick</strong> = Polygon schließen.
+        Mausrad = Zoom (max. ~21 / 5 cm pro Pixel). Rechtsklick auf Vertex = entfernen.
+        Im Modus „Hindernis" zeichnest du Dachfenster, Kamine oder Gauben — deren Fläche wird automatisch abgezogen.
       </div>
-      <div class="row" style="margin-top:10px">
-        <button class="btn" id="btn-close">Polygon schließen</button>
-        <button class="btn btn--ghost" id="btn-reset">Zurücksetzen</button>
-        <button class="btn" id="btn-undo">Letzten Punkt rückgängig</button>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="btn-undo">↶ Letzten Punkt</button>
+        <button class="btn" id="btn-close">✓ Polygon schließen</button>
+        <button class="btn btn--ghost" id="btn-clear-current">Aktuelles löschen</button>
+        <button class="btn btn--ghost" id="btn-clear-all">Alle löschen</button>
       </div>
       <div id="dim-readout"></div>
+      <div id="shape-list"></div>
     </div>
 
-    <div class="card" style="margin-top:16px">
-      <h2><span class="step">3</span> Dach- &amp; Modul-Parameter</h2>
+    <div class="card" style="margin-top:14px">
+      <h2><span class="step">3</span> Dach-Geometrie &amp; Modul</h2>
       <div class="row">
         <div>
-          <label>Dachform</label>
+          <label class="f">Dachform</label>
           <select id="roofType">
             <option value="satteldach">Satteldach (2 Seiten)</option>
             <option value="walmdach">Walmdach (4 Seiten)</option>
@@ -142,107 +174,139 @@ footer a { color: var(--primary); }
           </select>
         </div>
         <div>
-          <label>First-Länge (m)</label>
+          <label class="f">First-Länge (m)</label>
           <input type="number" id="firstLength" value="10" min="1" max="50" step="0.1">
         </div>
         <div>
-          <label>Hausbreite (m)</label>
+          <label class="f">Hausbreite (m)</label>
           <input type="number" id="houseWidth" value="10" min="1" max="30" step="0.1">
         </div>
         <div>
-          <label>Dachneigung (°)</label>
+          <label class="f">Dachneigung (°)</label>
           <input type="number" id="pitch" value="40" min="5" max="60" step="1">
         </div>
       </div>
-      <div class="row" style="margin-top:10px">
+      <div class="row" style="margin-top:8px">
         <div>
-          <label>Wp / Modul</label>
+          <label class="f">Wp / Modul</label>
           <input type="number" id="panelWp" value="450" min="300" max="650" step="5">
         </div>
         <div>
-          <label>Modul-Fläche (m²)</label>
+          <label class="f">Modul-Fläche (m²)</label>
           <input type="number" id="panelArea" value="2" min="1" max="3" step="0.05">
         </div>
         <div>
-          <label>Ausrichtung Seite A</label>
+          <label class="f">Ausrichtung Seite A</label>
           <select id="aspectA"><option value="ost">Ost</option><option value="sued" selected>Süd</option><option value="west">West</option><option value="nord">Nord</option></select>
         </div>
         <div>
-          <label>Ausrichtung Seite B</label>
+          <label class="f">Ausrichtung Seite B</label>
           <select id="aspectB"><option value="ost">Ost</option><option value="sued">Süd</option><option value="west">West</option><option value="nord" selected>Nord</option></select>
         </div>
       </div>
-      <div class="row" id="walmAspects" style="margin-top:10px;display:none">
+      <div class="row" id="walmAspects" style="margin-top:8px;display:none">
         <div>
-          <label>Ausrichtung Seite C (Walm)</label>
+          <label class="f">Ausrichtung Seite C (Walm)</label>
           <select id="aspectC"><option value="ost">Ost</option><option value="sued">Süd</option><option value="west" selected>West</option><option value="nord">Nord</option></select>
         </div>
         <div>
-          <label>Ausrichtung Seite D (Walm)</label>
+          <label class="f">Ausrichtung Seite D (Walm)</label>
           <select id="aspectD"><option value="ost" selected>Ost</option><option value="sued">Süd</option><option value="west">West</option><option value="nord">Nord</option></select>
         </div>
       </div>
     </div>
 
-    <div class="card" style="margin-top:16px">
+    <div class="card" style="margin-top:14px">
       <h2><span class="step">4</span> Ergebnis (Excel-Formeln)</h2>
       <table id="results">
-        <thead><tr><th>Seite</th><th>Ausrichtung</th><th>Hypotenuse&nbsp;(m)</th><th>Fläche&nbsp;(m²)</th><th>Module</th><th>kWp</th><th>Ertrag&nbsp;(kWh/Jahr)</th></tr></thead>
+        <thead><tr><th>Seite</th><th>Ausrichtung</th><th>Hypotenuse&nbsp;(m)</th><th>Brutto&nbsp;(m²)</th><th>Netto&nbsp;(m²)</th><th>Module</th><th>kWp</th><th>Ertrag&nbsp;(kWh/J)</th></tr></thead>
         <tbody id="results-body"></tbody>
       </table>
-      <p class="muted" id="region-line" style="margin-top:8px"></p>
+      <p class="muted" id="region-line" style="margin-top:6px"></p>
+      <p class="muted" id="obstacle-line" style="margin-top:4px"></p>
     </div>
   </div>
 
-  <!-- RIGHT: Sidebar — Verbrauch + Wirtschaftlichkeit -->
+  <!-- RIGHT: Sidebar -->
   <aside>
     <div class="card">
       <h2><span class="step">5</span> Verbrauch &amp; Add-ons</h2>
       <div class="row">
         <div>
-          <label>Jahresverbrauch (kWh)</label>
+          <label class="f">Jahresverbrauch (kWh)</label>
           <input type="number" id="kwhYear" value="4500" min="500" max="30000" step="100">
         </div>
         <div>
-          <label>Strompreis (ct/kWh)</label>
+          <label class="f">Strompreis (ct/kWh)</label>
           <input type="number" id="priceCt" value="35" min="10" max="80" step="1">
         </div>
       </div>
-      <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
-        <label><input type="checkbox" id="addStorage"> Stromspeicher (+ 8 000 €, EVQ 70%)</label>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:5px;font-size:.9rem">
+        <label><input type="checkbox" id="addStorage"> Stromspeicher (+ 8 000 €, EVQ 70 %)</label>
         <label><input type="checkbox" id="addWallbox"> Wallbox (+ 1 500 €, +3 000 kWh)</label>
         <label><input type="checkbox" id="addHeatpump"> Wärmepumpe (+4 500 kWh)</label>
       </div>
     </div>
 
-    <div class="card" style="margin-top:16px">
+    <div class="card" style="margin-top:14px">
       <h2><span class="step">6</span> Wirtschaftlichkeit</h2>
       <div class="kpis" id="kpis"></div>
-      <div id="roi-table" style="margin-top:12px"></div>
+      <div id="roi-table" style="margin-top:10px"></div>
     </div>
 
     <p class="note">
-      <strong>Hinweis:</strong> Ertragstabelle und Trigonometrie übernommen 1:1
-      aus den A&amp;B-Excel-Sheets. Spezifische Erträge je Region:
-      Norden 540–900, Osten 600–1000, Mitte/Westen 585–975, Süden 660–1100 kWh/kWp.
+      <strong>Tipp:</strong> Ranzoomen (Mausrad oder Doppelklick auf Karte) bis du die Dachziegel klar siehst.
+      Google Satellite zeigt für Deutschland Auflösungen bis ca. 5 cm pro Pixel —
+      Dachfenster und Kamine sind dann gut erkennbar.
+    </p>
+    <p class="warn">
+      <strong>Tokens rotieren!</strong> Die im Chat geteilten Keys sollten sofort
+      in der Google Cloud Console deaktiviert / neu generiert werden.
     </p>
   </aside>
 </main>
 
 <footer>
-  © A&amp;B Solarenergy &middot; Pilotregion Borken (NRW) &middot; Karten:
-  <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>,
-  Luftbild: <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri World Imagery</a>
-  &middot; Geocoding: Nominatim
+  © A&amp;B Solarenergy &middot; Karten: Google Maps Platform &middot; Geocoding: Nominatim (OSM)
 </footer>
+
+<!--
+  ============================================================================
+  Google Maps Platform API-Key
+  ============================================================================
+  Erforderlich für die Google-Satelliten-Imagery in höchster Auflösung
+  und das Drawing-Plugin. Den Key gibt es kostenlos bis 28.000 Loads/Monat:
+    https://console.cloud.google.com/apis/credentials
+  Aktivieren musst du die APIs:
+    - Maps JavaScript API
+    - Geometry Library (in Maps JS bereits enthalten)
+  Trag deinen Key zwischen die Anführungszeichen unten ein und speichere die
+  Datei. Token-Quotas und Sicherheit (HTTP-Referrer-Restriction!) in der
+  Google Cloud Console konfigurieren.
+  ============================================================================
+-->
+<script>
+  // ⚠️ HIER DEN GOOGLE MAPS API-KEY EINTRAGEN ⚠️
+  // Schritte:
+  //   1. https://console.cloud.google.com/apis/credentials
+  //   2. "Maps JavaScript API" aktivieren
+  //   3. API-Key erstellen (oder den bestehenden kopieren)
+  //   4. Unten zwischen die Anführungszeichen einfügen
+  //   5. (Empfohlen) Key auf HTTP-Referrer "file://" + deine Domain einschränken
+  window.GOOGLE_MAPS_API_KEY = "DEIN_GOOGLE_MAPS_API_KEY_HIER_EINSETZEN";
+  // (Cesium-Ion-Token nur falls du später Photorealistic-3D-Tiles willst.)
+  window.CESIUM_ION_TOKEN = "";
+</script>
 
 <script>
 /* ===========================================================================
-   A&B PV-Konfigurator — vollständig im Browser, keine Build-Tools.
-   Alle Formeln 1:1 aus den Excel-Sheets:
-     - Trigonometrie (Hypotenuse, Dachfläche, Modulanzahl, kWp)
-     - PLZ-Region → kWh/kWp/Jahr-Lookup
-     - Wirtschaftlichkeit (Investition, Eigenverbrauch, Amortisation)
+   A&B PV-Konfigurator v2 — Google Satellite Edition
+   ===========================================================================
+   - Google Maps Satellite Imagery (zoom bis 21, ~5 cm/px in DE)
+   - Polygon-Drawing für Hauptdach + beliebige Hindernisse (Dachfenster, Kamine)
+   - Excel-Formeln (Hypotenuse, Fläche, Module, kWp) inline
+   - PLZ-basierte Ertragstabelle
+   - Wirtschaftlichkeit (Investition, Amortisation, ROI 5/10/15/20)
    =========================================================================== */
 
 /* ---------- 1. PV-Ertragstabelle (Sheet 2) ---------- */
@@ -280,40 +344,29 @@ function hypotenuseFromHalfWidth(halfWidth, pitchDeg, ridgeAngleDeg = 90) {
   return halfWidth * Math.sin(ridgeAngleDeg * Math.PI / 180) / sinA;
 }
 function computeRoof(input) {
-  const { firstLengthM, houseWidthM, pitchDeg, panelWattPeak, panelAreaM2, roofType } = input;
+  const { firstLengthM, houseWidthM, pitchDeg, roofType } = input;
   const halfW = houseWidthM / 2;
   const hyp = hypotenuseFromHalfWidth(halfW, pitchDeg);
   const sides = [];
-  const mkSide = (label, hypM, areaM2) => {
-    const panelCount = panelAreaM2 > 0 ? Math.floor(areaM2 / panelAreaM2) : 0;
-    const kwp = panelCount * panelWattPeak / 1000;
-    return { label, hypotenuseM: round2(hypM), areaM2: round2(areaM2), panelCount, kwp: round2(kwp) };
-  };
   if (roofType === 'pultdach') {
     const fullHyp = hypotenuseFromHalfWidth(houseWidthM, pitchDeg);
-    sides.push(mkSide('A', fullHyp, fullHyp * firstLengthM));
+    sides.push({ label: 'A', hypotenuseM: fullHyp, areaM2: fullHyp * firstLengthM });
   } else if (roofType === 'satteldach') {
     const area = hyp * firstLengthM;
-    sides.push(mkSide('A', hyp, area));
-    sides.push(mkSide('B', hyp, area));
-  } else { /* walmdach */
+    sides.push({ label: 'A', hypotenuseM: hyp, areaM2: area });
+    sides.push({ label: 'B', hypotenuseM: hyp, areaM2: area });
+  } else {
     const walmTiefe = halfW;
     const ridgeM = Math.max(0, firstLengthM - 2 * walmTiefe);
     const trapezArea = ((firstLengthM + ridgeM) / 2) * hyp;
-    sides.push(mkSide('A', hyp, trapezArea));
-    sides.push(mkSide('B', hyp, trapezArea));
+    sides.push({ label: 'A', hypotenuseM: hyp, areaM2: trapezArea });
+    sides.push({ label: 'B', hypotenuseM: hyp, areaM2: trapezArea });
     const walmArea = 0.5 * houseWidthM * hyp;
-    sides.push(mkSide('C', hyp, walmArea));
-    sides.push(mkSide('D', hyp, walmArea));
+    sides.push({ label: 'C', hypotenuseM: hyp, areaM2: walmArea });
+    sides.push({ label: 'D', hypotenuseM: hyp, areaM2: walmArea });
   }
-  return {
-    sides,
-    totalKwp: round2(sides.reduce((s, x) => s + x.kwp, 0)),
-    totalArea: round2(sides.reduce((s, x) => s + x.areaM2, 0)),
-    totalPanels: sides.reduce((s, x) => s + x.panelCount, 0),
-  };
+  return sides;
 }
-function round2(v) { return Math.round(v * 100) / 100; }
 
 /* ---------- 3. Wirtschaftlichkeit ---------- */
 const CALC = {
@@ -364,114 +417,200 @@ function calculate(opts) {
   };
 }
 
-/* ---------- 4. Pixel/Geo Helpers ---------- */
+/* ---------- 4. Geo helpers ---------- */
 function haversineMeters(a, b) {
   const R = 6371000;
-  const f1 = a[1] * Math.PI / 180, f2 = b[1] * Math.PI / 180;
-  const df = (b[1] - a[1]) * Math.PI / 180, dl = (b[0] - a[0]) * Math.PI / 180;
+  const f1 = a.lat * Math.PI / 180, f2 = b.lat * Math.PI / 180;
+  const df = (b.lat - a.lat) * Math.PI / 180, dl = (b.lng - a.lng) * Math.PI / 180;
   const h = Math.sin(df / 2) ** 2 + Math.cos(f1) * Math.cos(f2) * Math.sin(dl / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
-}
-function bearingDeg(a, b) {
-  const f1 = a[1] * Math.PI / 180, f2 = b[1] * Math.PI / 180;
-  const dl = (b[0] - a[0]) * Math.PI / 180;
-  const y = Math.sin(dl) * Math.cos(f2);
-  const x = Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl);
-  return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
 }
 function dimensionsFromRing(ring) {
   if (ring.length < 3) return null;
   let longest = 0, shortest = Infinity;
   for (let i = 0; i < ring.length; i++) {
-    const a = ring[i], b = ring[(i + 1) % ring.length];
-    const len = haversineMeters(a, b);
+    const len = haversineMeters(ring[i], ring[(i + 1) % ring.length]);
     if (len > longest) longest = len;
     if (len < shortest) shortest = len;
   }
   return { firstLengthM: longest, houseWidthM: shortest };
 }
 
-/* ---------- 5. Map + Tracer ---------- */
-const map = L.map('map', { doubleClickZoom: false }).setView([51.84, 6.85], 18); // Borken
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  maxZoom: 19, attribution: 'Esri World Imagery'
-}).addTo(map);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, opacity: 0.0
-}); // ensures rate-limiter happy
-let vertices = []; // [[lng, lat], ...]
-let polyLayer = null, markers = [], edgeLabels = [];
+/* ---------- 5. Map state ---------- */
+let map = null;
+let drawingMode = 'main';                 // 'main' | 'obstacle'
+let currentRing = [];                     // [{lat, lng}, ...]
+let currentMarkers = [];                  // google.maps.Marker[]
+let currentPolyline = null;
+let shapes = [];                          // [{type, polygon, areaM2, ringLatLng}]
+let mapClickListener = null, mapDblClickListener = null;
+let currentPlz = null, currentAddrLatLng = null;
 
-function redrawTrace() {
-  if (polyLayer) map.removeLayer(polyLayer);
-  markers.forEach(m => map.removeLayer(m));
-  edgeLabels.forEach(m => map.removeLayer(m));
-  markers = []; edgeLabels = [];
-  if (vertices.length === 0) {
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 51.84, lng: 6.85 },   // Borken default
+    zoom: 19,
+    mapTypeId: 'satellite',
+    tilt: 0,
+    streetViewControl: false,
+    fullscreenControl: true,
+    disableDoubleClickZoom: true,         // we use dblclick to close polygon
+  });
+
+  mapClickListener = map.addListener('click', e => {
+    currentRing.push({ lat: e.latLng.lat(), lng: e.latLng.lng() });
+    redrawCurrent();
+  });
+  mapDblClickListener = map.addListener('dblclick', () => closeCurrentPolygon());
+}
+
+window.initMap = initMap;
+
+/* ---------- 6. Drawing logic ---------- */
+function redrawCurrent() {
+  if (currentPolyline) currentPolyline.setMap(null);
+  currentMarkers.forEach(m => m.setMap(null));
+  currentMarkers = [];
+
+  if (currentRing.length === 0) {
     document.getElementById('dim-readout').innerHTML = '';
     return;
   }
-  const latLngs = vertices.map(v => [v[1], v[0]]);
-  if (vertices.length >= 3) {
-    polyLayer = L.polygon(latLngs, { color: '#ff6b00', weight: 2, fillOpacity: 0.25 }).addTo(map);
-  } else {
-    polyLayer = L.polyline(latLngs, { color: '#ff6b00', weight: 2 }).addTo(map);
+
+  const color = drawingMode === 'main' ? '#0d73fc' : '#dc2626';
+  const path = currentRing.map(p => ({ lat: p.lat, lng: p.lng }));
+  if (currentRing.length >= 2) {
+    currentPolyline = new google.maps.Polyline({
+      path, geodesic: true, strokeColor: color, strokeWeight: 2.5, map,
+    });
   }
-  vertices.forEach(v => {
-    const m = L.circleMarker([v[1], v[0]], { radius: 5, color: '#fff', fillColor: '#ff6b00', fillOpacity: 1, weight: 2 }).addTo(map);
-    markers.push(m);
+  currentRing.forEach((p, i) => {
+    const marker = new google.maps.Marker({
+      position: p, map,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 6, fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,
+      },
+    });
+    marker.addListener('rightclick', () => {
+      currentRing.splice(i, 1);
+      redrawCurrent();
+    });
+    currentMarkers.push(marker);
   });
-  // Edge labels
-  for (let i = 0; i < vertices.length; i++) {
-    const a = vertices[i], b = vertices[(i + 1) % vertices.length];
-    if (vertices.length < 3 && i === vertices.length - 1) continue; // open polyline: skip closing edge
-    const len = haversineMeters(a, b);
-    const mid = [(a[1] + b[1]) / 2, (a[0] + b[0]) / 2];
-    const lbl = L.marker(mid, {
-      icon: L.divIcon({
-        className: '',
-        html: `<span style="background:rgba(0,0,0,.7);color:#fff;padding:1px 5px;border-radius:4px;font-size:11px;font-weight:600">${len.toFixed(1)} m</span>`,
-        iconSize: [60, 18], iconAnchor: [30, 9]
-      })
-    }).addTo(map);
-    edgeLabels.push(lbl);
-  }
-  // Update readout + auto-fill First/Breite if closed
-  if (vertices.length >= 3) {
-    const dim = dimensionsFromRing(vertices);
+
+  if (currentRing.length >= 3) {
+    const dim = dimensionsFromRing(currentRing);
     if (dim) {
       document.getElementById('dim-readout').innerHTML =
-        `<span class="tag ok">längste Kante: ${dim.firstLengthM.toFixed(2)} m → First-Länge</span>` +
-        `<span class="tag ok">kürzeste Kante: ${dim.houseWidthM.toFixed(2)} m → Hausbreite</span>`;
+        `<span class="tag info">längste Kante: ${dim.firstLengthM.toFixed(2)} m</span>` +
+        `<span class="tag info">kürzeste Kante: ${dim.houseWidthM.toFixed(2)} m</span>` +
+        `<span class="tag warn">${currentRing.length} Punkte gesetzt</span>`;
     }
   } else {
-    document.getElementById('dim-readout').innerHTML = '';
+    document.getElementById('dim-readout').innerHTML =
+      `<span class="tag warn">${currentRing.length} Punkt${currentRing.length === 1 ? '' : 'e'} — mindestens 3 nötig</span>`;
   }
 }
 
-map.on('click', e => {
-  vertices.push([e.latlng.lng, e.latlng.lat]);
-  redrawTrace();
-});
-map.on('dblclick', () => closePolygon());
+function closeCurrentPolygon() {
+  if (currentRing.length < 3) return;
+  const path = currentRing.slice();
+  const color = drawingMode === 'main' ? '#0d73fc' : '#dc2626';
+  const fill  = drawingMode === 'main' ? '#0d73fc' : '#dc2626';
+  const polygon = new google.maps.Polygon({
+    paths: path, strokeColor: color, strokeWeight: 2,
+    fillColor: fill, fillOpacity: drawingMode === 'main' ? 0.18 : 0.32,
+    editable: true, draggable: false, map,
+  });
+  // Recompute when user edits vertices
+  ['set_at', 'insert_at', 'remove_at'].forEach(ev => {
+    google.maps.event.addListener(polygon.getPath(), ev, () => recalcShape(shape));
+  });
+  const areaM2 = google.maps.geometry.spherical.computeArea(polygon.getPath());
+  const ringLatLng = path.slice();
+  const dim = drawingMode === 'main' ? dimensionsFromRing(ringLatLng) : null;
+  const shape = { type: drawingMode, polygon, areaM2, ringLatLng, dim };
+  shapes.push(shape);
 
-function closePolygon() {
-  if (vertices.length < 3) return;
-  const dim = dimensionsFromRing(vertices);
-  if (!dim) return;
-  document.getElementById('firstLength').value = dim.firstLengthM.toFixed(1);
-  document.getElementById('houseWidth').value = dim.houseWidthM.toFixed(1);
+  // Auto-fill First-Länge & Hausbreite from main shape
+  if (drawingMode === 'main' && dim) {
+    document.getElementById('firstLength').value = dim.firstLengthM.toFixed(1);
+    document.getElementById('houseWidth').value = dim.houseWidthM.toFixed(1);
+  }
+
+  currentRing = [];
+  redrawCurrent();
+  renderShapeList();
   recompute();
 }
-document.getElementById('btn-close').addEventListener('click', closePolygon);
-document.getElementById('btn-reset').addEventListener('click', () => { vertices = []; redrawTrace(); });
-document.getElementById('btn-undo').addEventListener('click', () => { vertices.pop(); redrawTrace(); });
 
-/* ---------- 6. Adresssuche (Nominatim, kein Token nötig) ---------- */
+function recalcShape(shape) {
+  shape.areaM2 = google.maps.geometry.spherical.computeArea(shape.polygon.getPath());
+  const arr = [];
+  shape.polygon.getPath().forEach(p => arr.push({ lat: p.lat(), lng: p.lng() }));
+  shape.ringLatLng = arr;
+  if (shape.type === 'main') {
+    shape.dim = dimensionsFromRing(arr);
+    if (shape.dim) {
+      document.getElementById('firstLength').value = shape.dim.firstLengthM.toFixed(1);
+      document.getElementById('houseWidth').value = shape.dim.houseWidthM.toFixed(1);
+    }
+  }
+  renderShapeList();
+  recompute();
+}
+
+function renderShapeList() {
+  const wrap = document.getElementById('shape-list');
+  if (shapes.length === 0) { wrap.innerHTML = ''; return; }
+  let mainCount = 0, obsCount = 0;
+  wrap.innerHTML = shapes.map((s, i) => {
+    const label = s.type === 'main' ? `Hauptdach #${++mainCount}` : `Hindernis #${++obsCount}`;
+    const color = s.type === 'main' ? '#0d73fc' : '#dc2626';
+    return `<div class="shape-item">
+      <span class="dot" style="background:${color}"></span>
+      <span class="name">${label}</span>
+      <span>${s.areaM2.toFixed(1)} m²</span>
+      <span class="x" data-i="${i}" title="Löschen">✕</span>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.x').forEach(el => {
+    el.addEventListener('click', () => {
+      const i = +el.dataset.i;
+      shapes[i].polygon.setMap(null);
+      shapes.splice(i, 1);
+      renderShapeList();
+      recompute();
+    });
+  });
+}
+
+/* Mode buttons */
+document.querySelectorAll('[data-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    drawingMode = btn.dataset.mode;
+    document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === drawingMode));
+    currentRing = [];
+    redrawCurrent();
+  });
+});
+document.getElementById('btn-undo').addEventListener('click', () => { currentRing.pop(); redrawCurrent(); });
+document.getElementById('btn-close').addEventListener('click', closeCurrentPolygon);
+document.getElementById('btn-clear-current').addEventListener('click', () => { currentRing = []; redrawCurrent(); });
+document.getElementById('btn-clear-all').addEventListener('click', () => {
+  shapes.forEach(s => s.polygon.setMap(null));
+  shapes = [];
+  currentRing = [];
+  redrawCurrent();
+  renderShapeList();
+  recompute();
+});
+
+/* ---------- 7. Adresssuche (Nominatim — kein Google-Geocoding-Quota) ---------- */
 const addrInput = document.getElementById('addr');
 const suggBox = document.getElementById('suggestions');
 let suggTimer = null, suggCtl = null;
-let currentPlz = null;
 
 addrInput.addEventListener('input', () => {
   clearTimeout(suggTimer);
@@ -508,7 +647,11 @@ function selectAddress(d) {
   addrInput.value = d.display_name;
   suggBox.style.display = 'none';
   const lat = parseFloat(d.lat), lng = parseFloat(d.lon);
-  map.setView([lat, lng], 19);
+  currentAddrLatLng = { lat, lng };
+  if (map) {
+    map.setCenter(currentAddrLatLng);
+    map.setZoom(20);
+  }
   const plz = d.address && d.address.postcode ? d.address.postcode.match(/\d{5}/)?.[0] : null;
   currentPlz = plz;
   document.getElementById('addr-info').innerHTML =
@@ -517,7 +660,7 @@ function selectAddress(d) {
   recompute();
 }
 
-/* ---------- 7. Live-Berechnung ---------- */
+/* ---------- 8. Live-Berechnung ---------- */
 const $ = id => document.getElementById(id);
 const fmt = n => Number(n).toLocaleString('de-DE', { maximumFractionDigits: 0 });
 const fmt1 = n => Number(n).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -531,42 +674,62 @@ function recompute() {
     firstLengthM: +$('firstLength').value || 0,
     houseWidthM: +$('houseWidth').value || 0,
     pitchDeg: +$('pitch').value || 40,
-    panelWattPeak: +$('panelWp').value || 450,
-    panelAreaM2: +$('panelArea').value || 2,
     roofType,
   };
-  const geom = computeRoof(input);
+  const sides = computeRoof(input);
+  const panelWp = +$('panelWp').value || 450;
+  const panelArea = +$('panelArea').value || 2;
   const region = regionFromPlz(currentPlz);
   const aspectFor = lbl => ({
     A: $('aspectA').value, B: $('aspectB').value,
     C: $('aspectC').value, D: $('aspectD').value,
   }[lbl]);
 
+  // Hindernis-Fläche aus dem Polygon-Tracer (Bodenfläche m²) — wir verteilen
+  // sie proportional zur Bruttofläche jeder Seite. Hinweis: Die Hindernis-
+  // Fläche ist auf dem Boden gemessen, das Dach ist geneigt → echte
+  // Dachprojektion = Bodenfläche / cos(pitch). Wir korrigieren das.
+  const obstaclesGroundM2 = shapes.filter(s => s.type === 'obstacle').reduce((sum, s) => sum + s.areaM2, 0);
+  const cosPitch = Math.cos(input.pitchDeg * Math.PI / 180);
+  const obstaclesRoofM2 = cosPitch > 0 ? obstaclesGroundM2 / cosPitch : obstaclesGroundM2;
+  const totalGross = sides.reduce((s, x) => s + x.areaM2, 0);
+  const obstacleFrac = totalGross > 0 ? Math.min(0.95, obstaclesRoofM2 / totalGross) : 0;
+
   // Ergebnis-Tabelle
   let body = '';
-  let totalYield = 0;
-  geom.sides.forEach(s => {
+  let totalNet = 0, totalPanels = 0, totalKwp = 0, totalYield = 0;
+  sides.forEach(s => {
     const aspect = aspectFor(s.label);
-    const y = Math.round(s.kwp * specificYield(region, aspect));
-    totalYield += y;
+    const netArea = s.areaM2 * (1 - obstacleFrac);
+    const panelCount = panelArea > 0 ? Math.floor(netArea / panelArea) : 0;
+    const kwp = panelCount * panelWp / 1000;
+    const y = Math.round(kwp * specificYield(region, aspect));
+    totalNet += netArea; totalPanels += panelCount; totalKwp += kwp; totalYield += y;
     body += `<tr>
       <td>${s.label}</td><td>${ASPECT_LABELS[aspect]}</td>
       <td>${s.hypotenuseM.toFixed(2)}</td><td>${s.areaM2.toFixed(2)}</td>
-      <td>${s.panelCount}</td><td>${s.kwp.toFixed(2)}</td>
+      <td>${netArea.toFixed(2)}</td>
+      <td>${panelCount}</td><td>${kwp.toFixed(2)}</td>
       <td>${fmt(y)}</td></tr>`;
   });
   body += `<tr class="total">
-    <td colspan="3">Gesamt</td><td>${geom.totalArea.toFixed(2)}</td>
-    <td>${geom.totalPanels}</td><td>${geom.totalKwp.toFixed(2)}</td>
+    <td colspan="3">Gesamt</td>
+    <td>${totalGross.toFixed(2)}</td><td>${totalNet.toFixed(2)}</td>
+    <td>${totalPanels}</td><td>${totalKwp.toFixed(2)}</td>
     <td>${fmt(totalYield)}</td></tr>`;
   $('results-body').innerHTML = body;
   $('region-line').innerHTML = region
     ? `Region: <strong>${REGION_LABEL[region]}</strong> (PLZ ${currentPlz})`
     : 'Region: <em>unbekannt — Bundesschnitt verwendet</em>';
+  $('obstacle-line').innerHTML = obstaclesGroundM2 > 0
+    ? `Hindernisse: <strong>${shapes.filter(s => s.type === 'obstacle').length}</strong> markiert ` +
+      `· Boden ${obstaclesGroundM2.toFixed(1)} m² → Dachfläche ${obstaclesRoofM2.toFixed(1)} m² ` +
+      `(${(obstacleFrac * 100).toFixed(0)} % Abzug pro Seite)`
+    : '';
 
   // Wirtschaftlichkeit
   const calc = calculate({
-    kwp: geom.totalKwp,
+    kwp: totalKwp,
     yieldKwh: totalYield,
     kwhYear: +$('kwhYear').value || 4500,
     priceCt: +$('priceCt').value || 35,
@@ -583,19 +746,18 @@ function recompute() {
     <div class="kpi"><div class="l">Eigenverbrauch</div><div class="v">${fmt(calc.eigen)} kWh</div></div>
     <div class="kpi"><div class="l">Einspeisung</div><div class="v">${fmt(calc.einspeis)} kWh</div></div>
     <div class="kpi"><div class="l">CO₂-Einsparung</div><div class="v">${fmt1(calc.co2_t)} t/J</div></div>
-    <div class="kpi"><div class="l">Module gesamt</div><div class="v">${geom.totalPanels}</div></div>
+    <div class="kpi"><div class="l">Module gesamt</div><div class="v">${totalPanels}</div></div>
     <div class="kpi"><div class="l">≈ Bäume</div><div class="v">${fmt(calc.trees)}</div></div>`;
 
-  let roi = '<table style="margin-top:8px"><thead><tr><th>Horizont</th><th>ohne PV</th><th>mit PV</th><th>Vorteil</th></tr></thead><tbody>';
+  let roi = '<table style="margin-top:6px"><thead><tr><th>Horizont</th><th>ohne PV</th><th>mit PV</th><th>Vorteil</th></tr></thead><tbody>';
   calc.horizons.forEach(h => {
     const benefit = h.costNo - h.costPV;
-    roi += `<tr><td>${h.h} Jahre</td><td>${fmt(h.costNo)} €</td><td>${fmt(h.costPV)} €</td><td><strong style="color:${benefit >= 0 ? 'var(--good)' : '#dc2626'}">${benefit >= 0 ? '+' : ''}${fmt(benefit)} €</strong></td></tr>`;
+    roi += `<tr><td>${h.h} Jahre</td><td>${fmt(h.costNo)} €</td><td>${fmt(h.costPV)} €</td><td><strong style="color:${benefit >= 0 ? 'var(--good)' : 'var(--danger)'}">${benefit >= 0 ? '+' : ''}${fmt(benefit)} €</strong></td></tr>`;
   });
   roi += '</tbody></table>';
   $('roi-table').innerHTML = roi;
 }
 
-// Wire up live updates
 ['roofType','firstLength','houseWidth','pitch','panelWp','panelArea',
  'aspectA','aspectB','aspectC','aspectD',
  'kwhYear','priceCt','addStorage','addWallbox','addHeatpump'
@@ -604,7 +766,27 @@ function recompute() {
   if (el) el.addEventListener('input', recompute);
 });
 
-// Initial render
+/* ---------- 9. Google Maps Script Loader ---------- */
+function loadGoogleMaps() {
+  if (!window.GOOGLE_MAPS_API_KEY || window.GOOGLE_MAPS_API_KEY.length < 20) {
+    document.getElementById('token-bar').style.display = 'block';
+    document.getElementById('map').innerHTML =
+      '<div style="padding:60px 20px;text-align:center;color:#9a3412">Kein Google-Maps-Key — bitte oben einsetzen.</div>';
+    return;
+  }
+  const s = document.createElement('script');
+  s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(window.GOOGLE_MAPS_API_KEY)}&libraries=geometry,drawing&v=weekly&loading=async&callback=initMap`;
+  s.async = true; s.defer = true;
+  s.onerror = () => {
+    document.getElementById('token-bar').style.display = 'block';
+    document.getElementById('map').innerHTML =
+      '<div style="padding:60px 20px;text-align:center;color:#9a3412">Google-Maps konnte nicht laden — Key ungültig oder API nicht aktiviert.</div>';
+  };
+  document.head.appendChild(s);
+}
+loadGoogleMaps();
+
+// Initial render (sidebar funktioniert auch ohne Map)
 recompute();
 </script>
 </body>
