@@ -24,6 +24,7 @@ import type {
   RoofFace,
 } from "@/types/solar";
 import { placeModulesOnSelectedFaces } from "@/lib/geometry/modulePlacement";
+import { fitOrientedBox } from "@/lib/geometry/roofShapeHeuristic";
 import {
   MockRoofDetectionProvider,
   getAvailableMockKinds,
@@ -38,13 +39,26 @@ export type ManualParams = {
   shape: RoofShape;
   pitchDeg: number;
   eaveHeightM: number;
+  /** Optional explizit gesetztes First-Azimuth (0–179°). Wenn null, fällt
+   *  der Builder auf die OBB-Heuristik zurück. */
+  ridgeAzimuthDeg: number | null;
 };
 
 const DEFAULT_MANUAL_PARAMS: ManualParams = {
   shape: "satteldach",
   pitchDeg: 35,
   eaveHeightM: 5.5,
+  ridgeAzimuthDeg: null,
 };
+
+/** OBB-Azimuth aus einem Footprint (zur Initialisierung des Sliders). */
+function obbAzimuthFromFootprint(footprint: LngLat[]): number {
+  try {
+    return fitOrientedBox(footprint).ridgeAzimuthDeg;
+  } catch {
+    return 0;
+  }
+}
 
 /**
  * Berechnet das First-Azimuth (CW von Nord, in Grad) aus zwei lng/lat-Punkten.
@@ -352,10 +366,21 @@ export default function SolarPlanner({ mapSettings }: Props) {
           shape: manualParams.shape,
           pitchDeg: manualParams.pitchDeg,
           eaveHeightM: manualParams.eaveHeightM,
+          ridgeAzimuthDeg: manualParams.ridgeAzimuthDeg ?? undefined,
           label: data.building.address ?? "Per Klick gewählt",
         });
         const computed = recomputeBuilding(built, built.roofFaces, settings);
         setBuilding(computed);
+        // Slider-Wert auf die jetzt verwendete First-Richtung setzen, damit
+        // der User danach unmittelbar an dieser Achse drehen kann.
+        const usedAz = obbAzimuthFromFootprint(
+          data.building.footprint.vertices,
+        );
+        setManualParams((prev) => ({
+          ...prev,
+          ridgeAzimuthDeg:
+            prev.ridgeAzimuthDeg ?? usedAz,
+        }));
         setProviderInfo({
           name: "manual",
           reason: `Footprint per Klick aus OSM (${data.building.roofFaces.length} OSM-Tags). Form/Pitch/Traufe via Slider veränderbar.`,
@@ -435,22 +460,29 @@ export default function SolarPlanner({ mapSettings }: Props) {
   /** Gemeinsamer Bau-Pfad. Nutzt optional explizites Ridge-Azimuth. */
   function finishDrawingNow(ridgeAzimuthDeg: number | undefined) {
     try {
+      const effectiveAz =
+        ridgeAzimuthDeg ?? obbAzimuthFromFootprint(drawnPoints);
       const built = buildBuildingFromManualFootprint({
         footprint: drawnPoints,
         shape: manualParams.shape,
         pitchDeg: manualParams.pitchDeg,
         eaveHeightM: manualParams.eaveHeightM,
-        ridgeAzimuthDeg,
+        ridgeAzimuthDeg: effectiveAz,
         label: "Manuell gezeichnet",
       });
       const computed = recomputeBuilding(built, built.roofFaces, settings);
       setBuilding(computed);
+      // Slider matcht jetzt die tatsächliche Hausrichtung.
+      setManualParams((prev) => ({
+        ...prev,
+        ridgeAzimuthDeg: effectiveAz,
+      }));
       setProviderInfo({
         name: "manual",
         reason:
           ridgeAzimuthDeg !== undefined
-            ? `User: ${drawnPoints.length} Eckpunkte + First (${ridgeAzimuthDeg.toFixed(0)}°).`
-            : `User: ${drawnPoints.length} Eckpunkte (First aus OBB-Heuristik).`,
+            ? `User: ${drawnPoints.length} Eckpunkte + First (${effectiveAz.toFixed(0)}°).`
+            : `User: ${drawnPoints.length} Eckpunkte (First aus OBB-Heuristik = ${effectiveAz.toFixed(0)}°).`,
       });
       setDrawingMode(false);
       setDrawnPoints([]);
@@ -500,6 +532,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
         shape: manualParams.shape,
         pitchDeg: manualParams.pitchDeg,
         eaveHeightM: manualParams.eaveHeightM,
+        ridgeAzimuthDeg: manualParams.ridgeAzimuthDeg ?? undefined,
         label: "Manuell gezeichnet",
       });
       // Selektion der Dachflächen aus altem State übernehmen, soweit IDs matchen.

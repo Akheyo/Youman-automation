@@ -551,6 +551,37 @@ function RoofConfigPanel({
           className="w-full"
         />
       </div>
+
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            Hausausrichtung (First)
+          </label>
+          <span className="text-xs font-medium text-slate-700">
+            {manualParams.ridgeAzimuthDeg !== null
+              ? `${Math.round(manualParams.ridgeAzimuthDeg)}°`
+              : "auto"}
+          </span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={179}
+          step={1}
+          value={manualParams.ridgeAzimuthDeg ?? 0}
+          onChange={(e) =>
+            setManualParams({
+              ...manualParams,
+              ridgeAzimuthDeg: Number(e.target.value),
+            })
+          }
+          className="w-full accent-brand"
+        />
+        <p className="text-[10px] text-slate-500">
+          0° = Nord-Süd · 90° = Ost-West. Schiebe nachträglich, falls die
+          Drehung nicht passt.
+        </p>
+      </div>
     </div>
   );
 }
