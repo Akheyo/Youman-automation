@@ -76,6 +76,12 @@ export class ThreeBuildingLayer implements CustomLayerInterface {
       antialias: true,
     });
     this.renderer.autoClear = false;
+    // WICHTIG: Seit Three r155 ist `outputColorSpace` per Default `SRGBColorSpace`.
+    // Das verändert das Framebuffer-Encoding, das MapLibre erwartet, und führt
+    // dazu, dass die Basemap nach Three's Frame unsichtbar wird (Bug-Symptom:
+    // weißer Map-Bereich, Tiles werden geladen, aber nicht angezeigt).
+    // LinearSRGBColorSpace stellt das ursprüngliche Verhalten her.
+    this.renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
   }
 
   onRemove() {
@@ -86,7 +92,7 @@ export class ThreeBuildingLayer implements CustomLayerInterface {
     this.map = null;
   }
 
-  render: CustomRenderMethod = (_gl, matrix) => {
+  render: CustomRenderMethod = (gl, matrix) => {
     if (!this.renderer || !this.map) return;
 
     // matrix kommt als gl-matrix `mat4` (Float32Array), Three.js nimmt
@@ -101,6 +107,12 @@ export class ThreeBuildingLayer implements CustomLayerInterface {
     this.camera.projectionMatrix = m.multiply(local);
     this.renderer.resetState();
     this.renderer.render(this.scene, this.camera);
+    // GL-State, der MapLibre's Folge-Draws beeinflusst, defensiv zurücksetzen.
+    // Three deaktiviert TEXTURE_2D-Bindings nicht zuverlässig, was bei der
+    // nächsten MapLibre-Pass die Raster-Layer schwarz/leer aussehen lässt.
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
+    gl.bindTexture(gl.TEXTURE_2D, null);
     this.map.triggerRepaint();
   }
 
