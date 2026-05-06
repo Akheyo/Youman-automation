@@ -29,6 +29,15 @@ function buildStyle(
   tileUrl: string | undefined,
   attribution: string | undefined,
 ): StyleSpecification {
+  // Immer ein Background-Layer als Sicherheitsnetz, damit der Map-Container
+  // auch dann eine sichtbare Farbe hat, wenn alle Tile-Requests scheitern
+  // (z. B. 403 wegen Domain-Restriction des Tile-Anbieters).
+  const backgroundLayer = {
+    id: "background",
+    type: "background" as const,
+    paint: { "background-color": "#e2e8f0" },
+  };
+
   if (tileUrl) {
     return {
       version: 8,
@@ -42,6 +51,7 @@ function buildStyle(
         },
       },
       layers: [
+        backgroundLayer,
         {
           id: "basemap",
           type: "raster",
@@ -56,22 +66,23 @@ function buildStyle(
     sources: {
       osm: {
         type: "raster",
-        tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+        tiles: [
+          "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        ],
         tileSize: 256,
         attribution: "© OpenStreetMap-Mitwirkende",
+        maxzoom: 19,
       },
     },
     layers: [
-      {
-        id: "background",
-        type: "background",
-        paint: { "background-color": "#f4f6f8" },
-      },
+      backgroundLayer,
       {
         id: "osm",
         type: "raster",
         source: "osm",
-        paint: { "raster-opacity": 0.85 },
+        paint: { "raster-opacity": 0.9 },
       },
     ],
   };
@@ -114,21 +125,44 @@ export default function MapView({
     );
     mapRef.current = map;
 
-    map.on("load", () => {
-      const layer = new ThreeBuildingLayer({ showEdges: true });
-      map.addLayer(layer);
-      layerRef.current = layer;
-      const b = buildingRef.current;
-      if (b) {
-        layer.setBuilding(b);
-        map.flyTo({
-          center: [b.center.lng, b.center.lat],
-          zoom: 19,
-          pitch: 60,
-          bearing: -30,
-          essential: true,
-        });
+    // Three-Layer immer dann (re-)hinzufügen, wenn der aktuelle Style fertig
+    // geladen ist. Deckt sowohl den initialen `load` als auch spätere
+    // `setStyle`-Aufrufe ab. MapLibre wirft Style-Custom-Layers beim
+    // Style-Wechsel raus, daher idempotent neu erzeugen.
+    const ensureThreeLayer = () => {
+      if (!mapRef.current) return;
+      try {
+        if (mapRef.current.getLayer("youman-three-building")) return;
+      } catch {
+        /* getLayer kann werfen, wenn Style noch nicht ready ist – ignorieren */
       }
+      try {
+        const layer = new ThreeBuildingLayer({ showEdges: true });
+        mapRef.current.addLayer(layer);
+        layerRef.current = layer;
+        const b = buildingRef.current;
+        if (b) {
+          layer.setBuilding(b);
+          mapRef.current.flyTo({
+            center: [b.center.lng, b.center.lat],
+            zoom: 19,
+            pitch: 60,
+            bearing: -30,
+            essential: true,
+          });
+        }
+      } catch (err) {
+        // Three-Layer darf die Karte nicht killen.
+        console.error("[MapView] Three-Layer konnte nicht hinzugefügt werden:", err);
+      }
+    };
+
+    map.on("load", ensureThreeLayer);
+    map.on("style.load", ensureThreeLayer);
+    map.on("error", (e) => {
+      // Tile-Fehler etc. nur loggen, nicht crashen.
+      // eslint-disable-next-line no-console
+      console.warn("[MapLibre]", e?.error?.message ?? e);
     });
 
     return () => {
@@ -139,18 +173,19 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 2) Style ändern (z. B. Tile-URL umkonfiguriert).
+  // 2) Style nachträglich ändern (Tile-URL via .env zur Laufzeit anders).
+  // Die erste Auswertung beim Mount überspringen, damit kein doppelter
+  // setStyle-Race entsteht (initialer Style ist bereits über Constructor gesetzt).
+  const styleInitializedRef = useRef(false);
   useEffect(() => {
+    if (!styleInitializedRef.current) {
+      styleInitializedRef.current = true;
+      return;
+    }
     const map = mapRef.current;
     if (!map) return;
     map.setStyle(style);
-    map.once("style.load", () => {
-      const layer = new ThreeBuildingLayer({ showEdges: true });
-      map.addLayer(layer);
-      layerRef.current = layer;
-      const b = buildingRef.current;
-      if (b) layer.setBuilding(b);
-    });
+    // ensureThreeLayer feuert per `style.load`-Listener.
   }, [style]);
 
   // 3) Wenn das Gebäude wechselt, Layer aktualisieren + Kamera schwenken.
