@@ -124,21 +124,16 @@ export class ThreeBuildingLayer implements CustomLayerInterface {
     this.clear();
     this.setOriginFromLngLat(building.center);
 
-    // 1) Gebäudewände aus Footprint.
-    const footprint = this.footprintToLocalMeters(building);
-    const eaveTopZ = this.estimateEaveHeight(building);
-    if (footprint && eaveTopZ > 0) {
-      const wallMesh = this.buildWalls(footprint, 0, eaveTopZ);
-      this.buildingGroup.add(wallMesh);
-    }
+    // Wände werden vom NativeBuildingLayer (MapLibre fill-extrusion) gemacht;
+    // hier nur die schräge Geometrie, die fill-extrusion nicht beherrscht.
 
-    // 2) Dachflächen.
+    // Dachflächen als echte 3D-Schrägflächen.
     for (const face of building.roofFaces) {
       const meshes = this.buildRoofFace(face);
       meshes.forEach((m) => this.buildingGroup.add(m));
     }
 
-    // 3) PV-Module.
+    // PV-Module liegen geneigt auf den Dachflächen.
     for (const mod of building.modules) {
       const mesh = this.buildModule(mod);
       this.buildingGroup.add(mesh);

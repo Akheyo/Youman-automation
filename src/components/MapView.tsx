@@ -19,6 +19,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { DetectedBuilding, MapSettings } from "@/types/solar";
 import { NativeBuildingLayer } from "@/lib/map/NativeBuildingLayer";
+import { ThreeBuildingLayer } from "@/lib/map/ThreeBuildingLayer";
 
 type MapViewProps = {
   building: DetectedBuilding | null;
@@ -83,6 +84,7 @@ export default function MapView({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const layerRef = useRef<NativeBuildingLayer | null>(null);
+  const threeRef = useRef<ThreeBuildingLayer | null>(null);
   const buildingRef = useRef<DetectedBuilding | null>(building);
   buildingRef.current = building;
 
@@ -113,17 +115,27 @@ export default function MapView({
 
     map.on("load", () => {
       if (!mapRef.current) return;
+      // 1) Wände als native fill-extrusion (stabil).
       const layer = new NativeBuildingLayer(mapRef.current);
       layer.install();
       layerRef.current = layer;
+      // 2) Echte 3D-Schrägflächen für Dächer + Module via Three.js Custom Layer.
+      const three = new ThreeBuildingLayer({ showEdges: true });
+      mapRef.current.addLayer(three);
+      threeRef.current = three;
+
       const b = buildingRef.current;
-      if (b) layer.setBuilding(b);
+      if (b) {
+        layer.setBuilding(b);
+        three.setBuilding(b);
+      }
     });
 
     return () => {
       map.remove();
       mapRef.current = null;
       layerRef.current = null;
+      threeRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -132,8 +144,10 @@ export default function MapView({
   useEffect(() => {
     const map = mapRef.current;
     const layer = layerRef.current;
+    const three = threeRef.current;
     if (!map || !layer || !building) return;
     layer.setBuilding(building);
+    three?.setBuilding(building);
     map.flyTo({
       center: [building.center.lng, building.center.lat],
       zoom: 19,

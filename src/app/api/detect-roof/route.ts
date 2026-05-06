@@ -95,11 +95,20 @@ export async function POST(req: Request) {
     building.warnings = [...(building.warnings ?? []), ...warnings];
   }
 
+  // Wichtig: bei Fallback auf Mock soll die UI auch Mock anzeigen, nicht den
+  // ursprünglich gewählten Provider. `building.source` wird vom tatsächlich
+  // erfolgreichen Provider gesetzt und ist die ehrliche Quelle.
+  const actualProviderName = building.source;
+  const actualReason =
+    actualProviderName === selection.provider.name
+      ? selection.reason
+      : `${selection.provider.name} hat keine Daten geliefert – Fallback auf ${actualProviderName}.`;
+
   return NextResponse.json({
     building,
     providerSelection: {
-      name: selection.provider.name,
-      reason: selection.reason,
+      name: actualProviderName,
+      reason: actualReason,
     },
   });
 }
