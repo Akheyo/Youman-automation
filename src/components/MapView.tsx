@@ -44,6 +44,12 @@ type MapViewProps = {
   /** Kamera fliegt hierhin, wenn cameraTick sich erhöht (z. B. nach Suche). */
   cameraTarget: LngLat | null;
   cameraTick: number;
+  /** Drag-to-rotate aktiv: Map-Pan/Rotate ist disabled, Maus dreht das Haus. */
+  rotatingMode: boolean;
+  /** Aktuelle Hausausrichtung in Grad – Startwert für Drag-Berechnung. */
+  currentRidgeAzimuthDeg: number | null;
+  /** Callback wenn der User per Maus auf eine neue Ausrichtung gedreht hat. */
+  onRotateRequest: (newAzimuthDeg: number) => void;
 };
 
 const DRAW_SRC = "youman-draw";
@@ -111,6 +117,9 @@ export default function MapView({
   onMapClick,
   cameraTarget,
   cameraTick,
+  rotatingMode,
+  currentRidgeAzimuthDeg,
+  onRotateRequest,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -124,6 +133,10 @@ export default function MapView({
   captureClicksRef.current = drawingMode || pickingMode;
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
+  const ridgeAzRef = useRef<number | null>(currentRidgeAzimuthDeg);
+  ridgeAzRef.current = currentRidgeAzimuthDeg;
+  const onRotateRequestRef = useRef(onRotateRequest);
+  onRotateRequestRef.current = onRotateRequest;
 
   const style = useMemo(
     () => buildStyle(mapSettings.tileUrl, mapSettings.tileAttribution),
@@ -309,8 +322,71 @@ export default function MapView({
     const map = mapRef.current;
     if (!map) return;
     const canvas = map.getCanvas();
-    canvas.style.cursor = drawingMode || pickingMode ? "crosshair" : "";
-  }, [drawingMode, pickingMode]);
+    if (drawingMode || pickingMode) canvas.style.cursor = "crosshair";
+    else if (rotatingMode) canvas.style.cursor = "grab";
+    else canvas.style.cursor = "";
+  }, [drawingMode, pickingMode, rotatingMode]);
+
+  /* Drag-to-rotate: Mausziehen dreht das Haus um seinen Mittelpunkt.
+   * Während aktiv ist MapLibre's Pan/Rotate disabled. */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !rotatingMode) return;
+    map.dragPan.disable();
+    map.dragRotate.disable();
+    const canvas = map.getCanvas();
+
+    let dragging = false;
+    let startScreenAngleDeg = 0;
+    let startRidgeAz = 0;
+
+    const screenAngle = (e: MouseEvent): number | null => {
+      const b = buildingRef.current;
+      if (!b || !mapRef.current) return null;
+      const c = mapRef.current.project([b.center.lng, b.center.lat]);
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      // atan2(y, x) → CW (gedreht) ist positiv, da Bildschirm-Y nach unten zeigt.
+      return (Math.atan2(my - c.y, mx - c.x) * 180) / Math.PI;
+    };
+
+    const onDown = (e: MouseEvent) => {
+      const a = screenAngle(e);
+      if (a === null) return;
+      e.preventDefault();
+      startScreenAngleDeg = a;
+      startRidgeAz = ridgeAzRef.current ?? 0;
+      dragging = true;
+      canvas.style.cursor = "grabbing";
+    };
+    const onMove = (e: MouseEvent) => {
+      if (!dragging) return;
+      const a = screenAngle(e);
+      if (a === null) return;
+      const delta = a - startScreenAngleDeg;
+      let newAz = startRidgeAz + delta;
+      newAz = ((newAz % 360) + 360) % 360;
+      onRotateRequestRef.current(newAz);
+    };
+    const onUp = () => {
+      if (!dragging) return;
+      dragging = false;
+      canvas.style.cursor = "grab";
+    };
+
+    canvas.addEventListener("mousedown", onDown);
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+
+    return () => {
+      map.dragPan.enable();
+      map.dragRotate.enable();
+      canvas.removeEventListener("mousedown", onDown);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+  }, [rotatingMode]);
 
   // Drawing-Vorschau aktualisieren, wann immer drawnPoints oder ridgePoints
   // sich ändern. Polygon: orange. First: blaue Linie mit blauen Endpunkten.
@@ -386,6 +462,28 @@ export default function MapView({
       }}
     >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+      {rotatingMode && (
+        <div
+          style={{
+            position: "absolute",
+            left: 12,
+            top: 12,
+            maxWidth: 420,
+            padding: "10px 14px",
+            background: "rgba(255,255,255,0.95)",
+            color: "#0f172a",
+            fontSize: 13,
+            lineHeight: 1.45,
+            borderRadius: 8,
+            boxShadow: "0 6px 20px rgba(15,23,42,0.18)",
+          }}
+        >
+          <strong style={{ fontWeight: 600 }}>Drehen aktiv:</strong>{" "}
+          Halte die linke Maustaste auf der Karte und ziehe, um das Haus zu
+          drehen. Mit dem Slider in der Sidebar feinjustieren. Erneut auf
+          &bdquo;Drehen&ldquo; klicken zum Beenden.
+        </div>
+      )}
       {pickingMode && (
         <div
           style={{

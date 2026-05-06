@@ -44,6 +44,9 @@ type Props = {
   drawingMode: boolean;
   drawingPhase: "corners" | "ridge";
   pickingMode: boolean;
+  rotatingMode: boolean;
+  canRotate: boolean;
+  onToggleRotating: () => void;
   drawnPointCount: number;
   ridgePointCount: number;
   manualParams: ManualParams;
@@ -103,6 +106,9 @@ export default function Sidebar({
   drawingMode,
   drawingPhase,
   pickingMode,
+  rotatingMode,
+  canRotate,
+  onToggleRotating,
   drawnPointCount,
   ridgePointCount,
   manualParams,
@@ -181,6 +187,8 @@ export default function Sidebar({
             drawingMode={drawingMode}
             drawingPhase={drawingPhase}
             pickingMode={pickingMode}
+            rotatingMode={rotatingMode}
+            canRotate={canRotate}
             drawnPointCount={drawnPointCount}
             ridgePointCount={ridgePointCount}
             manualParams={manualParams}
@@ -195,6 +203,7 @@ export default function Sidebar({
             onFinishDrawing={onFinishDrawing}
             onUndoPoint={onUndoPoint}
             onLoadDemo={onLoadDemo}
+            onToggleRotating={onToggleRotating}
           />
         </Section>
 
@@ -294,6 +303,8 @@ type RoofConfigPanelProps = {
   drawingMode: boolean;
   drawingPhase: "corners" | "ridge";
   pickingMode: boolean;
+  rotatingMode: boolean;
+  canRotate: boolean;
   drawnPointCount: number;
   ridgePointCount: number;
   manualParams: ManualParams;
@@ -308,6 +319,7 @@ type RoofConfigPanelProps = {
   onFinishDrawing: () => void;
   onUndoPoint: () => void;
   onLoadDemo: () => void;
+  onToggleRotating: () => void;
 };
 
 function RoofConfigPanel({
@@ -316,6 +328,8 @@ function RoofConfigPanel({
   drawingMode,
   drawingPhase,
   pickingMode,
+  rotatingMode,
+  canRotate,
   drawnPointCount,
   ridgePointCount,
   manualParams,
@@ -330,8 +344,9 @@ function RoofConfigPanel({
   onFinishDrawing,
   onUndoPoint,
   onLoadDemo,
+  onToggleRotating,
 }: RoofConfigPanelProps) {
-  const idle = !drawingMode && !pickingMode;
+  const idle = !drawingMode && !pickingMode && !rotatingMode;
   const disabledIfNoLocation = !hasLocation || loading;
   return (
     <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
@@ -372,6 +387,19 @@ function RoofConfigPanel({
           </div>
           <button
             type="button"
+            onClick={onToggleRotating}
+            disabled={!canRotate}
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            title={
+              !canRotate
+                ? "Erst ein Haus per Klick wählen oder zeichnen, dann kann gedreht werden."
+                : "Maus-Drag-Modus: drag auf der Karte dreht das Haus"
+            }
+          >
+            ⟳ Mit Maus drehen
+          </button>
+          <button
+            type="button"
             onClick={onLoadDemo}
             disabled={loading}
             className="w-full rounded-md border border-dashed border-slate-300 px-3 py-1.5 text-[11px] font-medium text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed"
@@ -379,6 +407,22 @@ function RoofConfigPanel({
             Demo-Gebäude laden
           </button>
         </div>
+      )}
+
+      {rotatingMode && (
+        <>
+          <p className="rounded-md bg-blue-50 px-2 py-1.5 text-xs text-blue-800">
+            Drehen aktiv. Mausziehen auf der Karte dreht das Haus um seinen
+            Mittelpunkt. Slider unten justiert fein.
+          </p>
+          <button
+            type="button"
+            onClick={onToggleRotating}
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Drehen beenden
+          </button>
+        </>
       )}
 
       {pickingMode && (

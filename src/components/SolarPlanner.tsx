@@ -105,6 +105,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
   const [recenterTick, setRecenterTick] = useState(0);
   const [drawingMode, setDrawingMode] = useState(false);
   const [pickingMode, setPickingMode] = useState(false);
+  const [rotatingMode, setRotatingMode] = useState(false);
   const [drawnPoints, setDrawnPoints] = useState<LngLat[]>([]);
   // Drawing-Phase: erst Ecken, dann optional 2 Punkte für die First-Linie.
   const [drawingPhase, setDrawingPhase] = useState<"corners" | "ridge">(
@@ -314,6 +315,22 @@ export default function SolarPlanner({ mapSettings }: Props) {
 
   const recenter = useCallback(() => {
     setRecenterTick((t) => t + 1);
+  }, []);
+
+  /* -------- Drag-to-rotate -------- */
+
+  const toggleRotatingMode = useCallback(() => {
+    setRotatingMode((m) => !m);
+    setPickingMode(false);
+    setDrawingMode(false);
+  }, []);
+
+  /** Wird vom MapView aufgerufen, wenn der User per Maus dreht. */
+  const handleRotateRequest = useCallback((newAzimuthDeg: number) => {
+    setManualParams((prev) => ({
+      ...prev,
+      ridgeAzimuthDeg: newAzimuthDeg,
+    }));
   }, []);
 
   /* -------- Manual: Picking (1 Klick → OSM Footprint) -------- */
@@ -583,6 +600,9 @@ export default function SolarPlanner({ mapSettings }: Props) {
           onMapClick={handleMapClick}
           cameraTarget={searchedLocation}
           cameraTick={cameraTick}
+          rotatingMode={rotatingMode}
+          currentRidgeAzimuthDeg={manualParams.ridgeAzimuthDeg}
+          onRotateRequest={handleRotateRequest}
         />
       </div>
       <Sidebar
@@ -606,6 +626,9 @@ export default function SolarPlanner({ mapSettings }: Props) {
         drawingMode={drawingMode}
         drawingPhase={drawingPhase}
         pickingMode={pickingMode}
+        rotatingMode={rotatingMode}
+        canRotate={Boolean(building?.source === "manual" && building.footprint)}
+        onToggleRotating={toggleRotatingMode}
         drawnPointCount={drawnPoints.length}
         ridgePointCount={ridgePoints.length}
         manualParams={manualParams}
