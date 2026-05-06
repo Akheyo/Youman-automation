@@ -25,7 +25,8 @@ import JsonDebugPanel from "./JsonDebugPanel";
 type Props = {
   address: string;
   setAddress: (a: string) => void;
-  onDetect: () => void;
+  onSearchAddress: () => void;
+  onAutoDetect: () => void;
   onLoadDemo: () => void;
   onCycleDemo: () => void;
   onRecenter: () => void;
@@ -38,16 +39,21 @@ type Props = {
   settings: ModuleSettings;
   setSettings: (s: ModuleSettings) => void;
   toggleFace: (id: string) => void;
-  // Manueller Workflow
+  // Workflow-State
+  searchedLocation: { lng: number; lat: number } | null;
   drawingMode: boolean;
+  drawingPhase: "corners" | "ridge";
   pickingMode: boolean;
   drawnPointCount: number;
+  ridgePointCount: number;
   manualParams: ManualParams;
   setManualParams: (p: ManualParams) => void;
   onStartPicking: () => void;
   onCancelPicking: () => void;
   onStartDrawing: () => void;
   onCancelDrawing: () => void;
+  onProceedToRidge: () => void;
+  onSkipRidge: () => void;
   onFinishDrawing: () => void;
   onUndoPoint: () => void;
 };
@@ -79,7 +85,8 @@ function Section({
 export default function Sidebar({
   address,
   setAddress,
-  onDetect,
+  onSearchAddress,
+  onAutoDetect,
   onLoadDemo,
   onCycleDemo,
   onRecenter,
@@ -92,22 +99,28 @@ export default function Sidebar({
   settings,
   setSettings,
   toggleFace,
+  searchedLocation,
   drawingMode,
+  drawingPhase,
   pickingMode,
   drawnPointCount,
+  ridgePointCount,
   manualParams,
   setManualParams,
   onStartPicking,
   onCancelPicking,
   onStartDrawing,
   onCancelDrawing,
+  onProceedToRidge,
+  onSkipRidge,
   onFinishDrawing,
   onUndoPoint,
 }: Props) {
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
-    onDetect();
+    onSearchAddress();
   };
+  const hasLocation = searchedLocation !== null;
 
   const faces: RoofFace[] = building?.roofFaces ?? [];
   const approxCount = faces.filter(
@@ -131,32 +144,28 @@ export default function Sidebar({
       </header>
 
       <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">
-        <Section title="Adresseingabe" step={1}>
+        <Section title="Haus suchen" step={1}>
           <form onSubmit={onSubmit} className="space-y-2">
             <input
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              placeholder="z. B. Marienplatz, München"
+              placeholder="z. B. Mölndalstraße 8, 46325 Borken"
               className="w-full rounded-md border border-slate-300 px-2 py-2 text-sm focus:border-brand focus:outline-none"
               disabled={loading}
             />
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={loading || address.trim().length === 0}
-                className="flex-1 rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-200"
-              >
-                {loading ? "Erkenne …" : "Dach automatisch erkennen"}
-              </button>
-              <button
-                type="button"
-                onClick={onLoadDemo}
-                disabled={loading}
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed"
-              >
-                Demo laden
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading || address.trim().length === 0}
+              className="w-full rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-200"
+            >
+              {loading ? "Suche …" : "Haus suchen"}
+            </button>
+            {hasLocation && (
+              <p className="rounded-md bg-emerald-50 px-2 py-1.5 text-[11px] text-emerald-800">
+                Standort gefunden. Wähle unten, wie das Dach modelliert
+                werden soll.
+              </p>
+            )}
             {error && (
               <p className="rounded-md bg-rose-50 px-2 py-1.5 text-xs text-rose-700">
                 {error}
@@ -165,19 +174,27 @@ export default function Sidebar({
           </form>
         </Section>
 
-        <Section title="Haus auf Karte festlegen">
-          <ManualDrawingPanel
+        <Section title="Dach festlegen" step={2}>
+          <RoofConfigPanel
+            hasLocation={hasLocation}
+            loading={loading}
             drawingMode={drawingMode}
+            drawingPhase={drawingPhase}
             pickingMode={pickingMode}
             drawnPointCount={drawnPointCount}
+            ridgePointCount={ridgePointCount}
             manualParams={manualParams}
             setManualParams={setManualParams}
+            onAutoDetect={onAutoDetect}
             onStartPicking={onStartPicking}
             onCancelPicking={onCancelPicking}
             onStartDrawing={onStartDrawing}
             onCancelDrawing={onCancelDrawing}
+            onProceedToRidge={onProceedToRidge}
+            onSkipRidge={onSkipRidge}
             onFinishDrawing={onFinishDrawing}
             onUndoPoint={onUndoPoint}
+            onLoadDemo={onLoadDemo}
           />
         </Section>
 
@@ -271,60 +288,97 @@ const SHAPE_OPTIONS: { value: RoofShape; label: string }[] = [
   { value: "pultdach", label: "Pultdach" },
 ];
 
-type ManualPanelProps = {
+type RoofConfigPanelProps = {
+  hasLocation: boolean;
+  loading: boolean;
   drawingMode: boolean;
+  drawingPhase: "corners" | "ridge";
   pickingMode: boolean;
   drawnPointCount: number;
+  ridgePointCount: number;
   manualParams: ManualParams;
   setManualParams: (p: ManualParams) => void;
+  onAutoDetect: () => void;
   onStartPicking: () => void;
   onCancelPicking: () => void;
   onStartDrawing: () => void;
   onCancelDrawing: () => void;
+  onProceedToRidge: () => void;
+  onSkipRidge: () => void;
   onFinishDrawing: () => void;
   onUndoPoint: () => void;
+  onLoadDemo: () => void;
 };
 
-function ManualDrawingPanel({
+function RoofConfigPanel({
+  hasLocation,
+  loading,
   drawingMode,
+  drawingPhase,
   pickingMode,
   drawnPointCount,
+  ridgePointCount,
   manualParams,
   setManualParams,
+  onAutoDetect,
   onStartPicking,
   onCancelPicking,
   onStartDrawing,
   onCancelDrawing,
+  onProceedToRidge,
+  onSkipRidge,
   onFinishDrawing,
   onUndoPoint,
-}: ManualPanelProps) {
+  onLoadDemo,
+}: RoofConfigPanelProps) {
   const idle = !drawingMode && !pickingMode;
+  const disabledIfNoLocation = !hasLocation || loading;
   return (
     <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+      {!hasLocation && (
+        <p className="rounded-md bg-slate-50 px-2 py-1.5 text-[11px] text-slate-600">
+          Erst oben ein Haus suchen. Dann wählst du hier, wie das Dach
+          modelliert werden soll.
+        </p>
+      )}
+
       {idle && (
-        <>
-          <p className="text-xs text-slate-600">
-            Klicke einmal auf das gewünschte Haus &mdash; dann lädt der
-            echte Footprint aus OpenStreetMap. Wenn OSM das Gebäude nicht
-            kennt, kannst du den Umriss selber zeichnen.
-          </p>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={onAutoDetect}
+            disabled={disabledIfNoLocation}
+            className="w-full rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-200"
+          >
+            Dach automatisch erkennen
+          </button>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={onStartPicking}
-              className="rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+              disabled={disabledIfNoLocation}
+              className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Haus auswählen
+              Haus auf Karte klicken
             </button>
             <button
               type="button"
               onClick={onStartDrawing}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              disabled={disabledIfNoLocation}
+              className="rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Selber zeichnen
+              Eckpunkte + First zeichnen
             </button>
           </div>
-        </>
+          <button
+            type="button"
+            onClick={onLoadDemo}
+            disabled={loading}
+            className="w-full rounded-md border border-dashed border-slate-300 px-3 py-1.5 text-[11px] font-medium text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed"
+          >
+            Demo-Gebäude laden
+          </button>
+        </div>
       )}
 
       {pickingMode && (
@@ -343,14 +397,14 @@ function ManualDrawingPanel({
         </>
       )}
 
-      {drawingMode && (
+      {drawingMode && drawingPhase === "corners" && (
         <>
           <p className="rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
-            Zeichnen aktiv &mdash; {drawnPointCount} Punkt
+            Schritt 1 &mdash; Ecken: {drawnPointCount} Punkt
             {drawnPointCount === 1 ? "" : "e"} gesetzt.
-            {drawnPointCount < 3 && " Mindestens 3 Eckpunkte benötigt."}
+            {drawnPointCount < 3 && " Mindestens 3 benötigt."}
           </p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={onUndoPoint}
@@ -366,10 +420,54 @@ function ManualDrawingPanel({
             >
               Abbrechen
             </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={onSkipRidge}
+              disabled={drawnPointCount < 3}
+              className="rounded-md border border-slate-300 px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Ohne First fertig
+            </button>
+            <button
+              type="button"
+              onClick={onProceedToRidge}
+              disabled={drawnPointCount < 3}
+              className="rounded-md bg-brand px-2 py-2 text-xs font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-200"
+            >
+              Weiter zur First →
+            </button>
+          </div>
+        </>
+      )}
+
+      {drawingMode && drawingPhase === "ridge" && (
+        <>
+          <p className="rounded-md bg-blue-50 px-2 py-1.5 text-xs text-blue-800">
+            Schritt 2 &mdash; First-Linie: {ridgePointCount}/2 Punkte gesetzt.
+            {ridgePointCount < 2 && " Klicke 2 Punkte für die Firstrichtung."}
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={onUndoPoint}
+              disabled={ridgePointCount === 0}
+              className="rounded-md border border-slate-300 px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              ↶ Letzten
+            </button>
+            <button
+              type="button"
+              onClick={onCancelDrawing}
+              className="rounded-md border border-slate-300 px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Abbrechen
+            </button>
             <button
               type="button"
               onClick={onFinishDrawing}
-              disabled={drawnPointCount < 3}
+              disabled={ridgePointCount < 2}
               className="rounded-md bg-brand px-2 py-2 text-xs font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-200"
             >
               Fertig

@@ -29,14 +29,21 @@ type MapViewProps = {
   mapSettings: MapSettings;
   /** Bei jeder Erhöhung wird die Kamera neu auf das Gebäude zentriert. */
   recenterTick: number;
-  /** Drawing-Modus: Polygon-Eckpunkte sammeln. */
+  /** Drawing-Modus: Polygon-Eckpunkte / First-Linie sammeln. */
   drawingMode: boolean;
+  /** Drawing-Sub-Phase: erst Ecken, dann optional First. */
+  drawingPhase: "corners" | "ridge";
   /** Picking-Modus: nur 1 Klick → Parent fragt OSM ab. */
   pickingMode: boolean;
-  /** Bisher gezeichnete Punkte (nur drawingMode). */
+  /** Bisher gezeichnete Eckpunkte. */
   drawnPoints: LngLat[];
+  /** First-Linien-Punkte (max 2). */
+  ridgePoints: LngLat[];
   /** Callback bei jedem Klick (Parent dispatcht je nach Modus). */
   onMapClick: (p: LngLat) => void;
+  /** Kamera fliegt hierhin, wenn cameraTick sich erhöht (z. B. nach Suche). */
+  cameraTarget: LngLat | null;
+  cameraTick: number;
 };
 
 const DRAW_SRC = "youman-draw";
@@ -97,9 +104,13 @@ export default function MapView({
   mapSettings,
   recenterTick,
   drawingMode,
+  drawingPhase,
   pickingMode,
   drawnPoints,
+  ridgePoints,
   onMapClick,
+  cameraTarget,
+  cameraTick,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -164,26 +175,64 @@ export default function MapView({
           "fill-opacity": 0.18,
         },
       });
+      // Eckpunkt-Linien (orange).
       mapRef.current.addLayer({
         id: DRAW_LINE_LAYER,
         type: "line",
         source: DRAW_SRC,
-        filter: ["!=", ["geometry-type"], "Point"],
+        filter: [
+          "all",
+          ["!=", ["geometry-type"], "Point"],
+          ["!=", ["get", "kind"], "ridgeLine"],
+        ],
         paint: {
           "line-color": "#f97316",
           "line-width": 2,
         },
       });
+      // First-Linie (blau, dicker).
+      mapRef.current.addLayer({
+        id: DRAW_LINE_LAYER + "-ridge",
+        type: "line",
+        source: DRAW_SRC,
+        filter: ["==", ["get", "kind"], "ridgeLine"],
+        paint: {
+          "line-color": "#2563eb",
+          "line-width": 4,
+        },
+      });
+      // Eckpunkt-Kreise (orange).
       mapRef.current.addLayer({
         id: DRAW_POINT_LAYER,
         type: "circle",
         source: DRAW_SRC,
-        filter: ["==", ["geometry-type"], "Point"],
+        filter: [
+          "all",
+          ["==", ["geometry-type"], "Point"],
+          ["==", ["get", "kind"], "corner"],
+        ],
         paint: {
           "circle-radius": 5,
           "circle-color": "#ffffff",
           "circle-stroke-color": "#f97316",
           "circle-stroke-width": 2,
+        },
+      });
+      // First-Endpunkte (blau, größer).
+      mapRef.current.addLayer({
+        id: DRAW_POINT_LAYER + "-ridge",
+        type: "circle",
+        source: DRAW_SRC,
+        filter: [
+          "all",
+          ["==", ["geometry-type"], "Point"],
+          ["==", ["get", "kind"], "ridge"],
+        ],
+        paint: {
+          "circle-radius": 6,
+          "circle-color": "#ffffff",
+          "circle-stroke-color": "#2563eb",
+          "circle-stroke-width": 3,
         },
       });
 
@@ -241,6 +290,20 @@ export default function MapView({
     });
   }, [recenterTick]);
 
+  // Kamera-Flug zur gesuchten Adresse (auch wenn noch kein Building da ist).
+  useEffect(() => {
+    if (cameraTick === 0 || !cameraTarget) return;
+    const map = mapRef.current;
+    if (!map) return;
+    map.flyTo({
+      center: [cameraTarget.lng, cameraTarget.lat],
+      zoom: 19,
+      pitch: 60,
+      bearing: -30,
+      essential: true,
+    });
+  }, [cameraTick, cameraTarget]);
+
   // Cursor je nach Drawing-/Picking-Modus.
   useEffect(() => {
     const map = mapRef.current;
@@ -249,7 +312,8 @@ export default function MapView({
     canvas.style.cursor = drawingMode || pickingMode ? "crosshair" : "";
   }, [drawingMode, pickingMode]);
 
-  // Drawing-Vorschau aktualisieren, wann immer drawnPoints sich ändern.
+  // Drawing-Vorschau aktualisieren, wann immer drawnPoints oder ridgePoints
+  // sich ändern. Polygon: orange. First: blaue Linie mit blauen Endpunkten.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -259,26 +323,20 @@ export default function MapView({
     if (!src) return;
 
     const features: GeoJSON.Feature[] = [];
-    if (drawnPoints.length === 0) {
-      src.setData({ type: "FeatureCollection", features: [] });
-      return;
-    }
-    // Punkte als Circle-Markers.
+
+    // Eckpunkte als Circle-Markers (orange via "kind"="corner").
     for (let i = 0; i < drawnPoints.length; i++) {
       const p = drawnPoints[i]!;
       features.push({
         type: "Feature",
-        properties: { idx: i },
+        properties: { kind: "corner", idx: i },
         geometry: { type: "Point", coordinates: [p.lng, p.lat] },
       });
     }
-    // Linie/Polygon: ab 2 Punkten LineString, ab 3 Punkten zusätzlich Polygon
-    // (Polygon-Vorschau füllt das Gebäude bereits orange ein, sobald es eine
-    // sinnvolle Form hat).
     if (drawnPoints.length >= 2) {
       features.push({
         type: "Feature",
-        properties: { kind: "line" },
+        properties: { kind: "edges" },
         geometry: {
           type: "LineString",
           coordinates: drawnPoints.map((p) => [p.lng, p.lat]),
@@ -294,8 +352,29 @@ export default function MapView({
         geometry: { type: "Polygon", coordinates: [ring] },
       });
     }
+
+    // First-Linie: blau, eigene Linie mit eigenen Endpunkt-Markern.
+    for (let i = 0; i < ridgePoints.length; i++) {
+      const p = ridgePoints[i]!;
+      features.push({
+        type: "Feature",
+        properties: { kind: "ridge", idx: i },
+        geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+      });
+    }
+    if (ridgePoints.length === 2) {
+      features.push({
+        type: "Feature",
+        properties: { kind: "ridgeLine" },
+        geometry: {
+          type: "LineString",
+          coordinates: ridgePoints.map((p) => [p.lng, p.lat]),
+        },
+      });
+    }
+
     src.setData({ type: "FeatureCollection", features });
-  }, [drawnPoints]);
+  }, [drawnPoints, ridgePoints]);
 
   return (
     <div
@@ -344,9 +423,21 @@ export default function MapView({
             boxShadow: "0 6px 20px rgba(15,23,42,0.18)",
           }}
         >
-          <strong style={{ fontWeight: 600 }}>Zeichnen:</strong> Klicke nacheinander
-          die Eckpunkte des Hauses an. Mindestens 3 Punkte. In der Sidebar dann
-          &bdquo;Fertig&ldquo; drücken.
+          {drawingPhase === "corners" ? (
+            <>
+              <strong style={{ fontWeight: 600 }}>Schritt 1 &mdash; Eckpunkte:</strong>{" "}
+              Klicke die Hausecken an (mindestens 3). In der Sidebar dann
+              &bdquo;Weiter zur First&ldquo; oder &bdquo;Fertig&ldquo;.
+            </>
+          ) : (
+            <>
+              <strong style={{ fontWeight: 600, color: "#2563eb" }}>
+                Schritt 2 &mdash; First-Linie:
+              </strong>{" "}
+              Klicke 2 Punkte für die First-Linie (Dachrücken). Dann in der
+              Sidebar &bdquo;Fertig&ldquo;.
+            </>
+          )}
         </div>
       )}
       {!mapSettings.tileUrl && !drawingMode && !pickingMode && (

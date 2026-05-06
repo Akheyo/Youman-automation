@@ -45,6 +45,8 @@ export type ManualBuildingParams = {
   eaveHeightM: number;
   /** Optionaler Label-Text für den Building-State. */
   label?: string;
+  /** Optional: explizite First-Richtung in Grad (Azimuth, 0 = Nord, CW). */
+  ridgeAzimuthDeg?: number;
 };
 
 export function buildBuildingFromManualFootprint(
@@ -55,6 +57,13 @@ export function buildBuildingFromManualFootprint(
   }
 
   const obb = fitOrientedBox(p.footprint);
+  // Wenn der User die First-Linie explizit angegeben hat, nutzen wir
+  // dieses Azimuth statt der OBB-Heuristik. Die OBB-Maße bleiben gleich,
+  // nur die Rotation der Default-Geometrie passt sich der echten First an.
+  const ridgeAzimuthDeg =
+    p.ridgeAzimuthDeg !== undefined
+      ? p.ridgeAzimuthDeg
+      : obb.ridgeAzimuthDeg;
 
   const rise =
     p.shape === "flachdach"
@@ -62,9 +71,9 @@ export function buildBuildingFromManualFootprint(
       : obb.halfWidthM * Math.tan(p.pitchDeg * DEG);
   const ridgeHeightM = p.eaveHeightM + rise;
   // mockRoofs.buildXxx nutzt rotationDeg als CCW-Rotation der Default-Geometrie
-  // (First entlang Y-Achse). Wir wollen den First in Richtung obb.ridgeAzimuth
-  // (CW von Nord) drehen → rotationDeg = -ridgeAzimuthDeg.
-  const rotationDeg = -obb.ridgeAzimuthDeg;
+  // (First entlang Y-Achse). Wir drehen den First in Richtung des bestimmten
+  // Azimuths (User oder OBB) → rotationDeg = -ridgeAzimuthDeg.
+  const rotationDeg = -ridgeAzimuthDeg;
 
   const template: MockBuildingTemplate = {
     kind: p.shape,

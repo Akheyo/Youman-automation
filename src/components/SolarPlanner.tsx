@@ -46,6 +46,22 @@ const DEFAULT_MANUAL_PARAMS: ManualParams = {
   eaveHeightM: 5.5,
 };
 
+/**
+ * Berechnet das First-Azimuth (CW von Nord, in Grad) aus zwei lng/lat-Punkten.
+ * 0° = Nord, 90° = Ost, 180° = Süd, 270° = West. Das Ergebnis liegt in
+ * [0°, 180°), weil eine First-Linie keine Richtung hat (a→b ist gleich b→a).
+ */
+function ridgeAzimuthFromPoints(a: LngLat, b: LngLat): number {
+  const meanLat = (a.lat + b.lat) / 2;
+  const dx = (b.lng - a.lng) * Math.cos((meanLat * Math.PI) / 180);
+  const dy = b.lat - a.lat;
+  // atan2(dx, dy) → 0 = nach Norden zeigend, im Uhrzeigersinn.
+  let az = (Math.atan2(dx, dy) * 180) / Math.PI;
+  if (az < 0) az += 360;
+  if (az >= 180) az -= 180;
+  return az;
+}
+
 const DEFAULT_SETTINGS: ModuleSettings = {
   moduleWp: 430,
   moduleWidthM: 1.13,
@@ -76,9 +92,20 @@ export default function SolarPlanner({ mapSettings }: Props) {
   const [drawingMode, setDrawingMode] = useState(false);
   const [pickingMode, setPickingMode] = useState(false);
   const [drawnPoints, setDrawnPoints] = useState<LngLat[]>([]);
+  // Drawing-Phase: erst Ecken, dann optional 2 Punkte für die First-Linie.
+  const [drawingPhase, setDrawingPhase] = useState<"corners" | "ridge">(
+    "corners",
+  );
+  const [ridgePoints, setRidgePoints] = useState<LngLat[]>([]);
   const [manualParams, setManualParams] = useState<ManualParams>(
     DEFAULT_MANUAL_PARAMS,
   );
+  // Adresssuche unabhängig von der Detektion: zuerst nur Geocoding +
+  // Kamera-Flug, danach kann der User die Modellierungs-Methode wählen.
+  const [searchedLocation, setSearchedLocation] = useState<LngLat | null>(
+    null,
+  );
+  const [cameraTick, setCameraTick] = useState(0);
 
   /* -------- Helpers -------- */
 
@@ -119,15 +146,72 @@ export default function SolarPlanner({ mapSettings }: Props) {
 
   /* -------- Actions -------- */
 
-  const handleDetect = useCallback(async () => {
+  /**
+   * Schritt 1: Haus per Adresse SUCHEN (Geocoding + Kamera-Flug).
+   * Lädt KEIN 3D-Modell. Damit der User danach selbst entscheidet, wie das
+   * Dach aufgebaut werden soll (Auto-Erkennung / Klick / Selber zeichnen).
+   */
+  const handleSearchAddress = useCallback(async () => {
     if (!address.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/geocode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address }),
+      });
+      const data = (await res.json()) as
+        | { lat: number; lng: number; formattedAddress: string }
+        | { error: string };
+      if (!res.ok || "error" in data) {
+        const msg = "error" in data ? data.error : `HTTP ${res.status}`;
+        throw new Error(msg);
+      }
+      const loc: LngLat = { lng: data.lng, lat: data.lat };
+      setSearchedLocation(loc);
+      setCameraTick((t) => t + 1);
+      // Bestehendes Modell verwerfen, damit der User klar sieht: jetzt erst
+      // Dach festlegen. Gleichzeitig Drawing-States resetten.
+      setBuilding(null);
+      setProviderInfo(null);
+      setDrawingMode(false);
+      setPickingMode(false);
+      setDrawnPoints([]);
+      setRidgePoints([]);
+      setDrawingPhase("corners");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Adresse konnte nicht gefunden werden",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [address]);
+
+  /**
+   * Schritt 2 – Variante A: Auto-Erkennung über die Provider-Kette
+   * (Google Solar → OSM). Funktioniert auch ohne vorherige Adresse,
+   * sofern eine im Eingabefeld steht.
+   */
+  const handleAutoDetect = useCallback(async () => {
+    if (!address.trim() && !searchedLocation) {
+      setError("Bitte zuerst eine Adresse eingeben oder Haus suchen.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/detect-roof", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address }),
+        body: JSON.stringify(
+          searchedLocation
+            ? { lat: searchedLocation.lat, lng: searchedLocation.lng, address }
+            : { address },
+        ),
       });
       const data = (await res.json()) as
         | {
@@ -150,14 +234,13 @@ export default function SolarPlanner({ mapSettings }: Props) {
       const raw =
         err instanceof Error ? err.message : "Unbekannter Fehler";
       setError(
-        `Keine Solar- oder Gebäudedaten gefunden für diese Adresse. ` +
-          `Probier 'Haus auswählen' (Klick auf das Haus) oder 'Selber zeichnen'. ` +
-          `(${raw})`,
+        `Keine Solar- oder Gebäudedaten gefunden. ` +
+          `Probier 'Haus auswählen' oder 'Selber zeichnen'. (${raw})`,
       );
     } finally {
       setLoading(false);
     }
-  }, [address, settings, recomputeBuilding]);
+  }, [address, searchedLocation, settings, recomputeBuilding]);
 
   const loadDemo = useCallback(async () => {
     setLoading(true);
@@ -299,11 +382,13 @@ export default function SolarPlanner({ mapSettings }: Props) {
     [manualParams, recomputeBuilding, settings],
   );
 
-  /* -------- Manual: Drawing (Polygon zeichnen) -------- */
+  /* -------- Manual: Drawing (Polygon + optional First-Linie zeichnen) -------- */
 
   const startDrawing = useCallback(() => {
     setError(null);
     setDrawnPoints([]);
+    setRidgePoints([]);
+    setDrawingPhase("corners");
     setPickingMode(false);
     setDrawingMode(true);
   }, []);
@@ -311,50 +396,98 @@ export default function SolarPlanner({ mapSettings }: Props) {
   const cancelDrawing = useCallback(() => {
     setDrawingMode(false);
     setDrawnPoints([]);
+    setRidgePoints([]);
+    setDrawingPhase("corners");
   }, []);
 
-  const finishDrawing = useCallback(() => {
+  /** Wechselt von Eckpunkten in die First-Phase (Ridge-Markierung). */
+  const proceedToRidge = useCallback(() => {
     if (drawnPoints.length < 3) {
       setError("Mindestens 3 Eckpunkte zeichnen.");
       return;
     }
+    setError(null);
+    setDrawingPhase("ridge");
+  }, [drawnPoints.length]);
+
+  /** Springt direkt vom Ecken-Schritt aufs fertige Modell ohne explizite First. */
+  const skipRidge = useCallback(() => {
+    finishDrawingNow(/* ridgeAzimuthDeg */ undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawnPoints, manualParams, settings, recomputeBuilding]);
+
+  const finishDrawing = useCallback(() => {
+    // Wenn der User in der Ridge-Phase ist und 2 Punkte gesetzt hat,
+    // berechnen wir Azimuth aus diesen.
+    if (drawingPhase === "ridge" && ridgePoints.length === 2) {
+      const a = ridgePoints[0]!;
+      const b = ridgePoints[1]!;
+      const az = ridgeAzimuthFromPoints(a, b);
+      finishDrawingNow(az);
+    } else if (drawingPhase === "corners" && drawnPoints.length >= 3) {
+      finishDrawingNow(undefined);
+    } else {
+      setError("Bitte 2 Punkte für die First-Linie setzen.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawingPhase, ridgePoints, drawnPoints]);
+
+  /** Gemeinsamer Bau-Pfad. Nutzt optional explizites Ridge-Azimuth. */
+  function finishDrawingNow(ridgeAzimuthDeg: number | undefined) {
     try {
       const built = buildBuildingFromManualFootprint({
         footprint: drawnPoints,
         shape: manualParams.shape,
         pitchDeg: manualParams.pitchDeg,
         eaveHeightM: manualParams.eaveHeightM,
+        ridgeAzimuthDeg,
         label: "Manuell gezeichnet",
       });
       const computed = recomputeBuilding(built, built.roofFaces, settings);
       setBuilding(computed);
       setProviderInfo({
         name: "manual",
-        reason: `User hat ${drawnPoints.length} Eckpunkte gezeichnet.`,
+        reason:
+          ridgeAzimuthDeg !== undefined
+            ? `User: ${drawnPoints.length} Eckpunkte + First (${ridgeAzimuthDeg.toFixed(0)}°).`
+            : `User: ${drawnPoints.length} Eckpunkte (First aus OBB-Heuristik).`,
       });
       setDrawingMode(false);
       setDrawnPoints([]);
+      setRidgePoints([]);
+      setDrawingPhase("corners");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Manuelles Bauen fehlgeschlagen",
       );
     }
-  }, [drawnPoints, manualParams, recomputeBuilding, settings]);
+  }
 
   const handleMapClick = useCallback(
     (p: LngLat) => {
       if (pickingMode) {
         void pickHouseAt(p);
       } else if (drawingMode) {
-        setDrawnPoints((prev) => [...prev, p]);
+        if (drawingPhase === "corners") {
+          setDrawnPoints((prev) => [...prev, p]);
+        } else if (drawingPhase === "ridge") {
+          // Maximal 2 Ridge-Punkte; weitere ersetzen den letzten.
+          setRidgePoints((prev) =>
+            prev.length < 2 ? [...prev, p] : [...prev.slice(0, 1), p],
+          );
+        }
       }
     },
-    [pickingMode, drawingMode, pickHouseAt],
+    [pickingMode, drawingMode, drawingPhase, pickHouseAt],
   );
 
   const undoLastPoint = useCallback(() => {
-    setDrawnPoints((prev) => prev.slice(0, -1));
-  }, []);
+    if (drawingPhase === "ridge") {
+      setRidgePoints((prev) => prev.slice(0, -1));
+    } else {
+      setDrawnPoints((prev) => prev.slice(0, -1));
+    }
+  }, [drawingPhase]);
 
   // Wenn manuelle Parameter (Form/Pitch/Traufe) sich ändern UND wir gerade
   // ein manuell gezeichnetes Gebäude im State haben, neu bauen.
@@ -410,15 +543,20 @@ export default function SolarPlanner({ mapSettings }: Props) {
           mapSettings={mapSettings}
           recenterTick={recenterTick}
           drawingMode={drawingMode}
+          drawingPhase={drawingPhase}
           pickingMode={pickingMode}
           drawnPoints={drawnPoints}
+          ridgePoints={ridgePoints}
           onMapClick={handleMapClick}
+          cameraTarget={searchedLocation}
+          cameraTick={cameraTick}
         />
       </div>
       <Sidebar
         address={address}
         setAddress={setAddress}
-        onDetect={handleDetect}
+        onSearchAddress={handleSearchAddress}
+        onAutoDetect={handleAutoDetect}
         onLoadDemo={() => void loadDemo()}
         onCycleDemo={cycleDemo}
         onRecenter={recenter}
@@ -431,15 +569,20 @@ export default function SolarPlanner({ mapSettings }: Props) {
         settings={settings}
         setSettings={setSettings}
         toggleFace={toggleFace}
+        searchedLocation={searchedLocation}
         drawingMode={drawingMode}
+        drawingPhase={drawingPhase}
         pickingMode={pickingMode}
         drawnPointCount={drawnPoints.length}
+        ridgePointCount={ridgePoints.length}
         manualParams={manualParams}
         setManualParams={setManualParams}
         onStartPicking={startPicking}
         onCancelPicking={cancelPicking}
         onStartDrawing={startDrawing}
         onCancelDrawing={cancelDrawing}
+        onProceedToRidge={proceedToRidge}
+        onSkipRidge={skipRidge}
         onFinishDrawing={finishDrawing}
         onUndoPoint={undoLastPoint}
       />
