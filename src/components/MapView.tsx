@@ -3,9 +3,10 @@
 /**
  * MapView – die große 3D-Karte links.
  *
- * MapLibre GL JS dient als Basemap und als Träger für unseren
- * `ThreeBuildingLayer`. Pitch/Bearing/Zoom kommen aus MapLibre, die
- * Three.js-Geometrie bleibt automatisch georeferenziert.
+ * MapLibre GL JS dient als Basemap UND als Renderer für das Gebäude.
+ * Die `NativeBuildingLayer` zeichnet Wände, Dachflächen und PV-Module
+ * über native `fill-extrusion`-Layer; kein Three.js, keine Konflikte
+ * im geteilten WebGL-Kontext.
  */
 
 import { useEffect, useMemo, useRef } from "react";
@@ -16,7 +17,7 @@ import maplibregl, {
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { DetectedBuilding, MapSettings } from "@/types/solar";
-import { ThreeBuildingLayer } from "@/lib/map/ThreeBuildingLayer";
+import { NativeBuildingLayer } from "@/lib/map/NativeBuildingLayer";
 
 type MapViewProps = {
   building: DetectedBuilding | null;
@@ -30,8 +31,7 @@ function buildStyle(
   attribution: string | undefined,
 ): StyleSpecification {
   // Immer ein Background-Layer als Sicherheitsnetz, damit der Map-Container
-  // auch dann eine sichtbare Farbe hat, wenn alle Tile-Requests scheitern
-  // (z. B. 403 wegen Domain-Restriction des Tile-Anbieters).
+  // auch dann eine sichtbare Farbe hat, wenn alle Tile-Requests scheitern.
   const backgroundLayer = {
     id: "background",
     type: "background" as const,
@@ -52,11 +52,7 @@ function buildStyle(
       },
       layers: [
         backgroundLayer,
-        {
-          id: "basemap",
-          type: "raster",
-          source: "basemap",
-        },
+        { id: "basemap", type: "raster", source: "basemap" },
       ],
     };
   }
@@ -95,7 +91,7 @@ export default function MapView({
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
-  const layerRef = useRef<ThreeBuildingLayer | null>(null);
+  const layerRef = useRef<NativeBuildingLayer | null>(null);
   const buildingRef = useRef<DetectedBuilding | null>(building);
   buildingRef.current = building;
 
@@ -104,12 +100,17 @@ export default function MapView({
     [mapSettings.tileUrl, mapSettings.tileAttribution],
   );
 
-  // 1) Karte einmalig erzeugen.
+  // Karte einmalig erzeugen.
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     // eslint-disable-next-line no-console
-    console.log("[MapView] mounting, container size:", rect.width, "x", rect.height);
+    console.log(
+      "[MapView] mounting, container size:",
+      rect.width,
+      "x",
+      rect.height,
+    );
     const initialCenter: [number, number] = buildingRef.current
       ? [buildingRef.current.center.lng, buildingRef.current.center.lat]
       : [13.405, 52.52];
@@ -130,23 +131,14 @@ export default function MapView({
     // eslint-disable-next-line no-console
     console.log("[MapView] MapLibre map created");
 
-    // Three-Layer immer dann (re-)hinzufügen, wenn der aktuelle Style fertig
-    // geladen ist. Deckt sowohl den initialen `load` als auch spätere
-    // `setStyle`-Aufrufe ab. MapLibre wirft Style-Custom-Layers beim
-    // Style-Wechsel raus, daher idempotent neu erzeugen.
-    const ensureThreeLayer = () => {
+    // Native fill-extrusion-Layer installieren, sobald der Style bereit ist.
+    const ensureBuildingLayer = () => {
       if (!mapRef.current) return;
       try {
-        if (mapRef.current.getLayer("youman-three-building")) return;
-      } catch {
-        /* getLayer kann werfen, wenn Style noch nicht ready ist – ignorieren */
-      }
-      try {
-        const layer = new ThreeBuildingLayer({ showEdges: true });
-        mapRef.current.addLayer(layer);
+        const layer =
+          layerRef.current ?? new NativeBuildingLayer(mapRef.current);
+        layer.install();
         layerRef.current = layer;
-        // eslint-disable-next-line no-console
-        console.log("[MapView] Three layer added");
         const b = buildingRef.current;
         if (b) {
           layer.setBuilding(b);
@@ -158,36 +150,26 @@ export default function MapView({
             essential: true,
           });
         }
+        // eslint-disable-next-line no-console
+        console.log("[MapView] native building layer ready");
       } catch (err) {
-        // Three-Layer darf die Karte nicht killen.
-        console.error("[MapView] Three-Layer konnte nicht hinzugefügt werden:", err);
+        // eslint-disable-next-line no-console
+        console.error("[MapView] Layer-Installation fehlgeschlagen:", err);
       }
     };
 
     map.on("load", () => {
       // eslint-disable-next-line no-console
       console.log("[MapView] map.load fired");
-      ensureThreeLayer();
-      // Resize triggern – MapLibre rechnet die Canvas-Größe oft erst nach
-      // dem ersten Layout-Frame korrekt aus, und ein nicht resized Canvas
-      // bleibt 0×0 und damit unsichtbar.
+      ensureBuildingLayer();
       mapRef.current?.resize();
     });
-    map.on("style.load", () => {
-      // eslint-disable-next-line no-console
-      console.log("[MapView] map.style.load fired");
-      ensureThreeLayer();
-    });
     map.on("error", (e) => {
-      // Tile-Fehler etc. nur loggen, nicht crashen.
       // eslint-disable-next-line no-console
       console.warn("[MapLibre]", e?.error?.message ?? e);
     });
 
-    // Resize-Beobachter: wenn der Container später noch wächst (z. B. weil
-    // Sidebar/Layout asynchron auflöst), zwingt das MapLibre die Canvas
-    // anzupassen. Behebt den weiß-bleibenden Map-Bereich, wenn der Container
-    // beim ersten Mount 0-Höhe hatte.
+    // Resize-Beobachter, falls der Container nach dem Mount noch wächst.
     const ro = new ResizeObserver(() => mapRef.current?.resize());
     ro.observe(containerRef.current);
 
@@ -200,13 +182,7 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 2) StrictMode-fester Schutz: Style wird beim Mount im Constructor gesetzt,
-  // ein nachträgliches setStyle() würde nur die Race-Condition mit der ersten
-  // Style-Ladung erneut auslösen. Da die `mapSettings` aus env-Variablen
-  // kommen und ohne Server-Restart sowieso nicht wechseln, ist hier kein
-  // Effect mehr nötig.
-
-  // 3) Wenn das Gebäude wechselt, Layer aktualisieren + Kamera schwenken.
+  // Wenn das Gebäude wechselt: Layer aktualisieren + Kamera schwenken.
   useEffect(() => {
     const map = mapRef.current;
     const layer = layerRef.current;
@@ -221,7 +197,7 @@ export default function MapView({
     });
   }, [building]);
 
-  // 4) Manuelles Recenter aus Sidebar.
+  // Manuelles Recenter aus der Sidebar.
   useEffect(() => {
     if (recenterTick === 0) return;
     const map = mapRef.current;
