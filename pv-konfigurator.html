@@ -1442,6 +1442,10 @@ const panelMat = new THREE.MeshStandardMaterial({
 const panelHoverMat = new THREE.MeshStandardMaterial({
   color: 0x4f9bff, transparent: true, opacity: 0.45, side: THREE.DoubleSide,
 });
+const gaubeMat = new THREE.MeshStandardMaterial({
+  color: 0xdc2626, transparent: true, opacity: 0.55, side: THREE.DoubleSide,
+});
+const gaubeLineMat = new THREE.LineBasicMaterial({ color: 0xdc2626 });
 
 // Subtile atmosphärische Tiefe
 scene.fog = new THREE.Fog(0xc8d8e4, 80, 380);
@@ -1451,6 +1455,13 @@ const disabledPanels = new Set();    // "slopeIdx:r:c" — Default-Panel ausgebl
 const enabledPanels  = new Set();    // "slopeIdx:r:c" — Manuell hinzugefügt (z. B. auf Nord)
 const slopeMeshes = [];              // Roof-Slope-Mesh-Referenzen für Raycasting
 const slopeData   = [];              // Pro-Slope-Metadaten
+
+// Gauben (manuell auf 3D-Dach gezeichnete Polygone, blockieren Panel-Platzierung)
+const gaubeGroup = new THREE.Group();
+scene.add(gaubeGroup);
+const gauben = [];                   // [{slopeIdx, polyUV: [{u,v}], mesh}]
+let drawingMode = 'normal';          // 'normal' | 'gaube'
+let gaubeDrawing = null;             // {slopeIdx, vertices: [Vector3], polyUV: [{u,v}], lineObj, dotObjs[]}
 
 const houseGroup = new THREE.Group();
 scene.add(houseGroup);
@@ -1473,9 +1484,22 @@ function clearHouse() {
   while (panelGroup.children.length > 0) {
     const c = panelGroup.children[0]; panelGroup.remove(c); disposeTree(c);
   }
+  while (gaubeGroup.children.length > 0) {
+    const c = gaubeGroup.children[0]; gaubeGroup.remove(c); disposeTree(c);
+  }
+  cancelGaubeDrawing();
   slopeMeshes.length = 0;
   slopeData.length = 0;
 }
+
+function clearGauben() {
+  gauben.length = 0;
+  while (gaubeGroup.children.length > 0) {
+    const c = gaubeGroup.children[0]; gaubeGroup.remove(c); disposeTree(c);
+  }
+  if (typeof window.recompute === 'function') window.recompute();
+}
+window.clearGauben = clearGauben;
 
 function ringToLocal(ring, pivot) {
   const mPerLat = 111320;
@@ -1574,7 +1598,7 @@ function buildRoofSlope(corners, aspect) {
   slopeData.push(data);
 
   // Default-Belegung: nur auf geeigneten Slopes (Süd/Ost/West), respektiere
-  // disabledPanels/enabledPanels.
+  // disabledPanels/enabledPanels und Gauben.
   if (cols > 0 && rows > 0) {
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -1582,12 +1606,18 @@ function buildRoofSlope(corners, aspect) {
         const isDefaultOn = isSlopeUsable(aspect);
         const enabled = enabledPanels.has(key);
         const disabled = disabledPanels.has(key);
+        if (panelInsideAnyGaube(slopeIdx, r, c)) continue;
         if ((isDefaultOn && !disabled) || enabled) {
           addPanelMesh(slopeIdx, r, c);
         }
       }
     }
   }
+
+  // Gauben-Meshes für diesen Slope neu zeichnen (sie hängen an slopeIdx)
+  gauben
+    .filter(g => g.slopeIdx === slopeIdx)
+    .forEach(g => g.mesh = rebuildGaubeMesh(g));
 }
 
 function addPanelMesh(slopeIdx, r, c) {
@@ -1628,7 +1658,129 @@ function findPanelMesh(slopeIdx, r, c) {
 
 /* Old placePanels — entfernt, jetzt in buildRoofSlope integriert. */
 
-/* placePanels wurde in buildRoofSlope integriert (siehe oben). */
+/* ----------- Gauben-Polygone ----------- */
+function pointInPolygon2D(p, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].u, yi = poly[i].v;
+    const xj = poly[j].u, yj = poly[j].v;
+    if (((yi > p.v) !== (yj > p.v)) &&
+        (p.u < (xj - xi) * (p.v - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+function panelInsideAnyGaube(slopeIdx, r, c) {
+  const s = slopeData[slopeIdx];
+  if (!s) return false;
+  const cu = s.startU + c * (PANEL_W_M + PANEL_GAP) + PANEL_W_M / 2;
+  const cv = s.startV + r * (PANEL_H_M + PANEL_GAP) + PANEL_H_M / 2;
+  for (const g of gauben) {
+    if (g.slopeIdx !== slopeIdx) continue;
+    if (pointInPolygon2D({ u: cu, v: cv }, g.polyUV)) return true;
+  }
+  return false;
+}
+function rebuildGaubeMesh(g) {
+  const s = slopeData[g.slopeIdx];
+  if (!s) return null;
+  const shape = new THREE.Shape();
+  shape.moveTo(g.polyUV[0].u, g.polyUV[0].v);
+  for (let i = 1; i < g.polyUV.length; i++) shape.lineTo(g.polyUV[i].u, g.polyUV[i].v);
+  shape.closePath();
+  const geom = new THREE.ShapeGeometry(shape);
+  // 2D-Shape (x=u, y=v) auf die Slope-Ebene transformieren
+  const positions = geom.attributes.position;
+  const newPositions = new Float32Array(positions.count * 3);
+  const off = 0.05;
+  for (let i = 0; i < positions.count; i++) {
+    const u = positions.getX(i), v = positions.getY(i);
+    const p = s.corners[0].clone()
+      .add(s.wDir.clone().multiplyScalar(u))
+      .add(s.hDir.clone().multiplyScalar(v))
+      .add(s.normal.clone().multiplyScalar(off));
+    newPositions[i*3] = p.x; newPositions[i*3+1] = p.y; newPositions[i*3+2] = p.z;
+  }
+  geom.setAttribute('position', new THREE.BufferAttribute(newPositions, 3));
+  geom.computeVertexNormals();
+  const mesh = new THREE.Mesh(geom, gaubeMat);
+  // Boundary-Linie
+  const ringPts = g.polyUV.map(uv =>
+    s.corners[0].clone()
+      .add(s.wDir.clone().multiplyScalar(uv.u))
+      .add(s.hDir.clone().multiplyScalar(uv.v))
+      .add(s.normal.clone().multiplyScalar(off + 0.005))
+  );
+  ringPts.push(ringPts[0].clone());
+  const lineGeom = new THREE.BufferGeometry().setFromPoints(ringPts);
+  const line = new THREE.Line(lineGeom, gaubeLineMat);
+  const grp = new THREE.Group();
+  grp.add(mesh); grp.add(line);
+  gaubeGroup.add(grp);
+  return grp;
+}
+
+function startGaubeDrawing() {
+  drawingMode = 'gaube';
+  gaubeDrawing = { slopeIdx: null, vertices: [], polyUV: [], lineObj: null, dotObjs: [] };
+  controls.enableRotate = false;  // Verhindert versehentliche Rotation während Zeichnung
+  updateHudForMode();
+}
+function cancelGaubeDrawing() {
+  drawingMode = 'normal';
+  if (gaubeDrawing) {
+    if (gaubeDrawing.lineObj) { gaubeGroup.remove(gaubeDrawing.lineObj); gaubeDrawing.lineObj.geometry.dispose(); }
+    gaubeDrawing.dotObjs.forEach(o => { gaubeGroup.remove(o); o.geometry.dispose(); });
+  }
+  gaubeDrawing = null;
+  controls.enableRotate = true;
+  updateHudForMode();
+}
+function addGaubeVertex(point, slopeIdx) {
+  if (!gaubeDrawing) return;
+  if (gaubeDrawing.slopeIdx !== null && gaubeDrawing.slopeIdx !== slopeIdx) return;
+  gaubeDrawing.slopeIdx = slopeIdx;
+  const s = slopeData[slopeIdx];
+  const local = new THREE.Vector3().subVectors(point, s.corners[0]);
+  const u = local.dot(s.wDir), v = local.dot(s.hDir);
+  gaubeDrawing.vertices.push(point.clone());
+  gaubeDrawing.polyUV.push({ u, v });
+  // Vertex-Marker
+  const dotGeom = new THREE.SphereGeometry(0.18, 12, 8);
+  const dotMat = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
+  const dot = new THREE.Mesh(dotGeom, dotMat);
+  dot.position.copy(point).add(s.normal.clone().multiplyScalar(0.06));
+  gaubeGroup.add(dot);
+  gaubeDrawing.dotObjs.push(dot);
+  // Linie aktualisieren
+  if (gaubeDrawing.lineObj) { gaubeGroup.remove(gaubeDrawing.lineObj); gaubeDrawing.lineObj.geometry.dispose(); }
+  if (gaubeDrawing.vertices.length >= 2) {
+    const pts = gaubeDrawing.vertices.map(p => p.clone().add(s.normal.clone().multiplyScalar(0.06)));
+    const lineGeom = new THREE.BufferGeometry().setFromPoints(pts);
+    gaubeDrawing.lineObj = new THREE.Line(lineGeom, gaubeLineMat);
+    gaubeGroup.add(gaubeDrawing.lineObj);
+  }
+  updateHudForMode();
+}
+function closeGaubePolygon() {
+  if (!gaubeDrawing || gaubeDrawing.vertices.length < 3) return;
+  const slopeIdx = gaubeDrawing.slopeIdx;
+  const polyUV = gaubeDrawing.polyUV.map(p => ({ ...p }));
+  // Drawing-Preview wegräumen
+  if (gaubeDrawing.lineObj) { gaubeGroup.remove(gaubeDrawing.lineObj); gaubeDrawing.lineObj.geometry.dispose(); }
+  gaubeDrawing.dotObjs.forEach(o => { gaubeGroup.remove(o); o.geometry.dispose(); });
+  gaubeDrawing = null;
+  drawingMode = 'normal';
+  controls.enableRotate = true;
+  // Gaube speichern + Re-Render via recompute (so wird buildRoofSlope neu gemacht)
+  gauben.push({ slopeIdx, polyUV, mesh: null });
+  if (typeof window.recompute === 'function') window.recompute();
+  updateHudForMode();
+}
+window.startGaubeDrawing = startGaubeDrawing;
+window.cancelGaubeDrawing = cancelGaubeDrawing;
+window.closeGaubePolygon = closeGaubePolygon;
 
 /* ----------- Hauptfunktion: Haus aufbauen ----------- */
 /* Kamera-Hilfsfunktion: positioniert orbiting auf den Slope, der am
@@ -1803,7 +1955,7 @@ function viewTop() {
 window.viewReset = viewReset;
 window.viewTop = viewTop;
 
-/* Hud-Buttons + Manual-Mode-Hinweis */
+/* Hud-Buttons + Mode-Hinweis */
 {
   const hud = document.createElement('div');
   hud.style.cssText = 'position:absolute;bottom:12px;left:12px;display:flex;gap:6px;z-index:10;flex-wrap:wrap';
@@ -1812,16 +1964,22 @@ window.viewTop = viewTop;
     <button type="button" id="v3d-reset" style="${btnStyle}">↺ Süd-Sicht</button>
     <button type="button" id="v3d-top" style="${btnStyle}">⤓ Top</button>
     <button type="button" id="v3d-autofill" style="${btnStyle}">⚡ Auto-Belegung</button>
+    <button type="button" id="v3d-gaube" style="${btnStyle};background:rgba(220,38,38,.85)">✏️ Gaube zeichnen</button>
+    <button type="button" id="v3d-clear-gauben" style="${btnStyle}">✕ Gauben löschen</button>
   `;
   container.appendChild(hud);
   document.getElementById('v3d-reset').addEventListener('click', viewReset);
   document.getElementById('v3d-top').addEventListener('click', viewTop);
   document.getElementById('v3d-autofill').addEventListener('click', resetToAutoFill);
+  document.getElementById('v3d-gaube').addEventListener('click', () => {
+    if (drawingMode === 'gaube') cancelGaubeDrawing();
+    else startGaubeDrawing();
+  });
+  document.getElementById('v3d-clear-gauben').addEventListener('click', clearGauben);
 
   const tip = document.createElement('div');
   tip.id = 'v3d-tip';
-  tip.style.cssText = 'position:absolute;top:12px;left:12px;padding:6px 11px;border-radius:8px;background:rgba(15,23,42,.78);color:#fff;font:500 .8rem system-ui;backdrop-filter:blur(8px);z-index:10;max-width:260px;line-height:1.4';
-  tip.innerHTML = '💡 <strong>Klick</strong> auf Modul = entfernen · auf leere Stelle = hinzufügen';
+  tip.style.cssText = 'position:absolute;top:12px;left:12px;padding:8px 12px;border-radius:10px;background:rgba(15,23,42,.82);color:#fff;font:500 .8rem system-ui;backdrop-filter:blur(8px);z-index:10;max-width:300px;line-height:1.45';
   container.appendChild(tip);
 
   const counter = document.createElement('div');
@@ -1830,6 +1988,28 @@ window.viewTop = viewTop;
   counter.textContent = '— Module';
   container.appendChild(counter);
 }
+
+function updateHudForMode() {
+  const tip = document.getElementById('v3d-tip');
+  const gaubeBtn = document.getElementById('v3d-gaube');
+  if (!tip) return;
+  if (drawingMode === 'gaube') {
+    const n = gaubeDrawing?.vertices.length ?? 0;
+    tip.innerHTML = `✏️ <strong>Gaube zeichnen</strong> · ${n} Punkt${n === 1 ? '' : 'e'} gesetzt
+      <br>Klick = Eckpunkt · <strong>Doppelklick</strong> = schließen · ESC oder Button = abbrechen`;
+    if (gaubeBtn) { gaubeBtn.textContent = '✕ Abbrechen'; gaubeBtn.style.background = 'rgba(15,23,42,.78)'; }
+  } else {
+    tip.innerHTML = `🖱 <strong>Maus ziehen</strong> = drehen · <strong>Rechtsklick</strong> = verschieben · <strong>Mausrad</strong> = zoomen
+      <br>💡 Klick auf Modul = entfernen · auf leere Stelle = hinzufügen`;
+    if (gaubeBtn) { gaubeBtn.textContent = '✏️ Gaube zeichnen'; gaubeBtn.style.background = 'rgba(220,38,38,.85)'; }
+  }
+}
+updateHudForMode();
+
+// ESC zum Abbrechen der Gauben-Zeichnung
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && drawingMode === 'gaube') cancelGaubeDrawing();
+});
 
 function updateCounter() {
   const el = document.getElementById('v3d-counter');
@@ -1902,6 +2082,10 @@ function gridCellAtHit(hit, slopeIdx) {
 
 function updateHover(e) {
   if (hoverPanel) { panelGroup.remove(hoverPanel); hoverPanel.geometry.dispose(); hoverPanel = null; }
+  if (drawingMode === 'gaube') {
+    renderer.domElement.style.cursor = 'crosshair';
+    return;
+  }
   const rc = pickFromEvent(e);
   // Hover über existierendes Panel?
   const panelHits = rc.intersectObjects(panelGroup.children, false);
@@ -1945,6 +2129,15 @@ function buildHoverPanel(slopeIdx, r, c) {
 
 function handleClick(e) {
   const rc = pickFromEvent(e);
+  // Gauben-Zeichnen-Modus: jeder Klick auf eine Slope setzt einen Vertex
+  if (drawingMode === 'gaube') {
+    const slopeHits = rc.intersectObjects(slopeMeshes, false);
+    if (slopeHits.length > 0) {
+      const hit = slopeHits[0];
+      addGaubeVertex(hit.point.clone(), hit.object.userData.slopeIdx);
+    }
+    return;
+  }
   // 1. Trifft ein bestehendes Panel? → entfernen
   const panelHits = rc.intersectObjects(panelGroup.children.filter(p => p.userData.kind === 'panel'), false);
   if (panelHits.length > 0) {
@@ -1969,6 +2162,7 @@ function handleClick(e) {
     if (!cell) return;
     const key = `${slopeIdx}:${cell.r}:${cell.c}`;
     if (findPanelMesh(slopeIdx, cell.r, cell.c)) return;  // schon belegt
+    if (panelInsideAnyGaube(slopeIdx, cell.r, cell.c)) return;  // in einer Gaube → blockiert
     addPanelMesh(slopeIdx, cell.r, cell.c);
     disabledPanels.delete(key);
     enabledPanels.add(key);
@@ -1976,6 +2170,14 @@ function handleClick(e) {
     notifyPanelChange();
   }
 }
+
+// Doppelklick im Gauben-Modus = Polygon schließen
+renderer.domElement.addEventListener('dblclick', (e) => {
+  if (drawingMode === 'gaube') {
+    e.preventDefault();
+    closeGaubePolygon();
+  }
+});
 
 function notifyPanelChange() {
   // Manuelle Module-Anzahl an den Calculator durchreichen
