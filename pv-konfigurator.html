@@ -1355,30 +1355,27 @@ scene.add(hemi);
   scene.add(sprite);
 }
 
-/* ----------- Procedurale Dachziegel-Textur ----------- */
+/* ----------- Procedurale Dachziegel-Textur (klar sichtbar) ----------- */
 const tileTexture = (() => {
   const c = document.createElement('canvas');
-  c.width = 256; c.height = 256;
+  c.width = 128; c.height = 128;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#7c2d12'; ctx.fillRect(0, 0, 256, 256);
-  for (let y = 0; y < 256; y += 24) {
-    const offset = ((y / 24) | 0) % 2 === 0 ? 0 : 16;
-    for (let x = -32; x < 256; x += 32) {
-      // Tile body
-      ctx.fillStyle = '#a13520';
-      ctx.beginPath();
-      ctx.moveTo(x + offset, y + 24);
-      ctx.bezierCurveTo(x + offset + 8, y + 6, x + offset + 24, y + 6, x + offset + 32, y + 24);
-      ctx.lineTo(x + offset, y + 24);
-      ctx.fill();
-      // Highlight
-      ctx.fillStyle = 'rgba(255,210,180,0.18)';
-      ctx.fillRect(x + offset + 4, y + 6, 24, 3);
-      // Shadow groove
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
-      ctx.fillRect(x + offset, y + 22, 32, 2);
-    }
+  // Kräftiges Tonziegel-Rot
+  ctx.fillStyle = '#b14a2b'; ctx.fillRect(0, 0, 128, 128);
+  // Horizontale Fugen (alle 16 px = ~Dachpfanne-Höhe)
+  ctx.fillStyle = '#5c1d0d';
+  for (let y = 0; y < 128; y += 16) ctx.fillRect(0, y, 128, 2);
+  // Vertikale Fugen, versetzt pro Reihe
+  for (let y = 0; y < 128; y += 16) {
+    const offset = ((y / 16) | 0) % 2 === 0 ? 0 : 16;
+    for (let x = offset; x < 128; x += 32) ctx.fillRect(x, y, 2, 16);
   }
+  // Highlight-Streifen oben an jedem Ziegel (Wölbung)
+  ctx.fillStyle = 'rgba(255,210,170,0.25)';
+  for (let y = 2; y < 128; y += 16) ctx.fillRect(0, y, 128, 2);
+  // Schatten unter jedem Ziegel
+  ctx.fillStyle = 'rgba(0,0,0,0.25)';
+  for (let y = 12; y < 128; y += 16) ctx.fillRect(0, y, 128, 2);
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.colorSpace = THREE.SRGBColorSpace;
@@ -1386,37 +1383,41 @@ const tileTexture = (() => {
   return t;
 })();
 
-/* ----------- Glas-Modul-Textur ----------- */
+/* ----------- PV-Modul-Textur ----------- */
 const panelTexture = (() => {
   const c = document.createElement('canvas');
-  c.width = 256; c.height = 256;
+  c.width = 128; c.height = 128;
   const ctx = c.getContext('2d');
-  // Dunkelblau, polysiliziumartig
-  const grad = ctx.createLinearGradient(0, 0, 256, 256);
-  grad.addColorStop(0, '#0a1f3d');
-  grad.addColorStop(0.5, '#15356b');
-  grad.addColorStop(1, '#0c2147');
-  ctx.fillStyle = grad; ctx.fillRect(0, 0, 256, 256);
-  // Zellen-Raster (6×10)
-  ctx.strokeStyle = '#000a1c'; ctx.lineWidth = 2;
-  for (let i = 1; i < 6; i++) { ctx.beginPath(); ctx.moveTo((i*256)/6, 0); ctx.lineTo((i*256)/6, 256); ctx.stroke(); }
-  for (let i = 1; i < 10; i++) { ctx.beginPath(); ctx.moveTo(0, (i*256)/10); ctx.lineTo(256, (i*256)/10); ctx.stroke(); }
-  // Subtle silvery streaks (Busbars)
-  ctx.fillStyle = 'rgba(180,200,230,0.18)';
-  for (let i = 0; i < 6; i++) ctx.fillRect(((i+0.5)*256)/6 - 1, 4, 2, 248);
-  // Frame
-  ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 8;
-  ctx.strokeRect(4, 4, 248, 248);
+  ctx.fillStyle = '#162a52'; ctx.fillRect(0, 0, 128, 128);
+  // Zellen-Raster 6×10
+  ctx.strokeStyle = '#0a1635'; ctx.lineWidth = 1.5;
+  for (let i = 1; i < 6; i++) { ctx.beginPath(); ctx.moveTo((i*128)/6, 0); ctx.lineTo((i*128)/6, 128); ctx.stroke(); }
+  for (let i = 1; i < 10; i++) { ctx.beginPath(); ctx.moveTo(0, (i*128)/10); ctx.lineTo(128, (i*128)/10); ctx.stroke(); }
+  // Busbar-Streifen
+  ctx.fillStyle = 'rgba(170,200,240,0.22)';
+  for (let i = 0; i < 6; i++) ctx.fillRect(((i+0.5)*128)/6 - 0.5, 4, 1, 120);
+  // Subtile Diagonal-Reflexion
+  const grad = ctx.createLinearGradient(0, 0, 128, 128);
+  grad.addColorStop(0, 'rgba(255,255,255,0.10)');
+  grad.addColorStop(0.5, 'rgba(255,255,255,0)');
+  grad.addColorStop(1, 'rgba(0,0,0,0.15)');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, 128, 128);
+  // Aluminium-Rahmen
+  ctx.strokeStyle = '#cdd2d8'; ctx.lineWidth = 4;
+  ctx.strokeRect(2, 2, 124, 124);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 })();
 
-const wallMat = new THREE.MeshStandardMaterial({ color: 0xeae0d2, roughness: 0.85, metalness: 0.05 });
-const gableMat = new THREE.MeshStandardMaterial({ color: 0xd9cfbe, roughness: 0.85, metalness: 0.05 });
+const wallMat  = new THREE.MeshStandardMaterial({ color: 0xeae0d2, roughness: 0.92, metalness: 0.0 });
+const gableMat = new THREE.MeshStandardMaterial({ color: 0xd9cfbe, roughness: 0.92, metalness: 0.0 });
+const tileMat  = new THREE.MeshStandardMaterial({
+  map: tileTexture, color: 0xffffff, roughness: 0.78, metalness: 0.0, side: THREE.DoubleSide,
+});
 const panelMat = new THREE.MeshStandardMaterial({
-  map: panelTexture, color: 0xffffff, metalness: 0.4, roughness: 0.18,
-  envMapIntensity: 1.2,
+  map: panelTexture, color: 0xffffff, metalness: 0.3, roughness: 0.22,
+  envMapIntensity: 1.5,
 });
 
 const houseGroup = new THREE.Group();
@@ -1496,33 +1497,26 @@ function makeTri(corners, material) {
 
 /* ----------- Slope mit Dachziegel-Textur + Eignungs-Outline ----------- */
 function buildRoofSlope(corners, aspect) {
-  const widthVec = new THREE.Vector3().subVectors(corners[1], corners[0]);
+  const widthVec  = new THREE.Vector3().subVectors(corners[1], corners[0]);
   const heightVec = new THREE.Vector3().subVectors(corners[3], corners[0]);
   const slopeW = widthVec.length();
   const slopeH = heightVec.length();
-  // 1 Ziegel ≈ 0.3 m breit × 0.4 m hoch, repeat entsprechend
-  const tile = tileTexture.clone();
-  tile.wrapS = tile.wrapT = THREE.RepeatWrapping;
-  tile.needsUpdate = true;
-  const mat = new THREE.MeshStandardMaterial({
-    map: tile, roughness: 0.9, metalness: 0.05, side: THREE.DoubleSide,
-  });
+  // UV repeat: 1 Tile-Cluster ≈ 1 m × 1 m → angenehm sichtbar in 30-50 m Entfernung
   const mesh = makeQuad(corners, {
-    material: mat,
-    uvRepeat: { u: slopeW / 0.4, v: slopeH / 0.4 },
+    material: tileMat,
+    uvRepeat: { u: slopeW, v: slopeH },
   });
   houseGroup.add(mesh);
-  // Eignungs-Rand (farbige Linie)
+  // Eignungs-Rand
   const rim = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(corners),
+    new THREE.BufferGeometry().setFromPoints([...corners, corners[0]]),
     new THREE.LineBasicMaterial({ color: suitabilityRimColor(aspect), linewidth: 2 }),
   );
   houseGroup.add(rim);
-
-  // PV-Module nur auf geeigneten Slopes
   if (isSlopeUsable(aspect)) {
     placePanels(corners, slopeW, slopeH);
   }
+  return { aspect, slopeW, slopeH, corners };
 }
 
 function placePanels(corners, slopeW, slopeH) {
@@ -1567,6 +1561,39 @@ function placePanels(corners, slopeW, slopeH) {
 }
 
 /* ----------- Hauptfunktion: Haus aufbauen ----------- */
+/* Kamera-Hilfsfunktion: positioniert orbiting auf den Slope, der am
+   südlichsten zeigt — da sieht man die PV-Module am besten. */
+function setCameraToBestView(slopeAspects, lengthM, widthM, eaveHeightM) {
+  // Konvertiere Aspect zu Compass-Azimut (0=N, 90=O, 180=S, 270=W)
+  const ASP_AZ = { sued: 180, ost: 90, west: 270, nord: 0 };
+  // Score: wie nah an Süd (180°)?
+  function score(aspect) {
+    const az = ASP_AZ[aspect] ?? 180;
+    return Math.cos((az - 180) * Math.PI / 180);
+  }
+  let bestAspect = 'sued', bestScore = -2;
+  slopeAspects.forEach(a => {
+    if (a === 'nord') return;
+    const s = score(a);
+    if (s > bestScore) { bestScore = s; bestAspect = a; }
+  });
+  if (bestScore < -1.5) bestAspect = slopeAspects[0] || 'sued';
+
+  // Compass-Azimut der besten Slope, Kamera leicht versetzt davon
+  const az = ASP_AZ[bestAspect] ?? 180;
+  // Compass → lokale XZ-Richtung (Z=Süd, X=Ost, Y=Up)
+  const azRad = az * Math.PI / 180;
+  const dx = Math.sin(azRad);
+  const dz = -Math.cos(azRad);  // 180° → +Z (Süd), 90° → +X (Ost)
+  // Korrigiere Vorzeichen: in unserem System ist +Z = Süd
+  const dirX = dx;
+  const dirZ = -dz;
+  const dist = Math.max(lengthM, widthM, 8) * 1.4 + 14;
+  camera.position.set(dirX * dist, eaveHeightM + dist * 0.45, dirZ * dist);
+  controls.target.set(0, eaveHeightM * 0.6, 0);
+  controls.update();
+}
+
 function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }) {
   clearHouse();
   if (!ring || ring.length < 3) return;
@@ -1608,6 +1635,7 @@ function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }
   }
   function corners3(arr) { return arr.map(back); }
 
+  const builtAspects = [];
   if (roofType === 'pultdach') {
     const highY = eaveHeightM + widthM * Math.tan(pitchDeg * Math.PI / 180);
     const slope = corners3([
@@ -1618,6 +1646,7 @@ function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }
     ]);
     const aspect = aspectFromAzimuth3D(ridgeBearingDeg + 90);
     buildRoofSlope(slope, aspect);
+    builtAspects.push(aspect);
     houseGroup.add(makeTri(corners3([
       { x: minX, y: eaveHeightM, z: minZ },
       { x: minX, y: eaveHeightM, z: maxZ },
@@ -1645,6 +1674,7 @@ function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }
     const aspect2 = aspectFromAzimuth3D(ridgeBearingDeg + 90);
     buildRoofSlope(slope1, aspect1);
     buildRoofSlope(slope2, aspect2);
+    builtAspects.push(aspect1, aspect2);
     houseGroup.add(makeTri(corners3([
       { x: minX, y: eaveHeightM, z: minZ },
       { x: minX, y: eaveHeightM, z: maxZ },
@@ -1674,18 +1704,45 @@ function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }
   );
   houseGroup.add(baseLoop);
 
-  // Kamera einmalig fitten — danach nicht mehr automatisch verschieben
+  // Kamera einmalig auf die beste (südlichste) Slope ausrichten
   if (!build3DHouse._didInitialFit) {
-    const radius = Math.max(lengthM, widthM, 8) * 1.4 + 14;
-    camera.position.set(radius * 0.78, radius * 0.55, radius * 0.78);
-    controls.target.set(0, eaveHeightM * 0.55, 0);
-    controls.update();
+    setCameraToBestView(builtAspects, lengthM, widthM, eaveHeightM);
     build3DHouse._didInitialFit = true;
+    build3DHouse._lastView = { lengthM, widthM, eaveHeightM, aspects: builtAspects };
   } else {
-    controls.target.set(0, eaveHeightM * 0.55, 0);
+    controls.target.set(0, eaveHeightM * 0.6, 0);
+    build3DHouse._lastView = { lengthM, widthM, eaveHeightM, aspects: builtAspects };
   }
-
   emptyOverlay.style.display = 'none';
+}
+
+/* View-Buttons: 🏠 Reset zur besten Sicht, ↥ Top-Down */
+function viewReset() {
+  const lv = build3DHouse._lastView;
+  if (lv) setCameraToBestView(lv.aspects, lv.lengthM, lv.widthM, lv.eaveHeightM);
+}
+function viewTop() {
+  const lv = build3DHouse._lastView;
+  if (!lv) return;
+  const dist = Math.max(lv.lengthM, lv.widthM, 10) * 1.6;
+  camera.position.set(0, dist, 0.01);
+  controls.target.set(0, lv.eaveHeightM * 0.6, 0);
+  controls.update();
+}
+window.viewReset = viewReset;
+window.viewTop = viewTop;
+
+/* Hud-Buttons in den Container einsetzen */
+{
+  const hud = document.createElement('div');
+  hud.style.cssText = 'position:absolute;bottom:12px;left:12px;display:flex;gap:6px;z-index:10';
+  hud.innerHTML = `
+    <button type="button" id="v3d-reset" style="padding:6px 10px;border-radius:8px;border:none;background:rgba(15,23,42,.7);color:#fff;font:600 .82rem system-ui;cursor:pointer;backdrop-filter:blur(6px)">↺ Süd-Sicht</button>
+    <button type="button" id="v3d-top" style="padding:6px 10px;border-radius:8px;border:none;background:rgba(15,23,42,.7);color:#fff;font:600 .82rem system-ui;cursor:pointer;backdrop-filter:blur(6px)">⤓ Top</button>
+  `;
+  container.appendChild(hud);
+  document.getElementById('v3d-reset').addEventListener('click', viewReset);
+  document.getElementById('v3d-top').addEventListener('click', viewTop);
 }
 
 function animate() {
