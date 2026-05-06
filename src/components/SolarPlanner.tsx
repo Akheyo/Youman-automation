@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
   DetectedBuilding,
+  LngLat,
   MapSettings,
   ModuleSettings,
   RoofFace,
@@ -28,8 +29,22 @@ import {
   getAvailableMockKinds,
 } from "@/lib/providers/mockRoofDetectionProvider";
 import type { MockBuildingKind } from "@/lib/geometry/mockRoofs";
+import type { RoofShape } from "@/lib/geometry/roofShapeHeuristic";
+import { buildBuildingFromManualFootprint } from "@/lib/manual/buildFromFootprint";
 import Sidebar from "./Sidebar";
 import MapView from "./MapView";
+
+export type ManualParams = {
+  shape: RoofShape;
+  pitchDeg: number;
+  eaveHeightM: number;
+};
+
+const DEFAULT_MANUAL_PARAMS: ManualParams = {
+  shape: "satteldach",
+  pitchDeg: 35,
+  eaveHeightM: 5.5,
+};
 
 const DEFAULT_SETTINGS: ModuleSettings = {
   moduleWp: 430,
@@ -58,6 +73,11 @@ export default function SolarPlanner({ mapSettings }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [demoCycleIdx, setDemoCycleIdx] = useState(0);
   const [recenterTick, setRecenterTick] = useState(0);
+  const [drawingMode, setDrawingMode] = useState(false);
+  const [drawnPoints, setDrawnPoints] = useState<LngLat[]>([]);
+  const [manualParams, setManualParams] = useState<ManualParams>(
+    DEFAULT_MANUAL_PARAMS,
+  );
 
   /* -------- Helpers -------- */
 
@@ -199,6 +219,83 @@ export default function SolarPlanner({ mapSettings }: Props) {
     setRecenterTick((t) => t + 1);
   }, []);
 
+  /* -------- Manual drawing -------- */
+
+  const startDrawing = useCallback(() => {
+    setError(null);
+    setDrawnPoints([]);
+    setDrawingMode(true);
+  }, []);
+
+  const cancelDrawing = useCallback(() => {
+    setDrawingMode(false);
+    setDrawnPoints([]);
+  }, []);
+
+  const finishDrawing = useCallback(() => {
+    if (drawnPoints.length < 3) {
+      setError("Mindestens 3 Eckpunkte zeichnen.");
+      return;
+    }
+    try {
+      const built = buildBuildingFromManualFootprint({
+        footprint: drawnPoints,
+        shape: manualParams.shape,
+        pitchDeg: manualParams.pitchDeg,
+        eaveHeightM: manualParams.eaveHeightM,
+        label: "Manuell gezeichnet",
+      });
+      const computed = recomputeBuilding(built, built.roofFaces, settings);
+      setBuilding(computed);
+      setProviderInfo({
+        name: "manual",
+        reason: `User hat ${drawnPoints.length} Eckpunkte gezeichnet.`,
+      });
+      setDrawingMode(false);
+      setDrawnPoints([]);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Manuelles Bauen fehlgeschlagen",
+      );
+    }
+  }, [drawnPoints, manualParams, recomputeBuilding, settings]);
+
+  const handleMapClick = useCallback((p: LngLat) => {
+    setDrawnPoints((prev) => [...prev, p]);
+  }, []);
+
+  const undoLastPoint = useCallback(() => {
+    setDrawnPoints((prev) => prev.slice(0, -1));
+  }, []);
+
+  // Wenn manuelle Parameter (Form/Pitch/Traufe) sich ändern UND wir gerade
+  // ein manuell gezeichnetes Gebäude im State haben, neu bauen.
+  useEffect(() => {
+    if (!building || building.source !== "manual") return;
+    if (!building.footprint) return;
+    try {
+      const built = buildBuildingFromManualFootprint({
+        footprint: building.footprint.vertices,
+        shape: manualParams.shape,
+        pitchDeg: manualParams.pitchDeg,
+        eaveHeightM: manualParams.eaveHeightM,
+        label: "Manuell gezeichnet",
+      });
+      // Selektion der Dachflächen aus altem State übernehmen, soweit IDs matchen.
+      const selectedIds = new Set(
+        building.roofFaces.filter((f) => f.selected).map((f) => f.id),
+      );
+      const faces = built.roofFaces.map((f) => ({
+        ...f,
+        selected: selectedIds.size === 0 ? f.selected : selectedIds.has(f.id),
+      }));
+      setBuilding(recomputeBuilding(built, faces, settings));
+    } catch {
+      /* Pitch/Form-Update darf bestehenden State nicht killen. */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manualParams]);
+
   const providerLabel = useMemo(() => {
     if (!providerInfo) return null;
     switch (providerInfo.name) {
@@ -208,6 +305,8 @@ export default function SolarPlanner({ mapSettings }: Props) {
         return "LoD2 (amtlich)";
       case "osm":
         return "OpenStreetMap";
+      case "manual":
+        return "Manuell gezeichnet";
       case "mock":
         return "Mock (Demo)";
       default:
@@ -222,6 +321,9 @@ export default function SolarPlanner({ mapSettings }: Props) {
           building={building}
           mapSettings={mapSettings}
           recenterTick={recenterTick}
+          drawingMode={drawingMode}
+          drawnPoints={drawnPoints}
+          onMapClick={handleMapClick}
         />
       </div>
       <Sidebar
@@ -240,6 +342,14 @@ export default function SolarPlanner({ mapSettings }: Props) {
         settings={settings}
         setSettings={setSettings}
         toggleFace={toggleFace}
+        drawingMode={drawingMode}
+        drawnPointCount={drawnPoints.length}
+        manualParams={manualParams}
+        setManualParams={setManualParams}
+        onStartDrawing={startDrawing}
+        onCancelDrawing={cancelDrawing}
+        onFinishDrawing={finishDrawing}
+        onUndoPoint={undoLastPoint}
       />
     </div>
   );

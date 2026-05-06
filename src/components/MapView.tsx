@@ -6,8 +6,11 @@
  * Strukturell bewusst nahe an der funktionierenden /test-map gehalten:
  * inline-styles für die Container-Größe, kein dynamic-Import, kein
  * antialias-Flag, kein ResizeObserver, kein flyTo im load-Handler.
- * Das Gebäude wird ausschließlich über den NativeBuildingLayer als
- * fill-extrusion gerendert.
+ *
+ * Zusatz-Modus „Drawing": Wenn `drawingMode` true ist, sammelt MapView
+ * Map-Klicks als lng/lat-Punkte und gibt sie per `onMapClick` zurück.
+ * Eine separate GeoJSON-Source rendert die bereits gezeichneten Punkte
+ * + Verbindungslinien als Vorschau.
  */
 
 import { useEffect, useMemo, useRef } from "react";
@@ -17,7 +20,7 @@ import maplibregl, {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import type { DetectedBuilding, MapSettings } from "@/types/solar";
+import type { DetectedBuilding, LngLat, MapSettings } from "@/types/solar";
 import { NativeBuildingLayer } from "@/lib/map/NativeBuildingLayer";
 import { ThreeBuildingLayer } from "@/lib/map/ThreeBuildingLayer";
 
@@ -26,7 +29,18 @@ type MapViewProps = {
   mapSettings: MapSettings;
   /** Bei jeder Erhöhung wird die Kamera neu auf das Gebäude zentriert. */
   recenterTick: number;
+  /** Drawing-Modus aktiv: Klicks werden gesammelt statt der Map-Selektion. */
+  drawingMode: boolean;
+  /** Bisher gezeichnete Punkte (für Vorschau-Polygon). */
+  drawnPoints: LngLat[];
+  /** Callback bei jedem Klick im drawingMode. */
+  onMapClick: (p: LngLat) => void;
 };
+
+const DRAW_SRC = "youman-draw";
+const DRAW_LINE_LAYER = "youman-draw-line";
+const DRAW_FILL_LAYER = "youman-draw-fill";
+const DRAW_POINT_LAYER = "youman-draw-points";
 
 function buildStyle(
   tileUrl: string | undefined,
@@ -80,6 +94,9 @@ export default function MapView({
   building,
   mapSettings,
   recenterTick,
+  drawingMode,
+  drawnPoints,
+  onMapClick,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -87,6 +104,12 @@ export default function MapView({
   const threeRef = useRef<ThreeBuildingLayer | null>(null);
   const buildingRef = useRef<DetectedBuilding | null>(building);
   buildingRef.current = building;
+  // Refs, damit der Click-Handler in der Map-Init immer auf aktuelle Werte
+  // schaut (keine Re-Init bei jedem State-Update nötig).
+  const drawingModeRef = useRef(drawingMode);
+  drawingModeRef.current = drawingMode;
+  const onMapClickRef = useRef(onMapClick);
+  onMapClickRef.current = onMapClick;
 
   const style = useMemo(
     () => buildStyle(mapSettings.tileUrl, mapSettings.tileAttribution),
@@ -115,20 +138,63 @@ export default function MapView({
 
     map.on("load", () => {
       if (!mapRef.current) return;
-      // 1) Wände als native fill-extrusion (stabil).
+      // Building-Layer.
       const layer = new NativeBuildingLayer(mapRef.current);
       layer.install();
       layerRef.current = layer;
-      // 2) Echte 3D-Schrägflächen für Dächer + Module via Three.js Custom Layer.
       const three = new ThreeBuildingLayer({ showEdges: true });
       mapRef.current.addLayer(three);
       threeRef.current = three;
+
+      // Drawing-Source + Layer (initial leer).
+      mapRef.current.addSource(DRAW_SRC, {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      mapRef.current.addLayer({
+        id: DRAW_FILL_LAYER,
+        type: "fill",
+        source: DRAW_SRC,
+        filter: ["==", ["geometry-type"], "Polygon"],
+        paint: {
+          "fill-color": "#f97316",
+          "fill-opacity": 0.18,
+        },
+      });
+      mapRef.current.addLayer({
+        id: DRAW_LINE_LAYER,
+        type: "line",
+        source: DRAW_SRC,
+        filter: ["!=", ["geometry-type"], "Point"],
+        paint: {
+          "line-color": "#f97316",
+          "line-width": 2,
+        },
+      });
+      mapRef.current.addLayer({
+        id: DRAW_POINT_LAYER,
+        type: "circle",
+        source: DRAW_SRC,
+        filter: ["==", ["geometry-type"], "Point"],
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#ffffff",
+          "circle-stroke-color": "#f97316",
+          "circle-stroke-width": 2,
+        },
+      });
 
       const b = buildingRef.current;
       if (b) {
         layer.setBuilding(b);
         three.setBuilding(b);
       }
+    });
+
+    // Click-Handler: nur im drawingMode greifen.
+    map.on("click", (e) => {
+      if (!drawingModeRef.current) return;
+      onMapClickRef.current({ lng: e.lngLat.lng, lat: e.lngLat.lat });
     });
 
     return () => {
@@ -172,10 +238,94 @@ export default function MapView({
     });
   }, [recenterTick]);
 
+  // Cursor je nach Drawing-Modus.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const canvas = map.getCanvas();
+    canvas.style.cursor = drawingMode ? "crosshair" : "";
+  }, [drawingMode]);
+
+  // Drawing-Vorschau aktualisieren, wann immer drawnPoints sich ändern.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const src = map.getSource(DRAW_SRC) as
+      | maplibregl.GeoJSONSource
+      | undefined;
+    if (!src) return;
+
+    const features: GeoJSON.Feature[] = [];
+    if (drawnPoints.length === 0) {
+      src.setData({ type: "FeatureCollection", features: [] });
+      return;
+    }
+    // Punkte als Circle-Markers.
+    for (let i = 0; i < drawnPoints.length; i++) {
+      const p = drawnPoints[i]!;
+      features.push({
+        type: "Feature",
+        properties: { idx: i },
+        geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+      });
+    }
+    // Linie/Polygon: ab 2 Punkten LineString, ab 3 Punkten zusätzlich Polygon
+    // (Polygon-Vorschau füllt das Gebäude bereits orange ein, sobald es eine
+    // sinnvolle Form hat).
+    if (drawnPoints.length >= 2) {
+      features.push({
+        type: "Feature",
+        properties: { kind: "line" },
+        geometry: {
+          type: "LineString",
+          coordinates: drawnPoints.map((p) => [p.lng, p.lat]),
+        },
+      });
+    }
+    if (drawnPoints.length >= 3) {
+      const ring = drawnPoints.map((p) => [p.lng, p.lat]);
+      ring.push([drawnPoints[0]!.lng, drawnPoints[0]!.lat]);
+      features.push({
+        type: "Feature",
+        properties: { kind: "polygon" },
+        geometry: { type: "Polygon", coordinates: [ring] },
+      });
+    }
+    src.setData({ type: "FeatureCollection", features });
+  }, [drawnPoints]);
+
   return (
-    <div style={{ position: "relative", height: "100%", width: "100%", background: "#e2e8f0" }}>
+    <div
+      style={{
+        position: "relative",
+        height: "100%",
+        width: "100%",
+        background: "#e2e8f0",
+      }}
+    >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
-      {!mapSettings.tileUrl && (
+      {drawingMode && (
+        <div
+          style={{
+            position: "absolute",
+            left: 12,
+            top: 12,
+            maxWidth: 420,
+            padding: "10px 14px",
+            background: "rgba(255,255,255,0.95)",
+            color: "#0f172a",
+            fontSize: 13,
+            lineHeight: 1.45,
+            borderRadius: 8,
+            boxShadow: "0 6px 20px rgba(15,23,42,0.18)",
+          }}
+        >
+          <strong style={{ fontWeight: 600 }}>Zeichnen:</strong> Klicke nacheinander
+          die Eckpunkte des Hauses an. Mindestens 3 Punkte. In der Sidebar dann
+          &bdquo;Fertig&ldquo; drücken.
+        </div>
+      )}
+      {!mapSettings.tileUrl && !drawingMode && (
         <div
           style={{
             position: "absolute",

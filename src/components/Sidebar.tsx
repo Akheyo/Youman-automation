@@ -14,6 +14,8 @@ import type {
   ModuleSettings,
   RoofFace,
 } from "@/types/solar";
+import type { RoofShape } from "@/lib/geometry/roofShapeHeuristic";
+import type { ManualParams } from "./SolarPlanner";
 
 import RoofFaceList from "./RoofFaceList";
 import ModuleSettingsPanel from "./ModuleSettingsPanel";
@@ -36,6 +38,15 @@ type Props = {
   settings: ModuleSettings;
   setSettings: (s: ModuleSettings) => void;
   toggleFace: (id: string) => void;
+  // Drawing-Modus
+  drawingMode: boolean;
+  drawnPointCount: number;
+  manualParams: ManualParams;
+  setManualParams: (p: ManualParams) => void;
+  onStartDrawing: () => void;
+  onCancelDrawing: () => void;
+  onFinishDrawing: () => void;
+  onUndoPoint: () => void;
 };
 
 function Section({
@@ -78,6 +89,14 @@ export default function Sidebar({
   settings,
   setSettings,
   toggleFace,
+  drawingMode,
+  drawnPointCount,
+  manualParams,
+  setManualParams,
+  onStartDrawing,
+  onCancelDrawing,
+  onFinishDrawing,
+  onUndoPoint,
 }: Props) {
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -138,6 +157,19 @@ export default function Sidebar({
               </p>
             )}
           </form>
+        </Section>
+
+        <Section title="Auf Karte zeichnen">
+          <ManualDrawingPanel
+            drawingMode={drawingMode}
+            drawnPointCount={drawnPointCount}
+            manualParams={manualParams}
+            setManualParams={setManualParams}
+            onStart={onStartDrawing}
+            onCancel={onCancelDrawing}
+            onFinish={onFinishDrawing}
+            onUndo={onUndoPoint}
+          />
         </Section>
 
         <Section title="Datenquelle" step={2}>
@@ -212,11 +244,171 @@ export default function Sidebar({
         </Section>
 
         <p className="rounded-md bg-slate-50 px-3 py-2 text-[11px] leading-snug text-slate-600">
-          Demo/Prototyp: Dachgeometrien können aus API-Daten, LoD2-Daten oder
-          Mock-Daten stammen. Approximierte Dachflächen sind nicht amtlich
-          vermessen.
+          Demo/Prototyp: Dachgeometrien können aus API-Daten, LoD2-Daten,
+          OSM-Footprints, manueller Zeichnung oder Mock-Daten stammen.
+          Approximierte Dachflächen sind nicht amtlich vermessen.
         </p>
       </div>
     </aside>
+  );
+}
+
+/* ----------------------------- ManualDrawingPanel ----------------------------- */
+
+const SHAPE_OPTIONS: { value: RoofShape; label: string }[] = [
+  { value: "satteldach", label: "Satteldach" },
+  { value: "walmdach", label: "Walmdach" },
+  { value: "flachdach", label: "Flachdach" },
+  { value: "pultdach", label: "Pultdach" },
+];
+
+type ManualPanelProps = {
+  drawingMode: boolean;
+  drawnPointCount: number;
+  manualParams: ManualParams;
+  setManualParams: (p: ManualParams) => void;
+  onStart: () => void;
+  onCancel: () => void;
+  onFinish: () => void;
+  onUndo: () => void;
+};
+
+function ManualDrawingPanel({
+  drawingMode,
+  drawnPointCount,
+  manualParams,
+  setManualParams,
+  onStart,
+  onCancel,
+  onFinish,
+  onUndo,
+}: ManualPanelProps) {
+  return (
+    <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
+      {!drawingMode ? (
+        <>
+          <p className="text-xs text-slate-600">
+            Wenn das Haus weder per Adresse noch via OSM gefunden wird:
+            Klicke 4–8 Eckpunkte auf der Karte und wähle Form/Pitch.
+          </p>
+          <button
+            type="button"
+            onClick={onStart}
+            className="w-full rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+          >
+            Auf Karte zeichnen
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
+            Zeichnen aktiv — {drawnPointCount} Punkt
+            {drawnPointCount === 1 ? "" : "e"} gesetzt.
+            {drawnPointCount < 3 && " Mindestens 3 Eckpunkte benötigt."}
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={onUndo}
+              disabled={drawnPointCount === 0}
+              className="rounded-md border border-slate-300 px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              ↶ Letzten
+            </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-md border border-slate-300 px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Abbrechen
+            </button>
+            <button
+              type="button"
+              onClick={onFinish}
+              disabled={drawnPointCount < 3}
+              className="rounded-md bg-brand px-2 py-2 text-xs font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-200"
+            >
+              Fertig
+            </button>
+          </div>
+        </>
+      )}
+
+      <div className="space-y-2 border-t border-slate-100 pt-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+          Dachform
+        </p>
+        <div className="grid grid-cols-2 gap-1">
+          {SHAPE_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() =>
+                setManualParams({ ...manualParams, shape: opt.value })
+              }
+              className={
+                "rounded-md border px-2 py-1.5 text-xs font-medium transition " +
+                (manualParams.shape === opt.value
+                  ? "border-brand bg-brand-50 text-brand-700"
+                  : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50")
+              }
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            Dachneigung
+          </label>
+          <span className="text-xs font-medium text-slate-700">
+            {manualParams.pitchDeg.toFixed(0)}°
+          </span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={60}
+          step={1}
+          value={manualParams.pitchDeg}
+          onChange={(e) =>
+            setManualParams({
+              ...manualParams,
+              pitchDeg: Number(e.target.value),
+            })
+          }
+          disabled={manualParams.shape === "flachdach"}
+          className="w-full"
+        />
+      </div>
+
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            Traufhöhe
+          </label>
+          <span className="text-xs font-medium text-slate-700">
+            {manualParams.eaveHeightM.toFixed(1)} m
+          </span>
+        </div>
+        <input
+          type="range"
+          min={2.5}
+          max={12}
+          step={0.5}
+          value={manualParams.eaveHeightM}
+          onChange={(e) =>
+            setManualParams({
+              ...manualParams,
+              eaveHeightM: Number(e.target.value),
+            })
+          }
+          className="w-full"
+        />
+      </div>
+    </div>
   );
 }
