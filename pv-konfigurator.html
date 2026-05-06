@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A&amp;B PV-Konfigurator — Standalone</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f7f9fc; --bg-soft: #eef2f7; --card: #fff; --border: #d8dee9;
+  --text: #1f2937; --muted: #6b7280;
+  --primary: #0d73fc; --primary-d: #075ad6;
+  --accent: #ff6b00; --good: #22c55e;
+  --shadow: 0 2px 8px rgba(0,0,0,.06);
+  --radius: 10px;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.4; min-height: 100vh;
+}
+header {
+  background: #fff; border-bottom: 1px solid var(--border);
+  padding: 14px 20px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow);
+}
+header .brand {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary), #00b4d8);
+  color: #fff; display: grid; place-items: center; font-weight: 800;
+}
+header h1 { font-size: 1.15rem; font-weight: 700; }
+header h1 small { color: var(--muted); font-weight: 500; font-size: .85rem; margin-left: 8px; }
+
+main { max-width: 1300px; margin: 0 auto; padding: 20px; display: grid; gap: 20px; grid-template-columns: 1fr 380px; }
+@media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.card h2 { font-size: 1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.card h2 .step { background: var(--primary); color: #fff; border-radius: 50%; width: 22px; height: 22px; display: grid; place-items: center; font-size: .75rem; font-weight: 700; }
+.card h3 { font-size: .92rem; margin: 14px 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.row > * { flex: 1; min-width: 140px; }
+.row label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 3px; font-weight: 600; }
+input[type=text], input[type=number], select {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+  font: inherit; background: #fff; color: inherit;
+}
+input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: -1px; border-color: var(--primary); }
+
+.btn {
+  background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px;
+  font: inherit; cursor: pointer; font-weight: 600; color: var(--text); transition: all .15s;
+}
+.btn:hover { background: var(--bg-soft); }
+.btn--primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn--primary:hover { background: var(--primary-d); }
+.btn--ghost { background: transparent; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+#map { height: 500px; border-radius: 8px; border: 1px solid var(--border); }
+.map-hint { font-size: .82rem; color: var(--muted); margin-top: 6px; }
+
+table { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: 6px; }
+th, td { padding: 7px 8px; text-align: right; border-bottom: 1px solid var(--border); }
+th:first-child, td:first-child { text-align: left; }
+thead th { background: var(--bg-soft); font-weight: 700; color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .03em; }
+tr.total td { background: var(--bg-soft); font-weight: 700; }
+
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.kpi { background: var(--bg-soft); border-radius: 8px; padding: 10px 12px; }
+.kpi .l { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
+.kpi .v { font-size: 1.15rem; font-weight: 800; margin-top: 2px; color: var(--text); }
+.kpi.h { background: linear-gradient(135deg, #e0f2fe, #d1fae5); }
+.kpi.h .v { color: var(--good); }
+
+.suggestions {
+  background: #fff; border: 1px solid var(--border); border-radius: 8px; max-height: 220px; overflow: auto;
+  margin-top: 4px; box-shadow: var(--shadow);
+}
+.suggestions div { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--bg-soft); font-size: .9rem; }
+.suggestions div:hover { background: var(--bg-soft); }
+.suggestions div:last-child { border-bottom: none; }
+
+.tag { display: inline-block; background: var(--bg-soft); border-radius: 999px; padding: 3px 10px; font-size: .8rem; color: var(--muted); margin-right: 4px; }
+.tag.ok { background: #d1fae5; color: #065f46; }
+
+.muted { color: var(--muted); font-size: .85rem; }
+.note { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 8px 10px; font-size: .82rem; color: #9a3412; margin-top: 8px; }
+
+footer { text-align: center; color: var(--muted); padding: 20px; font-size: .82rem; }
+footer a { color: var(--primary); }
+
+#dim-readout { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+#dim-readout .tag.ok { background: #dbeafe; color: var(--primary-d); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">A&amp;B</div>
+  <h1>PV-Konfigurator <small>Standalone-Version &middot; Excel-Formeln + 2D-Satellitenbild</small></h1>
+</header>
+
+<main>
+  <!-- LEFT: Map + Address + Inputs -->
+  <div>
+    <div class="card">
+      <h2><span class="step">1</span> Adresse</h2>
+      <input type="text" id="addr" placeholder="Straße Hausnummer, PLZ Ort" autocomplete="off">
+      <div id="suggestions" class="suggestions" style="display:none"></div>
+      <div id="addr-info" class="muted" style="margin-top:6px"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2><span class="step">2</span> Dach auf Satellitenbild zeichnen</h2>
+      <div id="map"></div>
+      <div class="map-hint">
+        Linksklick = Eckpunkt. <strong>Doppelklick</strong> oder Button = Polygon schließen.
+        Längste Kante &rarr; First-Länge, kürzeste &rarr; Hausbreite.
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="btn-close">Polygon schließen</button>
+        <button class="btn btn--ghost" id="btn-reset">Zurücksetzen</button>
+        <button class="btn" id="btn-undo">Letzten Punkt rückgängig</button>
+      </div>
+      <div id="dim-readout"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2><span class="step">3</span> Dach- &amp; Modul-Parameter</h2>
+      <div class="row">
+        <div>
+          <label>Dachform</label>
+          <select id="roofType">
+            <option value="satteldach">Satteldach (2 Seiten)</option>
+            <option value="walmdach">Walmdach (4 Seiten)</option>
+            <option value="pultdach">Pultdach (1 Seite)</option>
+          </select>
+        </div>
+        <div>
+          <label>First-Länge (m)</label>
+          <input type="number" id="firstLength" value="10" min="1" max="50" step="0.1">
+        </div>
+        <div>
+          <label>Hausbreite (m)</label>
+          <input type="number" id="houseWidth" value="10" min="1" max="30" step="0.1">
+        </div>
+        <div>
+          <label>Dachneigung (°)</label>
+          <input type="number" id="pitch" value="40" min="5" max="60" step="1">
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label>Wp / Modul</label>
+          <input type="number" id="panelWp" value="450" min="300" max="650" step="5">
+        </div>
+        <div>
+          <label>Modul-Fläche (m²)</label>
+          <input type="number" id="panelArea" value="2" min="1" max="3" step="0.05">
+        </div>
+        <div>
+          <label>Ausrichtung Seite A</label>
+          <select id="aspectA"><option value="ost">Ost</option><option value="sued" selected>Süd</option><option value="west">West</option><option value="nord">Nord</option></select>
+        </div>
+        <div>
+          <label>Ausrichtung Seite B</label>
+          <select id="aspectB"><option value="ost">Ost</option><option value="sued">Süd</option><option value="west">West</option><option value="nord" selected>Nord</option></select>
+        </div>
+      </div>
+      <div class="row" id="walmAspects" style="margin-top:10px;display:none">
+        <div>
+          <label>Ausrichtung Seite C (Walm)</label>
+          <select id="aspectC"><option value="ost">Ost</option><option value="sued">Süd</option><option value="west" selected>West</option><option value="nord">Nord</option></select>
+        </div>
+        <div>
+          <label>Ausrichtung Seite D (Walm)</label>
+          <select id="aspectD"><option value="ost" selected>Ost</option><option value="sued">Süd</option><option value="west">West</option><option value="nord">Nord</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2><span class="step">4</span> Ergebnis (Excel-Formeln)</h2>
+      <table id="results">
+        <thead><tr><th>Seite</th><th>Ausrichtung</th><th>Hypotenuse&nbsp;(m)</th><th>Fläche&nbsp;(m²)</th><th>Module</th><th>kWp</th><th>Ertrag&nbsp;(kWh/Jahr)</th></tr></thead>
+        <tbody id="results-body"></tbody>
+      </table>
+      <p class="muted" id="region-line" style="margin-top:8px"></p>
+    </div>
+  </div>
+
+  <!-- RIGHT: Sidebar — Verbrauch + Wirtschaftlichkeit -->
+  <aside>
+    <div class="card">
+      <h2><span class="step">5</span> Verbrauch &amp; Add-ons</h2>
+      <div class="row">
+        <div>
+          <label>Jahresverbrauch (kWh)</label>
+          <input type="number" id="kwhYear" value="4500" min="500" max="30000" step="100">
+        </div>
+        <div>
+          <label>Strompreis (ct/kWh)</label>
+          <input type="number" id="priceCt" value="35" min="10" max="80" step="1">
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+        <label><input type="checkbox" id="addStorage"> Stromspeicher (+ 8 000 €, EVQ 70%)</label>
+        <label><input type="checkbox" id="addWallbox"> Wallbox (+ 1 500 €, +3 000 kWh)</label>
+        <label><input type="checkbox" id="addHeatpump"> Wärmepumpe (+4 500 kWh)</label>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2><span class="step">6</span> Wirtschaftlichkeit</h2>
+      <div class="kpis" id="kpis"></div>
+      <div id="roi-table" style="margin-top:12px"></div>
+    </div>
+
+    <p class="note">
+      <strong>Hinweis:</strong> Ertragstabelle und Trigonometrie übernommen 1:1
+      aus den A&amp;B-Excel-Sheets. Spezifische Erträge je Region:
+      Norden 540–900, Osten 600–1000, Mitte/Westen 585–975, Süden 660–1100 kWh/kWp.
+    </p>
+  </aside>
+</main>
+
+<footer>
+  © A&amp;B Solarenergy &middot; Pilotregion Borken (NRW) &middot; Karten:
+  <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>,
+  Luftbild: <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri World Imagery</a>
+  &middot; Geocoding: Nominatim
+</footer>
+
+<script>
+/* ===========================================================================
+   A&B PV-Konfigurator — vollständig im Browser, keine Build-Tools.
+   Alle Formeln 1:1 aus den Excel-Sheets:
+     - Trigonometrie (Hypotenuse, Dachfläche, Modulanzahl, kWp)
+     - PLZ-Region → kWh/kWp/Jahr-Lookup
+     - Wirtschaftlichkeit (Investition, Eigenverbrauch, Amortisation)
+   =========================================================================== */
+
+/* ---------- 1. PV-Ertragstabelle (Sheet 2) ---------- */
+const YIELD_TABLE = {
+  norden:        { sued: 900,  ost: 675, west: 660, nord: 540 },
+  osten:         { sued: 1000, ost: 750, west: 730, nord: 600 },
+  'mitte-westen':{ sued: 975,  ost: 730, west: 710, nord: 585 },
+  sueden:        { sued: 1100, ost: 825, west: 800, nord: 660 },
+};
+const YIELD_AVG = { sued: 993.75, ost: 745, west: 725, nord: 596.25 };
+const REGION_LABEL = {
+  norden: 'Norden (PLZ 2xxxx)',
+  osten: 'Osten (PLZ 0–1xxxx)',
+  'mitte-westen': 'Mitte/Westen (PLZ 3–6xxxx)',
+  sueden: 'Süden (PLZ 7–9xxxx)',
+};
+function regionFromPlz(plz) {
+  if (!plz) return null;
+  const f = String(plz).trim().charCodeAt(0) - 48;
+  if (f === 0 || f === 1) return 'osten';
+  if (f === 2) return 'norden';
+  if (f >= 3 && f <= 6) return 'mitte-westen';
+  if (f >= 7 && f <= 9) return 'sueden';
+  return null;
+}
+function specificYield(region, aspect) {
+  return region ? YIELD_TABLE[region][aspect] : YIELD_AVG[aspect];
+}
+
+/* ---------- 2. Dach-Geometrie (Sheet 1) ---------- */
+function hypotenuseFromHalfWidth(halfWidth, pitchDeg, ridgeAngleDeg = 90) {
+  const angleA = 180 - ridgeAngleDeg - pitchDeg;
+  const sinA = Math.sin(angleA * Math.PI / 180);
+  if (sinA <= 0) return 0;
+  return halfWidth * Math.sin(ridgeAngleDeg * Math.PI / 180) / sinA;
+}
+function computeRoof(input) {
+  const { firstLengthM, houseWidthM, pitchDeg, panelWattPeak, panelAreaM2, roofType } = input;
+  const halfW = houseWidthM / 2;
+  const hyp = hypotenuseFromHalfWidth(halfW, pitchDeg);
+  const sides = [];
+  const mkSide = (label, hypM, areaM2) => {
+    const panelCount = panelAreaM2 > 0 ? Math.floor(areaM2 / panelAreaM2) : 0;
+    const kwp = panelCount * panelWattPeak / 1000;
+    return { label, hypotenuseM: round2(hypM), areaM2: round2(areaM2), panelCount, kwp: round2(kwp) };
+  };
+  if (roofType === 'pultdach') {
+    const fullHyp = hypotenuseFromHalfWidth(houseWidthM, pitchDeg);
+    sides.push(mkSide('A', fullHyp, fullHyp * firstLengthM));
+  } else if (roofType === 'satteldach') {
+    const area = hyp * firstLengthM;
+    sides.push(mkSide('A', hyp, area));
+    sides.push(mkSide('B', hyp, area));
+  } else { /* walmdach */
+    const walmTiefe = halfW;
+    const ridgeM = Math.max(0, firstLengthM - 2 * walmTiefe);
+    const trapezArea = ((firstLengthM + ridgeM) / 2) * hyp;
+    sides.push(mkSide('A', hyp, trapezArea));
+    sides.push(mkSide('B', hyp, trapezArea));
+    const walmArea = 0.5 * houseWidthM * hyp;
+    sides.push(mkSide('C', hyp, walmArea));
+    sides.push(mkSide('D', hyp, walmArea));
+  }
+  return {
+    sides,
+    totalKwp: round2(sides.reduce((s, x) => s + x.kwp, 0)),
+    totalArea: round2(sides.reduce((s, x) => s + x.areaM2, 0)),
+    totalPanels: sides.reduce((s, x) => s + x.panelCount, 0),
+  };
+}
+function round2(v) { return Math.round(v * 100) / 100; }
+
+/* ---------- 3. Wirtschaftlichkeit ---------- */
+const CALC = {
+  EVQ_NO: 0.32, EVQ_BAT: 0.70, EVQ_MIN: 0.15, EVQ_MAX: 0.95,
+  OVERSIZE_THRESHOLD: 1.3, OVERSIZE_SLOPE: 0.25,
+  FEED_IN: 0.08, EUR_KWP: 1400, EUR_STORAGE: 8000, EUR_WALLBOX: 1500,
+  KWH_WALLBOX: 3000, KWH_HEATPUMP: 4500,
+  CO2_KG_KWH: 0.434, TREES_PER_T_CO2: 80, INFLATION: 0.03,
+  HORIZONS: [5, 10, 15, 20],
+};
+function calculate(opts) {
+  const { kwp, yieldKwh, kwhYear, priceCt, addons } = opts;
+  let demand = kwhYear;
+  if (addons.wallbox) demand += CALC.KWH_WALLBOX;
+  if (addons.heatpump) demand += CALC.KWH_HEATPUMP;
+  let evq = addons.storage ? CALC.EVQ_BAT : CALC.EVQ_NO;
+  const ratio = yieldKwh / Math.max(demand, 1);
+  if (ratio > CALC.OVERSIZE_THRESHOLD) {
+    evq *= 1 - (ratio - CALC.OVERSIZE_THRESHOLD) * CALC.OVERSIZE_SLOPE;
+  }
+  evq = Math.max(CALC.EVQ_MIN, Math.min(CALC.EVQ_MAX, evq));
+  const eigen = Math.min(yieldKwh * evq, demand);
+  const einspeis = Math.max(0, yieldKwh - eigen);
+  const priceEur = priceCt / 100;
+  const ersparnis = eigen * priceEur + einspeis * CALC.FEED_IN;
+  let inv = kwp * CALC.EUR_KWP;
+  if (addons.storage) inv += CALC.EUR_STORAGE;
+  if (addons.wallbox) inv += CALC.EUR_WALLBOX;
+  const amort = ersparnis > 0 ? inv / ersparnis : 0;
+  const co2_t = yieldKwh * CALC.CO2_KG_KWH / 1000;
+  const trees = co2_t * CALC.TREES_PER_T_CO2;
+  const horizons = CALC.HORIZONS.map(h => {
+    let costNo = 0, costPV = 0;
+    for (let t = 0; t < h; t++) {
+      const p = priceEur * Math.pow(1 + CALC.INFLATION, t);
+      costNo += demand * p;
+      costPV += (demand - eigen) * p - einspeis * CALC.FEED_IN;
+    }
+    costPV += inv;
+    return { h, costNo: Math.max(0, Math.round(costNo)), costPV: Math.max(0, Math.round(costPV)) };
+  });
+  return {
+    investmentEur: Math.round(inv), yearlySavings: Math.round(ersparnis),
+    paybackYears: Math.round(amort * 10) / 10,
+    eigen: Math.round(eigen), einspeis: Math.round(einspeis),
+    co2_t: Math.round(co2_t * 100) / 100, trees: Math.round(trees),
+    horizons,
+  };
+}
+
+/* ---------- 4. Pixel/Geo Helpers ---------- */
+function haversineMeters(a, b) {
+  const R = 6371000;
+  const f1 = a[1] * Math.PI / 180, f2 = b[1] * Math.PI / 180;
+  const df = (b[1] - a[1]) * Math.PI / 180, dl = (b[0] - a[0]) * Math.PI / 180;
+  const h = Math.sin(df / 2) ** 2 + Math.cos(f1) * Math.cos(f2) * Math.sin(dl / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function bearingDeg(a, b) {
+  const f1 = a[1] * Math.PI / 180, f2 = b[1] * Math.PI / 180;
+  const dl = (b[0] - a[0]) * Math.PI / 180;
+  const y = Math.sin(dl) * Math.cos(f2);
+  const x = Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl);
+  return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+}
+function dimensionsFromRing(ring) {
+  if (ring.length < 3) return null;
+  let longest = 0, shortest = Infinity;
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i], b = ring[(i + 1) % ring.length];
+    const len = haversineMeters(a, b);
+    if (len > longest) longest = len;
+    if (len < shortest) shortest = len;
+  }
+  return { firstLengthM: longest, houseWidthM: shortest };
+}
+
+/* ---------- 5. Map + Tracer ---------- */
+const map = L.map('map', { doubleClickZoom: false }).setView([51.84, 6.85], 18); // Borken
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  maxZoom: 19, attribution: 'Esri World Imagery'
+}).addTo(map);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, opacity: 0.0
+}); // ensures rate-limiter happy
+let vertices = []; // [[lng, lat], ...]
+let polyLayer = null, markers = [], edgeLabels = [];
+
+function redrawTrace() {
+  if (polyLayer) map.removeLayer(polyLayer);
+  markers.forEach(m => map.removeLayer(m));
+  edgeLabels.forEach(m => map.removeLayer(m));
+  markers = []; edgeLabels = [];
+  if (vertices.length === 0) {
+    document.getElementById('dim-readout').innerHTML = '';
+    return;
+  }
+  const latLngs = vertices.map(v => [v[1], v[0]]);
+  if (vertices.length >= 3) {
+    polyLayer = L.polygon(latLngs, { color: '#ff6b00', weight: 2, fillOpacity: 0.25 }).addTo(map);
+  } else {
+    polyLayer = L.polyline(latLngs, { color: '#ff6b00', weight: 2 }).addTo(map);
+  }
+  vertices.forEach(v => {
+    const m = L.circleMarker([v[1], v[0]], { radius: 5, color: '#fff', fillColor: '#ff6b00', fillOpacity: 1, weight: 2 }).addTo(map);
+    markers.push(m);
+  });
+  // Edge labels
+  for (let i = 0; i < vertices.length; i++) {
+    const a = vertices[i], b = vertices[(i + 1) % vertices.length];
+    if (vertices.length < 3 && i === vertices.length - 1) continue; // open polyline: skip closing edge
+    const len = haversineMeters(a, b);
+    const mid = [(a[1] + b[1]) / 2, (a[0] + b[0]) / 2];
+    const lbl = L.marker(mid, {
+      icon: L.divIcon({
+        className: '',
+        html: `<span style="background:rgba(0,0,0,.7);color:#fff;padding:1px 5px;border-radius:4px;font-size:11px;font-weight:600">${len.toFixed(1)} m</span>`,
+        iconSize: [60, 18], iconAnchor: [30, 9]
+      })
+    }).addTo(map);
+    edgeLabels.push(lbl);
+  }
+  // Update readout + auto-fill First/Breite if closed
+  if (vertices.length >= 3) {
+    const dim = dimensionsFromRing(vertices);
+    if (dim) {
+      document.getElementById('dim-readout').innerHTML =
+        `<span class="tag ok">längste Kante: ${dim.firstLengthM.toFixed(2)} m → First-Länge</span>` +
+        `<span class="tag ok">kürzeste Kante: ${dim.houseWidthM.toFixed(2)} m → Hausbreite</span>`;
+    }
+  } else {
+    document.getElementById('dim-readout').innerHTML = '';
+  }
+}
+
+map.on('click', e => {
+  vertices.push([e.latlng.lng, e.latlng.lat]);
+  redrawTrace();
+});
+map.on('dblclick', () => closePolygon());
+
+function closePolygon() {
+  if (vertices.length < 3) return;
+  const dim = dimensionsFromRing(vertices);
+  if (!dim) return;
+  document.getElementById('firstLength').value = dim.firstLengthM.toFixed(1);
+  document.getElementById('houseWidth').value = dim.houseWidthM.toFixed(1);
+  recompute();
+}
+document.getElementById('btn-close').addEventListener('click', closePolygon);
+document.getElementById('btn-reset').addEventListener('click', () => { vertices = []; redrawTrace(); });
+document.getElementById('btn-undo').addEventListener('click', () => { vertices.pop(); redrawTrace(); });
+
+/* ---------- 6. Adresssuche (Nominatim, kein Token nötig) ---------- */
+const addrInput = document.getElementById('addr');
+const suggBox = document.getElementById('suggestions');
+let suggTimer = null, suggCtl = null;
+let currentPlz = null;
+
+addrInput.addEventListener('input', () => {
+  clearTimeout(suggTimer);
+  const q = addrInput.value.trim();
+  if (q.length < 4) { suggBox.style.display = 'none'; return; }
+  suggTimer = setTimeout(async () => {
+    if (suggCtl) suggCtl.abort();
+    suggCtl = new AbortController();
+    try {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=de&limit=6&q=${encodeURIComponent(q)}`,
+        { signal: suggCtl.signal, headers: { 'Accept-Language': 'de' } }
+      );
+      const data = await r.json();
+      if (!data.length) { suggBox.style.display = 'none'; return; }
+      suggBox.innerHTML = '';
+      data.forEach(d => {
+        const div = document.createElement('div');
+        div.textContent = d.display_name;
+        div.addEventListener('click', () => selectAddress(d));
+        suggBox.appendChild(div);
+      });
+      suggBox.style.display = 'block';
+    } catch (err) {
+      if (err.name !== 'AbortError') console.warn(err);
+    }
+  }, 350);
+});
+document.addEventListener('click', e => {
+  if (!suggBox.contains(e.target) && e.target !== addrInput) suggBox.style.display = 'none';
+});
+
+function selectAddress(d) {
+  addrInput.value = d.display_name;
+  suggBox.style.display = 'none';
+  const lat = parseFloat(d.lat), lng = parseFloat(d.lon);
+  map.setView([lat, lng], 19);
+  const plz = d.address && d.address.postcode ? d.address.postcode.match(/\d{5}/)?.[0] : null;
+  currentPlz = plz;
+  document.getElementById('addr-info').innerHTML =
+    `📍 ${d.display_name.split(',').slice(0,2).join(', ')}` +
+    (plz ? ` &middot; <span class="tag ok">${REGION_LABEL[regionFromPlz(plz)] || 'Region unbekannt'}</span>` : '');
+  recompute();
+}
+
+/* ---------- 7. Live-Berechnung ---------- */
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n).toLocaleString('de-DE', { maximumFractionDigits: 0 });
+const fmt1 = n => Number(n).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const ASPECT_LABELS = { sued: 'Süd', ost: 'Ost', west: 'West', nord: 'Nord' };
+
+function recompute() {
+  const roofType = $('roofType').value;
+  $('walmAspects').style.display = roofType === 'walmdach' ? 'flex' : 'none';
+
+  const input = {
+    firstLengthM: +$('firstLength').value || 0,
+    houseWidthM: +$('houseWidth').value || 0,
+    pitchDeg: +$('pitch').value || 40,
+    panelWattPeak: +$('panelWp').value || 450,
+    panelAreaM2: +$('panelArea').value || 2,
+    roofType,
+  };
+  const geom = computeRoof(input);
+  const region = regionFromPlz(currentPlz);
+  const aspectFor = lbl => ({
+    A: $('aspectA').value, B: $('aspectB').value,
+    C: $('aspectC').value, D: $('aspectD').value,
+  }[lbl]);
+
+  // Ergebnis-Tabelle
+  let body = '';
+  let totalYield = 0;
+  geom.sides.forEach(s => {
+    const aspect = aspectFor(s.label);
+    const y = Math.round(s.kwp * specificYield(region, aspect));
+    totalYield += y;
+    body += `<tr>
+      <td>${s.label}</td><td>${ASPECT_LABELS[aspect]}</td>
+      <td>${s.hypotenuseM.toFixed(2)}</td><td>${s.areaM2.toFixed(2)}</td>
+      <td>${s.panelCount}</td><td>${s.kwp.toFixed(2)}</td>
+      <td>${fmt(y)}</td></tr>`;
+  });
+  body += `<tr class="total">
+    <td colspan="3">Gesamt</td><td>${geom.totalArea.toFixed(2)}</td>
+    <td>${geom.totalPanels}</td><td>${geom.totalKwp.toFixed(2)}</td>
+    <td>${fmt(totalYield)}</td></tr>`;
+  $('results-body').innerHTML = body;
+  $('region-line').innerHTML = region
+    ? `Region: <strong>${REGION_LABEL[region]}</strong> (PLZ ${currentPlz})`
+    : 'Region: <em>unbekannt — Bundesschnitt verwendet</em>';
+
+  // Wirtschaftlichkeit
+  const calc = calculate({
+    kwp: geom.totalKwp,
+    yieldKwh: totalYield,
+    kwhYear: +$('kwhYear').value || 4500,
+    priceCt: +$('priceCt').value || 35,
+    addons: {
+      storage: $('addStorage').checked,
+      wallbox: $('addWallbox').checked,
+      heatpump: $('addHeatpump').checked,
+    },
+  });
+  $('kpis').innerHTML = `
+    <div class="kpi h"><div class="l">Ersparnis / Jahr</div><div class="v">${fmt(calc.yearlySavings)} €</div></div>
+    <div class="kpi"><div class="l">Investition</div><div class="v">${fmt(calc.investmentEur)} €</div></div>
+    <div class="kpi"><div class="l">Amortisation</div><div class="v">${fmt1(calc.paybackYears)} J.</div></div>
+    <div class="kpi"><div class="l">Eigenverbrauch</div><div class="v">${fmt(calc.eigen)} kWh</div></div>
+    <div class="kpi"><div class="l">Einspeisung</div><div class="v">${fmt(calc.einspeis)} kWh</div></div>
+    <div class="kpi"><div class="l">CO₂-Einsparung</div><div class="v">${fmt1(calc.co2_t)} t/J</div></div>
+    <div class="kpi"><div class="l">Module gesamt</div><div class="v">${geom.totalPanels}</div></div>
+    <div class="kpi"><div class="l">≈ Bäume</div><div class="v">${fmt(calc.trees)}</div></div>`;
+
+  let roi = '<table style="margin-top:8px"><thead><tr><th>Horizont</th><th>ohne PV</th><th>mit PV</th><th>Vorteil</th></tr></thead><tbody>';
+  calc.horizons.forEach(h => {
+    const benefit = h.costNo - h.costPV;
+    roi += `<tr><td>${h.h} Jahre</td><td>${fmt(h.costNo)} €</td><td>${fmt(h.costPV)} €</td><td><strong style="color:${benefit >= 0 ? 'var(--good)' : '#dc2626'}">${benefit >= 0 ? '+' : ''}${fmt(benefit)} €</strong></td></tr>`;
+  });
+  roi += '</tbody></table>';
+  $('roi-table').innerHTML = roi;
+}
+
+// Wire up live updates
+['roofType','firstLength','houseWidth','pitch','panelWp','panelArea',
+ 'aspectA','aspectB','aspectC','aspectD',
+ 'kwhYear','priceCt','addStorage','addWallbox','addHeatpump'
+].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('input', recompute);
+});
+
+// Initial render
+recompute();
+</script>
+</body>
+</html>
