@@ -3,20 +3,11 @@ node_modules/
 .pnp
 .pnp.js
 
-# Testing
-coverage/
-.nyc_output/
-playwright-report/
-test-results/
-
 # Next.js
 .next/
 out/
 next-env.d.ts
 tsconfig.tsbuildinfo
-
-# Cesium runtime — copied from node_modules at install time (see scripts/copy-cesium.js)
-public/cesium/
 
 # Production
 build/
@@ -34,12 +25,3 @@ dist/
 # IDE
 .vscode/
 .idea/
-
-# LoD2 pipeline artifacts (gigabytes; keep out of git)
-scripts/lod2-pipeline/citygml/
-scripts/lod2-pipeline/3dtiles/
-scripts/lod2-pipeline/.cache/
-scripts/lod2-pipeline/venv/
-scripts/lod2-pipeline/__pycache__/
-*.gml
-*.xml.gz

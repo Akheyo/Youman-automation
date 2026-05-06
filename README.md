@@ -1,257 +1,330 @@
-# A&B Solarenergy — PV-Konfigurator
+# Youman 3D-Solarplaner – Prototyp
 
-Production-grade Photovoltaik-Konfigurator für die Pilotregion **Borken (NRW)**.
-Adresse eingeben → echtes 3D-Modell des Hauses → automatische Modulbelegung →
-Wirtschaftlichkeitsberechnung → Lead-Anfrage an A&B Vertrieb.
+Ein professioneller 3D-Solarplaner-Prototyp mit
+**MapLibre GL JS** + **Three.js** als 3D-Karte, einer
+**Provider-Architektur** für Dachflächen-Erkennung
+(Mock / Google Solar API / LoD2-Stub) und einem **vereinheitlichten
+Datenmodell** auf Basis von `RoofFace`.
 
-> Architektur-Entscheidung: NRW LoD2 self-hosted 3D Tiles. Volle Begründung in
-> [ARCHITECTURE.md](./ARCHITECTURE.md). Was *nicht* funktioniert hat (Google
-> Photorealistic, OSM Buildings, MapTiler Flat-Extrusion) ist dort dokumentiert.
+> Ziel des Prototyps ist die Daten- und Visualisierungsarchitektur, nicht die
+> finale Wirtschaftlichkeitsberechnung. PV-Module werden korrekt platziert und
+> Kennzahlen (Anzahl, kWp) angezeigt – aber Erträge, Verschattung etc. sind
+> noch nicht Bestandteil dieses MVPs.
 
 ---
 
-## Quick start (lokal)
+## Schnellstart
 
 ```bash
-git clone https://github.com/akheyo/youman-automation
-cd youman-automation
-git checkout claude/pv-configurator-3d-XN7Kb
-
-cp .env.example .env.local
-# Mindestens NEXT_PUBLIC_CESIUM_ION_TOKEN setzen, optional Mapbox/PVGIS
-
 npm install
 npm run dev
-# → http://localhost:3000
 ```
 
-Ohne Cesium-Token startet der 3D-Viewer mit einem klaren Banner inkl. Aktion.
-Ohne LoD2-Tileset zeigt der Viewer NRW-Solarkataster-Polygone auf
-Cesium-World-Terrain (2.5D-Fallback) — keine OSM-Boxen, kein Fake-3D.
+Anschließend `http://localhost:3000` im Browser öffnen. Beim ersten Aufruf
+wird automatisch ein Demo-Gebäude (Mock-Provider) geladen, sodass die App
+**ohne API-Keys** sofort sichtbare 3D-Dachflächen mit PV-Modulen zeigt.
 
-## Architektur in einem Diagramm
+---
 
-```mermaid
-flowchart LR
-    A[Adresse] -->|/api/geocode| B[Mapbox/Nominatim]
-    A -->|/api/buildings| C[OSM Overpass]
-    A -->|/api/nrw-wfs| D[LANUK Solarkataster]
-    D -->|tilt+azimuth+kwp| E[/api/pvgis/]
-    C --> F[Cesium 3D Viewer]
-    D --> F
-    F -->|click segment| G[Panel Grid]
-    G --> H[Calculator]
-    E --> H
-    H --> I[Sidebar KPIs]
-    I --> J[Lead-Form]
-    J -->|/api/lead| K[Webhook → A&B Vertrieb]
-```
+## Was die App tut
 
-Volle Erläuterung in [ARCHITECTURE.md](./ARCHITECTURE.md).
+1. Du gibst eine **Adresse** ein (oder klickst „Demo laden“).
+2. Das Backend **geocodiert** die Adresse (Google API, falls Key gesetzt –
+   sonst Mock-Geocoding mit deutschen Großstädten).
+3. Der **`RoofDetectionProvider`** wird gewählt (`google-solar`, sonst
+   `mock`) und liefert ein normalisiertes **`DetectedBuilding`** mit
+   `RoofFace[]`, `PVModule[]`, Footprint, Center, Confidence usw.
+4. Das Frontend rendert das Gebäude in einer **3D-Karte** (MapLibre als
+   Basemap + Three.js Custom Layer für die Geometrie).
+5. Du wählst Dachflächen aus / ab und passt die **Modul-Einstellungen** an.
+   Module werden live neu platziert und Kennzahlen (Anzahl, kWp) aktualisieren
+   sich.
 
-## Projekt-Struktur
+---
+
+## Architektur-Diagramm
 
 ```
-.
-├── app/                       # Next.js 14 App Router
-│   ├── api/                   # 5 server routes
-│   │   ├── geocode/           # Mapbox primary, Nominatim fallback
-│   │   ├── buildings/         # OSM Overpass (mirror cascade)
-│   │   ├── nrw-wfs/           # LANUK Solarkataster
-│   │   ├── pvgis/             # EU JRC yield calc
-│   │   └── lead/              # Webhook forwarder
-│   ├── embed/                 # /embed iframe variant + auto-resize
-│   ├── privacy/               # DSGVO page
-│   ├── layout.tsx
-│   ├── page.tsx
-│   └── globals.css
-├── components/                # 10 React components, all client-side
-│   ├── PVConfigurator.tsx     # orchestrator
-│   ├── CesiumViewer.tsx       # 3D viewer (Cesium 1.123)
-│   ├── AddressSearch.tsx
-│   ├── Stepper.tsx
-│   ├── Sidebar.tsx
-│   ├── ConsumptionPanel.tsx
-│   ├── AddonsPanel.tsx
-│   ├── LeadForm.tsx
-│   ├── ResultBanner.tsx
-│   └── PdfExportButton.tsx
-├── lib/                       # Pure logic, fully unit-tested
-│   ├── calculator.ts          # PV economics
-│   ├── nrw-wfs.ts             # LANUK WFS client
-│   ├── pvgis.ts               # PVGIS client
-│   ├── overpass.ts            # OSM client
-│   ├── geo.ts                 # turf helpers
-│   ├── panel-grid.ts          # module placement
-│   ├── geocode.ts             # Mapbox + Nominatim
-│   ├── lead.ts                # Webhook validation + HMAC
-│   ├── lod2.ts                # Tileset config helpers
-│   └── store.ts               # Zustand state
-├── tests/
-│   ├── *.test.ts              # Vitest unit tests (calculator, geo, panel-grid, lead, nrw-wfs)
-│   └── e2e/smoke.spec.ts      # Playwright happy-path
-├── scripts/lod2-pipeline/     # CityGML → 3D Tiles → Cloudflare R2
-│   ├── 1_download_citygml.sh
-│   ├── 2_convert_to_3dtiles.py
-│   ├── 3_upload_to_r2.sh
-│   ├── requirements.txt
-│   └── README.md
-├── wordpress/                 # iframe + standalone embed snippets
-├── types/index.ts             # Domain types (TypeScript strict)
-├── ARCHITECTURE.md            # Decision record
-├── README.md                  # this file
-└── package.json
+                ┌────────────────────┐
+                │  Frontend (Next.js)│
+                │  ─ SolarPlanner    │
+                │  ─ MapView         │
+                │     (MapLibre +    │
+                │      Three.js)     │
+                │  ─ Sidebar         │
+                └─────────┬──────────┘
+                          │ POST /api/detect-roof
+                          │ POST /api/geocode
+                          ▼
+                ┌────────────────────┐
+                │  Backend (Next.js  │
+                │  App Router API)   │
+                └─────────┬──────────┘
+                          │
+              ┌───────────┴────────────┐
+              ▼                        ▼
+   ┌─────────────────────┐   ┌─────────────────────┐
+   │  providerFactory    │   │  googleGeocoding    │
+   └────────┬────────────┘   └─────────────────────┘
+            │
+   ┌────────┼─────────────┬──────────────────┐
+   ▼        ▼             ▼                  ▼
+┌──────┐ ┌────────┐ ┌──────────────────┐ ┌─────────────────┐
+│ Mock │ │ Google │ │ Lod2RoofProvider │ │ (manuell, später│
+│      │ │ Solar  │ │   (Stub)         │ │  Editor)        │
+└──┬───┘ └────┬───┘ └──────────┬───────┘ └─────────────────┘
+   │          │                │
+   └──────────┼────────────────┘
+              ▼
+      ┌────────────────────────────────┐
+      │   DetectedBuilding             │
+      │   (RoofFace[], PVModule[],     │
+      │    Footprint, Center, Source)  │
+      └────────────────────────────────┘
 ```
 
-## Verwendete Services
+**Trennung der Verantwortlichkeiten:**
 
-| Service | Zweck | Free-Tier-Grenze | Required |
-|---------|-------|------------------|----------|
-| Mapbox Geocoding | Adresssuche | 100k Req/Monat | optional (Nominatim-Fallback) |
-| Cesium Ion | World Terrain | unlimited (Default-Token) | **ja** für 3D-Viewer |
-| Cloudflare R2 | LoD2-Tileset hosten | 10 GB Storage / 10M Class A Operations | empfohlen für Production |
-| Vercel | App-Hosting | 100 GB Bandwidth (Hobby) | empfohlen |
-| LANUK NRW WFS | Solarkataster | unbegrenzt | **ja** |
-| OSM Overpass | Building Footprints | rate-limit | **ja** |
-| EU JRC PVGIS | Ertragsberechnung | unbegrenzt | optional (NRW-Default-Fallback) |
+| Schicht                 | Aufgabe                                                          |
+| ----------------------- | ---------------------------------------------------------------- |
+| `MapLibre GL JS`        | Basemap, Kamera, Pitch / Bearing / Zoom                          |
+| `Three.js` Custom Layer | 3D-Visualisierung (Gebäude, Dachflächen, PV-Module)              |
+| `Google Solar API`      | Schnelle automatische Dach-/Solarinfos                           |
+| `LoD2 (Deutschland)`    | Spätere genaue Dachform-Geometrie aus amtlichen 3D-Modellen      |
+| `Backend / Provider`    | Vereinheitlicht alle Quellen zu `RoofFace` und `DetectedBuilding`|
 
-Erwartete Production-Kosten: **< $25/Monat** bei < 10k Konfigurationen/Monat.
+**Wichtig:** Die Visualisierung weiß **niemals** ob es sich um ein
+Sattel-, Walm-, Flach- oder Pultdach handelt. Sie bekommt nur ein
+generisches `RoofFace[]` mit `vertices3d`, `pitchDeg`, `azimuthDeg`,
+`areaM2`, `selected`, …
 
-## Tests
+---
+
+## Environment Variables
+
+Lege eine Datei `.env.local` an (oder kopiere `.env.example`).
 
 ```bash
-npm run typecheck            # TS strict check
-npm run lint                 # ESLint
-npm run test                 # Vitest (lib/* unit tests)
-npm run test:coverage        # Vitest mit Coverage-Report (Ziel: 70% lines)
-npm run test:e2e:install     # Playwright Browser einmalig installieren
-npm run test:e2e             # Playwright smoke gegen `npm run dev`
+# Server-side: Geocoding (optional, sonst Mock)
+GOOGLE_MAPS_API_KEY=
+
+# Server-side: Google Solar API für RoofDetection (optional, sonst Mock)
+GOOGLE_SOLAR_API_KEY=
+
+# Browser: Raster-Tile-URL für die Basemap (z. B. Mapbox / MapTiler / Esri)
+# Wenn leer, wird OSM-Carto als heller Fallback genutzt.
+NEXT_PUBLIC_TILE_URL=
+NEXT_PUBLIC_TILE_ATTRIBUTION=
 ```
 
-Coverage-Schwellen (in `vitest.config.ts`): 70% lines/functions/statements,
-65% branches. CI sollte bei Unterschreitung fehlschlagen.
+### Google Maps Geocoding einrichten
 
-## Production-Deployment
+1. In der Google Cloud Console ein Projekt anlegen.
+2. „Geocoding API“ aktivieren und einen API-Key erstellen.
+3. Den Key in `.env.local` als `GOOGLE_MAPS_API_KEY` eintragen.
+4. Den Key serverseitig auf die Geocoding-API beschränken – er wird nie
+   ans Frontend ausgeliefert.
 
-### Auf Vercel
+### Google Solar API einrichten
+
+1. Im selben Projekt „Solar API“ aktivieren (separat freischalten).
+2. API-Key entweder den gleichen wie für Geocoding nutzen oder einen
+   eigenen erstellen.
+3. Als `GOOGLE_SOLAR_API_KEY` in `.env.local` eintragen.
+4. Sobald gesetzt, wählt der `providerFactory` automatisch
+   `GoogleSolarRoofProvider` als Dachdetektion.
+
+### Satellitentiles (Basemap)
+
+`NEXT_PUBLIC_TILE_URL` muss eine Tile-Vorlage mit `{z}/{x}/{y}` sein. Beispiele:
 
 ```bash
-vercel link                   # an Project binden (einmalig)
-vercel env pull               # Env Vars von Vercel laden
-vercel --prod                 # Production-Deploy
+# MapTiler Hybrid (Konto + Key nötig)
+NEXT_PUBLIC_TILE_URL=https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=YOUR_KEY
+NEXT_PUBLIC_TILE_ATTRIBUTION=© MapTiler © OpenStreetMap
+
+# Esri World Imagery (für Demo / Prototypen, eigene Lizenz beachten)
+NEXT_PUBLIC_TILE_URL=https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}
+NEXT_PUBLIC_TILE_ATTRIBUTION=Tiles © Esri
 ```
 
-Custom Domain: `konfig.ab-solarenergy.de` als CNAME auf
-`cname.vercel-dns.com` in der DNS-Zone konfigurieren, dann in
-Vercel Project Settings → Domains hinzufügen.
+Ohne Konfiguration zeigt die App eine helle OSM-Karte als Fallback und
+einen dezenten Hinweis links oben.
 
-### NRW LoD2-Tileset hosten
+---
 
-Das ist eine einmalige Operation pro Regierungsbezirk. Siehe
-[scripts/lod2-pipeline/README.md](./scripts/lod2-pipeline/README.md).
+## Provider im Detail
 
-Pilot Borken (~80 MB CityGML, ~5 min Konvertierung):
+### MockRoofDetectionProvider
 
-```bash
-cd scripts/lod2-pipeline
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-./1_download_citygml.sh --bezirk muenster --gemeinde borken
-python 2_convert_to_3dtiles.py --input ./citygml/borken --output ./3dtiles/borken --draco
-./3_upload_to_r2.sh --bucket lod2-nrw --path borken
+Liefert für jede Eingabe ein deterministisches `DetectedBuilding` mit echten
+3D-Vertices. Unterstützt:
+
+- Satteldach (2 RoofFaces)
+- Walmdach (4 RoofFaces)
+- Flachdach (1 RoofFace)
+- Pultdach (1 RoofFace)
+- Komplex mit Anbau (5–8 RoofFaces)
+
+Über den Sidebar-Button **„Demo-Gebäude wechseln“** kann man durch alle
+Typen rotieren – ideal zum Prüfen, dass die Visualisierung wirklich
+nur mit `RoofFace[]` arbeitet.
+
+### GoogleSolarRoofProvider
+
+- Ruft `solar.googleapis.com/v1/buildingInsights:findClosest` auf.
+- Liest `roofSegmentStats` (Pitch, Azimuth, Fläche, Bounding-Box,
+  `planeHeightAtCenterMeters`, Center).
+- **Approximiert** die Dachflächen als geneigte Rechtecke (Google liefert
+  keine echten Polygon-Eckpunkte). Die Approximation ist in
+  `metadata.approximation = true` markiert; die Confidence wird reduziert.
+- Wenn `solarPanels` zurückkommen, werden diese als zusätzliche Module
+  übernommen (zur Plausibilisierung der Modulplatzierung).
+- Fehler & fehlende Daten führen automatisch zum Fallback auf den
+  Mock-Provider, mit Warnhinweis im UI.
+
+### Lod2RoofProvider (Stub)
+
+Vorbereitete Architektur für deutsche LoD2-Daten. Aktuell wirft der
+Provider absichtlich einen `Error`. Siehe
+[`src/lib/lod2/README.md`](src/lib/lod2/README.md) für die geplante
+Pipeline (CityGML → RoofSurface-Polygone → `RoofFace`).
+
+---
+
+## Datenmodell (Auszug)
+
+```ts
+type RoofFace = {
+  id: string;
+  label: string;
+  vertices3d: Vec3[];        // lokale Meter, Ursprung = Gebäudezentrum
+  centerLngLat?: LngLat;
+  pitchDeg: number;
+  azimuthDeg: number;        // 0 = N, 90 = O, 180 = S, 270 = W
+  areaM2: number;
+  selected: boolean;
+  confidence?: number;
+  source: "mock" | "google-solar" | "lod2" | "manual";
+  metadata?: Record<string, unknown>;
+};
+
+type DetectedBuilding = {
+  buildingId: string;
+  address?: string;
+  center: LngLat;
+  footprint?: BuildingFootprint;
+  roofFaces: RoofFace[];
+  modules: PVModule[];
+  source: "mock" | "google-solar" | "lod2" | "manual";
+  confidence?: number;
+  metrics: {
+    totalRoofAreaM2: number;
+    selectedRoofAreaM2: number;
+    moduleCount: number;
+    totalKwp: number;
+  };
+  warnings?: string[];
+};
 ```
 
-Resultierende URL als `NEXT_PUBLIC_LOD2_TILESET_URL` in den Vercel-Env-Vars
-setzen, neu deployen → photorealistische Dachformen.
+Lokale Meter-Koordinaten:
 
-### WordPress-Integration
+- `X = Ost (positiv) / West (negativ)`
+- `Y = Nord (positiv) / Süd (negativ)`
+- `Z = Höhe in Metern über Boden`
 
-Zwei Snippets in `wordpress/`. Empfohlen: iframe-Variante in einen
-"Custom HTML"-Block der Seite kleben. iframe-Höhe passt sich automatisch
-via `postMessage` an.
+Die Umrechnung in Mercator-Koordinaten der Karte erfolgt im
+`ThreeBuildingLayer` über `maplibregl.MercatorCoordinate.fromLngLat`.
 
-## Lead-Webhook-Schema
+---
 
-`POST <LEAD_WEBHOOK_URL>` mit Body:
+## Modulplatzierung
 
-```json
-{
-  "name": "Max Mustermann",
-  "phone": "+49 1234 567890",
-  "email": "max@example.de",
-  "timeframe": "sofort | 1-3-monate | 3-6-monate | spaeter",
-  "message": "optional",
-  "address": "Mölndalstraße 8, 46325 Borken",
-  "lat": 51.84,
-  "lng": 6.86,
-  "consumption": {
-    "kwhYear": 4500,
-    "priceCtKwh": 35,
-    "hasEAuto": false,
-    "addons": { "storage": false, "wallbox": true, "heatpump": false }
-  },
-  "calculation": {
-    "recommendedKwp": 7.2,
-    "moduleCount": 18,
-    "yearlyYieldKwh": 6840,
-    "yearlySavingsEur": 1450,
-    "investmentEur": 11580,
-    "paybackYears": 8,
-    "co2SavingsT": 2.97
-  },
-  "timestamp": "2026-04-26T15:30:00.000Z",
-  "consent": true,
-  "source": "iframe@ab-solarenergy.de"
-}
+`placeModulesOnRoofFace(face, settings)` arbeitet **rein generisch** auf
+den Vertices der RoofFace:
+
+1. Flächennormale `n` per Newell-Methode.
+2. Längste Kante als `u`-Achse (in der Dachebene), `v = n × u`.
+3. 2D-Bounding-Box im (u, v)-System, abzüglich `edgeMarginM`.
+4. Raster aus Modulrechtecken (Größe + `moduleGapM`).
+5. Module, deren Mittelpunkt nicht im Polygon liegt, werden verworfen.
+6. Eckpunkte zurück nach 3D, leichter Z-Lift gegen Z-Fighting.
+
+Das funktioniert dadurch unabhängig vom Dachtyp – Satteldach, Walmdach,
+Flachdach, Pultdach, …
+
+---
+
+## Bekannte Grenzen
+
+- **Google Solar API ohne Polygone**: Dachflächen sind approximierte
+  Rechtecke – die Form weicht vom realen Dach ab. LoD2-Daten oder eine
+  spätere ML-basierte Polygon-Extraktion lösen das.
+- **Modulplatzierung**: Mittelpunkts-Test gegen das Dachpolygon (kein
+  exaktes Clipping). Für sehr konkave Polygone können Module zu nah am
+  Rand sitzen.
+- **Flachdach-Aufständerung**: Aktuell nur „flush“ (Module liegen flach
+  auf). `ModuleSettings` ist so vorbereitet, dass `tilted-south` /
+  `east-west` später ergänzt werden können.
+- **Three.js Picking / Hover**: Die 3D-Geometrie ist sichtbar, aber noch
+  nicht klickbar. Auswahl erfolgt über die Sidebar-Liste.
+- **CRS-Approximation**: Equirectangular-Projektion auf Gebäude-Skala. Für
+  Einzelgebäude < 200 m unkritisch; für stadtweite Datensätze müsste man
+  pro Gebäude rechnen.
+
+---
+
+## Projektstruktur
+
+```
+src/
+  app/
+    page.tsx
+    layout.tsx
+    globals.css
+    api/
+      detect-roof/route.ts
+      geocode/route.ts
+  components/
+    SolarPlanner.tsx     # State-Container, verbindet Map + Sidebar
+    MapView.tsx          # MapLibre + ThreeBuildingLayer
+    Sidebar.tsx          # Rechte Spalte
+    RoofFaceList.tsx
+    ModuleSettingsPanel.tsx
+    MetricsPanel.tsx
+    JsonDebugPanel.tsx
+  lib/
+    geometry/
+      coordinates.ts     # lng/lat <-> lokale Meter, Rotation
+      roofMath.ts        # Normale, Pitch, Azimuth, Polygonfläche
+      modulePlacement.ts # generischer Modul-Raster-Algorithmus
+      mockRoofs.ts       # 5 Mock-Dachgeometrien
+    providers/
+      roofDetectionProvider.ts     # Interface
+      mockRoofDetectionProvider.ts
+      googleSolarRoofProvider.ts
+      lod2RoofProvider.ts          # Stub
+      providerFactory.ts
+    map/
+      ThreeBuildingLayer.ts        # MapLibre CustomLayer + Three.js
+      materials.ts
+    api/
+      googleGeocoding.ts
+    lod2/
+      README.md
+  types/
+    solar.ts
 ```
 
-Optional `X-Signature: sha256=<HMAC>` Header, falls `LEAD_WEBHOOK_SECRET` gesetzt.
+---
 
-A&B kann den Webhook auf einen Zapier/Make/HubSpot-Endpoint zeigen lassen.
+## Nächste Schritte
 
-## Datenschutz / DSGVO
-
-Volle Erklärung unter `/privacy` (Source: [app/privacy/page.tsx](./app/privacy/page.tsx)).
-Wichtigste Punkte:
-
-- Keine Tracking-Cookies, kein Analytics ohne Consent
-- Externe Services (Mapbox, Overpass, NRW WFS, PVGIS, Cesium Ion, R2) sind
-  in der Datenschutzerklärung aufgeführt
-- Lead-Daten werden nur bei explizitem Consent übermittelt
-- Server-side IP-Logging nur via Vercel-Defaults (deaktivierbar)
-
-## Wartung
-
-### Neue NRW-Daten nachhosten
-
-NRW veröffentlicht jährlich ein LoD2-Update. Delta-Update:
-
-```bash
-cd scripts/lod2-pipeline
-./1_download_citygml.sh --since 2026-01-01
-python 2_convert_to_3dtiles.py --input ./citygml --output ./3dtiles --incremental --draco
-./3_upload_to_r2.sh --bucket lod2-nrw --sync
-```
-
-### Calculator-Konstanten anpassen
-
-Alle Wirtschaftlichkeits-Konstanten zentral in
-[`lib/calculator.ts`](./lib/calculator.ts) → `CALC` Objekt. Tests laufen
-deterministisch durch — `npm run test` warnt sofort bei Regression.
-
-## Bekannte Limits / Roadmap
-
-- **Verschattungsanalyse**: aktuell nur über NRW LANUK Eignungs-Klassifizierung
-  (sehr gut / gut / bedingt). Phase 2: pro-Modul Sun-Position-Tracking via
-  Cesium SunLight.
-- **NRW only**: Pilotregion. Bayern (BVV), BW (LGL) kommen mit Phase 3.
-- **Speicher-Auslegung pauschal**: 10 kWh / +€8000. Keine kWp-abhängige
-  dynamische Dimensionierung.
-- **PDF-Export ohne Polygon-Render**: Map-Snapshot via html2canvas funktioniert,
-  echtes Cesium-Snapshot mit Modulen ist Phase 2.
-
-## Lizenz
-
-Projekt-Code: proprietär (A&B Solarenergy).
-NRW LoD2: DL-DE→Zero-2.0 (frei kommerziell nutzbar).
-OpenStreetMap: ODbL (Quellangabe in Datenschutz).
+- LoD2-Pipeline implementieren (CityGML / 3D Tiles → RoofFace).
+- Three.js-Picking für Klick/Hover auf Dachflächen.
+- Modul-Clipping gegen das vollständige Polygon (statt Mittelpunkts-Test).
+- Reihenabstand & Aufständerung für Flachdach (`tilted-south`,
+  `east-west`).
+- Verschattungs-/Ertragsberechnung mit PVGIS / Google Solar Insights.
+- Export nach JSON / DXF / 3D-PDF.
