@@ -35,6 +35,8 @@ export type MockBuildingTemplate = {
   ridgeHeightM: number;
   /** Drehung des Gebäudes um Z in Grad (0 = First in Nord-Süd-Richtung). */
   rotationDeg: number;
+  /** Optional: explizite First-Länge in m (nur für Walmdach relevant). */
+  ridgeLengthM?: number;
 };
 
 export type MockBuilding = {
@@ -124,7 +126,12 @@ function buildSatteldach(t: MockBuildingTemplate): RoofFace[] {
 function buildWalmdach(t: MockBuildingTemplate): RoofFace[] {
   const { halfWidthM: hw, halfLengthM: hl, eaveHeightM: e, ridgeHeightM: r } = t;
   // First verkürzt: Walm an Süd- und Nordseite.
-  const ridgeShortenY = Math.min(hl * 0.5, hw); // First-Länge = 2 * (hl - shorten)
+  // Wenn `ridgeLengthM` gesetzt ist, leiten wir den Verkürzungs-Offset daraus
+  // ab (First-Länge = 2 * (hl - shorten)). Sonst Default-Heuristik.
+  const ridgeShortenY =
+    t.ridgeLengthM !== undefined
+      ? Math.max(0, hl - t.ridgeLengthM / 2)
+      : Math.min(hl * 0.5, hw);
   const ridgeS = rot({ x: 0, y: -hl + ridgeShortenY }, t.rotationDeg);
   const ridgeN = rot({ x: 0, y: hl - ridgeShortenY }, t.rotationDeg);
   const eaveSW = rot({ x: -hw, y: -hl }, t.rotationDeg);
@@ -275,11 +282,18 @@ export const MOCK_TEMPLATES: Record<MockBuildingKind, MockBuildingTemplate> = {
   walmdach: {
     kind: "walmdach",
     label: "Walmdach",
-    halfWidthM: 6,
-    halfLengthM: 8,
+    // Gebäudemaße: 10 m × 20 m. Bei First-Länge 10 m bleibt für die Walm-
+    // Triangel an Süd/Nord ein Y-Run von 5 m – das ergibt zusammen mit
+    // halfWidthM 5 m exakt den gleichen Pitch (40°) wie auf West/Ost.
+    halfWidthM: 5,
+    halfLengthM: 10,
     eaveHeightM: 4.5,
-    ridgeHeightM: 8.5,
-    rotationDeg: -10,
+    // Pitch 40° auf allen 4 Flächen: rise = 5 * tan(40°) ≈ 4.2 m.
+    ridgeHeightM: 8.7,
+    // Explizite First-Länge: 10 m.
+    ridgeLengthM: 10,
+    // Gerade ausgerichtet, kein Drehwinkel.
+    rotationDeg: 0,
   },
   flachdach: {
     kind: "flachdach",
