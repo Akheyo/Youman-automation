@@ -797,6 +797,33 @@ function renderShapeList() {
 }
 
 /* ---------- 6b. Auto-Detect via Overpass (OSM Building Footprints) ---------- */
+async function fetchOverpass(query) {
+  // Versucht mehrere Strategien — direkter GET (keine Preflight), direkter POST,
+  // dann CORS-Proxies. Damit funktioniert Auto-Detect auch wenn die HTML aus
+  // einer Sandbox-Origin (cdn.statically.io, raw.githack, file://) geladen wird,
+  // wo Overpass direkt CORS-blockiert.
+  const directUrl = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+  const strategies = [
+    () => fetch(directUrl),                                                                         // GET direkt — meist reicht das
+    () => fetch('https://overpass-api.de/api/interpreter', {                                        // POST direkt
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'data=' + encodeURIComponent(query),
+    }),
+    () => fetch('https://lz4.overpass-api.de/api/interpreter?data=' + encodeURIComponent(query)),   // Mirror
+    () => fetch('https://corsproxy.io/?' + encodeURIComponent(directUrl)),                          // CORS-Proxy
+    () => fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(directUrl)),             // 2. CORS-Proxy
+  ];
+  let lastErr = null;
+  for (let i = 0; i < strategies.length; i++) {
+    try {
+      const r = await strategies[i]();
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error('Alle Overpass-Strategien fehlgeschlagen');
+}
+
 async function detectBuildingAt(lat, lng) {
   const status = document.getElementById('detect-status');
   status.style.display = 'block';
@@ -806,13 +833,7 @@ async function detectBuildingAt(lat, lng) {
      relation(around:30,${lat},${lng})[building];);
     out geom tags;`;
   try {
-    const r = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'data=' + encodeURIComponent(query),
-    });
-    if (!r.ok) throw new Error('Overpass HTTP ' + r.status);
-    const data = await r.json();
+    const data = await fetchOverpass(query);
     const candidates = [];
     for (const el of (data.elements || [])) {
       if (!el.geometry || el.geometry.length < 3) continue;
@@ -844,8 +865,10 @@ async function detectBuildingAt(lat, lng) {
       ` &middot; Quelle: OpenStreetMap`;
     return best;
   } catch (err) {
-    status.textContent = '⚠️ Overpass-API nicht erreichbar — bitte manuell zeichnen.';
-    console.warn(err);
+    status.innerHTML = '⚠️ OpenStreetMap-Auto-Detect nicht erreichbar (CORS). ' +
+      'Bitte das Dach <strong>manuell auf der Karte einzeichnen</strong> ' +
+      '(Klicken setzt Eckpunkte, Doppelklick schließt das Polygon).';
+    console.warn('[Overpass] alle Strategien fehlgeschlagen:', err);
     return null;
   }
 }
