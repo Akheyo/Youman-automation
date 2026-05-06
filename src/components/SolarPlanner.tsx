@@ -260,9 +260,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
           );
         }
         if (data.building.source !== "osm" || !data.building.footprint) {
-          throw new Error(
-            "OSM hat hier kein Gebäude gefunden. Probier 'Selber zeichnen'.",
-          );
+          throw new Error("osm-not-found");
         }
         // OSM hat den Footprint geliefert – das Dach bauen wir mit den
         // aktuellen manuellen Parametern (Form, Pitch, Traufe), damit der
@@ -281,9 +279,20 @@ export default function SolarPlanner({ mapSettings }: Props) {
           reason: `Footprint per Klick aus OSM (${data.building.roofFaces.length} OSM-Tags). Form/Pitch/Traufe via Slider veränderbar.`,
         });
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Picking fehlgeschlagen",
-        );
+        // Smarter Fallback: OSM hat hier nichts – statt zu meckern, nahtlos
+        // ins manuelle Zeichnen wechseln. Der ursprüngliche Klick ist bereits
+        // der erste Eckpunkt; User klickt einfach die restlichen Ecken nach.
+        const message =
+          err instanceof Error ? err.message : "Picking fehlgeschlagen";
+        if (message === "osm-not-found") {
+          setError(
+            "OSM kennt das Gebäude nicht – zeichne die restlichen Ecken einfach weiter.",
+          );
+          setDrawnPoints([p]);
+          setDrawingMode(true);
+        } else {
+          setError(message);
+        }
       } finally {
         setLoading(false);
       }

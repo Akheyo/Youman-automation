@@ -28,7 +28,7 @@ export type OsmBuilding = {
 export async function fetchBuildingsNear(
   lat: number,
   lng: number,
-  radiusM = 40,
+  radiusM = 80,
 ): Promise<OsmBuilding[]> {
   // Wichtig: nur ways mit `building`-Tag, mit Geometrie. Multipolygone
   // (relations) lassen wir hier weg – komplexer zu parsen, für den Prototyp

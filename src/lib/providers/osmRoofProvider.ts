@@ -54,7 +54,13 @@ export class OSMRoofProvider implements RoofDetectionProvider {
   readonly name = "osm";
 
   async detectRoof(input: RoofDetectionInput): Promise<DetectedBuilding> {
-    const buildings = await fetchBuildingsNear(input.lat, input.lng, 40);
+    // Erst 80 m, dann 150 m versuchen – beim Klicken in der 3D-Tilt-Ansicht
+    // landet der Klickpunkt durch die Perspektive 8–15 m neben dem Haus,
+    // ländliche Gebiete sind in OSM zudem oft lückenhaft.
+    let buildings = await fetchBuildingsNear(input.lat, input.lng, 80);
+    if (buildings.length === 0) {
+      buildings = await fetchBuildingsNear(input.lat, input.lng, 150);
+    }
     if (buildings.length === 0) {
       throw new Error(
         "OSM hat keine Gebäude in der Nähe der Adresse gefunden.",
@@ -185,7 +191,9 @@ function pickClosestBuilding(
     const dy = (c.lat - lat) * 111320;
     const d = Math.hypot(dx, dy);
     // Mindestgröße der Bounding-Box als Schwelle für „kein Schuppen/Tonne".
-    const sizeOk = approximateAreaM2(b.geometry, lat) > 15;
+    // 5 m² Schwelle: filtert Mülltonnen/Briefkästen, lässt aber kleine
+    // Wohnhäuser/Garagen rein (typisch 30–60 m²).
+    const sizeOk = approximateAreaM2(b.geometry, lat) > 5;
     if (!sizeOk) continue;
     if (!best || d < best.d) best = { b, d };
   }
