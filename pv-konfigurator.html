@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>A&amp;B PV-Konfigurator — Standalone (Google Satellite)</title>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -174,6 +182,23 @@ footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8re
         <span class="legend"><span class="swatch suit-b"></span>bedingt (Ost/West)</span>
         <span class="legend"><span class="swatch suit-u"></span>ungeeignet (Nord)</span>
       </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2><span class="step">2b</span> 3D-Vorschau (Excel-Formeln)</h2>
+      <div id="viewer3d"
+           style="height:420px;border-radius:8px;background:linear-gradient(180deg,#87ceeb 0%,#b8e0ed 60%,#a5c4a3 100%);position:relative;overflow:hidden">
+        <div id="viewer3d-empty"
+             style="position:absolute;inset:0;display:grid;place-items:center;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4);font-weight:600;text-align:center;padding:20px">
+          🏠 Sobald ein Hauptdach-Polygon vorhanden ist (auto-erkannt oder gezeichnet),<br>
+          wird hier das 3D-Gebäude mit den Excel-Formeln aufgebaut.
+        </div>
+      </div>
+      <p class="map-hint">
+        <strong>Maus ziehen</strong> = drehen, <strong>Mausrad</strong> = zoomen, <strong>Rechtsklick + ziehen</strong> = verschieben.
+        Wände werden aus dem Footprint extrudiert (Eaves-Höhe = Stockwerke × 3 m), das Dach mit
+        <code>C = (Breite/2) / cos(Pitch)</code> aufgebaut. Slopes farbcodiert wie in der 2D-Karte.
+      </p>
     </div>
 
     <div class="card" style="margin-top:14px">
@@ -783,7 +808,7 @@ async function autoLoadBuilding(lat, lng) {
     google.maps.event.addListener(polygon.getPath(), ev, () => recalcShape(shape)));
   const areaM2 = google.maps.geometry.spherical.computeArea(polygon.getPath());
   const dim = dimensionsFromRing(found.ring);
-  const shape = { type: 'main', polygon, areaM2, ringLatLng: found.ring, dim };
+  const shape = { type: 'main', polygon, areaM2, ringLatLng: found.ring, dim, osmTags: found.tags };
   shapes.push(shape);
   if (dim) {
     document.getElementById('firstLength').value = dim.firstLengthM.toFixed(1);
@@ -1059,6 +1084,27 @@ function recompute() {
 
   // Suitability-Vorschau aktualisieren
   if (typeof google !== 'undefined' && google.maps) renderRoofPreview();
+
+  // 3D-Vorschau aktualisieren (Three.js, asynchron geladen via importmap)
+  const main = shapes.find(s => s.type === 'main');
+  if (main && main.dim && typeof window.update3D === 'function') {
+    // Eaves-Höhe: aus Stockwerken (OSM building:levels × 3 m) ableiten,
+    // Default 6 m (1.5-stöckiges Einfamilienhaus).
+    let eaveHeightM = 6;
+    const tagLevels = main.osmTags && main.osmTags['building:levels'];
+    if (tagLevels && !isNaN(parseFloat(tagLevels))) {
+      eaveHeightM = Math.max(2.5, parseFloat(tagLevels) * 3);
+    }
+    window.update3D({
+      ring: main.ringLatLng,
+      ridgeBearingDeg: main.dim.ridgeBearingDeg,
+      eaveHeightM,
+      pitchDeg: input.pitchDeg,
+      roofType,
+    });
+  } else if (typeof window.clear3D === 'function' && !main) {
+    window.clear3D();
+  }
 }
 
 ['roofType','firstLength','houseWidth','pitch','panelWp','panelArea',
@@ -1091,6 +1137,301 @@ loadGoogleMaps();
 
 // Initial render (sidebar funktioniert auch ohne Map)
 recompute();
+</script>
+
+<!-- ============================================================================
+     Three.js 3D-Vorschau — extrudierte Wände + Satteldach mit Excel-Formeln
+     ============================================================================ -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const SUIT_COLORS = {
+  sehr_gut:   0x22c55e,
+  gut:        0x84cc16,
+  bedingt:    0xf59e0b,
+  ungeeignet: 0x94a3b8,
+};
+function suitabilityColorFor(aspect) {
+  if (aspect === 'sued') return SUIT_COLORS.sehr_gut;
+  if (aspect === 'ost' || aspect === 'west') return SUIT_COLORS.bedingt;
+  return SUIT_COLORS.ungeeignet;
+}
+function aspectFromAzimuth3D(deg) {
+  const a = ((deg % 360) + 360) % 360;
+  if (a >= 315 || a < 45) return 'nord';
+  if (a < 135) return 'ost';
+  if (a < 225) return 'sued';
+  return 'west';
+}
+
+const container = document.getElementById('viewer3d');
+const emptyOverlay = document.getElementById('viewer3d-empty');
+
+const scene = new THREE.Scene();
+scene.background = null; // CSS-Gradient durchscheinen lassen
+
+const camera = new THREE.PerspectiveCamera(45, 16 / 9, 0.1, 2000);
+camera.position.set(35, 30, 35);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+renderer.domElement.style.position = 'absolute';
+renderer.domElement.style.inset = '0';
+
+function resize() {
+  const r = container.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width / Math.max(1, r.height);
+  camera.updateProjectionMatrix();
+}
+resize();
+new ResizeObserver(resize).observe(container);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 8;
+controls.maxDistance = 200;
+controls.maxPolarAngle = Math.PI * 0.49;
+
+// Beleuchtung
+const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+scene.add(ambient);
+const sun = new THREE.DirectionalLight(0xfff5e6, 0.95);
+sun.position.set(50, 80, 30);
+sun.castShadow = true;
+sun.shadow.camera.left = -60; sun.shadow.camera.right = 60;
+sun.shadow.camera.top = 60; sun.shadow.camera.bottom = -60;
+sun.shadow.mapSize.width = 1024; sun.shadow.mapSize.height = 1024;
+scene.add(sun);
+
+// Boden (Rasen)
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(400, 400),
+  new THREE.MeshLambertMaterial({ color: 0x9ec48a }),
+);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.01;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Kompass-Pfeil "N"
+const compass = (() => {
+  const grp = new THREE.Group();
+  const arrow = new THREE.ArrowHelper(
+    new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0.05, 0), 4, 0xdc2626, 1.2, 0.8
+  );
+  grp.add(arrow);
+  const canvas = document.createElement('canvas');
+  canvas.width = 64; canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#dc2626'; ctx.font = 'bold 48px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('N', 32, 36);
+  const tex = new THREE.CanvasTexture(canvas);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
+  sprite.position.set(0, 0.5, -5);
+  sprite.scale.set(2, 2, 1);
+  grp.add(sprite);
+  scene.add(grp);
+  return grp;
+})();
+
+const houseGroup = new THREE.Group();
+scene.add(houseGroup);
+
+function clearHouse() {
+  while (houseGroup.children.length > 0) {
+    const c = houseGroup.children[0];
+    houseGroup.remove(c);
+    if (c.geometry) c.geometry.dispose();
+    if (c.material) (Array.isArray(c.material) ? c.material : [c.material]).forEach(m => m.dispose());
+  }
+}
+
+/* Lokales Koordinatensystem: X=Ost, Z=Süd, Y=Höhe (Three.js right-handed mit Y up). */
+function ringToLocal(ring, pivot) {
+  const mPerLat = 111320;
+  const mPerLng = 111320 * Math.cos(pivot.lat * Math.PI / 180);
+  return ring.map(p => ({
+    x: (p.lng - pivot.lng) * mPerLng,
+    z: -(p.lat - pivot.lat) * mPerLat,    // Norden = -Z
+  }));
+}
+
+function rotateXZ(p, theta) {
+  const c = Math.cos(theta), s = Math.sin(theta);
+  return { x: p.x * c - p.z * s, z: p.x * s + p.z * c };
+}
+
+function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }) {
+  clearHouse();
+  if (!ring || ring.length < 3) return;
+
+  const pivot = { lat: ring.reduce((a, p) => a + p.lat, 0) / ring.length,
+                  lng: ring.reduce((a, p) => a + p.lng, 0) / ring.length };
+  const local = ringToLocal(ring, pivot);
+
+  // === Wände: Footprint extrudieren ===
+  const shape = new THREE.Shape();
+  shape.moveTo(local[0].x, local[0].z);
+  for (let i = 1; i < local.length; i++) shape.lineTo(local[i].x, local[i].z);
+  shape.closePath();
+  const wallGeom = new THREE.ExtrudeGeometry(shape, { depth: eaveHeightM, bevelEnabled: false, steps: 1 });
+  // ExtrudeGeometry extrudiert in +Z; wir wollen +Y → Drehung
+  wallGeom.rotateX(-Math.PI / 2);
+  // Nach Rotation liegt der Footprint nun in Y=-eaveHeightM..0; nach oben verschieben
+  wallGeom.translate(0, eaveHeightM, 0);
+  // Zusätzlich liegt der Footprint nun in (x, z) wieder, aber gespiegelt — y-flip
+  wallGeom.scale(1, 1, -1);
+  const walls = new THREE.Mesh(wallGeom,
+    new THREE.MeshLambertMaterial({ color: 0xe8dfd0, side: THREE.DoubleSide }));
+  walls.castShadow = true;
+  walls.receiveShadow = true;
+  houseGroup.add(walls);
+
+  // === Dach: OBB im rotierten Frame, Slopes bauen ===
+  const theta = -ridgeBearingDeg * Math.PI / 180;
+  const rotated = local.map(p => rotateXZ(p, theta));
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+  rotated.forEach(p => {
+    if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+    if (p.z < minZ) minZ = p.z; if (p.z > maxZ) maxZ = p.z;
+  });
+  const widthM = maxZ - minZ;             // perpendicular zum First
+  const lengthM = maxX - minX;            // entlang First
+  const halfW = widthM / 2;
+  const ridgeRise = halfW * Math.tan(pitchDeg * Math.PI / 180);
+  const ridgeY = eaveHeightM + ridgeRise;
+  const midZ = (minZ + maxZ) / 2;
+
+  // Hilfsfunktion: aus rotiertem (x, y, z) zurück ins Welt-XYZ
+  function back(p) {
+    const r = rotateXZ({ x: p.x, z: p.z }, -theta);
+    return new THREE.Vector3(r.x, p.y, r.z);
+  }
+
+  function makeSlope(corners, color) {
+    const verts = corners.map(back);
+    const geom = new THREE.BufferGeometry();
+    const positions = new Float32Array([
+      verts[0].x, verts[0].y, verts[0].z,
+      verts[1].x, verts[1].y, verts[1].z,
+      verts[2].x, verts[2].y, verts[2].z,
+      verts[0].x, verts[0].y, verts[0].z,
+      verts[2].x, verts[2].y, verts[2].z,
+      verts[3].x, verts[3].y, verts[3].z,
+    ]);
+    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    const mat = new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide });
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    houseGroup.add(mesh);
+    // Outline edges
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geom),
+      new THREE.LineBasicMaterial({ color: 0x4d2200, linewidth: 1 }),
+    );
+    houseGroup.add(edges);
+  }
+
+  function makeGable(corners) {
+    const verts = corners.map(back);
+    const geom = new THREE.BufferGeometry();
+    const positions = new Float32Array([
+      verts[0].x, verts[0].y, verts[0].z,
+      verts[1].x, verts[1].y, verts[1].z,
+      verts[2].x, verts[2].y, verts[2].z,
+    ]);
+    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    const mesh = new THREE.Mesh(geom,
+      new THREE.MeshLambertMaterial({ color: 0xdcd1bd, side: THREE.DoubleSide }));
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    houseGroup.add(mesh);
+  }
+
+  if (roofType === 'pultdach') {
+    // Eine einzelne Schräge: niedrige Seite minZ→eave, hohe Seite maxZ→eave + tan(pitch)*width
+    const highY = eaveHeightM + widthM * Math.tan(pitchDeg * Math.PI / 180);
+    const corners = [
+      { x: minX, y: eaveHeightM, z: minZ },
+      { x: maxX, y: eaveHeightM, z: minZ },
+      { x: maxX, y: highY,       z: maxZ },
+      { x: minX, y: highY,       z: maxZ },
+    ];
+    const aspect = aspectFromAzimuth3D(ridgeBearingDeg + 90);
+    makeSlope(corners, suitabilityColorFor(aspect));
+    // Gable-Dreiecke an den Schmalseiten
+    makeGable([
+      { x: minX, y: eaveHeightM, z: minZ },
+      { x: minX, y: eaveHeightM, z: maxZ },
+      { x: minX, y: highY,       z: maxZ },
+    ]);
+    makeGable([
+      { x: maxX, y: eaveHeightM, z: minZ },
+      { x: maxX, y: eaveHeightM, z: maxZ },
+      { x: maxX, y: highY,       z: maxZ },
+    ]);
+  } else {
+    // Satteldach (Walmdach hier identisch dargestellt — die Walmen kommen
+    // in der Berechnungstabelle separat vor)
+    // Slope 1 (Süd-Seite des Firstes, also minZ → ridge)
+    const slope1 = [
+      { x: minX, y: eaveHeightM, z: minZ },
+      { x: maxX, y: eaveHeightM, z: minZ },
+      { x: maxX, y: ridgeY,      z: midZ },
+      { x: minX, y: ridgeY,      z: midZ },
+    ];
+    const slope2 = [
+      { x: minX, y: eaveHeightM, z: maxZ },
+      { x: maxX, y: eaveHeightM, z: maxZ },
+      { x: maxX, y: ridgeY,      z: midZ },
+      { x: minX, y: ridgeY,      z: midZ },
+    ];
+    const aspect1 = aspectFromAzimuth3D(ridgeBearingDeg + 270);  // facing -Z (compass = bearing-90)
+    const aspect2 = aspectFromAzimuth3D(ridgeBearingDeg + 90);   // facing +Z (compass = bearing+90)
+    makeSlope(slope1, suitabilityColorFor(aspect1));
+    makeSlope(slope2, suitabilityColorFor(aspect2));
+    // Giebeldreiecke
+    makeGable([
+      { x: minX, y: eaveHeightM, z: minZ },
+      { x: minX, y: eaveHeightM, z: maxZ },
+      { x: minX, y: ridgeY,      z: midZ },
+    ]);
+    makeGable([
+      { x: maxX, y: eaveHeightM, z: minZ },
+      { x: maxX, y: eaveHeightM, z: maxZ },
+      { x: maxX, y: ridgeY,      z: midZ },
+    ]);
+  }
+
+  // Kamera auf das Gebäude ausrichten
+  const target = new THREE.Vector3(0, eaveHeightM * 0.6, 0);
+  const radius = Math.max(lengthM, widthM) * 1.6 + 12;
+  camera.position.set(radius * 0.7, radius * 0.55, radius * 0.7);
+  controls.target.copy(target);
+  controls.update();
+
+  emptyOverlay.style.display = 'none';
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+/* Bridge zum Haupt-Skript: window.update3D({ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType}) */
+window.update3D = build3DHouse;
+window.clear3D = () => { clearHouse(); emptyOverlay.style.display = 'grid'; };
 </script>
 </body>
 </html>
