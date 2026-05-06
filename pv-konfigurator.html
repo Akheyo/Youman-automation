@@ -143,14 +143,17 @@ footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8re
       Bitte Key oben rechts in die HTML einsetzen — Anleitung im <code>&lt;script&gt;</code>-Tag-Kommentar.
     </div>
 
-    <div class="card">
+    <div class="card" id="card-step1">
       <h2><span class="step">1</span> Adresse</h2>
       <input type="text" id="addr" placeholder="Straße Hausnummer, PLZ Ort" autocomplete="off">
       <div id="suggestions" class="suggestions" style="display:none"></div>
       <div id="addr-info" class="muted" style="margin-top:6px"></div>
+      <div class="row" style="margin-top:10px;justify-content:flex-end">
+        <button class="btn btn--primary" data-next="card-step2">Weiter zu Schritt 2: Eckpunkte →</button>
+      </div>
     </div>
 
-    <div class="card" style="margin-top:14px">
+    <div class="card" id="card-step2" style="margin-top:14px">
       <h2><span class="step">2</span> Dach &amp; Hindernisse zeichnen</h2>
       <div class="map-toolbar">
         <button class="btn" id="btn-detect">🔍 Gebäude automatisch erkennen</button>
@@ -182,10 +185,13 @@ footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8re
         <span class="legend"><span class="swatch suit-b"></span>bedingt (Ost/West)</span>
         <span class="legend"><span class="swatch suit-u"></span>ungeeignet (Nord)</span>
       </div>
+      <div class="row" style="margin-top:10px;justify-content:flex-end">
+        <button class="btn btn--primary" data-next="card-step3">Weiter zu Schritt 3: 3D-Vorschau →</button>
+      </div>
     </div>
 
-    <div class="card" style="margin-top:14px">
-      <h2><span class="step">2b</span> 3D-Vorschau (Excel-Formeln)</h2>
+    <div class="card" id="card-step3" style="margin-top:14px">
+      <h2><span class="step">3</span> 3D-Vorschau (Excel-Formeln)</h2>
       <div id="viewer3d"
            style="height:420px;border-radius:8px;background:linear-gradient(180deg,#87ceeb 0%,#b8e0ed 60%,#a5c4a3 100%);position:relative;overflow:hidden">
         <div id="viewer3d-empty"
@@ -199,10 +205,13 @@ footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8re
         Wände werden aus dem Footprint extrudiert (Eaves-Höhe = Stockwerke × 3 m), das Dach mit
         <code>C = (Breite/2) / cos(Pitch)</code> aufgebaut. Slopes farbcodiert wie in der 2D-Karte.
       </p>
+      <div class="row" style="margin-top:10px;justify-content:flex-end">
+        <button class="btn btn--primary" data-next="card-step4">Weiter zu Schritt 4: Parameter →</button>
+      </div>
     </div>
 
-    <div class="card" style="margin-top:14px">
-      <h2><span class="step">3</span> Dach-Geometrie &amp; Modul</h2>
+    <div class="card" id="card-step4" style="margin-top:14px">
+      <h2><span class="step">4</span> Dach-Geometrie &amp; Modul</h2>
       <div class="row">
         <div>
           <label class="f">Dachform</label>
@@ -255,8 +264,13 @@ footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8re
       </div>
     </div>
 
-    <div class="card" style="margin-top:14px">
-      <h2><span class="step">4</span> Ergebnis (Excel-Formeln)</h2>
+      <div class="row" style="margin-top:10px;justify-content:flex-end">
+        <button class="btn btn--primary" data-next="card-step5">Weiter zu Schritt 5: Ergebnis &amp; Wirtschaftlichkeit →</button>
+      </div>
+    </div>
+
+    <div class="card" id="card-step5" style="margin-top:14px">
+      <h2><span class="step">5</span> Ergebnis (Excel-Formeln)</h2>
       <table id="results">
         <thead><tr><th>Seite</th><th>Ausrichtung</th><th>Hypotenuse&nbsp;(m)</th><th>Brutto&nbsp;(m²)</th><th>Netto&nbsp;(m²)</th><th>Module</th><th>kWp</th><th>Ertrag&nbsp;(kWh/J)</th></tr></thead>
         <tbody id="results-body"></tbody>
@@ -269,7 +283,7 @@ footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8re
   <!-- RIGHT: Sidebar -->
   <aside>
     <div class="card">
-      <h2><span class="step">5</span> Verbrauch &amp; Add-ons</h2>
+      <h2><span class="step">6</span> Verbrauch &amp; Add-ons</h2>
       <div class="row">
         <div>
           <label class="f">Jahresverbrauch (kWh)</label>
@@ -288,7 +302,7 @@ footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8re
     </div>
 
     <div class="card" style="margin-top:14px">
-      <h2><span class="step">6</span> Wirtschaftlichkeit</h2>
+      <h2><span class="step">7</span> Wirtschaftlichkeit</h2>
       <div class="kpis" id="kpis"></div>
       <div id="roi-table" style="margin-top:10px"></div>
     </div>
@@ -1085,27 +1099,63 @@ function recompute() {
   // Suitability-Vorschau aktualisieren
   if (typeof google !== 'undefined' && google.maps) renderRoofPreview();
 
-  // 3D-Vorschau aktualisieren (Three.js, asynchron geladen via importmap)
-  const main = shapes.find(s => s.type === 'main');
-  if (main && main.dim && typeof window.update3D === 'function') {
-    // Eaves-Höhe: aus Stockwerken (OSM building:levels × 3 m) ableiten,
-    // Default 6 m (1.5-stöckiges Einfamilienhaus).
-    let eaveHeightM = 6;
-    const tagLevels = main.osmTags && main.osmTags['building:levels'];
-    if (tagLevels && !isNaN(parseFloat(tagLevels))) {
-      eaveHeightM = Math.max(2.5, parseFloat(tagLevels) * 3);
+  // 3D-Vorschau aktualisieren (Three.js, asynchron geladen via importmap).
+  // Wir rendern IMMER etwas — entweder das echte erkannte Gebäude oder
+  // ein synthetisches Rechteck aus den aktuellen Eingaben.
+  if (typeof window.update3D === 'function') {
+    const main = shapes.find(s => s.type === 'main');
+    let ring, ridgeBearingDeg, eaveHeightM = 6, isSynthetic = false;
+    if (main && main.dim) {
+      ring = main.ringLatLng;
+      ridgeBearingDeg = main.dim.ridgeBearingDeg;
+      const tagLevels = main.osmTags && main.osmTags['building:levels'];
+      if (tagLevels && !isNaN(parseFloat(tagLevels))) {
+        eaveHeightM = Math.max(2.5, parseFloat(tagLevels) * 3);
+      }
+    } else {
+      // Synthetisches Rechteck: First-Länge × Hausbreite, am letzten Adress-
+      // Punkt zentriert (oder Borken als Fallback). First läuft Ost-West.
+      const center = currentAddrLatLng || { lat: 51.84, lng: 6.85 };
+      const halfL = (input.firstLengthM / 2) / (111320 * Math.cos(center.lat * Math.PI / 180));
+      const halfW = (input.houseWidthM / 2) / 111320;
+      ring = [
+        { lat: center.lat - halfW, lng: center.lng - halfL },
+        { lat: center.lat - halfW, lng: center.lng + halfL },
+        { lat: center.lat + halfW, lng: center.lng + halfL },
+        { lat: center.lat + halfW, lng: center.lng - halfL },
+      ];
+      ridgeBearingDeg = 90;
+      isSynthetic = true;
     }
-    window.update3D({
-      ring: main.ringLatLng,
-      ridgeBearingDeg: main.dim.ridgeBearingDeg,
-      eaveHeightM,
-      pitchDeg: input.pitchDeg,
-      roofType,
-    });
-  } else if (typeof window.clear3D === 'function' && !main) {
-    window.clear3D();
+    try {
+      window.update3D({
+        ring, ridgeBearingDeg, eaveHeightM,
+        pitchDeg: input.pitchDeg,
+        roofType,
+        isSynthetic,
+      });
+    } catch (err) {
+      console.error('[3D] update failed:', err);
+    }
   }
 }
+
+// Expose recompute global, damit das Three.js-Modul nach dem Init eine
+// initiale Render-Pass triggern kann.
+window.recompute = recompute;
+
+/* ---------- 8b. "Weiter →"-Buttons mit smooth-scroll ---------- */
+document.querySelectorAll('[data-next]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tgt = document.getElementById(btn.dataset.next);
+    if (!tgt) return;
+    tgt.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Visuelles Highlight-Pulse
+    tgt.style.transition = 'box-shadow .4s';
+    tgt.style.boxShadow = '0 0 0 3px rgba(13,115,252,.4), var(--shadow)';
+    setTimeout(() => { tgt.style.boxShadow = ''; }, 1200);
+  });
+});
 
 ['roofType','firstLength','houseWidth','pitch','panelWp','panelArea',
  'aspectA','aspectB','aspectC','aspectD',
@@ -1268,7 +1318,7 @@ function rotateXZ(p, theta) {
   return { x: p.x * c - p.z * s, z: p.x * s + p.z * c };
 }
 
-function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }) {
+function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType, isSynthetic }) {
   clearHouse();
   if (!ring || ring.length < 3) return;
 
@@ -1276,23 +1326,39 @@ function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }
                   lng: ring.reduce((a, p) => a + p.lng, 0) / ring.length };
   const local = ringToLocal(ring, pivot);
 
-  // === Wände: Footprint extrudieren ===
-  const shape = new THREE.Shape();
-  shape.moveTo(local[0].x, local[0].z);
-  for (let i = 1; i < local.length; i++) shape.lineTo(local[i].x, local[i].z);
-  shape.closePath();
-  const wallGeom = new THREE.ExtrudeGeometry(shape, { depth: eaveHeightM, bevelEnabled: false, steps: 1 });
-  // ExtrudeGeometry extrudiert in +Z; wir wollen +Y → Drehung
-  wallGeom.rotateX(-Math.PI / 2);
-  // Nach Rotation liegt der Footprint nun in Y=-eaveHeightM..0; nach oben verschieben
-  wallGeom.translate(0, eaveHeightM, 0);
-  // Zusätzlich liegt der Footprint nun in (x, z) wieder, aber gespiegelt — y-flip
-  wallGeom.scale(1, 1, -1);
-  const walls = new THREE.Mesh(wallGeom,
-    new THREE.MeshLambertMaterial({ color: 0xe8dfd0, side: THREE.DoubleSide }));
-  walls.castShadow = true;
-  walls.receiveShadow = true;
-  houseGroup.add(walls);
+  // === Wände: ein Quad pro Footprint-Kante (robust auch bei konkaven Polygonen) ===
+  const wallMat = new THREE.MeshLambertMaterial({ color: 0xe8dfd0, side: THREE.DoubleSide });
+  for (let i = 0; i < local.length; i++) {
+    const a = local[i], b = local[(i + 1) % local.length];
+    const positions = new Float32Array([
+      a.x, 0,            a.z,
+      b.x, 0,            b.z,
+      b.x, eaveHeightM,  b.z,
+      a.x, 0,            a.z,
+      b.x, eaveHeightM,  b.z,
+      a.x, eaveHeightM,  a.z,
+    ]);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    const wall = new THREE.Mesh(geom, wallMat);
+    wall.castShadow = true; wall.receiveShadow = true;
+    houseGroup.add(wall);
+  }
+  // Boden des Hauses (für saubere Schatten)
+  try {
+    const floorShape = new THREE.Shape();
+    floorShape.moveTo(local[0].x, -local[0].z);
+    for (let i = 1; i < local.length; i++) floorShape.lineTo(local[i].x, -local[i].z);
+    floorShape.closePath();
+    const floorGeom = new THREE.ShapeGeometry(floorShape);
+    floorGeom.rotateX(-Math.PI / 2);
+    const floor = new THREE.Mesh(floorGeom,
+      new THREE.MeshLambertMaterial({ color: 0xc8c2b3 }));
+    floor.position.y = 0.01;
+    floor.receiveShadow = true;
+    houseGroup.add(floor);
+  } catch {}
 
   // === Dach: OBB im rotierten Frame, Slopes bauen ===
   const theta = -ridgeBearingDeg * Math.PI / 180;
@@ -1430,8 +1496,31 @@ function animate() {
 animate();
 
 /* Bridge zum Haupt-Skript: window.update3D({ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType}) */
-window.update3D = build3DHouse;
+window.update3D = (opts) => {
+  build3DHouse(opts);
+  // Synthetic-Badge oben rechts im 3D-Viewer
+  let badge = document.getElementById('viewer3d-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'viewer3d-badge';
+    badge.style.cssText = 'position:absolute;top:10px;right:10px;padding:4px 10px;border-radius:999px;font-size:.78rem;font-weight:700;backdrop-filter:blur(6px);z-index:10';
+    container.appendChild(badge);
+  }
+  if (opts && opts.isSynthetic) {
+    badge.textContent = '⚙️ Vorschau aus Eingaben';
+    badge.style.background = 'rgba(245,158,11,.85)';
+    badge.style.color = '#fff';
+  } else {
+    badge.textContent = '✓ Echter OSM-Footprint';
+    badge.style.background = 'rgba(34,197,94,.9)';
+    badge.style.color = '#fff';
+  }
+};
 window.clear3D = () => { clearHouse(); emptyOverlay.style.display = 'grid'; };
+
+console.log('[3D] Three.js viewer ready');
+// Initiale Render-Pass anstoßen, jetzt wo update3D verfügbar ist.
+if (typeof window.recompute === 'function') window.recompute();
 </script>
 </body>
 </html>
