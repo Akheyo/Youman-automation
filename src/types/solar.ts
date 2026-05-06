@@ -18,7 +18,12 @@ export type LngLat = {
   lat: number;
 };
 
-export type DataSource = "mock" | "google-solar" | "lod2" | "manual";
+export type DataSource =
+  | "mock"
+  | "google-solar"
+  | "lod2"
+  | "osm"
+  | "manual";
 
 /**
  * Eine einzelne Dachfläche im Gebäude. `vertices3d` sind lokale

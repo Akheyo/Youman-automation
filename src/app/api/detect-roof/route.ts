@@ -8,15 +8,23 @@
  *   oder beides (lat/lng hat Vorrang).
  *
  * Optional:
- *   { "provider": "auto" | "mock" | "google-solar" | "lod2" }
+ *   { "provider": "auto" | "mock" | "google-solar" | "osm" | "lod2" }
  *
- * Response: DetectedBuilding (mit Provider-Info als zusätzliches Feld).
+ * Response:
+ *   {
+ *     building: DetectedBuilding,
+ *     providerSelection: { name, reason }
+ *   }
+ *
+ * Verhalten:
+ *   - Provider-Kette aus dem Factory wird der Reihe nach probiert.
+ *   - Erster Provider, der ohne Throw zurückkommt, gewinnt.
+ *   - Fehler der zwischen-Provider werden in `building.warnings` gesammelt.
  */
 
 import { NextResponse } from "next/server";
 import type { DetectedBuilding } from "@/types/solar";
-import { selectRoofDetectionProvider } from "@/lib/providers/providerFactory";
-import { MockRoofDetectionProvider } from "@/lib/providers/mockRoofDetectionProvider";
+import { selectProviderChain } from "@/lib/providers/providerFactory";
 import { geocodeAddress } from "@/lib/api/googleGeocoding";
 
 export const runtime = "nodejs";
@@ -25,7 +33,7 @@ type DetectRoofBody = {
   address?: string;
   lat?: number;
   lng?: number;
-  provider?: "auto" | "mock" | "google-solar" | "lod2";
+  provider?: "auto" | "mock" | "google-solar" | "osm" | "lod2";
 };
 
 export async function POST(req: Request) {
@@ -64,51 +72,60 @@ export async function POST(req: Request) {
     );
   }
 
-  // 2) Pick provider and try detection. Fallback to mock on error.
-  const selection = selectRoofDetectionProvider(body.provider ?? "auto");
+  // 2) Provider-Kette der Reihe nach probieren.
+  const chain = selectProviderChain(body.provider ?? "auto");
   const warnings: string[] = [];
-  let building: DetectedBuilding;
+  let building: DetectedBuilding | null = null;
+  let usedProviderName: string | null = null;
 
-  try {
-    building = await selection.provider.detectRoof({
-      address: formattedAddress,
-      lat,
-      lng,
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unbekannter Fehler";
-    console.warn(
-      `[detect-roof] Provider ${selection.provider.name} fehlgeschlagen: ${message}. Fallback auf Mock.`,
+  for (const provider of chain.providers) {
+    try {
+      building = await provider.detectRoof({
+        address: formattedAddress,
+        lat,
+        lng,
+      });
+      usedProviderName = provider.name;
+      break;
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Unbekannter Fehler";
+      console.warn(
+        `[detect-roof] Provider ${provider.name} fehlgeschlagen: ${message}.`,
+      );
+      warnings.push(`${provider.name}: ${message}`);
+      continue;
+    }
+  }
+
+  if (!building || !usedProviderName) {
+    return NextResponse.json(
+      {
+        error:
+          "Kein Provider konnte ein Gebäude liefern.",
+        details: warnings,
+      },
+      { status: 502 },
     );
-    warnings.push(
-      `${selection.provider.name} fehlgeschlagen (${message}). Es werden Demo-Daten angezeigt.`,
-    );
-    const fallback = new MockRoofDetectionProvider();
-    building = await fallback.detectRoof({
-      address: formattedAddress,
-      lat,
-      lng,
-    });
   }
 
   if (warnings.length > 0) {
     building.warnings = [...(building.warnings ?? []), ...warnings];
   }
 
-  // Wichtig: bei Fallback auf Mock soll die UI auch Mock anzeigen, nicht den
-  // ursprünglich gewählten Provider. `building.source` wird vom tatsächlich
-  // erfolgreichen Provider gesetzt und ist die ehrliche Quelle.
-  const actualProviderName = building.source;
-  const actualReason =
-    actualProviderName === selection.provider.name
-      ? selection.reason
-      : `${selection.provider.name} hat keine Daten geliefert – Fallback auf ${actualProviderName}.`;
+  // Provider-Name aus dem tatsächlich erfolgreichen Provider, plus
+  // ehrliche Reason: nutze building.source falls abweichend.
+  const actualName = building.source;
+  const reason =
+    actualName === usedProviderName
+      ? chain.reason
+      : `Erfolgreich: ${actualName}. ${chain.reason}`;
 
   return NextResponse.json({
     building,
     providerSelection: {
-      name: actualProviderName,
-      reason: actualReason,
+      name: actualName,
+      reason,
     },
   });
 }

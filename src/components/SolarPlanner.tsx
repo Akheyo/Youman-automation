@@ -205,9 +205,11 @@ export default function SolarPlanner({ mapSettings }: Props) {
       case "google-solar":
         return "Google Solar API";
       case "lod2":
-        return "LoD2";
+        return "LoD2 (amtlich)";
+      case "osm":
+        return "OpenStreetMap";
       case "mock":
-        return "Mock";
+        return "Mock (Demo)";
       default:
         return providerInfo.name;
     }

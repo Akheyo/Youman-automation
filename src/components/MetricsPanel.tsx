@@ -71,6 +71,8 @@ function sourceLabel(s: DetectedBuilding["source"]): string {
       return "Google Solar API";
     case "lod2":
       return "LoD2";
+    case "osm":
+      return "OpenStreetMap";
     case "manual":
       return "Manuell";
   }
