@@ -646,11 +646,16 @@ let mapClickListener = null, mapDblClickListener = null;
 let currentPlz = null, currentAddrLatLng = null;
 
 // Ridge (First) — manuell vom User gesetzt
-let manualRidgeBearing = null;            // °, 0..180. null = auto vom längsten Edge
+let manualRidgeBearing = null;            // °, 0..180. null = nicht gesetzt
 let manualRidgeLatLngs = null;            // [{lat,lng}, {lat,lng}] für Visualisierung
 let ridgeFirstClick = null;               // 1. Klick im Ridge-Modus
 let ridgeMapLayer = null;                 // google.maps.Polyline auf der Karte
 let ridgeMapMarker = null;                // First-Klick-Marker
+
+// Strict-Flow-States: 3D-Vorschau erscheint erst wenn beide true
+let footprintIsSet = false;               // Hauptdach-Polygon liegt vor
+let ridgeIsConfirmed = false;             // User hat First gesetzt oder bestätigt
+let suggestedRidgeBearing = null;         // Auto-Vorschlag aus längstem Edge
 
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
@@ -747,6 +752,9 @@ function closeCurrentPolygon() {
   if (drawingMode === 'main' && dim) {
     document.getElementById('firstLength').value = dim.firstLengthM.toFixed(1);
     document.getElementById('houseWidth').value = dim.houseWidthM.toFixed(1);
+    suggestedRidgeBearing = dim.ridgeBearingDeg;
+    footprintIsSet = true;
+    ridgeIsConfirmed = false;
   }
 
   currentRing = [];
@@ -894,7 +902,10 @@ async function autoLoadBuilding(lat, lng) {
   if (dim) {
     document.getElementById('firstLength').value = dim.firstLengthM.toFixed(1);
     document.getElementById('houseWidth').value = dim.houseWidthM.toFixed(1);
+    suggestedRidgeBearing = dim.ridgeBearingDeg;
   }
+  footprintIsSet = true;
+  ridgeIsConfirmed = false;  // User muss First neu bestätigen / setzen
   // Falls OSM eine Dachform liefert, übernehmen (Walmdach/Pultdach)
   const tagShape = found.tags && found.tags['roof:shape'];
   if (tagShape === 'hipped') document.getElementById('roofType').value = 'walmdach';
@@ -1043,6 +1054,7 @@ function onRidgeClick(latLng) {
 function setManualRidge(bearingDeg, latLngs = null) {
   manualRidgeBearing = bearingDeg;
   if (latLngs) manualRidgeLatLngs = latLngs;
+  ridgeIsConfirmed = true;
   // Karte: Ridge-Linie zeichnen
   drawRidgeOnMap();
   // Input-Feld synchronisieren
@@ -1055,9 +1067,17 @@ function setManualRidge(bearingDeg, latLngs = null) {
   }
 }
 
+// User bestätigt den Auto-Vorschlag (längster Edge) als First
+function confirmAutoRidge() {
+  if (suggestedRidgeBearing == null) return;
+  setManualRidge(suggestedRidgeBearing);
+}
+window.confirmAutoRidge = confirmAutoRidge;
+
 function clearManualRidge() {
   manualRidgeBearing = null;
   manualRidgeLatLngs = null;
+  ridgeIsConfirmed = false;
   if (ridgeMapLayer) { ridgeMapLayer.setMap(null); ridgeMapLayer = null; }
   const input = document.getElementById('manualRidge');
   if (input) input.value = '';
@@ -1119,6 +1139,10 @@ document.getElementById('btn-clear-all').addEventListener('click', () => {
   shapes.forEach(s => s.polygon.setMap(null));
   shapes = [];
   currentRing = [];
+  footprintIsSet = false;
+  ridgeIsConfirmed = false;
+  suggestedRidgeBearing = null;
+  clearManualRidge();
   redrawCurrent();
   renderShapeList();
   recompute();
@@ -1284,43 +1308,88 @@ function recompute() {
   // ein synthetisches Rechteck aus den aktuellen Eingaben.
   if (typeof window.update3D === 'function') {
     const main = shapes.find(s => s.type === 'main');
-    let ring, ridgeBearingDeg, eaveHeightM = 6, isSynthetic = false;
     if (main && main.dim) {
-      ring = main.ringLatLng;
-      ridgeBearingDeg = manualRidgeBearing !== null ? manualRidgeBearing : main.dim.ridgeBearingDeg;
-      const tagLevels = main.osmTags && main.osmTags['building:levels'];
-      if (tagLevels && !isNaN(parseFloat(tagLevels))) {
-        eaveHeightM = Math.max(2.5, parseFloat(tagLevels) * 3);
-      }
+      footprintIsSet = true;
+      if (suggestedRidgeBearing == null) suggestedRidgeBearing = main.dim.ridgeBearingDeg;
     } else {
-      // Synthetisches Rechteck: First-Länge × Hausbreite, am letzten Adress-
-      // Punkt zentriert (oder Borken als Fallback). First läuft Ost-West.
-      const center = currentAddrLatLng || { lat: 51.84, lng: 6.85 };
-      const halfL = (input.firstLengthM / 2) / (111320 * Math.cos(center.lat * Math.PI / 180));
-      const halfW = (input.houseWidthM / 2) / 111320;
-      ring = [
-        { lat: center.lat - halfW, lng: center.lng - halfL },
-        { lat: center.lat - halfW, lng: center.lng + halfL },
-        { lat: center.lat + halfW, lng: center.lng + halfL },
-        { lat: center.lat + halfW, lng: center.lng - halfL },
-      ];
-      ridgeBearingDeg = manualRidgeBearing !== null ? manualRidgeBearing : 90;
-      isSynthetic = true;
+      footprintIsSet = false;
     }
-    // Ridge-Linie auf 2D-Karte zeichnen (falls manuell gesetzt) bzw. Auto-First
-    // an die längste Edge anhängen für Visualisierung.
-    if (manualRidgeBearing !== null) drawRidgeOnMap();
+
+    // STRICT-FLOW: keine 3D-Vorschau ohne Footprint UND ohne bestätigte First
+    if (!footprintIsSet || !ridgeIsConfirmed) {
+      if (typeof window.clear3D === 'function') window.clear3D();
+      renderViewerPlaceholder();
+      return;
+    }
+
+    // Beide gesetzt → echtes Modell aus Eckpunkten + Excel-Formeln rechnen
+    let ring = main.ringLatLng;
+    let ridgeBearingDeg = manualRidgeBearing;
+    let eaveHeightM = 6;
+    const tagLevels = main.osmTags && main.osmTags['building:levels'];
+    if (tagLevels && !isNaN(parseFloat(tagLevels))) {
+      eaveHeightM = Math.max(2.5, parseFloat(tagLevels) * 3);
+    }
+    drawRidgeOnMap();
     try {
       window.update3D({
         ring, ridgeBearingDeg, eaveHeightM,
         pitchDeg: input.pitchDeg,
         roofType,
-        isSynthetic,
+        isSynthetic: false,
       });
     } catch (err) {
       console.error('[3D] update failed:', err);
     }
   }
+}
+
+/* Status-Placeholder im 3D-Viewer wenn Footprint oder First fehlt */
+function renderViewerPlaceholder() {
+  const overlay = document.getElementById('viewer3d-empty');
+  if (!overlay) return;
+  overlay.style.display = 'grid';
+  const fpIcon = footprintIsSet ? '✅' : '⬜';
+  const ridgeIcon = ridgeIsConfirmed ? '✅' : '⬜';
+  const fpText = footprintIsSet
+    ? '<strong>1. Eckpunkte gesetzt</strong>'
+    : '<strong>1. Eckpunkte zeichnen</strong> (in Schritt 2 auf Karte klicken oder Auto-Erkennen)';
+  let ridgeText, ridgeAction = '';
+  if (ridgeIsConfirmed) {
+    ridgeText = '<strong>2. First-Achse gesetzt</strong>';
+  } else if (footprintIsSet) {
+    ridgeText = '<strong>2. First-Achse setzen</strong> (Toolbar „First" + 2 Klicks oder Auto übernehmen)';
+    if (suggestedRidgeBearing != null) {
+      ridgeAction = `
+        <button id="accept-auto-ridge" type="button"
+          style="margin-top:14px;padding:11px 18px;border-radius:9px;border:none;
+                 background:#0d73fc;color:#fff;font:700 .92rem system-ui;cursor:pointer;width:100%">
+          ✓ Auto-First übernehmen (${Math.round(suggestedRidgeBearing)}°, längster Edge)
+        </button>`;
+    }
+  } else {
+    ridgeText = '<strong>2. First-Achse setzen</strong>';
+  }
+  overlay.innerHTML = `
+    <div style="background:rgba(15,23,42,.88);padding:22px 26px;border-radius:14px;
+                max-width:420px;text-align:left;backdrop-filter:blur(10px);
+                box-shadow:0 8px 30px rgba(0,0,0,.3)">
+      <h3 style="font-size:1rem;margin-bottom:14px;font-weight:700;letter-spacing:-.005em">
+        3D-Vorschau wartet auf Eingaben
+      </h3>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:.9rem;line-height:1.5">
+        <div>${fpIcon} ${fpText}</div>
+        <div>${ridgeIcon} ${ridgeText}</div>
+      </div>
+      ${ridgeAction}
+      <p style="margin-top:14px;font-size:.78rem;color:#cbd5e1;line-height:1.5">
+        Die 3D-Vorschau wird aus deinen Eckpunkten + First mit der Excel-Formel
+        <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:4px">C&nbsp;=&nbsp;(B/2)&thinsp;/&thinsp;cos(α)</code> generiert.
+      </p>
+    </div>
+  `;
+  const btn = document.getElementById('accept-auto-ridge');
+  if (btn) btn.addEventListener('click', confirmAutoRidge);
 }
 
 // Expose recompute global, damit das Three.js-Modul nach dem Init eine
