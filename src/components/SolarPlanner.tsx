@@ -74,6 +74,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
   const [demoCycleIdx, setDemoCycleIdx] = useState(0);
   const [recenterTick, setRecenterTick] = useState(0);
   const [drawingMode, setDrawingMode] = useState(false);
+  const [pickingMode, setPickingMode] = useState(false);
   const [drawnPoints, setDrawnPoints] = useState<LngLat[]>([]);
   const [manualParams, setManualParams] = useState<ManualParams>(
     DEFAULT_MANUAL_PARAMS,
@@ -219,11 +220,83 @@ export default function SolarPlanner({ mapSettings }: Props) {
     setRecenterTick((t) => t + 1);
   }, []);
 
-  /* -------- Manual drawing -------- */
+  /* -------- Manual: Picking (1 Klick → OSM Footprint) -------- */
+
+  const startPicking = useCallback(() => {
+    setError(null);
+    setDrawnPoints([]);
+    setDrawingMode(false);
+    setPickingMode(true);
+  }, []);
+
+  const cancelPicking = useCallback(() => {
+    setPickingMode(false);
+  }, []);
+
+  const pickHouseAt = useCallback(
+    async (p: LngLat) => {
+      setPickingMode(false);
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/detect-roof", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            lat: p.lat,
+            lng: p.lng,
+            provider: "osm",
+          }),
+        });
+        const data = (await res.json()) as
+          | {
+              building: DetectedBuilding;
+              providerSelection: { name: string; reason: string };
+            }
+          | { error: string };
+        if (!res.ok || "error" in data) {
+          throw new Error(
+            "error" in data ? data.error : `HTTP ${res.status}`,
+          );
+        }
+        if (data.building.source !== "osm" || !data.building.footprint) {
+          throw new Error(
+            "OSM hat hier kein Gebäude gefunden. Probier 'Selber zeichnen'.",
+          );
+        }
+        // OSM hat den Footprint geliefert – das Dach bauen wir mit den
+        // aktuellen manuellen Parametern (Form, Pitch, Traufe), damit der
+        // User die Slider sofort als Steuerung benutzen kann.
+        const built = buildBuildingFromManualFootprint({
+          footprint: data.building.footprint.vertices,
+          shape: manualParams.shape,
+          pitchDeg: manualParams.pitchDeg,
+          eaveHeightM: manualParams.eaveHeightM,
+          label: data.building.address ?? "Per Klick gewählt",
+        });
+        const computed = recomputeBuilding(built, built.roofFaces, settings);
+        setBuilding(computed);
+        setProviderInfo({
+          name: "manual",
+          reason: `Footprint per Klick aus OSM (${data.building.roofFaces.length} OSM-Tags). Form/Pitch/Traufe via Slider veränderbar.`,
+        });
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Picking fehlgeschlagen",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [manualParams, recomputeBuilding, settings],
+  );
+
+  /* -------- Manual: Drawing (Polygon zeichnen) -------- */
 
   const startDrawing = useCallback(() => {
     setError(null);
     setDrawnPoints([]);
+    setPickingMode(false);
     setDrawingMode(true);
   }, []);
 
@@ -260,9 +333,16 @@ export default function SolarPlanner({ mapSettings }: Props) {
     }
   }, [drawnPoints, manualParams, recomputeBuilding, settings]);
 
-  const handleMapClick = useCallback((p: LngLat) => {
-    setDrawnPoints((prev) => [...prev, p]);
-  }, []);
+  const handleMapClick = useCallback(
+    (p: LngLat) => {
+      if (pickingMode) {
+        void pickHouseAt(p);
+      } else if (drawingMode) {
+        setDrawnPoints((prev) => [...prev, p]);
+      }
+    },
+    [pickingMode, drawingMode, pickHouseAt],
+  );
 
   const undoLastPoint = useCallback(() => {
     setDrawnPoints((prev) => prev.slice(0, -1));
@@ -322,6 +402,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
           mapSettings={mapSettings}
           recenterTick={recenterTick}
           drawingMode={drawingMode}
+          pickingMode={pickingMode}
           drawnPoints={drawnPoints}
           onMapClick={handleMapClick}
         />
@@ -343,9 +424,12 @@ export default function SolarPlanner({ mapSettings }: Props) {
         setSettings={setSettings}
         toggleFace={toggleFace}
         drawingMode={drawingMode}
+        pickingMode={pickingMode}
         drawnPointCount={drawnPoints.length}
         manualParams={manualParams}
         setManualParams={setManualParams}
+        onStartPicking={startPicking}
+        onCancelPicking={cancelPicking}
         onStartDrawing={startDrawing}
         onCancelDrawing={cancelDrawing}
         onFinishDrawing={finishDrawing}

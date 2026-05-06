@@ -29,11 +29,13 @@ type MapViewProps = {
   mapSettings: MapSettings;
   /** Bei jeder Erhöhung wird die Kamera neu auf das Gebäude zentriert. */
   recenterTick: number;
-  /** Drawing-Modus aktiv: Klicks werden gesammelt statt der Map-Selektion. */
+  /** Drawing-Modus: Polygon-Eckpunkte sammeln. */
   drawingMode: boolean;
-  /** Bisher gezeichnete Punkte (für Vorschau-Polygon). */
+  /** Picking-Modus: nur 1 Klick → Parent fragt OSM ab. */
+  pickingMode: boolean;
+  /** Bisher gezeichnete Punkte (nur drawingMode). */
   drawnPoints: LngLat[];
-  /** Callback bei jedem Klick im drawingMode. */
+  /** Callback bei jedem Klick (Parent dispatcht je nach Modus). */
   onMapClick: (p: LngLat) => void;
 };
 
@@ -95,6 +97,7 @@ export default function MapView({
   mapSettings,
   recenterTick,
   drawingMode,
+  pickingMode,
   drawnPoints,
   onMapClick,
 }: MapViewProps) {
@@ -106,8 +109,8 @@ export default function MapView({
   buildingRef.current = building;
   // Refs, damit der Click-Handler in der Map-Init immer auf aktuelle Werte
   // schaut (keine Re-Init bei jedem State-Update nötig).
-  const drawingModeRef = useRef(drawingMode);
-  drawingModeRef.current = drawingMode;
+  const captureClicksRef = useRef(drawingMode || pickingMode);
+  captureClicksRef.current = drawingMode || pickingMode;
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
 
@@ -191,9 +194,9 @@ export default function MapView({
       }
     });
 
-    // Click-Handler: nur im drawingMode greifen.
+    // Click-Handler: nur im Drawing- oder Picking-Modus greifen.
     map.on("click", (e) => {
-      if (!drawingModeRef.current) return;
+      if (!captureClicksRef.current) return;
       onMapClickRef.current({ lng: e.lngLat.lng, lat: e.lngLat.lat });
     });
 
@@ -238,13 +241,13 @@ export default function MapView({
     });
   }, [recenterTick]);
 
-  // Cursor je nach Drawing-Modus.
+  // Cursor je nach Drawing-/Picking-Modus.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const canvas = map.getCanvas();
-    canvas.style.cursor = drawingMode ? "crosshair" : "";
-  }, [drawingMode]);
+    canvas.style.cursor = drawingMode || pickingMode ? "crosshair" : "";
+  }, [drawingMode, pickingMode]);
 
   // Drawing-Vorschau aktualisieren, wann immer drawnPoints sich ändern.
   useEffect(() => {
@@ -304,6 +307,27 @@ export default function MapView({
       }}
     >
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+      {pickingMode && (
+        <div
+          style={{
+            position: "absolute",
+            left: 12,
+            top: 12,
+            maxWidth: 420,
+            padding: "10px 14px",
+            background: "rgba(255,255,255,0.95)",
+            color: "#0f172a",
+            fontSize: 13,
+            lineHeight: 1.45,
+            borderRadius: 8,
+            boxShadow: "0 6px 20px rgba(15,23,42,0.18)",
+          }}
+        >
+          <strong style={{ fontWeight: 600 }}>Haus auswählen:</strong> Einmal auf
+          das gewünschte Haus klicken. App holt den echten Footprint aus
+          OpenStreetMap und nimmt deine Slider-Werte fürs Dach.
+        </div>
+      )}
       {drawingMode && (
         <div
           style={{
@@ -325,7 +349,7 @@ export default function MapView({
           &bdquo;Fertig&ldquo; drücken.
         </div>
       )}
-      {!mapSettings.tileUrl && !drawingMode && (
+      {!mapSettings.tileUrl && !drawingMode && !pickingMode && (
         <div
           style={{
             position: "absolute",

@@ -38,11 +38,14 @@ type Props = {
   settings: ModuleSettings;
   setSettings: (s: ModuleSettings) => void;
   toggleFace: (id: string) => void;
-  // Drawing-Modus
+  // Manueller Workflow
   drawingMode: boolean;
+  pickingMode: boolean;
   drawnPointCount: number;
   manualParams: ManualParams;
   setManualParams: (p: ManualParams) => void;
+  onStartPicking: () => void;
+  onCancelPicking: () => void;
   onStartDrawing: () => void;
   onCancelDrawing: () => void;
   onFinishDrawing: () => void;
@@ -90,9 +93,12 @@ export default function Sidebar({
   setSettings,
   toggleFace,
   drawingMode,
+  pickingMode,
   drawnPointCount,
   manualParams,
   setManualParams,
+  onStartPicking,
+  onCancelPicking,
   onStartDrawing,
   onCancelDrawing,
   onFinishDrawing,
@@ -159,16 +165,19 @@ export default function Sidebar({
           </form>
         </Section>
 
-        <Section title="Auf Karte zeichnen">
+        <Section title="Haus auf Karte festlegen">
           <ManualDrawingPanel
             drawingMode={drawingMode}
+            pickingMode={pickingMode}
             drawnPointCount={drawnPointCount}
             manualParams={manualParams}
             setManualParams={setManualParams}
-            onStart={onStartDrawing}
-            onCancel={onCancelDrawing}
-            onFinish={onFinishDrawing}
-            onUndo={onUndoPoint}
+            onStartPicking={onStartPicking}
+            onCancelPicking={onCancelPicking}
+            onStartDrawing={onStartDrawing}
+            onCancelDrawing={onCancelDrawing}
+            onFinishDrawing={onFinishDrawing}
+            onUndoPoint={onUndoPoint}
           />
         </Section>
 
@@ -264,52 +273,87 @@ const SHAPE_OPTIONS: { value: RoofShape; label: string }[] = [
 
 type ManualPanelProps = {
   drawingMode: boolean;
+  pickingMode: boolean;
   drawnPointCount: number;
   manualParams: ManualParams;
   setManualParams: (p: ManualParams) => void;
-  onStart: () => void;
-  onCancel: () => void;
-  onFinish: () => void;
-  onUndo: () => void;
+  onStartPicking: () => void;
+  onCancelPicking: () => void;
+  onStartDrawing: () => void;
+  onCancelDrawing: () => void;
+  onFinishDrawing: () => void;
+  onUndoPoint: () => void;
 };
 
 function ManualDrawingPanel({
   drawingMode,
+  pickingMode,
   drawnPointCount,
   manualParams,
   setManualParams,
-  onStart,
-  onCancel,
-  onFinish,
-  onUndo,
+  onStartPicking,
+  onCancelPicking,
+  onStartDrawing,
+  onCancelDrawing,
+  onFinishDrawing,
+  onUndoPoint,
 }: ManualPanelProps) {
+  const idle = !drawingMode && !pickingMode;
   return (
     <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
-      {!drawingMode ? (
+      {idle && (
         <>
           <p className="text-xs text-slate-600">
-            Wenn das Haus weder per Adresse noch via OSM gefunden wird:
-            Klicke 4–8 Eckpunkte auf der Karte und wähle Form/Pitch.
+            Klicke einmal auf das gewünschte Haus &mdash; dann lädt der
+            echte Footprint aus OpenStreetMap. Wenn OSM das Gebäude nicht
+            kennt, kannst du den Umriss selber zeichnen.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={onStartPicking}
+              className="rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+            >
+              Haus auswählen
+            </button>
+            <button
+              type="button"
+              onClick={onStartDrawing}
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Selber zeichnen
+            </button>
+          </div>
+        </>
+      )}
+
+      {pickingMode && (
+        <>
+          <p className="rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
+            Klick auf das Haus auf der Karte. App fragt OSM, baut das Modell
+            mit deinen aktuellen Slider-Werten.
           </p>
           <button
             type="button"
-            onClick={onStart}
-            className="w-full rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+            onClick={onCancelPicking}
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
           >
-            Auf Karte zeichnen
+            Abbrechen
           </button>
         </>
-      ) : (
+      )}
+
+      {drawingMode && (
         <>
           <p className="rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
-            Zeichnen aktiv — {drawnPointCount} Punkt
+            Zeichnen aktiv &mdash; {drawnPointCount} Punkt
             {drawnPointCount === 1 ? "" : "e"} gesetzt.
             {drawnPointCount < 3 && " Mindestens 3 Eckpunkte benötigt."}
           </p>
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={onUndo}
+              onClick={onUndoPoint}
               disabled={drawnPointCount === 0}
               className="rounded-md border border-slate-300 px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -317,14 +361,14 @@ function ManualDrawingPanel({
             </button>
             <button
               type="button"
-              onClick={onCancel}
+              onClick={onCancelDrawing}
               className="rounded-md border border-slate-300 px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
             >
               Abbrechen
             </button>
             <button
               type="button"
-              onClick={onFinish}
+              onClick={onFinishDrawing}
               disabled={drawnPointCount < 3}
               className="rounded-md bg-brand px-2 py-2 text-xs font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:bg-brand-200"
             >
