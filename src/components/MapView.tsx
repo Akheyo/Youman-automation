@@ -370,6 +370,41 @@ export default function MapView({
           Aktuell wird eine helle OSM-Karte als Fallback genutzt.
         </div>
       )}
+      {!building && !drawingMode && !pickingMode && (
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            maxWidth: 480,
+            padding: "20px 24px",
+            background: "rgba(255,255,255,0.96)",
+            color: "#0f172a",
+            fontSize: 14,
+            lineHeight: 1.5,
+            borderRadius: 12,
+            boxShadow: "0 12px 40px rgba(15,23,42,0.22)",
+            textAlign: "center",
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontWeight: 600,
+              fontSize: 16,
+              color: "#0f172a",
+            }}
+          >
+            Kein Gebäude geladen
+          </p>
+          <p style={{ margin: "8px 0 0", color: "#475569" }}>
+            Gib rechts eine Adresse ein und klick &bdquo;Dach automatisch
+            erkennen&ldquo;, oder w&auml;hle &bdquo;Haus auswählen&ldquo;,
+            &bdquo;Selber zeichnen&ldquo; bzw. &bdquo;Demo laden&ldquo;.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

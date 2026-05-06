@@ -106,13 +106,6 @@ export default function SolarPlanner({ mapSettings }: Props) {
     [],
   );
 
-  /* -------- Lifecycle: load demo on first mount -------- */
-
-  useEffect(() => {
-    void loadDemo();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   /* -------- Recompute modules when settings or selection change -------- */
 
   useEffect(() => {
@@ -154,7 +147,13 @@ export default function SolarPlanner({ mapSettings }: Props) {
       setBuilding(computed);
       setProviderInfo(data.providerSelection);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+      const raw =
+        err instanceof Error ? err.message : "Unbekannter Fehler";
+      setError(
+        `Keine Solar- oder Gebäudedaten gefunden für diese Adresse. ` +
+          `Probier 'Haus auswählen' (Klick auf das Haus) oder 'Selber zeichnen'. ` +
+          `(${raw})`,
+      );
     } finally {
       setLoading(false);
     }

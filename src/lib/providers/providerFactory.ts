@@ -89,7 +89,11 @@ export function selectProviderChain(
     };
   }
 
-  // auto – Standardkette
+  // auto – Standardkette. Wichtig: Mock wird hier bewusst NICHT angehängt.
+  // 'Dach automatisch erkennen' soll ehrlich scheitern, wenn weder Google
+  // Solar noch OSM Daten haben – statt einen generischen Mock-Walmdach
+  // anzuzeigen, der den User in die Irre führt. Mock ist explizit über
+  // 'Demo laden' (Frontend) bzw. provider="mock" Override erreichbar.
   const chain: RoofDetectionProvider[] = [];
   const reasons: string[] = [];
   if (lod2Source) {
@@ -102,8 +106,6 @@ export function selectProviderChain(
   }
   chain.push(osm);
   reasons.push("OSM Overpass");
-  chain.push(mock);
-  reasons.push("Mock");
 
   return {
     providers: chain,
