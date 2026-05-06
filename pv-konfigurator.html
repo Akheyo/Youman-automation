@@ -1167,6 +1167,26 @@ function recompute() {
 // initiale Render-Pass triggern kann.
 window.recompute = recompute;
 
+// Wenn der User Module manuell hinzufügt/entfernt → 3D meldet's via Event,
+// wir aktualisieren die Modulanzahl-Anzeige im UI (Tabelle bleibt aus
+// Excel-Formel, die manuelle Anzahl wird als Override addiert).
+window.__manualPanelCount = null;
+window.addEventListener('panels-changed', (e) => {
+  window.__manualPanelCount = e.detail.count;
+  // Rein optisch — die Excel-Tabelle bleibt referenz, aber die kWp-Zeile
+  // im 3D-Counter zeigt die echte gesetzte Zahl.
+});
+
+// panelWp-Wert ans 3D-Modul durchreichen, damit der Counter live rechnet
+['panelWp'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    const sync = () => { window.__panelWp = +el.value || 450; if (window.__updatePanelCounter) window.__updatePanelCounter(); };
+    el.addEventListener('input', sync);
+    sync();
+  }
+});
+
 /* ---------- 8b. "Weiter →"-Buttons mit smooth-scroll ---------- */
 document.querySelectorAll('[data-next]').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1410,15 +1430,27 @@ const panelTexture = (() => {
   return t;
 })();
 
-const wallMat  = new THREE.MeshStandardMaterial({ color: 0xeae0d2, roughness: 0.92, metalness: 0.0 });
-const gableMat = new THREE.MeshStandardMaterial({ color: 0xd9cfbe, roughness: 0.92, metalness: 0.0 });
+const wallMat  = new THREE.MeshStandardMaterial({ color: 0xede4d4, roughness: 0.92, metalness: 0.0 });
+const gableMat = new THREE.MeshStandardMaterial({ color: 0xdccfb9, roughness: 0.92, metalness: 0.0 });
 const tileMat  = new THREE.MeshStandardMaterial({
-  map: tileTexture, color: 0xffffff, roughness: 0.78, metalness: 0.0, side: THREE.DoubleSide,
+  map: tileTexture, color: 0xffffff, roughness: 0.72, metalness: 0.0, side: THREE.DoubleSide,
 });
 const panelMat = new THREE.MeshStandardMaterial({
-  map: panelTexture, color: 0xffffff, metalness: 0.3, roughness: 0.22,
-  envMapIntensity: 1.5,
+  map: panelTexture, color: 0xffffff, metalness: 0.35, roughness: 0.18,
+  envMapIntensity: 1.6,
 });
+const panelHoverMat = new THREE.MeshStandardMaterial({
+  color: 0x4f9bff, transparent: true, opacity: 0.45, side: THREE.DoubleSide,
+});
+
+// Subtile atmosphärische Tiefe
+scene.fog = new THREE.Fog(0xc8d8e4, 80, 380);
+
+// Manuelle Panel-Verwaltung: deaktivierte Default-Panels + zusätzlich aktivierte
+const disabledPanels = new Set();    // "slopeIdx:r:c" — Default-Panel ausgeblendet
+const enabledPanels  = new Set();    // "slopeIdx:r:c" — Manuell hinzugefügt (z. B. auf Nord)
+const slopeMeshes = [];              // Roof-Slope-Mesh-Referenzen für Raycasting
+const slopeData   = [];              // Pro-Slope-Metadaten
 
 const houseGroup = new THREE.Group();
 scene.add(houseGroup);
@@ -1441,6 +1473,8 @@ function clearHouse() {
   while (panelGroup.children.length > 0) {
     const c = panelGroup.children[0]; panelGroup.remove(c); disposeTree(c);
   }
+  slopeMeshes.length = 0;
+  slopeData.length = 0;
 }
 
 function ringToLocal(ring, pivot) {
@@ -1497,68 +1531,104 @@ function makeTri(corners, material) {
 
 /* ----------- Slope mit Dachziegel-Textur + Eignungs-Outline ----------- */
 function buildRoofSlope(corners, aspect) {
+  const slopeIdx = slopeData.length;
   const widthVec  = new THREE.Vector3().subVectors(corners[1], corners[0]);
   const heightVec = new THREE.Vector3().subVectors(corners[3], corners[0]);
   const slopeW = widthVec.length();
   const slopeH = heightVec.length();
-  // UV repeat: 1 Tile-Cluster ≈ 1 m × 1 m → angenehm sichtbar in 30-50 m Entfernung
+  const wDir = widthVec.clone().normalize();
+  const hDir = heightVec.clone().normalize();
+  const normal = new THREE.Vector3().crossVectors(wDir, hDir).normalize();
+
   const mesh = makeQuad(corners, {
     material: tileMat,
     uvRepeat: { u: slopeW, v: slopeH },
   });
+  mesh.userData = { kind: 'slope', slopeIdx };
   houseGroup.add(mesh);
+  slopeMeshes.push(mesh);
+
   // Eignungs-Rand
   const rim = new THREE.LineLoop(
     new THREE.BufferGeometry().setFromPoints([...corners, corners[0]]),
     new THREE.LineBasicMaterial({ color: suitabilityRimColor(aspect), linewidth: 2 }),
   );
   houseGroup.add(rim);
-  if (isSlopeUsable(aspect)) {
-    placePanels(corners, slopeW, slopeH);
-  }
-  return { aspect, slopeW, slopeH, corners };
-}
 
-function placePanels(corners, slopeW, slopeH) {
+  // Panel-Grid berechnen (auch für Nord, damit Manual-Add darauf möglich ist)
   const usableW = slopeW - 2 * PANEL_SETBACK;
   const usableH = slopeH - 2 * PANEL_SETBACK;
-  if (usableW <= PANEL_W_M || usableH <= PANEL_H_M) return;
-  const cols = Math.floor((usableW + PANEL_GAP) / (PANEL_W_M + PANEL_GAP));
-  const rows = Math.floor((usableH + PANEL_GAP) / (PANEL_H_M + PANEL_GAP));
-  if (cols <= 0 || rows <= 0) return;
-  const wDir = new THREE.Vector3().subVectors(corners[1], corners[0]).normalize();
-  const hDir = new THREE.Vector3().subVectors(corners[3], corners[0]).normalize();
-  const normal = new THREE.Vector3().crossVectors(wDir, hDir).normalize();
-  const totalGridW = cols * PANEL_W_M + (cols - 1) * PANEL_GAP;
-  const totalGridH = rows * PANEL_H_M + (rows - 1) * PANEL_GAP;
-  const startU = (slopeW - totalGridW) / 2;
-  const startV = (slopeH - totalGridH) / 2;
-  const offset = 0.06;
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const u = startU + c * (PANEL_W_M + PANEL_GAP);
-      const v = startV + r * (PANEL_H_M + PANEL_GAP);
-      const bl = corners[0].clone()
-        .add(wDir.clone().multiplyScalar(u))
-        .add(hDir.clone().multiplyScalar(v))
-        .add(normal.clone().multiplyScalar(offset));
-      const br = corners[0].clone()
-        .add(wDir.clone().multiplyScalar(u + PANEL_W_M))
-        .add(hDir.clone().multiplyScalar(v))
-        .add(normal.clone().multiplyScalar(offset));
-      const tr = corners[0].clone()
-        .add(wDir.clone().multiplyScalar(u + PANEL_W_M))
-        .add(hDir.clone().multiplyScalar(v + PANEL_H_M))
-        .add(normal.clone().multiplyScalar(offset));
-      const tl = corners[0].clone()
-        .add(wDir.clone().multiplyScalar(u))
-        .add(hDir.clone().multiplyScalar(v + PANEL_H_M))
-        .add(normal.clone().multiplyScalar(offset));
-      const panel = makeQuad([bl, br, tr, tl], { material: panelMat });
-      panelGroup.add(panel);
+  let cols = 0, rows = 0, startU = 0, startV = 0;
+  if (usableW > PANEL_W_M && usableH > PANEL_H_M) {
+    cols = Math.floor((usableW + PANEL_GAP) / (PANEL_W_M + PANEL_GAP));
+    rows = Math.floor((usableH + PANEL_GAP) / (PANEL_H_M + PANEL_GAP));
+    const totalGridW = cols * PANEL_W_M + (cols - 1) * PANEL_GAP;
+    const totalGridH = rows * PANEL_H_M + (rows - 1) * PANEL_GAP;
+    startU = (slopeW - totalGridW) / 2;
+    startV = (slopeH - totalGridH) / 2;
+  }
+  const data = {
+    slopeIdx, aspect, corners, slopeW, slopeH,
+    wDir, hDir, normal, cols, rows, startU, startV,
+  };
+  slopeData.push(data);
+
+  // Default-Belegung: nur auf geeigneten Slopes (Süd/Ost/West), respektiere
+  // disabledPanels/enabledPanels.
+  if (cols > 0 && rows > 0) {
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const key = `${slopeIdx}:${r}:${c}`;
+        const isDefaultOn = isSlopeUsable(aspect);
+        const enabled = enabledPanels.has(key);
+        const disabled = disabledPanels.has(key);
+        if ((isDefaultOn && !disabled) || enabled) {
+          addPanelMesh(slopeIdx, r, c);
+        }
+      }
     }
   }
 }
+
+function addPanelMesh(slopeIdx, r, c) {
+  const s = slopeData[slopeIdx];
+  if (!s || s.cols === 0) return null;
+  const u = s.startU + c * (PANEL_W_M + PANEL_GAP);
+  const v = s.startV + r * (PANEL_H_M + PANEL_GAP);
+  const offset = 0.07;
+  const bl = s.corners[0].clone()
+    .add(s.wDir.clone().multiplyScalar(u))
+    .add(s.hDir.clone().multiplyScalar(v))
+    .add(s.normal.clone().multiplyScalar(offset));
+  const br = s.corners[0].clone()
+    .add(s.wDir.clone().multiplyScalar(u + PANEL_W_M))
+    .add(s.hDir.clone().multiplyScalar(v))
+    .add(s.normal.clone().multiplyScalar(offset));
+  const tr = s.corners[0].clone()
+    .add(s.wDir.clone().multiplyScalar(u + PANEL_W_M))
+    .add(s.hDir.clone().multiplyScalar(v + PANEL_H_M))
+    .add(s.normal.clone().multiplyScalar(offset));
+  const tl = s.corners[0].clone()
+    .add(s.wDir.clone().multiplyScalar(u))
+    .add(s.hDir.clone().multiplyScalar(v + PANEL_H_M))
+    .add(s.normal.clone().multiplyScalar(offset));
+  const panel = makeQuad([bl, br, tr, tl], { material: panelMat });
+  panel.userData = { kind: 'panel', slopeIdx, r, c };
+  panelGroup.add(panel);
+  return panel;
+}
+
+function findPanelMesh(slopeIdx, r, c) {
+  return panelGroup.children.find(p =>
+    p.userData.kind === 'panel'
+    && p.userData.slopeIdx === slopeIdx
+    && p.userData.r === r && p.userData.c === c
+  );
+}
+
+/* Old placePanels — entfernt, jetzt in buildRoofSlope integriert. */
+
+/* placePanels wurde in buildRoofSlope integriert (siehe oben). */
 
 /* ----------- Hauptfunktion: Haus aufbauen ----------- */
 /* Kamera-Hilfsfunktion: positioniert orbiting auf den Slope, der am
@@ -1714,6 +1784,7 @@ function build3DHouse({ ring, ridgeBearingDeg, eaveHeightM, pitchDeg, roofType }
     build3DHouse._lastView = { lengthM, widthM, eaveHeightM, aspects: builtAspects };
   }
   emptyOverlay.style.display = 'none';
+  updateCounter();
 }
 
 /* View-Buttons: 🏠 Reset zur besten Sicht, ↥ Top-Down */
@@ -1732,17 +1803,185 @@ function viewTop() {
 window.viewReset = viewReset;
 window.viewTop = viewTop;
 
-/* Hud-Buttons in den Container einsetzen */
+/* Hud-Buttons + Manual-Mode-Hinweis */
 {
   const hud = document.createElement('div');
-  hud.style.cssText = 'position:absolute;bottom:12px;left:12px;display:flex;gap:6px;z-index:10';
+  hud.style.cssText = 'position:absolute;bottom:12px;left:12px;display:flex;gap:6px;z-index:10;flex-wrap:wrap';
+  const btnStyle = 'padding:6px 11px;border-radius:8px;border:none;background:rgba(15,23,42,.78);color:#fff;font:600 .82rem system-ui;cursor:pointer;backdrop-filter:blur(8px)';
   hud.innerHTML = `
-    <button type="button" id="v3d-reset" style="padding:6px 10px;border-radius:8px;border:none;background:rgba(15,23,42,.7);color:#fff;font:600 .82rem system-ui;cursor:pointer;backdrop-filter:blur(6px)">↺ Süd-Sicht</button>
-    <button type="button" id="v3d-top" style="padding:6px 10px;border-radius:8px;border:none;background:rgba(15,23,42,.7);color:#fff;font:600 .82rem system-ui;cursor:pointer;backdrop-filter:blur(6px)">⤓ Top</button>
+    <button type="button" id="v3d-reset" style="${btnStyle}">↺ Süd-Sicht</button>
+    <button type="button" id="v3d-top" style="${btnStyle}">⤓ Top</button>
+    <button type="button" id="v3d-autofill" style="${btnStyle}">⚡ Auto-Belegung</button>
   `;
   container.appendChild(hud);
   document.getElementById('v3d-reset').addEventListener('click', viewReset);
   document.getElementById('v3d-top').addEventListener('click', viewTop);
+  document.getElementById('v3d-autofill').addEventListener('click', resetToAutoFill);
+
+  const tip = document.createElement('div');
+  tip.id = 'v3d-tip';
+  tip.style.cssText = 'position:absolute;top:12px;left:12px;padding:6px 11px;border-radius:8px;background:rgba(15,23,42,.78);color:#fff;font:500 .8rem system-ui;backdrop-filter:blur(8px);z-index:10;max-width:260px;line-height:1.4';
+  tip.innerHTML = '💡 <strong>Klick</strong> auf Modul = entfernen · auf leere Stelle = hinzufügen';
+  container.appendChild(tip);
+
+  const counter = document.createElement('div');
+  counter.id = 'v3d-counter';
+  counter.style.cssText = 'position:absolute;bottom:12px;right:12px;padding:7px 12px;border-radius:10px;background:rgba(15,23,42,.78);color:#fff;font:700 .9rem system-ui;backdrop-filter:blur(8px);z-index:10;letter-spacing:.01em';
+  counter.textContent = '— Module';
+  container.appendChild(counter);
+}
+
+function updateCounter() {
+  const el = document.getElementById('v3d-counter');
+  if (!el) return;
+  const count = panelGroup.children.filter(p => p.userData.kind === 'panel').length;
+  const wp = window.__panelWp || 450;
+  const kwp = (count * wp / 1000).toFixed(2);
+  el.textContent = `${count} Module · ${kwp} kWp`;
+}
+window.__updatePanelCounter = updateCounter;
+
+function resetToAutoFill() {
+  disabledPanels.clear();
+  enabledPanels.clear();
+  if (typeof window.recompute === 'function') window.recompute();
+}
+window.resetToAutoFill = resetToAutoFill;
+
+/* ----------- Raycasting: Klick zum Hinzufügen / Entfernen von Modulen ----------- */
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let hoverPanel = null;       // Vorschau-Mesh wenn auf leerer Stelle
+let lastDragTime = 0;
+let mouseDownTime = 0;
+let didMove = false;
+
+renderer.domElement.addEventListener('pointerdown', () => {
+  mouseDownTime = performance.now();
+  didMove = false;
+});
+renderer.domElement.addEventListener('pointermove', (e) => {
+  if (e.buttons > 0) { didMove = true; lastDragTime = performance.now(); }
+  // Hover-Vorschau
+  updateHover(e);
+});
+renderer.domElement.addEventListener('pointerleave', () => {
+  if (hoverPanel) { panelGroup.remove(hoverPanel); hoverPanel.geometry.dispose(); hoverPanel = null; }
+});
+renderer.domElement.addEventListener('click', (e) => {
+  // Skip wenn länger als 250 ms gedrückt oder bewegt → das war eine Drag-/Rotation
+  const downDur = performance.now() - mouseDownTime;
+  if (didMove || downDur > 250) return;
+  handleClick(e);
+});
+
+function pickFromEvent(e) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(ndc, camera);
+  return raycaster;
+}
+
+function gridCellAtHit(hit, slopeIdx) {
+  const s = slopeData[slopeIdx];
+  if (!s || s.cols === 0) return null;
+  const local = new THREE.Vector3().subVectors(hit.point, s.corners[0]);
+  const u = local.dot(s.wDir);
+  const v = local.dot(s.hDir);
+  const c = Math.floor((u - s.startU) / (PANEL_W_M + PANEL_GAP));
+  const r = Math.floor((v - s.startV) / (PANEL_H_M + PANEL_GAP));
+  if (r < 0 || r >= s.rows || c < 0 || c >= s.cols) return null;
+  // Liegt der Punkt überhaupt in der Zelle (nicht im Gap)?
+  const cellU = s.startU + c * (PANEL_W_M + PANEL_GAP);
+  const cellV = s.startV + r * (PANEL_H_M + PANEL_GAP);
+  if (u < cellU || u > cellU + PANEL_W_M) return null;
+  if (v < cellV || v > cellV + PANEL_H_M) return null;
+  return { r, c };
+}
+
+function updateHover(e) {
+  if (hoverPanel) { panelGroup.remove(hoverPanel); hoverPanel.geometry.dispose(); hoverPanel = null; }
+  const rc = pickFromEvent(e);
+  // Hover über existierendes Panel?
+  const panelHits = rc.intersectObjects(panelGroup.children, false);
+  if (panelHits.length > 0) {
+    renderer.domElement.style.cursor = 'pointer';
+    return;
+  }
+  // Hover über Slope?
+  const slopeHits = rc.intersectObjects(slopeMeshes, false);
+  if (slopeHits.length > 0) {
+    const hit = slopeHits[0];
+    const slopeIdx = hit.object.userData.slopeIdx;
+    const cell = gridCellAtHit(hit, slopeIdx);
+    if (cell && !findPanelMesh(slopeIdx, cell.r, cell.c)) {
+      // Vorschau zeichnen
+      hoverPanel = buildHoverPanel(slopeIdx, cell.r, cell.c);
+      if (hoverPanel) panelGroup.add(hoverPanel);
+      renderer.domElement.style.cursor = 'pointer';
+      return;
+    }
+  }
+  renderer.domElement.style.cursor = '';
+}
+
+function buildHoverPanel(slopeIdx, r, c) {
+  const s = slopeData[slopeIdx];
+  if (!s) return null;
+  const u = s.startU + c * (PANEL_W_M + PANEL_GAP);
+  const v = s.startV + r * (PANEL_H_M + PANEL_GAP);
+  const offset = 0.09;
+  const corners = [
+    s.corners[0].clone().add(s.wDir.clone().multiplyScalar(u)).add(s.hDir.clone().multiplyScalar(v)).add(s.normal.clone().multiplyScalar(offset)),
+    s.corners[0].clone().add(s.wDir.clone().multiplyScalar(u + PANEL_W_M)).add(s.hDir.clone().multiplyScalar(v)).add(s.normal.clone().multiplyScalar(offset)),
+    s.corners[0].clone().add(s.wDir.clone().multiplyScalar(u + PANEL_W_M)).add(s.hDir.clone().multiplyScalar(v + PANEL_H_M)).add(s.normal.clone().multiplyScalar(offset)),
+    s.corners[0].clone().add(s.wDir.clone().multiplyScalar(u)).add(s.hDir.clone().multiplyScalar(v + PANEL_H_M)).add(s.normal.clone().multiplyScalar(offset)),
+  ];
+  const ghost = makeQuad(corners, { material: panelHoverMat });
+  ghost.userData = { kind: 'hover' };
+  return ghost;
+}
+
+function handleClick(e) {
+  const rc = pickFromEvent(e);
+  // 1. Trifft ein bestehendes Panel? → entfernen
+  const panelHits = rc.intersectObjects(panelGroup.children.filter(p => p.userData.kind === 'panel'), false);
+  if (panelHits.length > 0) {
+    const ud = panelHits[0].object.userData;
+    const key = `${ud.slopeIdx}:${ud.r}:${ud.c}`;
+    panelGroup.remove(panelHits[0].object);
+    panelHits[0].object.geometry.dispose();
+    enabledPanels.delete(key);
+    // Wenn dieses Panel ein Default-Panel war, in disabled aufnehmen
+    const aspect = slopeData[ud.slopeIdx]?.aspect;
+    if (isSlopeUsable(aspect)) disabledPanels.add(key);
+    updateCounter();
+    notifyPanelChange();
+    return;
+  }
+  // 2. Trifft eine Slope-Zelle? → hinzufügen
+  const slopeHits = rc.intersectObjects(slopeMeshes, false);
+  if (slopeHits.length > 0) {
+    const hit = slopeHits[0];
+    const slopeIdx = hit.object.userData.slopeIdx;
+    const cell = gridCellAtHit(hit, slopeIdx);
+    if (!cell) return;
+    const key = `${slopeIdx}:${cell.r}:${cell.c}`;
+    if (findPanelMesh(slopeIdx, cell.r, cell.c)) return;  // schon belegt
+    addPanelMesh(slopeIdx, cell.r, cell.c);
+    disabledPanels.delete(key);
+    enabledPanels.add(key);
+    updateCounter();
+    notifyPanelChange();
+  }
+}
+
+function notifyPanelChange() {
+  // Manuelle Module-Anzahl an den Calculator durchreichen
+  window.dispatchEvent(new CustomEvent('panels-changed', {
+    detail: { count: panelGroup.children.filter(p => p.userData.kind === 'panel').length },
+  }));
 }
 
 function animate() {
