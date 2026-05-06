@@ -15,7 +15,6 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
 
 import type {
   DetectedBuilding,
@@ -30,16 +29,7 @@ import {
 } from "@/lib/providers/mockRoofDetectionProvider";
 import type { MockBuildingKind } from "@/lib/geometry/mockRoofs";
 import Sidebar from "./Sidebar";
-
-// Dynamisches Laden, damit MapLibre/Three.js nur im Browser ausgeführt werden.
-const MapView = dynamic(() => import("./MapView"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-slate-100 text-sm text-slate-500">
-      Karte wird geladen …
-    </div>
-  ),
-});
+import MapView from "./MapView";
 
 const DEFAULT_SETTINGS: ModuleSettings = {
   moduleWp: 430,
@@ -225,7 +215,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
 
   return (
     <div className="flex h-full w-full flex-row">
-      <div className="flex-1">
+      <div style={{ flex: "1 1 auto", minWidth: 0, height: "100%", position: "relative" }}>
         <MapView
           building={building}
           mapSettings={mapSettings}
