@@ -41,7 +41,9 @@ export function createMaterials(): Materials {
   });
 
   const roofUnselected = new THREE.MeshStandardMaterial({
-    color: 0x94a3b8,
+    // Deutlich heller als die Wand (slate-500, 0x9ca3af), damit die nicht
+    // ausgewählten Walm-Flächen gegen die Wand klar erkennbar bleiben.
+    color: 0xe5e7eb,
     roughness: 0.85,
     metalness: 0.0,
     flatShading: true,
