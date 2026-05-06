@@ -363,6 +363,29 @@ export class GoogleSolarRoofProvider implements RoofDetectionProvider {
       });
     }
 
+    /* --------- Z-Normalisierung: absolute Höhe über NN → relative Höhe über Boden ---------
+     *
+     * Google liefert `planeHeightAtCenterMeters` als absolute Höhe über
+     * Meeresspiegel. Unsere Extrusion (NativeBuildingLayer) erwartet
+     * Meter über Boden – ohne Normalisierung schwebt das Gebäude in
+     * Bodennähe-Höhe der Region (z. B. 30 m in Gemen, 500 m+ in München).
+     *
+     * Strategie: Niedrigster Eckpunkt aller Dachflächen ist eine gute
+     * Schätzung für die Traufe. Wir verschieben alles so, dass diese
+     * Traufe auf ASSUMED_EAVE_M liegt (Standard-Hausdach 1–2 Geschosse).
+     */
+    const ASSUMED_EAVE_M = 5.5;
+    const allZs = roofFaces.flatMap((f) => f.vertices3d.map((v) => v.z));
+    if (allZs.length > 0) {
+      const minAbsZ = Math.min(...allZs);
+      const shift = ASSUMED_EAVE_M - minAbsZ;
+      const apply = (v: Vec3) => {
+        v.z += shift;
+      };
+      roofFaces.forEach((f) => f.vertices3d.forEach(apply));
+      modules.forEach((m) => m.vertices3d.forEach(apply));
+    }
+
     const totalRoofAreaM2 = roofFaces.reduce((s, f) => s + f.areaM2, 0);
     const selectedRoofAreaM2 = roofFaces
       .filter((f) => f.selected)
