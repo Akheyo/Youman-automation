@@ -185,6 +185,7 @@ footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8re
         <div class="seg">
           <button class="btn active" id="mode-main" data-mode="main">Dach</button>
           <button class="btn" id="mode-obstacle" data-mode="obstacle">Hindernis</button>
+          <button class="btn" id="mode-ridge" data-mode="ridge" title="2 Klicks für die First-Achse">First</button>
         </div>
         <div class="seg">
           <button class="btn btn--icon" id="btn-undo" title="Letzten Punkt rückgängig">↶</button>
@@ -257,6 +258,15 @@ footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8re
           <input type="number" id="pitch" value="40" min="5" max="60" step="1">
         </div>
       </div>
+      <div class="row" style="margin-top:8px;align-items:flex-end">
+        <div>
+          <label class="f">First-Ausrichtung (° · 0=N, 90=O, 180=S)</label>
+          <input type="number" id="manualRidge" min="0" max="179" step="1" placeholder="auto (aus Footprint)">
+        </div>
+        <button class="btn btn--ghost" id="ridgeAuto" type="button" title="Auto: längste Footprint-Kante">🔄 Auto</button>
+        <button class="btn" id="ridgeDraw" type="button" title="Auf der Karte zeichnen (2 Klicks)">✏️ Auf Karte zeichnen</button>
+      </div>
+      <p class="muted" style="font-size:.8rem;margin-top:4px">Tipp: Schau auf das Satellitenbild — der First läuft entlang der höchsten Kante des Daches. Bei Nord-Süd-First ≈ 0°, bei Ost-West-First ≈ 90°.</p>
       <div class="row" style="margin-top:8px">
         <div>
           <label class="f">Wp / Modul</label>
@@ -626,7 +636,7 @@ function splitFootprintForSaddle(ring, ridgeBearingDeg) {
 
 /* ---------- 5. Map state ---------- */
 let map = null;
-let drawingMode = 'main';                 // 'main' | 'obstacle'
+let drawingMode = 'main';                 // 'main' | 'obstacle' | 'ridge'
 let currentRing = [];                     // [{lat, lng}, ...]
 let currentMarkers = [];                  // google.maps.Marker[]
 let currentPolyline = null;
@@ -634,6 +644,13 @@ let shapes = [];                          // [{type, polygon, areaM2, ringLatLng
 let roofPreviewLayers = [];               // farbige Slope-Polygone + Ridge-Linie
 let mapClickListener = null, mapDblClickListener = null;
 let currentPlz = null, currentAddrLatLng = null;
+
+// Ridge (First) — manuell vom User gesetzt
+let manualRidgeBearing = null;            // °, 0..180. null = auto vom längsten Edge
+let manualRidgeLatLngs = null;            // [{lat,lng}, {lat,lng}] für Visualisierung
+let ridgeFirstClick = null;               // 1. Klick im Ridge-Modus
+let ridgeMapLayer = null;                 // google.maps.Polyline auf der Karte
+let ridgeMapMarker = null;                // First-Klick-Marker
 
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
@@ -647,10 +664,14 @@ function initMap() {
   });
 
   mapClickListener = map.addListener('click', e => {
+    if (drawingMode === 'ridge') { onRidgeClick(e.latLng); return; }
     currentRing.push({ lat: e.latLng.lat(), lng: e.latLng.lng() });
     redrawCurrent();
   });
-  mapDblClickListener = map.addListener('dblclick', () => closeCurrentPolygon());
+  mapDblClickListener = map.addListener('dblclick', () => {
+    if (drawingMode === 'ridge') return;
+    closeCurrentPolygon();
+  });
 }
 
 window.initMap = initMap;
@@ -953,8 +974,121 @@ document.querySelectorAll('[data-mode]').forEach(btn => {
     document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === drawingMode));
     currentRing = [];
     redrawCurrent();
+    // Im Ridge-Modus: ersten Klick zurücksetzen
+    if (drawingMode === 'ridge') { ridgeFirstClick = null; clearRidgeFirstMarker(); }
   });
 });
+
+/* ---------- 6d. First-Achse manuell setzen ---------- */
+function bearingFromLatLngs(a, b) {
+  const f1 = a.lat * Math.PI / 180, f2 = b.lat * Math.PI / 180;
+  const dl = (b.lng - a.lng) * Math.PI / 180;
+  const y = Math.sin(dl) * Math.cos(f2);
+  const x = Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl);
+  return ((Math.atan2(y, x) * 180 / Math.PI + 360) % 360);
+}
+
+function clearRidgeFirstMarker() {
+  if (ridgeMapMarker) { ridgeMapMarker.setMap(null); ridgeMapMarker = null; }
+}
+
+function onRidgeClick(latLng) {
+  const point = { lat: latLng.lat(), lng: latLng.lng() };
+  if (!ridgeFirstClick) {
+    ridgeFirstClick = point;
+    ridgeMapMarker = new google.maps.Marker({
+      position: point, map,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 7, fillColor: '#ff6b00', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,
+      },
+      title: 'First-Anfangspunkt — jetzt zweiten Klick setzen',
+    });
+    return;
+  }
+  // 2. Klick: Bearing berechnen, Linie zeichnen, Modus verlassen
+  const bearing = bearingFromLatLngs(ridgeFirstClick, point);
+  const norm = ((bearing % 180) + 180) % 180;
+  setManualRidge(norm, [ridgeFirstClick, point]);
+  ridgeFirstClick = null;
+  clearRidgeFirstMarker();
+  // Modus zurück auf Hauptdach
+  drawingMode = 'main';
+  document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === 'main'));
+}
+
+function setManualRidge(bearingDeg, latLngs = null) {
+  manualRidgeBearing = bearingDeg;
+  if (latLngs) manualRidgeLatLngs = latLngs;
+  // Karte: Ridge-Linie zeichnen
+  drawRidgeOnMap();
+  // Input-Feld synchronisieren
+  const input = document.getElementById('manualRidge');
+  if (input) input.value = Math.round(bearingDeg);
+  // Force-rebuild: Camera neu fitten
+  if (typeof window !== 'undefined' && typeof window.recompute === 'function') {
+    if (window.__resetCameraFitOnNextBuild) window.__resetCameraFitOnNextBuild();
+    window.recompute();
+  }
+}
+
+function clearManualRidge() {
+  manualRidgeBearing = null;
+  manualRidgeLatLngs = null;
+  if (ridgeMapLayer) { ridgeMapLayer.setMap(null); ridgeMapLayer = null; }
+  const input = document.getElementById('manualRidge');
+  if (input) input.value = '';
+  if (typeof window.recompute === 'function') {
+    if (window.__resetCameraFitOnNextBuild) window.__resetCameraFitOnNextBuild();
+    window.recompute();
+  }
+}
+
+function drawRidgeOnMap() {
+  if (ridgeMapLayer) { ridgeMapLayer.setMap(null); ridgeMapLayer = null; }
+  if (!map || !manualRidgeLatLngs) {
+    // Falls nur Bearing gesetzt aber keine Linie: an dem Hauptdach-Centroid einzeichnen
+    if (manualRidgeBearing !== null && shapes.find(s => s.type === 'main')) {
+      const main = shapes.find(s => s.type === 'main');
+      const c = main.ringLatLng.reduce((a, p) => ({ lat: a.lat + p.lat, lng: a.lng + p.lng }), { lat: 0, lng: 0 });
+      c.lat /= main.ringLatLng.length; c.lng /= main.ringLatLng.length;
+      // Linie um den Centroid, Länge ~1.5x Footprint-Diagonale
+      const dim = main.dim;
+      const halfL = (dim.firstLengthM * 0.55);
+      const az = manualRidgeBearing * Math.PI / 180;
+      const dLat = (Math.cos(az) * halfL) / 111320;
+      const dLng = (Math.sin(az) * halfL) / (111320 * Math.cos(c.lat * Math.PI / 180));
+      manualRidgeLatLngs = [
+        { lat: c.lat - dLat, lng: c.lng - dLng },
+        { lat: c.lat + dLat, lng: c.lng + dLng },
+      ];
+    } else return;
+  }
+  ridgeMapLayer = new google.maps.Polyline({
+    path: manualRidgeLatLngs, strokeColor: '#ff6b00', strokeWeight: 5, strokeOpacity: 0.95,
+    icons: [{ icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3.5, strokeColor: '#ff6b00' }, offset: '50%' }],
+    map,
+  });
+}
+
+// Input-Feld + Buttons
+{
+  const inp = document.getElementById('manualRidge');
+  if (inp) inp.addEventListener('input', () => {
+    const v = inp.value.trim();
+    if (v === '') { clearManualRidge(); return; }
+    const n = parseFloat(v);
+    if (isNaN(n)) return;
+    setManualRidge(((n % 180) + 180) % 180);
+  });
+  const btnAuto = document.getElementById('ridgeAuto');
+  if (btnAuto) btnAuto.addEventListener('click', clearManualRidge);
+  const btnDraw = document.getElementById('ridgeDraw');
+  if (btnDraw) btnDraw.addEventListener('click', () => {
+    document.getElementById('mode-ridge').click();
+    document.getElementById('card-step2').scrollIntoView({ behavior: 'smooth' });
+  });
+}
 document.getElementById('btn-undo').addEventListener('click', () => { currentRing.pop(); redrawCurrent(); });
 document.getElementById('btn-close').addEventListener('click', closeCurrentPolygon);
 document.getElementById('btn-clear-current').addEventListener('click', () => { currentRing = []; redrawCurrent(); });
@@ -1130,7 +1264,7 @@ function recompute() {
     let ring, ridgeBearingDeg, eaveHeightM = 6, isSynthetic = false;
     if (main && main.dim) {
       ring = main.ringLatLng;
-      ridgeBearingDeg = main.dim.ridgeBearingDeg;
+      ridgeBearingDeg = manualRidgeBearing !== null ? manualRidgeBearing : main.dim.ridgeBearingDeg;
       const tagLevels = main.osmTags && main.osmTags['building:levels'];
       if (tagLevels && !isNaN(parseFloat(tagLevels))) {
         eaveHeightM = Math.max(2.5, parseFloat(tagLevels) * 3);
@@ -1147,9 +1281,12 @@ function recompute() {
         { lat: center.lat + halfW, lng: center.lng + halfL },
         { lat: center.lat + halfW, lng: center.lng - halfL },
       ];
-      ridgeBearingDeg = 90;
+      ridgeBearingDeg = manualRidgeBearing !== null ? manualRidgeBearing : 90;
       isSynthetic = true;
     }
+    // Ridge-Linie auf 2D-Karte zeichnen (falls manuell gesetzt) bzw. Auto-First
+    // an die längste Edge anhängen für Visualisierung.
+    if (manualRidgeBearing !== null) drawRidgeOnMap();
     try {
       window.update3D({
         ring, ridgeBearingDeg, eaveHeightM,
@@ -1207,6 +1344,9 @@ document.querySelectorAll('[data-next]').forEach(btn => {
   const el = $(id);
   if (el) el.addEventListener('input', recompute);
 });
+// manualRidge eigener Listener (oben definiert) — hier nur sicherheitshalber recompute
+const manualRidgeEl = $('manualRidge');
+if (manualRidgeEl) manualRidgeEl.addEventListener('change', recompute);
 
 /* ---------- 9. Google Maps Script Loader ---------- */
 function loadGoogleMaps() {
@@ -2194,6 +2334,7 @@ function animate() {
 animate();
 
 /* Bridge */
+window.__resetCameraFitOnNextBuild = () => { build3DHouse._didInitialFit = false; };
 window.update3D = (opts) => {
   try { build3DHouse(opts); } catch (e) { console.error('[3D] build failed:', e); return; }
   let badge = document.getElementById('viewer3d-badge');
