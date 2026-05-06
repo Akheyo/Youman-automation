@@ -71,6 +71,11 @@ input:focus, select:focus { outline: 2px solid var(--primary); outline-offset: -
 .legend .swatch { width: 14px; height: 14px; border-radius: 3px; border: 1.5px solid; }
 .legend .swatch.main { background: rgba(13,115,252,.3); border-color: var(--primary); }
 .legend .swatch.obstacle { background: rgba(220,38,38,.35); border-color: var(--danger); }
+.legend .swatch.suit-sg { background: #22c55e; border-color: #15803d; }
+.legend .swatch.suit-g  { background: #84cc16; border-color: #4d7c0f; }
+.legend .swatch.suit-b  { background: #f59e0b; border-color: #b45309; }
+.legend .swatch.suit-u  { background: #94a3b8; border-color: #475569; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; padding: 6px 8px; background: var(--bg-soft); border-radius: 6px; font-size: .8rem; }
 
 table { width: 100%; border-collapse: collapse; font-size: .88rem; margin-top: 4px; }
 th, td { padding: 6px 7px; text-align: right; border-bottom: 1px solid var(--border); }
@@ -140,12 +145,14 @@ footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8re
     <div class="card" style="margin-top:14px">
       <h2><span class="step">2</span> Dach &amp; Hindernisse zeichnen</h2>
       <div class="map-toolbar">
+        <button class="btn" id="btn-detect">🔍 Gebäude automatisch erkennen</button>
         <button class="btn btn--primary active" id="mode-main" data-mode="main">▭ Hauptdach</button>
-        <button class="btn btn--danger" id="mode-obstacle" data-mode="obstacle">⊘ Hindernis (Dachfenster, Kamin)</button>
+        <button class="btn btn--danger" id="mode-obstacle" data-mode="obstacle">⊘ Hindernis</button>
         <span style="flex:1"></span>
         <span class="legend"><span class="swatch main"></span>Dach</span>
         <span class="legend"><span class="swatch obstacle"></span>Hindernis</span>
       </div>
+      <div id="detect-status" style="display:none;font-size:.85rem;color:var(--muted);margin-bottom:6px"></div>
       <div id="map"></div>
       <div class="map-hint">
         <strong>Linksklick</strong> = Eckpunkt setzen. <strong>Doppelklick</strong> = Polygon schließen.
@@ -160,6 +167,13 @@ footer { text-align: center; color: var(--muted); padding: 16px; font-size: .8re
       </div>
       <div id="dim-readout"></div>
       <div id="shape-list"></div>
+      <div class="legend-row" id="suit-legend" style="display:none">
+        <strong>Eignung pro Dachseite:</strong>
+        <span class="legend"><span class="swatch suit-sg"></span>sehr gut (Süd)</span>
+        <span class="legend"><span class="swatch suit-g"></span>gut (SO/SW)</span>
+        <span class="legend"><span class="swatch suit-b"></span>bedingt (Ost/West)</span>
+        <span class="legend"><span class="swatch suit-u"></span>ungeeignet (Nord)</span>
+      </div>
     </div>
 
     <div class="card" style="margin-top:14px">
@@ -426,15 +440,126 @@ function haversineMeters(a, b) {
   const h = Math.sin(df / 2) ** 2 + Math.cos(f1) * Math.cos(f2) * Math.sin(dl / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
+function bearingDeg(a, b) {
+  const f1 = a.lat * Math.PI / 180, f2 = b.lat * Math.PI / 180;
+  const dl = (b.lng - a.lng) * Math.PI / 180;
+  const y = Math.sin(dl) * Math.cos(f2);
+  const x = Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl);
+  return ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+}
 function dimensionsFromRing(ring) {
   if (ring.length < 3) return null;
-  let longest = 0, shortest = Infinity;
+  let longest = 0, shortest = Infinity, longestBearing = 0;
   for (let i = 0; i < ring.length; i++) {
-    const len = haversineMeters(ring[i], ring[(i + 1) % ring.length]);
-    if (len > longest) longest = len;
+    const a = ring[i], b = ring[(i + 1) % ring.length];
+    const len = haversineMeters(a, b);
+    if (len > longest) { longest = len; longestBearing = bearingDeg(a, b); }
     if (len < shortest) shortest = len;
   }
-  return { firstLengthM: longest, houseWidthM: shortest };
+  return {
+    firstLengthM: longest,
+    houseWidthM: shortest,
+    ridgeBearingDeg: ((longestBearing % 180) + 180) % 180,
+  };
+}
+function ringCentroid(ring) {
+  let lat = 0, lng = 0;
+  ring.forEach(p => { lat += p.lat; lng += p.lng; });
+  return { lat: lat / ring.length, lng: lng / ring.length };
+}
+function pointInRing(p, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i].lng, yi = ring[i].lat;
+    const xj = ring[j].lng, yj = ring[j].lat;
+    if (((yi > p.lat) !== (yj > p.lat)) &&
+        (p.lng < (xj - xi) * (p.lat - yi) / (yj - yi) + xi)) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/* Lokale planare Koordinaten (Meter) um einen Pivot — gut bei <500 m. */
+function toLocalXY(p, pivot) {
+  const mPerLat = 111320;
+  const mPerLng = 111320 * Math.cos(pivot.lat * Math.PI / 180);
+  return { x: (p.lng - pivot.lng) * mPerLng, y: (p.lat - pivot.lat) * mPerLat };
+}
+function fromLocalXY(xy, pivot) {
+  const mPerLat = 111320;
+  const mPerLng = 111320 * Math.cos(pivot.lat * Math.PI / 180);
+  return { lat: pivot.lat + xy.y / mPerLat, lng: pivot.lng + xy.x / mPerLng };
+}
+
+/* Aspect (Süd/Ost/West/Nord) aus Kompass-Azimut. */
+function aspectFromAzimuth(deg) {
+  const a = ((deg % 360) + 360) % 360;
+  if (a >= 315 || a < 45) return 'nord';
+  if (a < 135) return 'ost';
+  if (a < 225) return 'sued';
+  return 'west';
+}
+/* Eignung + Farbe aus Aspect (entspricht NRW LANUK Solarkataster). */
+function suitabilityFor(aspect) {
+  if (aspect === 'sued') return { label: 'sehr gut', color: '#22c55e', code: 'sg' };
+  if (aspect === 'ost' || aspect === 'west') return { label: 'bedingt', color: '#f59e0b', code: 'b' };
+  return { label: 'ungeeignet', color: '#94a3b8', code: 'u' };
+}
+
+/* Splittet ein konvexes Footprint-Polygon entlang seiner Mittelachse parallel
+   zum längsten Edge in zwei Halb-Polygone (Satteldach-Vorschau). */
+function splitFootprintForSaddle(ring, ridgeBearingDeg) {
+  if (ring.length < 3) return null;
+  const pivot = ringCentroid(ring);
+  // Rotationswinkel: -ridgeBearing bringt First-Achse parallel zur X-Achse
+  const theta = -ridgeBearingDeg * Math.PI / 180;
+  const cosT = Math.cos(theta), sinT = Math.sin(theta);
+  // Zu lokalen Metern + rotieren
+  const local = ring.map(p => {
+    const xy = toLocalXY(p, pivot);
+    return { x: xy.x * cosT - xy.y * sinT, y: xy.x * sinT + xy.y * cosT };
+  });
+  let minY = Infinity, maxY = -Infinity;
+  local.forEach(p => { if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y; });
+  const midY = (minY + maxY) / 2;
+  // Ring in zwei Hälften aufteilen entlang y = midY (mit Kanten-Schnitt)
+  function clip(half) {
+    // half = +1 → behalte y >= midY, -1 → behalte y <= midY
+    const out = [];
+    for (let i = 0; i < local.length; i++) {
+      const a = local[i], b = local[(i + 1) % local.length];
+      const aIn = (half > 0 ? a.y >= midY : a.y <= midY);
+      const bIn = (half > 0 ? b.y >= midY : b.y <= midY);
+      if (aIn) out.push(a);
+      if (aIn !== bIn) {
+        // Schnittpunkt mit y = midY
+        const t = (midY - a.y) / (b.y - a.y);
+        out.push({ x: a.x + t * (b.x - a.x), y: midY });
+      }
+    }
+    return out;
+  }
+  const halfPlus = clip(+1);
+  const halfMinus = clip(-1);
+  // Zurück: rotieren + nach LngLat
+  const cosBack = Math.cos(-theta), sinBack = Math.sin(-theta);
+  const toLatLng = h => h.map(p => fromLocalXY({
+    x: p.x * cosBack - p.y * sinBack,
+    y: p.x * sinBack + p.y * cosBack,
+  }, pivot));
+  // Aspect pro Hälfte: Slope-Normale zeigt vom Mittelfirst weg
+  // halfPlus liegt auf y > midY → Normale zeigt Richtung +90° im rotierten Frame,
+  //   also Kompass-Azimut = ridgeBearing + 90 (modulo 360)
+  // halfMinus → ridgeBearing - 90 (= ridgeBearing + 270)
+  return {
+    halfA: { ring: toLatLng(halfPlus), azimuth: (ridgeBearingDeg + 90) % 360 },
+    halfB: { ring: toLatLng(halfMinus), azimuth: (ridgeBearingDeg + 270) % 360 },
+    ridgeStart: fromLocalXY({ x: Math.min(...local.map(p => p.x)) * cosBack - midY * sinBack,
+                              y: Math.min(...local.map(p => p.x)) * sinBack + midY * cosBack }, pivot),
+    ridgeEnd:   fromLocalXY({ x: Math.max(...local.map(p => p.x)) * cosBack - midY * sinBack,
+                              y: Math.max(...local.map(p => p.x)) * sinBack + midY * cosBack }, pivot),
+  };
 }
 
 /* ---------- 5. Map state ---------- */
@@ -444,6 +569,7 @@ let currentRing = [];                     // [{lat, lng}, ...]
 let currentMarkers = [];                  // google.maps.Marker[]
 let currentPolyline = null;
 let shapes = [];                          // [{type, polygon, areaM2, ringLatLng}]
+let roofPreviewLayers = [];               // farbige Slope-Polygone + Ridge-Linie
 let mapClickListener = null, mapDblClickListener = null;
 let currentPlz = null, currentAddrLatLng = null;
 
@@ -587,6 +713,177 @@ function renderShapeList() {
   });
 }
 
+/* ---------- 6b. Auto-Detect via Overpass (OSM Building Footprints) ---------- */
+async function detectBuildingAt(lat, lng) {
+  const status = document.getElementById('detect-status');
+  status.style.display = 'block';
+  status.textContent = '🔄 Suche Gebäude in OpenStreetMap …';
+  const query = `[out:json][timeout:15];
+    (way(around:30,${lat},${lng})[building];
+     relation(around:30,${lat},${lng})[building];);
+    out geom tags;`;
+  try {
+    const r = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'data=' + encodeURIComponent(query),
+    });
+    if (!r.ok) throw new Error('Overpass HTTP ' + r.status);
+    const data = await r.json();
+    const candidates = [];
+    for (const el of (data.elements || [])) {
+      if (!el.geometry || el.geometry.length < 3) continue;
+      const ring = el.geometry.map(g => ({ lat: g.lat, lng: g.lon }));
+      // Geschlossen → letzten == ersten Punkt nicht doppelt zählen
+      if (ring.length > 1 && ring[0].lat === ring[ring.length - 1].lat
+          && ring[0].lng === ring[ring.length - 1].lng) ring.pop();
+      candidates.push({ ring, tags: el.tags || {} });
+    }
+    if (candidates.length === 0) {
+      status.textContent = 'ℹ️ Keine Gebäude in OpenStreetMap an dieser Adresse gefunden — bitte manuell zeichnen.';
+      return null;
+    }
+    // Bevorzuge Polygon, das die Adresse enthält; sonst nähestes Centroid.
+    let best = null, bestDist = Infinity;
+    for (const c of candidates) {
+      if (pointInRing({ lat, lng }, c.ring)) { best = c; bestDist = 0; break; }
+      const cen = ringCentroid(c.ring);
+      const d = haversineMeters({ lat, lng }, cen);
+      if (d < bestDist) { bestDist = d; best = c; }
+    }
+    if (!best) {
+      status.textContent = 'ℹ️ Kein passendes Gebäude gefunden.';
+      return null;
+    }
+    status.innerHTML = `✅ Gebäude erkannt: <strong>${best.ring.length} Eckpunkte</strong>` +
+      (best.tags['building:levels'] ? ` &middot; ${best.tags['building:levels']} Stockwerke` : '') +
+      (best.tags['roof:shape'] ? ` &middot; Dachform: ${best.tags['roof:shape']}` : '') +
+      ` &middot; Quelle: OpenStreetMap`;
+    return best;
+  } catch (err) {
+    status.textContent = '⚠️ Overpass-API nicht erreichbar — bitte manuell zeichnen.';
+    console.warn(err);
+    return null;
+  }
+}
+
+async function autoLoadBuilding(lat, lng) {
+  const found = await detectBuildingAt(lat, lng);
+  if (!found) return;
+  // Bestehende main-Shapes entfernen, neue setzen
+  shapes.filter(s => s.type === 'main').forEach(s => s.polygon.setMap(null));
+  shapes = shapes.filter(s => s.type !== 'main');
+  const polygon = new google.maps.Polygon({
+    paths: found.ring,
+    strokeColor: '#0d73fc', strokeWeight: 2,
+    fillColor: '#0d73fc', fillOpacity: 0.18,
+    editable: true, map,
+  });
+  ['set_at', 'insert_at', 'remove_at'].forEach(ev =>
+    google.maps.event.addListener(polygon.getPath(), ev, () => recalcShape(shape)));
+  const areaM2 = google.maps.geometry.spherical.computeArea(polygon.getPath());
+  const dim = dimensionsFromRing(found.ring);
+  const shape = { type: 'main', polygon, areaM2, ringLatLng: found.ring, dim };
+  shapes.push(shape);
+  if (dim) {
+    document.getElementById('firstLength').value = dim.firstLengthM.toFixed(1);
+    document.getElementById('houseWidth').value = dim.houseWidthM.toFixed(1);
+  }
+  // Falls OSM eine Dachform liefert, übernehmen (Walmdach/Pultdach)
+  const tagShape = found.tags && found.tags['roof:shape'];
+  if (tagShape === 'hipped') document.getElementById('roofType').value = 'walmdach';
+  else if (tagShape === 'flat' || tagShape === 'skillion' || tagShape === 'lean_to')
+    document.getElementById('roofType').value = 'pultdach';
+  // Pitch
+  const tagPitch = found.tags && (found.tags['roof:angle'] || found.tags['roof:pitch']);
+  if (tagPitch && !isNaN(parseFloat(tagPitch))) document.getElementById('pitch').value = parseFloat(tagPitch);
+  renderShapeList();
+  renderRoofPreview();
+  recompute();
+  // Karte auf das Gebäude zentrieren
+  const bounds = new google.maps.LatLngBounds();
+  found.ring.forEach(p => bounds.extend(p));
+  map.fitBounds(bounds, 60);
+}
+
+/* ---------- 6c. Roof-Preview mit Suitability-Färbung ---------- */
+function clearRoofPreview() {
+  roofPreviewLayers.forEach(l => l.setMap(null));
+  roofPreviewLayers = [];
+  document.getElementById('suit-legend').style.display = 'none';
+}
+function renderRoofPreview() {
+  clearRoofPreview();
+  const main = shapes.find(s => s.type === 'main');
+  if (!main || !main.dim) return;
+  const ring = main.ringLatLng;
+  const ridge = main.dim.ridgeBearingDeg;
+  const roofType = document.getElementById('roofType').value;
+  const split = splitFootprintForSaddle(ring, ridge);
+  if (!split) return;
+
+  const halves = roofType === 'pultdach'
+    ? [{ ring: ring, azimuth: (ridge + 90) % 360 }]
+    : [split.halfA, split.halfB];
+    // Walmdach: vereinfachte Vorschau wie Satteldach, Walmen werden in der
+    // Tabelle korrekt mit gerechnet — eine exakte 4-seitige Top-Down-Aufteilung
+    // würde den Aufwand sprengen; das Solarkataster-LANUK-Tool macht es genauso.
+
+  let strongestAspect = 'nord';
+  halves.forEach(h => {
+    const aspect = aspectFromAzimuth(h.azimuth);
+    const suit = suitabilityFor(aspect);
+    if (suit.code === 'sg') strongestAspect = 'sued';
+    else if (suit.code === 'b' && strongestAspect !== 'sued') strongestAspect = aspect;
+    const poly = new google.maps.Polygon({
+      paths: h.ring,
+      strokeColor: suit.color, strokeWeight: 1,
+      fillColor: suit.color, fillOpacity: 0.55,
+      clickable: false, map,
+    });
+    roofPreviewLayers.push(poly);
+    // Beschriftung: kleines DivOverlay mit Eignung
+    const c = ringCentroid(h.ring);
+    const lbl = new google.maps.Marker({
+      position: c, map, clickable: false,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 0, fillOpacity: 0, strokeOpacity: 0,
+      },
+      label: {
+        text: `${ASPECT_LABELS[aspect] || aspect} · ${suit.label}`,
+        color: '#0b1320', fontSize: '12px', fontWeight: 'bold',
+      },
+    });
+    roofPreviewLayers.push(lbl);
+  });
+
+  // Ridge-Linie (Firstkante) als gestrichelte Linie
+  if (roofType !== 'pultdach' && split.ridgeStart && split.ridgeEnd) {
+    const ridgeLine = new google.maps.Polyline({
+      path: [split.ridgeStart, split.ridgeEnd],
+      strokeColor: '#0b1320',
+      strokeOpacity: 0,
+      icons: [{
+        icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3, strokeColor: '#0b1320' },
+        offset: '0', repeat: '8px',
+      }],
+      map,
+    });
+    roofPreviewLayers.push(ridgeLine);
+  }
+  document.getElementById('suit-legend').style.display = 'flex';
+}
+
+/* Auto-Detect-Button */
+document.getElementById('btn-detect').addEventListener('click', () => {
+  if (!currentAddrLatLng) {
+    alert('Bitte zuerst eine Adresse auswählen.');
+    return;
+  }
+  autoLoadBuilding(currentAddrLatLng.lat, currentAddrLatLng.lng);
+});
+
 /* Mode buttons */
 document.querySelectorAll('[data-mode]').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -659,6 +956,8 @@ function selectAddress(d) {
     `📍 ${d.display_name.split(',').slice(0,2).join(', ')}` +
     (plz ? ` &middot; <span class="tag ok">${REGION_LABEL[regionFromPlz(plz)] || 'Region unbekannt'}</span>` : '');
   recompute();
+  // Direkt OSM-Footprint-Erkennung anstoßen (best-effort, schweigsam bei Fehlern)
+  if (map) autoLoadBuilding(lat, lng);
 }
 
 /* ---------- 8. Live-Berechnung ---------- */
@@ -757,6 +1056,9 @@ function recompute() {
   });
   roi += '</tbody></table>';
   $('roi-table').innerHTML = roi;
+
+  // Suitability-Vorschau aktualisieren
+  if (typeof google !== 'undefined' && google.maps) renderRoofPreview();
 }
 
 ['roofType','firstLength','houseWidth','pitch','panelWp','panelArea',
