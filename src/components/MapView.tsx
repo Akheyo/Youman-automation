@@ -107,6 +107,9 @@ export default function MapView({
   // 1) Karte einmalig erzeugen.
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    // eslint-disable-next-line no-console
+    console.log("[MapView] mounting, container size:", rect.width, "x", rect.height);
     const initialCenter: [number, number] = buildingRef.current
       ? [buildingRef.current.center.lng, buildingRef.current.center.lat]
       : [13.405, 52.52];
@@ -124,6 +127,8 @@ export default function MapView({
       "top-left",
     );
     mapRef.current = map;
+    // eslint-disable-next-line no-console
+    console.log("[MapView] MapLibre map created");
 
     // Three-Layer immer dann (re-)hinzufügen, wenn der aktuelle Style fertig
     // geladen ist. Deckt sowohl den initialen `load` als auch spätere
@@ -140,6 +145,8 @@ export default function MapView({
         const layer = new ThreeBuildingLayer({ showEdges: true });
         mapRef.current.addLayer(layer);
         layerRef.current = layer;
+        // eslint-disable-next-line no-console
+        console.log("[MapView] Three layer added");
         const b = buildingRef.current;
         if (b) {
           layer.setBuilding(b);
@@ -157,15 +164,35 @@ export default function MapView({
       }
     };
 
-    map.on("load", ensureThreeLayer);
-    map.on("style.load", ensureThreeLayer);
+    map.on("load", () => {
+      // eslint-disable-next-line no-console
+      console.log("[MapView] map.load fired");
+      ensureThreeLayer();
+      // Resize triggern – MapLibre rechnet die Canvas-Größe oft erst nach
+      // dem ersten Layout-Frame korrekt aus, und ein nicht resized Canvas
+      // bleibt 0×0 und damit unsichtbar.
+      mapRef.current?.resize();
+    });
+    map.on("style.load", () => {
+      // eslint-disable-next-line no-console
+      console.log("[MapView] map.style.load fired");
+      ensureThreeLayer();
+    });
     map.on("error", (e) => {
       // Tile-Fehler etc. nur loggen, nicht crashen.
       // eslint-disable-next-line no-console
       console.warn("[MapLibre]", e?.error?.message ?? e);
     });
 
+    // Resize-Beobachter: wenn der Container später noch wächst (z. B. weil
+    // Sidebar/Layout asynchron auflöst), zwingt das MapLibre die Canvas
+    // anzupassen. Behebt den weiß-bleibenden Map-Bereich, wenn der Container
+    // beim ersten Mount 0-Höhe hatte.
+    const ro = new ResizeObserver(() => mapRef.current?.resize());
+    ro.observe(containerRef.current);
+
     return () => {
+      ro.disconnect();
       map.remove();
       mapRef.current = null;
       layerRef.current = null;
@@ -173,20 +200,11 @@ export default function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 2) Style nachträglich ändern (Tile-URL via .env zur Laufzeit anders).
-  // Die erste Auswertung beim Mount überspringen, damit kein doppelter
-  // setStyle-Race entsteht (initialer Style ist bereits über Constructor gesetzt).
-  const styleInitializedRef = useRef(false);
-  useEffect(() => {
-    if (!styleInitializedRef.current) {
-      styleInitializedRef.current = true;
-      return;
-    }
-    const map = mapRef.current;
-    if (!map) return;
-    map.setStyle(style);
-    // ensureThreeLayer feuert per `style.load`-Listener.
-  }, [style]);
+  // 2) StrictMode-fester Schutz: Style wird beim Mount im Constructor gesetzt,
+  // ein nachträgliches setStyle() würde nur die Race-Condition mit der ersten
+  // Style-Ladung erneut auslösen. Da die `mapSettings` aus env-Variablen
+  // kommen und ohne Server-Restart sowieso nicht wechseln, ist hier kein
+  // Effect mehr nötig.
 
   // 3) Wenn das Gebäude wechselt, Layer aktualisieren + Kamera schwenken.
   useEffect(() => {
@@ -219,7 +237,7 @@ export default function MapView({
   }, [recenterTick]);
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full bg-slate-200">
       <div ref={containerRef} className="absolute inset-0" />
       {!mapSettings.tileUrl && (
         <div className="pointer-events-none absolute left-3 top-3 max-w-md rounded-md bg-white/85 px-3 py-2 text-xs text-slate-700 shadow-card backdrop-blur">
