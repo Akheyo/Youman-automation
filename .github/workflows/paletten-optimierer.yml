@@ -2,8 +2,14 @@ name: Paletten Optimierer - Build Installer
 
 on:
   push:
+    branches:
+      - main
+      - "claude/palette-optimizer-build-**"
     tags:
       - "v*.*.*"
+    paths:
+      - "paletten-optimierer/**"
+      - ".github/workflows/paletten-optimierer.yml"
   workflow_dispatch:
     inputs:
       version:
