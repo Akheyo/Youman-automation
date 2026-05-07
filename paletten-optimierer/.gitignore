@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Build-Artefakte (root-.gitignore ignoriert build/, hier wieder freigeben)
+!build/
+!build/*
+build/build/
+build/dist/
+build/icon.ico
+build/__pycache__/
+dist/
+*.spec.bak
+
+# PyInstaller / Inno Setup
+*.exe
+!installer.iss
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Laufzeit-Daten (werden zur Laufzeit erzeugt)
+storage/bestand.json
+storage/bestellungen.json
+
+# Tests / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
