@@ -6,7 +6,10 @@ Metadaten — beides muss explizit eingesammelt werden, sonst startet das
 gepackte Binary nicht.
 """
 
-from PyInstaller.utils.hooks import collect_all, copy_metadata
+import os
+from pathlib import Path
+
+from PyInstaller.utils.hooks import collect_all, collect_data_files, copy_metadata
 
 
 # Vollständig einsammeln (datas + binaries + hidden imports)
@@ -26,6 +29,15 @@ try:
     numpy_datas, numpy_binaries, numpy_hidden = collect_all("numpy")
 except Exception:
     numpy_datas, numpy_binaries, numpy_hidden = [], [], []
+
+
+# Streamlit's Frontend-Static-Files explizit nachziehen.
+# `collect_all` packt sie in modernen PyInstaller-Versionen meist mit ein,
+# aber wir sind robust und ergänzen sie noch einmal mit collect_data_files.
+streamlit_static = collect_data_files("streamlit", include_py_files=False)
+streamlit_runtime_static = collect_data_files(
+    "streamlit.runtime", include_py_files=False
+)
 
 
 # Package-Metadaten (Streamlit liest sie zur Laufzeit über importlib.metadata)
@@ -56,10 +68,19 @@ app_datas = [
 
 
 extra_hidden = [
+    "streamlit",
+    "streamlit.web",
     "streamlit.web.cli",
-    "streamlit.runtime.scriptrunner.magic_funcs",
     "streamlit.web.bootstrap",
+    "streamlit.runtime",
+    "streamlit.runtime.scriptrunner",
+    "streamlit.runtime.scriptrunner.magic_funcs",
+    "streamlit.runtime.caching",
+    "streamlit.runtime.caching.cache_data_api",
+    "streamlit.runtime.caching.cache_resource_api",
     "openpyxl.cell._writer",
+    "pkg_resources.py2_warn",
+    "pkg_resources.markers",
 ]
 
 
@@ -77,6 +98,8 @@ a = Analysis(
     datas=app_datas
     + metadata
     + streamlit_datas
+    + streamlit_static
+    + streamlit_runtime_static
     + plotly_datas
     + altair_datas
     + pandas_datas
