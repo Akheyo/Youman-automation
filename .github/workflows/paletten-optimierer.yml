@@ -1,4 +1,4 @@
-name: Build Windows Installer
+name: Paletten Optimierer - Build Installer
 
 on:
   push:
