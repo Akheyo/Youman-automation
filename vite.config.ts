@@ -9,8 +9,14 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // Tauri erwartet einen fixen Dev-Port
+  clearScreen: false,
   server: {
     port: 5173,
+    strictPort: true,
     host: true,
+    watch: {
+      ignored: ['**/src-tauri/**'],
+    },
   },
 });

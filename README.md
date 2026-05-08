@@ -116,9 +116,71 @@ src/
 
 ## Datensicherheit
 
-- Daten liegen ausschließlich im LocalStorage des verwendeten Browsers.
+- Daten liegen ausschließlich im LocalStorage des verwendeten Browsers
+  bzw. im WebView2-Storage der installierten Desktop-App.
 - **Browser-Cache leeren = Datenverlust**. In den Einstellungen kann der
   Demo-Datensatz nachgeladen oder alle Daten gelöscht werden.
+
+## Windows-Installer (.exe) bauen
+
+Die App wird via **Tauri v2** zu einer Windows-`.exe` paketiert. Der Build
+läuft in der Cloud auf GitHub Actions — du brauchst auf deinem Rechner kein
+Rust und keine Visual-Studio-Build-Tools.
+
+### Build manuell auslösen
+
+1. GitHub-Repo öffnen
+2. Tab **Actions** → links **Build Windows Installer** auswählen
+3. Rechts **Run workflow** klicken, Branch wählen (`claude/auto-dealer-margin-tool-jggg2`),
+   nochmal **Run workflow** bestätigen
+4. Nach ca. 5–8 Minuten ist der Build fertig
+5. Auf den fertigen Run klicken → unten unter **Artifacts** den Download
+   `DAEV-Margin-Tool-Windows` finden, das ZIP enthält die `.exe`
+
+### Versionierten Release erzeugen
+
+```powershell
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Damit baut der Workflow zusätzlich einen GitHub-Release und hängt die
+`.exe` an die Release-Seite an. Der Kunde kann sie dort direkt
+runterladen.
+
+### An den Kunden weitergeben
+
+- Datei: `DAEV Margin Tool_1.0.0_x64-setup.exe` (NSIS-Installer)
+- Per Mail / USB / Cloud-Link an den Kunden geben
+- Doppelklick installiert das Tool. Erscheint dann als **DAEV Margin Tool**
+  im Startmenü mit eigenem Icon.
+- Daten landen in `%APPDATA%\com.daev.margin-tool` (vom WebView2-Storage
+  verwaltet).
+
+### Hinweis zu Windows SmartScreen
+
+Da die `.exe` (noch) nicht code-signiert ist, zeigt Windows beim ersten
+Start eine SmartScreen-Warnung ("Der Computer wurde durch Windows
+geschützt"). Klick auf **Weitere Informationen → Trotzdem ausführen**.
+Für eine signierte Version wäre ein Code-Signing-Zertifikat (~250 €/Jahr)
+nötig — die Workflow-Konfiguration unterstützt das bereits, fehlen nur
+die Secrets.
+
+### Lokal bauen (optional)
+
+Falls du selbst auf Windows bauen willst (statt via GitHub):
+
+```powershell
+# Einmalig: Rust + Visual-Studio-Build-Tools
+winget install Rustlang.Rustup
+rustup default stable
+winget install Microsoft.VisualStudio.2022.BuildTools
+
+# Dann
+npm install
+npm run tauri:build
+# .exe liegt in src-tauri/target/release/bundle/nsis/
+```
 
 ## Lizenz
 

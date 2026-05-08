@@ -8,6 +8,12 @@ dist/
 build/
 *.tsbuildinfo
 
+# Tauri-generierte Artefakte (Sub-.gitignore in src-tauri/ ist die Quelle)
+src-tauri/target/
+src-tauri/gen/
+src-tauri/icons/
+app-icon.png
+
 # Testing
 coverage/
 

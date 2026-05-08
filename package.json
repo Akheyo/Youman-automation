@@ -11,7 +11,10 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -21,6 +24,7 @@
     "tailwind-merge": "^2.5.5"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0",
     "@types/node": "^25.6.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

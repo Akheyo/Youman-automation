@@ -1,0 +1,8 @@
+# Rust build output
+target/
+
+# Tauri-generated capability schemas + permissions
+gen/
+
+# Generated icons (werden im CI-Build aus generate-icon.ps1 erzeugt)
+icons/
