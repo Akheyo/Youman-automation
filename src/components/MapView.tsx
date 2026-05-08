@@ -184,7 +184,7 @@ export default function MapView({
         source: DRAW_SRC,
         filter: ["==", ["geometry-type"], "Polygon"],
         paint: {
-          "fill-color": "#f97316",
+          "fill-color": "#2563eb",
           "fill-opacity": 0.18,
         },
       });
@@ -199,7 +199,7 @@ export default function MapView({
           ["!=", ["get", "kind"], "ridgeLine"],
         ],
         paint: {
-          "line-color": "#f97316",
+          "line-color": "#2563eb",
           "line-width": 2,
         },
       });
@@ -227,7 +227,7 @@ export default function MapView({
         paint: {
           "circle-radius": 5,
           "circle-color": "#ffffff",
-          "circle-stroke-color": "#f97316",
+          "circle-stroke-color": "#2563eb",
           "circle-stroke-width": 2,
         },
       });

@@ -102,6 +102,10 @@ export default function SolarPlanner({ mapSettings }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [demoCycleIdx, setDemoCycleIdx] = useState(0);
+  // Präsentationsmodus: nach erfolgreicher Hausgenerierung wird die Sidebar
+  // ausgeblendet und das 3D-Modell füllt den ganzen Screen. Ein Overlay-
+  // Button bringt den User zurück in die Bearbeitung.
+  const [presentationMode, setPresentationMode] = useState(false);
   const [recenterTick, setRecenterTick] = useState(0);
   const [drawingMode, setDrawingMode] = useState(false);
   const [pickingMode, setPickingMode] = useState(false);
@@ -195,6 +199,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
       setDrawnPoints([]);
       setRidgePoints([]);
       setDrawingPhase("corners");
+      setPresentationMode(false);
     } catch (err) {
       setError(
         err instanceof Error
@@ -245,6 +250,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
       );
       setBuilding(computed);
       setProviderInfo(data.providerSelection);
+      setPresentationMode(true);
     } catch (err) {
       const raw =
         err instanceof Error ? err.message : "Unbekannter Fehler";
@@ -275,6 +281,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
         name: "mock",
         reason: `Demo: ${kind}. Keine API-Calls.`,
       });
+      setPresentationMode(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Demo-Ladung fehlgeschlagen");
     } finally {
@@ -402,6 +409,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
           name: "manual",
           reason: `Footprint per Klick aus OSM (${data.building.roofFaces.length} OSM-Tags). Form/Pitch/Traufe via Slider veränderbar.`,
         });
+        setPresentationMode(true);
       } catch (err) {
         // Smarter Fallback: OSM hat hier nichts – statt zu meckern, nahtlos
         // ins manuelle Zeichnen wechseln. Der ursprüngliche Klick ist bereits
@@ -505,6 +513,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
       setDrawnPoints([]);
       setRidgePoints([]);
       setDrawingPhase("corners");
+      setPresentationMode(true);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Manuelles Bauen fehlgeschlagen",
@@ -586,7 +595,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
   }, [providerInfo]);
 
   return (
-    <div className="flex h-full w-full flex-row">
+    <div className="relative flex h-full w-full flex-row">
       <div style={{ flex: "1 1 auto", minWidth: 0, height: "100%", position: "relative" }}>
         <MapView
           building={building}
@@ -605,43 +614,164 @@ export default function SolarPlanner({ mapSettings }: Props) {
           onRotateRequest={handleRotateRequest}
         />
       </div>
-      <Sidebar
-        address={address}
-        setAddress={setAddress}
-        onSearchAddress={handleSearchAddress}
-        onAutoDetect={handleAutoDetect}
-        onLoadDemo={() => void loadDemo()}
-        onCycleDemo={cycleDemo}
-        onRecenter={recenter}
-        onReplaceModules={replaceModules}
-        loading={loading}
-        error={error}
-        building={building}
-        providerLabel={providerLabel}
-        providerReason={providerInfo?.reason ?? null}
-        settings={settings}
-        setSettings={setSettings}
-        toggleFace={toggleFace}
-        searchedLocation={searchedLocation}
-        drawingMode={drawingMode}
-        drawingPhase={drawingPhase}
-        pickingMode={pickingMode}
-        rotatingMode={rotatingMode}
-        canRotate={Boolean(building?.source === "manual" && building.footprint)}
-        onToggleRotating={toggleRotatingMode}
-        drawnPointCount={drawnPoints.length}
-        ridgePointCount={ridgePoints.length}
-        manualParams={manualParams}
-        setManualParams={setManualParams}
-        onStartPicking={startPicking}
-        onCancelPicking={cancelPicking}
-        onStartDrawing={startDrawing}
-        onCancelDrawing={cancelDrawing}
-        onProceedToRidge={proceedToRidge}
-        onSkipRidge={skipRidge}
-        onFinishDrawing={finishDrawing}
-        onUndoPoint={undoLastPoint}
-      />
+      {!presentationMode && (
+        <Sidebar
+          address={address}
+          setAddress={setAddress}
+          onSearchAddress={handleSearchAddress}
+          onAutoDetect={handleAutoDetect}
+          onLoadDemo={() => void loadDemo()}
+          onCycleDemo={cycleDemo}
+          onRecenter={recenter}
+          onReplaceModules={replaceModules}
+          loading={loading}
+          error={error}
+          building={building}
+          providerLabel={providerLabel}
+          providerReason={providerInfo?.reason ?? null}
+          settings={settings}
+          setSettings={setSettings}
+          toggleFace={toggleFace}
+          searchedLocation={searchedLocation}
+          drawingMode={drawingMode}
+          drawingPhase={drawingPhase}
+          pickingMode={pickingMode}
+          rotatingMode={rotatingMode}
+          canRotate={Boolean(building?.source === "manual" && building.footprint)}
+          onToggleRotating={toggleRotatingMode}
+          drawnPointCount={drawnPoints.length}
+          ridgePointCount={ridgePoints.length}
+          manualParams={manualParams}
+          setManualParams={setManualParams}
+          onStartPicking={startPicking}
+          onCancelPicking={cancelPicking}
+          onStartDrawing={startDrawing}
+          onCancelDrawing={cancelDrawing}
+          onProceedToRidge={proceedToRidge}
+          onSkipRidge={skipRidge}
+          onFinishDrawing={finishDrawing}
+          onUndoPoint={undoLastPoint}
+        />
+      )}
+
+      {presentationMode && (
+        <PresentationOverlay
+          building={building}
+          providerLabel={providerLabel}
+          onExit={() => setPresentationMode(false)}
+          onRecenter={recenter}
+        />
+      )}
     </div>
+  );
+}
+
+/* ----------------------------- PresentationOverlay ----------------------------- */
+
+type PresentationOverlayProps = {
+  building: DetectedBuilding | null;
+  providerLabel: string | null;
+  onExit: () => void;
+  onRecenter: () => void;
+};
+
+function PresentationOverlay({
+  building,
+  providerLabel,
+  onExit,
+  onRecenter,
+}: PresentationOverlayProps) {
+  return (
+    <>
+      <div
+        style={{
+          position: "absolute",
+          top: 16,
+          left: 16,
+          padding: "12px 16px",
+          background: "rgba(255,255,255,0.96)",
+          borderRadius: 12,
+          boxShadow: "0 6px 20px rgba(15,23,42,0.18)",
+          fontSize: 13,
+          color: "#0f172a",
+          maxWidth: 360,
+          zIndex: 20,
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            textTransform: "uppercase",
+            fontSize: 10,
+            letterSpacing: 1,
+            color: "#1d4ed8",
+            fontWeight: 600,
+          }}
+        >
+          3D-Vorschau
+        </p>
+        <p
+          style={{
+            margin: "4px 0 0",
+            fontWeight: 600,
+            fontSize: 16,
+            color: "#0f172a",
+          }}
+        >
+          {building?.address ?? "Gebäude"}
+        </p>
+        <p style={{ margin: "2px 0 0", fontSize: 11, color: "#64748b" }}>
+          Quelle: {providerLabel ?? "—"} ·{" "}
+          {building?.metrics.totalRoofAreaM2.toFixed(0) ?? "0"} m² Dach ·{" "}
+          {building?.metrics.totalKwp.toFixed(1) ?? "0"} kWp
+        </p>
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          top: 16,
+          right: 16,
+          display: "flex",
+          gap: 8,
+          zIndex: 20,
+        }}
+      >
+        <button
+          type="button"
+          onClick={onRecenter}
+          style={{
+            padding: "10px 14px",
+            background: "rgba(255,255,255,0.96)",
+            color: "#1e3a8a",
+            border: "1px solid #bfdbfe",
+            borderRadius: 10,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            boxShadow: "0 4px 12px rgba(15,23,42,0.10)",
+          }}
+        >
+          Ansicht zentrieren
+        </button>
+        <button
+          type="button"
+          onClick={onExit}
+          style={{
+            padding: "10px 16px",
+            background: "#2563eb",
+            color: "#ffffff",
+            border: "none",
+            borderRadius: 10,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            boxShadow: "0 4px 12px rgba(37,99,235,0.30)",
+          }}
+        >
+          ← Zurück zur Bearbeitung
+        </button>
+      </div>
+    </>
   );
 }

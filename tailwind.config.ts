@@ -9,14 +9,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Weiß-Blau-Designsystem: Primärfarbe ist ein klares Mittelblau,
+        // 50/100 sind sehr helle Tönungen für Surfaces und Accent-Backgrounds,
+        // 600/700 sind Hover-/Active-States.
         brand: {
-          DEFAULT: "#ff7a00",
-          50: "#fff4e6",
-          100: "#ffe0b8",
-          200: "#ffc680",
-          500: "#ff7a00",
-          600: "#e56a00",
-          700: "#b35200",
+          DEFAULT: "#2563eb",
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          500: "#2563eb",
+          600: "#1d4ed8",
+          700: "#1e40af",
         },
         roof: {
           selected: "#1d4ed8",
