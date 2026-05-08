@@ -1,12 +1,14 @@
 """Streamlit-Dashboard des Paletten-Optimierers.
 
-Multi-Page-Dashboard mit Sidebar-Navigation, Step-Indikator, Karten-Layout und
-Plotly-Charts. Alle Berechnungen werden bei Settings-Änderungen direkt neu
-durchgeführt und im Session-State zwischengespeichert.
+Polished Dashboard nach Mockup: Sidebar-Navigation mit KPI-Footer,
+Step-Indikator, gruppierte Ergebnistabelle, drei Analyse-Karten, Footer
+mit Hinweis-Boxen. Berechnungen werden bei jeder Settings-Änderung
+nachgezogen und im Session-State zwischengespeichert.
 """
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from html import escape
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +25,7 @@ from optimizer import (
     KostenParameter,
     OptimierungsErgebnis,
     Palette,
+    StandardPalette,
     WirtschaftlichkeitsErgebnis,
     berechne_wirtschaftlichkeit,
     optimiere,
@@ -52,157 +55,307 @@ st.set_page_config(
 
 CSS = """
 <style>
+    /* Reset Streamlit Defaults */
+    .stApp { background: #f3f4f6; }
+    .block-container { padding-top: 1.2rem; padding-bottom: 2rem; max-width: 100%; }
+    header[data-testid="stHeader"] { background: transparent; }
+    #MainMenu { visibility: hidden; }
+    footer { visibility: hidden; }
+
+    /* Sidebar */
     section[data-testid="stSidebar"] {
-        background-color: #1a2944;
+        background-color: #1a2944 !important;
+        padding-top: 0;
     }
-    section[data-testid="stSidebar"] * {
-        color: #f3f4f6 !important;
+    section[data-testid="stSidebar"] > div {
+        padding-top: 0;
     }
-    section[data-testid="stSidebar"] .stRadio label {
-        color: #f3f4f6 !important;
-        padding: 6px 0;
-    }
+    section[data-testid="stSidebar"] * { color: #e2e8f0; }
     section[data-testid="stSidebar"] h1,
     section[data-testid="stSidebar"] h2,
-    section[data-testid="stSidebar"] h3 {
+    section[data-testid="stSidebar"] h3 { color: #ffffff !important; }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] label,
+    section[data-testid="stSidebar"] [data-testid="stRadio"] p {
+        color: #cbd5e1 !important;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] > div { gap: 4px; }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] > div > label {
+        padding: 9px 12px;
+        border-radius: 8px;
+        transition: background 0.15s;
+        margin: 0;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] > div > label:hover {
+        background: rgba(255,255,255,0.05);
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] input:checked + div {
+        font-weight: 700;
+    }
+    section[data-testid="stSidebar"] [data-testid="stRadio"] input:checked ~ div {
         color: #ffffff !important;
     }
-    .sidebar-logo {
-        color: #ffffff;
+
+    .sidebar-brand {
+        display: flex; align-items: center; gap: 10px;
+        padding: 18px 16px 22px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        margin-bottom: 12px;
+    }
+    .sidebar-brand .logo {
+        width: 36px; height: 36px; border-radius: 8px;
+        background: #fbbf24; color: #1a2944;
+        display: flex; align-items: center; justify-content: center;
         font-size: 20px;
-        font-weight: 800;
-        margin-bottom: 0;
     }
-    .sidebar-sub {
-        color: #94a3b8;
-        font-size: 12px;
-        margin-bottom: 18px;
-    }
+    .sidebar-brand .name { color: #ffffff; font-weight: 800; font-size: 16px; line-height: 1.1;}
+    .sidebar-brand .sub { color: #94a3b8; font-size: 11px; margin-top: 2px;}
+
     .sidebar-kpi {
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 8px;
-        padding: 12px;
-        margin-top: 18px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 10px;
+        padding: 14px;
+        margin: 14px 6px 0;
     }
-    .sidebar-kpi .label { font-size: 11px; color: #94a3b8; }
-    .sidebar-kpi .value { font-size: 22px; font-weight: 700; color: #ffffff; }
+    .sidebar-kpi .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px;}
+    .sidebar-kpi .row { display: flex; align-items: center; gap: 12px; margin-top: 8px;}
+    .sidebar-kpi .icon-box {
+        width: 40px; height: 40px; border-radius: 8px; background: rgba(251,191,36,0.15);
+        color: #fbbf24; display:flex; align-items:center; justify-content:center; font-size: 22px;
+    }
+    .sidebar-kpi .value { font-size: 26px; font-weight: 800; color: #ffffff; line-height: 1;}
+    .sidebar-kpi .unit { color: #94a3b8; font-size: 12px; margin-top: 2px;}
+    .sidebar-status { margin: 14px 6px 0; }
+    .sidebar-status .item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 7px 8px; font-size: 12px; color: #cbd5e1;
+    }
+    .sidebar-status .dot {
+        width: 9px; height: 9px; border-radius: 50%;
+    }
+    .sidebar-status .dot.ok { background: #22c55e; }
+    .sidebar-status .dot.unter { background: #fbbf24; }
+    .sidebar-status .dot.kritisch { background: #ef4444; }
+    .sidebar-status .badge-rot {
+        background: #ef4444; color: white; font-size: 11px; font-weight: 700;
+        padding: 1px 8px; border-radius: 999px; margin-left: auto;
+    }
+
+    /* Header */
+    .head-row {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 14px;
+    }
+    .head-title { color: #1a2944; font-size: 20px; font-weight: 800; margin:0;}
+    .head-sub { color: #6b7280; font-size: 12px; margin-top: 2px;}
+
+    /* Step Indicator */
+    .step-row { display: flex; gap: 0; margin: 4px 0 18px; align-items: center;}
+    .step {
+        display: flex; align-items: center; gap: 10px;
+        background: #ffffff; border: 1px solid #e5e7eb;
+        padding: 10px 18px; color: #6b7280; font-size: 13px; font-weight: 600;
+        border-radius: 0;
+    }
+    .step:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px;}
+    .step:last-child  { border-top-right-radius: 8px; border-bottom-right-radius: 8px;}
+    .step + .step { border-left: none; }
+    .step .num {
+        width: 24px; height: 24px; border-radius: 50%;
+        background: #e5e7eb; color: #6b7280; font-size: 12px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-weight: 700;
+    }
+    .step.done .num { background: #22c55e; color: white; }
+    .step.done { color: #1a2944; }
+    .step.active .num { background: #2563eb; color: white; }
+    .step.active { color: #1a2944; background: #eff6ff; border-color: #bfdbfe; }
+    .arrow { color: #cbd5e1; padding: 0 6px; font-size: 14px; }
+
+    /* Cards */
     .card {
         background: #ffffff;
         border: 1px solid #e5e7eb;
         border-radius: 10px;
-        padding: 18px 18px 14px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        padding: 16px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
         margin-bottom: 14px;
     }
     .card h3 {
         color: #1a2944;
-        font-size: 15px;
+        font-size: 14px;
         margin: 0 0 12px 0;
         font-weight: 700;
+        text-transform: none;
     }
-    .step-row {
-        display: flex; gap: 8px;
-        margin: 6px 0 22px;
+    .card .sub { color: #6b7280; font-size: 12px; margin-top: 4px;}
+
+    /* File card */
+    .file-card { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+    .file-card .icon {
+        width: 42px; height: 42px; border-radius: 8px;
+        background: #dcfce7; color: #15803d;
+        display:flex; align-items:center; justify-content:center; font-weight: 800; font-size: 13px;
     }
-    .step {
-        flex: 1; display: flex; align-items: center; gap: 10px;
-        background: #f9fafb; border-radius: 8px;
-        padding: 10px 14px; border: 1px solid #e5e7eb;
-        color: #6b7280; font-size: 13px; font-weight: 600;
+    .file-meta { flex: 1; }
+    .file-meta .fn { font-weight: 700; color: #1a2944; font-size: 13px; }
+    .file-meta .info { color: #6b7280; font-size: 11px; margin-top: 2px;}
+
+    /* Compact rows in cards */
+    .row-kv { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;}
+    .row-kv .k { color: #6b7280;}
+    .row-kv .v { color: #1a2944; font-weight: 600;}
+
+    .lade-box {
+        background: #f3f4f6; border-radius: 8px; padding: 12px;
+        text-align: center; margin-top: 8px;
     }
-    .step.active { background: #1a2944; color: #ffffff; border-color: #1a2944; }
-    .step .num {
-        width: 22px; height: 22px; border-radius: 50%;
-        background: #d1d5db; color: #374151; font-size: 12px;
-        display: inline-flex; align-items: center; justify-content: center;
+    .lade-box .lbl { color: #6b7280; font-size: 11px; }
+    .lade-box .val { color: #1a2944; font-size: 18px; font-weight: 800; margin-top: 2px;}
+
+    /* Result table (grouped) */
+    .result-tbl { width: 100%; border-collapse: collapse; font-size: 13px;}
+    .result-tbl thead th {
+        background: #f9fafb; color: #1a2944; font-weight: 700;
+        padding: 11px 10px; text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 12px;
+    }
+    .result-tbl td {
+        padding: 9px 10px; border-bottom: 1px solid #f3f4f6;
+        color: #374151;
+    }
+    .result-tbl tr:hover td { background: #fafbfc; }
+    .standard-cell {
+        background: #eff6ff !important;
+        color: #1d4ed8 !important;
         font-weight: 700;
+        text-align: center;
+        font-size: 14px;
+        vertical-align: middle;
+        border-right: 1px solid #e5e7eb;
     }
-    .step.active .num { background: #fbbf24; color: #1a2944; }
-    .kpi { display: flex; gap: 12px; margin: 6px 0 12px; }
-    .kpi-box {
-        flex: 1; border: 1px solid #e5e7eb; border-radius: 10px;
-        padding: 12px; background: #ffffff;
-    }
-    .kpi-box .label { color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .kpi-box .value { color: #1a2944; font-size: 24px; font-weight: 800; margin-top: 4px; }
-    .kpi-box .delta { font-size: 12px; margin-top: 2px; color: #16a34a; }
-    .kpi-box .delta.bad { color: #dc2626; }
-    .info-box {
-        background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
-        padding: 14px; height: 100%;
-    }
-    .info-box .icon { font-size: 22px; margin-bottom: 6px; }
-    .info-box .title { color: #1a2944; font-weight: 700; font-size: 13px; }
-    .info-box .desc { color: #6b7280; font-size: 12px; margin-top: 4px; }
+    .standard-cell .sub-line { font-size: 11px; color: #64748b; font-weight: 500; margin-top: 4px;}
     .badge {
-        display: inline-block; padding: 2px 10px; border-radius: 999px;
-        font-size: 11px; font-weight: 600;
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
     }
     .badge-ok { background: #dcfce7; color: #166534; }
+    .badge-kombi { background: #fef3c7; color: #92400e; }
     .badge-unter { background: #fef3c7; color: #92400e; }
     .badge-kritisch { background: #fee2e2; color: #991b1b; }
-    .truck-wrap { text-align: center; padding: 8px 0; }
-    .header-actions { display: flex; gap: 10px; }
-    div[data-testid="stMetricValue"] { color: #1a2944; }
-    .stApp { background: #f3f4f6; }
+
+    /* Wirtschaftlichkeits-Tabelle */
+    .wirt-tbl { width: 100%; border-collapse: collapse; font-size: 12px;}
+    .wirt-tbl thead th {
+        color: #6b7280; font-weight: 600; padding: 7px 8px;
+        text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .wirt-tbl thead th:first-child { text-align: left; }
+    .wirt-tbl td {
+        padding: 8px; text-align: right; color: #1a2944; font-weight: 600;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .wirt-tbl td:first-child { text-align: left; color: #374151; font-weight: 500;}
+    .wirt-tbl .pos { color: #16a34a; }
+    .wirt-tbl .neg { color: #dc2626; }
+    .wirt-tbl tr.gesamt td { font-weight: 800; font-size: 13px;}
+    .wirt-summary {
+        background: #dcfce7; color: #166534;
+        border-radius: 8px; padding: 12px;
+        display: flex; justify-content: space-between; align-items: center;
+        margin-top: 10px; font-weight: 700;
+    }
+    .wirt-summary.bad { background: #fee2e2; color: #991b1b; }
+    .wirt-summary .v { font-size: 20px; }
+
+    /* Logistik */
+    .log-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .log-grid .it { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0;}
+    .log-grid .it .l { color: #6b7280; }
+    .log-grid .it .v { color: #1a2944; font-weight: 700; }
+    .log-grid .it .v.warn { color: #dc2626; }
+
+    /* Chart card */
+    .chart-anno {
+        background: #dcfce7; color: #166534;
+        border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 600;
+        text-align: center; margin-top: -10px;
+    }
+
+    /* Footer info boxes */
+    .info-row { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 12px; align-items: stretch; margin-top: 8px; }
+    .info-box {
+        background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px;
+        padding: 14px; display: flex; gap: 12px; align-items: center;
+    }
+    .info-box .ico {
+        width: 38px; height: 38px; border-radius: 8px;
+        background: #eff6ff; color: #2563eb;
+        display:flex; align-items:center; justify-content:center; font-size: 18px;
+    }
+    .info-box.warn .ico { background: #fef3c7; color: #b45309; }
+    .info-box.info .ico { background: #e0e7ff; color: #4338ca; }
+    .info-box.cart .ico { background: #fce7f3; color: #be185d; }
+    .info-box .lbl { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.4px;}
+    .info-box .val { font-size: 13px; color: #1a2944; font-weight: 700; margin-top: 2px;}
+    .info-box .sub { font-size: 11px; color: #6b7280; margin-top: 1px;}
+
+    /* Override Streamlit button look in select places */
+    .stButton > button[kind="primary"] {
+        background: #2563eb; color: white; border: none;
+        font-weight: 600;
+    }
+    .stButton > button[kind="secondary"] {
+        background: white; color: #1a2944; border: 1px solid #e5e7eb;
+        font-weight: 600;
+    }
 </style>
 """
 
 st.markdown(CSS, unsafe_allow_html=True)
 
 
+# ---------------------------------------------------------------------------
+# Session State
+# ---------------------------------------------------------------------------
+
 def init_state() -> None:
-    """Initialisiert Session-State mit Defaults."""
     defaults: dict[str, Any] = {
         "paletten": [],
         "ergebnis": None,
         "wirtschaftlichkeit": None,
         "tol_einheit": "mm",
         "tol_l": 100.0,
-        "tol_b": 80.0,
+        "tol_b": 100.0,
         "kosten_pro_lkw": 800.0,
         "nutzbare_ladelaenge": 13.6,
         "palettenkosten_neu": 18.0,
         "palettenkosten_alt": 14.0,
         "sicherheitsbestand": 100,
-        "kombinieren_erlaubt": False,
+        "kombinieren_erlaubt": True,
         "raster": 50,
-        "geplantes_lieferdatum": date.today() + timedelta(days=14),
+        "geplantes_lieferdatum": date.today() + timedelta(days=60),
+        "planungs_monate": 2,
         "auftragsnummer": "",
         "kunde": "",
         "firma": "Paletten Optimierer",
+        "datei_name": "",
+        "datei_zeit": "",
+        "nav_seite": "Dashboard",
     }
     for k, v in defaults.items():
         st.session_state.setdefault(k, v)
 
 
-def aktiver_schritt() -> int:
-    if not st.session_state.paletten:
-        return 1
-    if st.session_state.ergebnis is None:
-        return 2
-    return 4
-
-
-def step_indicator() -> None:
-    aktiv = aktiver_schritt()
-    schritte = [
-        (1, "Import"),
-        (2, "Einstellungen"),
-        (3, "Optimierung"),
-        (4, "Ergebnisse"),
-    ]
-    html = '<div class="step-row">'
-    for n, name in schritte:
-        cls = "step active" if n == aktiv else "step"
-        html += f'<div class="{cls}"><span class="num">{n}</span>{name}</div>'
-    html += "</div>"
-    st.markdown(html, unsafe_allow_html=True)
-
+# ---------------------------------------------------------------------------
+# Compute
+# ---------------------------------------------------------------------------
 
 def run_optimierung() -> None:
-    """Berechnet Optimierung + Wirtschaftlichkeit neu, wenn Daten existieren."""
     if not st.session_state.paletten:
         st.session_state.ergebnis = None
         st.session_state.wirtschaftlichkeit = None
@@ -226,76 +379,146 @@ def run_optimierung() -> None:
     st.session_state.wirtschaftlichkeit = wirt
 
 
-def truck_svg(zusatz_lademeter: float, max_breite: float = 13.6) -> str:
-    """Liefert ein einfaches SVG eines LKW mit rot-gestricheltem Zusatzbedarf."""
-    if max_breite <= 0:
-        max_breite = 13.6
-    pct = max(0.0, min(zusatz_lademeter / max_breite, 0.5))
-    truck_w = 280
-    extra_w = int(truck_w * pct)
-    return f"""
-    <div class="truck-wrap">
-      <svg width="320" height="120" viewBox="0 0 320 120" xmlns="http://www.w3.org/2000/svg">
-        <rect x="20" y="30" width="{truck_w}" height="55" rx="4" fill="#1a2944" stroke="#0f1a30" stroke-width="2"/>
-        <rect x="24" y="34" width="{truck_w - 8}" height="47" rx="2" fill="#3b4a6b"/>
-        <rect x="{20 + truck_w}" y="40" width="{extra_w}" height="45" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="6,4"/>
-        <rect x="0" y="60" width="20" height="25" fill="#1a2944"/>
-        <circle cx="60" cy="92" r="10" fill="#374151" stroke="#1f2937" stroke-width="2"/>
-        <circle cx="100" cy="92" r="10" fill="#374151" stroke="#1f2937" stroke-width="2"/>
-        <circle cx="240" cy="92" r="10" fill="#374151" stroke="#1f2937" stroke-width="2"/>
-        <text x="160" y="62" font-size="11" font-family="Arial" fill="#fbbf24" text-anchor="middle" font-weight="700">{max_breite:.1f} m Ladelänge</text>
-        <text x="{20 + truck_w + extra_w + 4}" y="65" font-size="10" font-family="Arial" fill="#dc2626" font-weight="700">+{zusatz_lademeter:.2f} m</text>
-      </svg>
-    </div>
-    """
+def aktiver_schritt() -> int:
+    if not st.session_state.paletten:
+        return 1
+    if st.session_state.ergebnis is None:
+        return 2
+    return 4
 
 
-def kosten_chart(wirt: WirtschaftlichkeitsErgebnis) -> go.Figure:
-    monate = [1, 2, 3, 6, 12]
-    alt = [wirt.gesamtkosten_alt * m for m in monate]
-    neu = [wirt.gesamtkosten_neu * m for m in monate]
-    fig = go.Figure()
-    fig.add_trace(
-        go.Scatter(
-            x=monate,
-            y=alt,
-            mode="lines+markers",
-            name="Aktuell",
-            line=dict(color="#1a2944", width=3),
-            marker=dict(size=8),
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=monate,
-            y=neu,
-            mode="lines+markers",
-            name="Optimiert",
-            line=dict(color="#16a34a", width=3),
-            marker=dict(size=8),
-        )
-    )
-    fig.update_layout(
-        height=280,
-        margin=dict(l=10, r=10, t=10, b=10),
-        plot_bgcolor="#ffffff",
-        paper_bgcolor="#ffffff",
-        xaxis=dict(title="Monate", gridcolor="#e5e7eb", tickmode="array", tickvals=monate),
-        yaxis=dict(title="Kosten (€)", gridcolor="#e5e7eb"),
-        legend=dict(orientation="h", y=1.1, x=0.0),
-    )
-    return fig
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def fmt_eur(x: float) -> str:
+    s = f"{x:,.2f}"
+    return s.replace(",", "X").replace(".", ",").replace("X", ".") + " €"
 
 
-def header_zeile() -> None:
-    col_t, col_a = st.columns([3, 2])
-    with col_t:
+def fmt_int(x: int | float) -> str:
+    return f"{int(x):,}".replace(",", ".")
+
+
+def kosten_pro_lademeter() -> float:
+    if st.session_state.nutzbare_ladelaenge <= 0:
+        return 0.0
+    return st.session_state.kosten_pro_lkw / st.session_state.nutzbare_ladelaenge
+
+
+# ---------------------------------------------------------------------------
+# Sidebar
+# ---------------------------------------------------------------------------
+
+NAV_ITEMS = [
+    ("Dashboard", "📊"),
+    ("Datenimport", "📥"),
+    ("Optimierung", "⚙️"),
+    ("Ergebnisse", "✅"),
+    ("Bestand & Disposition", "📦"),
+    ("Bestellungen", "🛒"),
+    ("Kostenanalyse", "💰"),
+    ("Einstellungen", "⚡"),
+    ("Stammdaten", "📁"),
+    ("Berichte", "📄"),
+]
+
+
+def sidebar() -> str:
+    with st.sidebar:
         st.markdown(
-            f"<h2 style='color:#1a2944;margin:0;'>{st.session_state.firma}</h2>"
-            "<div style='color:#6b7280;font-size:13px;'>Wirtschaftliche Standardisierung von Industriepaletten</div>",
+            """
+            <div class="sidebar-brand">
+              <div class="logo">📦</div>
+              <div>
+                <div class="name">Paletten Optimierer</div>
+                <div class="sub">Standardisierung &amp; Kostenanalyse</div>
+              </div>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
-    with col_a:
+        labels = [f"{ico}  {name}" for name, ico in NAV_ITEMS]
+        idx = next(
+            (i for i, (n, _) in enumerate(NAV_ITEMS) if n == st.session_state.nav_seite),
+            0,
+        )
+        sel = st.radio(
+            "Navigation",
+            labels,
+            index=idx,
+            label_visibility="collapsed",
+        )
+        st.session_state.nav_seite = NAV_ITEMS[labels.index(sel)][0]
+
+        # KPI-Footer
+        bestand = lade_bestand()
+        gesamt = sum(int(v.get("menge", 0)) for v in bestand.values())
+        cnt_ok = cnt_unter = cnt_krit = 0
+        for v in bestand.values():
+            s = bewerte_status(int(v.get("menge", 0)), int(v.get("sicherheitsbestand", 100)))
+            if s == "ok":
+                cnt_ok += 1
+            elif s == "unter":
+                cnt_unter += 1
+            else:
+                cnt_krit += 1
+
+        st.markdown(
+            f"""
+            <div class="sidebar-kpi">
+              <div class="label">Aktueller Bestand (gesamt)</div>
+              <div class="row">
+                <div class="icon-box">📦</div>
+                <div>
+                  <div class="value">{fmt_int(gesamt)}</div>
+                  <div class="unit">Paletten</div>
+                </div>
+              </div>
+            </div>
+            <div class="sidebar-status">
+              <div class="item"><span class="dot ok"></span>Sicherheitsbestand ok</div>
+              <div class="item"><span class="dot unter"></span>Unter Sicherheitsbestand</div>
+              <div class="item"><span class="dot kritisch"></span>Kritisch
+                {f'<span class="badge-rot">{cnt_krit}</span>' if cnt_krit else ''}
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    return st.session_state.nav_seite
+
+
+# ---------------------------------------------------------------------------
+# Header & Step Indicator
+# ---------------------------------------------------------------------------
+
+def header() -> None:
+    aktiv = aktiver_schritt()
+    schritte = [(1, "Import"), (2, "Einstellungen"), (3, "Optimierung"), (4, "Ergebnisse")]
+
+    parts = []
+    for n, name in schritte:
+        if n < aktiv:
+            cls = "step done"
+            num = "✓"
+        elif n == aktiv:
+            cls = "step active"
+            num = str(n)
+        else:
+            cls = "step"
+            num = str(n)
+        parts.append(
+            f'<div class="{cls}"><span class="num">{num}</span>{name}</div>'
+        )
+        if n < 4:
+            parts.append('<span class="arrow">→</span>')
+    step_html = '<div class="step-row">' + "".join(parts) + "</div>"
+
+    col_l, col_r = st.columns([3, 2])
+    with col_l:
+        st.markdown(step_html, unsafe_allow_html=True)
+    with col_r:
         b1, b2 = st.columns(2)
         with b1:
             if st.session_state.ergebnis is not None:
@@ -319,586 +542,779 @@ def header_zeile() -> None:
                     kunde=st.session_state.kunde,
                 )
                 st.download_button(
-                    "📄 Bestellung (PDF)",
+                    "🛒 Bestellung erstellen (PDF)",
                     data=pdf,
                     file_name=f"bestellung_{date.today().isoformat()}.pdf",
                     mime="application/pdf",
                     use_container_width=True,
+                    type="primary",
                 )
             else:
-                st.button("📄 Bestellung (PDF)", disabled=True, use_container_width=True)
+                st.button(
+                    "🛒 Bestellung erstellen (PDF)",
+                    disabled=True,
+                    use_container_width=True,
+                    type="primary",
+                )
 
 
-def sidebar() -> str:
-    with st.sidebar:
-        st.markdown(
-            '<div class="sidebar-logo">📦 Paletten Optimierer</div>'
-            '<div class="sidebar-sub">Drahtgitter · Standardisierung</div>',
-            unsafe_allow_html=True,
-        )
-        seite = st.radio(
-            "Navigation",
-            [
-                "Dashboard",
-                "Datenimport",
-                "Bestand",
-                "Bestellungen",
-                "Einstellungen",
-            ],
-            index=0,
-            label_visibility="collapsed",
-        )
-        bestand = lade_bestand()
-        gesamt = sum(int(v.get("menge", 0)) for v in bestand.values())
-        kritisch = sum(
-            1
-            for v in bestand.values()
-            if bewerte_status(int(v.get("menge", 0)), int(v.get("sicherheitsbestand", 100)))
-            == "kritisch"
-        )
-        st.markdown(
-            f"""
-            <div class="sidebar-kpi">
-              <div class="label">Gesamtbestand</div>
-              <div class="value">{gesamt:,}</div>
-            </div>
-            <div class="sidebar-kpi">
-              <div class="label">Kritische Typen</div>
-              <div class="value" style="color:{'#fca5a5' if kritisch else '#86efac'};">{kritisch}</div>
-            </div>
-            """.replace(",", "."),
-            unsafe_allow_html=True,
-        )
-    return seite
+# ---------------------------------------------------------------------------
+# Left column cards
+# ---------------------------------------------------------------------------
 
-
-def card(titel: str) -> Any:
-    container = st.container()
-    container.markdown(f'<div class="card"><h3>{titel}</h3>', unsafe_allow_html=True)
-    return container
-
-
-def end_card(container: Any) -> None:
-    container.markdown("</div>", unsafe_allow_html=True)
-
-
-def seite_datenimport() -> None:
-    step_indicator()
-    c = card("Datenimport")
-    upload = c.file_uploader(
-        "Excel-Datei (.xlsx) hochladen", type=["xlsx"], accept_multiple_files=False
-    )
-    col_a, col_b = c.columns([1, 1])
-    if col_a.button("📥 Datei laden", use_container_width=True, disabled=upload is None):
-        if upload is not None:
-            try:
-                ps = importiere_excel(upload)
-                st.session_state.paletten = ps
-                run_optimierung()
-                c.success(f"{len(ps)} Paletten geladen.")
-            except Exception as exc:
-                c.error(f"Fehler beim Import: {exc}")
-    if col_b.button("📦 Beispieldaten laden (80 Artikel)", use_container_width=True):
-        beispiel_pfad = Path("data") / "beispiel_palettenliste.xlsx"
-        if not beispiel_pfad.exists():
-            erstelle_beispiel_excel(beispiel_pfad, 80)
-        ps = importiere_excel(beispiel_pfad)
-        st.session_state.paletten = ps
-        run_optimierung()
-        c.success(f"{len(ps)} Beispiel-Paletten geladen.")
-    end_card(c)
-
-    if st.session_state.paletten:
-        c2 = card(f"Importierte Paletten ({len(st.session_state.paletten)})")
-        df = pd.DataFrame(
-            [
-                {
-                    "Artikelnummer": p.artikelnummer,
-                    "Länge (mm)": p.laenge,
-                    "Breite (mm)": p.breite,
-                    "Anzahl": p.anzahl,
-                    "Stk/Pal": p.stueck_pro_palette,
-                    "Kosten alt (€)": p.kosten_alt,
-                }
-                for p in st.session_state.paletten
-            ]
-        )
-        c2.dataframe(df, use_container_width=True, hide_index=True, height=320)
-        end_card(c2)
-
-
-def seite_bestand() -> None:
-    c = card("Bestand pro Palettentyp")
-    bestand = lade_bestand()
-    benoetigt = {}
-    if st.session_state.ergebnis is not None:
-        benoetigt = {
-            s.label: s.gesamt_anzahl for s in st.session_state.ergebnis.standards
-        }
-    krit = berechne_kritische_paletten(benoetigt)
-
-    if not krit:
-        c.info("Noch kein Bestand erfasst. Lege einen Eintrag pro Palettentyp an.")
-    else:
-        rows = []
-        for k in krit:
-            badge_cls = {"ok": "badge-ok", "unter": "badge-unter", "kritisch": "badge-kritisch"}[
-                k["status"]
-            ]
-            rows.append(
-                {
-                    "Typ": k["typ"],
-                    "Bestand": k["menge"],
-                    "Sicherheits-Bestand": k["sicherheitsbestand"],
-                    "Bedarf": k["benoetigt"],
-                    "Zu bestellen": k["zu_bestellen"],
-                    "Status": k["status"],
-                }
+def card_datenimport() -> None:
+    with st.container(border=False):
+        if st.session_state.datei_name:
+            n_artikel = len(st.session_state.paletten)
+            st.markdown(
+                f"""
+                <div class="card">
+                  <h3>Datenimport</h3>
+                  <div class="file-card">
+                    <div class="icon">XLS</div>
+                    <div class="file-meta">
+                      <div class="fn">{escape(st.session_state.datei_name)}</div>
+                      <div class="info">Importiert am: {escape(st.session_state.datei_zeit)}<br/>
+                        Gesamt Artikel: {fmt_int(n_artikel)}</div>
+                    </div>
+                  </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
-        c.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-    end_card(c)
-
-    c2 = card("Bestand pflegen")
-    typ = c2.text_input(
-        "Palettentyp",
-        value=st.session_state.ergebnis.standards[0].label
-        if st.session_state.ergebnis and st.session_state.ergebnis.standards
-        else "1500 × 700 mm",
-    )
-    col_a, col_b, col_c = c2.columns(3)
-    menge = col_a.number_input("Aktueller Bestand", min_value=0, value=100, step=10)
-    sb = col_b.number_input("Sicherheitsbestand", min_value=0, value=100, step=10)
-    if col_c.button("💾 Speichern", use_container_width=True):
-        aktualisiere_bestand(typ, menge=int(menge), sicherheitsbestand=int(sb))
-        c2.success(f"Bestand für {typ} gespeichert.")
-        st.rerun()
-    end_card(c2)
-
-
-def seite_bestellungen() -> None:
-    c = card("Bestellhistorie")
-    bestellungen = lade_bestellungen()
-    if not bestellungen:
-        c.info("Noch keine Bestellungen erfasst.")
-    else:
-        df = pd.DataFrame(
-            [
-                {
-                    "Datum": b.datum[:10],
-                    "Auftrag": b.auftragsnummer,
-                    "Kunde": b.kunde,
-                    "Palettentyp": b.palettentyp,
-                    "Menge": b.menge,
-                    "Lieferung": b.geplantes_verbrauchsdatum,
-                    "Status": b.status,
-                    "ID": b.bestell_id[:8],
-                }
-                for b in sorted(bestellungen, key=lambda x: x.datum, reverse=True)
-            ]
-        )
-        c.dataframe(df, use_container_width=True, hide_index=True)
-    end_card(c)
-
-    c2 = card("Bestellung verbuchen / stornieren")
-    offen = [b for b in bestellungen if b.status == "offen"]
-    if not offen:
-        c2.info("Keine offenen Bestellungen.")
-    else:
-        labels = [
-            f"{b.bestell_id[:8]} · {b.palettentyp} · {b.menge} Stk · {b.datum[:10]}"
-            for b in offen
-        ]
-        idx = c2.selectbox(
-            "Offene Bestellung wählen", range(len(offen)), format_func=lambda i: labels[i]
-        )
-        col_v, col_s = c2.columns(2)
-        if col_v.button("✅ Verbuchen", use_container_width=True):
-            buche_bestellung_in_bestand(offen[idx].bestell_id)
-            c2.success("Bestellung verbucht und Bestand aktualisiert.")
-            st.rerun()
-        if col_s.button("❌ Stornieren", use_container_width=True):
-            aktualisiere_bestellstatus(offen[idx].bestell_id, "storniert")
-            c2.success("Bestellung storniert.")
-            st.rerun()
-    end_card(c2)
-
-    c3 = card("Neue Bestellung erfassen")
-    if not st.session_state.ergebnis:
-        c3.info("Erst Optimierung durchführen, um Standardpaletten zu wählen.")
-    else:
-        labels = [s.label for s in st.session_state.ergebnis.standards]
-        sel = c3.selectbox("Standardpalette", labels)
-        col1, col2, col3 = c3.columns(3)
-        menge = col1.number_input("Menge", min_value=1, value=50, step=10)
-        liefer = col2.date_input("Lieferdatum", value=st.session_state.geplantes_lieferdatum)
-        auftrag = col3.text_input("Auftragsnummer", value="")
-        if c3.button("➕ Bestellung anlegen", use_container_width=True):
-            order = Bestellung.neu(
-                palettentyp=sel,
-                menge=int(menge),
-                geplantes_verbrauchsdatum=liefer,
-                auftragsnummer=auftrag,
-                kunde=st.session_state.kunde,
+            with st.expander("Neue Datei importieren", expanded=False):
+                upload = st.file_uploader(
+                    "Excel-Datei", type=["xlsx"], key="up_dash", label_visibility="collapsed"
+                )
+                col_a, col_b = st.columns(2)
+                if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
+                    if upload is not None:
+                        try:
+                            ps = importiere_excel(upload)
+                            st.session_state.paletten = ps
+                            st.session_state.datei_name = upload.name
+                            st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
+                            run_optimierung()
+                            st.rerun()
+                        except Exception as exc:
+                            st.error(f"Import-Fehler: {exc}")
+                if col_b.button("📦 Beispieldaten", use_container_width=True):
+                    lade_beispiel()
+                    st.rerun()
+        else:
+            st.markdown('<div class="card"><h3>Datenimport</h3>', unsafe_allow_html=True)
+            upload = st.file_uploader(
+                "Excel-Datei (.xlsx) auswählen oder Beispieldaten laden",
+                type=["xlsx"],
+                key="up_dash_init",
             )
-            fuege_bestellung_hinzu(order)
-            c3.success("Bestellung angelegt.")
-            st.rerun()
-    end_card(c3)
+            col_a, col_b = st.columns(2)
+            if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
+                if upload is not None:
+                    try:
+                        ps = importiere_excel(upload)
+                        st.session_state.paletten = ps
+                        st.session_state.datei_name = upload.name
+                        st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
+                        run_optimierung()
+                        st.rerun()
+                    except Exception as exc:
+                        st.error(f"Import-Fehler: {exc}")
+            if col_b.button("📦 Beispieldaten", use_container_width=True):
+                lade_beispiel()
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
 
 
-def seite_einstellungen() -> None:
-    c = card("Einstellungen")
-    st.session_state.firma = c.text_input("Firmenname", value=st.session_state.firma)
-    st.session_state.kunde = c.text_input("Kunde (Default)", value=st.session_state.kunde)
-    st.session_state.auftragsnummer = c.text_input(
-        "Auftragsnummer (Default)", value=st.session_state.auftragsnummer
-    )
-    end_card(c)
-    c2 = card("Sicherheitsbestand global setzen")
-    sb = c2.number_input(
-        "Wert", min_value=0, value=int(st.session_state.sicherheitsbestand), step=10
-    )
-    if c2.button("Auf alle Typen anwenden", use_container_width=True):
-        st.session_state.sicherheitsbestand = int(sb)
-        setze_sicherheitsbestand_global(int(sb))
-        c2.success("Sicherheitsbestand global aktualisiert.")
-    end_card(c2)
+def lade_beispiel() -> None:
+    pfad = Path("data") / "beispiel_palettenliste.xlsx"
+    if not pfad.exists():
+        erstelle_beispiel_excel(pfad, 80)
+    st.session_state.paletten = importiere_excel(pfad)
+    st.session_state.datei_name = pfad.name
+    st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
+    run_optimierung()
 
 
-def kosten_block(spalte: Any) -> None:
-    c = spalte.container()
-    c.markdown('<div class="card"><h3>Kosten / Logistik</h3>', unsafe_allow_html=True)
-    st.session_state.kosten_pro_lkw = c.number_input(
-        "Kosten pro LKW (€)",
-        min_value=0.0,
-        value=float(st.session_state.kosten_pro_lkw),
-        step=10.0,
-    )
-    st.session_state.nutzbare_ladelaenge = c.number_input(
-        "Nutzbare Ladelänge (m)",
-        min_value=1.0,
-        value=float(st.session_state.nutzbare_ladelaenge),
-        step=0.1,
-    )
-    st.session_state.palettenkosten_neu = c.number_input(
-        "Palettenkosten neu (€)",
-        min_value=0.0,
-        value=float(st.session_state.palettenkosten_neu),
-        step=0.5,
-    )
-    st.session_state.palettenkosten_alt = c.number_input(
-        "Palettenkosten alt (€, Default)",
-        min_value=0.0,
-        value=float(st.session_state.palettenkosten_alt),
-        step=0.5,
-    )
-    c.markdown("</div>", unsafe_allow_html=True)
-
-
-def toleranz_block(spalte: Any) -> None:
-    c = spalte.container()
-    c.markdown('<div class="card"><h3>Toleranz</h3>', unsafe_allow_html=True)
-    einheit = c.radio(
+def card_toleranz() -> None:
+    st.markdown('<div class="card"><h3>Toleranz Einstellungen</h3>', unsafe_allow_html=True)
+    col_l, col_b = st.columns(2)
+    suffix = "mm" if st.session_state.tol_einheit == "mm" else "%"
+    with col_l:
+        st.session_state.tol_l = st.number_input(
+            f"Länge Toleranz ({suffix})",
+            min_value=0.0,
+            value=float(st.session_state.tol_l),
+            step=10.0 if suffix == "mm" else 1.0,
+            key="tol_l_in",
+        )
+    with col_b:
+        st.session_state.tol_b = st.number_input(
+            f"Breite Toleranz ({suffix})",
+            min_value=0.0,
+            value=float(st.session_state.tol_b),
+            step=10.0 if suffix == "mm" else 1.0,
+            key="tol_b_in",
+        )
+    einheit = st.radio(
         "Einheit",
-        ["mm", "prozent"],
-        index=0 if st.session_state.tol_einheit == "mm" else 1,
+        ["Millimeter", "Prozent"],
         horizontal=True,
+        index=0 if st.session_state.tol_einheit == "mm" else 1,
+        key="einh_in",
     )
-    st.session_state.tol_einheit = einheit
-    if einheit == "mm":
-        st.session_state.tol_l = c.number_input(
-            "Toleranz Länge (mm)",
-            min_value=0.0,
-            value=float(st.session_state.tol_l),
-            step=10.0,
-        )
-        st.session_state.tol_b = c.number_input(
-            "Toleranz Breite (mm)",
-            min_value=0.0,
-            value=float(st.session_state.tol_b),
-            step=10.0,
-        )
-    else:
-        st.session_state.tol_l = c.number_input(
-            "Toleranz Länge (%)",
-            min_value=0.0,
-            value=float(st.session_state.tol_l),
-            step=1.0,
-        )
-        st.session_state.tol_b = c.number_input(
-            "Toleranz Breite (%)",
-            min_value=0.0,
-            value=float(st.session_state.tol_b),
-            step=1.0,
-        )
-    st.session_state.kombinieren_erlaubt = c.checkbox(
+    st.session_state.tol_einheit = "mm" if einheit == "Millimeter" else "prozent"
+    st.session_state.kombinieren_erlaubt = st.toggle(
         "Paletten kombinieren erlauben",
         value=st.session_state.kombinieren_erlaubt,
+        key="kombi_in",
     )
-    st.session_state.raster = c.select_slider(
-        "Aufrunden auf Raster (mm)", options=[0, 10, 25, 50, 100], value=st.session_state.raster
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def card_planung() -> None:
+    st.markdown('<div class="card"><h3>Planungszeitraum für Bestellung</h3>', unsafe_allow_html=True)
+    monate_label = ["1 Monat", "2 Monate", "3 Monate", "6 Monate", "12 Monate"]
+    monate_val = [1, 2, 3, 6, 12]
+    idx = monate_val.index(st.session_state.planungs_monate) if st.session_state.planungs_monate in monate_val else 1
+    sel = st.selectbox("Zeitraum", monate_label, index=idx, key="plan_in")
+    st.session_state.planungs_monate = monate_val[monate_label.index(sel)]
+    st.session_state.geplantes_lieferdatum = st.date_input(
+        "Bis Datum",
+        value=date.today() + timedelta(days=30 * st.session_state.planungs_monate),
+        key="lief_in",
     )
-    c.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
-def planung_block(spalte: Any) -> None:
-    c = spalte.container()
-    c.markdown('<div class="card"><h3>Planungszeitraum</h3>', unsafe_allow_html=True)
-    st.session_state.geplantes_lieferdatum = c.date_input(
-        "Geplantes Lieferdatum",
-        value=st.session_state.geplantes_lieferdatum,
-    )
-    st.session_state.auftragsnummer = c.text_input(
-        "Auftragsnummer",
-        value=st.session_state.auftragsnummer,
-    )
-    st.session_state.kunde = c.text_input("Kunde", value=st.session_state.kunde)
-    c.markdown("</div>", unsafe_allow_html=True)
-
-
-def sicherheit_block(spalte: Any) -> None:
-    c = spalte.container()
-    c.markdown('<div class="card"><h3>Sicherheitsbestand</h3>', unsafe_allow_html=True)
-    st.session_state.sicherheitsbestand = c.number_input(
-        "Default für neue Typen",
-        min_value=0,
-        value=int(st.session_state.sicherheitsbestand),
-        step=10,
-    )
-    if c.button("📦 Beispieldaten laden", use_container_width=True):
-        beispiel_pfad = Path("data") / "beispiel_palettenliste.xlsx"
-        if not beispiel_pfad.exists():
-            erstelle_beispiel_excel(beispiel_pfad, 80)
-        st.session_state.paletten = importiere_excel(beispiel_pfad)
-        run_optimierung()
-        st.rerun()
-    c.markdown("</div>", unsafe_allow_html=True)
-
-
-def vergleichs_tabelle(wirt: WirtschaftlichkeitsErgebnis) -> pd.DataFrame:
-    return pd.DataFrame(
-        [
-            {
-                "Position": "Palettenkosten",
-                "Aktuell (€)": round(wirt.palettenkosten_alt, 2),
-                "Optimiert (€)": round(wirt.palettenkosten_neu, 2),
-                "Differenz (€)": round(wirt.palettenkosten_alt - wirt.palettenkosten_neu, 2),
-            },
-            {
-                "Position": "Logistikkosten",
-                "Aktuell (€)": round(wirt.logistikkosten_alt, 2),
-                "Optimiert (€)": round(wirt.logistikkosten_neu, 2),
-                "Differenz (€)": round(wirt.logistikkosten_alt - wirt.logistikkosten_neu, 2),
-            },
-            {
-                "Position": "Gesamtkosten / Monat",
-                "Aktuell (€)": round(wirt.gesamtkosten_alt, 2),
-                "Optimiert (€)": round(wirt.gesamtkosten_neu, 2),
-                "Differenz (€)": round(wirt.ersparnis, 2),
-            },
-            {
-                "Position": "Hochrechnung 12 Monate",
-                "Aktuell (€)": round(wirt.gesamtkosten_alt * 12, 2),
-                "Optimiert (€)": round(wirt.gesamtkosten_neu * 12, 2),
-                "Differenz (€)": round(wirt.ersparnis * 12, 2),
-            },
-        ]
-    )
-
-
-def standards_tabelle(erg: OptimierungsErgebnis) -> pd.DataFrame:
-    rows = []
-    for s in erg.standards:
-        rows.append(
-            {
-                "Standardpalette": s.label,
-                "Länge (mm)": int(round(s.laenge)),
-                "Breite (mm)": int(round(s.breite)),
-                "Anzahl Artikel": len(s.members),
-                "Gesamt Paletten": s.gesamt_anzahl,
-                "Typ": "Standard",
-            }
+def card_kosten() -> None:
+    st.markdown('<div class="card"><h3>Kosten &amp; Logistik (optional)</h3>', unsafe_allow_html=True)
+    col_l, col_r = st.columns(2)
+    with col_l:
+        st.session_state.kosten_pro_lkw = st.number_input(
+            "Kosten pro LKW (€)",
+            min_value=0.0,
+            value=float(st.session_state.kosten_pro_lkw),
+            step=10.0,
+            key="lkw_in",
         )
-    for k in erg.kombinationen:
-        rows.append(
-            {
-                "Standardpalette": f"{k.standard_a.label} + {k.standard_b.label}",
-                "Länge (mm)": int(round(k.palette.laenge)),
-                "Breite (mm)": int(round(k.palette.breite)),
-                "Anzahl Artikel": 1,
-                "Gesamt Paletten": k.palette.anzahl,
-                "Typ": "Kombination aus 2 Paletten",
-            }
+    with col_r:
+        st.session_state.nutzbare_ladelaenge = st.number_input(
+            "Nutzbare Ladelänge / LKW (m)",
+            min_value=0.1,
+            value=float(st.session_state.nutzbare_ladelaenge),
+            step=0.1,
+            key="lade_in",
         )
-    return pd.DataFrame(rows)
-
-
-def kpi_zeile(erg: OptimierungsErgebnis, wirt: WirtschaftlichkeitsErgebnis) -> None:
-    html = f"""
-    <div class="kpi">
-      <div class="kpi-box">
-        <div class="label">Eingabe-Typen</div>
-        <div class="value">{erg.anzahl_eingabe_typen}</div>
-      </div>
-      <div class="kpi-box">
-        <div class="label">Standards</div>
-        <div class="value">{erg.anzahl_standards}</div>
-        <div class="delta">−{erg.reduktion_prozent:.0f}%</div>
-      </div>
-      <div class="kpi-box">
-        <div class="label">Ersparnis / Monat</div>
-        <div class="value">{wirt.ersparnis:,.0f} €</div>
-      </div>
-      <div class="kpi-box">
-        <div class="label">Ersparnis / Jahr</div>
-        <div class="value">{wirt.ersparnis * 12:,.0f} €</div>
-      </div>
-      <div class="kpi-box">
-        <div class="label">Zusatz-Lademeter</div>
-        <div class="value">+{wirt.zusatz_lademeter:.1f} m</div>
-        <div class="delta bad">je Tour</div>
-      </div>
-    </div>
-    """.replace(",", ".")
-    st.markdown(html, unsafe_allow_html=True)
-
-
-def naechste_schritte() -> None:
     st.markdown(
-        """
-        <div class="card"><h3>Nächste Schritte</h3>
-          <div style="display:flex;gap:12px;">
-            <div class="info-box" style="flex:1;">
-              <div class="icon">📊</div>
-              <div class="title">Bericht prüfen</div>
-              <div class="desc">Excel-Bericht herunterladen und im Team teilen.</div>
-            </div>
-            <div class="info-box" style="flex:1;">
-              <div class="icon">📦</div>
-              <div class="title">Bestand prüfen</div>
-              <div class="desc">Aktuellen Bestand mit Bedarf abgleichen.</div>
-            </div>
-            <div class="info-box" style="flex:1;">
-              <div class="icon">📄</div>
-              <div class="title">Bestellung erstellen</div>
-              <div class="desc">PDF-Bestellung an den Lieferanten senden.</div>
-            </div>
-            <div class="info-box" style="flex:1;">
-              <div class="icon">🔁</div>
-              <div class="title">Iterieren</div>
-              <div class="desc">Toleranzen anpassen und neu optimieren.</div>
-            </div>
-          </div>
+        f"""
+        <div class="lade-box">
+          <div class="lbl">Kosten pro Lademeter</div>
+          <div class="val">{fmt_eur(kosten_pro_lademeter())} / m</div>
+        </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    if st.button("🔄 Neue Optimierung starten", use_container_width=True):
-        st.session_state.paletten = []
-        st.session_state.ergebnis = None
-        st.session_state.wirtschaftlichkeit = None
-        st.rerun()
 
+
+def card_sicherheitsbestand() -> None:
+    st.markdown('<div class="card"><h3>Sicherheitsbestand je Palette</h3>', unsafe_allow_html=True)
+    st.session_state.sicherheitsbestand = st.number_input(
+        "Stück",
+        min_value=0,
+        value=int(st.session_state.sicherheitsbestand),
+        step=10,
+        label_visibility="collapsed",
+        key="sb_in",
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------------------------
+# Result table (grouped HTML)
+# ---------------------------------------------------------------------------
+
+def render_result_table(erg: OptimierungsErgebnis) -> str:
+    rows: list[str] = []
+    for std in erg.standards:
+        members = std.members
+        rs = max(1, len(members))
+        for i, m in enumerate(members):
+            tds = []
+            if i == 0:
+                tds.append(
+                    f'<td rowspan="{rs}" class="standard-cell">'
+                    f'{int(round(std.laenge))} × {int(round(std.breite))}'
+                    f'<div class="sub-line">{rs} Artikel · {std.gesamt_anzahl} Stk</div>'
+                    f'</td>'
+                )
+            tds.append(f"<td>{escape(m.artikelnummer)}</td>")
+            tds.append(f"<td>{fmt_int(m.anzahl)}</td>")
+            tds.append(f"<td>{fmt_int(m.stueck_pro_palette)}</td>")
+            tds.append(f"<td>{int(round(m.laenge))} × {int(round(m.breite))}</td>")
+            tds.append(
+                '<td><span class="badge badge-ok">✓ innerhalb Toleranz</span></td>'
+            )
+            rows.append("<tr>" + "".join(tds) + "</tr>")
+
+    for k in erg.kombinationen:
+        m = k.palette
+        std_label = f"{int(round(k.standard_a.laenge))} × {int(round(k.standard_a.breite))} + " \
+                    f"{int(round(k.standard_b.laenge))} × {int(round(k.standard_b.breite))}"
+        rows.append(
+            f"<tr>"
+            f'<td class="standard-cell">{std_label}<div class="sub-line">(kombiniert)</div></td>'
+            f"<td>{escape(m.artikelnummer)}</td>"
+            f"<td>{fmt_int(m.anzahl)}</td>"
+            f"<td>{fmt_int(m.stueck_pro_palette)}</td>"
+            f"<td>{int(round(m.laenge))} × {int(round(m.breite))}</td>"
+            f'<td><span class="badge badge-kombi">⚡ Kombination aus 2 Paletten</span></td>'
+            "</tr>"
+        )
+
+    head = (
+        "<thead><tr>"
+        "<th>Neue Standardpalette (mm)</th>"
+        "<th>Artikelnummer</th>"
+        "<th>Benötigte Paletten</th>"
+        "<th>Stückzahl pro Palette</th>"
+        "<th>Alte Palettenmaße (mm)</th>"
+        "<th>Bemerkung / Hinweis</th>"
+        "</tr></thead>"
+    )
+    return f'<table class="result-tbl">{head}<tbody>{"".join(rows)}</tbody></table>'
+
+
+def card_ergebnis(erg: OptimierungsErgebnis) -> None:
+    st.markdown(
+        f'<div class="card"><h3>Optimierungs Ergebnis</h3>{render_result_table(erg)}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Three analysis cards
+# ---------------------------------------------------------------------------
+
+def card_wirtschaftlichkeit(wirt: WirtschaftlichkeitsErgebnis, n_alt: int, n_neu: int) -> None:
+    diff_anz = n_neu - n_alt
+    diff_pal = wirt.palettenkosten_neu - wirt.palettenkosten_alt
+    diff_log = wirt.logistikkosten_neu - wirt.logistikkosten_alt
+    diff_ges = wirt.gesamtkosten_neu - wirt.gesamtkosten_alt
+    diff_class = "neg" if diff_ges > 0 else "pos"
+    summary_class = "wirt-summary" if wirt.ersparnis >= 0 else "wirt-summary bad"
+
+    def _fmt_diff(x: float, einheit: str = "€") -> str:
+        sign = "+" if x > 0 else ""
+        if einheit == "€":
+            return f"{sign}{fmt_eur(x)}"
+        return f"{sign}{int(x):,}".replace(",", ".")
+
+    def _cls(x: float, invertiert: bool = False) -> str:
+        if x == 0:
+            return ""
+        if invertiert:
+            return "pos" if x > 0 else "neg"
+        return "neg" if x > 0 else "pos"
+
+    html = f"""
+    <div class="card">
+      <h3>Wirtschaftlichkeitsvergleich (pro Monat)</h3>
+      <table class="wirt-tbl">
+        <thead><tr><th>Kennzahl</th><th>Aktuell</th><th>Neu</th><th>Differenz</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Anzahl Palettenvarianten</td>
+            <td>{fmt_int(n_alt)}</td>
+            <td>{fmt_int(n_neu)}</td>
+            <td class="{_cls(diff_anz)}">{_fmt_diff(diff_anz, '')}</td>
+          </tr>
+          <tr>
+            <td>Palettenkosten</td>
+            <td>{fmt_eur(wirt.palettenkosten_alt)}</td>
+            <td>{fmt_eur(wirt.palettenkosten_neu)}</td>
+            <td class="{_cls(diff_pal)}">{_fmt_diff(diff_pal)}</td>
+          </tr>
+          <tr>
+            <td>Logistikkosten</td>
+            <td>{fmt_eur(wirt.logistikkosten_alt)}</td>
+            <td>{fmt_eur(wirt.logistikkosten_neu)}</td>
+            <td class="{_cls(diff_log)}">{_fmt_diff(diff_log)}</td>
+          </tr>
+          <tr class="gesamt">
+            <td>Gesamtkosten</td>
+            <td>{fmt_eur(wirt.gesamtkosten_alt)}</td>
+            <td>{fmt_eur(wirt.gesamtkosten_neu)}</td>
+            <td class="{diff_class}">{_fmt_diff(diff_ges)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="{summary_class}">
+        <div>{'Ersparnis pro Monat' if wirt.ersparnis >= 0 else 'Mehrkosten pro Monat'}</div>
+        <div class="v">{fmt_eur(abs(wirt.ersparnis))}</div>
+      </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def truck_svg(zusatz_lademeter: float, max_breite: float) -> str:
+    if max_breite <= 0:
+        max_breite = 13.6
+    pct = max(0.0, min(zusatz_lademeter / max_breite, 0.6))
+    truck_w = 260
+    extra_w = int(truck_w * pct)
+    return f"""
+    <div style="text-align:center;padding:6px 0;">
+      <svg width="320" height="100" viewBox="0 0 320 100" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="46" width="20" height="34" fill="#1a2944" rx="2"/>
+        <rect x="22" y="34" width="{truck_w}" height="46" rx="3" fill="#1a2944" stroke="#0f1a30"/>
+        <rect x="26" y="38" width="{truck_w - 8}" height="38" rx="2" fill="#3b4a6b"/>
+        <rect x="{22 + truck_w}" y="38" width="{extra_w}" height="38" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3"/>
+        <circle cx="50" cy="86" r="9" fill="#374151" stroke="#1f2937" stroke-width="2"/>
+        <circle cx="90" cy="86" r="9" fill="#374151" stroke="#1f2937" stroke-width="2"/>
+        <circle cx="240" cy="86" r="9" fill="#374151" stroke="#1f2937" stroke-width="2"/>
+        <text x="{22 + truck_w + extra_w + 4}" y="32" font-size="10" font-family="Arial" fill="#dc2626" font-weight="700">+{zusatz_lademeter:.2f} m</text>
+        <text x="22" y="98" font-size="9" fill="#6b7280">0 m</text>
+        <text x="{22 + truck_w - 20}" y="98" font-size="9" fill="#6b7280">{max_breite:.2f} m</text>
+      </svg>
+    </div>
+    """
+
+
+def card_logistik(wirt: WirtschaftlichkeitsErgebnis) -> None:
+    mehrkosten = wirt.logistikkosten_neu - wirt.logistikkosten_alt
+    html = f"""
+    <div class="card">
+      <h3>Logistik Kostenanalyse</h3>
+      <div class="log-grid">
+        <div class="it"><span class="l">Zusätzlicher Laderaumbedarf</span>
+          <span class="v warn">{wirt.zusatz_lademeter:.2f} m</span></div>
+        <div class="it"><span class="l">Mehrkosten durch Logistik</span>
+          <span class="v">{fmt_eur(abs(mehrkosten))}</span></div>
+        <div class="it"><span class="l">Auswirkung auf Versandkosten<br/><span style="font-size:10px;">(pro Monat)</span></span>
+          <span class="v warn">+{fmt_eur(abs(mehrkosten))}</span></div>
+      </div>
+      {truck_svg(wirt.zusatz_lademeter, st.session_state.nutzbare_ladelaenge)}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def kosten_chart(wirt: WirtschaftlichkeitsErgebnis) -> go.Figure:
+    monate = [1, 2, 3, 6, 12]
+    alt = [wirt.gesamtkosten_alt * m for m in monate]
+    neu = [wirt.gesamtkosten_neu * m for m in monate]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=monate, y=alt, mode="lines+markers", name="Aktuell (individuell)",
+        line=dict(color="#2563eb", width=3), marker=dict(size=8),
+    ))
+    fig.add_trace(go.Scatter(
+        x=monate, y=neu, mode="lines+markers", name="Neu (Standardisiert)",
+        line=dict(color="#16a34a", width=3), marker=dict(size=8),
+    ))
+    fig.update_layout(
+        height=240,
+        margin=dict(l=10, r=10, t=10, b=10),
+        plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
+        xaxis=dict(title="", gridcolor="#e5e7eb",
+                   tickmode="array", tickvals=monate,
+                   ticktext=[f"{m} Monat" if m == 1 else f"{m} Monate" for m in monate]),
+        yaxis=dict(title="", gridcolor="#e5e7eb", tickformat=",.0f"),
+        legend=dict(orientation="h", y=-0.2, x=0.0, font=dict(size=11)),
+        font=dict(size=11),
+    )
+    return fig
+
+
+def card_kosten_simulation(wirt: WirtschaftlichkeitsErgebnis) -> None:
+    ersparnis_12 = wirt.ersparnis * 12
+    farb_klasse = "" if ersparnis_12 >= 0 else "background:#fee2e2;color:#991b1b;"
+    titel = "Ersparnis nach 12 Monaten" if ersparnis_12 >= 0 else "Mehrkosten nach 12 Monaten"
+    st.markdown('<div class="card"><h3>Kostenentwicklung (Simulation)</h3>', unsafe_allow_html=True)
+    st.plotly_chart(kosten_chart(wirt), use_container_width=True, config={"displayModeBar": False})
+    st.markdown(
+        f"""
+        <div style="background:#dcfce7;color:#166534;border-radius:8px;padding:8px 12px;
+                    font-size:12px;font-weight:600;text-align:center;margin-top:-8px;{farb_klasse}">
+          {titel}: {fmt_eur(abs(ersparnis_12))}
+        </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Footer info row
+# ---------------------------------------------------------------------------
+
+def footer_info(erg: OptimierungsErgebnis) -> None:
+    benoetigt = {s.label: s.gesamt_anzahl for s in erg.standards}
+    krit = berechne_kritische_paletten(benoetigt)
+    n_kritisch = sum(1 for k in krit if k["status"] in ("unter", "kritisch"))
+
+    bestellungen = lade_bestellungen()
+    offen = sum(1 for b in bestellungen if b.status == "offen")
+    pdf_text = "PDF erstellt" if offen else "noch keine Bestellung"
+
+    bestand_total = sum(int(v.get("menge", 0)) for v in lade_bestand().values())
+    monatsbedarf = sum(s.gesamt_anzahl for s in erg.standards) / max(1, st.session_state.planungs_monate)
+    tage_reicht = int(bestand_total / max(1, monatsbedarf) * 30) if monatsbedarf > 0 else 999
+    bis_datum = (date.today() + timedelta(days=tage_reicht)).strftime("%d.%m.%Y")
+
+    empfohlen_in = max(0, tage_reicht - 7)
+
+    info_html = f"""
+    <div class="info-row">
+      <div class="info-box">
+        <div class="ico">📅</div>
+        <div>
+          <div class="lbl">Bestand reicht bis</div>
+          <div class="val">{bis_datum}</div>
+          <div class="sub">(ca. {tage_reicht} Tage)</div>
+        </div>
+      </div>
+      <div class="info-box warn">
+        <div class="ico">⚠️</div>
+        <div>
+          <div class="lbl">Sicherheitsbestand unterschritten</div>
+          <div class="val">{n_kritisch} Palettentypen</div>
+        </div>
+      </div>
+      <div class="info-box info">
+        <div class="ico">ℹ️</div>
+        <div>
+          <div class="lbl">Empfehlung</div>
+          <div class="val">Neue Bestellung in: {empfohlen_in} Tagen</div>
+        </div>
+      </div>
+      <div class="info-box cart">
+        <div class="ico">🛒</div>
+        <div>
+          <div class="lbl">Offene Bestellungen</div>
+          <div class="val">{offen} Bestellung{'en' if offen != 1 else ''}</div>
+          <div class="sub">({pdf_text})</div>
+        </div>
+      </div>
+    </div>
+    """
+    col_info, col_btn = st.columns([5, 1.2])
+    with col_info:
+        st.markdown('<div class="card"><h3>Nächste Schritte / Hinweise</h3>' + info_html + '</div>', unsafe_allow_html=True)
+    with col_btn:
+        st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
+        if st.button("🔄 Neue Optimierung starten", use_container_width=True, type="primary"):
+            st.session_state.paletten = []
+            st.session_state.ergebnis = None
+            st.session_state.wirtschaftlichkeit = None
+            st.session_state.datei_name = ""
+            st.session_state.datei_zeit = ""
+            st.rerun()
+
+
+# ---------------------------------------------------------------------------
+# Pages
+# ---------------------------------------------------------------------------
 
 def seite_dashboard() -> None:
-    step_indicator()
+    header()
 
     if not st.session_state.paletten:
-        c = card("Datenimport")
-        c.write(
-            "Lade eine Excel-Datei mit Palettenliste oder verwende Beispieldaten, "
-            "um zu starten."
-        )
+        c = st.container()
+        c.markdown('<div class="card"><h3>Datenimport</h3>'
+                   '<p style="color:#6b7280;font-size:13px;">Lade eine Excel-Datei hoch oder verwende Beispieldaten, '
+                   'um zu starten.</p>', unsafe_allow_html=True)
+        upload = c.file_uploader("Excel-Datei (.xlsx)", type=["xlsx"], key="up_init")
         col_a, col_b = c.columns(2)
-        upload = col_a.file_uploader(
-            "Excel-Datei (.xlsx)", type=["xlsx"], key="upload_dash"
-        )
-        if upload is not None:
-            try:
-                st.session_state.paletten = importiere_excel(upload)
-                run_optimierung()
-                st.rerun()
-            except Exception as exc:
-                c.error(f"Import-Fehler: {exc}")
-        if col_b.button("📦 Beispieldaten laden (80 Artikel)", use_container_width=True):
-            beispiel_pfad = Path("data") / "beispiel_palettenliste.xlsx"
-            if not beispiel_pfad.exists():
-                erstelle_beispiel_excel(beispiel_pfad, 80)
-            st.session_state.paletten = importiere_excel(beispiel_pfad)
-            run_optimierung()
+        if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
+            if upload is not None:
+                try:
+                    ps = importiere_excel(upload)
+                    st.session_state.paletten = ps
+                    st.session_state.datei_name = upload.name
+                    st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
+                    run_optimierung()
+                    st.rerun()
+                except Exception as exc:
+                    c.error(f"Import-Fehler: {exc}")
+        if col_b.button("📦 Beispieldaten laden", use_container_width=True, type="primary"):
+            lade_beispiel()
             st.rerun()
-        end_card(c)
+        c.markdown("</div>", unsafe_allow_html=True)
         return
 
+    # Re-compute if needed
+    if st.session_state.ergebnis is None or st.session_state.wirtschaftlichkeit is None:
+        run_optimierung()
     erg = st.session_state.ergebnis
     wirt = st.session_state.wirtschaftlichkeit
-    if erg is None or wirt is None:
+
+    # Main two-column layout
+    col_l, col_r = st.columns([1, 2.2])
+    with col_l:
+        card_datenimport()
+        card_toleranz()
+        card_planung()
+        card_kosten()
+        card_sicherheitsbestand()
+        if st.button("🔄 Neu optimieren", use_container_width=True, type="primary", key="reopt"):
+            run_optimierung()
+            st.rerun()
+    with col_r:
+        # Re-run after potential left-column changes
         run_optimierung()
         erg = st.session_state.ergebnis
         wirt = st.session_state.wirtschaftlichkeit
 
-    kpi_zeile(erg, wirt)
+        card_ergebnis(erg)
+        sub_a, sub_b, sub_c = st.columns([1, 1, 1])
+        with sub_a:
+            card_wirtschaftlichkeit(wirt, n_alt=erg.anzahl_eingabe_typen, n_neu=erg.anzahl_standards)
+        with sub_b:
+            card_logistik(wirt)
+        with sub_c:
+            card_kosten_simulation(wirt)
 
-    col_links, col_rechts = st.columns([1, 2])
+    footer_info(erg)
 
-    with col_links:
-        toleranz_block(col_links)
-        planung_block(col_links)
-        kosten_block(col_links)
-        sicherheit_block(col_links)
-        if col_links.button("🔄 Neu optimieren", use_container_width=True, type="primary"):
+
+def seite_datenimport() -> None:
+    header()
+    st.markdown('<div class="card"><h3>Datenimport</h3>', unsafe_allow_html=True)
+    upload = st.file_uploader("Excel-Datei (.xlsx) hochladen", type=["xlsx"], key="up_d")
+    col_a, col_b = st.columns(2)
+    if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
+        if upload is not None:
+            ps = importiere_excel(upload)
+            st.session_state.paletten = ps
+            st.session_state.datei_name = upload.name
+            st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
+            run_optimierung()
+            st.success(f"{len(ps)} Paletten geladen.")
+    if col_b.button("📦 Beispieldaten laden", use_container_width=True, type="primary"):
+        lade_beispiel()
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    if st.session_state.paletten:
+        df = pd.DataFrame([
+            {"Artikelnummer": p.artikelnummer, "Länge (mm)": p.laenge, "Breite (mm)": p.breite,
+             "Anzahl": p.anzahl, "Stk/Pal": p.stueck_pro_palette, "Kosten alt (€)": p.kosten_alt}
+            for p in st.session_state.paletten
+        ])
+        st.markdown(f'<div class="card"><h3>Importierte Paletten ({len(df)})</h3>', unsafe_allow_html=True)
+        st.dataframe(df, use_container_width=True, hide_index=True, height=420)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+def seite_optimierung() -> None:
+    header()
+    if not st.session_state.paletten:
+        st.info("Erst Daten importieren.")
+        return
+    col_l, col_r = st.columns([1, 2])
+    with col_l:
+        card_toleranz()
+        card_kosten()
+        if st.button("🔄 Neu optimieren", use_container_width=True, type="primary"):
             run_optimierung()
             st.rerun()
+    with col_r:
+        if st.session_state.ergebnis:
+            card_ergebnis(st.session_state.ergebnis)
 
-    with col_rechts:
-        c1 = card(f"Optimierungs-Ergebnis · {erg.anzahl_standards} Standards")
-        df_std = standards_tabelle(erg)
-        c1.dataframe(df_std, use_container_width=True, hide_index=True)
-        end_card(c1)
 
-        sub_a, sub_b, sub_c = col_rechts.columns([2, 2, 3])
-        with sub_a:
-            cv = card("Wirtschaftlichkeitsvergleich")
-            cv.dataframe(
-                vergleichs_tabelle(wirt), use_container_width=True, hide_index=True
-            )
-            end_card(cv)
-        with sub_b:
-            cl = card("Logistik-Analyse")
-            cl.markdown(
-                truck_svg(wirt.zusatz_lademeter, st.session_state.nutzbare_ladelaenge),
-                unsafe_allow_html=True,
-            )
-            cl.metric(
-                "Lademeter je Tour",
-                f"{wirt.basis_lademeter_neu:.1f} m",
-                f"+{wirt.zusatz_lademeter:.2f} m",
-                delta_color="inverse",
-            )
-            end_card(cl)
-        with sub_c:
-            cc = card("Kostenverlauf 12 Monate")
-            cc.plotly_chart(kosten_chart(wirt), use_container_width=True)
-            end_card(cc)
+def seite_ergebnisse() -> None:
+    header()
+    if not st.session_state.ergebnis:
+        st.info("Erst optimieren.")
+        return
+    erg = st.session_state.ergebnis
+    wirt = st.session_state.wirtschaftlichkeit
+    card_ergebnis(erg)
+    a, b, c = st.columns(3)
+    with a:
+        card_wirtschaftlichkeit(wirt, erg.anzahl_eingabe_typen, erg.anzahl_standards)
+    with b:
+        card_logistik(wirt)
+    with c:
+        card_kosten_simulation(wirt)
 
-    naechste_schritte()
 
+def seite_bestand() -> None:
+    st.markdown('<div class="card"><h3>Bestand pro Palettentyp</h3>', unsafe_allow_html=True)
+    benoetigt = {}
+    if st.session_state.ergebnis:
+        benoetigt = {s.label: s.gesamt_anzahl for s in st.session_state.ergebnis.standards}
+    krit = berechne_kritische_paletten(benoetigt)
+    if not krit:
+        st.info("Noch kein Bestand erfasst.")
+    else:
+        rows = [{"Typ": k["typ"], "Bestand": k["menge"], "Sicherheit": k["sicherheitsbestand"],
+                 "Bedarf": k["benoetigt"], "Zu bestellen": k["zu_bestellen"], "Status": k["status"]}
+                for k in krit]
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="card"><h3>Bestand pflegen</h3>', unsafe_allow_html=True)
+    typ_default = (st.session_state.ergebnis.standards[0].label
+                   if st.session_state.ergebnis and st.session_state.ergebnis.standards
+                   else "1500 × 700 mm")
+    typ = st.text_input("Palettentyp", value=typ_default)
+    col1, col2, col3 = st.columns(3)
+    menge = col1.number_input("Aktueller Bestand", min_value=0, value=100, step=10)
+    sb = col2.number_input("Sicherheitsbestand", min_value=0, value=int(st.session_state.sicherheitsbestand), step=10)
+    if col3.button("💾 Speichern", use_container_width=True, type="primary"):
+        aktualisiere_bestand(typ, menge=int(menge), sicherheitsbestand=int(sb))
+        st.success(f"Bestand für {typ} gespeichert.")
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def seite_bestellungen() -> None:
+    st.markdown('<div class="card"><h3>Bestellhistorie</h3>', unsafe_allow_html=True)
+    bestellungen = lade_bestellungen()
+    if not bestellungen:
+        st.info("Noch keine Bestellungen.")
+    else:
+        df = pd.DataFrame([
+            {"Datum": b.datum[:10], "Auftrag": b.auftragsnummer, "Kunde": b.kunde,
+             "Palettentyp": b.palettentyp, "Menge": b.menge,
+             "Lieferung": b.geplantes_verbrauchsdatum, "Status": b.status, "ID": b.bestell_id[:8]}
+            for b in sorted(bestellungen, key=lambda x: x.datum, reverse=True)
+        ])
+        st.dataframe(df, use_container_width=True, hide_index=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    offen = [b for b in bestellungen if b.status == "offen"]
+    if offen:
+        st.markdown('<div class="card"><h3>Offene Bestellungen verbuchen</h3>', unsafe_allow_html=True)
+        labels = [f"{b.bestell_id[:8]} · {b.palettentyp} · {b.menge} Stk" for b in offen]
+        idx = st.selectbox("Wählen", range(len(offen)), format_func=lambda i: labels[i])
+        col_v, col_s = st.columns(2)
+        if col_v.button("✅ Verbuchen", use_container_width=True, type="primary"):
+            buche_bestellung_in_bestand(offen[idx].bestell_id)
+            st.rerun()
+        if col_s.button("❌ Stornieren", use_container_width=True):
+            aktualisiere_bestellstatus(offen[idx].bestell_id, "storniert")
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    if st.session_state.ergebnis:
+        st.markdown('<div class="card"><h3>Neue Bestellung</h3>', unsafe_allow_html=True)
+        labels = [s.label for s in st.session_state.ergebnis.standards]
+        sel = st.selectbox("Standardpalette", labels)
+        c1, c2, c3 = st.columns(3)
+        menge = c1.number_input("Menge", min_value=1, value=50, step=10)
+        liefer = c2.date_input("Lieferdatum", value=st.session_state.geplantes_lieferdatum)
+        auftrag = c3.text_input("Auftragsnummer", value="")
+        if st.button("➕ Anlegen", use_container_width=True, type="primary"):
+            order = Bestellung.neu(palettentyp=sel, menge=int(menge),
+                                   geplantes_verbrauchsdatum=liefer,
+                                   auftragsnummer=auftrag, kunde=st.session_state.kunde)
+            fuege_bestellung_hinzu(order)
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+def seite_kostenanalyse() -> None:
+    if not st.session_state.wirtschaftlichkeit:
+        st.info("Erst optimieren.")
+        return
+    wirt = st.session_state.wirtschaftlichkeit
+    erg = st.session_state.ergebnis
+    a, b = st.columns(2)
+    with a:
+        card_wirtschaftlichkeit(wirt, erg.anzahl_eingabe_typen, erg.anzahl_standards)
+    with b:
+        card_kosten_simulation(wirt)
+    card_logistik(wirt)
+
+
+def seite_einstellungen() -> None:
+    st.markdown('<div class="card"><h3>Einstellungen</h3>', unsafe_allow_html=True)
+    st.session_state.firma = st.text_input("Firmenname", value=st.session_state.firma)
+    st.session_state.kunde = st.text_input("Kunde (Default)", value=st.session_state.kunde)
+    st.session_state.auftragsnummer = st.text_input("Auftragsnummer (Default)", value=st.session_state.auftragsnummer)
+    st.session_state.palettenkosten_neu = st.number_input(
+        "Palettenkosten neu (€)", min_value=0.0, value=float(st.session_state.palettenkosten_neu), step=0.5)
+    st.session_state.palettenkosten_alt = st.number_input(
+        "Palettenkosten alt (€, Default)", min_value=0.0, value=float(st.session_state.palettenkosten_alt), step=0.5)
+    sb = st.number_input("Sicherheitsbestand global", min_value=0,
+                         value=int(st.session_state.sicherheitsbestand), step=10)
+    if st.button("💾 Speichern", use_container_width=True, type="primary"):
+        st.session_state.sicherheitsbestand = int(sb)
+        setze_sicherheitsbestand_global(int(sb))
+        st.success("Einstellungen gespeichert.")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def seite_stammdaten() -> None:
+    st.markdown('<div class="card"><h3>Stammdaten</h3>'
+                '<p style="color:#6b7280;font-size:13px;">Hier kannst du Lieferanten, Kunden und '
+                'andere Stammdaten pflegen. Aktuell werden Stammdaten direkt in den Bestellungen erfasst.</p>'
+                '</div>', unsafe_allow_html=True)
+
+
+def seite_berichte() -> None:
+    st.markdown('<div class="card"><h3>Berichte</h3>', unsafe_allow_html=True)
+    if st.session_state.ergebnis is None:
+        st.info("Erst optimieren, um Berichte zu erzeugen.")
+    else:
+        col_a, col_b = st.columns(2)
+        xlsx = exportiere_ergebnis_excel(st.session_state.ergebnis)
+        col_a.download_button("📊 Excel-Bericht", data=xlsx,
+                              file_name=f"bericht_{date.today().isoformat()}.xlsx",
+                              mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                              use_container_width=True, type="primary")
+        pdf = erstelle_bestellung_pdf(st.session_state.ergebnis,
+                                      st.session_state.geplantes_lieferdatum,
+                                      firma=st.session_state.firma,
+                                      auftragsnummer=st.session_state.auftragsnummer,
+                                      kunde=st.session_state.kunde)
+        col_b.download_button("📄 PDF-Bestellung", data=pdf,
+                              file_name=f"bestellung_{date.today().isoformat()}.pdf",
+                              mime="application/pdf",
+                              use_container_width=True, type="primary")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 def main() -> None:
     init_state()
     seite = sidebar()
-    header_zeile()
+    st.markdown(
+        f'<div class="head-row"><div><div class="head-title">{escape(st.session_state.firma)}</div>'
+        f'<div class="head-sub">Wirtschaftliche Standardisierung von Industriepaletten</div></div></div>',
+        unsafe_allow_html=True,
+    )
 
     if seite == "Dashboard":
         seite_dashboard()
     elif seite == "Datenimport":
         seite_datenimport()
-    elif seite == "Bestand":
+    elif seite == "Optimierung":
+        seite_optimierung()
+    elif seite == "Ergebnisse":
+        seite_ergebnisse()
+    elif seite == "Bestand & Disposition":
         seite_bestand()
     elif seite == "Bestellungen":
         seite_bestellungen()
+    elif seite == "Kostenanalyse":
+        seite_kostenanalyse()
     elif seite == "Einstellungen":
         seite_einstellungen()
+    elif seite == "Stammdaten":
+        seite_stammdaten()
+    elif seite == "Berichte":
+        seite_berichte()
 
 
 if __name__ == "__main__":
