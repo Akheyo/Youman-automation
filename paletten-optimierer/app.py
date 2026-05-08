@@ -736,6 +736,9 @@ def card_sicherheitsbestand() -> None:
 # ---------------------------------------------------------------------------
 
 def render_result_table(erg: OptimierungsErgebnis) -> str:
+    has_kunde = any(m.kunde for s in erg.standards for m in s.members)
+    has_auftrag = any(m.auftrag for s in erg.standards for m in s.members)
+
     rows: list[str] = []
     for std in erg.standards:
         members = std.members
@@ -749,7 +752,12 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
                     f'<div class="sub-line">{rs} Artikel · {std.gesamt_anzahl} Stk</div>'
                     f'</td>'
                 )
-            tds.append(f"<td>{escape(m.artikelnummer)}</td>")
+            artikel_html = escape(m.artikelnummer)
+            if has_kunde and m.kunde:
+                artikel_html += f'<div style="font-size:11px;color:#6b7280;">{escape(m.kunde[:30])}</div>'
+            tds.append(f"<td>{artikel_html}</td>")
+            if has_auftrag:
+                tds.append(f'<td style="font-family:monospace;font-size:12px;">{escape(m.auftrag)}</td>')
             tds.append(f"<td>{fmt_int(m.anzahl)}</td>")
             tds.append(f"<td>{fmt_int(m.stueck_pro_palette)}</td>")
             tds.append(f"<td>{int(round(m.laenge))} × {int(round(m.breite))}</td>")
@@ -762,27 +770,35 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
         m = k.palette
         std_label = f"{int(round(k.standard_a.laenge))} × {int(round(k.standard_a.breite))} + " \
                     f"{int(round(k.standard_b.laenge))} × {int(round(k.standard_b.breite))}"
-        rows.append(
+        artikel_html = escape(m.artikelnummer)
+        if has_kunde and m.kunde:
+            artikel_html += f'<div style="font-size:11px;color:#6b7280;">{escape(m.kunde[:30])}</div>'
+        kombi_row = (
             f"<tr>"
             f'<td class="standard-cell">{std_label}<div class="sub-line">(kombiniert)</div></td>'
-            f"<td>{escape(m.artikelnummer)}</td>"
+            f"<td>{artikel_html}</td>"
+        )
+        if has_auftrag:
+            kombi_row += f'<td style="font-family:monospace;font-size:12px;">{escape(m.auftrag)}</td>'
+        kombi_row += (
             f"<td>{fmt_int(m.anzahl)}</td>"
             f"<td>{fmt_int(m.stueck_pro_palette)}</td>"
             f"<td>{int(round(m.laenge))} × {int(round(m.breite))}</td>"
             f'<td><span class="badge badge-kombi">⚡ Kombination aus 2 Paletten</span></td>'
             "</tr>"
         )
+        rows.append(kombi_row)
 
-    head = (
-        "<thead><tr>"
-        "<th>Neue Standardpalette (mm)</th>"
-        "<th>Artikelnummer</th>"
-        "<th>Benötigte Paletten</th>"
-        "<th>Stückzahl pro Palette</th>"
-        "<th>Alte Palettenmaße (mm)</th>"
-        "<th>Bemerkung / Hinweis</th>"
-        "</tr></thead>"
-    )
+    head_cells = ["<th>Neue Standardpalette (mm)</th>", "<th>Artikelnummer / Kunde</th>"]
+    if has_auftrag:
+        head_cells.append("<th>Auftrag</th>")
+    head_cells.extend([
+        "<th>Benötigte Paletten</th>",
+        "<th>Stückzahl pro Palette</th>",
+        "<th>Alte Palettenmaße (mm)</th>",
+        "<th>Bemerkung / Hinweis</th>",
+    ])
+    head = "<thead><tr>" + "".join(head_cells) + "</tr></thead>"
     return f'<table class="result-tbl">{head}<tbody>{"".join(rows)}</tbody></table>'
 
 

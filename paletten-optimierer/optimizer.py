@@ -24,6 +24,11 @@ class Palette:
     anzahl: int
     kosten_alt: float = 14.0
     stueck_pro_palette: int = 0
+    hoehe: float = 0.0
+    kunde: str = ""
+    auftrag: str = ""
+    kw_lieferung: str = ""
+    menge: int = 0
 
 
 @dataclass

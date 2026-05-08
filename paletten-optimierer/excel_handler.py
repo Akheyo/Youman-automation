@@ -41,6 +41,12 @@ SPALTEN_MAPPING: dict[str, list[str]] = {
         "laenge_mm",
         "länge_mm",
         "length_mm",
+        "p-laenge",
+        "p-länge",
+        "p_laenge",
+        "p_länge",
+        "p.laenge",
+        "p.länge",
     ],
     "breite": [
         "breite",
@@ -49,6 +55,21 @@ SPALTEN_MAPPING: dict[str, list[str]] = {
         "w",
         "breite_mm",
         "width_mm",
+        "p-breite",
+        "p_breite",
+        "p.breite",
+    ],
+    "hoehe": [
+        "hoehe",
+        "höhe",
+        "height",
+        "h",
+        "p-hoehe",
+        "p-höhe",
+        "p_hoehe",
+        "p_höhe",
+        "p.hoehe",
+        "p.höhe",
     ],
     "anzahl": [
         "anzahl",
@@ -56,12 +77,12 @@ SPALTEN_MAPPING: dict[str, list[str]] = {
         "benötigte_paletten",
         "benoetigte paletten",
         "benötigte paletten",
-        "menge",
-        "stueck",
-        "stück",
-        "qty",
-        "quantity",
-        "count",
+        "p-anzahl",
+        "p_anzahl",
+        "p.anzahl",
+        "paletten",
+        "pallet_count",
+        "qty_pallets",
     ],
     "stueck_pro_palette": [
         "stueckzahl_pro_palette",
@@ -70,6 +91,12 @@ SPALTEN_MAPPING: dict[str, list[str]] = {
         "stück_pro_palette",
         "stueckzahl pro palette",
         "stk_pro_palette",
+        "stck_pal",
+        "stck_pal.",
+        "stck pal.",
+        "stck pal",
+        "stk_pal",
+        "stk_pal.",
         "items_per_pallet",
         "pieces_per_pallet",
     ],
@@ -81,6 +108,40 @@ SPALTEN_MAPPING: dict[str, list[str]] = {
         "cost",
         "preis",
         "price",
+    ],
+    "kunde": [
+        "kunde",
+        "name",
+        "customer",
+        "client",
+        "abnehmer",
+    ],
+    "auftrag": [
+        "auftrag",
+        "auftragsnummer",
+        "auftrag-nr",
+        "auftragsnr",
+        "order",
+        "order_no",
+        "ordernumber",
+    ],
+    "kw_lieferung": [
+        "kw_lieferung",
+        "kw lief.",
+        "kw lief",
+        "kw_lief",
+        "kw_lief.",
+        "lieferwoche",
+        "lief-kw",
+        "delivery_week",
+    ],
+    "menge": [
+        "menge",
+        "stueck",
+        "stück",
+        "qty",
+        "quantity",
+        "amount",
     ],
 }
 
@@ -145,44 +206,58 @@ def importiere_excel(
             f"Gefundene Spalten: {header}"
         )
 
+    def _val(row: tuple, schluessel: str):
+        if schluessel not in spalten:
+            return None
+        idx = spalten[schluessel]
+        if idx >= len(row):
+            return None
+        return row[idx]
+
+    def _str(v) -> str:
+        if v is None:
+            return ""
+        return str(v).strip()
+
+    def _float(v, default: float = 0.0) -> float:
+        if v is None or _str(v) == "":
+            return default
+        try:
+            return float(str(v).replace(",", "."))
+        except (TypeError, ValueError):
+            return default
+
+    def _int(v, default: int = 0) -> int:
+        return int(_float(v, default))
+
     paletten: list[Palette] = []
     for row in rows[1:]:
         if all(c is None or str(c).strip() == "" for c in row):
             continue
         try:
-            artikel = row[spalten["artikelnummer"]]
-            laenge_v = row[spalten["laenge"]]
-            breite_v = row[spalten["breite"]]
-            if artikel is None or laenge_v is None or breite_v is None:
-                continue
-            laenge = float(laenge_v)
-            breite = float(breite_v)
-            if laenge <= 0 or breite <= 0:
+            artikel = _str(_val(row, "artikelnummer"))
+            laenge = _float(_val(row, "laenge"))
+            breite = _float(_val(row, "breite"))
+            if not artikel or laenge <= 0 or breite <= 0:
                 continue
 
-            anzahl_v = row[spalten["anzahl"]] if "anzahl" in spalten else None
-            anzahl = int(float(anzahl_v)) if anzahl_v not in (None, "") else 1
+            anzahl = _int(_val(row, "anzahl"), 1) or 1
             if anzahl < 0:
                 continue
 
-            stk_v = (
-                row[spalten["stueck_pro_palette"]]
-                if "stueck_pro_palette" in spalten
-                else None
-            )
-            stueck = int(float(stk_v)) if stk_v not in (None, "") else 0
-
-            kosten_v = row[spalten["kosten_alt"]] if "kosten_alt" in spalten else None
-            kosten = float(kosten_v) if kosten_v not in (None, "") else 14.0
-
             paletten.append(
                 Palette(
-                    artikelnummer=str(artikel).strip(),
+                    artikelnummer=artikel,
                     laenge=laenge,
                     breite=breite,
                     anzahl=anzahl,
-                    kosten_alt=kosten,
-                    stueck_pro_palette=stueck,
+                    kosten_alt=_float(_val(row, "kosten_alt"), 14.0) or 14.0,
+                    stueck_pro_palette=_int(_val(row, "stueck_pro_palette")),
+                    hoehe=_float(_val(row, "hoehe")),
+                    kunde=_str(_val(row, "kunde")),
+                    auftrag=_str(_val(row, "auftrag")),
+                    kw_lieferung=_str(_val(row, "kw_lieferung")),
+                    menge=_int(_val(row, "menge")),
                 )
             )
         except (TypeError, ValueError):
