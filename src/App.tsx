@@ -1,19 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from './store';
 import { VehicleList } from './components/VehicleList';
 import { VehicleDetail } from './components/VehicleDetail';
 import { VehicleForm } from './components/VehicleForm';
 import { VerkaufModal } from './components/VerkaufModal';
 import { Dialog } from './components/Dialog';
-import { vehiclesToCsv, downloadCsv } from './lib/exportCsv';
-import {
-  Car,
-  Database,
-  Download,
-  Plus,
-  Settings as SettingsIcon,
-  Upload,
-} from 'lucide-react';
+import { Car, Plus, Settings as SettingsIcon } from 'lucide-react';
 import type { Vehicle } from './types';
 
 type View =
@@ -27,18 +19,18 @@ export default function App() {
   const [view, setView] = useState<View>({ kind: 'list' });
   const [verkaufVehicleId, setVerkaufVehicleId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Beim ersten Start: Demo-Datensatz anbieten, wenn nichts da ist
   useEffect(() => {
     if (store.vehicles.length === 0) {
-      const seen = localStorage.getItem('youman.demoOffered');
+      const seen = localStorage.getItem('daev.demoOffered');
       if (!seen) {
-        localStorage.setItem('youman.demoOffered', '1');
+        localStorage.setItem('daev.demoOffered', '1');
         if (
           window.confirm(
-            'Willkommen! Soll der Beispiel-Datensatz "VW Polo" geladen werden?\n\n' +
-              '(Demonstriert die Differenzbesteuerungs-Berechnung mit 1.533 € Gewinn / 32,27 % Marge)',
+            'Willkommen beim DAEV Margin Tool!\n\n' +
+              'Soll der Beispiel-Datensatz "VW Polo" geladen werden?\n' +
+              '(zeigt 1.533 € Gewinnanteil bei 32,27 % Marge)',
           )
         ) {
           store.loadDemoData();
@@ -56,44 +48,6 @@ export default function App() {
     ? store.vehicles.find((v) => v.id === verkaufVehicleId)
     : null;
 
-  function handleExportJson() {
-    const backup = store.exportJson();
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `youman-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function handleExportCsv() {
-    const csv = vehiclesToCsv(store.vehicles);
-    downloadCsv(`youman-fahrzeuge-${new Date().toISOString().slice(0, 10)}.csv`, csv);
-  }
-
-  function handleImportJson(file: File) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const data = JSON.parse(String(reader.result));
-        if (
-          window.confirm(
-            'Import überschreibt alle aktuellen Daten. Wirklich fortfahren?',
-          )
-        ) {
-          store.importJson(data);
-          alert('Import erfolgreich.');
-        }
-      } catch (e) {
-        alert(`Import fehlgeschlagen: ${(e as Error).message}`);
-      }
-    };
-    reader.readAsText(file);
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-slate-900 text-white">
@@ -103,9 +57,9 @@ export default function App() {
             onClick={() => setView({ kind: 'list' })}
           >
             <Car size={22} />
-            <span className="font-bold text-lg">Youman Margen-Tool</span>
+            <span className="font-bold text-lg tracking-wide">DAEV Margin Tool</span>
             <span className="text-xs text-slate-400 hidden sm:inline">
-              Gebrauchtwagen · Differenzbesteuerung
+              · Differenzbesteuerung §25a UStG
             </span>
           </button>
           <div className="flex items-center gap-2 flex-wrap">
@@ -116,40 +70,9 @@ export default function App() {
             )}
             <button
               className="btn-ghost text-white hover:bg-white/10"
-              onClick={handleExportCsv}
-              title="Alle Fahrzeuge als CSV exportieren"
-            >
-              <Download size={16} /> CSV
-            </button>
-            <button
-              className="btn-ghost text-white hover:bg-white/10"
-              onClick={handleExportJson}
-              title="Alle Daten als JSON-Backup exportieren"
-            >
-              <Database size={16} /> Backup
-            </button>
-            <button
-              className="btn-ghost text-white hover:bg-white/10"
-              onClick={() => fileInputRef.current?.click()}
-              title="Backup-Datei einlesen"
-            >
-              <Upload size={16} /> Import
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/json"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleImportJson(f);
-                e.target.value = '';
-              }}
-            />
-            <button
-              className="btn-ghost text-white hover:bg-white/10"
               onClick={() => setSettingsOpen(true)}
               title="Einstellungen"
+              aria-label="Einstellungen"
             >
               <SettingsIcon size={16} />
             </button>
@@ -207,7 +130,11 @@ export default function App() {
               if (copy) setView({ kind: 'edit', id: copy.id });
             }}
             onDelete={() => {
-              if (window.confirm(`Fahrzeug "${aktuellesFahrzeug.marke} ${aktuellesFahrzeug.modell}" wirklich löschen?`)) {
+              if (
+                window.confirm(
+                  `Fahrzeug "${aktuellesFahrzeug.marke} ${aktuellesFahrzeug.modell}" wirklich löschen?`,
+                )
+              ) {
                 store.deleteVehicle(aktuellesFahrzeug.id);
                 setView({ kind: 'list' });
               }
@@ -226,7 +153,7 @@ export default function App() {
       </main>
 
       <footer className="text-center text-xs text-slate-400 py-4">
-        Youman Margen-Tool · Berechnung gem. §25a UStG · Daten werden lokal im Browser gespeichert
+        DAEV Margin Tool · Berechnung gem. §25a UStG · Daten werden lokal im Browser gespeichert
       </footer>
 
       {verkaufVehicle && (

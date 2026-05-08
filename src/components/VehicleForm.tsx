@@ -445,6 +445,7 @@ export function VehicleForm({ initial, defaultStundensatz, onSubmit, onCancel }:
           kennzahlen={kennzahlen}
           ankaufspreis={draft.ankaufspreis}
           verkaufspreis={draft.verkaufspreis}
+          stundensatz={draft.stundensatz}
         />
       </aside>
     </form>

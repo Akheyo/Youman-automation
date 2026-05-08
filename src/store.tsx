@@ -9,14 +9,11 @@ import {
 } from 'react';
 import type { Vehicle, Settings } from '@/types';
 import {
-  exportBackup,
   generateId,
-  importBackup as importBackupRaw,
   loadSettings,
   loadVehicles,
   saveSettings,
   saveVehicles,
-  type Backup,
 } from '@/lib/db';
 import { createPoloSeed } from '@/lib/seed';
 
@@ -30,8 +27,6 @@ interface StoreContextValue {
   updateSettings: (patch: Partial<Settings>) => void;
   loadDemoData: () => void;
   resetAll: () => void;
-  exportJson: () => Backup;
-  importJson: (data: unknown) => void;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -109,14 +104,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setVehicles([]);
   }, []);
 
-  const exportJson = useCallback(() => exportBackup(), []);
-
-  const importJson = useCallback<StoreContextValue['importJson']>((data) => {
-    const result = importBackupRaw(data);
-    setVehicles(result.vehicles);
-    setSettings(result.settings);
-  }, []);
-
   const value = useMemo<StoreContextValue>(
     () => ({
       vehicles,
@@ -128,8 +115,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateSettings,
       loadDemoData,
       resetAll,
-      exportJson,
-      importJson,
     }),
     [
       vehicles,
@@ -141,8 +126,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updateSettings,
       loadDemoData,
       resetAll,
-      exportJson,
-      importJson,
     ],
   );
 

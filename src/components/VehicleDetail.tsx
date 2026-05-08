@@ -4,8 +4,7 @@ import { KOSTEN_KATEGORIEN } from '@/types';
 import { berechneKennzahlen } from '@/lib/calculations';
 import { formatDatum, formatEuro, formatZahl } from '@/lib/format';
 import { KennzahlenPanel } from './KennzahlenPanel';
-import { exportVehiclePdf } from '@/lib/exportPdf';
-import { ArrowLeft, Copy, Edit, FileDown, Tag, Trash2 } from 'lucide-react';
+import { ArrowLeft, Copy, Edit, Tag, Trash2 } from 'lucide-react';
 
 interface Props {
   vehicle: Vehicle;
@@ -35,9 +34,6 @@ export function VehicleDetail({ vehicle, onBack, onEdit, onSell, onDuplicate, on
               <Tag size={16} /> Verkauf erfassen
             </button>
           )}
-          <button className="btn-secondary" onClick={() => exportVehiclePdf(vehicle)}>
-            <FileDown size={16} /> PDF
-          </button>
           <button className="btn-secondary" onClick={onEdit}>
             <Edit size={16} /> Bearbeiten
           </button>
@@ -204,6 +200,7 @@ export function VehicleDetail({ vehicle, onBack, onEdit, onSell, onDuplicate, on
             kennzahlen={kennzahlen}
             ankaufspreis={vehicle.ankaufspreis}
             verkaufspreis={vehicle.verkaufspreis}
+            stundensatz={vehicle.stundensatz}
           />
         </aside>
       </div>
