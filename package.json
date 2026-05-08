@@ -1,42 +1,37 @@
 {
-  "name": "ab-pv-konfigurator",
-  "version": "1.0.0",
+  "name": "youman-haendler-margen",
   "private": true,
-  "description": "A&B Solarenergy PV-Konfigurator — production-grade 3D PV configurator for NRW (Borken) using NRW LoD2 self-hosted 3D Tiles + LANUK Solarkataster.",
-  "license": "UNLICENSED",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Lokales Margen-Tool für Gebrauchtwagenhändler — Einkauf, Kosten, Verkauf, Differenzbesteuerung.",
   "scripts": {
-    "postinstall": "node scripts/copy-cesium.js",
-    "dev": "next dev -p 3000",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install --with-deps chromium"
+    "test:watch": "vitest"
   },
   "dependencies": {
-    "@turf/turf": "^7.1.0",
-    "cesium": "^1.123.0",
-    "html2canvas": "^1.4.1",
+    "clsx": "^2.1.1",
     "jspdf": "^2.5.2",
-    "next": "^14.2.13",
+    "jspdf-autotable": "^3.8.4",
+    "lucide-react": "^0.468.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "zustand": "^4.5.5"
+    "tailwind-merge": "^2.5.5"
   },
   "devDependencies": {
-    "@playwright/test": "^1.47.2",
-    "@types/geojson": "^7946.0.14",
-    "@types/node": "^22.7.4",
-    "@types/react": "^18.3.11",
-    "@types/react-dom": "^18.3.0",
-    "@vitest/coverage-v8": "^2.1.2",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "^14.2.13",
-    "typescript": "^5.6.2",
-    "vitest": "^2.1.2"
+    "@types/node": "^25.6.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
   }
 }

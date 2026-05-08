@@ -1,7 +1,0 @@
-# Conversion pipeline — see README.md
-py3dtiles>=8.0.0
-cjio>=0.9.0          # CityJSON I/O
-lxml>=4.9.0
-click>=8.1.0
-tqdm>=4.66.0
-boto3>=1.34.0        # for upload_to_r2 fallback (alt. to rclone)
