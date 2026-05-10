@@ -50,11 +50,32 @@ class StandardPalette:
 
 @dataclass
 class Kombination:
-    """Kombination aus zwei Standardpaletten für eine Eingabe-Palette."""
+    """Kombination aus zwei oder drei Standardpaletten für eine Eingabe-Palette.
+
+    Die ``richtung`` gibt an, ob die Standards in Längs- oder Breitenrichtung
+    aneinandergelegt werden — entsprechend addieren sich entweder die Längen
+    oder die Breiten zur Abdeckung der Original-Palette.
+    """
 
     palette: Palette
-    standard_a: StandardPalette
-    standard_b: StandardPalette
+    standards: list[StandardPalette] = field(default_factory=list)
+    richtung: str = "laenge"  # "laenge" oder "breite"
+
+    @property
+    def standard_a(self) -> StandardPalette:
+        return self.standards[0]
+
+    @property
+    def standard_b(self) -> StandardPalette:
+        return self.standards[1] if len(self.standards) >= 2 else self.standards[0]
+
+    @property
+    def label(self) -> str:
+        parts = [
+            f"{int(round(s.laenge))} × {int(round(s.breite))}"
+            for s in self.standards
+        ]
+        return " + ".join(parts)
 
 
 @dataclass
@@ -176,38 +197,161 @@ def _kann_erweitert_werden(
     return True, neue_l, neue_b
 
 
-def _finde_kombination(
-    palette: Palette, standards: list[StandardPalette]
+def _finde_beste_kombi(
+    palette: Palette,
+    standards: list[StandardPalette],
+    tol_l: float,
+    tol_b: float,
+    einheit: Einheit,
+    max_k: int = 3,
 ) -> Kombination | None:
-    """Sucht zwei Standardpaletten, die zusammen die Fläche abdecken.
+    """Sucht die kostengünstigste 2- bis ``max_k``-fach-Kombination.
 
-    Eine Kombination ist nur sinnvoll, wenn die Eingabepalette in mindestens
-    einer Dimension *größer* ist als jede einzelne Standardpalette — sonst
-    würde eine einzelne Palette ausreichen (und hätte bereits in der ersten
-    Phase gegriffen).
+    Eine Kombination legt mehrere Standardpaletten aneinander, sodass sie
+    zusammen die Original-Palette abdecken — entweder in Längsrichtung
+    (Längen addieren sich) oder in Querrichtung (Breiten addieren sich).
+    Das Programm prüft beide Richtungen und nimmt die mit den kleinsten
+    Lademeter-Mehrkosten.
+
+    Constraints:
+    - Die Summe in der gestapelten Dimension muss >= Original-Maß sein
+      und darf das Maximum aus Original + Toleranz nicht überschreiten.
+    - In der orthogonalen Dimension muss jeder Standard >= Original-Maß
+      sein, und der größte darf max_zulaessig(Original, Tol) nicht
+      überschreiten.
+    - Jeder Standard muss in der gestapelten Dimension echt kleiner als
+      die Original-Palette sein — sonst wäre ein einzelner ausreichend.
     """
+    if not standards or max_k < 2:
+        return None
+
+    max_l = max_zulaessig(palette.laenge, tol_l, einheit)
+    max_b = max_zulaessig(palette.breite, tol_b, einheit)
+    anzahl = max(1, palette.anzahl)
+
+    # Vorfilter: Standards die in *einer* Richtung passen und in der
+    # *anderen* nicht zu groß sind. Das reduziert die Kombinations-Anzahl
+    # bei vielen Cluster (z.B. 100+) drastisch.
+    relevant = [
+        s for s in standards
+        if (
+            (s.breite >= palette.breite and s.breite <= max_b and s.laenge <= max_l)
+            or (s.laenge >= palette.laenge and s.laenge <= max_l and s.breite <= max_b)
+        )
+    ]
+    if not relevant:
+        return None
+    standards = relevant
+
+    # Bei 306 Paletten × bis zu 50 Standards × 3-fach = ca. 125k Kombis.
+    # Akzeptabel, weil wir das nur für wenige Kandidaten ausführen.
+    bester: tuple[float, list[StandardPalette], str] | None = None
+
+    def _eintragen(kosten: float, combo: list[StandardPalette], richtung: str) -> None:
+        nonlocal bester
+        if bester is None or kosten < bester[0]:
+            bester = (kosten, combo, richtung)
+
+    def _kombi_laengs(combo: list[StandardPalette]) -> None:
+        sum_l = sum(s.laenge for s in combo)
+        if sum_l < palette.laenge or sum_l > max_l:
+            return
+        min_b = min(s.breite for s in combo)
+        max_b_in_combo = max(s.breite for s in combo)
+        if min_b < palette.breite or max_b_in_combo > max_b:
+            return
+        if all(s.laenge >= palette.laenge for s in combo):
+            return  # ein einzelner würde reichen
+        kosten = (sum_l - palette.laenge) / 1000.0 * anzahl + len(combo) * 0.05
+        _eintragen(kosten, list(combo), "laenge")
+
+    def _kombi_quer(combo: list[StandardPalette]) -> None:
+        sum_b = sum(s.breite for s in combo)
+        if sum_b < palette.breite or sum_b > max_b:
+            return
+        min_l = min(s.laenge for s in combo)
+        max_l_in_combo = max(s.laenge for s in combo)
+        if min_l < palette.laenge or max_l_in_combo > max_l:
+            return
+        if all(s.breite >= palette.breite for s in combo):
+            return
+        kosten = (max_l_in_combo - palette.laenge) / 1000.0 * anzahl + len(combo) * 0.05
+        _eintragen(kosten, list(combo), "breite")
+
     n = len(standards)
+    # 2-fach Kombis
     for i in range(n):
         for j in range(i, n):
-            a = standards[i]
-            b = standards[j]
-            if (
-                a.laenge < palette.laenge
-                and b.laenge < palette.laenge
-                and a.laenge + b.laenge >= palette.laenge
-                and a.breite >= palette.breite
-                and b.breite >= palette.breite
-            ):
-                return Kombination(palette=palette, standard_a=a, standard_b=b)
-            if (
-                a.breite < palette.breite
-                and b.breite < palette.breite
-                and a.breite + b.breite >= palette.breite
-                and a.laenge >= palette.laenge
-                and b.laenge >= palette.laenge
-            ):
-                return Kombination(palette=palette, standard_a=a, standard_b=b)
-    return None
+            _kombi_laengs([standards[i], standards[j]])
+            _kombi_quer([standards[i], standards[j]])
+    # 3-fach Kombis (nur wenn aktiviert)
+    if max_k >= 3:
+        for i in range(n):
+            for j in range(i, n):
+                for k in range(j, n):
+                    _kombi_laengs([standards[i], standards[j], standards[k]])
+                    _kombi_quer([standards[i], standards[j], standards[k]])
+
+    if bester is None:
+        return None
+    _, combo, richtung = bester
+    return Kombination(palette=palette, standards=combo, richtung=richtung)
+
+
+def _post_processing_kombinationen(
+    ergebnis: OptimierungsErgebnis,
+    tol_l: float,
+    tol_b: float,
+    einheit: Einheit,
+    max_k: int = 3,
+    max_iterationen: int = 50,
+) -> OptimierungsErgebnis:
+    """Eliminiert kleine Standards, deren Mitglieder durch Kombis abgedeckt
+    werden können.
+
+    Geht iterativ den kleinsten Cluster zuerst durch. Für jeden Cluster mit
+    <= 3 Mitgliedern wird geprüft, ob *jedes* Mitglied durch eine Kombi
+    aus zwei oder drei anderen Standards dargestellt werden kann. Wenn ja,
+    wird der Cluster eliminiert und die Mitglieder als Kombinationen
+    erfasst. Anschließend startet die Iteration neu — eventuell sind nach
+    dem Wegfall jetzt weitere Cluster eliminierbar.
+    """
+    for _ in range(max_iterationen):
+        if len(ergebnis.standards) < 3:
+            break
+        idx_sort = sorted(
+            range(len(ergebnis.standards)),
+            key=lambda i: (
+                len(ergebnis.standards[i].members),
+                ergebnis.standards[i].gesamt_anzahl,
+            ),
+        )
+        eliminiert = False
+        for idx in idx_sort:
+            std = ergebnis.standards[idx]
+            if len(std.members) > 3:
+                break
+            andere = [
+                ergebnis.standards[i]
+                for i in range(len(ergebnis.standards))
+                if i != idx
+            ]
+            kombis: list[Kombination] = []
+            kann_alles = True
+            for m in std.members:
+                k = _finde_beste_kombi(m, andere, tol_l, tol_b, einheit, max_k=max_k)
+                if k is None:
+                    kann_alles = False
+                    break
+                kombis.append(k)
+            if kann_alles and kombis:
+                ergebnis.kombinationen.extend(kombis)
+                ergebnis.standards.pop(idx)
+                eliminiert = True
+                break
+        if not eliminiert:
+            break
+    return ergebnis
 
 
 def _kann_mergen(
@@ -361,11 +505,21 @@ def optimiere(
 
     clusters.sort(key=lambda g: g.gesamt_anzahl, reverse=True)
 
-    return OptimierungsErgebnis(
+    ergebnis = OptimierungsErgebnis(
         standards=clusters,
         kombinationen=[],
         eingabe_paletten=list(paletten),
     )
+
+    if kombinieren_erlaubt and len(clusters) >= 3:
+        ergebnis = _post_processing_kombinationen(
+            ergebnis,
+            tol_l=toleranz_l,
+            tol_b=toleranz_b,
+            einheit=einheit,
+        )
+
+    return ergebnis
 
 
 def empfohlene_toleranz(

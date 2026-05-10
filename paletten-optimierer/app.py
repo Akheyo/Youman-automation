@@ -29,9 +29,7 @@ from optimizer import (
     StandardPalette,
     WirtschaftlichkeitsErgebnis,
     berechne_wirtschaftlichkeit,
-    empfohlene_toleranz,
     optimiere,
-    optimiere_mit_zielanzahl,
 )
 from pdf_generator import erstelle_bestellung_pdf
 from storage_handler import (
@@ -400,15 +398,9 @@ def init_state() -> None:
         "paletten": [],
         "ergebnis": None,
         "wirtschaftlichkeit": None,
-        "modus": "Ziel-Anzahl",
-        "zielanzahl": 18,
-        "tol_einheit": "prozent",
-        "tol_l": 15.0,
-        "tol_b": 15.0,
-        "ermittelte_toleranz": 0.0,
-        "max_verschwendung_pct": 5.0,
-        "empfohlene_tol": 0.0,
-        "empfohlene_anz": 0,
+        "tol_einheit": "mm",
+        "tol_l": 200.0,
+        "tol_b": 200.0,
         "letzte_opt_signatur": "",
         "kosten_pro_lkw": 800.0,
         "nutzbare_ladelaenge": 13.6,
@@ -436,14 +428,8 @@ def init_state() -> None:
 
 def _opt_signatur() -> str:
     """Eindeutige Signatur der Optimierungs-Inputs für Caching."""
-    if st.session_state.modus == "Ziel-Anzahl":
-        return (
-            f"{len(st.session_state.paletten)}|ziel|"
-            f"{int(st.session_state.zielanzahl)}|"
-            f"{st.session_state.raster}|{st.session_state.kombinieren_erlaubt}"
-        )
     return (
-        f"{len(st.session_state.paletten)}|man|{st.session_state.tol_einheit}|"
+        f"{len(st.session_state.paletten)}|{st.session_state.tol_einheit}|"
         f"{st.session_state.tol_l}|{st.session_state.tol_b}|"
         f"{st.session_state.raster}|{st.session_state.kombinieren_erlaubt}"
     )
@@ -454,24 +440,14 @@ def run_optimierung() -> None:
         st.session_state.ergebnis = None
         st.session_state.wirtschaftlichkeit = None
         return
-    if st.session_state.modus == "Ziel-Anzahl":
-        erg, tol = optimiere_mit_zielanzahl(
-            st.session_state.paletten,
-            zielanzahl=int(st.session_state.zielanzahl),
-            raster=st.session_state.raster,
-            einheit="prozent",
-        )
-        st.session_state.ermittelte_toleranz = tol
-    else:
-        erg = optimiere(
-            st.session_state.paletten,
-            toleranz_l=st.session_state.tol_l,
-            toleranz_b=st.session_state.tol_b,
-            einheit=st.session_state.tol_einheit,
-            raster=st.session_state.raster,
-            kombinieren_erlaubt=st.session_state.kombinieren_erlaubt,
-        )
-        st.session_state.ermittelte_toleranz = 0.0
+    erg = optimiere(
+        st.session_state.paletten,
+        toleranz_l=st.session_state.tol_l,
+        toleranz_b=st.session_state.tol_b,
+        einheit=st.session_state.tol_einheit,
+        raster=st.session_state.raster,
+        kombinieren_erlaubt=st.session_state.kombinieren_erlaubt,
+    )
     params = KostenParameter(
         kosten_pro_lkw=st.session_state.kosten_pro_lkw,
         nutzbare_ladelaenge=st.session_state.nutzbare_ladelaenge,
@@ -499,21 +475,6 @@ def stelle_aktualitaet_sicher() -> None:
             run_optimierung()
     except Exception as exc:  # noqa: BLE001
         st.error(f"⚠️ Optimierung fehlgeschlagen: {exc}")
-
-
-def empfehlung_anwenden() -> None:
-    """Berechnet die Toleranz-Empfehlung und übernimmt sie."""
-    with st.spinner("Berechne intelligente Empfehlung ..."):
-        tol, anz = empfohlene_toleranz(
-            st.session_state.paletten,
-            max_verschwendung_pct=float(st.session_state.max_verschwendung_pct),
-            raster=st.session_state.raster,
-        )
-    st.session_state.empfohlene_tol = tol
-    st.session_state.empfohlene_anz = anz
-    st.session_state.tol_einheit = "prozent"
-    st.session_state.tol_l = tol
-    st.session_state.tol_b = tol
 
 
 def aktiver_schritt() -> int:
@@ -741,14 +702,7 @@ def _importiere_quelle(quelle, anzeigename: str) -> bool:
     st.session_state.letzte_opt_signatur = ""
 
     try:
-        if st.session_state.modus == "Ziel-Anzahl":
-            text = (
-                f"Suche kleinste Toleranz für {int(st.session_state.zielanzahl)} "
-                f"Standardpaletten ..."
-            )
-        else:
-            text = f"Optimiere {len(ps)} Paletten ..."
-        with st.spinner(text):
+        with st.spinner(f"Optimiere {len(ps)} Paletten ..."):
             run_optimierung()
     except Exception as exc:  # noqa: BLE001
         st.error(
@@ -808,98 +762,43 @@ def card_datenimport() -> None:
 
 
 def card_toleranz() -> None:
-    st.markdown('<div class="card"><h3>Optimierungs-Strategie</h3>', unsafe_allow_html=True)
-
-    modus = st.radio(
-        "Strategie",
-        ["Ziel-Anzahl", "Manuelle Toleranz"],
+    st.markdown('<div class="card"><h3>Toleranz</h3>', unsafe_allow_html=True)
+    col_l, col_b = st.columns(2)
+    suffix = "mm" if st.session_state.tol_einheit == "mm" else "%"
+    with col_l:
+        st.session_state.tol_l = st.number_input(
+            f"Länge ({suffix})",
+            min_value=0.0,
+            value=float(st.session_state.tol_l),
+            step=10.0 if suffix == "mm" else 1.0,
+            key="tol_l_in",
+        )
+    with col_b:
+        st.session_state.tol_b = st.number_input(
+            f"Breite ({suffix})",
+            min_value=0.0,
+            value=float(st.session_state.tol_b),
+            step=10.0 if suffix == "mm" else 1.0,
+            key="tol_b_in",
+        )
+    einheit = st.radio(
+        "Einheit",
+        ["Millimeter", "Prozent"],
         horizontal=True,
-        index=0 if st.session_state.modus == "Ziel-Anzahl" else 1,
-        key="modus_in",
-        label_visibility="collapsed",
+        index=0 if st.session_state.tol_einheit == "mm" else 1,
+        key="einh_in",
     )
-    st.session_state.modus = modus
-
-    if modus == "Ziel-Anzahl":
-        st.session_state.zielanzahl = st.number_input(
-            "Anzahl Standardpaletten (Ziel)",
-            min_value=2,
-            max_value=300,
-            value=int(st.session_state.zielanzahl),
-            step=1,
-            key="ziel_in",
-            help="Die App findet automatisch die kleinste Toleranz, mit der dieses Ziel erreicht wird.",
-        )
-        tol = st.session_state.get("ermittelte_toleranz", 0.0)
-        if tol > 0:
-            st.markdown(
-                f'<div class="lade-box" style="text-align:left;padding:10px 12px;">'
-                f'<div class="lbl">Ermittelte Toleranz</div>'
-                f'<div style="font-size:18px;color:#1a2944;font-weight:800;margin-top:2px;">'
-                f'±{tol:.1f}%</div></div>',
-                unsafe_allow_html=True,
-            )
-    else:
-        col_l, col_b = st.columns(2)
-        suffix = "mm" if st.session_state.tol_einheit == "mm" else "%"
-        with col_l:
-            st.session_state.tol_l = st.number_input(
-                f"Länge ({suffix})",
-                min_value=0.0,
-                value=float(st.session_state.tol_l),
-                step=10.0 if suffix == "mm" else 1.0,
-                key="tol_l_in",
-            )
-        with col_b:
-            st.session_state.tol_b = st.number_input(
-                f"Breite ({suffix})",
-                min_value=0.0,
-                value=float(st.session_state.tol_b),
-                step=10.0 if suffix == "mm" else 1.0,
-                key="tol_b_in",
-            )
-        einheit = st.radio(
-            "Einheit",
-            ["Prozent", "Millimeter"],
-            horizontal=True,
-            index=0 if st.session_state.tol_einheit == "prozent" else 1,
-            key="einh_in",
-        )
-        st.session_state.tol_einheit = "prozent" if einheit == "Prozent" else "mm"
-
-        # Smart-Empfehlung im manuellen Modus
-        emp_tol = st.session_state.get("empfohlene_tol", 0.0)
-        emp_anz = st.session_state.get("empfohlene_anz", 0)
-        if emp_tol > 0 and st.session_state.paletten:
-            col_e1, col_e2 = st.columns([3, 2])
-            with col_e1:
-                st.markdown(
-                    f'<div class="lade-box" style="text-align:left;padding:10px 12px;">'
-                    f'<div class="lbl">💡 Smart-Empfehlung</div>'
-                    f'<div style="font-size:13px;color:#1a2944;font-weight:600;margin-top:2px;">'
-                    f'±{emp_tol:.0f}% → {emp_anz} Standards</div>'
-                    f'<div style="font-size:11px;color:#6b7280;margin-top:2px;">'
-                    f'max {st.session_state.max_verschwendung_pct:.0f}% Lademeter-Verschwendung'
-                    f'</div></div>',
-                    unsafe_allow_html=True,
-                )
-            with col_e2:
-                st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
-                if st.button("Übernehmen", use_container_width=True, key="apply_emp"):
-                    st.session_state.tol_einheit = "prozent"
-                    st.session_state.tol_l = emp_tol
-                    st.session_state.tol_b = emp_tol
-                    st.rerun()
-        if st.session_state.paletten and st.button(
-            "🧠 Empfehlung berechnen", use_container_width=True, key="rec_emp"
-        ):
-            empfehlung_anwenden()
-            st.rerun()
+    st.session_state.tol_einheit = "mm" if einheit == "Millimeter" else "prozent"
 
     st.session_state.kombinieren_erlaubt = st.toggle(
-        "Paletten kombinieren erlauben",
+        "Paletten kombinieren (2- bis 3-fach, in Länge oder Breite)",
         value=st.session_state.kombinieren_erlaubt,
         key="kombi_in",
+        help=(
+            "Wenn aktiv, dürfen Original-Paletten durch 2 oder 3 kleinere "
+            "Standardpaletten ersetzt werden, die zusammen das Maß abdecken "
+            "— entweder längs aneinandergelegt oder quer."
+        ),
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -997,16 +896,17 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
 
     for k in erg.kombinationen:
         m = k.palette
-        std_label = (
-            f"{int(round(k.standard_a.laenge))} × {int(round(k.standard_a.breite))} + "
-            f"{int(round(k.standard_b.laenge))} × {int(round(k.standard_b.breite))}"
+        std_label = " + ".join(
+            f"{int(round(s.laenge))} × {int(round(s.breite))}" for s in k.standards
         )
+        kombi_hinweis = "in Länge gestapelt" if k.richtung == "laenge" else "in Breite gestapelt"
         artikel_html = f'<div style="font-weight:600;">{escape(m.artikelnummer)}</div>'
         if has_kunde and m.kunde:
             artikel_html += f'<div style="font-size:11px;color:#6b7280;">{escape(m.kunde[:35])}</div>'
         kombi_row = (
             f"<tr>"
-            f'<td class="standard-cell">{std_label}<div class="sub-line">(kombiniert)</div></td>'
+            f'<td class="standard-cell">{std_label}'
+            f'<div class="sub-line">{len(k.standards)}× kombiniert, {kombi_hinweis}</div></td>'
             f"<td>{artikel_html}</td>"
         )
         if has_auftrag:

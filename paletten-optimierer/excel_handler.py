@@ -370,8 +370,9 @@ def exportiere_ergebnis_excel(ergebnis: OptimierungsErgebnis) -> bytes:
             "Artikelnummer",
             "Original Länge",
             "Original Breite",
-            "Standard A",
-            "Standard B",
+            "Zusammensetzung",
+            "Richtung",
+            "Anzahl Standards",
         ]
         ws_kombi.append(spalten_kombi)
         for col, _ in enumerate(spalten_kombi, start=1):
@@ -379,17 +380,20 @@ def exportiere_ergebnis_excel(ergebnis: OptimierungsErgebnis) -> bytes:
             c.fill = header_fill
             c.font = header_font
         for k in ergebnis.kombinationen:
+            zusammensetzung = " + ".join(s.label for s in k.standards)
+            richtung = "längs" if k.richtung == "laenge" else "quer"
             ws_kombi.append(
                 [
                     k.palette.artikelnummer,
                     k.palette.laenge,
                     k.palette.breite,
-                    k.standard_a.label,
-                    k.standard_b.label,
+                    zusammensetzung,
+                    richtung,
+                    len(k.standards),
                 ]
             )
         for col_idx in range(1, len(spalten_kombi) + 1):
-            ws_kombi.column_dimensions[get_column_letter(col_idx)].width = 22
+            ws_kombi.column_dimensions[get_column_letter(col_idx)].width = 26
 
     buf = io.BytesIO()
     wb.save(buf)

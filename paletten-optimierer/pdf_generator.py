@@ -269,16 +269,18 @@ def erstelle_bestellung_pdf(
         story.append(det_tabelle)
 
     if ergebnis.kombinationen:
-        story.append(Paragraph("Kombinationen (2 Paletten)", h2))
-        kombi_rows = [["Artikelnummer", "Original L", "Original B", "Standard A", "Standard B"]]
+        story.append(Paragraph("Kombinationen aus Standardpaletten", h2))
+        kombi_rows = [["Artikelnummer", "Original L", "Original B", "Zusammensetzung", "Richtung"]]
         for k in ergebnis.kombinationen:
+            zusammensetzung = " + ".join(s.label for s in k.standards)
+            richtung = "längs" if k.richtung == "laenge" else "quer"
             kombi_rows.append(
                 [
                     k.palette.artikelnummer,
                     str(int(k.palette.laenge)),
                     str(int(k.palette.breite)),
-                    k.standard_a.label,
-                    k.standard_b.label,
+                    zusammensetzung,
+                    richtung,
                 ]
             )
         ktab = Table(
