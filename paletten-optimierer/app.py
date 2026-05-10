@@ -657,11 +657,47 @@ def lade_beispiel() -> None:
     pfad = Path(__file__).resolve().parent / "data" / "beispiel_palettenliste.xlsx"
     if not pfad.exists():
         erstelle_beispiel_excel(pfad, 80)
-    st.session_state.paletten = importiere_excel(pfad)
-    st.session_state.datei_name = pfad.name
+    _importiere_quelle(pfad, pfad.name)
+
+
+def _importiere_quelle(quelle, anzeigename: str) -> bool:
+    """Liest Paletten aus ``quelle`` und löst danach die Optimierung aus.
+
+    Beide Schritte sind in einen Spinner verpackt und mit Try/Except
+    geschützt, sodass UI-Hänger sichtbar werden und ein Optimierungs-
+    Fehler nicht die bereits geladenen Paletten verwirft.
+    """
+    try:
+        with st.spinner(f"Lese {anzeigename} ..."):
+            ps = importiere_excel(quelle)
+    except Exception as exc:  # noqa: BLE001 — wir wollen wirklich alles fangen
+        st.error(f"❌ Import-Fehler: {exc}")
+        return False
+
+    if not ps:
+        st.warning(
+            "Keine Paletten in der Datei gefunden. "
+            "Bitte prüfen, ob Spalten wie Artikelnummer, P-Länge, P-Breite vorhanden sind."
+        )
+        return False
+
+    st.session_state.paletten = ps
+    st.session_state.datei_name = anzeigename
     st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
-    with st.spinner("Berechne Optimierung ..."):
-        run_optimierung()
+    st.session_state.ergebnis = None
+    st.session_state.wirtschaftlichkeit = None
+
+    try:
+        with st.spinner(f"Berechne Optimierung für {len(ps)} Paletten ..."):
+            run_optimierung()
+    except Exception as exc:  # noqa: BLE001
+        st.error(
+            "⚠️ Optimierung fehlgeschlagen: " + str(exc) + "\n\n"
+            + f"{len(ps)} Paletten wurden geladen. Bitte links die Einstellungen prüfen "
+            + 'und mit "Neu optimieren" erneut versuchen.'
+        )
+
+    return True
 
 
 def card_datenimport() -> None:
@@ -689,16 +725,8 @@ def card_datenimport() -> None:
             )
             col_a, col_b = st.columns(2)
             if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
-                if upload is not None:
-                    try:
-                        ps = importiere_excel(upload)
-                        st.session_state.paletten = ps
-                        st.session_state.datei_name = upload.name
-                        st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
-                        run_optimierung()
-                        st.rerun()
-                    except Exception as exc:
-                        st.error(f"Import-Fehler: {exc}")
+                if upload is not None and _importiere_quelle(upload, upload.name):
+                    st.rerun()
             if col_b.button("📦 Beispieldaten", use_container_width=True):
                 lade_beispiel()
                 st.rerun()
@@ -711,16 +739,8 @@ def card_datenimport() -> None:
         )
         col_a, col_b = st.columns(2)
         if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
-            if upload is not None:
-                try:
-                    ps = importiere_excel(upload)
-                    st.session_state.paletten = ps
-                    st.session_state.datei_name = upload.name
-                    st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
-                    run_optimierung()
-                    st.rerun()
-                except Exception as exc:
-                    st.error(f"Import-Fehler: {exc}")
+            if upload is not None and _importiere_quelle(upload, upload.name):
+                st.rerun()
         if col_b.button("📦 Beispieldaten", use_container_width=True):
             lade_beispiel()
             st.rerun()
@@ -1170,16 +1190,8 @@ def seite_dashboard() -> None:
         upload = c.file_uploader("Excel-Datei (.xlsx)", type=["xlsx"], key="up_init")
         col_a, col_b = c.columns(2)
         if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
-            if upload is not None:
-                try:
-                    ps = importiere_excel(upload)
-                    st.session_state.paletten = ps
-                    st.session_state.datei_name = upload.name
-                    st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
-                    run_optimierung()
-                    st.rerun()
-                except Exception as exc:
-                    c.error(f"Import-Fehler: {exc}")
+            if upload is not None and _importiere_quelle(upload, upload.name):
+                st.rerun()
         if col_b.button("📦 Beispieldaten laden", use_container_width=True, type="primary"):
             lade_beispiel()
             st.rerun()
@@ -1187,7 +1199,14 @@ def seite_dashboard() -> None:
         return
 
     if st.session_state.ergebnis is None or st.session_state.wirtschaftlichkeit is None:
-        run_optimierung()
+        try:
+            with st.spinner("Berechne Optimierung ..."):
+                run_optimierung()
+        except Exception as exc:  # noqa: BLE001
+            st.error(
+                "⚠️ Optimierung fehlgeschlagen: " + str(exc) + "\n\n"
+                + 'Bitte die Einstellungen prüfen und "Neu optimieren" klicken.'
+            )
     erg = st.session_state.ergebnis
     wirt = st.session_state.wirtschaftlichkeit
 
@@ -1199,12 +1218,27 @@ def seite_dashboard() -> None:
         card_kosten()
         card_sicherheitsbestand()
         if st.button("🔄 Neu optimieren", use_container_width=True, type="primary", key="reopt"):
-            with st.spinner("Optimiere ..."):
-                run_optimierung()
+            try:
+                with st.spinner("Optimiere ..."):
+                    run_optimierung()
+            except Exception as exc:  # noqa: BLE001
+                st.error(f"⚠️ Optimierung fehlgeschlagen: {exc}")
             st.rerun()
     with col_r:
         erg = st.session_state.ergebnis
         wirt = st.session_state.wirtschaftlichkeit
+
+        if erg is None or wirt is None:
+            n = len(st.session_state.paletten)
+            hinweis = (
+                '<div class="card"><h3>Optimierungs-Ergebnis</h3>'
+                '<p style="color:#6b7280;font-size:13px;">'
+                f"{n} Paletten geladen. "
+                "Klicke links auf <b>Neu optimieren</b>, um die Standardpaletten "
+                "zu berechnen.</p></div>"
+            )
+            st.markdown(hinweis, unsafe_allow_html=True)
+            return
 
         card_ergebnis(erg)
         sub_a, sub_b, sub_c = st.columns([1, 1, 1])
@@ -1215,7 +1249,8 @@ def seite_dashboard() -> None:
         with sub_c:
             card_kosten_simulation(wirt)
 
-    footer_info(erg)
+    if erg is not None:
+        footer_info(erg)
 
 
 def seite_datenimport() -> None:
@@ -1224,13 +1259,9 @@ def seite_datenimport() -> None:
     upload = st.file_uploader("Excel-Datei (.xlsx)", type=["xlsx"], key="up_d")
     col_a, col_b = st.columns(2)
     if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
-        if upload is not None:
-            ps = importiere_excel(upload)
-            st.session_state.paletten = ps
-            st.session_state.datei_name = upload.name
-            st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
-            run_optimierung()
-            st.success(f"{len(ps)} Paletten geladen.")
+        if upload is not None and _importiere_quelle(upload, upload.name):
+            st.success(f"{len(st.session_state.paletten)} Paletten geladen.")
+            st.rerun()
     if col_b.button("📦 Beispieldaten laden", use_container_width=True, type="primary"):
         lade_beispiel()
         st.rerun()
