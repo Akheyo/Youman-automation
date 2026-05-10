@@ -368,6 +368,50 @@ def optimiere(
     )
 
 
+def empfohlene_toleranz(
+    paletten: list[Palette],
+    max_verschwendung_pct: float = 5.0,
+    raster: int = 50,
+) -> tuple[float, float]:
+    """Empfiehlt eine Toleranz, die wenig Lademeter verschwendet.
+
+    Sweept verschiedene Toleranz-Stufen und wählt die größte, bei der
+    die zusätzlich benötigten Lademeter (gegenüber den Original-Maßen)
+    unter ``max_verschwendung_pct`` Prozent der Gesamt-Lademeter
+    bleiben. Damit hat der Algorithmus genug Spielraum, um wenige
+    Standards zu produzieren, ohne den LKW unnötig leer mitzufahren.
+
+    Returns:
+        ``(toleranz_pct, anzahl_standards)`` — Toleranz in Prozent und
+        die damit erreichte Standard-Anzahl.
+    """
+    if not paletten:
+        return 5.0, 0
+
+    gesamt_lm = sum(p.laenge / 1000.0 * max(1, p.anzahl) for p in paletten)
+    if gesamt_lm <= 0:
+        return 5.0, 0
+
+    proben_tol = [0, 2, 5, 8, 10, 13, 17, 22, 28, 35, 45, 60, 80]
+    bestes_tol = 5.0
+    bestes_anz = len(paletten)
+
+    for tol in proben_tol:
+        e = optimiere(paletten, tol, tol, "prozent", raster)
+        zusatz = sum(
+            (s.laenge - m.laenge) / 1000.0 * max(1, m.anzahl)
+            for s in e.standards for m in s.members
+        )
+        verschwendung = zusatz / gesamt_lm * 100
+        if verschwendung <= max_verschwendung_pct:
+            bestes_tol = float(tol)
+            bestes_anz = e.anzahl_standards
+        else:
+            break
+
+    return bestes_tol, bestes_anz
+
+
 def optimiere_mit_zielanzahl(
     paletten: list[Palette],
     zielanzahl: int,

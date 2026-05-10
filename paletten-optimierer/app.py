@@ -29,8 +29,8 @@ from optimizer import (
     StandardPalette,
     WirtschaftlichkeitsErgebnis,
     berechne_wirtschaftlichkeit,
+    empfohlene_toleranz,
     optimiere,
-    optimiere_mit_zielanzahl,
 )
 from pdf_generator import erstelle_bestellung_pdf
 from storage_handler import (
@@ -399,12 +399,13 @@ def init_state() -> None:
         "paletten": [],
         "ergebnis": None,
         "wirtschaftlichkeit": None,
-        "modus": "Ziel-Anzahl",
-        "zielanzahl": 15,
-        "tol_einheit": "mm",
-        "tol_l": 200.0,
-        "tol_b": 150.0,
-        "ermittelte_toleranz": 0.0,
+        "tol_einheit": "prozent",
+        "tol_l": 15.0,
+        "tol_b": 15.0,
+        "max_verschwendung_pct": 5.0,
+        "empfohlene_tol": 0.0,
+        "empfohlene_anz": 0,
+        "letzte_opt_signatur": "",
         "kosten_pro_lkw": 800.0,
         "nutzbare_ladelaenge": 13.6,
         "palettenkosten_neu": 18.0,
@@ -429,30 +430,28 @@ def init_state() -> None:
 # Compute
 # ---------------------------------------------------------------------------
 
+def _opt_signatur() -> str:
+    """Eindeutige Signatur der Optimierungs-Inputs für Caching."""
+    return (
+        f"{len(st.session_state.paletten)}|{st.session_state.tol_einheit}|"
+        f"{st.session_state.tol_l}|{st.session_state.tol_b}|"
+        f"{st.session_state.raster}|{st.session_state.kombinieren_erlaubt}"
+    )
+
+
 def run_optimierung() -> None:
     if not st.session_state.paletten:
         st.session_state.ergebnis = None
         st.session_state.wirtschaftlichkeit = None
         return
-
-    if st.session_state.modus == "Ziel-Anzahl":
-        erg, tol = optimiere_mit_zielanzahl(
-            st.session_state.paletten,
-            zielanzahl=int(st.session_state.zielanzahl),
-            raster=st.session_state.raster,
-            einheit="prozent",
-        )
-        st.session_state.ermittelte_toleranz = tol
-    else:
-        erg = optimiere(
-            st.session_state.paletten,
-            toleranz_l=st.session_state.tol_l,
-            toleranz_b=st.session_state.tol_b,
-            einheit=st.session_state.tol_einheit,
-            raster=st.session_state.raster,
-            kombinieren_erlaubt=st.session_state.kombinieren_erlaubt,
-        )
-        st.session_state.ermittelte_toleranz = 0.0
+    erg = optimiere(
+        st.session_state.paletten,
+        toleranz_l=st.session_state.tol_l,
+        toleranz_b=st.session_state.tol_b,
+        einheit=st.session_state.tol_einheit,
+        raster=st.session_state.raster,
+        kombinieren_erlaubt=st.session_state.kombinieren_erlaubt,
+    )
     params = KostenParameter(
         kosten_pro_lkw=st.session_state.kosten_pro_lkw,
         nutzbare_ladelaenge=st.session_state.nutzbare_ladelaenge,
@@ -462,6 +461,39 @@ def run_optimierung() -> None:
     wirt = berechne_wirtschaftlichkeit(erg, params)
     st.session_state.ergebnis = erg
     st.session_state.wirtschaftlichkeit = wirt
+    st.session_state.letzte_opt_signatur = _opt_signatur()
+
+
+def stelle_aktualitaet_sicher() -> None:
+    """Re-optimiert wenn sich die Inputs seit dem letzten Lauf geändert haben.
+
+    So bleibt das Ergebnis live und reagiert auf jede Toleranz-Änderung,
+    ohne dass der User extra einen Knopf drücken muss.
+    """
+    if not st.session_state.paletten:
+        return
+    if _opt_signatur() == st.session_state.get("letzte_opt_signatur", ""):
+        return
+    try:
+        with st.spinner("Optimiere ..."):
+            run_optimierung()
+    except Exception as exc:  # noqa: BLE001
+        st.error(f"⚠️ Optimierung fehlgeschlagen: {exc}")
+
+
+def empfehlung_anwenden() -> None:
+    """Berechnet die Toleranz-Empfehlung und übernimmt sie."""
+    with st.spinner("Berechne intelligente Empfehlung ..."):
+        tol, anz = empfohlene_toleranz(
+            st.session_state.paletten,
+            max_verschwendung_pct=float(st.session_state.max_verschwendung_pct),
+            raster=st.session_state.raster,
+        )
+    st.session_state.empfohlene_tol = tol
+    st.session_state.empfohlene_anz = anz
+    st.session_state.tol_einheit = "prozent"
+    st.session_state.tol_l = tol
+    st.session_state.tol_b = tol
 
 
 def aktiver_schritt() -> int:
@@ -686,9 +718,28 @@ def _importiere_quelle(quelle, anzeigename: str) -> bool:
     st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
     st.session_state.ergebnis = None
     st.session_state.wirtschaftlichkeit = None
+    st.session_state.letzte_opt_signatur = ""
 
     try:
-        with st.spinner(f"Berechne Optimierung für {len(ps)} Paletten ..."):
+        with st.spinner(f"Berechne Smart-Empfehlung für {len(ps)} Paletten ..."):
+            tol, anz = empfohlene_toleranz(
+                ps,
+                max_verschwendung_pct=float(st.session_state.max_verschwendung_pct),
+                raster=st.session_state.raster,
+            )
+        st.session_state.empfohlene_tol = tol
+        st.session_state.empfohlene_anz = anz
+        st.session_state.tol_einheit = "prozent"
+        st.session_state.tol_l = tol
+        st.session_state.tol_b = tol
+    except Exception as exc:  # noqa: BLE001
+        st.warning(
+            f"Empfehlung konnte nicht berechnet werden: {exc}. "
+            "Standard-Toleranz wird verwendet."
+        )
+
+    try:
+        with st.spinner("Optimiere ..."):
             run_optimierung()
     except Exception as exc:  # noqa: BLE001
         st.error(
@@ -748,61 +799,71 @@ def card_datenimport() -> None:
 
 
 def card_toleranz() -> None:
-    st.markdown('<div class="card"><h3>Optimierungs-Strategie</h3>', unsafe_allow_html=True)
-    modus = st.radio(
-        "Modus",
-        ["Ziel-Anzahl", "Maximale Toleranz"],
-        horizontal=True,
-        index=0 if st.session_state.modus == "Ziel-Anzahl" else 1,
-        key="modus_in",
-        label_visibility="collapsed",
-    )
-    st.session_state.modus = modus
+    st.markdown('<div class="card"><h3>Toleranz</h3>', unsafe_allow_html=True)
 
-    if modus == "Ziel-Anzahl":
-        st.session_state.zielanzahl = st.number_input(
-            "Anzahl Standardpaletten (Ziel)",
-            min_value=2,
-            max_value=200,
-            value=int(st.session_state.zielanzahl),
-            step=1,
-            key="ziel_in",
-            help="Die App findet automatisch die kleinste Toleranz, mit der dieses Ziel erreicht wird.",
+    col_l, col_b = st.columns(2)
+    suffix = "mm" if st.session_state.tol_einheit == "mm" else "%"
+    with col_l:
+        st.session_state.tol_l = st.number_input(
+            f"Länge ({suffix})",
+            min_value=0.0,
+            value=float(st.session_state.tol_l),
+            step=10.0 if suffix == "mm" else 1.0,
+            key="tol_l_in",
         )
-        tol = st.session_state.get("ermittelte_toleranz", 0.0)
-        if tol > 0:
+    with col_b:
+        st.session_state.tol_b = st.number_input(
+            f"Breite ({suffix})",
+            min_value=0.0,
+            value=float(st.session_state.tol_b),
+            step=10.0 if suffix == "mm" else 1.0,
+            key="tol_b_in",
+        )
+    einheit = st.radio(
+        "Einheit",
+        ["Prozent", "Millimeter"],
+        horizontal=True,
+        index=0 if st.session_state.tol_einheit == "prozent" else 1,
+        key="einh_in",
+    )
+    st.session_state.tol_einheit = "prozent" if einheit == "Prozent" else "mm"
+
+    # Empfehlung
+    emp_tol = st.session_state.get("empfohlene_tol", 0.0)
+    emp_anz = st.session_state.get("empfohlene_anz", 0)
+    if emp_tol > 0 and st.session_state.paletten:
+        col_e1, col_e2 = st.columns([3, 2])
+        with col_e1:
             st.markdown(
-                f'<div class="lade-box"><div class="lbl">Ermittelte Toleranz</div>'
-                f'<div class="val">±{tol:.1f}%</div></div>',
+                f'<div class="lade-box" style="text-align:left;padding:10px 12px;">'
+                f'<div class="lbl">💡 Smart-Empfehlung</div>'
+                f'<div style="font-size:13px;color:#1a2944;font-weight:600;margin-top:2px;">'
+                f'±{emp_tol:.0f}% → {emp_anz} Standards</div>'
+                f'<div style="font-size:11px;color:#6b7280;margin-top:2px;">'
+                f'max {st.session_state.max_verschwendung_pct:.0f}% Lademeter-Verschwendung'
+                f'</div></div>',
                 unsafe_allow_html=True,
             )
-    else:
-        col_l, col_b = st.columns(2)
-        suffix = "mm" if st.session_state.tol_einheit == "mm" else "%"
-        with col_l:
-            st.session_state.tol_l = st.number_input(
-                f"Länge ({suffix})",
-                min_value=0.0,
-                value=float(st.session_state.tol_l),
-                step=10.0 if suffix == "mm" else 1.0,
-                key="tol_l_in",
-            )
-        with col_b:
-            st.session_state.tol_b = st.number_input(
-                f"Breite ({suffix})",
-                min_value=0.0,
-                value=float(st.session_state.tol_b),
-                step=10.0 if suffix == "mm" else 1.0,
-                key="tol_b_in",
-            )
-        einheit = st.radio(
-            "Einheit",
-            ["Millimeter", "Prozent"],
-            horizontal=True,
-            index=0 if st.session_state.tol_einheit == "mm" else 1,
-            key="einh_in",
-        )
-        st.session_state.tol_einheit = "mm" if einheit == "Millimeter" else "prozent"
+        with col_e2:
+            st.markdown('<div style="height:14px;"></div>', unsafe_allow_html=True)
+            if st.button("Übernehmen", use_container_width=True, key="apply_emp"):
+                st.session_state.tol_einheit = "prozent"
+                st.session_state.tol_l = emp_tol
+                st.session_state.tol_b = emp_tol
+                st.rerun()
+
+    st.session_state.max_verschwendung_pct = st.slider(
+        "Max. Lademeter-Verschwendung für Empfehlung (%)",
+        min_value=1.0, max_value=20.0,
+        value=float(st.session_state.max_verschwendung_pct),
+        step=0.5,
+        key="vw_in",
+    )
+    if st.session_state.paletten and st.button(
+        "🧠 Empfehlung neu berechnen", use_container_width=True, key="rec_emp"
+    ):
+        empfehlung_anwenden()
+        st.rerun()
 
     st.session_state.kombinieren_erlaubt = st.toggle(
         "Paletten kombinieren erlauben",
@@ -1207,8 +1268,6 @@ def seite_dashboard() -> None:
                 "⚠️ Optimierung fehlgeschlagen: " + str(exc) + "\n\n"
                 + 'Bitte die Einstellungen prüfen und "Neu optimieren" klicken.'
             )
-    erg = st.session_state.ergebnis
-    wirt = st.session_state.wirtschaftlichkeit
 
     col_l, col_r = st.columns([1, 2.4])
     with col_l:
@@ -1225,6 +1284,8 @@ def seite_dashboard() -> None:
                 st.error(f"⚠️ Optimierung fehlgeschlagen: {exc}")
             st.rerun()
     with col_r:
+        # Live re-optimize wenn sich Werte geändert haben (Toleranz, Einheit, ...)
+        stelle_aktualitaet_sicher()
         erg = st.session_state.ergebnis
         wirt = st.session_state.wirtschaftlichkeit
 
