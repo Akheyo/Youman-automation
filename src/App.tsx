@@ -5,7 +5,9 @@ import { VehicleDetail } from './components/VehicleDetail';
 import { VehicleForm } from './components/VehicleForm';
 import { VerkaufModal } from './components/VerkaufModal';
 import { Dialog } from './components/Dialog';
-import { Car, Plus, Settings as SettingsIcon } from 'lucide-react';
+import { Car, Plus, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
+import { isTauri } from './lib/storage';
+import { formatDatum } from './lib/format';
 import type { Vehicle } from './types';
 
 type View =
@@ -66,6 +68,16 @@ export default function App() {
             {view.kind === 'list' && (
               <button className="btn-success" onClick={() => setView({ kind: 'create' })}>
                 <Plus size={16} /> Neues Fahrzeug
+              </button>
+            )}
+            {isTauri() && (
+              <button
+                className="btn-ghost text-white hover:bg-white/10"
+                onClick={() => void store.refresh()}
+                title="Daten neu laden (z.B. nach Änderung am anderen PC)"
+                aria-label="Synchronisieren"
+              >
+                <RefreshCw size={16} />
               </button>
             )}
             <button
@@ -204,6 +216,43 @@ export default function App() {
               Wird beim Anlegen neuer Fahrzeuge übernommen.
             </p>
           </div>
+
+          <div className="border-t pt-4 space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Speicherort
+            </div>
+            <div className="rounded-md bg-slate-50 border border-slate-200 p-2 text-xs font-mono break-all text-slate-700">
+              {store.storageLocation}
+            </div>
+            {isTauri() ? (
+              <p className="text-xs text-slate-500">
+                Wenn dieser Ordner via OneDrive synchronisiert wird (Standard auf Windows 11
+                mit Microsoft-Konto), arbeiten beide PCs automatisch auf demselben Datenbestand.
+                Beim Wechsel auf den anderen PC einmal auf <RefreshCw size={11} className="inline -mt-0.5" /> klicken,
+                falls die App schon geöffnet war.
+              </p>
+            ) : (
+              <p className="text-xs text-slate-500">
+                Web-Vorschau: Daten liegen nur im Browser dieses Geräts. Der Auto-Sync zwischen
+                zwei PCs funktioniert nur in der installierten Desktop-Version.
+              </p>
+            )}
+            {store.lastSyncedAt && (
+              <p className="text-xs text-slate-400">
+                Zuletzt gespeichert: {formatDatum(store.lastSyncedAt)} ·{' '}
+                {new Date(store.lastSyncedAt).toLocaleTimeString('de-DE')}
+              </p>
+            )}
+            {isTauri() && (
+              <button
+                className="btn-secondary w-full"
+                onClick={() => void store.refresh()}
+              >
+                <RefreshCw size={14} /> Jetzt vom Speicherort neu laden
+              </button>
+            )}
+          </div>
+
           <div className="border-t pt-4 space-y-2">
             <button
               className="btn-secondary w-full"

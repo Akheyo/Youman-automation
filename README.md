@@ -114,12 +114,40 @@ src/
     └── Dialog.tsx             # Modal-Wrapper
 ```
 
-## Datensicherheit
+## Datenspeicherung & Auto-Sync zwischen 2 PCs
 
-- Daten liegen ausschließlich im LocalStorage des verwendeten Browsers
-  bzw. im WebView2-Storage der installierten Desktop-App.
-- **Browser-Cache leeren = Datenverlust**. In den Einstellungen kann der
-  Demo-Datensatz nachgeladen oder alle Daten gelöscht werden.
+Die installierte Windows-App speichert die Daten als **JSON-Datei** unter
+
+```
+%USERPROFILE%\Documents\DAEV Margin Tool\daten.json
+```
+
+Wenn der Documents-Ordner via OneDrive synchronisiert wird (Standard auf
+Windows 11 mit Microsoft-Konto), arbeiten **zwei PCs automatisch auf
+demselben Datenbestand**:
+
+1. App auf PC 1 installieren → Daten erfassen → schließen.
+2. OneDrive synchronisiert die JSON im Hintergrund.
+3. App auf PC 2 öffnen → liest dieselben Daten beim Start ein.
+4. Beim Wechsel zwischen den PCs ggf. einmal auf das Refresh-Symbol oben
+   rechts klicken, um die neueste Version zu laden.
+
+**Voraussetzungen für den Auto-Sync**:
+
+- Microsoft-Konto auf beiden PCs des Kunden
+- OneDrive-Sync für den Documents-Ordner aktiv (in Windows 11 Standard,
+  in OneDrive-Einstellungen unter "Backup")
+
+Falls OneDrive nicht eingerichtet ist, bleibt die Datei lokal — jeder PC
+hat dann seinen eigenen Datenbestand.
+
+**Hinweis zu Konflikten**: Sollten beide PCs gleichzeitig die App offen
+haben und beide etwas erfassen, gewinnt der zuletzt gespeicherte Stand
+("last write wins"). In der Praxis (Werkstatt vs. Büro) ist das kaum
+relevant.
+
+Im Web-Vorschau-Modus (`npm run dev` ohne Tauri) fällt die Persistenz auf
+LocalStorage des Browsers zurück — kein File-Sync möglich.
 
 ## Windows-Installer (.exe) bauen
 

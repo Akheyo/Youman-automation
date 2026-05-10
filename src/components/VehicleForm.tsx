@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Vehicle, KostenPosition, ArbeitsstundenEintrag, KostenKategorie } from '@/types';
 import { KOSTEN_KATEGORIEN } from '@/types';
-import { generateId } from '@/lib/db';
+import { generateId } from '@/lib/storage';
 import { heuteISO } from '@/lib/format';
 import { MoneyInput } from './MoneyInput';
 import { berechneKennzahlen } from '@/lib/calculations';

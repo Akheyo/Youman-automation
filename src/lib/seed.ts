@@ -1,5 +1,5 @@
 import type { Vehicle } from '@/types';
-import { generateId } from './db';
+import { generateId } from './storage';
 
 /**
  * Beispieldatensatz aus dem Original-Sheet:
