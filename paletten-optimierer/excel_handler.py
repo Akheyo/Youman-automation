@@ -173,11 +173,51 @@ def _finde_spalten(header: list[str]) -> dict[str, int]:
     return mapping
 
 
+PFLICHT_SPALTEN = ("artikelnummer", "laenge", "breite")
+
+
+def _finde_header_zeile(
+    rows: list[tuple],
+    scan_zeilen: int = 20,
+) -> tuple[int, dict[str, int], list[str]]:
+    """Sucht die wahrscheinlichste Header-Zeile in den ersten Zeilen.
+
+    Excel-Exporte haben oft Titel-Zeilen ("Firma X", "verplante Maschinen", ...)
+    vor der eigentlichen Header-Zeile. Wir scannen die ersten ``scan_zeilen``
+    Zeilen, mappen jede gegen unsere SPALTEN_MAPPING und nehmen die Zeile mit
+    den meisten Treffern (Pflichtspalten zählen 100x, Optionale je 1x).
+
+    Returns:
+        ``(zeilen_index, spalten_mapping, normalisierter_header)``
+    """
+    best_idx = 0
+    best_mapping: dict[str, int] = {}
+    best_score = -1
+    best_header: list[str] = []
+    for idx in range(min(scan_zeilen, len(rows))):
+        row = rows[idx]
+        header = [str(c) if c is not None else "" for c in row]
+        if not any(h.strip() for h in header):
+            continue
+        mapping = _finde_spalten(header)
+        pflicht_score = sum(1 for p in PFLICHT_SPALTEN if p in mapping)
+        score = pflicht_score * 100 + len(mapping)
+        if score > best_score:
+            best_score = score
+            best_idx = idx
+            best_mapping = mapping
+            best_header = header
+    return best_idx, best_mapping, best_header
+
+
 def importiere_excel(
     file_or_buffer: str | Path | IO[bytes],
     sheet_name: str | None = None,
 ) -> list[Palette]:
     """Liest eine Palettenliste aus einer Excel-Datei.
+
+    Erkennt die Header-Zeile automatisch (Titel-Zeilen darüber werden
+    übersprungen). Pflichtspalten: Artikelnummer, Länge, Breite.
 
     Args:
         file_or_buffer: Pfad oder Datei-ähnliches Objekt (z.B. Streamlit-Upload).
@@ -194,16 +234,15 @@ def importiere_excel(
     if not rows:
         return []
 
-    header_row = rows[0]
-    header = [str(c) if c is not None else "" for c in header_row]
-    spalten = _finde_spalten(header)
+    header_idx, spalten, header = _finde_header_zeile(rows)
 
-    pflicht = ["artikelnummer", "laenge", "breite"]
-    fehlend = [p for p in pflicht if p not in spalten]
+    fehlend = [p for p in PFLICHT_SPALTEN if p not in spalten]
     if fehlend:
+        gezeigt = [h for h in header if h.strip()] or [str(c) for c in rows[0] if c is not None]
         raise ValueError(
             f"Pflichtspalten fehlen in Excel: {', '.join(fehlend)}. "
-            f"Gefundene Spalten: {header}"
+            f"Erwartet: Artikelnummer, P-Länge, P-Breite (oder Synonyme). "
+            f"Gefundene Spalten in Zeile {header_idx + 1}: {gezeigt}"
         )
 
     def _val(row: tuple, schluessel: str):
@@ -231,7 +270,7 @@ def importiere_excel(
         return int(_float(v, default))
 
     paletten: list[Palette] = []
-    for row in rows[1:]:
+    for row in rows[header_idx + 1:]:
         if all(c is None or str(c).strip() == "" for c in row):
             continue
         try:
