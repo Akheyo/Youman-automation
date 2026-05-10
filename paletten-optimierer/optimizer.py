@@ -304,17 +304,18 @@ def _post_processing_kombinationen(
     tol_b: float,
     einheit: Einheit,
     max_k: int = 3,
-    max_iterationen: int = 50,
+    max_iterationen: int = 200,
 ) -> OptimierungsErgebnis:
-    """Eliminiert kleine Standards, deren Mitglieder durch Kombis abgedeckt
-    werden können.
+    """Eliminiert Standards aggressiv durch Kombinationen.
 
-    Geht iterativ den kleinsten Cluster zuerst durch. Für jeden Cluster mit
-    <= 3 Mitgliedern wird geprüft, ob *jedes* Mitglied durch eine Kombi
-    aus zwei oder drei anderen Standards dargestellt werden kann. Wenn ja,
-    wird der Cluster eliminiert und die Mitglieder als Kombinationen
-    erfasst. Anschließend startet die Iteration neu — eventuell sind nach
-    dem Wegfall jetzt weitere Cluster eliminierbar.
+    Ziel: minimale Anzahl unique Standards. Geht iterativ den kleinsten
+    Cluster zuerst durch und prüft, ob *jedes* Mitglied durch eine
+    2- bis ``max_k``-fach-Kombination der verbleibenden Standards
+    abgedeckt werden kann (in Längs- oder Querrichtung). Wenn ja, fällt
+    der ganze Cluster weg und seine Mitglieder werden als Kombinationen
+    erfasst. Wiederholt sich, bis keine weitere Eliminierung möglich ist
+    — die übrig bleibenden Standards bilden eine Art „Basis", aus der
+    sich alle Original-Maße reproduzieren lassen.
     """
     for _ in range(max_iterationen):
         if len(ergebnis.standards) < 3:
@@ -329,8 +330,6 @@ def _post_processing_kombinationen(
         eliminiert = False
         for idx in idx_sort:
             std = ergebnis.standards[idx]
-            if len(std.members) > 3:
-                break
             andere = [
                 ergebnis.standards[i]
                 for i in range(len(ergebnis.standards))
