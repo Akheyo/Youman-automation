@@ -32,9 +32,9 @@ def get_base_path() -> Path:
 def get_writable_path() -> Path:
     """Liefert ein vom Nutzer beschreibbares Verzeichnis für JSON-Storage."""
     if sys.platform == "win32":
-        base = Path(os.environ.get("APPDATA", str(Path.home()))) / "PalettenOptimierer"
+        base = Path(os.environ.get("APPDATA", str(Path.home()))) / "Youman"
     else:
-        base = Path.home() / ".paletten-optimierer"
+        base = Path.home() / ".youman"
     (base / "storage").mkdir(parents=True, exist_ok=True)
     (base / "logs").mkdir(parents=True, exist_ok=True)
     return base
@@ -42,7 +42,7 @@ def get_writable_path() -> Path:
 
 def setup_logging(log_dir: Path) -> Path:
     """Schreibt Streamlit + Launcher-Logs in eine Datei für Diagnose."""
-    log_file = log_dir / "paletten-optimierer.log"
+    log_file = log_dir / "youman.log"
     handlers: list[logging.Handler] = [logging.FileHandler(log_file, encoding="utf-8")]
     if not getattr(sys, "frozen", False):
         handlers.append(logging.StreamHandler(sys.stderr))
@@ -155,7 +155,7 @@ def main() -> int:
 
     log_file = setup_logging(log_dir)
     log = logging.getLogger("launcher")
-    log.info("Paletten Optimierer startet")
+    log.info("Youman startet")
     log.info("base=%s writable=%s frozen=%s", base, writable, getattr(sys, "frozen", False))
 
     if str(base) not in sys.path:

@@ -1,18 +1,21 @@
 """PDF-Generator für Bestellungen.
 
-Erzeugt eine professionell layoutete Bestell-PDF mit Kopfzeile, Bestelltabelle
-und Detail-Blöcken pro Standardpalette. Verwendet ReportLab Platypus.
+Erzeugt eine professionell layoutete Bestell-PDF mit Logo-Kopfzeile,
+Bestelltabelle und Detail-Blöcken pro Standardpalette. Verwendet
+ReportLab Platypus.
 """
 from __future__ import annotations
 
 import io
 from datetime import date, datetime
+from pathlib import Path
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import (
+    Image as PdfImage,
     Paragraph,
     SimpleDocTemplate,
     Spacer,
@@ -22,6 +25,14 @@ from reportlab.platypus import (
 
 from optimizer import OptimierungsErgebnis
 from storage_handler import berechne_kritische_paletten
+
+
+def _logo_pfad() -> Path | None:
+    base = Path(__file__).resolve().parent
+    for c in [base / "assets" / "youman_logo.png", base / "youman_logo.png"]:
+        if c.is_file():
+            return c
+    return None
 
 
 NAVY = colors.HexColor("#1a2944")
@@ -40,7 +51,7 @@ def _status_farbe(status: str) -> colors.Color:
 def erstelle_bestellung_pdf(
     ergebnis: OptimierungsErgebnis,
     geplantes_datum: date,
-    firma: str = "Paletten Optimierer",
+    firma: str = "Youman",
     auftragsnummer: str = "",
     kunde: str = "",
 ) -> bytes:
@@ -53,7 +64,7 @@ def erstelle_bestellung_pdf(
         rightMargin=18 * mm,
         topMargin=18 * mm,
         bottomMargin=18 * mm,
-        title="Palettenbestellung",
+        title="Youman Palettenbestellung",
         author=firma,
     )
 
@@ -61,9 +72,10 @@ def erstelle_bestellung_pdf(
     titel = ParagraphStyle(
         "Titel",
         parent=styles["Heading1"],
-        fontSize=20,
+        fontSize=22,
         textColor=NAVY,
-        spaceAfter=4,
+        spaceAfter=2,
+        leading=24,
     )
     subtitel = ParagraphStyle(
         "Sub",
@@ -88,7 +100,28 @@ def erstelle_bestellung_pdf(
     )
 
     story: list = []
-    story.append(Paragraph(firma, titel))
+
+    logo = _logo_pfad()
+    if logo is not None:
+        try:
+            logo_img = PdfImage(str(logo), width=14 * mm, height=14 * mm, kind="proportional")
+            header_table = Table(
+                [[logo_img, Paragraph(firma, titel)]],
+                colWidths=[18 * mm, None],
+            )
+            header_table.setStyle(TableStyle([
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ]))
+            story.append(header_table)
+        except Exception:
+            story.append(Paragraph(firma, titel))
+    else:
+        story.append(Paragraph(firma, titel))
+
     meta_parts = [
         f"Erstellt am: {datetime.now().strftime('%d.%m.%Y %H:%M')}",
         f"Geplantes Lieferdatum: {geplantes_datum.strftime('%d.%m.%Y')}",
@@ -272,7 +305,7 @@ def erstelle_bestellung_pdf(
     story.append(Spacer(1, 12))
     story.append(
         Paragraph(
-            "<i>Erzeugt mit Paletten Optimierer.</i>",
+            "<i>Erzeugt mit Youman.</i>",
             ParagraphStyle(
                 "Footer", parent=text, fontSize=8, textColor=DUNKELGRAU
             ),

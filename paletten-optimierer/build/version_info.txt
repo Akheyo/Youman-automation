@@ -18,13 +18,13 @@ VSVersionInfo(
         StringTable(
           u'040704B0',
           [
-            StringStruct(u'CompanyName', u'Paletten Optimierer'),
-            StringStruct(u'FileDescription', u'Paletten Optimierer'),
+            StringStruct(u'CompanyName', u'Youman'),
+            StringStruct(u'FileDescription', u'Youman — Industriepaletten Standardisierung'),
             StringStruct(u'FileVersion', u'1.0.0.0'),
-            StringStruct(u'InternalName', u'paletten-optimierer'),
-            StringStruct(u'LegalCopyright', u'© Paletten Optimierer'),
-            StringStruct(u'OriginalFilename', u'PalettenOptimierer.exe'),
-            StringStruct(u'ProductName', u'Paletten Optimierer'),
+            StringStruct(u'InternalName', u'Youman'),
+            StringStruct(u'LegalCopyright', u'© Youman'),
+            StringStruct(u'OriginalFilename', u'Youman.exe'),
+            StringStruct(u'ProductName', u'Youman'),
             StringStruct(u'ProductVersion', u'1.0.0.0')
           ]
         )

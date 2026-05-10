@@ -56,7 +56,7 @@ except Exception:
     pass
 
 
-# Eigene App-Module + Beispieldatei als Daten mitpacken (Pfade relativ zum Spec)
+# Eigene App-Module + Beispieldatei + Logo als Daten mitpacken
 app_datas = [
     ("../app.py", "."),
     ("../optimizer.py", "."),
@@ -64,6 +64,7 @@ app_datas = [
     ("../pdf_generator.py", "."),
     ("../storage_handler.py", "."),
     ("../data/beispiel_palettenliste.xlsx", "data"),
+    ("../assets/youman_logo.png", "assets"),
 ]
 
 
@@ -144,7 +145,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="PalettenOptimierer",
+    name="Youman",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -168,5 +169,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="PalettenOptimierer",
+    name="Youman",
 )

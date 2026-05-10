@@ -1,16 +1,16 @@
-; Inno Setup-Skript für Paletten Optimierer
+; Inno Setup-Skript für Youman
 ; Voraussetzung: Inno Setup 6.x
 ; Wird vom GitHub-Workflow per ISCC.exe aufgerufen.
 
-#define MyAppName "Paletten Optimierer"
+#define MyAppName "Youman"
 #ifndef MyAppVersion
   #define MyAppVersion GetEnv('APP_VERSION')
 #endif
 #if MyAppVersion == ""
   #define MyAppVersion "1.0.0"
 #endif
-#define MyAppPublisher "Paletten Optimierer"
-#define MyAppExeName "PalettenOptimierer.exe"
+#define MyAppPublisher "Youman"
+#define MyAppExeName "Youman.exe"
 
 [Setup]
 AppId={{5CA9D01B-4DF5-41A6-9298-A501610FCA2F}
@@ -18,7 +18,7 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL=https://github.com/akheyo/youman-automation
-DefaultDirName={autopf}\PalettenOptimierer
+DefaultDirName={autopf}\Youman
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
@@ -29,7 +29,7 @@ Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 OutputDir=..\dist\installer
-OutputBaseFilename=PalettenOptimierer-Setup-{#MyAppVersion}
+OutputBaseFilename=Youman-Setup-{#MyAppVersion}
 SetupIconFile=icon.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 UninstallDisplayName={#MyAppName} {#MyAppVersion}
@@ -46,7 +46,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "dist\PalettenOptimierer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "dist\Youman\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
@@ -84,7 +84,7 @@ begin
   while IsAppRunning('{#MyAppExeName}') do
   begin
     if MsgBox(
-      'Paletten Optimierer läuft noch. Bitte beenden Sie das Programm und klicken Sie OK.',
+      'Youman läuft noch. Bitte beenden Sie das Programm und klicken Sie OK.',
       mbConfirmation, MB_OKCANCEL) = IDCANCEL then
     begin
       Result := False;

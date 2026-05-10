@@ -1,4 +1,4 @@
-name: Paletten Optimierer - Build Installer
+name: Youman - Build Installer
 
 on:
   push:
@@ -27,6 +27,9 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: write
+
+    env:
+      LOGO_URL: "https://i.ibb.co/6cp0nhRZ/f3226217-0594-4d31-9986-5e6d32b9b4fe.png"
 
     steps:
       - name: Checkout
@@ -60,10 +63,33 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller pillow
 
-      - name: Beispieldaten erzeugen
+      - name: Logo herunterladen (mit Fallback)
         shell: pwsh
         run: |
-          python -c "from excel_handler import erstelle_beispiel_excel; erstelle_beispiel_excel('data/beispiel_palettenliste.xlsx', 80)"
+          $logo = "assets/youman_logo.png"
+          New-Item -ItemType Directory -Force -Path "assets" | Out-Null
+          $headers = @{ "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"; "Referer" = "https://ibb.co/" }
+          try {
+            Invoke-WebRequest -Uri $env:LOGO_URL -OutFile $logo -Headers $headers -UseBasicParsing -TimeoutSec 30
+            $size = (Get-Item $logo).Length
+            Write-Host "Logo heruntergeladen: $size bytes"
+            if ($size -lt 100) { throw "Logo zu klein, vermutlich Fehler-Antwort" }
+          } catch {
+            Write-Host "Logo-Download fehlgeschlagen: $_"
+            Write-Host "Verwende vorhandenes Logo aus dem Repo (assets/youman_logo.png)"
+            if (-not (Test-Path $logo)) {
+              Write-Host "Fallback wird beim Icon-Build erzeugt"
+            }
+          }
+
+      - name: Beispieldaten regenerieren
+        shell: pwsh
+        run: |
+          if (Test-Path "data/draht_mueller_raw.tsv") {
+            python scripts/import_draht_mueller.py
+          } else {
+            python -c "from excel_handler import erstelle_beispiel_excel; erstelle_beispiel_excel('data/beispiel_palettenliste.xlsx', 80)"
+          }
 
       - name: Icon erzeugen
         shell: pwsh
@@ -90,7 +116,7 @@ jobs:
       - name: Setup.exe als Artifact hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: PalettenOptimierer-Setup-${{ steps.vars.outputs.version }}
+          name: Youman-Setup-${{ steps.vars.outputs.version }}
           path: paletten-optimierer/dist/installer/*.exe
           if-no-files-found: error
 
@@ -98,7 +124,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          name: "Paletten Optimierer ${{ steps.vars.outputs.version }}"
+          name: "Youman ${{ steps.vars.outputs.version }}"
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           files: paletten-optimierer/dist/installer/*.exe

@@ -1,12 +1,13 @@
-"""Streamlit-Dashboard des Paletten-Optimierers.
+"""Youman — Streamlit-Dashboard für Paletten-Standardisierung.
 
-Polished Dashboard nach Mockup: Sidebar-Navigation mit KPI-Footer,
-Step-Indikator, gruppierte Ergebnistabelle, drei Analyse-Karten, Footer
-mit Hinweis-Boxen. Berechnungen werden bei jeder Settings-Änderung
+Brandenfreies, professionelles Layout mit Sidebar-Navigation, Step-
+Indikator, gruppierter Ergebnistabelle, drei Analyse-Karten und Footer mit
+Hinweis-Boxen. Berechnungen werden bei jeder Settings-Änderung
 nachgezogen und im Session-State zwischengespeichert.
 """
 from __future__ import annotations
 
+import base64
 from datetime import date, datetime, timedelta
 from html import escape
 from pathlib import Path
@@ -45,274 +46,343 @@ from storage_handler import (
 )
 
 
+APP_NAME = "Youman"
+APP_TAGLINE = "Industriepaletten · Standardisierung & Kostenanalyse"
+PRIMARY = "#0f1f3d"
+PRIMARY_LIGHT = "#1a2944"
+ACCENT = "#fbbf24"
+BLUE = "#2563eb"
+GREEN = "#16a34a"
+GRAY_BG = "#f5f6f8"
+
+
 st.set_page_config(
-    page_title="Paletten Optimierer",
+    page_title=APP_NAME,
     page_icon="📦",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 
-CSS = """
+# ---------------------------------------------------------------------------
+# Logo helpers
+# ---------------------------------------------------------------------------
+
+def _logo_path() -> Path | None:
+    base = Path(__file__).resolve().parent
+    candidates = [
+        base / "assets" / "youman_logo.png",
+        base / "youman_logo.png",
+    ]
+    for c in candidates:
+        if c.is_file():
+            return c
+    return None
+
+
+def logo_base64() -> str | None:
+    p = _logo_path()
+    if p is None:
+        return None
+    try:
+        return base64.b64encode(p.read_bytes()).decode("ascii")
+    except OSError:
+        return None
+
+
+LOGO_B64 = logo_base64()
+
+
+# ---------------------------------------------------------------------------
+# CSS
+# ---------------------------------------------------------------------------
+
+CSS = f"""
 <style>
-    /* Reset Streamlit Defaults */
-    .stApp { background: #f3f4f6; }
-    .block-container { padding-top: 1.2rem; padding-bottom: 2rem; max-width: 100%; }
-    header[data-testid="stHeader"] { background: transparent; }
-    #MainMenu { visibility: hidden; }
-    footer { visibility: hidden; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    html, body, [class*="css"] {{
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }}
+
+    .stApp {{ background: {GRAY_BG}; }}
+    .block-container {{ padding-top: 1rem; padding-bottom: 2rem; max-width: 100%; }}
+    header[data-testid="stHeader"] {{ background: transparent; height: 0; }}
+    #MainMenu, footer {{ visibility: hidden; }}
 
     /* Sidebar */
-    section[data-testid="stSidebar"] {
-        background-color: #1a2944 !important;
+    section[data-testid="stSidebar"] {{
+        background: linear-gradient(180deg, {PRIMARY} 0%, {PRIMARY_LIGHT} 100%) !important;
         padding-top: 0;
-    }
-    section[data-testid="stSidebar"] > div {
-        padding-top: 0;
-    }
-    section[data-testid="stSidebar"] * { color: #e2e8f0; }
+        border-right: 1px solid rgba(0,0,0,0.04);
+    }}
+    section[data-testid="stSidebar"] > div {{ padding-top: 0; }}
+    section[data-testid="stSidebar"] * {{ color: #cbd5e1; }}
     section[data-testid="stSidebar"] h1,
     section[data-testid="stSidebar"] h2,
-    section[data-testid="stSidebar"] h3 { color: #ffffff !important; }
+    section[data-testid="stSidebar"] h3 {{ color: #fff !important; }}
+
     section[data-testid="stSidebar"] [data-testid="stRadio"] label,
-    section[data-testid="stSidebar"] [data-testid="stRadio"] p {
+    section[data-testid="stSidebar"] [data-testid="stRadio"] p {{
         color: #cbd5e1 !important;
         font-size: 14px;
         font-weight: 500;
-    }
-    section[data-testid="stSidebar"] [data-testid="stRadio"] > div { gap: 4px; }
-    section[data-testid="stSidebar"] [data-testid="stRadio"] > div > label {
-        padding: 9px 12px;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stRadio"] > div {{ gap: 2px; }}
+    section[data-testid="stSidebar"] [data-testid="stRadio"] > div > label {{
+        padding: 10px 14px;
         border-radius: 8px;
-        transition: background 0.15s;
         margin: 0;
-    }
-    section[data-testid="stSidebar"] [data-testid="stRadio"] > div > label:hover {
-        background: rgba(255,255,255,0.05);
-    }
-    section[data-testid="stSidebar"] [data-testid="stRadio"] input:checked + div {
-        font-weight: 700;
-    }
-    section[data-testid="stSidebar"] [data-testid="stRadio"] input:checked ~ div {
-        color: #ffffff !important;
-    }
+        transition: background 0.15s, color 0.15s;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stRadio"] > div > label:hover {{
+        background: rgba(255,255,255,0.06);
+    }}
+    section[data-testid="stSidebar"] [data-testid="stRadio"] > div > label:has(input:checked) {{
+        background: rgba(251,191,36,0.12);
+        border-left: 3px solid {ACCENT};
+        padding-left: 11px;
+    }}
+    section[data-testid="stSidebar"] [data-testid="stRadio"] > div > label:has(input:checked) p {{
+        color: #fff !important;
+        font-weight: 600;
+    }}
 
-    .sidebar-brand {
-        display: flex; align-items: center; gap: 10px;
-        padding: 18px 16px 22px 16px;
+    .sidebar-brand {{
+        display: flex; align-items: center; gap: 12px;
+        padding: 22px 18px 24px 18px;
         border-bottom: 1px solid rgba(255,255,255,0.06);
-        margin-bottom: 12px;
-    }
-    .sidebar-brand .logo {
-        width: 36px; height: 36px; border-radius: 8px;
-        background: #fbbf24; color: #1a2944;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 20px;
-    }
-    .sidebar-brand .name { color: #ffffff; font-weight: 800; font-size: 16px; line-height: 1.1;}
-    .sidebar-brand .sub { color: #94a3b8; font-size: 11px; margin-top: 2px;}
+        margin-bottom: 14px;
+    }}
+    .sidebar-brand img {{ width: 44px; height: 44px; border-radius: 10px; object-fit: contain; background: rgba(255,255,255,0.06); padding: 4px;}}
+    .sidebar-brand .name {{
+        color: #fff; font-weight: 800; font-size: 22px; line-height: 1; letter-spacing: -0.5px;
+    }}
+    .sidebar-brand .sub {{
+        color: #94a3b8; font-size: 11px; margin-top: 4px; letter-spacing: 0.3px;
+    }}
 
-    .sidebar-kpi {
+    .sidebar-section-label {{
+        font-size: 10px; color: #64748b; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1px;
+        padding: 18px 18px 8px;
+    }}
+
+    .sidebar-kpi {{
         background: rgba(255,255,255,0.04);
         border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 10px;
-        padding: 14px;
-        margin: 14px 6px 0;
-    }
-    .sidebar-kpi .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px;}
-    .sidebar-kpi .row { display: flex; align-items: center; gap: 12px; margin-top: 8px;}
-    .sidebar-kpi .icon-box {
-        width: 40px; height: 40px; border-radius: 8px; background: rgba(251,191,36,0.15);
-        color: #fbbf24; display:flex; align-items:center; justify-content:center; font-size: 22px;
-    }
-    .sidebar-kpi .value { font-size: 26px; font-weight: 800; color: #ffffff; line-height: 1;}
-    .sidebar-kpi .unit { color: #94a3b8; font-size: 12px; margin-top: 2px;}
-    .sidebar-status { margin: 14px 6px 0; }
-    .sidebar-status .item {
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 10px 12px 0;
+    }}
+    .sidebar-kpi .label {{ font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px;}}
+    .sidebar-kpi .row {{ display: flex; align-items: center; gap: 12px; margin-top: 8px;}}
+    .sidebar-kpi .icon-box {{
+        width: 42px; height: 42px; border-radius: 10px; background: rgba(251,191,36,0.14);
+        color: {ACCENT}; display:flex; align-items:center; justify-content:center; font-size: 22px;
+    }}
+    .sidebar-kpi .value {{ font-size: 26px; font-weight: 800; color: #fff; line-height: 1;}}
+    .sidebar-kpi .unit {{ color: #94a3b8; font-size: 12px; margin-top: 3px;}}
+    .sidebar-status {{ margin: 12px 12px 8px; }}
+    .sidebar-status .item {{
         display: flex; align-items: center; gap: 10px;
-        padding: 7px 8px; font-size: 12px; color: #cbd5e1;
-    }
-    .sidebar-status .dot {
-        width: 9px; height: 9px; border-radius: 50%;
-    }
-    .sidebar-status .dot.ok { background: #22c55e; }
-    .sidebar-status .dot.unter { background: #fbbf24; }
-    .sidebar-status .dot.kritisch { background: #ef4444; }
-    .sidebar-status .badge-rot {
-        background: #ef4444; color: white; font-size: 11px; font-weight: 700;
-        padding: 1px 8px; border-radius: 999px; margin-left: auto;
-    }
+        padding: 6px 4px; font-size: 12px; color: #cbd5e1;
+    }}
+    .sidebar-status .dot {{ width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;}}
+    .sidebar-status .dot.ok {{ background: #22c55e; box-shadow: 0 0 6px #22c55e80;}}
+    .sidebar-status .dot.unter {{ background: {ACCENT}; box-shadow: 0 0 6px #fbbf2480;}}
+    .sidebar-status .dot.kritisch {{ background: #ef4444; box-shadow: 0 0 6px #ef444480;}}
+    .sidebar-status .badge-rot {{
+        background: #ef4444; color: #fff; font-size: 11px; font-weight: 700;
+        padding: 2px 9px; border-radius: 999px; margin-left: auto;
+    }}
 
-    /* Header */
-    .head-row {
-        display: flex; align-items: center; justify-content: space-between;
+    /* Top header */
+    .topbar {{
+        display: flex; justify-content: space-between; align-items: center;
         margin-bottom: 14px;
-    }
-    .head-title { color: #1a2944; font-size: 20px; font-weight: 800; margin:0;}
-    .head-sub { color: #6b7280; font-size: 12px; margin-top: 2px;}
+    }}
+    .topbar .title {{ color: {PRIMARY_LIGHT}; font-size: 24px; font-weight: 800; line-height: 1; letter-spacing: -0.5px;}}
+    .topbar .sub {{ color: #6b7280; font-size: 12px; margin-top: 4px;}}
 
     /* Step Indicator */
-    .step-row { display: flex; gap: 0; margin: 4px 0 18px; align-items: center;}
-    .step {
+    .step-row {{ display: flex; gap: 0; margin: 4px 0 18px; align-items: stretch;}}
+    .step {{
         display: flex; align-items: center; gap: 10px;
-        background: #ffffff; border: 1px solid #e5e7eb;
-        padding: 10px 18px; color: #6b7280; font-size: 13px; font-weight: 600;
-        border-radius: 0;
-    }
-    .step:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px;}
-    .step:last-child  { border-top-right-radius: 8px; border-bottom-right-radius: 8px;}
-    .step + .step { border-left: none; }
-    .step .num {
+        background: #fff; border: 1px solid #e5e7eb;
+        padding: 12px 18px; color: #6b7280; font-size: 13px; font-weight: 600;
+        flex: 1;
+    }}
+    .step:first-child {{ border-top-left-radius: 10px; border-bottom-left-radius: 10px;}}
+    .step:last-child  {{ border-top-right-radius: 10px; border-bottom-right-radius: 10px;}}
+    .step + .step {{ border-left: none; }}
+    .step .num {{
         width: 24px; height: 24px; border-radius: 50%;
         background: #e5e7eb; color: #6b7280; font-size: 12px;
         display: inline-flex; align-items: center; justify-content: center;
-        font-weight: 700;
-    }
-    .step.done .num { background: #22c55e; color: white; }
-    .step.done { color: #1a2944; }
-    .step.active .num { background: #2563eb; color: white; }
-    .step.active { color: #1a2944; background: #eff6ff; border-color: #bfdbfe; }
-    .arrow { color: #cbd5e1; padding: 0 6px; font-size: 14px; }
+        font-weight: 700; flex-shrink: 0;
+    }}
+    .step.done .num {{ background: {GREEN}; color: #fff; }}
+    .step.done {{ color: {PRIMARY_LIGHT}; }}
+    .step.active .num {{ background: {BLUE}; color: #fff; box-shadow: 0 0 0 4px rgba(37,99,235,0.15);}}
+    .step.active {{ color: {PRIMARY_LIGHT}; background: linear-gradient(180deg, #f0f7ff 0%, #fff 100%); border-color: #bfdbfe;}}
 
     /* Cards */
-    .card {
-        background: #ffffff;
+    .card {{
+        background: #fff;
         border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 16px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 1px 3px rgba(15,31,61,0.04), 0 1px 2px rgba(15,31,61,0.06);
         margin-bottom: 14px;
-    }
-    .card h3 {
-        color: #1a2944;
-        font-size: 14px;
-        margin: 0 0 12px 0;
+    }}
+    .card h3 {{
+        color: {PRIMARY_LIGHT};
+        font-size: 13px;
+        margin: 0 0 14px 0;
         font-weight: 700;
-        text-transform: none;
-    }
-    .card .sub { color: #6b7280; font-size: 12px; margin-top: 4px;}
+        letter-spacing: 0.2px;
+        text-transform: uppercase;
+        display: flex; align-items: center; gap: 8px;
+    }}
+    .card h3::before {{
+        content: ''; display: block; width: 3px; height: 14px;
+        background: {ACCENT}; border-radius: 2px;
+    }}
+    .card .sub {{ color: #6b7280; font-size: 12px; margin-top: 4px;}}
 
     /* File card */
-    .file-card { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
-    .file-card .icon {
-        width: 42px; height: 42px; border-radius: 8px;
+    .file-card {{ display: flex; align-items: center; gap: 12px; padding: 6px 0; }}
+    .file-card .icon {{
+        width: 44px; height: 44px; border-radius: 10px;
         background: #dcfce7; color: #15803d;
-        display:flex; align-items:center; justify-content:center; font-weight: 800; font-size: 13px;
-    }
-    .file-meta { flex: 1; }
-    .file-meta .fn { font-weight: 700; color: #1a2944; font-size: 13px; }
-    .file-meta .info { color: #6b7280; font-size: 11px; margin-top: 2px;}
+        display:flex; align-items:center; justify-content:center; font-weight: 800; font-size: 12px;
+    }}
+    .file-meta {{ flex: 1; min-width: 0; }}
+    .file-meta .fn {{ font-weight: 700; color: {PRIMARY_LIGHT}; font-size: 13px; word-break: break-all;}}
+    .file-meta .info {{ color: #6b7280; font-size: 11px; margin-top: 3px; line-height: 1.4;}}
 
-    /* Compact rows in cards */
-    .row-kv { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px;}
-    .row-kv .k { color: #6b7280;}
-    .row-kv .v { color: #1a2944; font-weight: 600;}
+    .lade-box {{
+        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        border: 1px solid #e5e7eb;
+        border-radius: 10px; padding: 14px;
+        text-align: center; margin-top: 10px;
+    }}
+    .lade-box .lbl {{ color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;}}
+    .lade-box .val {{ color: {PRIMARY_LIGHT}; font-size: 20px; font-weight: 800; margin-top: 4px;}}
 
-    .lade-box {
-        background: #f3f4f6; border-radius: 8px; padding: 12px;
-        text-align: center; margin-top: 8px;
-    }
-    .lade-box .lbl { color: #6b7280; font-size: 11px; }
-    .lade-box .val { color: #1a2944; font-size: 18px; font-weight: 800; margin-top: 2px;}
-
-    /* Result table (grouped) */
-    .result-tbl { width: 100%; border-collapse: collapse; font-size: 13px;}
-    .result-tbl thead th {
-        background: #f9fafb; color: #1a2944; font-weight: 700;
-        padding: 11px 10px; text-align: left;
-        border-bottom: 1px solid #e5e7eb;
-        font-size: 12px;
-    }
-    .result-tbl td {
-        padding: 9px 10px; border-bottom: 1px solid #f3f4f6;
+    /* Result table */
+    .result-tbl {{ width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px;}}
+    .result-tbl thead th {{
+        background: #f9fafb; color: {PRIMARY_LIGHT}; font-weight: 700;
+        padding: 12px 12px; text-align: left;
+        border-bottom: 2px solid #e5e7eb;
+        font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+        position: sticky; top: 0;
+    }}
+    .result-tbl td {{
+        padding: 11px 12px; border-bottom: 1px solid #f3f4f6;
         color: #374151;
-    }
-    .result-tbl tr:hover td { background: #fafbfc; }
-    .standard-cell {
-        background: #eff6ff !important;
-        color: #1d4ed8 !important;
+    }}
+    .result-tbl tbody tr:hover td {{ background: #fafbfc; }}
+    .standard-cell {{
+        background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%) !important;
+        color: #1e40af !important;
         font-weight: 700;
         text-align: center;
         font-size: 14px;
         vertical-align: middle;
-        border-right: 1px solid #e5e7eb;
-    }
-    .standard-cell .sub-line { font-size: 11px; color: #64748b; font-weight: 500; margin-top: 4px;}
-    .badge {
+        border-right: 1px solid #bfdbfe !important;
+    }}
+    .standard-cell .sub-line {{ font-size: 11px; color: #3b82f6; font-weight: 500; margin-top: 4px;}}
+    .badge {{
         display: inline-flex; align-items: center; gap: 4px;
-        padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
-    }
-    .badge-ok { background: #dcfce7; color: #166534; }
-    .badge-kombi { background: #fef3c7; color: #92400e; }
-    .badge-unter { background: #fef3c7; color: #92400e; }
-    .badge-kritisch { background: #fee2e2; color: #991b1b; }
+        padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    }}
+    .badge-ok {{ background: #dcfce7; color: #166534; }}
+    .badge-kombi {{ background: #fef3c7; color: #92400e; }}
 
     /* Wirtschaftlichkeits-Tabelle */
-    .wirt-tbl { width: 100%; border-collapse: collapse; font-size: 12px;}
-    .wirt-tbl thead th {
-        color: #6b7280; font-weight: 600; padding: 7px 8px;
-        text-align: right; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px;
+    .wirt-tbl {{ width: 100%; border-collapse: collapse; font-size: 12px;}}
+    .wirt-tbl thead th {{
+        color: #6b7280; font-weight: 600; padding: 8px;
+        text-align: right; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
         border-bottom: 1px solid #e5e7eb;
-    }
-    .wirt-tbl thead th:first-child { text-align: left; }
-    .wirt-tbl td {
-        padding: 8px; text-align: right; color: #1a2944; font-weight: 600;
+    }}
+    .wirt-tbl thead th:first-child {{ text-align: left; }}
+    .wirt-tbl td {{
+        padding: 9px 8px; text-align: right; color: {PRIMARY_LIGHT}; font-weight: 600;
         border-bottom: 1px solid #f3f4f6;
-    }
-    .wirt-tbl td:first-child { text-align: left; color: #374151; font-weight: 500;}
-    .wirt-tbl .pos { color: #16a34a; }
-    .wirt-tbl .neg { color: #dc2626; }
-    .wirt-tbl tr.gesamt td { font-weight: 800; font-size: 13px;}
-    .wirt-summary {
-        background: #dcfce7; color: #166534;
-        border-radius: 8px; padding: 12px;
+    }}
+    .wirt-tbl td:first-child {{ text-align: left; color: #374151; font-weight: 500;}}
+    .wirt-tbl .pos {{ color: {GREEN}; }}
+    .wirt-tbl .neg {{ color: #dc2626; }}
+    .wirt-tbl tr.gesamt td {{ font-weight: 800; font-size: 13px; padding-top: 12px;}}
+    .wirt-summary {{
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #166534;
+        border-radius: 10px; padding: 13px 16px;
         display: flex; justify-content: space-between; align-items: center;
-        margin-top: 10px; font-weight: 700;
-    }
-    .wirt-summary.bad { background: #fee2e2; color: #991b1b; }
-    .wirt-summary .v { font-size: 20px; }
+        margin-top: 14px; font-weight: 700;
+    }}
+    .wirt-summary.bad {{
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #991b1b;
+    }}
+    .wirt-summary .v {{ font-size: 22px; }}
 
     /* Logistik */
-    .log-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-    .log-grid .it { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0;}
-    .log-grid .it .l { color: #6b7280; }
-    .log-grid .it .v { color: #1a2944; font-weight: 700; }
-    .log-grid .it .v.warn { color: #dc2626; }
-
-    /* Chart card */
-    .chart-anno {
-        background: #dcfce7; color: #166534;
-        border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: 600;
-        text-align: center; margin-top: -10px;
-    }
+    .log-grid {{ display: grid; grid-template-columns: 1fr; gap: 8px; }}
+    .log-grid .it {{
+        display: flex; justify-content: space-between; font-size: 13px;
+        padding: 7px 10px; background: #f9fafb; border-radius: 6px;
+    }}
+    .log-grid .it .l {{ color: #6b7280; }}
+    .log-grid .it .v {{ color: {PRIMARY_LIGHT}; font-weight: 700; }}
+    .log-grid .it .v.warn {{ color: #dc2626; }}
 
     /* Footer info boxes */
-    .info-row { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 12px; align-items: stretch; margin-top: 8px; }
-    .info-box {
-        background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px;
+    .info-row {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }}
+    .info-box {{
+        background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
         padding: 14px; display: flex; gap: 12px; align-items: center;
-    }
-    .info-box .ico {
-        width: 38px; height: 38px; border-radius: 8px;
-        background: #eff6ff; color: #2563eb;
+        transition: box-shadow 0.15s, transform 0.15s;
+    }}
+    .info-box:hover {{ box-shadow: 0 4px 12px rgba(15,31,61,0.06); transform: translateY(-1px);}}
+    .info-box .ico {{
+        width: 40px; height: 40px; border-radius: 10px;
+        background: #eff6ff; color: {BLUE};
         display:flex; align-items:center; justify-content:center; font-size: 18px;
-    }
-    .info-box.warn .ico { background: #fef3c7; color: #b45309; }
-    .info-box.info .ico { background: #e0e7ff; color: #4338ca; }
-    .info-box.cart .ico { background: #fce7f3; color: #be185d; }
-    .info-box .lbl { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.4px;}
-    .info-box .val { font-size: 13px; color: #1a2944; font-weight: 700; margin-top: 2px;}
-    .info-box .sub { font-size: 11px; color: #6b7280; margin-top: 1px;}
+        flex-shrink: 0;
+    }}
+    .info-box.warn .ico {{ background: #fef3c7; color: #b45309; }}
+    .info-box.info .ico {{ background: #e0e7ff; color: #4338ca; }}
+    .info-box.cart .ico {{ background: #fce7f3; color: #be185d; }}
+    .info-box .lbl {{ font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;}}
+    .info-box .val {{ font-size: 14px; color: {PRIMARY_LIGHT}; font-weight: 700; margin-top: 3px;}}
+    .info-box .sub {{ font-size: 11px; color: #6b7280; margin-top: 2px;}}
 
-    /* Override Streamlit button look in select places */
-    .stButton > button[kind="primary"] {
-        background: #2563eb; color: white; border: none;
+    /* Buttons */
+    .stButton > button[kind="primary"] {{
+        background: {BLUE}; color: #fff; border: none;
+        font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }}
+    .stButton > button[kind="primary"]:hover {{
+        background: #1d4ed8;
+        box-shadow: 0 4px 12px rgba(37,99,235,0.25);
+    }}
+    .stButton > button[kind="secondary"] {{
+        background: #fff; color: {PRIMARY_LIGHT}; border: 1px solid #e5e7eb;
         font-weight: 600;
-    }
-    .stButton > button[kind="secondary"] {
-        background: white; color: #1a2944; border: 1px solid #e5e7eb;
-        font-weight: 600;
-    }
+    }}
+    .stDownloadButton > button {{
+        font-weight: 600; border-radius: 8px;
+    }}
+
+    /* Inputs */
+    [data-baseweb="input"] > div, [data-baseweb="select"] > div {{
+        border-radius: 8px !important;
+    }}
 </style>
 """
 
@@ -342,7 +412,7 @@ def init_state() -> None:
         "planungs_monate": 2,
         "auftragsnummer": "",
         "kunde": "",
-        "firma": "Paletten Optimierer",
+        "firma": APP_NAME,
         "datei_name": "",
         "datei_zeit": "",
         "nav_seite": "Dashboard",
@@ -424,20 +494,26 @@ NAV_ITEMS = [
 ]
 
 
+def sidebar_brand_html() -> str:
+    if LOGO_B64:
+        logo = f'<img src="data:image/png;base64,{LOGO_B64}" alt="{APP_NAME}"/>'
+    else:
+        logo = (
+            f'<div style="width:44px;height:44px;border-radius:10px;background:{ACCENT};'
+            f'color:{PRIMARY_LIGHT};display:flex;align-items:center;justify-content:center;'
+            f'font-weight:800;font-size:22px;">Y</div>'
+        )
+    return (
+        f'<div class="sidebar-brand">{logo}'
+        f'<div><div class="name">{APP_NAME}</div>'
+        f'<div class="sub">{APP_TAGLINE}</div></div></div>'
+    )
+
+
 def sidebar() -> str:
     with st.sidebar:
-        st.markdown(
-            """
-            <div class="sidebar-brand">
-              <div class="logo">📦</div>
-              <div>
-                <div class="name">Paletten Optimierer</div>
-                <div class="sub">Standardisierung &amp; Kostenanalyse</div>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown(sidebar_brand_html(), unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-section-label">Navigation</div>', unsafe_allow_html=True)
         labels = [f"{ico}  {name}" for name, ico in NAV_ITEMS]
         idx = next(
             (i for i, (n, _) in enumerate(NAV_ITEMS) if n == st.session_state.nav_seite),
@@ -451,23 +527,19 @@ def sidebar() -> str:
         )
         st.session_state.nav_seite = NAV_ITEMS[labels.index(sel)][0]
 
-        # KPI-Footer
         bestand = lade_bestand()
         gesamt = sum(int(v.get("menge", 0)) for v in bestand.values())
-        cnt_ok = cnt_unter = cnt_krit = 0
+        cnt_krit = 0
         for v in bestand.values():
             s = bewerte_status(int(v.get("menge", 0)), int(v.get("sicherheitsbestand", 100)))
-            if s == "ok":
-                cnt_ok += 1
-            elif s == "unter":
-                cnt_unter += 1
-            else:
+            if s == "kritisch":
                 cnt_krit += 1
 
+        st.markdown('<div class="sidebar-section-label">Bestand</div>', unsafe_allow_html=True)
         st.markdown(
             f"""
             <div class="sidebar-kpi">
-              <div class="label">Aktueller Bestand (gesamt)</div>
+              <div class="label">Gesamt im Lager</div>
               <div class="row">
                 <div class="icon-box">📦</div>
                 <div>
@@ -493,7 +565,15 @@ def sidebar() -> str:
 # Header & Step Indicator
 # ---------------------------------------------------------------------------
 
-def header() -> None:
+def topbar() -> None:
+    st.markdown(
+        f'<div class="topbar"><div><div class="title">{escape(st.session_state.firma)}</div>'
+        f'<div class="sub">{APP_TAGLINE}</div></div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def step_action_row() -> None:
     aktiv = aktiver_schritt()
     schritte = [(1, "Import"), (2, "Einstellungen"), (3, "Optimierung"), (4, "Ergebnisse")]
 
@@ -508,11 +588,7 @@ def header() -> None:
         else:
             cls = "step"
             num = str(n)
-        parts.append(
-            f'<div class="{cls}"><span class="num">{num}</span>{name}</div>'
-        )
-        if n < 4:
-            parts.append('<span class="arrow">→</span>')
+        parts.append(f'<div class="{cls}"><span class="num">{num}</span>{name}</div>')
     step_html = '<div class="step-row">' + "".join(parts) + "</div>"
 
     col_l, col_r = st.columns([3, 2])
@@ -526,7 +602,7 @@ def header() -> None:
                 st.download_button(
                     "📊 Bericht exportieren",
                     data=xlsx,
-                    file_name=f"optimierung_{date.today().isoformat()}.xlsx",
+                    file_name=f"youman_bericht_{date.today().isoformat()}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True,
                 )
@@ -544,7 +620,7 @@ def header() -> None:
                 st.download_button(
                     "🛒 Bestellung erstellen (PDF)",
                     data=pdf,
-                    file_name=f"bestellung_{date.today().isoformat()}.pdf",
+                    file_name=f"youman_bestellung_{date.today().isoformat()}.pdf",
                     mime="application/pdf",
                     use_container_width=True,
                     type="primary",
@@ -562,51 +638,38 @@ def header() -> None:
 # Left column cards
 # ---------------------------------------------------------------------------
 
+def lade_beispiel() -> None:
+    pfad = Path(__file__).resolve().parent / "data" / "beispiel_palettenliste.xlsx"
+    if not pfad.exists():
+        erstelle_beispiel_excel(pfad, 80)
+    st.session_state.paletten = importiere_excel(pfad)
+    st.session_state.datei_name = pfad.name
+    st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
+    run_optimierung()
+
+
 def card_datenimport() -> None:
-    with st.container(border=False):
-        if st.session_state.datei_name:
-            n_artikel = len(st.session_state.paletten)
-            st.markdown(
-                f"""
-                <div class="card">
-                  <h3>Datenimport</h3>
-                  <div class="file-card">
-                    <div class="icon">XLS</div>
-                    <div class="file-meta">
-                      <div class="fn">{escape(st.session_state.datei_name)}</div>
-                      <div class="info">Importiert am: {escape(st.session_state.datei_zeit)}<br/>
-                        Gesamt Artikel: {fmt_int(n_artikel)}</div>
-                    </div>
-                  </div>
+    if st.session_state.datei_name:
+        n_artikel = len(st.session_state.paletten)
+        st.markdown(
+            f"""
+            <div class="card">
+              <h3>Datenimport</h3>
+              <div class="file-card">
+                <div class="icon">XLSX</div>
+                <div class="file-meta">
+                  <div class="fn">{escape(st.session_state.datei_name)}</div>
+                  <div class="info">Importiert: {escape(st.session_state.datei_zeit)}<br/>
+                    Gesamt Artikel: <b>{fmt_int(n_artikel)}</b></div>
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            with st.expander("Neue Datei importieren", expanded=False):
-                upload = st.file_uploader(
-                    "Excel-Datei", type=["xlsx"], key="up_dash", label_visibility="collapsed"
-                )
-                col_a, col_b = st.columns(2)
-                if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
-                    if upload is not None:
-                        try:
-                            ps = importiere_excel(upload)
-                            st.session_state.paletten = ps
-                            st.session_state.datei_name = upload.name
-                            st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
-                            run_optimierung()
-                            st.rerun()
-                        except Exception as exc:
-                            st.error(f"Import-Fehler: {exc}")
-                if col_b.button("📦 Beispieldaten", use_container_width=True):
-                    lade_beispiel()
-                    st.rerun()
-        else:
-            st.markdown('<div class="card"><h3>Datenimport</h3>', unsafe_allow_html=True)
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        with st.expander("Neue Datei importieren"):
             upload = st.file_uploader(
-                "Excel-Datei (.xlsx) auswählen oder Beispieldaten laden",
-                type=["xlsx"],
-                key="up_dash_init",
+                "Excel-Datei", type=["xlsx"], key="up_dash", label_visibility="collapsed"
             )
             col_a, col_b = st.columns(2)
             if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
@@ -623,26 +686,38 @@ def card_datenimport() -> None:
             if col_b.button("📦 Beispieldaten", use_container_width=True):
                 lade_beispiel()
                 st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-
-
-def lade_beispiel() -> None:
-    pfad = Path("data") / "beispiel_palettenliste.xlsx"
-    if not pfad.exists():
-        erstelle_beispiel_excel(pfad, 80)
-    st.session_state.paletten = importiere_excel(pfad)
-    st.session_state.datei_name = pfad.name
-    st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
-    run_optimierung()
+    else:
+        st.markdown('<div class="card"><h3>Datenimport</h3>', unsafe_allow_html=True)
+        upload = st.file_uploader(
+            "Excel-Datei (.xlsx) auswählen oder Beispieldaten laden",
+            type=["xlsx"],
+            key="up_dash_init",
+        )
+        col_a, col_b = st.columns(2)
+        if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
+            if upload is not None:
+                try:
+                    ps = importiere_excel(upload)
+                    st.session_state.paletten = ps
+                    st.session_state.datei_name = upload.name
+                    st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
+                    run_optimierung()
+                    st.rerun()
+                except Exception as exc:
+                    st.error(f"Import-Fehler: {exc}")
+        if col_b.button("📦 Beispieldaten", use_container_width=True):
+            lade_beispiel()
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def card_toleranz() -> None:
-    st.markdown('<div class="card"><h3>Toleranz Einstellungen</h3>', unsafe_allow_html=True)
+    st.markdown('<div class="card"><h3>Toleranz</h3>', unsafe_allow_html=True)
     col_l, col_b = st.columns(2)
     suffix = "mm" if st.session_state.tol_einheit == "mm" else "%"
     with col_l:
         st.session_state.tol_l = st.number_input(
-            f"Länge Toleranz ({suffix})",
+            f"Länge ({suffix})",
             min_value=0.0,
             value=float(st.session_state.tol_l),
             step=10.0 if suffix == "mm" else 1.0,
@@ -650,7 +725,7 @@ def card_toleranz() -> None:
         )
     with col_b:
         st.session_state.tol_b = st.number_input(
-            f"Breite Toleranz ({suffix})",
+            f"Breite ({suffix})",
             min_value=0.0,
             value=float(st.session_state.tol_b),
             step=10.0 if suffix == "mm" else 1.0,
@@ -673,7 +748,7 @@ def card_toleranz() -> None:
 
 
 def card_planung() -> None:
-    st.markdown('<div class="card"><h3>Planungszeitraum für Bestellung</h3>', unsafe_allow_html=True)
+    st.markdown('<div class="card"><h3>Planungszeitraum</h3>', unsafe_allow_html=True)
     monate_label = ["1 Monat", "2 Monate", "3 Monate", "6 Monate", "12 Monate"]
     monate_val = [1, 2, 3, 6, 12]
     idx = monate_val.index(st.session_state.planungs_monate) if st.session_state.planungs_monate in monate_val else 1
@@ -688,11 +763,11 @@ def card_planung() -> None:
 
 
 def card_kosten() -> None:
-    st.markdown('<div class="card"><h3>Kosten &amp; Logistik (optional)</h3>', unsafe_allow_html=True)
+    st.markdown('<div class="card"><h3>Kosten &amp; Logistik</h3>', unsafe_allow_html=True)
     col_l, col_r = st.columns(2)
     with col_l:
         st.session_state.kosten_pro_lkw = st.number_input(
-            "Kosten pro LKW (€)",
+            "Kosten / LKW (€)",
             min_value=0.0,
             value=float(st.session_state.kosten_pro_lkw),
             step=10.0,
@@ -700,7 +775,7 @@ def card_kosten() -> None:
         )
     with col_r:
         st.session_state.nutzbare_ladelaenge = st.number_input(
-            "Nutzbare Ladelänge / LKW (m)",
+            "Ladelänge / LKW (m)",
             min_value=0.1,
             value=float(st.session_state.nutzbare_ladelaenge),
             step=0.1,
@@ -719,13 +794,12 @@ def card_kosten() -> None:
 
 
 def card_sicherheitsbestand() -> None:
-    st.markdown('<div class="card"><h3>Sicherheitsbestand je Palette</h3>', unsafe_allow_html=True)
+    st.markdown('<div class="card"><h3>Sicherheitsbestand</h3>', unsafe_allow_html=True)
     st.session_state.sicherheitsbestand = st.number_input(
-        "Stück",
+        "Stück je Palettentyp",
         min_value=0,
         value=int(st.session_state.sicherheitsbestand),
         step=10,
-        label_visibility="collapsed",
         key="sb_in",
     )
     st.markdown("</div>", unsafe_allow_html=True)
@@ -752,51 +826,51 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
                     f'<div class="sub-line">{rs} Artikel · {std.gesamt_anzahl} Stk</div>'
                     f'</td>'
                 )
-            artikel_html = escape(m.artikelnummer)
+            artikel_html = f'<div style="font-weight:600;">{escape(m.artikelnummer)}</div>'
             if has_kunde and m.kunde:
-                artikel_html += f'<div style="font-size:11px;color:#6b7280;">{escape(m.kunde[:30])}</div>'
+                artikel_html += f'<div style="font-size:11px;color:#6b7280;margin-top:2px;">{escape(m.kunde[:35])}</div>'
             tds.append(f"<td>{artikel_html}</td>")
             if has_auftrag:
-                tds.append(f'<td style="font-family:monospace;font-size:12px;">{escape(m.auftrag)}</td>')
-            tds.append(f"<td>{fmt_int(m.anzahl)}</td>")
-            tds.append(f"<td>{fmt_int(m.stueck_pro_palette)}</td>")
+                tds.append(f'<td style="font-family:ui-monospace,SF Mono,Menlo,monospace;font-size:12px;">{escape(m.auftrag)}</td>')
+            tds.append(f"<td style='text-align:right;'>{fmt_int(m.anzahl)}</td>")
+            tds.append(f"<td style='text-align:right;'>{fmt_int(m.stueck_pro_palette)}</td>")
             tds.append(f"<td>{int(round(m.laenge))} × {int(round(m.breite))}</td>")
-            tds.append(
-                '<td><span class="badge badge-ok">✓ innerhalb Toleranz</span></td>'
-            )
+            tds.append('<td><span class="badge badge-ok">✓ innerhalb Toleranz</span></td>')
             rows.append("<tr>" + "".join(tds) + "</tr>")
 
     for k in erg.kombinationen:
         m = k.palette
-        std_label = f"{int(round(k.standard_a.laenge))} × {int(round(k.standard_a.breite))} + " \
-                    f"{int(round(k.standard_b.laenge))} × {int(round(k.standard_b.breite))}"
-        artikel_html = escape(m.artikelnummer)
+        std_label = (
+            f"{int(round(k.standard_a.laenge))} × {int(round(k.standard_a.breite))} + "
+            f"{int(round(k.standard_b.laenge))} × {int(round(k.standard_b.breite))}"
+        )
+        artikel_html = f'<div style="font-weight:600;">{escape(m.artikelnummer)}</div>'
         if has_kunde and m.kunde:
-            artikel_html += f'<div style="font-size:11px;color:#6b7280;">{escape(m.kunde[:30])}</div>'
+            artikel_html += f'<div style="font-size:11px;color:#6b7280;">{escape(m.kunde[:35])}</div>'
         kombi_row = (
             f"<tr>"
             f'<td class="standard-cell">{std_label}<div class="sub-line">(kombiniert)</div></td>'
             f"<td>{artikel_html}</td>"
         )
         if has_auftrag:
-            kombi_row += f'<td style="font-family:monospace;font-size:12px;">{escape(m.auftrag)}</td>'
+            kombi_row += f'<td style="font-family:ui-monospace,monospace;font-size:12px;">{escape(m.auftrag)}</td>'
         kombi_row += (
-            f"<td>{fmt_int(m.anzahl)}</td>"
-            f"<td>{fmt_int(m.stueck_pro_palette)}</td>"
+            f"<td style='text-align:right;'>{fmt_int(m.anzahl)}</td>"
+            f"<td style='text-align:right;'>{fmt_int(m.stueck_pro_palette)}</td>"
             f"<td>{int(round(m.laenge))} × {int(round(m.breite))}</td>"
-            f'<td><span class="badge badge-kombi">⚡ Kombination aus 2 Paletten</span></td>'
+            f'<td><span class="badge badge-kombi">⚡ Kombination</span></td>'
             "</tr>"
         )
         rows.append(kombi_row)
 
-    head_cells = ["<th>Neue Standardpalette (mm)</th>", "<th>Artikelnummer / Kunde</th>"]
+    head_cells = ["<th>Standardpalette (mm)</th>", "<th>Artikel / Kunde</th>"]
     if has_auftrag:
         head_cells.append("<th>Auftrag</th>")
     head_cells.extend([
-        "<th>Benötigte Paletten</th>",
-        "<th>Stückzahl pro Palette</th>",
-        "<th>Alte Palettenmaße (mm)</th>",
-        "<th>Bemerkung / Hinweis</th>",
+        "<th style='text-align:right;'>Paletten</th>",
+        "<th style='text-align:right;'>Stk / Pal</th>",
+        "<th>Original (mm)</th>",
+        "<th>Bemerkung</th>",
     ])
     head = "<thead><tr>" + "".join(head_cells) + "</tr></thead>"
     return f'<table class="result-tbl">{head}<tbody>{"".join(rows)}</tbody></table>'
@@ -804,7 +878,9 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
 
 def card_ergebnis(erg: OptimierungsErgebnis) -> None:
     st.markdown(
-        f'<div class="card"><h3>Optimierungs Ergebnis</h3>{render_result_table(erg)}</div>',
+        f'<div class="card" style="max-height:680px;overflow:auto;">'
+        f'<h3>Optimierungs-Ergebnis · {erg.anzahl_standards} Standards aus {erg.anzahl_eingabe_typen} Typen</h3>'
+        f'{render_result_table(erg)}</div>',
         unsafe_allow_html=True,
     )
 
@@ -818,7 +894,6 @@ def card_wirtschaftlichkeit(wirt: WirtschaftlichkeitsErgebnis, n_alt: int, n_neu
     diff_pal = wirt.palettenkosten_neu - wirt.palettenkosten_alt
     diff_log = wirt.logistikkosten_neu - wirt.logistikkosten_alt
     diff_ges = wirt.gesamtkosten_neu - wirt.gesamtkosten_alt
-    diff_class = "neg" if diff_ges > 0 else "pos"
     summary_class = "wirt-summary" if wirt.ersparnis >= 0 else "wirt-summary bad"
 
     def _fmt_diff(x: float, einheit: str = "€") -> str:
@@ -836,12 +911,12 @@ def card_wirtschaftlichkeit(wirt: WirtschaftlichkeitsErgebnis, n_alt: int, n_neu
 
     html = f"""
     <div class="card">
-      <h3>Wirtschaftlichkeitsvergleich (pro Monat)</h3>
+      <h3>Wirtschaftlichkeit</h3>
       <table class="wirt-tbl">
-        <thead><tr><th>Kennzahl</th><th>Aktuell</th><th>Neu</th><th>Differenz</th></tr></thead>
+        <thead><tr><th>Position</th><th>Aktuell</th><th>Optimiert</th><th>Differenz</th></tr></thead>
         <tbody>
           <tr>
-            <td>Anzahl Palettenvarianten</td>
+            <td>Variantenzahl</td>
             <td>{fmt_int(n_alt)}</td>
             <td>{fmt_int(n_neu)}</td>
             <td class="{_cls(diff_anz)}">{_fmt_diff(diff_anz, '')}</td>
@@ -859,10 +934,10 @@ def card_wirtschaftlichkeit(wirt: WirtschaftlichkeitsErgebnis, n_alt: int, n_neu
             <td class="{_cls(diff_log)}">{_fmt_diff(diff_log)}</td>
           </tr>
           <tr class="gesamt">
-            <td>Gesamtkosten</td>
+            <td>Gesamt / Monat</td>
             <td>{fmt_eur(wirt.gesamtkosten_alt)}</td>
             <td>{fmt_eur(wirt.gesamtkosten_neu)}</td>
-            <td class="{diff_class}">{_fmt_diff(diff_ges)}</td>
+            <td class="{_cls(diff_ges)}">{_fmt_diff(diff_ges)}</td>
           </tr>
         </tbody>
       </table>
@@ -882,16 +957,16 @@ def truck_svg(zusatz_lademeter: float, max_breite: float) -> str:
     truck_w = 260
     extra_w = int(truck_w * pct)
     return f"""
-    <div style="text-align:center;padding:6px 0;">
+    <div style="text-align:center;padding:10px 0;">
       <svg width="320" height="100" viewBox="0 0 320 100" xmlns="http://www.w3.org/2000/svg">
-        <rect x="0" y="46" width="20" height="34" fill="#1a2944" rx="2"/>
-        <rect x="22" y="34" width="{truck_w}" height="46" rx="3" fill="#1a2944" stroke="#0f1a30"/>
+        <rect x="0" y="46" width="20" height="34" fill="{PRIMARY_LIGHT}" rx="2"/>
+        <rect x="22" y="34" width="{truck_w}" height="46" rx="3" fill="{PRIMARY_LIGHT}" stroke="#0f1a30"/>
         <rect x="26" y="38" width="{truck_w - 8}" height="38" rx="2" fill="#3b4a6b"/>
         <rect x="{22 + truck_w}" y="38" width="{extra_w}" height="38" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3"/>
         <circle cx="50" cy="86" r="9" fill="#374151" stroke="#1f2937" stroke-width="2"/>
         <circle cx="90" cy="86" r="9" fill="#374151" stroke="#1f2937" stroke-width="2"/>
         <circle cx="240" cy="86" r="9" fill="#374151" stroke="#1f2937" stroke-width="2"/>
-        <text x="{22 + truck_w + extra_w + 4}" y="32" font-size="10" font-family="Arial" fill="#dc2626" font-weight="700">+{zusatz_lademeter:.2f} m</text>
+        <text x="{22 + truck_w + extra_w + 4}" y="32" font-size="10" font-family="Inter, Arial" fill="#dc2626" font-weight="700">+{zusatz_lademeter:.2f} m</text>
         <text x="22" y="98" font-size="9" fill="#6b7280">0 m</text>
         <text x="{22 + truck_w - 20}" y="98" font-size="9" fill="#6b7280">{max_breite:.2f} m</text>
       </svg>
@@ -903,13 +978,13 @@ def card_logistik(wirt: WirtschaftlichkeitsErgebnis) -> None:
     mehrkosten = wirt.logistikkosten_neu - wirt.logistikkosten_alt
     html = f"""
     <div class="card">
-      <h3>Logistik Kostenanalyse</h3>
+      <h3>Logistik</h3>
       <div class="log-grid">
-        <div class="it"><span class="l">Zusätzlicher Laderaumbedarf</span>
+        <div class="it"><span class="l">Zusätzlicher Bedarf</span>
           <span class="v warn">{wirt.zusatz_lademeter:.2f} m</span></div>
-        <div class="it"><span class="l">Mehrkosten durch Logistik</span>
+        <div class="it"><span class="l">Mehrkosten Logistik</span>
           <span class="v">{fmt_eur(abs(mehrkosten))}</span></div>
-        <div class="it"><span class="l">Auswirkung auf Versandkosten<br/><span style="font-size:10px;">(pro Monat)</span></span>
+        <div class="it"><span class="l">Versand pro Monat</span>
           <span class="v warn">+{fmt_eur(abs(mehrkosten))}</span></div>
       </div>
       {truck_svg(wirt.zusatz_lademeter, st.session_state.nutzbare_ladelaenge)}
@@ -924,37 +999,39 @@ def kosten_chart(wirt: WirtschaftlichkeitsErgebnis) -> go.Figure:
     neu = [wirt.gesamtkosten_neu * m for m in monate]
     fig = go.Figure()
     fig.add_trace(go.Scatter(
-        x=monate, y=alt, mode="lines+markers", name="Aktuell (individuell)",
-        line=dict(color="#2563eb", width=3), marker=dict(size=8),
+        x=monate, y=alt, mode="lines+markers", name="Aktuell",
+        line=dict(color=BLUE, width=3), marker=dict(size=8),
+        fill="tozeroy", fillcolor="rgba(37,99,235,0.05)",
     ))
     fig.add_trace(go.Scatter(
-        x=monate, y=neu, mode="lines+markers", name="Neu (Standardisiert)",
-        line=dict(color="#16a34a", width=3), marker=dict(size=8),
+        x=monate, y=neu, mode="lines+markers", name="Optimiert",
+        line=dict(color=GREEN, width=3), marker=dict(size=8),
+        fill="tozeroy", fillcolor="rgba(22,163,74,0.05)",
     ))
     fig.update_layout(
         height=240,
         margin=dict(l=10, r=10, t=10, b=10),
-        plot_bgcolor="#ffffff", paper_bgcolor="#ffffff",
-        xaxis=dict(title="", gridcolor="#e5e7eb",
+        plot_bgcolor="#fff", paper_bgcolor="#fff",
+        xaxis=dict(title="", gridcolor="#f3f4f6",
                    tickmode="array", tickvals=monate,
-                   ticktext=[f"{m} Monat" if m == 1 else f"{m} Monate" for m in monate]),
-        yaxis=dict(title="", gridcolor="#e5e7eb", tickformat=",.0f"),
-        legend=dict(orientation="h", y=-0.2, x=0.0, font=dict(size=11)),
-        font=dict(size=11),
+                   ticktext=[f"{m}M" for m in monate]),
+        yaxis=dict(title="", gridcolor="#f3f4f6", tickformat=",.0f"),
+        legend=dict(orientation="h", y=-0.18, x=0.0, font=dict(size=11)),
+        font=dict(size=11, family="Inter, sans-serif"),
     )
     return fig
 
 
 def card_kosten_simulation(wirt: WirtschaftlichkeitsErgebnis) -> None:
     ersparnis_12 = wirt.ersparnis * 12
-    farb_klasse = "" if ersparnis_12 >= 0 else "background:#fee2e2;color:#991b1b;"
+    farb = "background:#dcfce7;color:#166534;" if ersparnis_12 >= 0 else "background:#fee2e2;color:#991b1b;"
     titel = "Ersparnis nach 12 Monaten" if ersparnis_12 >= 0 else "Mehrkosten nach 12 Monaten"
-    st.markdown('<div class="card"><h3>Kostenentwicklung (Simulation)</h3>', unsafe_allow_html=True)
+    st.markdown('<div class="card"><h3>Kostenentwicklung</h3>', unsafe_allow_html=True)
     st.plotly_chart(kosten_chart(wirt), use_container_width=True, config={"displayModeBar": False})
     st.markdown(
         f"""
-        <div style="background:#dcfce7;color:#166534;border-radius:8px;padding:8px 12px;
-                    font-size:12px;font-weight:600;text-align:center;margin-top:-8px;{farb_klasse}">
+        <div style="border-radius:8px;padding:10px 14px;
+                    font-size:12px;font-weight:600;text-align:center;margin-top:-8px;{farb}">
           {titel}: {fmt_eur(abs(ersparnis_12))}
         </div>
         </div>
@@ -974,7 +1051,7 @@ def footer_info(erg: OptimierungsErgebnis) -> None:
 
     bestellungen = lade_bestellungen()
     offen = sum(1 for b in bestellungen if b.status == "offen")
-    pdf_text = "PDF erstellt" if offen else "noch keine Bestellung"
+    pdf_text = "PDF erstellt" if offen else "noch keine"
 
     bestand_total = sum(int(v.get("menge", 0)) for v in lade_bestand().values())
     monatsbedarf = sum(s.gesamt_anzahl for s in erg.standards) / max(1, st.session_state.planungs_monate)
@@ -990,39 +1067,39 @@ def footer_info(erg: OptimierungsErgebnis) -> None:
         <div>
           <div class="lbl">Bestand reicht bis</div>
           <div class="val">{bis_datum}</div>
-          <div class="sub">(ca. {tage_reicht} Tage)</div>
+          <div class="sub">ca. {tage_reicht} Tage</div>
         </div>
       </div>
       <div class="info-box warn">
         <div class="ico">⚠️</div>
         <div>
-          <div class="lbl">Sicherheitsbestand unterschritten</div>
-          <div class="val">{n_kritisch} Palettentypen</div>
+          <div class="lbl">Sicherheitsbestand</div>
+          <div class="val">{n_kritisch} Typen unter</div>
         </div>
       </div>
       <div class="info-box info">
         <div class="ico">ℹ️</div>
         <div>
           <div class="lbl">Empfehlung</div>
-          <div class="val">Neue Bestellung in: {empfohlen_in} Tagen</div>
+          <div class="val">Bestellen in {empfohlen_in} Tagen</div>
         </div>
       </div>
       <div class="info-box cart">
         <div class="ico">🛒</div>
         <div>
           <div class="lbl">Offene Bestellungen</div>
-          <div class="val">{offen} Bestellung{'en' if offen != 1 else ''}</div>
-          <div class="sub">({pdf_text})</div>
+          <div class="val">{offen}</div>
+          <div class="sub">{pdf_text}</div>
         </div>
       </div>
     </div>
     """
     col_info, col_btn = st.columns([5, 1.2])
     with col_info:
-        st.markdown('<div class="card"><h3>Nächste Schritte / Hinweise</h3>' + info_html + '</div>', unsafe_allow_html=True)
+        st.markdown('<div class="card"><h3>Nächste Schritte</h3>' + info_html + '</div>', unsafe_allow_html=True)
     with col_btn:
         st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
-        if st.button("🔄 Neue Optimierung starten", use_container_width=True, type="primary"):
+        if st.button("🔄 Neue Optimierung", use_container_width=True, type="primary"):
             st.session_state.paletten = []
             st.session_state.ergebnis = None
             st.session_state.wirtschaftlichkeit = None
@@ -1036,13 +1113,15 @@ def footer_info(erg: OptimierungsErgebnis) -> None:
 # ---------------------------------------------------------------------------
 
 def seite_dashboard() -> None:
-    header()
+    step_action_row()
 
     if not st.session_state.paletten:
         c = st.container()
-        c.markdown('<div class="card"><h3>Datenimport</h3>'
-                   '<p style="color:#6b7280;font-size:13px;">Lade eine Excel-Datei hoch oder verwende Beispieldaten, '
-                   'um zu starten.</p>', unsafe_allow_html=True)
+        c.markdown(
+            '<div class="card"><h3>Datenimport</h3>'
+            '<p style="color:#6b7280;font-size:13px;">Excel-Datei hochladen oder Beispieldaten verwenden.</p>',
+            unsafe_allow_html=True,
+        )
         upload = c.file_uploader("Excel-Datei (.xlsx)", type=["xlsx"], key="up_init")
         col_a, col_b = c.columns(2)
         if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
@@ -1062,14 +1141,12 @@ def seite_dashboard() -> None:
         c.markdown("</div>", unsafe_allow_html=True)
         return
 
-    # Re-compute if needed
     if st.session_state.ergebnis is None or st.session_state.wirtschaftlichkeit is None:
         run_optimierung()
     erg = st.session_state.ergebnis
     wirt = st.session_state.wirtschaftlichkeit
 
-    # Main two-column layout
-    col_l, col_r = st.columns([1, 2.2])
+    col_l, col_r = st.columns([1, 2.4])
     with col_l:
         card_datenimport()
         card_toleranz()
@@ -1080,7 +1157,6 @@ def seite_dashboard() -> None:
             run_optimierung()
             st.rerun()
     with col_r:
-        # Re-run after potential left-column changes
         run_optimierung()
         erg = st.session_state.ergebnis
         wirt = st.session_state.wirtschaftlichkeit
@@ -1098,9 +1174,9 @@ def seite_dashboard() -> None:
 
 
 def seite_datenimport() -> None:
-    header()
+    step_action_row()
     st.markdown('<div class="card"><h3>Datenimport</h3>', unsafe_allow_html=True)
-    upload = st.file_uploader("Excel-Datei (.xlsx) hochladen", type=["xlsx"], key="up_d")
+    upload = st.file_uploader("Excel-Datei (.xlsx)", type=["xlsx"], key="up_d")
     col_a, col_b = st.columns(2)
     if col_a.button("📥 Importieren", use_container_width=True, disabled=upload is None):
         if upload is not None:
@@ -1117,8 +1193,12 @@ def seite_datenimport() -> None:
 
     if st.session_state.paletten:
         df = pd.DataFrame([
-            {"Artikelnummer": p.artikelnummer, "Länge (mm)": p.laenge, "Breite (mm)": p.breite,
-             "Anzahl": p.anzahl, "Stk/Pal": p.stueck_pro_palette, "Kosten alt (€)": p.kosten_alt}
+            {
+                "Artikel": p.artikelnummer, "Kunde": p.kunde, "Auftrag": p.auftrag,
+                "Länge": p.laenge, "Breite": p.breite, "Höhe": p.hoehe or "",
+                "Anzahl": p.anzahl, "Stk/Pal": p.stueck_pro_palette,
+                "Kosten alt (€)": p.kosten_alt,
+            }
             for p in st.session_state.paletten
         ])
         st.markdown(f'<div class="card"><h3>Importierte Paletten ({len(df)})</h3>', unsafe_allow_html=True)
@@ -1127,7 +1207,7 @@ def seite_datenimport() -> None:
 
 
 def seite_optimierung() -> None:
-    header()
+    step_action_row()
     if not st.session_state.paletten:
         st.info("Erst Daten importieren.")
         return
@@ -1144,7 +1224,7 @@ def seite_optimierung() -> None:
 
 
 def seite_ergebnisse() -> None:
-    header()
+    step_action_row()
     if not st.session_state.ergebnis:
         st.info("Erst optimieren.")
         return
@@ -1269,10 +1349,13 @@ def seite_einstellungen() -> None:
 
 
 def seite_stammdaten() -> None:
-    st.markdown('<div class="card"><h3>Stammdaten</h3>'
-                '<p style="color:#6b7280;font-size:13px;">Hier kannst du Lieferanten, Kunden und '
-                'andere Stammdaten pflegen. Aktuell werden Stammdaten direkt in den Bestellungen erfasst.</p>'
-                '</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="card"><h3>Stammdaten</h3>'
+        '<p style="color:#6b7280;font-size:13px;">Lieferanten- und Kundendaten werden aktuell '
+        'in den Bestellungen erfasst. Eigener Stammdaten-Bereich folgt in einer der nächsten '
+        'Versionen.</p></div>',
+        unsafe_allow_html=True,
+    )
 
 
 def seite_berichte() -> None:
@@ -1282,19 +1365,25 @@ def seite_berichte() -> None:
     else:
         col_a, col_b = st.columns(2)
         xlsx = exportiere_ergebnis_excel(st.session_state.ergebnis)
-        col_a.download_button("📊 Excel-Bericht", data=xlsx,
-                              file_name=f"bericht_{date.today().isoformat()}.xlsx",
-                              mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                              use_container_width=True, type="primary")
-        pdf = erstelle_bestellung_pdf(st.session_state.ergebnis,
-                                      st.session_state.geplantes_lieferdatum,
-                                      firma=st.session_state.firma,
-                                      auftragsnummer=st.session_state.auftragsnummer,
-                                      kunde=st.session_state.kunde)
-        col_b.download_button("📄 PDF-Bestellung", data=pdf,
-                              file_name=f"bestellung_{date.today().isoformat()}.pdf",
-                              mime="application/pdf",
-                              use_container_width=True, type="primary")
+        col_a.download_button(
+            "📊 Excel-Bericht", data=xlsx,
+            file_name=f"youman_bericht_{date.today().isoformat()}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True, type="primary",
+        )
+        pdf = erstelle_bestellung_pdf(
+            st.session_state.ergebnis,
+            st.session_state.geplantes_lieferdatum,
+            firma=st.session_state.firma,
+            auftragsnummer=st.session_state.auftragsnummer,
+            kunde=st.session_state.kunde,
+        )
+        col_b.download_button(
+            "📄 PDF-Bestellung", data=pdf,
+            file_name=f"youman_bestellung_{date.today().isoformat()}.pdf",
+            mime="application/pdf",
+            use_container_width=True, type="primary",
+        )
     st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -1305,11 +1394,7 @@ def seite_berichte() -> None:
 def main() -> None:
     init_state()
     seite = sidebar()
-    st.markdown(
-        f'<div class="head-row"><div><div class="head-title">{escape(st.session_state.firma)}</div>'
-        f'<div class="head-sub">Wirtschaftliche Standardisierung von Industriepaletten</div></div></div>',
-        unsafe_allow_html=True,
-    )
+    topbar()
 
     if seite == "Dashboard":
         seite_dashboard()
