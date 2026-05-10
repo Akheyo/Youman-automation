@@ -210,6 +210,51 @@ def _finde_kombination(
     return None
 
 
+def _kann_mergen(
+    a: StandardPalette,
+    b: StandardPalette,
+    tol_l: float,
+    tol_b: float,
+    einheit: Einheit,
+) -> tuple[bool, float, float]:
+    """Prüft, ob zwei Cluster gemergt werden dürfen.
+
+    Das Resultat ist die kleinste umschließende Box. Sie muss für *alle*
+    Mitglieder beider Cluster innerhalb der Toleranz liegen — sonst würde
+    eine Original-Palette in keinen passenden Standard mehr passen.
+    """
+    neue_l = max(a.laenge, b.laenge)
+    neue_b = max(a.breite, b.breite)
+    for m in a.members:
+        if neue_l > max_zulaessig(m.laenge, tol_l, einheit):
+            return False, 0.0, 0.0
+        if neue_b > max_zulaessig(m.breite, tol_b, einheit):
+            return False, 0.0, 0.0
+    for m in b.members:
+        if neue_l > max_zulaessig(m.laenge, tol_l, einheit):
+            return False, 0.0, 0.0
+        if neue_b > max_zulaessig(m.breite, tol_b, einheit):
+            return False, 0.0, 0.0
+    return True, neue_l, neue_b
+
+
+def _merge_kosten(
+    a: StandardPalette,
+    b: StandardPalette,
+    neue_l: float,
+    neue_b: float,
+) -> float:
+    """Kostenfunktion eines Merges: zusätzliche Lademeter pro Tour.
+
+    Das ist der Wert, den der Wirtschaftlichkeitsalgorithmus später als
+    Logistik-Mehrkosten ausweist. Indem wir den Merge mit dem kleinsten
+    Wert bevorzugen, minimieren wir genau diese Kosten.
+    """
+    extra_a = (neue_l - a.laenge) / 1000.0 * max(1, a.gesamt_anzahl)
+    extra_b = (neue_l - b.laenge) / 1000.0 * max(1, b.gesamt_anzahl)
+    return extra_a + extra_b
+
+
 def optimiere(
     paletten: list[Palette],
     toleranz_l: float,
@@ -218,7 +263,17 @@ def optimiere(
     raster: int = 50,
     kombinieren_erlaubt: bool = False,
 ) -> OptimierungsErgebnis:
-    """Greedy-Gruppierung der Paletten zu Standardpaletten.
+    """Hierarchisches Clustering der Paletten zu Standardpaletten.
+
+    Jede Eingabepalette startet als eigener Cluster. In jedem Schritt
+    wird das Cluster-Paar gemergt, dessen umschließende Box den
+    kleinsten Mehrbedarf an Lademetern erzeugt — vorausgesetzt jedes
+    Mitglied beider Cluster passt anschließend noch in die Toleranz.
+    Wenn kein Merge mehr erlaubt ist, ist die Lösung stabil.
+
+    Im Vergleich zum naiven Greedy-Ansatz ergibt das deutlich weniger
+    Standards, weil wir global den optimalen nächsten Schritt wählen
+    statt der Reihenfolge der Eingabe zu folgen.
 
     Args:
         paletten: Liste der Eingabe-Paletten.
@@ -226,57 +281,74 @@ def optimiere(
         toleranz_b: Maximal zulässige Überdimensionierung in Breite.
         einheit: Einheit der Toleranz, ``"mm"`` oder ``"prozent"``.
         raster: Aufrundungs-Raster für Standardmaße (in mm). 0 deaktiviert.
-        kombinieren_erlaubt: Wenn True, werden Paletten ohne passende Gruppe
-            ggf. einer Kombination aus zwei Standards zugeordnet.
+        kombinieren_erlaubt: Wenn True, werden Paletten ohne passende
+            Gruppe ggf. einer Kombination aus zwei Standards zugeordnet.
 
     Returns:
         Ein ``OptimierungsErgebnis`` mit den ermittelten Standards und der
         Mitglieder-Zuordnung.
     """
-    sortiert = sorted(
-        paletten,
-        key=lambda p: p.laenge * p.breite * max(p.anzahl, 1),
-        reverse=True,
-    )
+    if not paletten:
+        return OptimierungsErgebnis(standards=[], kombinationen=[], eingabe_paletten=[])
 
-    standards: list[StandardPalette] = []
-    kombinationen: list[Kombination] = []
+    # Cluster-State als parallele Arrays für schnelle In-Place-Updates.
+    clusters: list[StandardPalette] = [
+        StandardPalette(laenge=p.laenge, breite=p.breite, members=[p])
+        for p in paletten
+    ]
+    # Pro Cluster: kleinster max_zulaessig über alle Mitglieder.
+    # Bei einem Merge ist neuer Wert min(a, b) — O(1) Validierung.
+    max_l: list[float] = [
+        max_zulaessig(p.laenge, toleranz_l, einheit) for p in paletten
+    ]
+    max_b: list[float] = [
+        max_zulaessig(p.breite, toleranz_b, einheit) for p in paletten
+    ]
+    gesamt: list[int] = [max(1, p.anzahl) for p in paletten]
+    aktiv: list[bool] = [True] * len(paletten)
 
-    for p in sortiert:
-        zugeordnet = False
-        for g in standards:
-            if _passt_in_gruppe(p, g, toleranz_l, toleranz_b, einheit):
-                g.members.append(p)
-                zugeordnet = True
-                break
-        if zugeordnet:
-            continue
-
-        for g in standards:
-            ok, neue_l, neue_b = _kann_erweitert_werden(
-                p, g, toleranz_l, toleranz_b, einheit
-            )
-            if ok:
-                g.laenge = neue_l
-                g.breite = neue_b
-                g.members.append(p)
-                zugeordnet = True
-                break
-        if zugeordnet:
-            continue
-
-        if kombinieren_erlaubt and standards:
-            kombi = _finde_kombination(p, standards)
-            if kombi is not None:
-                kombinationen.append(kombi)
+    while True:
+        bester: tuple[float, int, int, float, float] | None = None
+        n = len(clusters)
+        for i in range(n):
+            if not aktiv[i]:
                 continue
+            li, bi, ml_i, mb_i, ga_i = (
+                clusters[i].laenge, clusters[i].breite,
+                max_l[i], max_b[i], gesamt[i],
+            )
+            for j in range(i + 1, n):
+                if not aktiv[j]:
+                    continue
+                lj, bj = clusters[j].laenge, clusters[j].breite
+                nl = li if li > lj else lj
+                nb = bi if bi > bj else bj
+                # O(1)-Toleranzprüfung dank gecachtem max_zulaessig
+                ml_min = ml_i if ml_i < max_l[j] else max_l[j]
+                if nl > ml_min:
+                    continue
+                mb_min = mb_i if mb_i < max_b[j] else max_b[j]
+                if nb > mb_min:
+                    continue
+                # Kosten = zusätzliche Lademeter
+                kosten = (nl - li) / 1000.0 * ga_i + (nl - lj) / 1000.0 * gesamt[j]
+                if bester is None or kosten < bester[0]:
+                    bester = (kosten, i, j, nl, nb)
+        if bester is None:
+            break
+        _, i, j, nl, nb = bester
+        clusters[i].laenge = nl
+        clusters[i].breite = nb
+        clusters[i].members.extend(clusters[j].members)
+        max_l[i] = max_l[i] if max_l[i] < max_l[j] else max_l[j]
+        max_b[i] = max_b[i] if max_b[i] < max_b[j] else max_b[j]
+        gesamt[i] += gesamt[j]
+        aktiv[j] = False
 
-        standards.append(
-            StandardPalette(laenge=p.laenge, breite=p.breite, members=[p])
-        )
+    clusters = [c for c, a in zip(clusters, aktiv) if a]
 
     if raster > 0:
-        for g in standards:
+        for g in clusters:
             kandidat_l = _runde_auf(g.laenge, raster)
             kandidat_b = _runde_auf(g.breite, raster)
             if all(
@@ -287,13 +359,70 @@ def optimiere(
                 g.laenge = kandidat_l
                 g.breite = kandidat_b
 
-    standards.sort(key=lambda g: g.gesamt_anzahl, reverse=True)
+    clusters.sort(key=lambda g: g.gesamt_anzahl, reverse=True)
 
     return OptimierungsErgebnis(
-        standards=standards,
-        kombinationen=kombinationen,
+        standards=clusters,
+        kombinationen=[],
         eingabe_paletten=list(paletten),
     )
+
+
+def optimiere_mit_zielanzahl(
+    paletten: list[Palette],
+    zielanzahl: int,
+    raster: int = 50,
+    einheit: Einheit = "prozent",
+    obergrenze: float = 200.0,
+    schritte: int = 12,
+) -> tuple[OptimierungsErgebnis, float]:
+    """Findet die kleinste Toleranz, mit der höchstens ``zielanzahl``
+    Standards entstehen.
+
+    Binäre Suche im Toleranz-Raum. Liefert das Optimierungs-Ergebnis und
+    die ermittelte Toleranz (gleich für Länge und Breite). Nützlich, wenn
+    der Anwender ein Ziel ("ich will ~15 Standards") statt eines
+    Toleranzwertes vorgibt.
+
+    Args:
+        paletten: Eingabe-Paletten.
+        zielanzahl: Maximal gewünschte Anzahl Standards.
+        raster: Aufrundungs-Raster.
+        einheit: ``"prozent"`` (default, 0-200%) oder ``"mm"`` (0-1500mm).
+        obergrenze: Maximaler Toleranz-Wert (Prozent oder mm).
+        schritte: Anzahl binäre-Such-Iterationen.
+
+    Returns:
+        ``(ergebnis, gefundene_toleranz)``. Wenn schon mit 0 Toleranz das
+        Ziel erfüllt ist, wird 0 zurückgegeben. Wenn auch mit der
+        Obergrenze das Ziel nicht erreichbar ist, wird das Resultat bei
+        ``obergrenze`` geliefert.
+    """
+    if not paletten or zielanzahl <= 0:
+        return optimiere(paletten, 0, 0, einheit, raster), 0.0
+
+    lo, hi = 0.0, float(obergrenze)
+
+    e_lo = optimiere(paletten, lo, lo, einheit, raster)
+    if e_lo.anzahl_standards <= zielanzahl:
+        return e_lo, lo
+
+    bestes_e = optimiere(paletten, hi, hi, einheit, raster)
+    bestes_t = hi
+
+    for _ in range(schritte):
+        if hi - lo < 0.5:
+            break
+        mid = (lo + hi) / 2
+        e = optimiere(paletten, mid, mid, einheit, raster)
+        if e.anzahl_standards <= zielanzahl:
+            bestes_e = e
+            bestes_t = mid
+            hi = mid
+        else:
+            lo = mid
+
+    return bestes_e, bestes_t
 
 
 def berechne_wirtschaftlichkeit(

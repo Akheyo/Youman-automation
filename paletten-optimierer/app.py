@@ -30,6 +30,7 @@ from optimizer import (
     WirtschaftlichkeitsErgebnis,
     berechne_wirtschaftlichkeit,
     optimiere,
+    optimiere_mit_zielanzahl,
 )
 from pdf_generator import erstelle_bestellung_pdf
 from storage_handler import (
@@ -398,9 +399,12 @@ def init_state() -> None:
         "paletten": [],
         "ergebnis": None,
         "wirtschaftlichkeit": None,
+        "modus": "Ziel-Anzahl",
+        "zielanzahl": 15,
         "tol_einheit": "mm",
-        "tol_l": 100.0,
-        "tol_b": 100.0,
+        "tol_l": 200.0,
+        "tol_b": 150.0,
+        "ermittelte_toleranz": 0.0,
         "kosten_pro_lkw": 800.0,
         "nutzbare_ladelaenge": 13.6,
         "palettenkosten_neu": 18.0,
@@ -430,14 +434,25 @@ def run_optimierung() -> None:
         st.session_state.ergebnis = None
         st.session_state.wirtschaftlichkeit = None
         return
-    erg = optimiere(
-        st.session_state.paletten,
-        toleranz_l=st.session_state.tol_l,
-        toleranz_b=st.session_state.tol_b,
-        einheit=st.session_state.tol_einheit,
-        raster=st.session_state.raster,
-        kombinieren_erlaubt=st.session_state.kombinieren_erlaubt,
-    )
+
+    if st.session_state.modus == "Ziel-Anzahl":
+        erg, tol = optimiere_mit_zielanzahl(
+            st.session_state.paletten,
+            zielanzahl=int(st.session_state.zielanzahl),
+            raster=st.session_state.raster,
+            einheit="prozent",
+        )
+        st.session_state.ermittelte_toleranz = tol
+    else:
+        erg = optimiere(
+            st.session_state.paletten,
+            toleranz_l=st.session_state.tol_l,
+            toleranz_b=st.session_state.tol_b,
+            einheit=st.session_state.tol_einheit,
+            raster=st.session_state.raster,
+            kombinieren_erlaubt=st.session_state.kombinieren_erlaubt,
+        )
+        st.session_state.ermittelte_toleranz = 0.0
     params = KostenParameter(
         kosten_pro_lkw=st.session_state.kosten_pro_lkw,
         nutzbare_ladelaenge=st.session_state.nutzbare_ladelaenge,
@@ -645,7 +660,8 @@ def lade_beispiel() -> None:
     st.session_state.paletten = importiere_excel(pfad)
     st.session_state.datei_name = pfad.name
     st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
-    run_optimierung()
+    with st.spinner("Berechne Optimierung ..."):
+        run_optimierung()
 
 
 def card_datenimport() -> None:
@@ -712,33 +728,62 @@ def card_datenimport() -> None:
 
 
 def card_toleranz() -> None:
-    st.markdown('<div class="card"><h3>Toleranz</h3>', unsafe_allow_html=True)
-    col_l, col_b = st.columns(2)
-    suffix = "mm" if st.session_state.tol_einheit == "mm" else "%"
-    with col_l:
-        st.session_state.tol_l = st.number_input(
-            f"Länge ({suffix})",
-            min_value=0.0,
-            value=float(st.session_state.tol_l),
-            step=10.0 if suffix == "mm" else 1.0,
-            key="tol_l_in",
-        )
-    with col_b:
-        st.session_state.tol_b = st.number_input(
-            f"Breite ({suffix})",
-            min_value=0.0,
-            value=float(st.session_state.tol_b),
-            step=10.0 if suffix == "mm" else 1.0,
-            key="tol_b_in",
-        )
-    einheit = st.radio(
-        "Einheit",
-        ["Millimeter", "Prozent"],
+    st.markdown('<div class="card"><h3>Optimierungs-Strategie</h3>', unsafe_allow_html=True)
+    modus = st.radio(
+        "Modus",
+        ["Ziel-Anzahl", "Maximale Toleranz"],
         horizontal=True,
-        index=0 if st.session_state.tol_einheit == "mm" else 1,
-        key="einh_in",
+        index=0 if st.session_state.modus == "Ziel-Anzahl" else 1,
+        key="modus_in",
+        label_visibility="collapsed",
     )
-    st.session_state.tol_einheit = "mm" if einheit == "Millimeter" else "prozent"
+    st.session_state.modus = modus
+
+    if modus == "Ziel-Anzahl":
+        st.session_state.zielanzahl = st.number_input(
+            "Anzahl Standardpaletten (Ziel)",
+            min_value=2,
+            max_value=200,
+            value=int(st.session_state.zielanzahl),
+            step=1,
+            key="ziel_in",
+            help="Die App findet automatisch die kleinste Toleranz, mit der dieses Ziel erreicht wird.",
+        )
+        tol = st.session_state.get("ermittelte_toleranz", 0.0)
+        if tol > 0:
+            st.markdown(
+                f'<div class="lade-box"><div class="lbl">Ermittelte Toleranz</div>'
+                f'<div class="val">±{tol:.1f}%</div></div>',
+                unsafe_allow_html=True,
+            )
+    else:
+        col_l, col_b = st.columns(2)
+        suffix = "mm" if st.session_state.tol_einheit == "mm" else "%"
+        with col_l:
+            st.session_state.tol_l = st.number_input(
+                f"Länge ({suffix})",
+                min_value=0.0,
+                value=float(st.session_state.tol_l),
+                step=10.0 if suffix == "mm" else 1.0,
+                key="tol_l_in",
+            )
+        with col_b:
+            st.session_state.tol_b = st.number_input(
+                f"Breite ({suffix})",
+                min_value=0.0,
+                value=float(st.session_state.tol_b),
+                step=10.0 if suffix == "mm" else 1.0,
+                key="tol_b_in",
+            )
+        einheit = st.radio(
+            "Einheit",
+            ["Millimeter", "Prozent"],
+            horizontal=True,
+            index=0 if st.session_state.tol_einheit == "mm" else 1,
+            key="einh_in",
+        )
+        st.session_state.tol_einheit = "mm" if einheit == "Millimeter" else "prozent"
+
     st.session_state.kombinieren_erlaubt = st.toggle(
         "Paletten kombinieren erlauben",
         value=st.session_state.kombinieren_erlaubt,
@@ -1154,10 +1199,10 @@ def seite_dashboard() -> None:
         card_kosten()
         card_sicherheitsbestand()
         if st.button("🔄 Neu optimieren", use_container_width=True, type="primary", key="reopt"):
-            run_optimierung()
+            with st.spinner("Optimiere ..."):
+                run_optimierung()
             st.rerun()
     with col_r:
-        run_optimierung()
         erg = st.session_state.ergebnis
         wirt = st.session_state.wirtschaftlichkeit
 
