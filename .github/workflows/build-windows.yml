@@ -5,6 +5,14 @@ on:
   push:
     tags:
       - "v*"
+    branches:
+      - "claude/auto-dealer-margin-tool-jggg2"
+    paths:
+      - "src/**"
+      - "src-tauri/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/build-windows.yml"
 
 jobs:
   build:
