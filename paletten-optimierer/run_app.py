@@ -15,6 +15,7 @@ import sys
 import threading
 import time
 import webbrowser
+from datetime import date
 from pathlib import Path
 
 
@@ -161,6 +162,44 @@ def main() -> int:
     if str(base) not in sys.path:
         sys.path.insert(0, str(base))
     os.chdir(base)
+
+    # === Lizenz-Prüfung (Zeit-Bombe) ===
+    try:
+        from license_config import (
+            LICENSE_EXPIRES,
+            LIZENZNEHMER,
+            KONTAKT,
+            ist_abgelaufen,
+            expiry_date,
+        )
+        if getattr(sys, "frozen", False) and ist_abgelaufen():
+            exp = expiry_date()
+            msg = (
+                f"\n{'=' * 60}\n"
+                f"  Youman — Test-Zeitraum abgelaufen\n"
+                f"{'=' * 60}\n\n"
+                f"  Lizenzinhaber:  {LIZENZNEHMER}\n"
+                f"  Ablaufdatum:    {exp.strftime('%d.%m.%Y') if exp else '?'}\n"
+                f"  Heute:          {date.today().strftime('%d.%m.%Y')}\n\n"
+                f"  Bitte fordern Sie eine neue Lizenz an.\n"
+            )
+            if KONTAKT:
+                msg += f"  Kontakt:        {KONTAKT}\n"
+            msg += f"\n{'=' * 60}\n"
+            log.warning("Lizenz abgelaufen am %s", exp)
+            sys.stderr.write(msg)
+            if sys.platform == "win32":
+                try:
+                    import tkinter as tk
+                    from tkinter import messagebox
+                    root = tk.Tk()
+                    root.withdraw()
+                    messagebox.showerror("Youman — Lizenz abgelaufen", msg)
+                except Exception:
+                    pass
+            return 4
+    except ImportError:
+        log.info("Keine license_config.py — Lizenz-Prüfung übersprungen")
 
     app_py = base / "app.py"
     if not app_py.exists():

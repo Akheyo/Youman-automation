@@ -660,7 +660,44 @@ def sidebar() -> str:
 # Header & Step Indicator
 # ---------------------------------------------------------------------------
 
+def lizenz_banner() -> None:
+    """Zeigt einen Hinweis-Banner wenn die App eine Trial-Lizenz hat."""
+    try:
+        from license_config import (
+            LIZENZNEHMER, KONTAKT, expiry_date, tage_verbleibend,
+        )
+    except ImportError:
+        return
+    exp = expiry_date()
+    if exp is None:
+        return
+    tage = tage_verbleibend() or 0
+    if tage < 0:
+        farbe = "#dc2626"
+        text = f"⚠️ Test-Zeitraum abgelaufen am {exp.strftime('%d.%m.%Y')}"
+    elif tage <= 7:
+        farbe = "#dc2626"
+        text = (
+            f"⚠️ Test-Version — läuft in {tage} Tag{'en' if tage != 1 else ''} ab "
+            f"({exp.strftime('%d.%m.%Y')})"
+        )
+    else:
+        farbe = "#b45309"
+        text = (
+            f"⏳ Test-Version für {escape(LIZENZNEHMER)} — gültig bis "
+            f"{exp.strftime('%d.%m.%Y')} ({tage} Tage verbleibend)"
+        )
+    kontakt = f" · Kontakt: {escape(KONTAKT)}" if KONTAKT else ""
+    st.markdown(
+        f'<div style="background:{farbe};color:#fff;padding:10px 14px;'
+        f'border-radius:8px;margin-bottom:14px;font-weight:600;font-size:13px;'
+        f'box-shadow:0 1px 3px rgba(0,0,0,0.1);">{text}{kontakt}</div>',
+        unsafe_allow_html=True,
+    )
+
+
 def topbar() -> None:
+    lizenz_banner()
     st.markdown(
         f'<div class="topbar"><div><div class="title">{escape(st.session_state.firma)}</div>'
         f'<div class="sub">{APP_TAGLINE}</div></div></div>',
