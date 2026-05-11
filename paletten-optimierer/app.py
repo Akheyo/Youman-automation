@@ -405,8 +405,9 @@ def init_state() -> None:
         "ergebnis": None,
         "wirtschaftlichkeit": None,
         "tol_einheit": "mm",
-        "tol_l": 100.0,
-        "tol_b": 100.0,
+        "tol_l": 300.0,
+        "tol_b": 300.0,
+        "mengen_schwelle": 0,
         "letzte_opt_signatur": "",
         "raster": 100,
         "wirtschaftliche_filterung": False,
@@ -455,6 +456,7 @@ def _opt_signatur() -> str:
     return "|".join(str(x) for x in [
         len(s.paletten), s.tol_einheit, s.tol_l, s.tol_b, s.raster,
         s.kombinieren_erlaubt, s.wirtschaftliche_filterung,
+        s.mengen_schwelle,
         s.palettenkosten_alt, s.palettenkosten_neu, s.kosten_pro_lkw,
         s.nutzbare_ladelaenge, s.setup_kosten_pro_standard,
         s.kalkulation_aktiv,
@@ -507,6 +509,7 @@ def run_optimierung() -> None:
         kombinieren_erlaubt=st.session_state.kombinieren_erlaubt,
         wirtschaftliche_filterung=st.session_state.wirtschaftliche_filterung,
         kosten_parameter=params,
+        mengen_schwelle=int(st.session_state.mengen_schwelle),
     )
     wirt = berechne_wirtschaftlichkeit(erg, params)
     st.session_state.ergebnis = erg
@@ -898,6 +901,20 @@ def card_toleranz() -> None:
         help="Standardmaße werden auf das nächste Vielfache aufgerundet, sofern die Toleranz das zulässt.",
     )
     st.session_state.raster = raster_val[raster_label.index(sel)]
+
+    st.session_state.mengen_schwelle = st.number_input(
+        "Mengen-Schwelle (kleine Cluster werden Sonderpaletten)",
+        min_value=0,
+        max_value=50,
+        value=int(st.session_state.mengen_schwelle),
+        step=1,
+        key="schwelle_in",
+        help=(
+            "Cluster mit weniger als dieser Anzahl Paletten gesamt werden "
+            "aus dem Standardsortiment ausgegliedert und als Sonderpaletten "
+            "behandelt. 0 = aus."
+        ),
+    )
     st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -1032,12 +1049,39 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
 
 
 def card_ergebnis(erg: OptimierungsErgebnis) -> None:
+    n_kombi = len(erg.kombinationen)
+    n_sonder = erg.anzahl_sonder
+    extras = []
+    if n_kombi:
+        extras.append(f"{n_kombi} Kombi")
+    if n_sonder:
+        extras.append(f"{n_sonder} Sonder")
+    extras_str = f" · {' · '.join(extras)}" if extras else ""
     st.markdown(
         f'<div class="card" style="max-height:680px;overflow:auto;">'
-        f'<h3>Optimierungs-Ergebnis · {erg.anzahl_standards} Standards aus {erg.anzahl_eingabe_typen} Typen</h3>'
+        f'<h3>Optimierungs-Ergebnis · {erg.anzahl_standards} Standards aus '
+        f'{erg.anzahl_eingabe_typen} Typen{extras_str}</h3>'
         f'{render_result_table(erg)}</div>',
         unsafe_allow_html=True,
     )
+
+    if n_sonder:
+        sonder_rows = "".join(
+            f"<tr><td>{escape(p.artikelnummer)}</td>"
+            f"<td>{escape(p.kunde[:35]) if p.kunde else ''}</td>"
+            f"<td style='font-family:ui-monospace,monospace;font-size:12px;'>{escape(p.auftrag) if p.auftrag else ''}</td>"
+            f"<td>{int(round(p.laenge))} × {int(round(p.breite))}</td>"
+            f"<td style='text-align:right;'>{fmt_int(p.anzahl)}</td></tr>"
+            for p in erg.sonderpaletten
+        )
+        st.markdown(
+            f'<div class="card"><h3>Sonderpaletten ({n_sonder}) — unter Mengen-Schwelle</h3>'
+            '<table class="result-tbl">'
+            '<thead><tr><th>Artikelnummer</th><th>Kunde</th><th>Auftrag</th>'
+            "<th>Maße (mm)</th><th style='text-align:right;'>Paletten</th></tr></thead>"
+            f'<tbody>{sonder_rows}</tbody></table></div>',
+            unsafe_allow_html=True,
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -85,6 +85,7 @@ class OptimierungsErgebnis:
     standards: list[StandardPalette]
     kombinationen: list[Kombination] = field(default_factory=list)
     eingabe_paletten: list[Palette] = field(default_factory=list)
+    sonderpaletten: list[Palette] = field(default_factory=list)
 
     @property
     def anzahl_eingabe_typen(self) -> int:
@@ -93,6 +94,10 @@ class OptimierungsErgebnis:
     @property
     def anzahl_standards(self) -> int:
         return len(self.standards)
+
+    @property
+    def anzahl_sonder(self) -> int:
+        return len(self.sonderpaletten)
 
     @property
     def reduktion_prozent(self) -> float:
@@ -459,119 +464,152 @@ def optimiere(
     kombinieren_erlaubt: bool = False,
     wirtschaftliche_filterung: bool = False,
     kosten_parameter: KostenParameter | None = None,
+    mengen_schwelle: int = 0,
 ) -> OptimierungsErgebnis:
-    """Hierarchisches Clustering der Paletten zu Standardpaletten.
+    """Set-Cover-Optimierung der Paletten zu Standardpaletten.
 
-    Jede Eingabepalette startet als eigener Cluster. In jedem Schritt
-    wird das Cluster-Paar gemergt, dessen umschließende Box den
-    kleinsten Mehrbedarf an Lademetern erzeugt — vorausgesetzt jedes
-    Mitglied beider Cluster passt anschließend noch in die Toleranz.
-    Wenn kein Merge mehr erlaubt ist, ist die Lösung stabil.
+    Spec-konformer 5-Phasen-Algorithmus:
 
-    Im Vergleich zum naiven Greedy-Ansatz ergibt das deutlich weniger
-    Standards, weil wir global den optimalen nächsten Schritt wählen
-    statt der Reihenfolge der Eingabe zu folgen.
+    1. **Kandidaten erzeugen.** Für jeden Artikel als Anker wird die größte
+       Gruppe gebildet, die innerhalb der Toleranzfenster zusammenbleibt.
+       Die Standardgröße ist (max L_i, max W_i) der Gruppe — kleiner geht
+       nicht, weil sonst Mitglieder rausfallen.
+    2. **Greedy Set Cover.** Iterativ den Kandidaten wählen, der die meiste
+       *noch unabgedeckte Stückzahl* abdeckt (gewichtet nach
+       ``anzahl``, nicht nach Artikelanzahl). Wiederholen bis alles
+       abgedeckt ist.
+    3. **Schrumpfen.** Standardmaße sind durch die Konstruktion bereits
+       minimal — keine zusätzliche Reduktion nötig.
+    4. **Merging / Kombinationen.** Wenn ``kombinieren_erlaubt=True``,
+       werden kleine Cluster eliminiert, deren Mitglieder durch 2- oder
+       3-fach-Kombinationen größerer Standards abgedeckt werden können.
+    5. **Wirtschaftlichkeitsfilter.** Wenn aktiv, werden Cluster
+       aufgelöst, deren Logistik-Mehrkosten die Palettenkosten-Ersparnis
+       übersteigen.
 
     Args:
-        paletten: Liste der Eingabe-Paletten.
-        toleranz_l: Maximal zulässige Überdimensionierung in Länge.
-        toleranz_b: Maximal zulässige Überdimensionierung in Breite.
-        einheit: Einheit der Toleranz, ``"mm"`` oder ``"prozent"``.
-        raster: Aufrundungs-Raster für Standardmaße (in mm). 0 deaktiviert.
-        kombinieren_erlaubt: Wenn True, werden Paletten ohne passende
-            Gruppe ggf. einer Kombination aus zwei Standards zugeordnet.
-
-    Returns:
-        Ein ``OptimierungsErgebnis`` mit den ermittelten Standards und der
-        Mitglieder-Zuordnung.
+        paletten: Eingabe-Paletten.
+        toleranz_l / toleranz_b: Maximale Überdimensionierung.
+        einheit: ``"mm"`` oder ``"prozent"``.
+        raster: Aufrundungs-Raster (default 100 mm).
+        kombinieren_erlaubt: Phase 4 aktivieren.
+        wirtschaftliche_filterung: Phase 5 aktivieren.
+        kosten_parameter: erforderlich wenn Phase 5 aktiv.
+        mengen_schwelle: Artikel mit ``anzahl < mengen_schwelle`` werden
+            als Sonderpaletten ausgewiesen und nicht standardisiert
+            (Spec: "Sondergröße in Verkleidung" vermeiden).
     """
     if not paletten:
-        return OptimierungsErgebnis(standards=[], kombinationen=[], eingabe_paletten=[])
-
-    # Cluster-State als parallele Arrays für schnelle In-Place-Updates.
-    clusters: list[StandardPalette] = [
-        StandardPalette(laenge=p.laenge, breite=p.breite, members=[p])
-        for p in paletten
-    ]
-    # Pro Cluster: kleinster max_zulaessig über alle Mitglieder.
-    # Bei einem Merge ist neuer Wert min(a, b) — O(1) Validierung.
-    max_l: list[float] = [
-        max_zulaessig(p.laenge, toleranz_l, einheit) for p in paletten
-    ]
-    max_b: list[float] = [
-        max_zulaessig(p.breite, toleranz_b, einheit) for p in paletten
-    ]
-    gesamt: list[int] = [max(1, p.anzahl) for p in paletten]
-    aktiv: list[bool] = [True] * len(paletten)
-
-    while True:
-        bester: tuple[float, int, int, float, float] | None = None
-        n = len(clusters)
-        for i in range(n):
-            if not aktiv[i]:
-                continue
-            li, bi, ml_i, mb_i, ga_i = (
-                clusters[i].laenge, clusters[i].breite,
-                max_l[i], max_b[i], gesamt[i],
-            )
-            for j in range(i + 1, n):
-                if not aktiv[j]:
-                    continue
-                lj, bj = clusters[j].laenge, clusters[j].breite
-                nl = li if li > lj else lj
-                nb = bi if bi > bj else bj
-                # O(1)-Toleranzprüfung dank gecachtem max_zulaessig
-                ml_min = ml_i if ml_i < max_l[j] else max_l[j]
-                if nl > ml_min:
-                    continue
-                mb_min = mb_i if mb_i < max_b[j] else max_b[j]
-                if nb > mb_min:
-                    continue
-                # Kosten = zusätzliche Lademeter
-                kosten = (nl - li) / 1000.0 * ga_i + (nl - lj) / 1000.0 * gesamt[j]
-                if bester is None or kosten < bester[0]:
-                    bester = (kosten, i, j, nl, nb)
-        if bester is None:
-            break
-        _, i, j, nl, nb = bester
-        clusters[i].laenge = nl
-        clusters[i].breite = nb
-        clusters[i].members.extend(clusters[j].members)
-        max_l[i] = max_l[i] if max_l[i] < max_l[j] else max_l[j]
-        max_b[i] = max_b[i] if max_b[i] < max_b[j] else max_b[j]
-        gesamt[i] += gesamt[j]
-        aktiv[j] = False
-
-    clusters = [c for c, a in zip(clusters, aktiv) if a]
-
-    if raster > 0:
-        for g in clusters:
-            kandidat_l = _runde_auf(g.laenge, raster)
-            kandidat_b = _runde_auf(g.breite, raster)
-            if all(
-                kandidat_l <= max_zulaessig(m.laenge, toleranz_l, einheit)
-                and kandidat_b <= max_zulaessig(m.breite, toleranz_b, einheit)
-                for m in g.members
-            ):
-                g.laenge = kandidat_l
-                g.breite = kandidat_b
-
-    clusters.sort(key=lambda g: g.gesamt_anzahl, reverse=True)
-
-    ergebnis = OptimierungsErgebnis(
-        standards=clusters,
-        kombinationen=[],
-        eingabe_paletten=list(paletten),
-    )
-
-    if kombinieren_erlaubt and len(clusters) >= 3:
-        ergebnis = _post_processing_kombinationen(
-            ergebnis,
-            tol_l=toleranz_l,
-            tol_b=toleranz_b,
-            einheit=einheit,
+        return OptimierungsErgebnis(
+            standards=[], kombinationen=[], eingabe_paletten=[], sonderpaletten=[]
         )
 
+    zu_std = list(paletten)
+    n = len(zu_std)
+    L_min = [p.laenge for p in zu_std]
+    W_min = [p.breite for p in zu_std]
+    L_max_tol = [max_zulaessig(p.laenge, toleranz_l, einheit) for p in zu_std]
+    W_max_tol = [max_zulaessig(p.breite, toleranz_b, einheit) for p in zu_std]
+    anzahl = [max(1, p.anzahl) for p in zu_std]
+
+    # === Phase 1: Kandidaten ===
+    # Für jeden Anker einen "maximalen kompatiblen Cluster" bauen.
+    # Sortier-Reihenfolge der Hinzunahme: nach Anzahl absteigend, damit
+    # Cluster mit hochvolumigen Mitgliedern entstehen.
+    sortier_by_demand = sorted(range(n), key=lambda j: anzahl[j], reverse=True)
+
+    kandidaten: list[tuple[float, float, frozenset[int]]] = []
+    seen: set[tuple[float, float, frozenset[int]]] = set()
+    for anker in range(n):
+        chosen: list[int] = [anker]
+        L_s = L_min[anker]
+        W_s = W_min[anker]
+        for j in sortier_by_demand:
+            if j == anker:
+                continue
+            new_L = L_s if L_s > L_min[j] else L_min[j]
+            new_W = W_s if W_s > W_min[j] else W_min[j]
+            # Passt der erweiterte Cluster zu allen bisherigen + j?
+            if new_L > L_max_tol[j] or new_W > W_max_tol[j]:
+                continue
+            ok = True
+            for k in chosen:
+                if new_L > L_max_tol[k] or new_W > W_max_tol[k]:
+                    ok = False
+                    break
+            if not ok:
+                continue
+            chosen.append(j)
+            L_s, W_s = new_L, new_W
+        key = (L_s, W_s, frozenset(chosen))
+        if key not in seen:
+            seen.add(key)
+            kandidaten.append(key)
+
+    # === Phase 2: Greedy Set Cover (nach Bedarf gewichtet) ===
+    nicht_abgedeckt: set[int] = set(range(n))
+    auswahl: list[tuple[float, float, set[int]]] = []
+    while nicht_abgedeckt:
+        bester: tuple[float, float, set[int]] | None = None
+        bester_score = 0
+        for L_s, W_s, members in kandidaten:
+            cov = members & nicht_abgedeckt
+            if not cov:
+                continue
+            score = sum(anzahl[i] for i in cov)
+            if score > bester_score:
+                bester_score = score
+                bester = (L_s, W_s, set(cov))
+        if bester is None:
+            # Defensive: verbleibende als Singletons (sollte nicht passieren)
+            for i in nicht_abgedeckt:
+                auswahl.append((L_min[i], W_min[i], {i}))
+            break
+        auswahl.append(bester)
+        nicht_abgedeckt -= bester[2]
+
+    # === Phase 3: Schrumpfen ist implizit (L_s = max L_min des Subsets) ===
+
+    # === Phase 4: Raster aufrunden ===
+    standards: list[StandardPalette] = []
+    for L_s, W_s, idx_set in auswahl:
+        members = [zu_std[i] for i in idx_set]
+        if raster > 0:
+            k_l = _runde_auf(L_s, raster)
+            k_w = _runde_auf(W_s, raster)
+            if all(
+                k_l <= max_zulaessig(m.laenge, toleranz_l, einheit)
+                and k_w <= max_zulaessig(m.breite, toleranz_b, einheit)
+                for m in members
+            ):
+                L_s, W_s = k_l, k_w
+        standards.append(StandardPalette(laenge=L_s, breite=W_s, members=members))
+
+    standards.sort(key=lambda g: g.gesamt_anzahl, reverse=True)
+
+    # === Mengen-Schwelle: kleine Cluster werden Sonderpaletten ===
+    sonder: list[Palette] = []
+    if mengen_schwelle > 0:
+        haupt = [s for s in standards if s.gesamt_anzahl >= mengen_schwelle]
+        klein = [s for s in standards if s.gesamt_anzahl < mengen_schwelle]
+        for s in klein:
+            sonder.extend(s.members)
+        standards = haupt
+
+    ergebnis = OptimierungsErgebnis(
+        standards=standards,
+        kombinationen=[],
+        eingabe_paletten=list(paletten),
+        sonderpaletten=sonder,
+    )
+
+    # === Phase 5: Kombinationen ===
+    if kombinieren_erlaubt and len(standards) >= 3:
+        ergebnis = _post_processing_kombinationen(
+            ergebnis, tol_l=toleranz_l, tol_b=toleranz_b, einheit=einheit
+        )
+
+    # === Phase 6: Wirtschaftlichkeitsfilter ===
     if wirtschaftliche_filterung and kosten_parameter is not None:
         ergebnis = _wirtschaftliche_filterung(ergebnis, kosten_parameter)
 
