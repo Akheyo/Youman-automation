@@ -11,7 +11,7 @@ import json
 import os
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Literal
 
@@ -74,6 +74,10 @@ def _bestand_pfad() -> Path:
 
 def _bestellungen_pfad() -> Path:
     return _storage_dir() / "bestellungen.json"
+
+
+def _auftraege_pfad() -> Path:
+    return _storage_dir() / "bearbeitete_auftraege.json"
 
 
 def lade_bestand() -> dict[str, dict]:
@@ -240,3 +244,138 @@ def berechne_kritische_paletten(
             }
         )
     return result
+
+
+# ---------------------------------------------------------------------------
+# AW / Auftrags-Tracking — verhindert Doppelbestellungen beim Re-Import
+# ---------------------------------------------------------------------------
+
+def lade_bearbeitete_auftraege() -> dict[str, dict]:
+    """Liefert das Mapping ``auftragsnummer → {datum, datei, ...}``."""
+    p = _auftraege_pfad()
+    if not p.exists():
+        return {}
+    try:
+        with p.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return {}
+        return data
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def speichere_bearbeitete_auftraege(daten: dict[str, dict]) -> None:
+    p = _auftraege_pfad()
+    with p.open("w", encoding="utf-8") as f:
+        json.dump(daten, f, indent=2, ensure_ascii=False)
+
+
+def markiere_auftraege_bearbeitet(
+    auftragsnummern: list[str],
+    quelle: str = "",
+) -> int:
+    """Markiert die übergebenen Auftragsnummern als bearbeitet.
+
+    Returns:
+        Die Anzahl der *neu* hinzugefügten Aufträge (Duplikate werden nicht
+        gezählt).
+    """
+    bearbeitete = lade_bearbeitete_auftraege()
+    jetzt = datetime.now().isoformat(timespec="seconds")
+    neu_count = 0
+    for nummer in auftragsnummern:
+        nummer = (nummer or "").strip()
+        if not nummer:
+            continue
+        if nummer not in bearbeitete:
+            bearbeitete[nummer] = {"datum": jetzt, "quelle": quelle}
+            neu_count += 1
+    speichere_bearbeitete_auftraege(bearbeitete)
+    return neu_count
+
+
+def filtere_neue_auftraege(auftragsnummern: list[str]) -> tuple[list[str], list[str]]:
+    """Trennt Auftragsnummern in (neu, bereits_bearbeitet)."""
+    bearbeitete = lade_bearbeitete_auftraege()
+    neu: list[str] = []
+    schon: list[str] = []
+    for nummer in auftragsnummern:
+        nummer = (nummer or "").strip()
+        if not nummer:
+            continue
+        if nummer in bearbeitete:
+            schon.append(nummer)
+        else:
+            neu.append(nummer)
+    return neu, schon
+
+
+def loesche_bearbeitete_auftraege() -> None:
+    """Setzt die AW-Historie komplett zurück (z.B. für neue Saison)."""
+    p = _auftraege_pfad()
+    if p.exists():
+        p.unlink()
+
+
+# ---------------------------------------------------------------------------
+# Verbrauchs-Timeline — projiziert Bestand über die Zeit
+# ---------------------------------------------------------------------------
+
+def projiziere_bestand(
+    palettentyp: str,
+    monatsbedarf: float,
+    horizont_tage: int = 120,
+) -> list[dict]:
+    """Berechnet die Bestandsentwicklung eines Palettentyps über die Zeit.
+
+    Bestand wird linear über ``monatsbedarf`` Paletten/Monat abgetragen,
+    zukünftige Bestellungen (Status = offen oder verbucht und
+    Verbrauchsdatum >= heute) erhöhen den projizierten Bestand zum
+    Verbrauchsdatum.
+
+    Returns:
+        Liste von ``{datum, bestand, ereignis}``-Einträgen, einer pro Tag.
+    """
+    bestand_dict = lade_bestand()
+    eintrag = bestand_dict.get(palettentyp, {"menge": 0, "sicherheitsbestand": 100})
+    aktueller_bestand = float(eintrag.get("menge", 0))
+    sicherheit = float(eintrag.get("sicherheitsbestand", 100))
+
+    heute = date.today()
+    if monatsbedarf < 0:
+        monatsbedarf = 0
+    tagesbedarf = monatsbedarf / 30.0
+
+    # Geplante Zugänge aus Bestellungen
+    zugaenge: dict[date, float] = {}
+    for b in lade_bestellungen():
+        if b.palettentyp != palettentyp or b.status == "storniert":
+            continue
+        if b.status == "verbucht":
+            # Schon eingebucht
+            continue
+        try:
+            datum = date.fromisoformat(b.geplantes_verbrauchsdatum)
+        except (TypeError, ValueError):
+            continue
+        if datum < heute:
+            continue
+        zugaenge[datum] = zugaenge.get(datum, 0.0) + b.menge
+
+    verlauf: list[dict] = []
+    bestand = aktueller_bestand
+    for tag in range(horizont_tage + 1):
+        d = heute + timedelta(days=tag)
+        bestand -= tagesbedarf
+        ereignis = ""
+        if d in zugaenge:
+            bestand += zugaenge[d]
+            ereignis = f"+{int(zugaenge[d])} (Bestellung)"
+        verlauf.append({
+            "datum": d.isoformat(),
+            "bestand": round(bestand, 1),
+            "sicherheit": sicherheit,
+            "ereignis": ereignis,
+        })
+    return verlauf

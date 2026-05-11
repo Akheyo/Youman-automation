@@ -26,6 +26,7 @@ from optimizer import (
     KostenParameter,
     OptimierungsErgebnis,
     Palette,
+    PalettenKalkulation,
     StandardPalette,
     WirtschaftlichkeitsErgebnis,
     berechne_wirtschaftlichkeit,
@@ -39,9 +40,14 @@ from storage_handler import (
     berechne_kritische_paletten,
     bewerte_status,
     buche_bestellung_in_bestand,
+    filtere_neue_auftraege,
     fuege_bestellung_hinzu,
+    lade_bearbeitete_auftraege,
     lade_bestand,
     lade_bestellungen,
+    loesche_bearbeitete_auftraege,
+    markiere_auftraege_bearbeitet,
+    projiziere_bestand,
     setze_sicherheitsbestand_global,
 )
 
@@ -399,9 +405,26 @@ def init_state() -> None:
         "ergebnis": None,
         "wirtschaftlichkeit": None,
         "tol_einheit": "mm",
-        "tol_l": 200.0,
-        "tol_b": 200.0,
+        "tol_l": 100.0,
+        "tol_b": 100.0,
         "letzte_opt_signatur": "",
+        "raster": 100,
+        "wirtschaftliche_filterung": False,
+        "setup_kosten_pro_standard": 200.0,
+        "kalkulation_aktiv": False,
+        "kalk_alt_material": 12.0,
+        "kalk_alt_fertigung": 6.0,
+        "kalk_alt_einkauf": 2.0,
+        "kalk_alt_lager": 1.0,
+        "kalk_alt_handling": 1.0,
+        "kalk_neu_material": 7.0,
+        "kalk_neu_fertigung": 4.0,
+        "kalk_neu_einkauf": 1.5,
+        "kalk_neu_lager": 1.0,
+        "kalk_neu_handling": 0.5,
+        "ignore_bekannte_auftraege": True,
+        "import_neu_count": 0,
+        "import_schon_count": 0,
         "kosten_pro_lkw": 800.0,
         "nutzbare_ladelaenge": 13.6,
         "palettenkosten_neu": 18.0,
@@ -428,10 +451,44 @@ def init_state() -> None:
 
 def _opt_signatur() -> str:
     """Eindeutige Signatur der Optimierungs-Inputs für Caching."""
-    return (
-        f"{len(st.session_state.paletten)}|{st.session_state.tol_einheit}|"
-        f"{st.session_state.tol_l}|{st.session_state.tol_b}|"
-        f"{st.session_state.raster}|{st.session_state.kombinieren_erlaubt}"
+    s = st.session_state
+    return "|".join(str(x) for x in [
+        len(s.paletten), s.tol_einheit, s.tol_l, s.tol_b, s.raster,
+        s.kombinieren_erlaubt, s.wirtschaftliche_filterung,
+        s.palettenkosten_alt, s.palettenkosten_neu, s.kosten_pro_lkw,
+        s.nutzbare_ladelaenge, s.setup_kosten_pro_standard,
+        s.kalkulation_aktiv,
+        s.kalk_alt_material, s.kalk_alt_fertigung, s.kalk_alt_einkauf,
+        s.kalk_alt_lager, s.kalk_alt_handling,
+        s.kalk_neu_material, s.kalk_neu_fertigung, s.kalk_neu_einkauf,
+        s.kalk_neu_lager, s.kalk_neu_handling,
+    ])
+
+
+def aktuelle_kostenparameter() -> KostenParameter:
+    s = st.session_state
+    return KostenParameter(
+        kosten_pro_lkw=s.kosten_pro_lkw,
+        nutzbare_ladelaenge=s.nutzbare_ladelaenge,
+        palettenkosten_neu=s.palettenkosten_neu,
+        palettenkosten_alt_default=s.palettenkosten_alt,
+        setup_kosten_pro_standard=s.setup_kosten_pro_standard,
+        kalkulation_neu=PalettenKalkulation(
+            aktiv=s.kalkulation_aktiv,
+            material=s.kalk_neu_material,
+            fertigung=s.kalk_neu_fertigung,
+            einkauf=s.kalk_neu_einkauf,
+            lager=s.kalk_neu_lager,
+            handling=s.kalk_neu_handling,
+        ),
+        kalkulation_alt=PalettenKalkulation(
+            aktiv=s.kalkulation_aktiv,
+            material=s.kalk_alt_material,
+            fertigung=s.kalk_alt_fertigung,
+            einkauf=s.kalk_alt_einkauf,
+            lager=s.kalk_alt_lager,
+            handling=s.kalk_alt_handling,
+        ),
     )
 
 
@@ -440,6 +497,7 @@ def run_optimierung() -> None:
         st.session_state.ergebnis = None
         st.session_state.wirtschaftlichkeit = None
         return
+    params = aktuelle_kostenparameter()
     erg = optimiere(
         st.session_state.paletten,
         toleranz_l=st.session_state.tol_l,
@@ -447,12 +505,8 @@ def run_optimierung() -> None:
         einheit=st.session_state.tol_einheit,
         raster=st.session_state.raster,
         kombinieren_erlaubt=st.session_state.kombinieren_erlaubt,
-    )
-    params = KostenParameter(
-        kosten_pro_lkw=st.session_state.kosten_pro_lkw,
-        nutzbare_ladelaenge=st.session_state.nutzbare_ladelaenge,
-        palettenkosten_neu=st.session_state.palettenkosten_neu,
-        palettenkosten_alt_default=st.session_state.palettenkosten_alt,
+        wirtschaftliche_filterung=st.session_state.wirtschaftliche_filterung,
+        kosten_parameter=params,
     )
     wirt = berechne_wirtschaftlichkeit(erg, params)
     st.session_state.ergebnis = erg
@@ -694,6 +748,28 @@ def _importiere_quelle(quelle, anzeigename: str) -> bool:
         )
         return False
 
+    # AW-Tracking — verhindert Doppelimport derselben Aufträge
+    auftrag_nummern = [p.auftrag for p in ps if p.auftrag]
+    if auftrag_nummern:
+        neu, schon = filtere_neue_auftraege(auftrag_nummern)
+        st.session_state.import_neu_count = len(neu)
+        st.session_state.import_schon_count = len(schon)
+        if schon and st.session_state.ignore_bekannte_auftraege:
+            schon_set = set(schon)
+            ps = [p for p in ps if (p.auftrag not in schon_set) or not p.auftrag]
+            st.info(
+                f"📋 AW-Check: {len(schon)} bereits bekannte Aufträge übersprungen, "
+                f"{len(neu)} neu. "
+                + '(Einstellung "bekannte AWs ignorieren" deaktivieren, um alles zu laden.)'
+            )
+            if not ps:
+                st.warning("Alle Aufträge wurden bereits importiert — nichts Neues zu tun.")
+                return False
+        markiere_auftraege_bearbeitet(
+            [p.auftrag for p in ps if p.auftrag],
+            quelle=anzeigename,
+        )
+
     st.session_state.paletten = ps
     st.session_state.datei_name = anzeigename
     st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
@@ -800,6 +876,28 @@ def card_toleranz() -> None:
             "— entweder längs aneinandergelegt oder quer."
         ),
     )
+    st.session_state.wirtschaftliche_filterung = st.toggle(
+        "💰 Wirtschaftliche Optimierung",
+        value=st.session_state.wirtschaftliche_filterung,
+        key="wirt_in",
+        help=(
+            "Wenn aktiv, werden Standards nur empfohlen, wenn die "
+            "Palettenkosten-Ersparnis größer ist als die zusätzlichen "
+            "Transportkosten. Cluster, die sich logistisch nicht lohnen, "
+            "werden als Sonderpaletten beibehalten."
+        ),
+    )
+    raster_label = ["10 mm", "25 mm", "50 mm", "100 mm", "kein Raster"]
+    raster_val = [10, 25, 50, 100, 0]
+    raster_idx = raster_val.index(st.session_state.raster) if st.session_state.raster in raster_val else 3
+    sel = st.selectbox(
+        "Standardmaße aufrunden auf",
+        raster_label,
+        index=raster_idx,
+        key="raster_in",
+        help="Standardmaße werden auf das nächste Vielfache aufgerundet, sofern die Toleranz das zulässt.",
+    )
+    st.session_state.raster = raster_val[raster_label.index(sel)]
     st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -966,6 +1064,29 @@ def card_wirtschaftlichkeit(wirt: WirtschaftlichkeitsErgebnis, n_alt: int, n_neu
             return "pos" if x > 0 else "neg"
         return "neg" if x > 0 else "pos"
 
+    # Break-Even & Jahresersparnis
+    be_text = ""
+    if wirt.break_even_monate is None:
+        be_text = "amortisiert sich nicht"
+    elif wirt.break_even_monate == 0:
+        be_text = "sofort"
+    elif wirt.break_even_monate < 1:
+        be_text = f"< 1 Monat ({wirt.break_even_monate * 30:.0f} Tage)"
+    else:
+        be_text = f"{wirt.break_even_monate:.1f} Monate"
+    jahresersparnis = wirt.ersparnis * 12 - wirt.setup_kosten_einmalig
+
+    setup_row = ""
+    if wirt.setup_kosten_einmalig > 0:
+        setup_row = f"""
+          <tr>
+            <td>Einmalige Setup-Kosten</td>
+            <td>—</td>
+            <td>{fmt_eur(wirt.setup_kosten_einmalig)}</td>
+            <td class="neg">+{fmt_eur(wirt.setup_kosten_einmalig)}</td>
+          </tr>
+        """
+
     html = f"""
     <div class="card">
       <h3>Wirtschaftlichkeit</h3>
@@ -990,6 +1111,7 @@ def card_wirtschaftlichkeit(wirt: WirtschaftlichkeitsErgebnis, n_alt: int, n_neu
             <td>{fmt_eur(wirt.logistikkosten_neu)}</td>
             <td class="{_cls(diff_log)}">{_fmt_diff(diff_log)}</td>
           </tr>
+          {setup_row}
           <tr class="gesamt">
             <td>Gesamt / Monat</td>
             <td>{fmt_eur(wirt.gesamtkosten_alt)}</td>
@@ -999,8 +1121,21 @@ def card_wirtschaftlichkeit(wirt: WirtschaftlichkeitsErgebnis, n_alt: int, n_neu
         </tbody>
       </table>
       <div class="{summary_class}">
-        <div>{'Ersparnis pro Monat' if wirt.ersparnis >= 0 else 'Mehrkosten pro Monat'}</div>
-        <div class="v">{fmt_eur(abs(wirt.ersparnis))}</div>
+        <div>
+          <div style="font-size:11px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;">
+            {'Ersparnis pro Monat' if wirt.ersparnis >= 0 else 'Mehrkosten pro Monat'}
+          </div>
+          <div class="v">{fmt_eur(abs(wirt.ersparnis))}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;">
+            Break-Even
+          </div>
+          <div style="font-size:14px;font-weight:700;margin-top:2px;">{be_text}</div>
+          <div style="font-size:11px;opacity:0.7;margin-top:4px;">
+            12 Mt: {fmt_eur(jahresersparnis)}
+          </div>
+        </div>
       </div>
     </div>
     """
@@ -1337,6 +1472,71 @@ def seite_bestand() -> None:
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # === Verbrauchs-Timeline ===
+    if krit:
+        st.markdown('<div class="card"><h3>Verbrauchs-Timeline (Projektion)</h3>', unsafe_allow_html=True)
+        typen = [k["typ"] for k in krit]
+        sel_typ = st.selectbox("Palettentyp wählen", typen, key="vt_typ")
+        col_p1, col_p2 = st.columns([1, 2])
+        with col_p1:
+            monatsbedarf = st.number_input(
+                "Monatlicher Bedarf (Stück)",
+                min_value=0.0,
+                value=float(next((k["benoetigt"] for k in krit if k["typ"] == sel_typ), 50)),
+                step=10.0,
+                key="vt_bedarf",
+            )
+        with col_p2:
+            horizont = st.slider("Horizont (Tage)", min_value=30, max_value=365, value=120, key="vt_horizont")
+        verlauf = projiziere_bestand(sel_typ, monatsbedarf, horizont_tage=horizont)
+        if verlauf:
+            df_v = pd.DataFrame(verlauf)
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=df_v["datum"], y=df_v["bestand"], mode="lines",
+                line=dict(color=PRIMARY_LIGHT, width=2),
+                fill="tozeroy", fillcolor="rgba(26,41,68,0.07)",
+                name="Bestand",
+            ))
+            fig.add_trace(go.Scatter(
+                x=df_v["datum"], y=df_v["sicherheit"], mode="lines",
+                line=dict(color="#dc2626", width=1, dash="dash"),
+                name="Sicherheitsbestand",
+            ))
+            # Marker für Bestellungs-Eingänge
+            zugaenge = df_v[df_v["ereignis"] != ""]
+            if not zugaenge.empty:
+                fig.add_trace(go.Scatter(
+                    x=zugaenge["datum"], y=zugaenge["bestand"], mode="markers",
+                    marker=dict(color=GREEN, size=10, symbol="triangle-up"),
+                    text=zugaenge["ereignis"],
+                    name="Lieferungen",
+                ))
+            fig.update_layout(
+                height=320,
+                margin=dict(l=10, r=10, t=10, b=10),
+                plot_bgcolor="#fff", paper_bgcolor="#fff",
+                xaxis=dict(gridcolor="#f3f4f6"),
+                yaxis=dict(title="Stück", gridcolor="#f3f4f6"),
+                legend=dict(orientation="h", y=-0.18, x=0.0),
+                font=dict(size=11, family="Inter, sans-serif"),
+            )
+            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+            # Kritische Phase erkennen
+            unter_null = next((v["datum"] for v in verlauf if v["bestand"] <= 0), None)
+            unter_sb = next((v["datum"] for v in verlauf if v["bestand"] < v["sicherheit"]), None)
+            cols = st.columns(2)
+            if unter_sb:
+                cols[0].warning(f"⚠️ Bestand unter Sicherheitsbestand ab **{unter_sb}**")
+            else:
+                cols[0].success("✅ Sicherheitsbestand wird im Zeitraum nicht unterschritten")
+            if unter_null:
+                cols[1].error(f"❌ Bestand komplett verbraucht ab **{unter_null}**")
+            else:
+                cols[1].success("✅ Reicht über den ganzen Zeitraum")
+        st.markdown("</div>", unsafe_allow_html=True)
+
 
 def seite_bestellungen() -> None:
     st.markdown('<div class="card"><h3>Bestellhistorie</h3>', unsafe_allow_html=True)
@@ -1399,20 +1599,103 @@ def seite_kostenanalyse() -> None:
 
 
 def seite_einstellungen() -> None:
-    st.markdown('<div class="card"><h3>Einstellungen</h3>', unsafe_allow_html=True)
+    st.markdown('<div class="card"><h3>Allgemein</h3>', unsafe_allow_html=True)
     st.session_state.firma = st.text_input("Firmenname", value=st.session_state.firma)
     st.session_state.kunde = st.text_input("Kunde (Default)", value=st.session_state.kunde)
     st.session_state.auftragsnummer = st.text_input("Auftragsnummer (Default)", value=st.session_state.auftragsnummer)
-    st.session_state.palettenkosten_neu = st.number_input(
-        "Palettenkosten neu (€)", min_value=0.0, value=float(st.session_state.palettenkosten_neu), step=0.5)
-    st.session_state.palettenkosten_alt = st.number_input(
-        "Palettenkosten alt (€, Default)", min_value=0.0, value=float(st.session_state.palettenkosten_alt), step=0.5)
     sb = st.number_input("Sicherheitsbestand global", min_value=0,
                          value=int(st.session_state.sicherheitsbestand), step=10)
-    if st.button("💾 Speichern", use_container_width=True, type="primary"):
+    if st.button("💾 Sicherheitsbestand global anwenden", use_container_width=True, type="primary"):
         st.session_state.sicherheitsbestand = int(sb)
         setze_sicherheitsbestand_global(int(sb))
-        st.success("Einstellungen gespeichert.")
+        st.success("Sicherheitsbestand auf alle Typen angewendet.")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # === Pallettenkosten — flach oder detailliert ===
+    st.markdown('<div class="card"><h3>Palettenkosten</h3>', unsafe_allow_html=True)
+    st.session_state.kalkulation_aktiv = st.toggle(
+        "Detaillierte Kalkulation aktivieren (Material / Fertigung / Einkauf / Lager / Handling)",
+        value=st.session_state.kalkulation_aktiv,
+        key="kalk_aktiv_in",
+    )
+    if not st.session_state.kalkulation_aktiv:
+        col_a, col_b = st.columns(2)
+        st.session_state.palettenkosten_alt = col_a.number_input(
+            "Palettenkosten alt (€/Stk, Sonderanfertigung)",
+            min_value=0.0, value=float(st.session_state.palettenkosten_alt), step=0.5,
+            key="pk_alt_in",
+        )
+        st.session_state.palettenkosten_neu = col_b.number_input(
+            "Palettenkosten neu (€/Stk, Standard)",
+            min_value=0.0, value=float(st.session_state.palettenkosten_neu), step=0.5,
+            key="pk_neu_in",
+        )
+    else:
+        col_alt, col_neu = st.columns(2)
+        with col_alt:
+            st.markdown("<b>Sonderanfertigung (alt)</b>", unsafe_allow_html=True)
+            st.session_state.kalk_alt_material = st.number_input(
+                "Material (€)", min_value=0.0, value=float(st.session_state.kalk_alt_material), step=0.5, key="ka_mat")
+            st.session_state.kalk_alt_fertigung = st.number_input(
+                "Fertigung (€)", min_value=0.0, value=float(st.session_state.kalk_alt_fertigung), step=0.5, key="ka_fer")
+            st.session_state.kalk_alt_einkauf = st.number_input(
+                "Einkauf (€)", min_value=0.0, value=float(st.session_state.kalk_alt_einkauf), step=0.5, key="ka_ein")
+            st.session_state.kalk_alt_lager = st.number_input(
+                "Lager (€)", min_value=0.0, value=float(st.session_state.kalk_alt_lager), step=0.5, key="ka_lag")
+            st.session_state.kalk_alt_handling = st.number_input(
+                "Handling (€)", min_value=0.0, value=float(st.session_state.kalk_alt_handling), step=0.5, key="ka_han")
+            alt_total = (st.session_state.kalk_alt_material + st.session_state.kalk_alt_fertigung
+                         + st.session_state.kalk_alt_einkauf + st.session_state.kalk_alt_lager
+                         + st.session_state.kalk_alt_handling)
+            st.markdown(f"<div class='lade-box'><div class='lbl'>Summe alt</div>"
+                        f"<div class='val'>{fmt_eur(alt_total)}</div></div>", unsafe_allow_html=True)
+        with col_neu:
+            st.markdown("<b>Standardpalette (neu)</b>", unsafe_allow_html=True)
+            st.session_state.kalk_neu_material = st.number_input(
+                "Material (€)", min_value=0.0, value=float(st.session_state.kalk_neu_material), step=0.5, key="kn_mat")
+            st.session_state.kalk_neu_fertigung = st.number_input(
+                "Fertigung (€)", min_value=0.0, value=float(st.session_state.kalk_neu_fertigung), step=0.5, key="kn_fer")
+            st.session_state.kalk_neu_einkauf = st.number_input(
+                "Einkauf (€)", min_value=0.0, value=float(st.session_state.kalk_neu_einkauf), step=0.5, key="kn_ein")
+            st.session_state.kalk_neu_lager = st.number_input(
+                "Lager (€)", min_value=0.0, value=float(st.session_state.kalk_neu_lager), step=0.5, key="kn_lag")
+            st.session_state.kalk_neu_handling = st.number_input(
+                "Handling (€)", min_value=0.0, value=float(st.session_state.kalk_neu_handling), step=0.5, key="kn_han")
+            neu_total = (st.session_state.kalk_neu_material + st.session_state.kalk_neu_fertigung
+                         + st.session_state.kalk_neu_einkauf + st.session_state.kalk_neu_lager
+                         + st.session_state.kalk_neu_handling)
+            st.markdown(f"<div class='lade-box'><div class='lbl'>Summe neu</div>"
+                        f"<div class='val'>{fmt_eur(neu_total)}</div></div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # === Setup-Kosten & Break-Even ===
+    st.markdown('<div class="card"><h3>Setup-Kosten</h3>', unsafe_allow_html=True)
+    st.session_state.setup_kosten_pro_standard = st.number_input(
+        "Einmalige Setup-Kosten je neuem Standardtyp (€)",
+        min_value=0.0, value=float(st.session_state.setup_kosten_pro_standard), step=50.0,
+        help="Anschaffung neuer Werkzeuge / Anlernung der Fertigung. Beeinflusst den Break-Even-Punkt.",
+        key="setup_in",
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # === AW-Historie ===
+    st.markdown('<div class="card"><h3>Auftrags-Historie (Doppelimport-Schutz)</h3>', unsafe_allow_html=True)
+    st.session_state.ignore_bekannte_auftraege = st.toggle(
+        "Bereits bekannte Auftragsnummern beim Re-Import ignorieren",
+        value=st.session_state.ignore_bekannte_auftraege,
+        key="ignore_aw_in",
+        help="Beim erneuten Excel-Import werden Aufträge, deren AW schon einmal eingelesen wurde, übersprungen.",
+    )
+    historie = lade_bearbeitete_auftraege()
+    st.markdown(
+        f'<div class="lade-box"><div class="lbl">Bereits eingelesene Aufträge</div>'
+        f'<div class="val">{fmt_int(len(historie))}</div></div>',
+        unsafe_allow_html=True,
+    )
+    if historie and st.button("🗑️ Historie löschen", use_container_width=True, key="del_aw"):
+        loesche_bearbeitete_auftraege()
+        st.success("Auftrags-Historie wurde geleert.")
+        st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 

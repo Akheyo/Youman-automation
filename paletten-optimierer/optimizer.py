@@ -102,13 +102,51 @@ class OptimierungsErgebnis:
 
 
 @dataclass
+class PalettenKalkulation:
+    """Detaillierte Kostenkalkulation pro Palette mit Sub-Positionen.
+
+    Wenn ``aktiv=True``, wird die Summe der Sub-Positionen als
+    Stückkosten verwendet. Sonst greift der flache Wert
+    ``palettenkosten_neu`` bzw. ``palettenkosten_alt_default`` aus
+    :class:`KostenParameter`.
+    """
+
+    aktiv: bool = False
+    material: float = 0.0
+    fertigung: float = 0.0
+    einkauf: float = 0.0
+    lager: float = 0.0
+    handling: float = 0.0
+
+    @property
+    def total(self) -> float:
+        return self.material + self.fertigung + self.einkauf + self.lager + self.handling
+
+
+@dataclass
 class KostenParameter:
     """Eingabe-Parameter für die Wirtschaftlichkeitsrechnung."""
 
     kosten_pro_lkw: float = 800.0
     nutzbare_ladelaenge: float = 13.6
-    palettenkosten_neu: float = 18.0
-    palettenkosten_alt_default: float = 14.0
+    palettenkosten_neu: float = 14.0
+    palettenkosten_alt_default: float = 22.0
+    # Einmalige Setup-Kosten pro neuem Standardtyp (Werkzeuge, Anlernung).
+    # Wird für die Break-Even-Berechnung verwendet.
+    setup_kosten_pro_standard: float = 200.0
+    # Detaillierte Kalkulation (optional aktivierbar)
+    kalkulation_neu: PalettenKalkulation = field(default_factory=PalettenKalkulation)
+    kalkulation_alt: PalettenKalkulation = field(default_factory=PalettenKalkulation)
+
+    def effektive_kosten_neu(self) -> float:
+        if self.kalkulation_neu.aktiv:
+            return self.kalkulation_neu.total
+        return self.palettenkosten_neu
+
+    def effektive_kosten_alt(self) -> float:
+        if self.kalkulation_alt.aktiv:
+            return self.kalkulation_alt.total
+        return self.palettenkosten_alt_default
 
 
 @dataclass
@@ -123,6 +161,7 @@ class WirtschaftlichkeitsErgebnis:
     basis_lademeter_neu: float
     zusatz_lademeter: float
     kosten_pro_lademeter: float
+    setup_kosten_einmalig: float = 0.0
 
     @property
     def gesamtkosten_alt(self) -> float:
@@ -136,8 +175,21 @@ class WirtschaftlichkeitsErgebnis:
     def ersparnis(self) -> float:
         return self.gesamtkosten_alt - self.gesamtkosten_neu
 
+    @property
+    def break_even_monate(self) -> float | None:
+        """Anzahl Monate bis sich die einmaligen Setup-Kosten amortisiert haben.
+
+        ``None`` wenn die monatliche Ersparnis <= 0 ist (lohnt sich nie)
+        oder wenn keine Setup-Kosten anfallen (amortisiert sofort).
+        """
+        if self.setup_kosten_einmalig <= 0:
+            return 0.0 if self.ersparnis > 0 else None
+        if self.ersparnis <= 0:
+            return None
+        return self.setup_kosten_einmalig / self.ersparnis
+
     def hochrechnung(self, monate: int) -> float:
-        return self.ersparnis * monate
+        return self.ersparnis * monate - self.setup_kosten_einmalig
 
 
 def max_zulaessig(originalwert: float, toleranz: float, einheit: Einheit) -> float:
@@ -403,8 +455,10 @@ def optimiere(
     toleranz_l: float,
     toleranz_b: float,
     einheit: Einheit = "mm",
-    raster: int = 50,
+    raster: int = 100,
     kombinieren_erlaubt: bool = False,
+    wirtschaftliche_filterung: bool = False,
+    kosten_parameter: KostenParameter | None = None,
 ) -> OptimierungsErgebnis:
     """Hierarchisches Clustering der Paletten zu Standardpaletten.
 
@@ -518,6 +572,58 @@ def optimiere(
             einheit=einheit,
         )
 
+    if wirtschaftliche_filterung and kosten_parameter is not None:
+        ergebnis = _wirtschaftliche_filterung(ergebnis, kosten_parameter)
+
+    return ergebnis
+
+
+def _wirtschaftliche_filterung(
+    ergebnis: OptimierungsErgebnis,
+    parameter: KostenParameter,
+) -> OptimierungsErgebnis:
+    """Wirtschaftliche Optimierung: Cluster werden nur behalten, wenn die
+    Palettenkosten-Ersparnis pro Mitglied größer ist als die zusätzlichen
+    Logistikkosten.
+
+    Cluster, deren Standardisierung mehr kostet als sie spart, werden
+    in einzelne Sonderpaletten zurück aufgelöst — das ist die im Spec
+    geforderte „erweiterte Optimierungslogik": *Eine größere Standardpalette
+    wird nur empfohlen, wenn die Einsparung der Palettenkosten größer ist
+    als die zusätzlichen Transportkosten.*
+    """
+    if parameter.nutzbare_ladelaenge <= 0:
+        return ergebnis
+
+    kosten_pro_lm = parameter.kosten_pro_lkw / parameter.nutzbare_ladelaenge
+    kosten_neu = parameter.effektive_kosten_neu()
+
+    behalten: list[StandardPalette] = []
+    for std in ergebnis.standards:
+        if len(std.members) <= 1:
+            behalten.append(std)
+            continue
+        # Pro Mitglied: Palettenkosten-Ersparnis = kosten_alt - kosten_neu
+        # Pro Mitglied: Logistik-Mehrkosten = (std.laenge - m.laenge) / 1000 * kosten_pro_lm
+        # Standard wirtschaftlich, wenn für die meisten Mitglieder die
+        # Ersparnis größer als die Mehrkosten ist.
+        ersparnis = 0.0
+        mehrkosten = 0.0
+        for m in std.members:
+            kosten_alt_m = m.kosten_alt or parameter.effektive_kosten_alt()
+            ersparnis += max(0.0, kosten_alt_m - kosten_neu) * m.anzahl
+            mehrkosten += (std.laenge - m.laenge) / 1000.0 * m.anzahl * kosten_pro_lm
+        if ersparnis >= mehrkosten:
+            behalten.append(std)
+            continue
+        # Cluster wirtschaftlich nicht sinnvoll → in Singletons auflösen.
+        for m in std.members:
+            behalten.append(
+                StandardPalette(laenge=m.laenge, breite=m.breite, members=[m])
+            )
+
+    ergebnis.standards = behalten
+    ergebnis.standards.sort(key=lambda g: g.gesamt_anzahl, reverse=True)
     return ergebnis
 
 
@@ -631,9 +737,11 @@ def berechne_wirtschaftlichkeit(
         raise ValueError("nutzbare_ladelaenge muss > 0 sein")
 
     kosten_pro_lademeter = parameter.kosten_pro_lkw / parameter.nutzbare_ladelaenge
+    kosten_neu_pro_stk = parameter.effektive_kosten_neu()
+    kosten_alt_default = parameter.effektive_kosten_alt()
 
     palettenkosten_alt = sum(
-        p.anzahl * (p.kosten_alt or parameter.palettenkosten_alt_default)
+        p.anzahl * (p.kosten_alt or kosten_alt_default)
         for p in ergebnis.eingabe_paletten
     )
 
@@ -641,15 +749,19 @@ def berechne_wirtschaftlichkeit(
     zusatz_lademeter = 0.0
     for std in ergebnis.standards:
         for m in std.members:
-            palettenkosten_neu += m.anzahl * parameter.palettenkosten_neu
+            palettenkosten_neu += m.anzahl * kosten_neu_pro_stk
             zusatz_lademeter += (
                 (std.laenge - m.laenge) / 1000.0 * m.anzahl
             )
 
     for kombi in ergebnis.kombinationen:
         m = kombi.palette
-        palettenkosten_neu += m.anzahl * parameter.palettenkosten_neu * 2
-        groesste_l = max(kombi.standard_a.laenge, kombi.standard_b.laenge)
+        anzahl_standards_im_kombi = len(kombi.standards)
+        palettenkosten_neu += m.anzahl * kosten_neu_pro_stk * anzahl_standards_im_kombi
+        if kombi.richtung == "laenge":
+            groesste_l = max(s.laenge for s in kombi.standards)
+        else:
+            groesste_l = max(s.laenge for s in kombi.standards)
         zusatz_lademeter += (groesste_l - m.laenge) / 1000.0 * m.anzahl
 
     basis_lademeter_alt = sum(
@@ -660,6 +772,8 @@ def berechne_wirtschaftlichkeit(
     logistikkosten_alt = basis_lademeter_alt * kosten_pro_lademeter
     logistikkosten_neu = basis_lademeter_neu * kosten_pro_lademeter
 
+    setup_kosten_einmalig = parameter.setup_kosten_pro_standard * len(ergebnis.standards)
+
     return WirtschaftlichkeitsErgebnis(
         palettenkosten_alt=palettenkosten_alt,
         palettenkosten_neu=palettenkosten_neu,
@@ -669,4 +783,5 @@ def berechne_wirtschaftlichkeit(
         basis_lademeter_neu=basis_lademeter_neu,
         zusatz_lademeter=zusatz_lademeter,
         kosten_pro_lademeter=kosten_pro_lademeter,
+        setup_kosten_einmalig=setup_kosten_einmalig,
     )
