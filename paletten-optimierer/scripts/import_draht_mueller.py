@@ -75,7 +75,7 @@ def parse_tsv(pfad: Path) -> list[dict]:
                 "Hoehe": _f(16),
                 "Benoetigte_Paletten": p_anzahl,
                 "Stueckzahl_pro_Palette": stk_pal,
-                "Palettenkosten": 14.0,  # Default
+                "Palettenkosten": 0.0,  # Default → globaler Wert aus KostenParameter
                 "Kunde": parts[7].strip(),
                 "Auftrag": parts[4].strip(),
                 "KW_Lieferung": parts[3].strip(),

@@ -290,7 +290,7 @@ def importiere_excel(
                     laenge=laenge,
                     breite=breite,
                     anzahl=anzahl,
-                    kosten_alt=_float(_val(row, "kosten_alt"), 14.0) or 14.0,
+                    kosten_alt=_float(_val(row, "kosten_alt"), 0.0),
                     stueck_pro_palette=_int(_val(row, "stueck_pro_palette")),
                     hoehe=_float(_val(row, "hoehe")),
                     kunde=_str(_val(row, "kunde")),

@@ -138,6 +138,7 @@ class KostenParameter:
 
     kosten_pro_lkw: float = 800.0
     nutzbare_ladelaenge: float = 13.6
+    lkw_breite: float = 2.4
     palettenkosten_neu: float = 14.0
     palettenkosten_alt_default: float = 22.0
     # Einmalige Setup-Kosten pro neuem Standardtyp (Werkzeuge, Anlernung).
@@ -156,6 +157,18 @@ class KostenParameter:
         if self.kalkulation_alt.aktiv:
             return self.kalkulation_alt.total
         return self.palettenkosten_alt_default
+
+    def kosten_pro_quadratmeter(self) -> float:
+        """€ pro Quadratmeter LKW-Bodenfläche."""
+        flaeche = self.nutzbare_ladelaenge * self.lkw_breite
+        if flaeche <= 0:
+            return 0.0
+        return self.kosten_pro_lkw / flaeche
+
+    def kosten_pro_lademeter(self) -> float:
+        if self.nutzbare_ladelaenge <= 0:
+            return 0.0
+        return self.kosten_pro_lkw / self.nutzbare_ladelaenge
 
 
 @dataclass
@@ -569,16 +582,35 @@ def optimiere(
             kandidaten.append(key)
 
     # === Phase 2: Greedy Set Cover (nach Bedarf gewichtet) ===
+    # Wirtschaftlicher Score (optional): summiere Netto-Ersparnis statt
+    # nur Bedarfs-Abdeckung. So bevorzugt Set Cover Kandidaten, die
+    # tatsächlich Geld sparen, statt nur viele Artikel zu fangen.
+    wirt_score_aktiv = wirtschaftliche_filterung and kosten_parameter is not None
+
+    def _score(L_s: float, W_s: float, cov: set[int]) -> tuple[float, float]:
+        """Liefert (primary_score, fallback_score). Set Cover wählt nach
+        primary, bei Gleichstand nach fallback. Bei aktivierter Wirt.-
+        Optimierung ist primary die Summe positiver Netto-Beiträge."""
+        if wirt_score_aktiv:
+            net_summe = 0.0
+            for i in cov:
+                p = zu_std[i]
+                net = palette_netto(L_s, W_s, p, kosten_parameter)
+                if net > 0:
+                    net_summe += net * p.anzahl
+            return (net_summe, sum(anzahl[i] for i in cov))
+        return (float(sum(anzahl[i] for i in cov)), 0.0)
+
     nicht_abgedeckt: set[int] = set(range(n))
     auswahl: list[tuple[float, float, float, set[int]]] = []
     while nicht_abgedeckt:
         bester: tuple[float, float, float, set[int]] | None = None
-        bester_score = 0
+        bester_score = (-1.0, -1.0)
         for L_s, W_s, H_s, members in kandidaten:
             cov = members & nicht_abgedeckt
             if not cov:
                 continue
-            score = sum(anzahl[i] for i in cov)
+            score = _score(L_s, W_s, cov)
             if score > bester_score:
                 bester_score = score
                 bester = (L_s, W_s, H_s, set(cov))
@@ -586,6 +618,13 @@ def optimiere(
             for i in nicht_abgedeckt:
                 auswahl.append((L_min[i], W_min[i], H_min[i], {i}))
             break
+        # Wenn auch der beste Kandidat wirt. neutral/negativ ist,
+        # Mitglieder als Singletons (Sonderpaletten) belassen.
+        if wirt_score_aktiv and bester_score[0] <= 0:
+            for i in bester[3]:
+                auswahl.append((L_min[i], W_min[i], H_min[i], {i}))
+            nicht_abgedeckt -= bester[3]
+            continue
         auswahl.append(bester)
         nicht_abgedeckt -= bester[3]
 
@@ -652,45 +691,99 @@ def optimiere(
     return ergebnis
 
 
+def palette_ersparnis(p: Palette, parameter: KostenParameter) -> float:
+    """Palettenkosten-Ersparnis pro Stück, wenn ``p`` standardisiert wird.
+
+    Differenz zwischen Sonderanfertigung (``kosten_alt``) und Standard
+    (``kosten_neu``). Negative Werte werden auf 0 begrenzt — keine
+    Ersparnis bedeutet keine Ersparnis, keine Strafe.
+    """
+    kosten_alt = p.kosten_alt or parameter.effektive_kosten_alt()
+    return max(0.0, kosten_alt - parameter.effektive_kosten_neu())
+
+
+def palette_mehrkosten(
+    L_s: float, W_s: float, p: Palette, parameter: KostenParameter
+) -> float:
+    """Logistik-Mehrkosten pro Palette, wenn ``p`` in einen Standard
+    ``L_s × W_s`` einsortiert wird.
+
+    Modelliert die zusätzlich beanspruchte LKW-Bodenfläche
+    (Länge × Breite) als Kosten pro m² Ladefläche — berücksichtigt also
+    *beide* Achsen, nicht nur die Länge wie in der älteren Formel.
+    """
+    flaeche_diff_m2 = max(
+        0.0, (L_s * W_s - p.laenge * p.breite) / 1_000_000.0
+    )
+    return flaeche_diff_m2 * parameter.kosten_pro_quadratmeter()
+
+
+def palette_netto(
+    L_s: float, W_s: float, p: Palette, parameter: KostenParameter
+) -> float:
+    """Wirtschaftlicher Netto-Beitrag pro Palette: Ersparnis minus Mehrkosten."""
+    return palette_ersparnis(p, parameter) - palette_mehrkosten(L_s, W_s, p, parameter)
+
+
+def mitglieder_wirtschaftlichkeit(
+    std: StandardPalette, parameter: KostenParameter
+) -> list[dict]:
+    """Detail-Aufschlüsselung pro Mitglied eines Standards.
+
+    Returns eine Liste mit pro-Mitglied:
+        - artikelnummer, kunde, original_l, original_b, anzahl
+        - ersparnis (pro Stück), mehrkosten (pro Stück), netto (pro Stück)
+        - ersparnis_total = ersparnis × anzahl, mehrkosten_total, netto_total
+    """
+    rows: list[dict] = []
+    for m in std.members:
+        e_per = palette_ersparnis(m, parameter)
+        k_per = palette_mehrkosten(std.laenge, std.breite, m, parameter)
+        n_per = e_per - k_per
+        rows.append({
+            "artikelnummer": m.artikelnummer,
+            "kunde": m.kunde,
+            "auftrag": m.auftrag,
+            "original_l": m.laenge,
+            "original_b": m.breite,
+            "anzahl": m.anzahl,
+            "ersparnis_pro_pal": e_per,
+            "mehrkosten_pro_pal": k_per,
+            "netto_pro_pal": n_per,
+            "ersparnis_total": e_per * m.anzahl,
+            "mehrkosten_total": k_per * m.anzahl,
+            "netto_total": n_per * m.anzahl,
+        })
+    return rows
+
+
 def _wirtschaftliche_filterung(
     ergebnis: OptimierungsErgebnis,
     parameter: KostenParameter,
 ) -> OptimierungsErgebnis:
-    """Wirtschaftliche Optimierung: Cluster werden nur behalten, wenn die
-    Palettenkosten-Ersparnis pro Mitglied größer ist als die zusätzlichen
-    Logistikkosten.
+    """Wirtschaftliche Optimierung: Cluster bleiben nur erhalten, wenn die
+    Summe der Palettenkosten-Ersparnis größer ist als die Summe der
+    zusätzlichen Logistikkosten (Bodenfläche-basiert, beide Achsen).
 
-    Cluster, deren Standardisierung mehr kostet als sie spart, werden
-    in einzelne Sonderpaletten zurück aufgelöst — das ist die im Spec
-    geforderte „erweiterte Optimierungslogik": *Eine größere Standardpalette
-    wird nur empfohlen, wenn die Einsparung der Palettenkosten größer ist
-    als die zusätzlichen Transportkosten.*
+    Spec-konform: *Eine größere Standardpalette wird nur empfohlen, wenn
+    die Einsparung der Palettenkosten größer ist als die zusätzlichen
+    Transportkosten.*
     """
-    if parameter.nutzbare_ladelaenge <= 0:
-        return ergebnis
-
-    kosten_pro_lm = parameter.kosten_pro_lkw / parameter.nutzbare_ladelaenge
-    kosten_neu = parameter.effektive_kosten_neu()
-
     behalten: list[StandardPalette] = []
     for std in ergebnis.standards:
         if len(std.members) <= 1:
             behalten.append(std)
             continue
-        # Pro Mitglied: Palettenkosten-Ersparnis = kosten_alt - kosten_neu
-        # Pro Mitglied: Logistik-Mehrkosten = (std.laenge - m.laenge) / 1000 * kosten_pro_lm
-        # Standard wirtschaftlich, wenn für die meisten Mitglieder die
-        # Ersparnis größer als die Mehrkosten ist.
-        ersparnis = 0.0
-        mehrkosten = 0.0
-        for m in std.members:
-            kosten_alt_m = m.kosten_alt or parameter.effektive_kosten_alt()
-            ersparnis += max(0.0, kosten_alt_m - kosten_neu) * m.anzahl
-            mehrkosten += (std.laenge - m.laenge) / 1000.0 * m.anzahl * kosten_pro_lm
+        ersparnis = sum(
+            palette_ersparnis(m, parameter) * m.anzahl for m in std.members
+        )
+        mehrkosten = sum(
+            palette_mehrkosten(std.laenge, std.breite, m, parameter) * m.anzahl
+            for m in std.members
+        )
         if ersparnis >= mehrkosten:
             behalten.append(std)
             continue
-        # Cluster wirtschaftlich nicht sinnvoll → in Singletons auflösen.
         for m in std.members:
             behalten.append(
                 StandardPalette(laenge=m.laenge, breite=m.breite, members=[m])
@@ -699,6 +792,57 @@ def _wirtschaftliche_filterung(
     ergebnis.standards = behalten
     ergebnis.standards.sort(key=lambda g: g.gesamt_anzahl, reverse=True)
     return ergebnis
+
+
+def break_even_analyse(
+    paletten: list[Palette],
+    parameter: KostenParameter,
+    toleranzen_mm: list[int] | None = None,
+    kombinieren_erlaubt: bool = True,
+    raster: int = 100,
+) -> list[dict]:
+    """Sweept verschiedene Toleranzen und berechnet pro Stufe die
+    wirtschaftliche Bilanz.
+
+    Liefert eine Tabelle mit ``toleranz, anzahl_standards,
+    palettenkosten_diff, logistikkosten_diff, gesamt_ersparnis,
+    break_even_monate`` — der Punkt mit der größten Gesamt-Ersparnis ist
+    die wirtschaftlich optimale Toleranz.
+
+    Wird vom „🎯 Break-Even-Analyse"-Knopf in der UI aufgerufen.
+    """
+    if toleranzen_mm is None:
+        toleranzen_mm = [50, 100, 150, 200, 300, 400, 500, 700, 1000]
+
+    ergebnisse: list[dict] = []
+    for tol in toleranzen_mm:
+        erg = optimiere(
+            paletten,
+            toleranz_l=float(tol),
+            toleranz_b=float(tol),
+            einheit="mm",
+            raster=raster,
+            kombinieren_erlaubt=kombinieren_erlaubt,
+            wirtschaftliche_filterung=False,
+            kosten_parameter=parameter,
+        )
+        w = berechne_wirtschaftlichkeit(erg, parameter)
+        ergebnisse.append({
+            "toleranz_mm": tol,
+            "anzahl_standards": erg.anzahl_standards,
+            "anzahl_kombinationen": len(erg.kombinationen),
+            "palettenkosten_alt": w.palettenkosten_alt,
+            "palettenkosten_neu": w.palettenkosten_neu,
+            "palettenkosten_diff": w.palettenkosten_neu - w.palettenkosten_alt,
+            "logistikkosten_alt": w.logistikkosten_alt,
+            "logistikkosten_neu": w.logistikkosten_neu,
+            "logistikkosten_diff": w.logistikkosten_neu - w.logistikkosten_alt,
+            "ersparnis_pro_monat": w.ersparnis,
+            "ersparnis_pro_jahr": w.ersparnis * 12,
+            "setup_kosten": w.setup_kosten_einmalig,
+            "break_even_monate": w.break_even_monate,
+        })
+    return ergebnisse
 
 
 def empfohlene_toleranz(

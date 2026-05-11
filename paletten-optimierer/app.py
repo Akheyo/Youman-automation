@@ -30,7 +30,11 @@ from optimizer import (
     StandardPalette,
     WirtschaftlichkeitsErgebnis,
     berechne_wirtschaftlichkeit,
+    break_even_analyse,
+    mitglieder_wirtschaftlichkeit,
     optimiere,
+    palette_ersparnis,
+    palette_mehrkosten,
 )
 from pdf_generator import erstelle_bestellung_pdf
 from storage_handler import (
@@ -430,6 +434,7 @@ def init_state() -> None:
         "import_schon_count": 0,
         "kosten_pro_lkw": 800.0,
         "nutzbare_ladelaenge": 13.6,
+        "lkw_breite": 2.4,
         "palettenkosten_neu": 18.0,
         "palettenkosten_alt": 14.0,
         "sicherheitsbestand": 100,
@@ -460,7 +465,7 @@ def _opt_signatur() -> str:
         s.kombinieren_erlaubt, s.wirtschaftliche_filterung,
         s.mengen_schwelle, s.hoehe_aktiv, s.tol_h,
         s.palettenkosten_alt, s.palettenkosten_neu, s.kosten_pro_lkw,
-        s.nutzbare_ladelaenge, s.setup_kosten_pro_standard,
+        s.nutzbare_ladelaenge, s.lkw_breite, s.setup_kosten_pro_standard,
         s.kalkulation_aktiv,
         s.kalk_alt_material, s.kalk_alt_fertigung, s.kalk_alt_einkauf,
         s.kalk_alt_lager, s.kalk_alt_handling,
@@ -474,6 +479,7 @@ def aktuelle_kostenparameter() -> KostenParameter:
     return KostenParameter(
         kosten_pro_lkw=s.kosten_pro_lkw,
         nutzbare_ladelaenge=s.nutzbare_ladelaenge,
+        lkw_breite=s.lkw_breite,
         palettenkosten_neu=s.palettenkosten_neu,
         palettenkosten_alt_default=s.palettenkosten_alt,
         setup_kosten_pro_standard=s.setup_kosten_pro_standard,
@@ -977,11 +983,24 @@ def card_kosten() -> None:
             step=0.1,
             key="lade_in",
         )
+    st.session_state.lkw_breite = st.number_input(
+        "LKW-Innenbreite (m)",
+        min_value=0.5,
+        value=float(st.session_state.lkw_breite),
+        step=0.05,
+        key="lkw_br_in",
+        help="Wird für die flächenbasierte Mehrkosten-Berechnung verwendet (Breite × Länge = LKW-Bodenfläche).",
+    )
+    flaeche = st.session_state.nutzbare_ladelaenge * st.session_state.lkw_breite
+    eur_m2 = st.session_state.kosten_pro_lkw / flaeche if flaeche > 0 else 0
     st.markdown(
         f"""
         <div class="lade-box">
-          <div class="lbl">Kosten pro Lademeter</div>
+          <div class="lbl">Kosten pro Lademeter / m²</div>
           <div class="val">{fmt_eur(kosten_pro_lademeter())} / m</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px;">
+            {fmt_eur(eur_m2)} / m² &nbsp;·&nbsp; LKW-Fläche: {flaeche:.2f} m²
+          </div>
         </div>
         </div>
         """,
@@ -1667,12 +1686,142 @@ def seite_kostenanalyse() -> None:
         return
     wirt = st.session_state.wirtschaftlichkeit
     erg = st.session_state.ergebnis
+    params = aktuelle_kostenparameter()
+
     a, b = st.columns(2)
     with a:
         card_wirtschaftlichkeit(wirt, erg.anzahl_eingabe_typen, erg.anzahl_standards)
     with b:
         card_kosten_simulation(wirt)
     card_logistik(wirt)
+
+    # === Pro-Mitglied-Analyse pro Standard ===
+    st.markdown('<div class="card"><h3>Pro-Mitglied-Wirtschaftlichkeit</h3>'
+                '<p style="color:#6b7280;font-size:12px;margin-top:-8px;">'
+                'Zeigt für jedes Mitglied jedes Standards die Netto-Bilanz '
+                '(Palettenkosten-Ersparnis minus Logistik-Mehrkosten).</p>',
+                unsafe_allow_html=True)
+    for std in erg.standards:
+        rows = mitglieder_wirtschaftlichkeit(std, params)
+        ersparnis_sum = sum(r["ersparnis_total"] for r in rows)
+        mehr_sum = sum(r["mehrkosten_total"] for r in rows)
+        netto_sum = ersparnis_sum - mehr_sum
+        farbe = "color:#16a34a;" if netto_sum >= 0 else "color:#dc2626;"
+        with st.expander(
+            f"{std.label}  ·  {len(rows)} Artikel  ·  Netto: "
+            f"{fmt_eur(netto_sum)}",
+            expanded=False,
+        ):
+            df = pd.DataFrame([
+                {
+                    "Artikel": r["artikelnummer"],
+                    "Kunde": r["kunde"][:25],
+                    "Original (mm)": f"{int(r['original_l'])} × {int(r['original_b'])}",
+                    "Stk": r["anzahl"],
+                    "Ersp/Stk (€)": round(r["ersparnis_pro_pal"], 2),
+                    "Mehrk/Stk (€)": round(r["mehrkosten_pro_pal"], 2),
+                    "Netto/Stk (€)": round(r["netto_pro_pal"], 2),
+                    "Netto gesamt (€)": round(r["netto_total"], 2),
+                }
+                for r in rows
+            ])
+            st.dataframe(df, use_container_width=True, hide_index=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # === Break-Even-Toleranz-Analyse ===
+    st.markdown('<div class="card"><h3>🎯 Break-Even-Toleranz-Analyse</h3>'
+                '<p style="color:#6b7280;font-size:12px;margin-top:-8px;">'
+                'Sweept verschiedene Toleranzen und zeigt, bei welcher '
+                'Toleranz die Wirtschaftlichkeit am besten ist. Maximale '
+                'Standardisierung ist nicht automatisch maximale Ersparnis '
+                '— hier siehst du den optimalen Punkt.</p>',
+                unsafe_allow_html=True)
+    if st.button("📊 Sweep berechnen", key="be_sweep", use_container_width=True):
+        with st.spinner("Berechne Toleranz-Sweep ..."):
+            sweep = break_even_analyse(
+                st.session_state.paletten, params,
+                kombinieren_erlaubt=st.session_state.kombinieren_erlaubt,
+                raster=st.session_state.raster,
+            )
+        st.session_state.be_sweep = sweep
+        st.rerun()
+    sweep = st.session_state.get("be_sweep")
+    if sweep:
+        df_sweep = pd.DataFrame([
+            {
+                "Toleranz (mm)": r["toleranz_mm"],
+                "# Standards": r["anzahl_standards"],
+                "# Kombis": r["anzahl_kombinationen"],
+                "Pal-Diff (€/Mon)": round(r["palettenkosten_diff"]),
+                "Log-Diff (€/Mon)": round(r["logistikkosten_diff"]),
+                "Ersparnis (€/Mon)": round(r["ersparnis_pro_monat"]),
+                "Ersparnis (€/Jahr)": round(r["ersparnis_pro_jahr"]),
+                "Break-Even (Mon)": (
+                    f"{r['break_even_monate']:.1f}"
+                    if r["break_even_monate"] is not None else "nie"
+                ),
+            }
+            for r in sweep
+        ])
+        # Optimum hervorheben
+        opt = max(sweep, key=lambda r: r["ersparnis_pro_monat"])
+        st.markdown(
+            f'<div class="wirt-summary">'
+            f'<div><div style="font-size:11px;opacity:0.7;text-transform:uppercase;'
+            f'letter-spacing:0.5px;">Wirtschaftliches Optimum</div>'
+            f'<div class="v">{opt["toleranz_mm"]} mm Toleranz</div></div>'
+            f'<div style="text-align:right;">'
+            f'<div style="font-size:11px;opacity:0.7;">'
+            f'{opt["anzahl_standards"]} Standards · {opt["anzahl_kombinationen"]} Kombis</div>'
+            f'<div style="font-size:14px;font-weight:700;margin-top:2px;">'
+            f'+{fmt_eur(opt["ersparnis_pro_monat"])} / Monat</div></div></div>',
+            unsafe_allow_html=True,
+        )
+        st.dataframe(df_sweep, use_container_width=True, hide_index=True)
+
+        # Plotly-Chart
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=[r["toleranz_mm"] for r in sweep],
+            y=[r["ersparnis_pro_monat"] for r in sweep],
+            mode="lines+markers", name="Ersparnis €/Monat",
+            line=dict(color=GREEN, width=3),
+            marker=dict(size=10),
+        ))
+        fig.add_trace(go.Scatter(
+            x=[r["toleranz_mm"] for r in sweep],
+            y=[r["anzahl_standards"] for r in sweep],
+            mode="lines+markers", name="# Standards",
+            line=dict(color=BLUE, width=2, dash="dot"),
+            yaxis="y2",
+        ))
+        fig.add_vline(
+            x=opt["toleranz_mm"], line_dash="dash", line_color="#f59e0b",
+            annotation_text=f"Optimum: {opt['toleranz_mm']}mm",
+            annotation_position="top",
+        )
+        fig.update_layout(
+            height=320,
+            margin=dict(l=10, r=10, t=30, b=10),
+            plot_bgcolor="#fff", paper_bgcolor="#fff",
+            xaxis=dict(title="Toleranz (mm)", gridcolor="#f3f4f6"),
+            yaxis=dict(title="Ersparnis €/Monat", gridcolor="#f3f4f6"),
+            yaxis2=dict(title="# Standards", overlaying="y", side="right",
+                        gridcolor="rgba(0,0,0,0)"),
+            legend=dict(orientation="h", y=-0.18, x=0.0),
+            font=dict(size=11, family="Inter, sans-serif"),
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+        if st.button(
+            f"✅ Optimum übernehmen ({opt['toleranz_mm']}mm)",
+            key="apply_optimum", use_container_width=True, type="primary"
+        ):
+            st.session_state.tol_einheit = "mm"
+            st.session_state.tol_l = float(opt["toleranz_mm"])
+            st.session_state.tol_b = float(opt["toleranz_mm"])
+            st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def seite_einstellungen() -> None:
