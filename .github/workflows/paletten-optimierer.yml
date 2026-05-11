@@ -19,7 +19,7 @@ on:
       trial_days:
         description: "Test-Zeitraum in Tagen (0 = unbegrenzt)"
         required: false
-        default: "90"
+        default: "3"
       lizenznehmer:
         description: "Lizenznehmer (Anzeigename im Banner)"
         required: false
