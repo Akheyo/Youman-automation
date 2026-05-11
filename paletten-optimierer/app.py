@@ -407,6 +407,8 @@ def init_state() -> None:
         "tol_einheit": "mm",
         "tol_l": 300.0,
         "tol_b": 300.0,
+        "tol_h": 200.0,
+        "hoehe_aktiv": False,
         "mengen_schwelle": 0,
         "letzte_opt_signatur": "",
         "raster": 100,
@@ -456,7 +458,7 @@ def _opt_signatur() -> str:
     return "|".join(str(x) for x in [
         len(s.paletten), s.tol_einheit, s.tol_l, s.tol_b, s.raster,
         s.kombinieren_erlaubt, s.wirtschaftliche_filterung,
-        s.mengen_schwelle,
+        s.mengen_schwelle, s.hoehe_aktiv, s.tol_h,
         s.palettenkosten_alt, s.palettenkosten_neu, s.kosten_pro_lkw,
         s.nutzbare_ladelaenge, s.setup_kosten_pro_standard,
         s.kalkulation_aktiv,
@@ -510,6 +512,8 @@ def run_optimierung() -> None:
         wirtschaftliche_filterung=st.session_state.wirtschaftliche_filterung,
         kosten_parameter=params,
         mengen_schwelle=int(st.session_state.mengen_schwelle),
+        hoehe_aktiv=st.session_state.hoehe_aktiv,
+        toleranz_h=st.session_state.tol_h,
     )
     wirt = berechne_wirtschaftlichkeit(erg, params)
     st.session_state.ergebnis = erg
@@ -869,6 +873,27 @@ def card_toleranz() -> None:
     )
     st.session_state.tol_einheit = "mm" if einheit == "Millimeter" else "prozent"
 
+    st.session_state.hoehe_aktiv = st.toggle(
+        "📦 Höhe mitstandardisieren (Stapel-/Gitterhöhe)",
+        value=st.session_state.hoehe_aktiv,
+        key="hoehe_in",
+        help=(
+            "Wenn aktiv, ist die Palettenhöhe (P-Höhe) die dritte Dimension. "
+            "Standards werden 3D — eine 1200×800 Palette mit 600 mm "
+            "Stapelhöhe ist dann ein anderer Standard als 1200×800 mit "
+            "1500 mm. Artikel ohne Höhenangabe passen weiterhin in jeden "
+            "Standard."
+        ),
+    )
+    if st.session_state.hoehe_aktiv:
+        st.session_state.tol_h = st.number_input(
+            f"Höhe ({'mm' if st.session_state.tol_einheit == 'mm' else '%'})",
+            min_value=0.0,
+            value=float(st.session_state.tol_h),
+            step=10.0 if st.session_state.tol_einheit == "mm" else 1.0,
+            key="tol_h_in",
+        )
+
     st.session_state.kombinieren_erlaubt = st.toggle(
         "Paletten kombinieren (2- bis 3-fach, in Länge oder Breite)",
         value=st.session_state.kombinieren_erlaubt,
@@ -983,6 +1008,7 @@ def card_sicherheitsbestand() -> None:
 def render_result_table(erg: OptimierungsErgebnis) -> str:
     has_kunde = any(m.kunde for s in erg.standards for m in s.members)
     has_auftrag = any(m.auftrag for s in erg.standards for m in s.members)
+    has_hoehe = any(s.hoehe > 0 for s in erg.standards)
 
     rows: list[str] = []
     for std in erg.standards:
@@ -1005,15 +1031,22 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
                 tds.append(f'<td style="font-family:ui-monospace,SF Mono,Menlo,monospace;font-size:12px;">{escape(m.auftrag)}</td>')
             tds.append(f"<td style='text-align:right;'>{fmt_int(m.anzahl)}</td>")
             tds.append(f"<td style='text-align:right;'>{fmt_int(m.stueck_pro_palette)}</td>")
-            tds.append(f"<td>{int(round(m.laenge))} × {int(round(m.breite))}</td>")
+            if has_hoehe:
+                h_str = (f"{int(round(m.laenge))} × {int(round(m.breite))} × {int(round(m.hoehe))}"
+                         if m.hoehe > 0 else f"{int(round(m.laenge))} × {int(round(m.breite))}")
+            else:
+                h_str = f"{int(round(m.laenge))} × {int(round(m.breite))}"
+            tds.append(f"<td>{h_str}</td>")
             tds.append('<td><span class="badge badge-ok">✓ innerhalb Toleranz</span></td>')
             rows.append("<tr>" + "".join(tds) + "</tr>")
 
     for k in erg.kombinationen:
         m = k.palette
-        std_label = " + ".join(
-            f"{int(round(s.laenge))} × {int(round(s.breite))}" for s in k.standards
-        )
+        def _fmt_std(s):
+            if has_hoehe and s.hoehe > 0:
+                return f"{int(round(s.laenge))} × {int(round(s.breite))} × {int(round(s.hoehe))}"
+            return f"{int(round(s.laenge))} × {int(round(s.breite))}"
+        std_label = " + ".join(_fmt_std(s) for s in k.standards)
         kombi_hinweis = "in Länge gestapelt" if k.richtung == "laenge" else "in Breite gestapelt"
         artikel_html = f'<div style="font-weight:600;">{escape(m.artikelnummer)}</div>'
         if has_kunde and m.kunde:

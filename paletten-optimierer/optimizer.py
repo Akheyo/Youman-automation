@@ -37,11 +37,15 @@ class StandardPalette:
 
     laenge: float
     breite: float
+    hoehe: float = 0.0
     members: list[Palette] = field(default_factory=list)
 
     @property
     def label(self) -> str:
-        return f"{int(round(self.laenge))} × {int(round(self.breite))} mm"
+        base = f"{int(round(self.laenge))} × {int(round(self.breite))} mm"
+        if self.hoehe > 0:
+            base = f"{int(round(self.laenge))} × {int(round(self.breite))} × {int(round(self.hoehe))} mm"
+        return base
 
     @property
     def gesamt_anzahl(self) -> int:
@@ -465,6 +469,8 @@ def optimiere(
     wirtschaftliche_filterung: bool = False,
     kosten_parameter: KostenParameter | None = None,
     mengen_schwelle: int = 0,
+    toleranz_h: float | None = None,
+    hoehe_aktiv: bool = False,
 ) -> OptimierungsErgebnis:
     """Set-Cover-Optimierung der Paletten zu Standardpaletten.
 
@@ -512,67 +518,83 @@ def optimiere(
     W_max_tol = [max_zulaessig(p.breite, toleranz_b, einheit) for p in zu_std]
     anzahl = [max(1, p.anzahl) for p in zu_std]
 
+    # Höhe als optionale dritte Dimension. Bei p.hoehe == 0 wird die Höhe
+    # für diesen Artikel nicht erzwungen (er passt in jeden Standard).
+    if hoehe_aktiv:
+        tol_h_val = toleranz_h if toleranz_h is not None else toleranz_l
+        H_min = [p.hoehe for p in zu_std]
+        H_max_tol = [
+            max_zulaessig(p.hoehe, tol_h_val, einheit) if p.hoehe > 0 else float("inf")
+            for p in zu_std
+        ]
+    else:
+        H_min = [0.0] * n
+        H_max_tol = [float("inf")] * n
+
     # === Phase 1: Kandidaten ===
     # Für jeden Anker einen "maximalen kompatiblen Cluster" bauen.
     # Sortier-Reihenfolge der Hinzunahme: nach Anzahl absteigend, damit
     # Cluster mit hochvolumigen Mitgliedern entstehen.
     sortier_by_demand = sorted(range(n), key=lambda j: anzahl[j], reverse=True)
 
-    kandidaten: list[tuple[float, float, frozenset[int]]] = []
-    seen: set[tuple[float, float, frozenset[int]]] = set()
+    kandidaten: list[tuple[float, float, float, frozenset[int]]] = []
+    seen: set[tuple[float, float, float, frozenset[int]]] = set()
     for anker in range(n):
         chosen: list[int] = [anker]
         L_s = L_min[anker]
         W_s = W_min[anker]
+        H_s = H_min[anker]
         for j in sortier_by_demand:
             if j == anker:
                 continue
             new_L = L_s if L_s > L_min[j] else L_min[j]
             new_W = W_s if W_s > W_min[j] else W_min[j]
+            new_H = H_s if H_s > H_min[j] else H_min[j]
             # Passt der erweiterte Cluster zu allen bisherigen + j?
-            if new_L > L_max_tol[j] or new_W > W_max_tol[j]:
+            if new_L > L_max_tol[j] or new_W > W_max_tol[j] or new_H > H_max_tol[j]:
                 continue
             ok = True
             for k in chosen:
-                if new_L > L_max_tol[k] or new_W > W_max_tol[k]:
+                if (new_L > L_max_tol[k] or new_W > W_max_tol[k]
+                        or new_H > H_max_tol[k]):
                     ok = False
                     break
             if not ok:
                 continue
             chosen.append(j)
-            L_s, W_s = new_L, new_W
-        key = (L_s, W_s, frozenset(chosen))
+            L_s, W_s, H_s = new_L, new_W, new_H
+        key = (L_s, W_s, H_s, frozenset(chosen))
         if key not in seen:
             seen.add(key)
             kandidaten.append(key)
 
     # === Phase 2: Greedy Set Cover (nach Bedarf gewichtet) ===
     nicht_abgedeckt: set[int] = set(range(n))
-    auswahl: list[tuple[float, float, set[int]]] = []
+    auswahl: list[tuple[float, float, float, set[int]]] = []
     while nicht_abgedeckt:
-        bester: tuple[float, float, set[int]] | None = None
+        bester: tuple[float, float, float, set[int]] | None = None
         bester_score = 0
-        for L_s, W_s, members in kandidaten:
+        for L_s, W_s, H_s, members in kandidaten:
             cov = members & nicht_abgedeckt
             if not cov:
                 continue
             score = sum(anzahl[i] for i in cov)
             if score > bester_score:
                 bester_score = score
-                bester = (L_s, W_s, set(cov))
+                bester = (L_s, W_s, H_s, set(cov))
         if bester is None:
-            # Defensive: verbleibende als Singletons (sollte nicht passieren)
             for i in nicht_abgedeckt:
-                auswahl.append((L_min[i], W_min[i], {i}))
+                auswahl.append((L_min[i], W_min[i], H_min[i], {i}))
             break
         auswahl.append(bester)
-        nicht_abgedeckt -= bester[2]
+        nicht_abgedeckt -= bester[3]
 
     # === Phase 3: Schrumpfen ist implizit (L_s = max L_min des Subsets) ===
 
     # === Phase 4: Raster aufrunden ===
+    tol_h_val = toleranz_h if toleranz_h is not None else toleranz_l
     standards: list[StandardPalette] = []
-    for L_s, W_s, idx_set in auswahl:
+    for L_s, W_s, H_s, idx_set in auswahl:
         members = [zu_std[i] for i in idx_set]
         if raster > 0:
             k_l = _runde_auf(L_s, raster)
@@ -583,7 +605,21 @@ def optimiere(
                 for m in members
             ):
                 L_s, W_s = k_l, k_w
-        standards.append(StandardPalette(laenge=L_s, breite=W_s, members=members))
+            if hoehe_aktiv and H_s > 0:
+                k_h = _runde_auf(H_s, raster)
+                if all(
+                    (m.hoehe == 0) or (k_h <= max_zulaessig(m.hoehe, tol_h_val, einheit))
+                    for m in members
+                ):
+                    H_s = k_h
+        standards.append(
+            StandardPalette(
+                laenge=L_s,
+                breite=W_s,
+                hoehe=H_s if hoehe_aktiv else 0.0,
+                members=members,
+            )
+        )
 
     standards.sort(key=lambda g: g.gesamt_anzahl, reverse=True)
 
