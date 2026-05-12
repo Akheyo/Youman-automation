@@ -222,3 +222,128 @@ export function generateId(): string {
   }
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
+
+/* ------------------------------------------------------------------ */
+/* Manueller Export / Import (für Sync zwischen PCs ohne OneDrive)    */
+/* ------------------------------------------------------------------ */
+
+export interface BackupBlob {
+  version: 1;
+  exportedAt: string;
+  settings: Settings;
+  vehicles: Vehicle[];
+}
+
+function buildBackupBlob(vehicles: Vehicle[], settings: Settings): BackupBlob {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    settings,
+    vehicles,
+  };
+}
+
+function suggestedFilename(): string {
+  const stamp = new Date().toISOString().slice(0, 10);
+  return `daev-margin-backup-${stamp}.json`;
+}
+
+/**
+ * Speichert alle Daten in eine vom Benutzer gewählte JSON-Datei.
+ * In Tauri: nativer "Speichern unter"-Dialog.
+ * Im Browser: Download über data-URL.
+ */
+export async function exportToFile(
+  vehicles: Vehicle[],
+  settings: Settings,
+): Promise<{ saved: boolean; path: string | null }> {
+  const json = JSON.stringify(buildBackupBlob(vehicles, settings), null, 2);
+
+  if (isTauri()) {
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+    const path = await save({
+      title: 'Datensicherung speichern',
+      defaultPath: suggestedFilename(),
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    });
+    if (!path) return { saved: false, path: null };
+    await writeTextFile(path, json);
+    return { saved: true, path };
+  }
+
+  // Browser-Fallback: Download via <a>-Tag
+  const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = suggestedFilename();
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  return { saved: true, path: null };
+}
+
+/**
+ * Lädt Daten aus einer JSON-Datei.
+ * In Tauri: nativer "Datei öffnen"-Dialog.
+ * Im Browser: über ein verstecktes <input type="file">.
+ */
+export async function importFromFile(): Promise<BackupBlob | null> {
+  let content: string | null = null;
+
+  if (isTauri()) {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const { readTextFile } = await import('@tauri-apps/plugin-fs');
+    const path = await open({
+      title: 'Datensicherung wählen',
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+      multiple: false,
+    });
+    if (!path || Array.isArray(path)) return null;
+    content = await readTextFile(path);
+  } else {
+    // Browser-Fallback
+    content = await pickFileBrowser();
+    if (content == null) return null;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new Error('Die Datei ist keine gültige JSON-Datei.');
+  }
+  if (
+    !parsed ||
+    typeof parsed !== 'object' ||
+    !Array.isArray((parsed as Partial<BackupBlob>).vehicles)
+  ) {
+    throw new Error('Die Datei enthält keine gültigen Fahrzeug-Daten.');
+  }
+  const obj = parsed as Partial<BackupBlob>;
+  return {
+    version: 1,
+    exportedAt: obj.exportedAt ?? new Date().toISOString(),
+    settings: { ...DEFAULT_SETTINGS, ...(obj.settings ?? {}) },
+    vehicles: obj.vehicles as Vehicle[],
+  };
+}
+
+function pickFileBrowser(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,.json';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return resolve(null);
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => resolve(null);
+      reader.readAsText(file);
+    };
+    input.click();
+  });
+}

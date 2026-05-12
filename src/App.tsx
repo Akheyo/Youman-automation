@@ -5,7 +5,7 @@ import { VehicleDetail } from './components/VehicleDetail';
 import { VehicleForm } from './components/VehicleForm';
 import { VerkaufModal } from './components/VerkaufModal';
 import { Dialog } from './components/Dialog';
-import { Car, Plus, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
+import { Car, Download, Plus, RefreshCw, Settings as SettingsIcon, Upload } from 'lucide-react';
 import { isTauri } from './lib/storage';
 import { formatDatum } from './lib/format';
 import type { Vehicle } from './types';
@@ -251,6 +251,62 @@ export default function App() {
                 <RefreshCw size={14} /> Jetzt vom Speicherort neu laden
               </button>
             )}
+          </div>
+
+          <div className="border-t pt-4 space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Daten zwischen PCs übertragen
+            </div>
+            <p className="text-xs text-slate-500 mb-2">
+              Auf PC 1 <b>Exportieren</b> klicken → Datei per Mail/USB an PC 2 senden → dort
+              <b> Importieren</b> klicken. Importieren ersetzt alle aktuellen Daten auf diesem PC.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                className="btn-secondary"
+                onClick={async () => {
+                  try {
+                    const result = await store.exportBackup();
+                    if (result.saved) {
+                      alert(
+                        result.path
+                          ? `Gespeichert unter:\n${result.path}`
+                          : 'Datei wurde heruntergeladen.',
+                      );
+                    }
+                  } catch (e) {
+                    alert(`Export fehlgeschlagen: ${(e as Error).message}`);
+                  }
+                }}
+              >
+                <Download size={14} /> Exportieren
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={async () => {
+                  if (
+                    store.vehicles.length > 0 &&
+                    !window.confirm(
+                      'Importieren ersetzt alle aktuellen Fahrzeugdaten auf diesem PC. Fortfahren?',
+                    )
+                  )
+                    return;
+                  try {
+                    const result = await store.importBackup();
+                    if (result) {
+                      alert(
+                        `Import erfolgreich: ${result.vehicles.length} Fahrzeug(e) übernommen.`,
+                      );
+                      setSettingsOpen(false);
+                    }
+                  } catch (e) {
+                    alert(`Import fehlgeschlagen: ${(e as Error).message}`);
+                  }
+                }}
+              >
+                <Upload size={14} /> Importieren
+              </button>
+            </div>
           </div>
 
           <div className="border-t pt-4 space-y-2">

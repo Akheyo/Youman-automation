@@ -10,7 +10,7 @@ import {
 } from 'react';
 import type { Vehicle, Settings } from '@/types';
 import { DEFAULT_SETTINGS } from '@/types';
-import { generateId, getStorageLocationLabel, isTauri, loadAll, saveAll } from '@/lib/storage';
+import { generateId, getStorageLocationLabel, isTauri, loadAll, saveAll, exportToFile, importFromFile, type BackupBlob } from '@/lib/storage';
 import { createPoloSeed } from '@/lib/seed';
 
 interface StoreContextValue {
@@ -31,6 +31,10 @@ interface StoreContextValue {
   resetAll: () => void;
   /** Manuelles Neu-Lesen der Datei — für Sync-Knopf. */
   refresh: () => Promise<void>;
+  /** Exportiert alle Daten in eine JSON-Datei (Sync zwischen PCs ohne Cloud). */
+  exportBackup: () => Promise<{ saved: boolean; path: string | null }>;
+  /** Importiert eine zuvor exportierte JSON-Datei und ersetzt die aktuellen Daten. */
+  importBackup: () => Promise<BackupBlob | null>;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -162,6 +166,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setVehicles([]);
   }, []);
 
+  const exportBackup = useCallback(() => exportToFile(vehicles, settings), [vehicles, settings]);
+
+  const importBackup = useCallback<StoreContextValue['importBackup']>(async () => {
+    const blob = await importFromFile();
+    if (!blob) return null;
+    skipNextSaveRef.current = false; // wir wollen die importierten Daten in die Datei schreiben
+    setVehicles(blob.vehicles);
+    setSettings(blob.settings);
+    return blob;
+  }, []);
+
   const value = useMemo<StoreContextValue>(
     () => ({
       vehicles,
@@ -177,6 +192,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       loadDemoData,
       resetAll,
       refresh,
+      exportBackup,
+      importBackup,
     }),
     [
       vehicles,
@@ -192,6 +209,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       loadDemoData,
       resetAll,
       refresh,
+      exportBackup,
+      importBackup,
     ],
   );
 
