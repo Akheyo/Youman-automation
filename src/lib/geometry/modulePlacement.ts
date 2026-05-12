@@ -114,9 +114,16 @@ export function placeModulesOnRoofFace(
         { u: cu, v: cv + moduleV },
       ];
 
-      // Mittelpunkts-Test gegen Polygon.
-      const center: UVPoint = { u: cu + moduleU / 2, v: cv + moduleV / 2 };
-      if (!pointInPolygon2D(center, projected)) continue;
+      // Vollständiger Eckpunkt-Test gegen Polygon: ALLE 4 Modulecken müssen
+      // innerhalb der Dachfläche liegen. Vorher reichte der Mittelpunkts-Test,
+      // wodurch Module besonders auf den dreieckigen Walm-Flächen sichtbar
+      // über die Dachkante hinausragten.
+      const allInside =
+        pointInPolygon2D(corners2D[0]!, projected) &&
+        pointInPolygon2D(corners2D[1]!, projected) &&
+        pointInPolygon2D(corners2D[2]!, projected) &&
+        pointInPolygon2D(corners2D[3]!, projected);
+      if (!allInside) continue;
 
       const corners3D: Vec3[] = corners2D.map((p) => ({
         x: origin.x + u.x * p.u + v.x * p.v,

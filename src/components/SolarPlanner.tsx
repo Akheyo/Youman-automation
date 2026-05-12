@@ -24,6 +24,11 @@ import type {
   RoofFace,
 } from "@/types/solar";
 import { placeModulesOnSelectedFaces } from "@/lib/geometry/modulePlacement";
+import {
+  createModuleAtClick,
+  findFaceUnderClick,
+  findModuleUnderClick,
+} from "@/lib/geometry/manualModulePlacement";
 import { fitOrientedBox } from "@/lib/geometry/roofShapeHeuristic";
 import {
   MockRoofDetectionProvider,
@@ -110,6 +115,8 @@ export default function SolarPlanner({ mapSettings }: Props) {
   const [drawingMode, setDrawingMode] = useState(false);
   const [pickingMode, setPickingMode] = useState(false);
   const [rotatingMode, setRotatingMode] = useState(false);
+  // Manueller Modul-Platzierungs-Modus (Klick auf Dach setzt/entfernt Modul).
+  const [manualPlacementMode, setManualPlacementMode] = useState(false);
   const [drawnPoints, setDrawnPoints] = useState<LngLat[]>([]);
   // Drawing-Phase: erst Ecken, dann optional 2 Punkte für die First-Linie.
   const [drawingPhase, setDrawingPhase] = useState<"corners" | "ridge">(
@@ -525,19 +532,77 @@ export default function SolarPlanner({ mapSettings }: Props) {
     (p: LngLat) => {
       if (pickingMode) {
         void pickHouseAt(p);
-      } else if (drawingMode) {
+        return;
+      }
+      if (drawingMode) {
         if (drawingPhase === "corners") {
           setDrawnPoints((prev) => [...prev, p]);
         } else if (drawingPhase === "ridge") {
-          // Maximal 2 Ridge-Punkte; weitere ersetzen den letzten.
           setRidgePoints((prev) =>
             prev.length < 2 ? [...prev, p] : [...prev.slice(0, 1), p],
           );
         }
+        return;
+      }
+      if (manualPlacementMode && building) {
+        // 1) Klick auf bestehendes Modul → entfernen.
+        const existing = findModuleUnderClick(
+          p,
+          building.modules,
+          building.center,
+        );
+        if (existing) {
+          setBuilding((prev) => {
+            if (!prev) return prev;
+            const remaining = prev.modules.filter((m) => m.id !== existing.id);
+            return {
+              ...prev,
+              modules: remaining,
+              metrics: {
+                ...prev.metrics,
+                moduleCount: remaining.length,
+                totalKwp:
+                  remaining.reduce((s, m) => s + m.wp, 0) / 1000,
+              },
+            };
+          });
+          return;
+        }
+        // 2) Klick auf eine ausgewählte Dachfläche → neues Modul setzen.
+        const face = findFaceUnderClick(p, building);
+        if (!face) return;
+        const mod = createModuleAtClick(p, face, building, settings);
+        if (!mod) return;
+        setBuilding((prev) => {
+          if (!prev) return prev;
+          const next = [...prev.modules, mod];
+          return {
+            ...prev,
+            modules: next,
+            metrics: {
+              ...prev.metrics,
+              moduleCount: next.length,
+              totalKwp: next.reduce((s, m) => s + m.wp, 0) / 1000,
+            },
+          };
+        });
       }
     },
-    [pickingMode, drawingMode, drawingPhase, pickHouseAt],
+    [
+      pickingMode,
+      drawingMode,
+      drawingPhase,
+      pickHouseAt,
+      manualPlacementMode,
+      building,
+      settings,
+    ],
   );
+
+  const toggleManualPlacement = useCallback(() => {
+    setManualPlacementMode((m) => !m);
+    setRotatingMode(false);
+  }, []);
 
   const undoLastPoint = useCallback(() => {
     if (drawingPhase === "ridge") {
@@ -612,6 +677,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
           rotatingMode={rotatingMode}
           currentRidgeAzimuthDeg={manualParams.ridgeAzimuthDeg}
           onRotateRequest={handleRotateRequest}
+          manualPlacementMode={manualPlacementMode}
         />
       </div>
       {!presentationMode && (
@@ -658,7 +724,12 @@ export default function SolarPlanner({ mapSettings }: Props) {
         <PresentationOverlay
           building={building}
           providerLabel={providerLabel}
-          onExit={() => setPresentationMode(false)}
+          manualPlacementMode={manualPlacementMode}
+          onToggleManualPlacement={toggleManualPlacement}
+          onExit={() => {
+            setPresentationMode(false);
+            setManualPlacementMode(false);
+          }}
           onRecenter={recenter}
         />
       )}
@@ -671,6 +742,8 @@ export default function SolarPlanner({ mapSettings }: Props) {
 type PresentationOverlayProps = {
   building: DetectedBuilding | null;
   providerLabel: string | null;
+  manualPlacementMode: boolean;
+  onToggleManualPlacement: () => void;
   onExit: () => void;
   onRecenter: () => void;
 };
@@ -678,6 +751,8 @@ type PresentationOverlayProps = {
 function PresentationOverlay({
   building,
   providerLabel,
+  manualPlacementMode,
+  onToggleManualPlacement,
   onExit,
   onRecenter,
 }: PresentationOverlayProps) {
@@ -739,6 +814,25 @@ function PresentationOverlay({
       >
         <button
           type="button"
+          onClick={onToggleManualPlacement}
+          style={{
+            padding: "10px 14px",
+            background: manualPlacementMode ? "#1e50e0" : "rgba(255,255,255,0.96)",
+            color: manualPlacementMode ? "#ffffff" : "#1e3a8a",
+            border: manualPlacementMode ? "none" : "1px solid #bfdbfe",
+            borderRadius: 10,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            boxShadow: "0 4px 12px rgba(15,23,42,0.10)",
+          }}
+        >
+          {manualPlacementMode
+            ? "✓ Modul-Modus beenden"
+            : "Module manuell setzen"}
+        </button>
+        <button
+          type="button"
           onClick={onRecenter}
           style={{
             padding: "10px 14px",
@@ -772,6 +866,32 @@ function PresentationOverlay({
           ← Zurück zur Bearbeitung
         </button>
       </div>
+
+      {manualPlacementMode && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            padding: "12px 18px",
+            background: "rgba(30,80,224,0.96)",
+            color: "#ffffff",
+            borderRadius: 12,
+            fontSize: 13,
+            fontWeight: 500,
+            boxShadow: "0 8px 24px rgba(30,80,224,0.35)",
+            zIndex: 20,
+            textAlign: "center",
+            maxWidth: 520,
+          }}
+        >
+          <strong style={{ fontWeight: 700 }}>Manueller Modul-Modus:</strong>{" "}
+          Klick auf eine Dachfläche setzt ein Modul. Klick auf ein
+          bestehendes Modul entfernt es. Rechtsklick + Ziehen dreht die
+          360°-Ansicht.
+        </div>
+      )}
     </>
   );
 }
