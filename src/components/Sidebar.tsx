@@ -134,19 +134,22 @@ export default function Sidebar({
   ).length;
 
   return (
-    <aside className="flex h-full w-[380px] flex-col border-l border-slate-200 bg-white">
-      <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-        <div>
-          <p className="text-[11px] uppercase tracking-wider text-brand-600">
-            Youman · Prototyp
+    <aside className="flex h-full w-[400px] flex-col border-l border-slate-200 bg-white">
+      <header className="border-b border-slate-200 px-6 py-5">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-brand">
+            A&amp;B Solarenergy
           </p>
-          <h1 className="text-base font-semibold text-slate-900">
-            3D-Solarplaner
-          </h1>
+          <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-brand-700">
+            Beta
+          </span>
         </div>
-        <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700">
-          MVP
-        </span>
+        <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-slate-900">
+          3D-Solarplaner
+        </h1>
+        <p className="mt-1 text-xs text-slate-500">
+          Moderne Energietechnik. Maßgeschneidert für Ihr Dach.
+        </p>
       </header>
 
       <div className="flex-1 space-y-5 overflow-y-auto px-4 py-4">

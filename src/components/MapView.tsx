@@ -184,7 +184,7 @@ export default function MapView({
         source: DRAW_SRC,
         filter: ["==", ["geometry-type"], "Polygon"],
         paint: {
-          "fill-color": "#2563eb",
+          "fill-color": "#1e50e0",
           "fill-opacity": 0.18,
         },
       });
@@ -199,7 +199,7 @@ export default function MapView({
           ["!=", ["get", "kind"], "ridgeLine"],
         ],
         paint: {
-          "line-color": "#2563eb",
+          "line-color": "#1e50e0",
           "line-width": 2,
         },
       });
@@ -210,7 +210,7 @@ export default function MapView({
         source: DRAW_SRC,
         filter: ["==", ["get", "kind"], "ridgeLine"],
         paint: {
-          "line-color": "#2563eb",
+          "line-color": "#1e50e0",
           "line-width": 4,
         },
       });
@@ -227,7 +227,7 @@ export default function MapView({
         paint: {
           "circle-radius": 5,
           "circle-color": "#ffffff",
-          "circle-stroke-color": "#2563eb",
+          "circle-stroke-color": "#1e50e0",
           "circle-stroke-width": 2,
         },
       });
@@ -244,7 +244,7 @@ export default function MapView({
         paint: {
           "circle-radius": 6,
           "circle-color": "#ffffff",
-          "circle-stroke-color": "#2563eb",
+          "circle-stroke-color": "#1e50e0",
           "circle-stroke-width": 3,
         },
       });
@@ -529,7 +529,7 @@ export default function MapView({
             </>
           ) : (
             <>
-              <strong style={{ fontWeight: 600, color: "#2563eb" }}>
+              <strong style={{ fontWeight: 600, color: "#1e50e0" }}>
                 Schritt 2 &mdash; First-Linie:
               </strong>{" "}
               Klicke 2 Punkte für die First-Linie (Dachrücken). Dann in der

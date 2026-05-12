@@ -9,20 +9,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Weiß-Blau-Designsystem: Primärfarbe ist ein klares Mittelblau,
-        // 50/100 sind sehr helle Tönungen für Surfaces und Accent-Backgrounds,
-        // 600/700 sind Hover-/Active-States.
+        // A&B-Solarenergy-Stil: kräftiges Royal-Blau auf reinem Weiß.
+        // DEFAULT = die Hauptaktionsfarbe (Buttons, Icons), 50/100/200 sind
+        // sehr helle Surfaces für Hover/Akzente, 600/700 sind dunklere
+        // Hover-/Active-States.
         brand: {
-          DEFAULT: "#2563eb",
-          50: "#eff6ff",
-          100: "#dbeafe",
-          200: "#bfdbfe",
-          500: "#2563eb",
-          600: "#1d4ed8",
-          700: "#1e40af",
+          DEFAULT: "#1e50e0",
+          50: "#eef4ff",
+          100: "#dbe7ff",
+          200: "#b8caff",
+          500: "#1e50e0",
+          600: "#1840c4",
+          700: "#0f2e96",
         },
         roof: {
-          selected: "#1d4ed8",
+          selected: "#1e50e0",
           unselected: "#94a3b8",
           hover: "#60a5fa",
         },
@@ -31,6 +32,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: [
+          "var(--font-inter)",
+          "Inter",
           "system-ui",
           "-apple-system",
           "Segoe UI",

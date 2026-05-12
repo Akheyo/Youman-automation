@@ -759,7 +759,7 @@ function PresentationOverlay({
           onClick={onExit}
           style={{
             padding: "10px 16px",
-            background: "#2563eb",
+            background: "#1e50e0",
             color: "#ffffff",
             border: "none",
             borderRadius: 10,

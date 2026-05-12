@@ -9,9 +9,11 @@ body,
 }
 
 body {
-  background: #f3f4f6;
+  background: #ffffff;
   color: #0f172a;
   font-family:
+    var(--font-inter),
+    "Inter",
     system-ui,
     -apple-system,
     "Segoe UI",
@@ -19,6 +21,8 @@ body {
     Helvetica,
     Arial,
     sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* MapLibre Pflicht-Styles werden via JS importiert. Wir überschreiben hier
@@ -29,4 +33,9 @@ body {
 
 .maplibregl-ctrl-attrib {
   font-size: 10px;
+}
+
+/* Range-Slider an die A&B-Blau-Akzentfarbe anpassen. */
+input[type="range"] {
+  accent-color: #1e50e0;
 }
