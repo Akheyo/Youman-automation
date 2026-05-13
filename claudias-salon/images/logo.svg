@@ -1,17 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" width="960" height="360">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 360" width="1000" height="360">
   <style>
-    .brand { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 700; fill: #1A1A1A; letter-spacing: 2px; }
-    .sub   { font-family: 'Inter', sans-serif; font-weight: 500; fill: #1A1A1A; letter-spacing: 18px; }
+    .brand { font-family: 'Cormorant Garamond', 'Times New Roman', Georgia, serif; font-weight: 700; fill: #1A1A1A; }
+    .sub   { font-family: 'Inter', Helvetica, Arial, sans-serif; font-weight: 500; fill: #1A1A1A; letter-spacing: 14px; }
   </style>
-  <text x="80" y="170" class="brand" font-size="100">CLAUDIA's</text>
-  <text x="560" y="170" class="brand" font-size="100">SALON</text>
-  <text x="270" y="240" class="sub" font-size="38">HAIRSTYLIST</text>
-  <!-- Scissor -->
-  <g transform="translate(460,80)" stroke="#C9A961" stroke-width="8" fill="none" stroke-linecap="round">
-    <circle cx="-20" cy="170" r="22"/>
-    <circle cx="22"  cy="170" r="22"/>
-    <line x1="-13" y1="155" x2="20" y2="10"/>
-    <line x1="15"  y1="155" x2="-18" y2="10"/>
-    <circle cx="1" cy="92" r="4" fill="#C9A961"/>
+  <!-- Linkes Wort – endet bei x=420 -->
+  <text x="420" y="180" class="brand" font-size="100" text-anchor="end">CLAUDIA's</text>
+  <!-- Rechtes Wort – beginnt bei x=580 -->
+  <text x="580" y="180" class="brand" font-size="100" text-anchor="start">SALON</text>
+  <!-- Untertitel zentriert -->
+  <text x="500" y="260" class="sub" font-size="36" text-anchor="middle">HAIRSTYLIST</text>
+  <!-- Schere zentriert zwischen den Wörtern -->
+  <g transform="translate(500,90)" stroke="#C9A961" stroke-width="9" fill="none" stroke-linecap="round">
+    <circle cx="-24" cy="180" r="24"/>
+    <circle cx="24"  cy="180" r="24"/>
+    <line x1="-17" y1="162" x2="22" y2="10"/>
+    <line x1="17"  y1="162" x2="-22" y2="10"/>
+    <circle cx="0" cy="100" r="5" fill="#C9A961"/>
   </g>
 </svg>
