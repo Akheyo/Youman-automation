@@ -204,21 +204,45 @@ p  { margin: 0 0 1em; }
   min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
   background:
-    linear-gradient(135deg, rgba(250,247,241,.95), rgba(255,255,255,.85)),
-    radial-gradient(circle at 20% 80%, rgba(201,169,97,.15), transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(201,169,97,.1), transparent 50%),
-    #FAF7F1;
+    radial-gradient(ellipse at 50% 0%, rgba(201,169,97,.22), transparent 55%),
+    radial-gradient(circle at 15% 85%, rgba(201,169,97,.18), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(201,169,97,.14), transparent 45%),
+    linear-gradient(180deg, #FFFFFF 0%, #FAF7F1 100%);
   padding: 8rem 1.5rem 4rem;
   text-align: center;
   overflow: hidden;
 }
+/* dezentes Diagonal-Linien-Muster */
 .hero::before {
   content: '';
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle, rgba(201,169,97,.06) 1px, transparent 1px);
-  background-size: 30px 30px;
+    repeating-linear-gradient(45deg,
+      transparent 0,
+      transparent 60px,
+      rgba(201,169,97,.04) 60px,
+      rgba(201,169,97,.04) 61px),
+    radial-gradient(circle, rgba(201,169,97,.05) 1px, transparent 1px);
+  background-size: auto, 35px 35px;
+  pointer-events: none;
+}
+/* horizontaler goldener Glow-Streifen unten im Hero */
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 1200px;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(201,169,97,0) 10%,
+    rgba(201,169,97,.6) 50%,
+    rgba(201,169,97,0) 90%,
+    transparent 100%);
   pointer-events: none;
 }
 .hero-content { position: relative; z-index: 2; max-width: 800px; }
@@ -547,3 +571,240 @@ p  { margin: 0 0 1em; }
 /* ============ SCROLL ANIMATIONS ============ */
 .reveal { opacity: 0; transform: translateY(30px); transition: all .8s ease; }
 .reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ============ GOLDEN ACCENTS ============ */
+
+/* Kicker mit goldener Linie davor (links ausgerichtet) */
+.kicker:not(.center)::before {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 1px;
+  background: var(--gold);
+  vertical-align: middle;
+  margin-right: 14px;
+  position: relative;
+  top: -2px;
+}
+
+/* Zentrierter Kicker: Linien links und rechts */
+.kicker.center::before,
+.kicker.center::after {
+  content: '';
+  display: inline-block;
+  width: 32px;
+  height: 1px;
+  background: var(--gold);
+  vertical-align: middle;
+  position: relative;
+  top: -2px;
+}
+.kicker.center::before { margin-right: 14px; }
+.kicker.center::after  { margin-left: 14px; }
+
+/* Goldener Akzent-Strich unter zentrierten H2 */
+.center h2,
+h2.center {
+  margin-bottom: 1.2rem;
+}
+.center h2::after,
+h2.center::after {
+  content: '';
+  display: block;
+  width: 64px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold-light), var(--gold), var(--gold-light));
+  margin: 1.2rem auto 0;
+}
+
+/* Section-Soft mit dezentem Punktraster und Top/Bottom-Gold-Linie */
+.section-soft {
+  position: relative;
+}
+.section-soft::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(201,169,97,.08) 1px, transparent 0);
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+}
+.section-soft > .container {
+  position: relative;
+  z-index: 1;
+}
+.section-soft::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 60%;
+  max-width: 800px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,169,97,.5), transparent);
+}
+
+/* Dark Section mit eleganten Gold-Glows */
+.section-dark {
+  position: relative;
+  overflow: hidden;
+}
+.section-dark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(201,169,97,.22), transparent 50%),
+    radial-gradient(circle at 80% 50%, rgba(201,169,97,.18), transparent 50%);
+  pointer-events: none;
+}
+.section-dark::after {
+  content: '';
+  position: absolute;
+  inset: 20px;
+  border-top: 1px solid rgba(201,169,97,.25);
+  border-bottom: 1px solid rgba(201,169,97,.25);
+  pointer-events: none;
+}
+.section-dark > .container { position: relative; z-index: 1; }
+
+/* Service-Cards: goldener Top-Strich beim Hover */
+.service-card {
+  position: relative;
+  overflow: hidden;
+}
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  transform: scaleX(0);
+  transition: transform .4s ease;
+}
+.service-card:hover::before { transform: scaleX(1); }
+
+/* Team-Cards: dezenter goldener Schmuck oben */
+.team-card {
+  position: relative;
+}
+.team-card::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 3px;
+  background: var(--gold);
+  border-radius: 0 0 4px 4px;
+  opacity: 0;
+  transition: opacity .3s ease, width .3s ease;
+}
+.team-card:hover::before { opacity: 1; width: 80px; }
+
+/* Review-Cards: großes goldenes Anführungszeichen */
+.review-card {
+  position: relative;
+  overflow: hidden;
+}
+.review-card::before {
+  content: '\201C';
+  position: absolute;
+  top: -10px;
+  right: 18px;
+  font-family: var(--serif);
+  font-size: 6rem;
+  line-height: 1;
+  color: var(--gold);
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+/* Gallery-Items: goldener Glow beim Hover */
+.gallery-item {
+  position: relative;
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+.gallery-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(201,169,97,.18);
+  border-color: var(--gold) !important;
+}
+
+/* Hours-Tabelle: goldene Trenner */
+.hours th, .hours td {
+  border-bottom-color: rgba(201,169,97,.25) !important;
+}
+
+/* Sektion-Trenner-Ornament (kann optional zwischen Sektionen genutzt werden) */
+.section-ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 0 2rem;
+  margin: -1rem 0 0;
+}
+.section-ornament::before,
+.section-ornament::after {
+  content: '';
+  flex: 1;
+  max-width: 120px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.section-ornament span {
+  color: var(--gold);
+  font-size: 1rem;
+  letter-spacing: .2em;
+}
+
+/* Buttons im Light-Bereich bekommen subtle Schimmer */
+.btn-gold {
+  position: relative;
+  overflow: hidden;
+}
+.btn-gold::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+  transition: left .6s ease;
+}
+.btn-gold:hover::after { left: 100%; }
+
+/* Hero-Buttons im light-Mode: Ghost-Button mit goldener Border */
+.hero .btn-ghost {
+  background: rgba(255,255,255,.6);
+  color: var(--black);
+  border-color: var(--gold);
+  backdrop-filter: blur(8px);
+}
+.hero .btn-ghost:hover {
+  background: var(--gold);
+  color: #fff;
+  border-color: var(--gold);
+}
+
+/* Hero-Kicker dekorativ */
+.hero-kicker {
+  position: relative;
+  display: inline-block;
+  padding: 0 50px;
+}
+.hero-kicker::before,
+.hero-kicker::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 36px;
+  height: 1px;
+  background: var(--gold);
+}
+.hero-kicker::before { left: 0; }
+.hero-kicker::after  { right: 0; }
+
