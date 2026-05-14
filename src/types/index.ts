@@ -72,3 +72,17 @@ export const DEFAULT_SETTINGS: Settings = {
   defaultStundensatz: 50,
   mwstSatz: 0.19,
 };
+
+/**
+ * Lokale Konfiguration pro PC — wird NICHT zwischen Geräten synchronisiert,
+ * sondern nur im LocalStorage des jeweiligen PCs gespeichert.
+ */
+export interface LocalConfig {
+  syncEnabled: boolean;
+  syncCode: string | null;
+}
+
+export const DEFAULT_LOCAL_CONFIG: LocalConfig = {
+  syncEnabled: false,
+  syncCode: null,
+};

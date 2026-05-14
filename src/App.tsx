@@ -5,9 +5,10 @@ import { VehicleDetail } from './components/VehicleDetail';
 import { VehicleForm } from './components/VehicleForm';
 import { VerkaufModal } from './components/VerkaufModal';
 import { Dialog } from './components/Dialog';
-import { Car, Download, Plus, RefreshCw, Settings as SettingsIcon, Upload } from 'lucide-react';
+import { Car, Cloud, CloudOff, Download, Loader2, Plus, RefreshCw, Settings as SettingsIcon, Upload } from 'lucide-react';
 import { isTauri } from './lib/storage';
 import { formatDatum } from './lib/format';
+import { SyncSection } from './components/SyncSection';
 import type { Vehicle } from './types';
 
 type View =
@@ -70,6 +71,7 @@ export default function App() {
                 <Plus size={16} /> Neues Fahrzeug
               </button>
             )}
+            <HeaderSyncBadge />
             {isTauri() && (
               <button
                 className="btn-ghost text-white hover:bg-white/10"
@@ -253,9 +255,11 @@ export default function App() {
             )}
           </div>
 
+          <SyncSection onClose={() => setSettingsOpen(false)} />
+
           <div className="border-t pt-4 space-y-2">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Daten zwischen PCs übertragen
+              Daten manuell zwischen PCs übertragen
             </div>
             <p className="text-xs text-slate-500 mb-2">
               Auf PC 1 <b>Exportieren</b> klicken → Datei per Mail/USB an PC 2 senden → dort
@@ -338,5 +342,44 @@ export default function App() {
         </div>
       </Dialog>
     </div>
+  );
+}
+
+function HeaderSyncBadge() {
+  const store = useStore();
+  if (!store.localConfig.syncEnabled) return null;
+  const { syncStatus } = store;
+  const Icon =
+    syncStatus === 'syncing'
+      ? Loader2
+      : syncStatus === 'online'
+        ? Cloud
+        : CloudOff;
+  const color =
+    syncStatus === 'online'
+      ? 'text-emerald-300'
+      : syncStatus === 'syncing'
+        ? 'text-blue-300'
+        : syncStatus === 'offline' || syncStatus === 'error'
+          ? 'text-amber-300'
+          : 'text-slate-300';
+  const label =
+    syncStatus === 'online'
+      ? 'Sync online'
+      : syncStatus === 'syncing'
+        ? 'Synct…'
+        : syncStatus === 'offline'
+          ? 'Sync offline'
+          : syncStatus === 'error'
+            ? 'Sync-Fehler'
+            : 'Sync bereit';
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs ${color}`}
+      title={store.syncError ?? label}
+    >
+      <Icon size={14} className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
+      <span className="hidden md:inline">{label}</span>
+    </span>
   );
 }

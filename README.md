@@ -149,6 +149,69 @@ relevant.
 Im Web-Vorschau-Modus (`npm run dev` ohne Tauri) fällt die Persistenz auf
 LocalStorage des Browsers zurück — kein File-Sync möglich.
 
+## Live-Sync zwischen 2 PCs (Vercel-Backend)
+
+Wenn beide PCs des Kunden Internet haben, aber OneDrive-Sync nicht eingerichtet
+werden kann, läuft die Live-Synchronisation über ein **eigenes kleines Backend
+auf Vercel**. Kosten: 0 € im Hobby-Plan, völlig ausreichend für 1–10 Kunden.
+
+### Vercel-Backend einrichten (einmalig, ~10 Minuten)
+
+1. **Account anlegen / einloggen** auf <https://vercel.com> — geht am einfachsten mit dem GitHub-Account
+2. Auf der Startseite **"Add New… → Project"** klicken
+3. Repository **`Akheyo/Youman-automation`** auswählen → **Import**
+4. Beim "Configure Project"-Dialog:
+   - **Framework Preset**: Other
+   - **Build Command**: bereits aus `vercel.json` (lass den Default)
+   - **Output Directory**: bereits aus `vercel.json`
+5. Vercel deployt automatisch — bei der ersten Deployment-Seite die **URL kopieren**
+   (z.B. `https://daev-margin-tool-xyz.vercel.app`)
+
+### KV-Speicher anhängen (für die Sync-Daten)
+
+1. Im Vercel-Projekt-Dashboard auf den Tab **"Storage"**
+2. **"Create Database"** → **"KV"** (Key-Value)
+3. Namen vergeben (z.B. `daev-sync`) → Region: Frankfurt → **Create**
+4. Auf **"Connect Project"** → das `daev-margin-tool`-Projekt anhaken → **Connect**
+
+Vercel injiziert die KV-Credentials (`KV_REST_API_URL`, `KV_REST_API_TOKEN`) automatisch als Env-Vars. Kein manueller Schritt nötig.
+
+### URL in der App hinterlegen
+
+Damit die Desktop-App weiß, wo das Backend liegt: in der Vercel-Projekt-Settings einen **Environment Variable** anlegen, der beim Build mit-in die App geht:
+
+1. Projekt → Settings → **Environment Variables**
+2. Neue Variable: `VITE_CLOUD_URL` = deine Vercel-URL (ohne `/api/data` am Ende)
+3. Für die GitHub-Action den gleichen Wert in <https://github.com/Akheyo/Youman-automation/settings/secrets/actions> als Repository-Secret namens `VITE_CLOUD_URL` hinterlegen
+
+Solange diese Variable nicht gesetzt ist, fällt die App auf den Default
+`https://daev-margin-tool.vercel.app` zurück — passt also nur, falls du das
+Projekt unter exakt diesem Namen deployst.
+
+### Sync beim Kunden aktivieren
+
+Auf **PC 1**:
+1. App öffnen → Zahnrad ⚙ → "Einstellungen"
+2. Sektion "Live-Sync zwischen PCs" → **"Neuen Sync starten"**
+3. Es erscheint ein Code wie `K7X3-AP9M-FZN4`. Code wird automatisch in die
+   Zwischenablage kopiert (oder per Hand abschreiben).
+
+Auf **PC 2**:
+1. App öffnen → Zahnrad ⚙ → "Einstellungen"
+2. Sektion "Live-Sync zwischen PCs" → **"Code von PC 1 eingeben"**
+3. Code eintippen → **Verbinden**
+4. Die Daten von PC 1 werden übernommen.
+
+Ab jetzt: Jede Änderung auf einem PC wird binnen ~10 Sekunden auf den anderen
+PC übertragen. Im Header oben rechts zeigt ein kleines Wolken-Symbol den
+Sync-Status (grün = online, gelb = offline, blau = synct gerade).
+
+### Konfliktstrategie
+
+Wenn beide PCs gleichzeitig editieren, gewinnt der zuletzt gespeicherte Stand
+("last write wins"). Für Werkstatt+Büro-Setup praktisch unkritisch, da selten
+beide gleichzeitig arbeiten.
+
 ## Windows-Installer (.exe) bauen
 
 Die App wird via **Tauri v2** zu einer Windows-`.exe` paketiert. Der Build

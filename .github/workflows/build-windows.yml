@@ -73,6 +73,9 @@ jobs:
       - name: Tauri Build
         run: npx @tauri-apps/cli build
         env:
+          # Cloud-Sync-Backend (Vercel-URL): muss als Repo-Secret VITE_CLOUD_URL gesetzt sein,
+          # damit die App weiß, wo das api/data-Backend liegt.
+          VITE_CLOUD_URL: ${{ secrets.VITE_CLOUD_URL }}
           # Code-Signing optional – wenn Zertifikat-Secrets gesetzt sind, hier durchschleifen.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
