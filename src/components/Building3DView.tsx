@@ -136,12 +136,22 @@ export default function Building3DView({
     scene.add(ground);
 
     // OrbitControls.
+    // - Azimuth (Drehung um die Up-Achse) explizit auf -Infinity..Infinity:
+    //   keine Begrenzung, der User kann das Haus unendlich oft umrunden.
+    // - Polar von ~5,7° (0,1 rad) bis knapp π/2: nicht ganz von senkrecht oben
+    //   und nicht unter den Boden, sonst flippt das Bild.
+    // - Damping aktiv, RAF-Loop ruft jeden Frame controls.update() auf.
     const controls = new OrbitControls(camera, renderer.domElement);
+    controls.minAzimuthAngle = -Infinity;
+    controls.maxAzimuthAngle = Infinity;
+    controls.minPolarAngle = 0.1;
+    controls.maxPolarAngle = Math.PI / 2 - 0.05;
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
+    controls.enablePan = true;
+    controls.enableZoom = true;
     controls.minDistance = 6;
     controls.maxDistance = 120;
-    controls.maxPolarAngle = Math.PI / 2 - 0.05; // nicht unter den Boden gucken
     controls.target.copy(DEFAULT_CAM_TARGET);
     controls.update();
     controlsRef.current = controls;
