@@ -36,6 +36,7 @@ from optimizer import (
     palette_ersparnis,
     palette_mehrkosten,
 )
+import db
 from pdf_generator import erstelle_bestellung_pdf
 from storage_handler import (
     Bestellung,
@@ -452,6 +453,62 @@ def init_state() -> None:
     for k, v in defaults.items():
         st.session_state.setdefault(k, v)
 
+    # === Persistente Settings aus der DB laden ===
+    # Werte die der User irgendwann mal gesetzt hat, überschreiben Defaults
+    PERSISTENT_KEYS = (
+        "tol_einheit", "tol_l", "tol_b", "tol_h", "hoehe_aktiv",
+        "mengen_schwelle", "raster", "wirtschaftliche_filterung",
+        "kombinieren_erlaubt", "setup_kosten_pro_standard",
+        "kosten_pro_lkw", "nutzbare_ladelaenge", "lkw_breite",
+        "palettenkosten_neu", "palettenkosten_alt",
+        "sicherheitsbestand", "firma", "kunde", "auftragsnummer",
+        "kalkulation_aktiv",
+        "kalk_alt_material", "kalk_alt_fertigung", "kalk_alt_einkauf",
+        "kalk_alt_lager", "kalk_alt_handling",
+        "kalk_neu_material", "kalk_neu_fertigung", "kalk_neu_einkauf",
+        "kalk_neu_lager", "kalk_neu_handling",
+        "ignore_bekannte_auftraege",
+    )
+    if not st.session_state.get("_settings_aus_db_geladen", False):
+        gespeicherte = db.lade_alle_settings()
+        for key in PERSISTENT_KEYS:
+            if key in gespeicherte:
+                st.session_state[key] = gespeicherte[key]
+        st.session_state._settings_aus_db_geladen = True
+
+    # === Auftragsdaten aus der DB laden falls nichts im Session-State ist ===
+    if not st.session_state.paletten and not st.session_state.get("_auftraege_geladen", False):
+        from optimizer import Palette
+        rows = db.lade_alle_auftraege()
+        if rows:
+            st.session_state.paletten = [
+                Palette(
+                    artikelnummer=r["artikelnummer"],
+                    laenge=r["laenge"], breite=r["breite"],
+                    laenge_original=r["laenge_original"],
+                    breite_original=r["breite_original"],
+                    hoehe=r["hoehe"], anzahl=r["anzahl"], menge=r["menge"],
+                    stueck_pro_palette=r["stueck_pro_palette"],
+                    kosten_alt=r["kosten_alt"], kunde=r["kunde"],
+                    auftrag=r["auftrag_nr"], kw_lieferung=r["kw_lieferung"],
+                )
+                for r in rows
+            ]
+            letzter = db.lade_letzten_batch()
+            if letzter:
+                st.session_state.datei_name = letzter["datei_name"]
+                st.session_state.datei_zeit = letzter["importiert_am"][:16].replace("T", " ")
+        st.session_state._auftraege_geladen = True
+
+
+def persistiere_setting(key: str, value: Any) -> None:
+    """Speichert ein Setting in der DB UND im session_state."""
+    st.session_state[key] = value
+    try:
+        db.setze_setting(key, value)
+    except Exception:
+        pass  # Schreibfehler nicht kritisch — session_state hat den Wert
+
 
 # ---------------------------------------------------------------------------
 # Compute
@@ -843,12 +900,41 @@ def _importiere_quelle(quelle, anzeigename: str) -> bool:
             quelle=anzeigename,
         )
 
+    # === Persistent in die DB schreiben ===
+    try:
+        batch_id = db.neuer_import_batch(anzeigename, len(ps), quelle=anzeigename)
+        eingefuegt = db.speichere_auftraege(ps, batch_id)
+        if eingefuegt < len(ps):
+            st.info(
+                f"📋 {eingefuegt} von {len(ps)} Aufträgen neu in die DB geschrieben "
+                f"(Rest war schon vorhanden)."
+            )
+        # Aktuelle Sicht: ALLE Aufträge in der DB, nicht nur die neuen
+        from optimizer import Palette
+        alle_rows = db.lade_alle_auftraege()
+        ps = [
+            Palette(
+                artikelnummer=r["artikelnummer"],
+                laenge=r["laenge"], breite=r["breite"],
+                laenge_original=r["laenge_original"],
+                breite_original=r["breite_original"],
+                hoehe=r["hoehe"], anzahl=r["anzahl"], menge=r["menge"],
+                stueck_pro_palette=r["stueck_pro_palette"],
+                kosten_alt=r["kosten_alt"], kunde=r["kunde"],
+                auftrag=r["auftrag_nr"], kw_lieferung=r["kw_lieferung"],
+            )
+            for r in alle_rows
+        ]
+    except Exception as exc:  # noqa: BLE001
+        st.warning(f"⚠️ DB-Schreibfehler: {exc} — Daten leben nur im Arbeitsspeicher.")
+
     st.session_state.paletten = ps
     st.session_state.datei_name = anzeigename
     st.session_state.datei_zeit = datetime.now().strftime("%d.%m.%Y %H:%M")
     st.session_state.ergebnis = None
     st.session_state.wirtschaftlichkeit = None
     st.session_state.letzte_opt_signatur = ""
+    st.session_state._auftraege_geladen = True
 
     try:
         with st.spinner(f"Optimiere {len(ps)} Paletten ..."):
@@ -1163,6 +1249,115 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
     return f'<table class="result-tbl">{head}<tbody>{"".join(rows)}</tbody></table>'
 
 
+def kpi_uebersicht(
+    erg: OptimierungsErgebnis | None,
+    wirt: WirtschaftlichkeitsErgebnis | None,
+) -> None:
+    """KPI-Übersicht mit st.metric — Original-Varianten, Standards,
+    Sonderpaletten, Abdeckung, Jahres-Einsparung. Behandelt Leerzustand
+    sauber."""
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#1a2944;margin-bottom:6px;">'
+        'Optimierungs-Ergebnis</div>',
+        unsafe_allow_html=True,
+    )
+
+    # === Leerzustand 1: Keine Daten in der DB ===
+    if not st.session_state.paletten:
+        st.info("Noch kein Datensatz importiert. → zum Tab 'Datenimport'")
+        return
+
+    # === Leerzustand 2: Daten da, aber noch nicht optimiert ===
+    if erg is None or wirt is None:
+        st.info("Optimierung steht aus → zum Tab 'Optimierung' und auf 'Neu optimieren'")
+        return
+
+    # === Parameter-Zeile darüber: was wurde berechnet ===
+    tol_einheit_sym = "mm" if st.session_state.tol_einheit == "mm" else "%"
+    tol_text = f"±{int(st.session_state.tol_l)} {tol_einheit_sym}"
+    if st.session_state.tol_l != st.session_state.tol_b:
+        tol_text = (
+            f"L ±{int(st.session_state.tol_l)} / "
+            f"B ±{int(st.session_state.tol_b)} {tol_einheit_sym}"
+        )
+    schwelle = int(st.session_state.mengen_schwelle)
+    schwelle_text = f"≥ {schwelle} Paletten" if schwelle > 0 else "aus"
+    stand = st.session_state.get("datei_zeit", "—") or "—"
+    st.markdown(
+        f'<div style="font-size:12px;color:#6b7280;margin-bottom:14px;">'
+        f'Toleranz: {tol_text} · Mengen-Schwelle: {schwelle_text} '
+        f'· Stand: {escape(stand)}'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    # === Kennzahlen ===
+    original_varianten = len(
+        set(
+            (p.laenge, p.breite, p.hoehe if st.session_state.hoehe_aktiv else 0)
+            for p in erg.eingabe_paletten
+        )
+    )
+    n_standards = erg.anzahl_standards
+    delta_standards = n_standards - original_varianten  # negativ = Reduktion
+    n_sonder = erg.anzahl_sonder
+
+    paletten_gesamt = sum(p.anzahl for p in erg.eingabe_paletten)
+    pal_in_std = sum(s.gesamt_anzahl for s in erg.standards)
+    pal_in_kombi = sum(k.palette.anzahl for k in erg.kombinationen)
+    abdeckung = (
+        (pal_in_std + pal_in_kombi) / paletten_gesamt * 100 if paletten_gesamt else 0
+    )
+
+    # Jahres-Einsparung (12 Monate × Ersparnis − Setup-Kosten)
+    jahres_ersparnis = wirt.ersparnis * 12 - wirt.setup_kosten_einmalig
+    if wirt.ersparnis == 0 and wirt.palettenkosten_alt == wirt.palettenkosten_neu:
+        # Keine Preise hinterlegt → Strich + Hinweis
+        ersparnis_value = "—"
+        ersparnis_help = "Preise im Tab 'Einstellungen' hinterlegen"
+    else:
+        ersparnis_value = fmt_eur(jahres_ersparnis)
+        ersparnis_help = (
+            f"Monatliche Ersparnis: {fmt_eur(wirt.ersparnis)} · "
+            f"abzüglich Setup-Kosten {fmt_eur(wirt.setup_kosten_einmalig)}"
+        )
+
+    c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1.2])
+    c1.metric(
+        "Original-Varianten",
+        fmt_int(original_varianten),
+        help="Anzahl unterschiedlicher Palettenmaße nach Orientierungs-Normalisierung.",
+    )
+    c2.metric(
+        "Standard-Paletten",
+        fmt_int(n_standards),
+        f"{delta_standards:+d} vs. Original" if delta_standards else None,
+        delta_color="inverse",  # negative = grün (Reduktion ist gut)
+        help="Anzahl der ermittelten Standardpaletten nach der Optimierung.",
+    )
+    c3.metric(
+        "Sonderpaletten",
+        fmt_int(n_sonder),
+        help=(
+            "Aufträge, die wegen Mengen-Schwelle oder Toleranz nicht "
+            "unter einen Standard fallen."
+        ),
+    )
+    c4.metric(
+        "Abdeckung Standards",
+        f"{abdeckung:.1f} %".replace(".", ","),
+        help=(
+            "Anteil der Paletten (gewichtet nach P-Anzahl), die durch "
+            "einen Standard oder eine Kombination abgedeckt werden."
+        ),
+    )
+    c5.metric(
+        "Geschätzte Jahres-Einsparung",
+        ersparnis_value,
+        help=ersparnis_help,
+    )
+
+
 def card_ergebnis(erg: OptimierungsErgebnis) -> None:
     n_kombi = len(erg.kombinationen)
     n_sonder = erg.anzahl_sonder
@@ -1173,38 +1368,8 @@ def card_ergebnis(erg: OptimierungsErgebnis) -> None:
         extras.append(f"{n_sonder} Sonder")
     extras_str = f" · {' · '.join(extras)}" if extras else ""
 
-    # KPI-Zeile mit echten Mengen vs. Variantenzahl
-    paletten_gesamt = sum(p.anzahl for p in erg.eingabe_paletten)
-    paletten_in_standards = sum(s.gesamt_anzahl for s in erg.standards)
-    paletten_in_kombis = sum(k.palette.anzahl for k in erg.kombinationen)
-    paletten_in_sonder = sum(p.anzahl for p in erg.sonderpaletten)
-    abdeckung_std = (paletten_in_standards / paletten_gesamt * 100) if paletten_gesamt else 0
-
-    st.markdown(
-        f'<div style="display:flex;gap:12px;margin-bottom:14px;">'
-        f'  <div class="lade-box" style="flex:1;" title="Anzahl Auftragspositionen aus der Excel (jede Zeile = ein Auftrag).">'
-        f'    <div class="lbl">Auftragspositionen</div>'
-        f'    <div class="val">{fmt_int(erg.anzahl_eingabe_typen)}</div>'
-        f'  </div>'
-        f'  <div class="lade-box" style="flex:1;" title="Anzahl unterschiedlicher Original-Maße (kanonisch, orientierungs-unabhängig).">'
-        f'    <div class="lbl">Original-Varianten</div>'
-        f'    <div class="val">{fmt_int(len(set((p.laenge, p.breite) for p in erg.eingabe_paletten)))}</div>'
-        f'  </div>'
-        f'  <div class="lade-box" style="flex:1;" title="Summe aller P-Anzahl-Werte = echte Palettenstückzahl gesamt.">'
-        f'    <div class="lbl">Paletten gesamt (Stk)</div>'
-        f'    <div class="val">{fmt_int(paletten_gesamt)}</div>'
-        f'  </div>'
-        f'  <div class="lade-box" style="flex:1;" title="Anzahl unterschiedlicher Standardpaletten nach der Optimierung.">'
-        f'    <div class="lbl">Standards</div>'
-        f'    <div class="val">{fmt_int(erg.anzahl_standards)}</div>'
-        f'  </div>'
-        f'  <div class="lade-box" style="flex:1;" title="Anteil der Paletten (gewichtet nach P-Anzahl), die direkt einem Standard zugeordnet sind.">'
-        f'    <div class="lbl">Abdeckung Standards</div>'
-        f'    <div class="val">{abdeckung_std:.0f}%</div>'
-        f'  </div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
+    # === KPI-Übersicht (st.metric per Spec) ===
+    kpi_uebersicht(erg, st.session_state.wirtschaftlichkeit)
 
     st.markdown(
         f'<div class="card" style="max-height:680px;overflow:auto;">'
@@ -1486,6 +1651,10 @@ def footer_info(erg: OptimierungsErgebnis) -> None:
     with col_btn:
         st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
         if st.button("🔄 Neue Optimierung", use_container_width=True, type="primary"):
+            try:
+                db.loesche_alle_auftraege()
+            except Exception:
+                pass
             st.session_state.paletten = []
             st.session_state.ergebnis = None
             st.session_state.wirtschaftlichkeit = None

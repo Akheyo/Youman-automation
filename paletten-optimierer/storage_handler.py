@@ -1,19 +1,16 @@
-"""JSON-Persistenz für Bestand und Bestellhistorie.
+"""Bestand, Bestellungen, AW-Tracking — jetzt persistent in SQLite.
 
-Bestand und Bestellungen werden als JSON-Dateien gespeichert. Der Speicherort
-wird per Umgebungsvariable ``PALETTEN_STORAGE_DIR`` gesteuert (Default:
-./storage). Bestellungen besitzen eine UUID und einen Status, sodass
-Doppelbestellungen vermieden werden können.
+API bleibt rückwärtskompatibel: existierender Code, der diese Funktionen
+ruft, muss nicht angepasst werden.
 """
 from __future__ import annotations
 
-import json
-import os
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import date, datetime, timedelta
-from pathlib import Path
+from datetime import date, datetime
 from typing import Literal
+
+import db
 
 
 BestellStatus = Literal["offen", "verbucht", "storniert"]
@@ -22,8 +19,6 @@ BestandsStatus = Literal["ok", "unter", "kritisch"]
 
 @dataclass
 class Bestellung:
-    """Eine einzelne Bestell-Position für eine Standardpalette."""
-
     bestell_id: str
     datum: str
     palettentyp: str
@@ -58,55 +53,22 @@ class Bestellung:
         )
 
 
-def _storage_dir() -> Path:
-    pfad = os.environ.get("PALETTEN_STORAGE_DIR")
-    if pfad:
-        d = Path(pfad)
-    else:
-        d = Path("storage")
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
-
-def _bestand_pfad() -> Path:
-    return _storage_dir() / "bestand.json"
-
-
-def _bestellungen_pfad() -> Path:
-    return _storage_dir() / "bestellungen.json"
-
-
-def _auftraege_pfad() -> Path:
-    return _storage_dir() / "bearbeitete_auftraege.json"
-
+# ---------------------------------------------------------------------------
+# Bestand
+# ---------------------------------------------------------------------------
 
 def lade_bestand() -> dict[str, dict]:
-    """Lädt den aktuellen Bestand pro Palettentyp.
-
-    Format::
-
-        {
-            "1500 × 700 mm": {"menge": 250, "sicherheitsbestand": 100},
-            ...
-        }
-    """
-    p = _bestand_pfad()
-    if not p.exists():
-        return {}
-    try:
-        with p.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-        if not isinstance(data, dict):
-            return {}
-        return data
-    except (OSError, json.JSONDecodeError):
-        return {}
+    return db.lade_bestand_db()
 
 
 def speichere_bestand(bestand: dict[str, dict]) -> None:
-    p = _bestand_pfad()
-    with p.open("w", encoding="utf-8") as f:
-        json.dump(bestand, f, indent=2, ensure_ascii=False)
+    """Komplettes Überschreiben — eher selten gebraucht."""
+    for typ, daten in bestand.items():
+        db.setze_bestand_db(
+            typ,
+            menge=daten.get("menge"),
+            sicherheitsbestand=daten.get("sicherheitsbestand"),
+        )
 
 
 def aktualisiere_bestand(
@@ -114,24 +76,13 @@ def aktualisiere_bestand(
     menge: int | None = None,
     sicherheitsbestand: int | None = None,
 ) -> dict[str, dict]:
-    """Setzt oder aktualisiert Bestand und Sicherheitsbestand für einen Typ."""
-    bestand = lade_bestand()
-    eintrag = bestand.get(palettentyp, {"menge": 0, "sicherheitsbestand": 100})
-    if menge is not None:
-        eintrag["menge"] = int(menge)
-    if sicherheitsbestand is not None:
-        eintrag["sicherheitsbestand"] = int(sicherheitsbestand)
-    bestand[palettentyp] = eintrag
-    speichere_bestand(bestand)
-    return bestand
+    db.setze_bestand_db(palettentyp, menge=menge, sicherheitsbestand=sicherheitsbestand)
+    return lade_bestand()
 
 
 def setze_sicherheitsbestand_global(sicherheitsbestand: int) -> dict[str, dict]:
-    bestand = lade_bestand()
-    for typ in bestand:
-        bestand[typ]["sicherheitsbestand"] = int(sicherheitsbestand)
-    speichere_bestand(bestand)
-    return bestand
+    db.setze_sicherheitsbestand_global_db(int(sicherheitsbestand))
+    return lade_bestand()
 
 
 def bewerte_status(menge: int, sicherheitsbestand: int) -> BestandsStatus:
@@ -142,64 +93,48 @@ def bewerte_status(menge: int, sicherheitsbestand: int) -> BestandsStatus:
     return "kritisch"
 
 
+# ---------------------------------------------------------------------------
+# Bestellungen
+# ---------------------------------------------------------------------------
+
 def lade_bestellungen() -> list[Bestellung]:
-    p = _bestellungen_pfad()
-    if not p.exists():
-        return []
-    try:
-        with p.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-        if not isinstance(data, list):
-            return []
-        return [Bestellung(**b) for b in data]
-    except (OSError, json.JSONDecodeError, TypeError):
-        return []
+    rows = db.lade_bestellungen_db()
+    return [Bestellung(**r) for r in rows]
 
 
 def speichere_bestellungen(bestellungen: list[Bestellung]) -> None:
-    p = _bestellungen_pfad()
-    with p.open("w", encoding="utf-8") as f:
-        json.dump([asdict(b) for b in bestellungen], f, indent=2, ensure_ascii=False)
+    for b in bestellungen:
+        db.speichere_bestellung_db(asdict(b))
 
 
 def fuege_bestellung_hinzu(bestellung: Bestellung) -> list[Bestellung]:
-    """Hängt eine Bestellung an die Historie und schreibt sie."""
-    alle = lade_bestellungen()
-    alle.append(bestellung)
-    speichere_bestellungen(alle)
-    return alle
+    db.speichere_bestellung_db(asdict(bestellung))
+    return lade_bestellungen()
 
 
 def aktualisiere_bestellstatus(
     bestell_id: str, neuer_status: BestellStatus
 ) -> list[Bestellung]:
-    alle = lade_bestellungen()
-    for b in alle:
-        if b.bestell_id == bestell_id:
-            b.status = neuer_status
-            break
-    speichere_bestellungen(alle)
-    return alle
+    db.aktualisiere_bestellstatus_db(bestell_id, neuer_status)
+    return lade_bestellungen()
 
 
 def buche_bestellung_in_bestand(bestell_id: str) -> dict[str, dict]:
-    """Verbucht eine offene Bestellung in den Bestand und markiert sie als
-    verbucht. Bereits verbuchte Bestellungen werden ignoriert."""
-    alle = lade_bestellungen()
-    bestand = lade_bestand()
-    for b in alle:
+    """Verbucht eine offene Bestellung in den Bestand."""
+    for b in lade_bestellungen():
         if b.bestell_id != bestell_id:
             continue
         if b.status != "offen":
-            return bestand
-        eintrag = bestand.get(b.palettentyp, {"menge": 0, "sicherheitsbestand": 100})
-        eintrag["menge"] = int(eintrag.get("menge", 0)) + b.menge
-        bestand[b.palettentyp] = eintrag
-        b.status = "verbucht"
+            return lade_bestand()
+        # Bestand erhöhen
+        aktueller = lade_bestand().get(b.palettentyp, {"menge": 0, "sicherheitsbestand": 100})
+        db.setze_bestand_db(
+            b.palettentyp,
+            menge=int(aktueller["menge"]) + b.menge,
+        )
+        db.aktualisiere_bestellstatus_db(b.bestell_id, "verbucht")
         break
-    speichere_bestellungen(alle)
-    speichere_bestand(bestand)
-    return bestand
+    return lade_bestand()
 
 
 def offene_bestellung_existiert(palettentyp: str) -> bool:
@@ -212,15 +147,6 @@ def offene_bestellung_existiert(palettentyp: str) -> bool:
 def berechne_kritische_paletten(
     benoetigt_pro_typ: dict[str, int] | None = None,
 ) -> list[dict]:
-    """Liefert eine Liste der Palettentypen mit Status und Bedarf.
-
-    Args:
-        benoetigt_pro_typ: Optional Mapping ``label → benötigte Menge``,
-            kommt aus dem aktuellen Optimierungs-Ergebnis.
-
-    Returns:
-        Liste mit ``{typ, menge, sicherheitsbestand, benoetigt, status, zu_bestellen}``.
-    """
     bestand = lade_bestand()
     benoetigt_pro_typ = benoetigt_pro_typ or {}
     typen = set(bestand.keys()) | set(benoetigt_pro_typ.keys())
@@ -233,93 +159,41 @@ def berechne_kritische_paletten(
         bedarf = int(benoetigt_pro_typ.get(typ, 0))
         zu_bestellen = max(0, bedarf + sb - menge) if bedarf > 0 else max(0, sb - menge)
         status = bewerte_status(menge, sb)
-        result.append(
-            {
-                "typ": typ,
-                "menge": menge,
-                "sicherheitsbestand": sb,
-                "benoetigt": bedarf,
-                "zu_bestellen": zu_bestellen,
-                "status": status,
-            }
-        )
+        result.append({
+            "typ": typ,
+            "menge": menge,
+            "sicherheitsbestand": sb,
+            "benoetigt": bedarf,
+            "zu_bestellen": zu_bestellen,
+            "status": status,
+        })
     return result
 
 
 # ---------------------------------------------------------------------------
-# AW / Auftrags-Tracking — verhindert Doppelbestellungen beim Re-Import
+# AW-Tracking
 # ---------------------------------------------------------------------------
 
 def lade_bearbeitete_auftraege() -> dict[str, dict]:
-    """Liefert das Mapping ``auftragsnummer → {datum, datei, ...}``."""
-    p = _auftraege_pfad()
-    if not p.exists():
-        return {}
-    try:
-        with p.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-        if not isinstance(data, dict):
-            return {}
-        return data
-    except (OSError, json.JSONDecodeError):
-        return {}
-
-
-def speichere_bearbeitete_auftraege(daten: dict[str, dict]) -> None:
-    p = _auftraege_pfad()
-    with p.open("w", encoding="utf-8") as f:
-        json.dump(daten, f, indent=2, ensure_ascii=False)
+    return db.lade_aw_historie()
 
 
 def markiere_auftraege_bearbeitet(
-    auftragsnummern: list[str],
-    quelle: str = "",
+    auftragsnummern: list[str], quelle: str = ""
 ) -> int:
-    """Markiert die übergebenen Auftragsnummern als bearbeitet.
-
-    Returns:
-        Die Anzahl der *neu* hinzugefügten Aufträge (Duplikate werden nicht
-        gezählt).
-    """
-    bearbeitete = lade_bearbeitete_auftraege()
-    jetzt = datetime.now().isoformat(timespec="seconds")
-    neu_count = 0
-    for nummer in auftragsnummern:
-        nummer = (nummer or "").strip()
-        if not nummer:
-            continue
-        if nummer not in bearbeitete:
-            bearbeitete[nummer] = {"datum": jetzt, "quelle": quelle}
-            neu_count += 1
-    speichere_bearbeitete_auftraege(bearbeitete)
-    return neu_count
+    return db.markiere_aw_bearbeitet(auftragsnummern, quelle)
 
 
 def filtere_neue_auftraege(auftragsnummern: list[str]) -> tuple[list[str], list[str]]:
-    """Trennt Auftragsnummern in (neu, bereits_bearbeitet)."""
-    bearbeitete = lade_bearbeitete_auftraege()
-    neu: list[str] = []
-    schon: list[str] = []
-    for nummer in auftragsnummern:
-        nummer = (nummer or "").strip()
-        if not nummer:
-            continue
-        if nummer in bearbeitete:
-            schon.append(nummer)
-        else:
-            neu.append(nummer)
-    return neu, schon
+    return db.filtere_neue_aws(auftragsnummern)
 
 
 def loesche_bearbeitete_auftraege() -> None:
-    """Setzt die AW-Historie komplett zurück (z.B. für neue Saison)."""
-    p = _auftraege_pfad()
-    if p.exists():
-        p.unlink()
+    db.loesche_aw_historie()
 
 
 # ---------------------------------------------------------------------------
-# Verbrauchs-Timeline — projiziert Bestand über die Zeit
+# Verbrauchs-Timeline
 # ---------------------------------------------------------------------------
 
 def projiziere_bestand(
@@ -327,16 +201,7 @@ def projiziere_bestand(
     monatsbedarf: float,
     horizont_tage: int = 120,
 ) -> list[dict]:
-    """Berechnet die Bestandsentwicklung eines Palettentyps über die Zeit.
-
-    Bestand wird linear über ``monatsbedarf`` Paletten/Monat abgetragen,
-    zukünftige Bestellungen (Status = offen oder verbucht und
-    Verbrauchsdatum >= heute) erhöhen den projizierten Bestand zum
-    Verbrauchsdatum.
-
-    Returns:
-        Liste von ``{datum, bestand, ereignis}``-Einträgen, einer pro Tag.
-    """
+    from datetime import timedelta
     bestand_dict = lade_bestand()
     eintrag = bestand_dict.get(palettentyp, {"menge": 0, "sicherheitsbestand": 100})
     aktueller_bestand = float(eintrag.get("menge", 0))
@@ -347,13 +212,11 @@ def projiziere_bestand(
         monatsbedarf = 0
     tagesbedarf = monatsbedarf / 30.0
 
-    # Geplante Zugänge aus Bestellungen
     zugaenge: dict[date, float] = {}
     for b in lade_bestellungen():
         if b.palettentyp != palettentyp or b.status == "storniert":
             continue
         if b.status == "verbucht":
-            # Schon eingebucht
             continue
         try:
             datum = date.fromisoformat(b.geplantes_verbrauchsdatum)

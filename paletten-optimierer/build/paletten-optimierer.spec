@@ -61,6 +61,7 @@ app_datas = [
     ("../app.py", "."),
     ("../optimizer.py", "."),
     ("../license_config.py", "."),
+    ("../db.py", "."),
     ("../excel_handler.py", "."),
     ("../pdf_generator.py", "."),
     ("../storage_handler.py", "."),
