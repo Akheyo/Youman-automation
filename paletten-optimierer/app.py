@@ -784,12 +784,35 @@ def _importiere_quelle(quelle, anzeigename: str) -> bool:
     geschützt, sodass UI-Hänger sichtbar werden und ein Optimierungs-
     Fehler nicht die bereits geladenen Paletten verwirft.
     """
+    import_warnungen: list[str] = []
     try:
         with st.spinner(f"Lese {anzeigename} ..."):
-            ps = importiere_excel(quelle)
+            ps = importiere_excel(quelle, warnungen=import_warnungen)
     except Exception as exc:  # noqa: BLE001 — wir wollen wirklich alles fangen
         st.error(f"❌ Import-Fehler: {exc}")
         return False
+
+    # Zeige Plausibilitäts-Warnungen (z.B. P-Anzahl-Abweichungen)
+    if import_warnungen:
+        plausib = [w for w in import_warnungen if "Plausibilität" in w]
+        fallbacks = [w for w in import_warnungen if "Fallback" in w]
+        if plausib:
+            with st.expander(
+                f"⚠️ {len(plausib)} Plausibilitäts-Warnung(en) "
+                "(P-Anzahl weicht von Menge/Stk-Pal ab)"
+            ):
+                for w in plausib[:50]:
+                    st.markdown(f"<div style='font-size:12px;'>{escape(w)}</div>",
+                                unsafe_allow_html=True)
+                if len(plausib) > 50:
+                    st.caption(f"... und {len(plausib) - 50} weitere.")
+        if fallbacks:
+            with st.expander(f"ℹ️ {len(fallbacks)} Fallback(s) für leere P-Anzahl"):
+                for w in fallbacks[:50]:
+                    st.markdown(f"<div style='font-size:12px;'>{escape(w)}</div>",
+                                unsafe_allow_html=True)
+                if len(fallbacks) > 50:
+                    st.caption(f"... und {len(fallbacks) - 50} weitere.")
 
     if not ps:
         st.warning(
@@ -1149,10 +1172,44 @@ def card_ergebnis(erg: OptimierungsErgebnis) -> None:
     if n_sonder:
         extras.append(f"{n_sonder} Sonder")
     extras_str = f" · {' · '.join(extras)}" if extras else ""
+
+    # KPI-Zeile mit echten Mengen vs. Variantenzahl
+    paletten_gesamt = sum(p.anzahl for p in erg.eingabe_paletten)
+    paletten_in_standards = sum(s.gesamt_anzahl for s in erg.standards)
+    paletten_in_kombis = sum(k.palette.anzahl for k in erg.kombinationen)
+    paletten_in_sonder = sum(p.anzahl for p in erg.sonderpaletten)
+    abdeckung_std = (paletten_in_standards / paletten_gesamt * 100) if paletten_gesamt else 0
+
+    st.markdown(
+        f'<div style="display:flex;gap:12px;margin-bottom:14px;">'
+        f'  <div class="lade-box" style="flex:1;" title="Anzahl Auftragspositionen aus der Excel (jede Zeile = ein Auftrag).">'
+        f'    <div class="lbl">Auftragspositionen</div>'
+        f'    <div class="val">{fmt_int(erg.anzahl_eingabe_typen)}</div>'
+        f'  </div>'
+        f'  <div class="lade-box" style="flex:1;" title="Anzahl unterschiedlicher Original-Maße (kanonisch, orientierungs-unabhängig).">'
+        f'    <div class="lbl">Original-Varianten</div>'
+        f'    <div class="val">{fmt_int(len(set((p.laenge, p.breite) for p in erg.eingabe_paletten)))}</div>'
+        f'  </div>'
+        f'  <div class="lade-box" style="flex:1;" title="Summe aller P-Anzahl-Werte = echte Palettenstückzahl gesamt.">'
+        f'    <div class="lbl">Paletten gesamt (Stk)</div>'
+        f'    <div class="val">{fmt_int(paletten_gesamt)}</div>'
+        f'  </div>'
+        f'  <div class="lade-box" style="flex:1;" title="Anzahl unterschiedlicher Standardpaletten nach der Optimierung.">'
+        f'    <div class="lbl">Standards</div>'
+        f'    <div class="val">{fmt_int(erg.anzahl_standards)}</div>'
+        f'  </div>'
+        f'  <div class="lade-box" style="flex:1;" title="Anteil der Paletten (gewichtet nach P-Anzahl), die direkt einem Standard zugeordnet sind.">'
+        f'    <div class="lbl">Abdeckung Standards</div>'
+        f'    <div class="val">{abdeckung_std:.0f}%</div>'
+        f'  </div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
     st.markdown(
         f'<div class="card" style="max-height:680px;overflow:auto;">'
         f'<h3>Optimierungs-Ergebnis · {erg.anzahl_standards} Standards aus '
-        f'{erg.anzahl_eingabe_typen} Typen{extras_str}</h3>'
+        f'{erg.anzahl_eingabe_typen} Aufträgen ({fmt_int(paletten_gesamt)} Stk Paletten){extras_str}</h3>'
         f'{render_result_table(erg)}</div>',
         unsafe_allow_html=True,
     )

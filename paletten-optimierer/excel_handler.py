@@ -80,9 +80,17 @@ SPALTEN_MAPPING: dict[str, list[str]] = {
         "p-anzahl",
         "p_anzahl",
         "p.anzahl",
+        "panzahl",
+        "palettenanzahl",
+        "anzahl_paletten",
+        "anzahl paletten",
+        "pal-anzahl",
+        "pal_anzahl",
         "paletten",
         "pallet_count",
         "qty_pallets",
+        "n_pallets",
+        "pallets",
     ],
     "stueck_pro_palette": [
         "stueckzahl_pro_palette",
@@ -213,20 +221,33 @@ def _finde_header_zeile(
 def importiere_excel(
     file_or_buffer: str | Path | IO[bytes],
     sheet_name: str | None = None,
+    warnungen: list[str] | None = None,
 ) -> list[Palette]:
     """Liest eine Palettenliste aus einer Excel-Datei.
 
     Erkennt die Header-Zeile automatisch (Titel-Zeilen darüber werden
     übersprungen). Pflichtspalten: Artikelnummer, Länge, Breite.
 
+    Für die Palettenanzahl pro Auftrag (Spalte ``P-Anzahl`` o.ä.) gilt:
+
+    - Direkter Wert aus der Spalte wird verwendet, wenn vorhanden.
+    - Wenn leer: Fallback auf ``ceil(Menge / Stck_Pal)`` mit Warnung.
+    - Wenn der Excel-Wert um mehr als 1 vom rechnerischen Fallback
+      abweicht, wird eine Warnung erzeugt, aber der Excel-Wert bleibt
+      maßgeblich (Spalte schlägt Berechnung).
+
     Args:
         file_or_buffer: Pfad oder Datei-ähnliches Objekt (z.B. Streamlit-Upload).
         sheet_name: Optionaler Name des Sheets, sonst das erste.
+        warnungen: Optionale Liste, in die Diagnose-Meldungen geschrieben
+            werden (Plausibilitäts-Hinweise, Fallback-Verwendung).
 
     Returns:
         Liste valider ``Palette``-Objekte. Ungültige Zeilen werden
         übersprungen.
     """
+    import math
+    log = warnungen if warnungen is not None else []
     wb = openpyxl.load_workbook(file_or_buffer, data_only=True, read_only=True)
     ws = wb[sheet_name] if sheet_name else wb.active
 
@@ -270,7 +291,7 @@ def importiere_excel(
         return int(_float(v, default))
 
     paletten: list[Palette] = []
-    for row in rows[header_idx + 1:]:
+    for row_nr, row in enumerate(rows[header_idx + 1:], start=header_idx + 2):
         if all(c is None or str(c).strip() == "" for c in row):
             continue
         try:
@@ -280,7 +301,42 @@ def importiere_excel(
             if not artikel or laenge <= 0 or breite <= 0:
                 continue
 
-            anzahl = _int(_val(row, "anzahl"), 1) or 1
+            auftrag_id = _str(_val(row, "auftrag")) or f"Zeile {row_nr}"
+            menge_val = _int(_val(row, "menge"))
+            stk_pal = _int(_val(row, "stueck_pro_palette"))
+            anzahl_raw = _val(row, "anzahl")
+            anzahl_excel = _int(anzahl_raw)
+
+            # Fallback wenn P-Anzahl leer/0 ist: ceil(menge / stk_pal)
+            fallback_anzahl = 0
+            if menge_val > 0 and stk_pal > 0:
+                fallback_anzahl = math.ceil(menge_val / stk_pal)
+
+            if anzahl_excel > 0:
+                anzahl = anzahl_excel
+                # Plausibilitäts-Check (Abweichung > 1 → Warnung)
+                if fallback_anzahl > 0 and abs(anzahl - fallback_anzahl) > 1:
+                    log.append(
+                        f"⚠️ Plausibilität Auftrag {auftrag_id}: "
+                        f"P-Anzahl={anzahl} weicht von ceil(Menge/Stk_Pal)="
+                        f"{fallback_anzahl} ab (Menge={menge_val}, "
+                        f"Stk_Pal={stk_pal}). Excel-Wert wird verwendet."
+                    )
+            elif fallback_anzahl > 0:
+                anzahl = fallback_anzahl
+                log.append(
+                    f"ℹ️ Fallback Auftrag {auftrag_id}: P-Anzahl leer → "
+                    f"ceil({menge_val}/{stk_pal}) = {anzahl} angenommen."
+                )
+            else:
+                # Weder Excel-Wert noch berechenbar — defaultet auf 1
+                anzahl = 1
+                if anzahl_raw is None or _str(anzahl_raw) == "":
+                    log.append(
+                        f"ℹ️ Auftrag {auftrag_id}: keine P-Anzahl, "
+                        "keine Menge — Default 1 verwendet."
+                    )
+
             if anzahl < 0:
                 continue
 
@@ -293,12 +349,12 @@ def importiere_excel(
                     breite_original=breite,
                     anzahl=anzahl,
                     kosten_alt=_float(_val(row, "kosten_alt"), 0.0),
-                    stueck_pro_palette=_int(_val(row, "stueck_pro_palette")),
+                    stueck_pro_palette=stk_pal,
                     hoehe=_float(_val(row, "hoehe")),
                     kunde=_str(_val(row, "kunde")),
                     auftrag=_str(_val(row, "auftrag")),
                     kw_lieferung=_str(_val(row, "kw_lieferung")),
-                    menge=_int(_val(row, "menge")),
+                    menge=menge_val,
                 )
             )
         except (TypeError, ValueError):
