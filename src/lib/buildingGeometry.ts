@@ -58,11 +58,16 @@ export function buildBuildingGroup(
   const includeWalls = options.includeWalls ?? options.mode === "local";
   const showEdges = options.showEdges ?? true;
 
-  if (includeWalls) {
-    const footprintLocal = footprintToLocal(building);
-    const eaveZ = estimateEaveHeight(building);
-    if (footprintLocal && eaveZ > 0) {
-      group.add(buildWalls(footprintLocal, 0, eaveZ, materials, showEdges));
+  const footprintLocal = footprintToLocal(building);
+  const eaveZ = estimateEaveHeight(building);
+
+  if (includeWalls && footprintLocal && eaveZ > 0) {
+    group.add(buildWalls(footprintLocal, 0, eaveZ, materials, showEdges));
+
+    // Giebelwände (Stirnseiten) schließen das Volumen zwischen Wand-Top und
+    // Dachfirst. Nur sinnvoll, wenn wir auch die Wände gebaut haben.
+    for (const m of buildGables(building, footprintLocal, eaveZ, materials)) {
+      group.add(m);
     }
   }
 
@@ -178,6 +183,18 @@ function buildWalls(
 
 /* --- Dachflächen --- */
 
+/**
+ * Eine Dachfläche besteht aus zwei Mesh-Layern:
+ *
+ *   1. roofBase (Anthrazit) – wird IMMER gerendert. Sorgt dafür, dass die
+ *      Schräge sichtbar geschlossen ist, unabhängig vom selected-Flag.
+ *   2. roofHighlight (Blau, leicht transparent) – nur wenn face.selected.
+ *      Liegt via polygonOffset minimal über der Basis und markiert
+ *      PV-taugliche Flächen ohne Z-Fighting.
+ *
+ * Beide Meshes teilen sich dieselbe Geometrie (Geometry-Sharing ist
+ * unproblematisch, dispose wird per WeakSet abgesichert).
+ */
 function buildRoofFace(
   face: RoofFace,
   materials: Materials,
@@ -197,14 +214,8 @@ function buildRoofFace(
   geom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   geom.computeVertexNormals();
 
-  const mat = face.selected
-    ? materials.roofSelected
-    : materials.roofUnselected;
-  const mesh = new THREE.Mesh(geom, mat);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  mesh.userData = {
-    kind: "roof",
+  const userData = {
+    kind: "roof" as const,
     roofFaceId: face.id,
     label: face.label,
     areaM2: face.areaM2,
@@ -212,7 +223,20 @@ function buildRoofFace(
     azimuthDeg: face.azimuthDeg,
   };
 
-  const out: THREE.Object3D[] = [mesh];
+  const baseMesh = new THREE.Mesh(geom, materials.roofBase);
+  baseMesh.castShadow = true;
+  baseMesh.receiveShadow = true;
+  baseMesh.userData = { ...userData };
+
+  const out: THREE.Object3D[] = [baseMesh];
+
+  if (face.selected) {
+    const overlayMesh = new THREE.Mesh(geom, materials.roofHighlight);
+    overlayMesh.castShadow = false;
+    overlayMesh.receiveShadow = false;
+    overlayMesh.userData = { ...userData, overlay: true };
+    out.push(overlayMesh);
+  }
 
   if (showEdges) {
     const edgePos: number[] = [];
@@ -229,6 +253,110 @@ function buildRoofFace(
     const lines = new THREE.LineSegments(edgeGeom, materials.edges);
     lines.userData = { kind: "roof", roofFaceId: face.id };
     out.push(lines);
+  }
+  return out;
+}
+
+/* --- Giebelwände --- */
+
+/**
+ * Schließt die Stirnseiten des Gebäudes, falls über einer Footprint-Kante
+ * KEINE Dachfläche mit passender Eave-Kante sitzt (typischer Fall: Satteldach
+ * an den kurzen Seiten).
+ *
+ * Algorithmus pro Footprint-Kante (a → b):
+ *   1. Prüfe, ob irgendeine Dachfläche zwei Eckpunkte bei z ≈ eaveZ hat,
+ *      die exakt an a und b liegen. Wenn ja → kein Giebel.
+ *   2. Sonst: finde den höchsten Roof-Vertex, dessen XY-Position dem
+ *      Mittelpunkt von (a, b) am nächsten liegt → Ridge-Apex.
+ *   3. Baue ein Dreieck (a@eave, b@eave, apex).
+ *
+ * Robust für Satteldach (zwei Giebel), Walmdach (keine Giebel weil alle
+ * Footprint-Kanten ein Eave haben), Flachdach (keine, alle Vertices liegen
+ * auf eaveZ). Für Pultdach passt es auf den Stirn-Triangeln; die
+ * Trapez-Seitenwand wird durch unsere Triangle-Heuristik nur teilweise
+ * gefüllt – akzeptable Approximation.
+ */
+function buildGables(
+  building: DetectedBuilding,
+  footprint: Vec3[],
+  eaveZ: number,
+  materials: Materials,
+): THREE.Object3D[] {
+  const out: THREE.Object3D[] = [];
+  if (footprint.length < 3 || building.roofFaces.length === 0) return out;
+
+  // Match-Toleranz für „liegt auf der Eave-Kante" und „liegt am Footprint-Eckpunkt".
+  const ZTOL = 0.5;
+  const XYTOL = 0.5;
+
+  // Alle Vertices, die deutlich über der Traufe liegen → potenzielle Ridge-Apexes.
+  const ridgeVertices: Vec3[] = [];
+  for (const face of building.roofFaces) {
+    for (const v of face.vertices3d) {
+      if (v.z > eaveZ + 0.1) ridgeVertices.push(v);
+    }
+  }
+  if (ridgeVertices.length === 0) return out;
+
+  for (let i = 0; i < footprint.length; i++) {
+    const a = footprint[i]!;
+    const b = footprint[(i + 1) % footprint.length]!;
+
+    // Hat eine Dachfläche zwei Eave-Vertices passend zu (a, b)?
+    const hasRoofAbove = building.roofFaces.some((face) => {
+      const low = face.vertices3d.filter((v) => Math.abs(v.z - eaveZ) < ZTOL);
+      if (low.length < 2) return false;
+      const matchA = low.some(
+        (v) => Math.hypot(v.x - a.x, v.y - a.y) < XYTOL,
+      );
+      const matchB = low.some(
+        (v) => Math.hypot(v.x - b.x, v.y - b.y) < XYTOL,
+      );
+      return matchA && matchB;
+    });
+    if (hasRoofAbove) continue;
+
+    // Nächsten Ridge-Apex zum Mittelpunkt von (a, b) suchen, höhere
+    // Apexes leicht bevorzugen (Score = Distanz – Höhen-Bonus).
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+    let apex: Vec3 | null = null;
+    let bestScore = Infinity;
+    for (const v of ridgeVertices) {
+      const d = Math.hypot(v.x - midX, v.y - midY);
+      const score = d - (v.z - eaveZ) * 0.5;
+      if (score < bestScore) {
+        bestScore = score;
+        apex = v;
+      }
+    }
+    if (!apex) continue;
+
+    // Degeneriertes Dreieck (z. B. wenn apex direkt auf einem der Eckpunkte
+    // liegt) auslassen.
+    const apexDist = Math.min(
+      Math.hypot(apex.x - a.x, apex.y - a.y),
+      Math.hypot(apex.x - b.x, apex.y - b.y),
+    );
+    if (apexDist < 0.05 && Math.abs(apex.z - eaveZ) < 0.1) continue;
+
+    const positions = [
+      a.x, a.y, eaveZ,
+      b.x, b.y, eaveZ,
+      apex.x, apex.y, apex.z,
+    ];
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(positions, 3),
+    );
+    geom.computeVertexNormals();
+    const mesh = new THREE.Mesh(geom, materials.gable);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.userData = { kind: "gable" };
+    out.push(mesh);
   }
   return out;
 }
@@ -266,11 +394,19 @@ function buildModule(mod: PVModule, materials: Materials): THREE.Object3D {
 /**
  * Räumt alle Geometrien in einem Group-Subtree auf. Materialien werden
  * NICHT disposed – die werden vom Caller zentral verwaltet.
+ *
+ * WeakSet sichert ab, dass eine geteilte BufferGeometry (Roof-Basis +
+ * Roof-Overlay teilen sich dieselbe Geometrie) nicht zweimal disposed wird.
  */
 export function disposeBuildingGroup(group: THREE.Group) {
+  const disposed = new WeakSet<THREE.BufferGeometry>();
   group.traverse((obj) => {
-    if ((obj as THREE.Mesh).geometry) {
-      (obj as THREE.Mesh).geometry.dispose();
+    const geom = (obj as THREE.Mesh).geometry as
+      | THREE.BufferGeometry
+      | undefined;
+    if (geom && !disposed.has(geom)) {
+      disposed.add(geom);
+      geom.dispose();
     }
   });
 }

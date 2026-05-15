@@ -4,8 +4,11 @@
  * Damit die Visualisierung konsistent bleibt, werden Materialien einmal
  * erzeugt und wiederverwendet. Farben:
  *   - Gebäudewände: grau
- *   - Dachfläche ausgewählt: blau (transluzent, Module sichtbar darüber)
- *   - Dachfläche nicht ausgewählt: hellgrau
+ *   - Giebel-/Stirnwände: gleicher Ton wie Wände, DoubleSide für sichere
+ *     Sicht unabhängig vom Triangle-Winding
+ *   - Dachfläche (Basis): Anthrazit – wird IMMER gerendert
+ *   - Dachfläche (Highlight): Blau, leicht transparent, mit polygonOffset
+ *     als Overlay über der Anthrazit-Basis (PV-tauglich markiert)
  *   - Hover-Highlight: hellblau
  *   - PV-Modul: dunkelgrau / schwarz
  *   - Kantenlinien: dunkelgrau
@@ -15,6 +18,9 @@ import * as THREE from "three";
 
 export type Materials = {
   building: THREE.MeshStandardMaterial;
+  gable: THREE.MeshStandardMaterial;
+  roofBase: THREE.MeshStandardMaterial;
+  roofHighlight: THREE.MeshStandardMaterial;
   roofSelected: THREE.MeshStandardMaterial;
   roofUnselected: THREE.MeshStandardMaterial;
   roofHover: THREE.MeshStandardMaterial;
@@ -30,6 +36,43 @@ export function createMaterials(): Materials {
     flatShading: true,
   });
 
+  // Giebel: gleiche Farbe wie die Wände, aber DoubleSide – das Triangle-Winding
+  // der Gable-Dreiecke ergibt sich aus dem Footprint und dem Ridge-Apex und
+  // ist nicht garantiert konsistent. DoubleSide rendert in jedem Fall korrekt.
+  const gable = new THREE.MeshStandardMaterial({
+    color: 0x9ca3af,
+    roughness: 0.85,
+    metalness: 0.0,
+    flatShading: true,
+    side: THREE.DoubleSide,
+  });
+
+  // Anthrazit-Standard für alle Dachflächen.
+  const roofBase = new THREE.MeshStandardMaterial({
+    color: 0x3a4250,
+    roughness: 0.7,
+    metalness: 0.05,
+    flatShading: true,
+    side: THREE.DoubleSide,
+  });
+
+  // Blaues Highlight als Overlay über roofBase. polygonOffset zieht das Mesh
+  // im Depth-Test minimal nach vorne, sodass es immer über der Basis-Schräge
+  // gezeichnet wird (kein Z-Fighting/Flackern beim 360°-Orbit).
+  const roofHighlight = new THREE.MeshStandardMaterial({
+    color: 0x1d4ed8,
+    roughness: 0.65,
+    metalness: 0.05,
+    flatShading: true,
+    transparent: true,
+    opacity: 0.7,
+    side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
+  });
+
+  // Legacy-Materialien (für ThreeBuildingLayer im Map-Mode, falls noch genutzt).
   const roofSelected = new THREE.MeshStandardMaterial({
     color: 0x1d4ed8,
     roughness: 0.7,
@@ -41,8 +84,6 @@ export function createMaterials(): Materials {
   });
 
   const roofUnselected = new THREE.MeshStandardMaterial({
-    // Deutlich heller als die Wand (slate-500, 0x9ca3af), damit die nicht
-    // ausgewählten Walm-Flächen gegen die Wand klar erkennbar bleiben.
     color: 0xe5e7eb,
     roughness: 0.85,
     metalness: 0.0,
@@ -74,6 +115,9 @@ export function createMaterials(): Materials {
 
   return {
     building,
+    gable,
+    roofBase,
+    roofHighlight,
     roofSelected,
     roofUnselected,
     roofHover,
