@@ -39,6 +39,7 @@ type Props = {
   settings: ModuleSettings;
   setSettings: (s: ModuleSettings) => void;
   toggleFace: (id: string) => void;
+  onOpenFaceDetails: (id: string) => void;
   // Workflow-State
   searchedLocation: { lng: number; lat: number } | null;
   drawingMode: boolean;
@@ -102,6 +103,7 @@ export default function Sidebar({
   settings,
   setSettings,
   toggleFace,
+  onOpenFaceDetails,
   searchedLocation,
   drawingMode,
   drawingPhase,
@@ -176,7 +178,7 @@ export default function Sidebar({
               </p>
             )}
             {error && (
-              <p className="rounded-md bg-rose-50 px-2 py-1.5 text-xs text-rose-700">
+              <p className="whitespace-pre-line rounded-md bg-rose-50 px-2 py-1.5 text-xs text-rose-700">
                 {error}
               </p>
             )}
@@ -240,7 +242,11 @@ export default function Sidebar({
         </Section>
 
         <Section title="Dachflächen" step={3}>
-          <RoofFaceList faces={faces} onToggle={toggleFace} />
+          <RoofFaceList
+            faces={faces}
+            onToggle={toggleFace}
+            onOpenDetails={onOpenFaceDetails}
+          />
         </Section>
 
         <Section title="Moduleinstellungen" step={4}>

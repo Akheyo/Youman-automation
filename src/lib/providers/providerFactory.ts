@@ -53,6 +53,10 @@ export function selectProviderChain(
 ): ProviderChain {
   const googleKey = process.env.GOOGLE_SOLAR_API_KEY;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  console.log(
+    `[providerFactory] override=${override}, googleKey=${googleKey ? "set" : "missing"}, ` +
+      `anthropicKey=${anthropicKey ? "set" : "missing"}, lod2Source=${lod2Source ? "registered" : "none"}`,
+  );
   const mock = new MockRoofDetectionProvider();
   const osm = new OSMRoofProvider();
   const lod2 = new Lod2RoofProvider(lod2Source);

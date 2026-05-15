@@ -232,13 +232,15 @@ export class ThreeBuildingLayer implements CustomLayerInterface {
     const moduleHit = hits.find(
       (hh) => (hh.object as THREE.Mesh).isMesh && hh.object.userData?.kind === "module",
     );
-    if (moduleHit) {
+    if (moduleHit?.object.userData.slotId) {
       return {
         kind: "module",
         moduleId: moduleHit.object.userData.moduleId as string,
-        slotId: moduleHit.object.userData.slotId as string | undefined,
+        slotId: moduleHit.object.userData.slotId as string,
       };
     }
+    // Modul ohne slotId (Alt-Daten) blockt nicht den Roof-Klick: wir suchen
+    // in den Hits weiter nach der Dachfläche und öffnen ihr Detail-Modal.
     const roofHit = hits.find(
       (hh) => (hh.object as THREE.Mesh).isMesh && hh.object.userData?.kind === "roof",
     );

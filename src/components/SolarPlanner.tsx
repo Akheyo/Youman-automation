@@ -293,10 +293,22 @@ export default function SolarPlanner({ mapSettings }: Props) {
             building: DetectedBuilding;
             providerSelection: { name: string; reason: string };
           }
-        | { error: string };
+        | { error: string; details?: string[] };
       if (!res.ok || "error" in data) {
-        const msg = "error" in data ? data.error : `HTTP ${res.status}`;
-        throw new Error(msg);
+        if ("error" in data && Array.isArray(data.details) && data.details.length > 0) {
+          // Strukturierter Fallback: jeder Provider mit seinem Fehler.
+          setError(
+            `${data.error}\n\n${data.details.join("\n")}\n\n` +
+              `→ Bitte „Haus auswählen" oder „Selber zeichnen" nutzen.`,
+          );
+        } else {
+          const msg = "error" in data ? data.error : `HTTP ${res.status}`;
+          setError(
+            `Keine Solar- oder Gebäudedaten gefunden. ` +
+              `Probier „Haus auswählen" oder „Selber zeichnen". (${msg})`,
+          );
+        }
+        return;
       }
       const computed = recomputeBuilding(data.building, data.building.roofFaces);
       setBuilding(computed);
@@ -307,7 +319,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
         err instanceof Error ? err.message : "Unbekannter Fehler";
       setError(
         `Keine Solar- oder Gebäudedaten gefunden. ` +
-          `Probier 'Haus auswählen' oder 'Selber zeichnen'. (${raw})`,
+          `Probier „Haus auswählen" oder „Selber zeichnen". (${raw})`,
       );
     } finally {
       setLoading(false);
@@ -829,6 +841,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
           settings={settings}
           setSettings={setSettings}
           toggleFace={toggleFace}
+          onOpenFaceDetails={openFaceModal}
           searchedLocation={searchedLocation}
           drawingMode={drawingMode}
           drawingPhase={drawingPhase}
@@ -853,8 +866,6 @@ export default function SolarPlanner({ mapSettings }: Props) {
 
       {presentationMode && (
         <PresentationOverlay
-          building={building}
-          providerLabel={providerLabel}
           onExit={() => setPresentationMode(false)}
           onRecenter={recenter}
         />
@@ -885,64 +896,16 @@ export default function SolarPlanner({ mapSettings }: Props) {
 /* ----------------------------- PresentationOverlay ----------------------------- */
 
 type PresentationOverlayProps = {
-  building: DetectedBuilding | null;
-  providerLabel: string | null;
   onExit: () => void;
   onRecenter: () => void;
 };
 
 function PresentationOverlay({
-  building,
-  providerLabel,
   onExit,
   onRecenter,
 }: PresentationOverlayProps) {
   return (
     <>
-      <div
-        style={{
-          position: "absolute",
-          top: 16,
-          left: 16,
-          padding: "12px 16px",
-          background: "rgba(255,255,255,0.96)",
-          borderRadius: 12,
-          boxShadow: "0 6px 20px rgba(15,23,42,0.18)",
-          fontSize: 13,
-          color: "#0f172a",
-          maxWidth: 360,
-          zIndex: 20,
-        }}
-      >
-        <p
-          style={{
-            margin: 0,
-            textTransform: "uppercase",
-            fontSize: 10,
-            letterSpacing: 1,
-            color: "#1d4ed8",
-            fontWeight: 600,
-          }}
-        >
-          3D-Vorschau
-        </p>
-        <p
-          style={{
-            margin: "4px 0 0",
-            fontWeight: 600,
-            fontSize: 16,
-            color: "#0f172a",
-          }}
-        >
-          {building?.address ?? "Gebäude"}
-        </p>
-        <p style={{ margin: "2px 0 0", fontSize: 11, color: "#64748b" }}>
-          Quelle: {providerLabel ?? "—"} ·{" "}
-          {building?.metrics.totalRoofAreaM2.toFixed(0) ?? "0"} m² Dach ·{" "}
-          {building?.metrics.totalKwp.toFixed(1) ?? "0"} kWp
-        </p>
-      </div>
-
       <div
         style={{
           position: "absolute",

@@ -332,13 +332,11 @@ export default function Building3DView({
           (h.object as THREE.Mesh).isMesh &&
           h.object.userData?.kind === "module",
       );
-      if (moduleHit) {
-        const slotId = moduleHit.object.userData?.slotId as string | undefined;
-        if (slotId) {
-          onToggleSlotRef.current(slotId);
-          return;
-        }
+      if (moduleHit?.object.userData?.slotId) {
+        onToggleSlotRef.current(moduleHit.object.userData.slotId as string);
+        return;
       }
+      // Module ohne slotId (Alt-Daten) blockieren das Modal-Öffnen NICHT.
       const roofHit = hits.find(
         (h) =>
           (h.object as THREE.Mesh).isMesh &&

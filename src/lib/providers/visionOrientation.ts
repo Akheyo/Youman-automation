@@ -40,9 +40,8 @@ import type {
 
 /* ----------------------------- Konfiguration ----------------------------- */
 
-// Aktuelles Sonnet-Modell mit Vision-Unterstützung. Bei Bedarf auf neuere
-// Variante umstellen (z. B. claude-sonnet-4-6) – Aufruf-Signatur bleibt gleich.
-const ANTHROPIC_MODEL = "claude-sonnet-4-5";
+// Aktuelles Sonnet-Modell mit Vision-Unterstützung.
+const ANTHROPIC_MODEL = "claude-sonnet-4-6";
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
 

@@ -74,11 +74,25 @@ export async function POST(req: Request) {
 
   // 2) Provider-Kette der Reihe nach probieren.
   const chain = selectProviderChain(body.provider ?? "auto");
-  const warnings: string[] = [];
+  const providerNames = chain.providers.map((p) => p.name).join(" → ");
+  console.log(
+    `[detect-roof] Kette: ${providerNames} für lat=${lat.toFixed(5)}, lng=${lng.toFixed(5)}`,
+  );
+  console.log(
+    `[detect-roof] env: GOOGLE_SOLAR_API_KEY=${process.env.GOOGLE_SOLAR_API_KEY ? "set" : "missing"}, ` +
+      `ANTHROPIC_API_KEY=${process.env.ANTHROPIC_API_KEY ? "set" : "missing"}, ` +
+      `MAPTILER_API_KEY=${process.env.MAPTILER_API_KEY ? "set" : (process.env.NEXT_PUBLIC_TILE_URL?.includes("key=") ? "set (NEXT_PUBLIC_TILE_URL)" : "missing")}`,
+  );
+
+  // Pro Provider: failures sammeln, damit das UI bei Total-Fehler eine
+  // strukturierte Begründung anzeigen kann (Google: ... / Vision: ... / OSM: ...).
+  type ProviderAttempt = { name: string; status: "ok" | "error"; message?: string };
+  const attempts: ProviderAttempt[] = [];
   let building: DetectedBuilding | null = null;
   let usedProviderName: string | null = null;
 
   for (const provider of chain.providers) {
+    console.log(`[detect-roof] versuche Provider: ${provider.name}`);
     try {
       building = await provider.detectRoof({
         address: formattedAddress,
@@ -86,14 +100,16 @@ export async function POST(req: Request) {
         lng,
       });
       usedProviderName = provider.name;
+      console.log(`[detect-roof] ✓ ${provider.name} erfolgreich.`);
+      attempts.push({ name: provider.name, status: "ok" });
       break;
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Unbekannter Fehler";
       console.warn(
-        `[detect-roof] Provider ${provider.name} fehlgeschlagen: ${message}.`,
+        `[detect-roof] ✗ ${provider.name} fehlgeschlagen: ${message}`,
       );
-      warnings.push(`${provider.name}: ${message}`);
+      attempts.push({ name: provider.name, status: "error", message });
       continue;
     }
   }
@@ -101,13 +117,22 @@ export async function POST(req: Request) {
   if (!building || !usedProviderName) {
     return NextResponse.json(
       {
-        error:
-          "Kein Provider konnte ein Gebäude liefern.",
-        details: warnings,
+        error: "Kein Provider konnte ein Gebäude liefern.",
+        // Frontend nutzt `details` für die strukturierte Begründung.
+        details: attempts
+          .filter((a) => a.status === "error")
+          .map((a) => `${a.name}: ${a.message}`),
+        attempts,
       },
       { status: 502 },
     );
   }
+
+  // Warnings aus fehlgeschlagenen Versuchen in das building.warnings einbetten,
+  // damit der User sieht, was im Hintergrund schief ging.
+  const warnings = attempts
+    .filter((a) => a.status === "error")
+    .map((a) => `${a.name}: ${a.message}`);
 
   if (warnings.length > 0) {
     building.warnings = [...(building.warnings ?? []), ...warnings];
