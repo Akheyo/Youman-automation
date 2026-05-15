@@ -24,21 +24,24 @@ import type {
   DetectedBuilding,
   LngLat,
   MapSettings,
-  ModuleSettings,
+  ModuleSlot,
 } from "@/types/solar";
 import { NativeBuildingLayer } from "@/lib/map/NativeBuildingLayer";
 import { ThreeBuildingLayer } from "@/lib/map/ThreeBuildingLayer";
-import {
-  createModuleAtClick,
-  validatePlacementAtLngLat,
-} from "@/lib/geometry/manualModulePlacement";
+import { findFaceUnderClick } from "@/lib/geometry/manualModulePlacement";
 import { localMetersToLngLat } from "@/lib/geometry/coordinates";
 
 type MapViewProps = {
   building: DetectedBuilding | null;
   mapSettings: MapSettings;
-  /** Module-Settings für die Ghost-Vorschau bei der manuellen Platzierung. */
-  moduleSettings: ModuleSettings;
+  /** Vordefinierte Modul-Slots auf allen ausgewählten Dachflächen. */
+  slots: ModuleSlot[];
+  /** Welche Slots aktuell mit einem Modul belegt sind. */
+  occupiedSlotIds: Set<string>;
+  /** Klick auf einen Slot: platziert oder entfernt das Modul dort. */
+  onToggleSlot: (slotId: string) => void;
+  /** Klick auf eine Dachfläche außerhalb der Slots: Detail-Modal. */
+  onOpenFaceModal: (faceId: string) => void;
   /** Bei jeder Erhöhung wird die Kamera neu auf das Gebäude zentriert. */
   recenterTick: number;
   /** Drawing-Modus: Polygon-Eckpunkte / First-Linie sammeln. */
@@ -51,10 +54,8 @@ type MapViewProps = {
   drawnPoints: LngLat[];
   /** First-Linien-Punkte (max 2). */
   ridgePoints: LngLat[];
-  /** Callback bei jedem Klick (Parent dispatcht je nach Modus). */
+  /** Callback bei jedem Klick im Drawing/Picking-Modus. */
   onMapClick: (p: LngLat) => void;
-  /** Rechtsklick: nur in manualPlacementMode interessant (Modul entfernen). */
-  onMapRightClick: (p: LngLat) => void;
   /** Kamera fliegt hierhin, wenn cameraTick sich erhöht (z. B. nach Suche). */
   cameraTarget: LngLat | null;
   cameraTick: number;
@@ -64,8 +65,6 @@ type MapViewProps = {
   currentRidgeAzimuthDeg: number | null;
   /** Callback wenn der User per Maus auf eine neue Ausrichtung gedreht hat. */
   onRotateRequest: (newAzimuthDeg: number) => void;
-  /** Manueller Modul-Platzierungs-Modus: Klick auf Dach setzt/entfernt Modul. */
-  manualPlacementMode: boolean;
 };
 
 const DRAW_SRC = "youman-draw";
@@ -73,11 +72,11 @@ const DRAW_LINE_LAYER = "youman-draw-line";
 const DRAW_FILL_LAYER = "youman-draw-fill";
 const DRAW_POINT_LAYER = "youman-draw-points";
 
-const GHOST_SRC = "youman-ghost";
-const GHOST_FILL_LAYER = "youman-ghost-fill";
-const GHOST_LINE_LAYER = "youman-ghost-line";
+const SLOT_SRC = "youman-slots";
+const SLOT_FILL_LAYER = "youman-slot-fill";
+const SLOT_LINE_LAYER = "youman-slot-line";
 
-function emptyGhost(): GeoJSON.FeatureCollection {
+function emptySlotData(): GeoJSON.FeatureCollection {
   return { type: "FeatureCollection", features: [] };
 }
 
@@ -132,7 +131,10 @@ function buildStyle(
 export default function MapView({
   building,
   mapSettings,
-  moduleSettings,
+  slots,
+  occupiedSlotIds,
+  onToggleSlot,
+  onOpenFaceModal,
   recenterTick,
   drawingMode,
   drawingPhase,
@@ -140,13 +142,11 @@ export default function MapView({
   drawnPoints,
   ridgePoints,
   onMapClick,
-  onMapRightClick,
   cameraTarget,
   cameraTick,
   rotatingMode,
   currentRidgeAzimuthDeg,
   onRotateRequest,
-  manualPlacementMode,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -156,18 +156,18 @@ export default function MapView({
   buildingRef.current = building;
   // Refs, damit der Click-Handler in der Map-Init immer auf aktuelle Werte
   // schaut (keine Re-Init bei jedem State-Update nötig).
-  const captureClicksRef = useRef(drawingMode || pickingMode || manualPlacementMode);
-  captureClicksRef.current = drawingMode || pickingMode || manualPlacementMode;
+  const captureModeRef = useRef(drawingMode || pickingMode);
+  captureModeRef.current = drawingMode || pickingMode;
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
-  const onMapRightClickRef = useRef(onMapRightClick);
-  onMapRightClickRef.current = onMapRightClick;
+  const onToggleSlotRef = useRef(onToggleSlot);
+  onToggleSlotRef.current = onToggleSlot;
+  const onOpenFaceModalRef = useRef(onOpenFaceModal);
+  onOpenFaceModalRef.current = onOpenFaceModal;
   const ridgeAzRef = useRef<number | null>(currentRidgeAzimuthDeg);
   ridgeAzRef.current = currentRidgeAzimuthDeg;
   const onRotateRequestRef = useRef(onRotateRequest);
   onRotateRequestRef.current = onRotateRequest;
-  const moduleSettingsRef = useRef(moduleSettings);
-  moduleSettingsRef.current = moduleSettings;
 
   const style = useMemo(
     () => buildStyle(mapSettings.tileUrl, mapSettings.tileAttribution),
@@ -280,38 +280,44 @@ export default function MapView({
         },
       });
 
-      // Ghost-Vorschau für manuelle Modulplatzierung: grün wenn Platz, rot
-      // wenn die jeweilige Dachfläche bereits am 32er-Limit ist.
-      mapRef.current.addSource(GHOST_SRC, {
+      // Slot-Layer: leerer Slot = helle Fläche, besetzter Slot = transparent
+      // (das Three.js-Modul darüber bleibt sichtbar), aber bleibt klickbar
+      // für queryRenderedFeatures.
+      mapRef.current.addSource(SLOT_SRC, {
         type: "geojson",
-        data: emptyGhost(),
+        data: emptySlotData(),
       });
       mapRef.current.addLayer({
-        id: GHOST_FILL_LAYER,
+        id: SLOT_FILL_LAYER,
         type: "fill",
-        source: GHOST_SRC,
+        source: SLOT_SRC,
         paint: {
           "fill-color": [
             "case",
-            ["==", ["get", "invalid"], true],
-            "#ef4444",
-            "#22c55e",
+            ["==", ["get", "occupied"], true],
+            "#0f172a",
+            "rgb(220,220,220)",
           ],
-          "fill-opacity": 0.4,
+          "fill-opacity": [
+            "case",
+            ["==", ["get", "occupied"], true],
+            0.0,
+            0.35,
+          ],
         },
       });
       mapRef.current.addLayer({
-        id: GHOST_LINE_LAYER,
+        id: SLOT_LINE_LAYER,
         type: "line",
-        source: GHOST_SRC,
+        source: SLOT_SRC,
         paint: {
           "line-color": [
             "case",
-            ["==", ["get", "invalid"], true],
-            "#dc2626",
-            "#16a34a",
+            ["==", ["get", "occupied"], true],
+            "rgba(15,23,42,0)",
+            "#ffffff",
           ],
-          "line-width": 2,
+          "line-width": 1,
         },
       });
 
@@ -322,17 +328,31 @@ export default function MapView({
       }
     });
 
-    // Click-Handler: nur im Drawing- oder Picking-Modus greifen.
+    // Klick-Dispatch: Drawing/Picking haben Priorität. Sonst Slot oder Face.
     map.on("click", (e) => {
-      if (!captureClicksRef.current) return;
-      onMapClickRef.current({ lng: e.lngLat.lng, lat: e.lngLat.lat });
-    });
-
-    // Rechtsklick: Browser-Kontextmenü unterdrücken und Parent informieren
-    // (nutzt das aktuell für „Modul entfernen" in manualPlacementMode).
-    map.on("contextmenu", (e) => {
-      e.preventDefault();
-      onMapRightClickRef.current({ lng: e.lngLat.lng, lat: e.lngLat.lat });
+      if (captureModeRef.current) {
+        onMapClickRef.current({ lng: e.lngLat.lng, lat: e.lngLat.lat });
+        return;
+      }
+      const map2 = mapRef.current;
+      if (!map2) return;
+      const slotFeatures = map2.queryRenderedFeatures(e.point, {
+        layers: [SLOT_FILL_LAYER],
+      });
+      if (slotFeatures.length > 0) {
+        const slotId = slotFeatures[0]!.properties?.slotId as
+          | string
+          | undefined;
+        if (slotId) {
+          onToggleSlotRef.current(slotId);
+          return;
+        }
+      }
+      const b2 = buildingRef.current;
+      if (!b2) return;
+      const click = { lng: e.lngLat.lng, lat: e.lngLat.lat };
+      const face = findFaceUnderClick(click, b2);
+      if (face) onOpenFaceModalRef.current(face.id);
     });
 
     return () => {
@@ -395,82 +415,46 @@ export default function MapView({
     const map = mapRef.current;
     if (!map) return;
     const canvas = map.getCanvas();
-    if (drawingMode || pickingMode || manualPlacementMode)
-      canvas.style.cursor = "crosshair";
+    if (drawingMode || pickingMode) canvas.style.cursor = "crosshair";
     else if (rotatingMode) canvas.style.cursor = "grab";
     else canvas.style.cursor = "";
-  }, [drawingMode, pickingMode, rotatingMode, manualPlacementMode]);
+  }, [drawingMode, pickingMode, rotatingMode]);
 
-  /* Hover-Vorschau in der manuellen Platzierung: Geist-Modul an der
-   * Mausposition. Farbe = grün, solange auf der Fläche noch Platz ist;
-   * rot, wenn die Fläche bereits 32 Module trägt. */
+  /* Slots ins Map-Source schreiben. Jeder Slot wird zu einem Polygon mit
+   * `slotId` und `occupied`-Property. Leere Slots sind sichtbar
+   * (helles Rechteck), besetzte Slots transparent (das Three.js-Modul
+   * darüber bleibt sichtbar), aber für queryRenderedFeatures klickbar. */
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const setGhost = (data: GeoJSON.FeatureCollection) => {
-      const src = map.getSource(GHOST_SRC) as
-        | maplibregl.GeoJSONSource
-        | undefined;
-      src?.setData(data);
-    };
-    if (!manualPlacementMode || !building) {
-      setGhost(emptyGhost());
+    const src = map.getSource(SLOT_SRC) as
+      | maplibregl.GeoJSONSource
+      | undefined;
+    if (!src) return;
+    if (!building) {
+      src.setData(emptySlotData());
       return;
     }
-    const onMove = (e: maplibregl.MapMouseEvent) => {
-      const b = buildingRef.current;
-      if (!b) return;
-      const click: LngLat = { lng: e.lngLat.lng, lat: e.lngLat.lat };
-      const result = validatePlacementAtLngLat(
-        click,
-        b,
-        moduleSettingsRef.current,
-      );
-      // Außerhalb einer Fläche: keine Vorschau (Cursor steht im Nichts).
-      if (!result.face) {
-        setGhost(emptyGhost());
-        return;
-      }
-      // Auch im ungültigen Fall ein Vorschau-Polygon zeigen, damit der User
-      // die Modulgröße sieht. Wir bauen das Kandidaten-Modul direkt aus
-      // klick + Fläche, unabhängig vom Validierungs-Ergebnis.
-      const candidateMod = createModuleAtClick(
-        click,
-        result.face,
-        b,
-        moduleSettingsRef.current,
-      );
-      if (!candidateMod) {
-        setGhost(emptyGhost());
-        return;
-      }
-      const ring = candidateMod.vertices3d.map((v) =>
-        localMetersToLngLat(v.x, v.y, b.center.lng, b.center.lat),
+    const features: GeoJSON.Feature[] = slots.map((slot) => {
+      const ring = slot.corners.map((v) =>
+        localMetersToLngLat(v.x, v.y, building.center.lng, building.center.lat),
       );
       ring.push(ring[0]!);
-      setGhost({
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            properties: { invalid: !result.ok },
-            geometry: {
-              type: "Polygon",
-              coordinates: [ring.map((p) => [p.lng, p.lat])],
-            },
-          },
-        ],
-      });
-    };
-    const onLeave = () => setGhost(emptyGhost());
-    map.on("mousemove", onMove);
-    map.on("mouseout", onLeave);
-    return () => {
-      map.off("mousemove", onMove);
-      map.off("mouseout", onLeave);
-      setGhost(emptyGhost());
-    };
-  }, [manualPlacementMode, building]);
+      return {
+        type: "Feature",
+        properties: {
+          slotId: slot.id,
+          faceId: slot.roofFaceId,
+          occupied: occupiedSlotIds.has(slot.id),
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [ring.map((p) => [p.lng, p.lat])],
+        },
+      };
+    });
+    src.setData({ type: "FeatureCollection", features });
+  }, [slots, occupiedSlotIds, building]);
 
   /* Drag-to-rotate: Mausziehen dreht das Haus um seinen Mittelpunkt.
    * Während aktiv ist MapLibre's Pan/Rotate disabled. */

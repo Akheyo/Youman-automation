@@ -27,6 +27,7 @@ import type {
 } from "@/types/solar";
 import { lngLatToLocalMeters } from "@/lib/geometry/coordinates";
 import type { Materials } from "@/lib/map/materials";
+import { calculateEfficiency, efficiencyColor } from "@/lib/efficiency";
 
 export type BuildBuildingMode = "mercator" | "local";
 
@@ -231,10 +232,17 @@ function buildRoofFace(
   const out: THREE.Object3D[] = [baseMesh];
 
   if (face.selected) {
-    const overlayMesh = new THREE.Mesh(geom, materials.roofHighlight);
+    // Highlight-Material pro Fläche clonen, damit jede Fläche ihre
+    // Effizienz-Farbe trägt. dispose erfolgt über die `__cloneMat`-Markierung
+    // in disposeBuildingGroup.
+    const overlayMat = (materials.roofHighlight as THREE.MeshStandardMaterial)
+      .clone() as THREE.MeshStandardMaterial;
+    const eff = calculateEfficiency(face.azimuthDeg, face.pitchDeg);
+    overlayMat.color = new THREE.Color(efficiencyColor(eff));
+    const overlayMesh = new THREE.Mesh(geom, overlayMat);
     overlayMesh.castShadow = false;
     overlayMesh.receiveShadow = false;
-    overlayMesh.userData = { ...userData, overlay: true };
+    overlayMesh.userData = { ...userData, overlay: true, __cloneMat: true };
     out.push(overlayMesh);
   }
 
@@ -386,6 +394,7 @@ function buildModule(mod: PVModule, materials: Materials): THREE.Object3D {
     kind: "module",
     moduleId: mod.id,
     roofFaceId: mod.roofFaceId,
+    slotId: mod.slotId,
     wp: mod.wp,
   };
   return mesh;
@@ -401,12 +410,18 @@ function buildModule(mod: PVModule, materials: Materials): THREE.Object3D {
 export function disposeBuildingGroup(group: THREE.Group) {
   const disposed = new WeakSet<THREE.BufferGeometry>();
   group.traverse((obj) => {
-    const geom = (obj as THREE.Mesh).geometry as
-      | THREE.BufferGeometry
-      | undefined;
+    const mesh = obj as THREE.Mesh;
+    const geom = mesh.geometry as THREE.BufferGeometry | undefined;
     if (geom && !disposed.has(geom)) {
       disposed.add(geom);
       geom.dispose();
+    }
+    // Per-Face geclonte Materialien (markiert via userData.__cloneMat)
+    // werden hier disposed; geteilte Materials aus `materials.*` nicht.
+    if (mesh.userData?.__cloneMat) {
+      const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
+      if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+      else mat?.dispose();
     }
   });
 }

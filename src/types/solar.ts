@@ -54,6 +54,28 @@ export type PVModule = {
   /** 4 Eckpunkte des Modulrechtecks im lokalen Meter-System. */
   vertices3d: Vec3[];
   wp: number;
+  /**
+   * Stabile Slot-Referenz für die slot-basierte Platzierung. Wenn gesetzt,
+   * gehört das Modul zu einem vordefinierten Raster-Slot der Fläche.
+   */
+  slotId?: string;
+};
+
+/**
+ * Vordefinierter Raster-Slot auf einer Dachfläche. Slots werden einmal aus
+ * der Geometrie der Fläche berechnet (siehe `lib/geometry/slotGenerator.ts`)
+ * und vom UI geklickt, um ein Modul zu setzen oder zu entfernen.
+ */
+export type ModuleSlot = {
+  /** Stabile ID, Form `${faceId}-r${row}-c${col}`. */
+  id: string;
+  roofFaceId: string;
+  row: number;
+  col: number;
+  /** Mittelpunkt im lokalen 3D-Meter-System (X = Ost, Y = Nord, Z = Höhe). */
+  center: Vec3;
+  /** 4 Eckpunkte im lokalen 3D-Meter-System. */
+  corners: Vec3[];
 };
 
 export type DetectedBuildingMetrics = {

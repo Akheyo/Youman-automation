@@ -2,6 +2,7 @@
 
 import type { DetectedBuilding, RoofFace } from "@/types/solar";
 import { MAX_MODULES_PER_FACE } from "@/lib/constants";
+import { orientationShort } from "@/lib/orientationLabel";
 
 type Props = {
   building: DetectedBuilding | null;
@@ -23,21 +24,7 @@ function azimuthPriority(azimuthDeg: number): number {
   return Math.min(Math.abs(a - 180), 360 - Math.abs(a - 180));
 }
 
-function orientationLabel(azimuthDeg: number): string {
-  const a = ((azimuthDeg % 360) + 360) % 360;
-  const dirs = [
-    "Nord",
-    "Nord-Ost",
-    "Ost",
-    "Süd-Ost",
-    "Süd",
-    "Süd-West",
-    "West",
-    "Nord-West",
-  ];
-  const idx = Math.round(a / 45) % 8;
-  return dirs[idx]!;
-}
+// orientationShort wird aus @/lib/orientationLabel importiert.
 
 type FaceRow = {
   face: RoofFace;
@@ -99,7 +86,7 @@ export default function MetricsPanel({
                 <span className="truncate text-slate-600">
                   {row.face.label}
                   <span className="ml-1 text-slate-400">
-                    · {orientationLabel(row.face.azimuthDeg)}
+                    · {orientationShort(row.face.azimuthDeg)}
                   </span>
                 </span>
                 <span

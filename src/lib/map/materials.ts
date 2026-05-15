@@ -26,6 +26,10 @@ export type Materials = {
   roofHover: THREE.MeshStandardMaterial;
   module: THREE.MeshStandardMaterial;
   edges: THREE.LineBasicMaterial;
+  /** Helle, semi-transparente Fläche für leere Modul-Slots. */
+  slotEmpty: THREE.MeshBasicMaterial;
+  /** Outline für leere Slots. */
+  slotEmptyEdge: THREE.LineBasicMaterial;
 };
 
 export function createMaterials(): Materials {
@@ -100,7 +104,7 @@ export function createMaterials(): Materials {
   });
 
   const moduleMat = new THREE.MeshStandardMaterial({
-    color: 0x0a0a0a,
+    color: 0x0f172a,
     roughness: 0.4,
     metalness: 0.1,
     flatShading: true,
@@ -113,6 +117,25 @@ export function createMaterials(): Materials {
     opacity: 0.7,
   });
 
+  // Leerer Slot: helles, semi-transparentes Rechteck. polygonOffset zieht den
+  // Slot leicht in Richtung Kamera, damit er nicht im Z-Fight mit der
+  // Dachfläche flackert.
+  const slotEmpty = new THREE.MeshBasicMaterial({
+    color: 0xdcdcdc,
+    transparent: true,
+    opacity: 0.35,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+  });
+  const slotEmptyEdge = new THREE.LineBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.85,
+  });
+
   return {
     building,
     gable,
@@ -123,6 +146,8 @@ export function createMaterials(): Materials {
     roofHover,
     module: moduleMat,
     edges,
+    slotEmpty,
+    slotEmptyEdge,
   };
 }
 

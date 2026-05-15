@@ -23,15 +23,9 @@ import type {
   ModuleSettings,
   PVModule,
   RoofFace,
-  Vec3,
 } from "@/types/solar";
-import { placeModulesOnSelectedFaces } from "@/lib/geometry/modulePlacement";
-import {
-  findModuleUnderClick,
-  formatPlacementReason,
-  validatePlacementAtFacePoint,
-  validatePlacementAtLngLat,
-} from "@/lib/geometry/manualModulePlacement";
+import { generateSlotsForBuilding } from "@/lib/geometry/slotGenerator";
+import FaceDetailModal from "./FaceDetailModal";
 import { fitOrientedBox } from "@/lib/geometry/roofShapeHeuristic";
 import Building3DView from "./Building3DView";
 import {
@@ -123,8 +117,6 @@ export default function SolarPlanner({ mapSettings }: Props) {
   const [drawingMode, setDrawingMode] = useState(false);
   const [pickingMode, setPickingMode] = useState(false);
   const [rotatingMode, setRotatingMode] = useState(false);
-  // Manueller Modul-Platzierungs-Modus (Klick auf Dach setzt/entfernt Modul).
-  const [manualPlacementMode, setManualPlacementMode] = useState(false);
   const [drawnPoints, setDrawnPoints] = useState<LngLat[]>([]);
   // Drawing-Phase: erst Ecken, dann optional 2 Punkte für die First-Linie.
   const [drawingPhase, setDrawingPhase] = useState<"corners" | "ridge">(
@@ -140,33 +132,60 @@ export default function SolarPlanner({ mapSettings }: Props) {
     null,
   );
   const [cameraTick, setCameraTick] = useState(0);
-  // Transienter Toast, der nach 3 s wieder verschwindet (z. B. Limit erreicht).
-  const [toast, setToast] = useState<string | null>(null);
+  // Modal-Dialog für eine angeklickte Dachfläche (Detail-Panel).
+  const [modalFaceId, setModalFaceId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!toast) return;
-    const t = window.setTimeout(() => setToast(null), 3000);
-    return () => window.clearTimeout(t);
-  }, [toast]);
+  /* -------- Slots (memoized) -------- */
+
+  // Slots werden EINMAL pro Selection/Settings-Wechsel berechnet, nicht
+  // bei jedem Render. Modulplatzierungen verändern building.modules,
+  // beeinflussen aber nicht die Slot-Geometrie selbst.
+  const slots = useMemo(() => {
+    if (!building) return [];
+    return generateSlotsForBuilding(building.roofFaces, settings);
+    // building.roofFaces ist die einzige relevante Achse von `building`;
+    // ein ganzer Re-Compute auf jedes building-Update wäre unnötig teuer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [building?.roofFaces, settings]);
+
+  const occupiedSlotIds = useMemo(() => {
+    const s = new Set<string>();
+    if (!building) return s;
+    for (const m of building.modules) {
+      if (m.slotId) s.add(m.slotId);
+    }
+    return s;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [building?.modules]);
 
   /* -------- Helpers -------- */
 
+  /**
+   * Aktualisiert RoofFace-Liste und Kennzahlen. Module bleiben erhalten,
+   * solange ihre Fläche ausgewählt bleibt – Module auf abgewählten Flächen
+   * werden entfernt, weil sie sonst orphan wären (kein Slot mehr).
+   */
   const recomputeBuilding = useCallback(
-    (b: DetectedBuilding, faces: RoofFace[], s: ModuleSettings) => {
-      const modules = placeModulesOnSelectedFaces(faces, s);
+    (b: DetectedBuilding, faces: RoofFace[]) => {
+      const selectedIds = new Set(
+        faces.filter((f) => f.selected).map((f) => f.id),
+      );
+      const keptModules = b.modules.filter((m) =>
+        selectedIds.has(m.roofFaceId),
+      );
       const totalRoofAreaM2 = faces.reduce((acc, f) => acc + f.areaM2, 0);
       const selectedRoofAreaM2 = faces
         .filter((f) => f.selected)
         .reduce((acc, f) => acc + f.areaM2, 0);
-      const totalKwp = modules.reduce((acc, m) => acc + m.wp, 0) / 1000;
+      const totalKwp = keptModules.reduce((acc, m) => acc + m.wp, 0) / 1000;
       const next: DetectedBuilding = {
         ...b,
         roofFaces: faces,
-        modules,
+        modules: keptModules,
         metrics: {
           totalRoofAreaM2,
           selectedRoofAreaM2,
-          moduleCount: modules.length,
+          moduleCount: keptModules.length,
           totalKwp,
         },
       };
@@ -175,16 +194,29 @@ export default function SolarPlanner({ mapSettings }: Props) {
     [],
   );
 
-  /* -------- Recompute modules when settings or selection change -------- */
-
+  /* Wenn der User Modul-Dimensionen oder die Ausrichtung wechselt, verschiebt
+   * sich das Slot-Raster. Alte Modulplatzierungen würden dann nicht mehr auf
+   * Slot-Positionen liegen → vorhandene Module werden bereinigt, damit der
+   * State konsistent bleibt. moduleWp-Änderungen bleiben ohne Auswirkung. */
   useEffect(() => {
     if (!building) return;
     setBuilding((prev) => {
       if (!prev) return prev;
-      return recomputeBuilding(prev, prev.roofFaces, settings);
+      if (prev.modules.length === 0) return prev;
+      return {
+        ...prev,
+        modules: [],
+        metrics: { ...prev.metrics, moduleCount: 0, totalKwp: 0 },
+      };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings]);
+  }, [
+    settings.moduleWidthM,
+    settings.moduleLengthM,
+    settings.moduleGapM,
+    settings.edgeMarginM,
+    settings.orientation,
+  ]);
 
   /* -------- Actions -------- */
 
@@ -266,11 +298,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
         const msg = "error" in data ? data.error : `HTTP ${res.status}`;
         throw new Error(msg);
       }
-      const computed = recomputeBuilding(
-        data.building,
-        data.building.roofFaces,
-        settings,
-      );
+      const computed = recomputeBuilding(data.building, data.building.roofFaces);
       setBuilding(computed);
       setProviderInfo(data.providerSelection);
       setPresentationMode(true);
@@ -284,7 +312,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [address, searchedLocation, settings, recomputeBuilding]);
+  }, [address, searchedLocation, recomputeBuilding]);
 
   const loadDemo = useCallback(async () => {
     setLoading(true);
@@ -298,7 +326,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
         lng: DEFAULT_DEMO_LNG,
         address: `Demo-Gebäude (${kind})`,
       });
-      const computed = recomputeBuilding(built, built.roofFaces, settings);
+      const computed = recomputeBuilding(built, built.roofFaces);
       setBuilding(computed);
       setProviderInfo({
         name: "mock",
@@ -310,7 +338,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [demoCycleIdx, recomputeBuilding, settings]);
+  }, [demoCycleIdx, recomputeBuilding]);
 
   const cycleDemo = useCallback(() => {
     setDemoCycleIdx((i) => i + 1);
@@ -330,22 +358,16 @@ export default function SolarPlanner({ mapSettings }: Props) {
         const nextFaces = prev.roofFaces.map((f) =>
           f.id === id ? { ...f, selected: !f.selected } : f,
         );
-        return recomputeBuilding(prev, nextFaces, settings);
+        return recomputeBuilding(prev, nextFaces);
       });
     },
-    [recomputeBuilding, settings],
+    [recomputeBuilding],
   );
-
-  const replaceModules = useCallback(() => {
-    setBuilding((prev) => {
-      if (!prev) return prev;
-      return recomputeBuilding(prev, prev.roofFaces, settings);
-    });
-  }, [recomputeBuilding, settings]);
 
   const clearAllModules = useCallback(() => {
     setBuilding((prev) => {
       if (!prev) return prev;
+      if (prev.modules.length === 0) return prev;
       return {
         ...prev,
         modules: [],
@@ -354,26 +376,54 @@ export default function SolarPlanner({ mapSettings }: Props) {
     });
   }, []);
 
-  const addModuleToBuilding = useCallback((mod: PVModule) => {
-    setBuilding((prev) => {
-      if (!prev) return prev;
-      const next = [...prev.modules, mod];
-      return {
-        ...prev,
-        modules: next,
-        metrics: {
-          ...prev.metrics,
-          moduleCount: next.length,
-          totalKwp: next.reduce((s, m) => s + m.wp, 0) / 1000,
-        },
-      };
-    });
-  }, []);
+  /* -------- Slot-Toggle und Face-Modal -------- */
 
-  const removeModuleById = useCallback((id: string) => {
+  const toggleSlot = useCallback(
+    (slotId: string) => {
+      if (!building) return;
+      const slot = slots.find((s) => s.id === slotId);
+      if (!slot) return;
+      setBuilding((prev) => {
+        if (!prev) return prev;
+        const existing = prev.modules.find((m) => m.slotId === slotId);
+        if (existing) {
+          const remaining = prev.modules.filter((m) => m.id !== existing.id);
+          return {
+            ...prev,
+            modules: remaining,
+            metrics: {
+              ...prev.metrics,
+              moduleCount: remaining.length,
+              totalKwp: remaining.reduce((s, m) => s + m.wp, 0) / 1000,
+            },
+          };
+        }
+        const mod: PVModule = {
+          id: `mod-${slotId}`,
+          slotId,
+          roofFaceId: slot.roofFaceId,
+          vertices3d: slot.corners,
+          wp: settings.moduleWp,
+        };
+        const next = [...prev.modules, mod];
+        return {
+          ...prev,
+          modules: next,
+          metrics: {
+            ...prev.metrics,
+            moduleCount: next.length,
+            totalKwp: next.reduce((s, m) => s + m.wp, 0) / 1000,
+          },
+        };
+      });
+    },
+    [building, slots, settings.moduleWp],
+  );
+
+  const clearFaceModules = useCallback((faceId: string) => {
     setBuilding((prev) => {
       if (!prev) return prev;
-      const remaining = prev.modules.filter((m) => m.id !== id);
+      const remaining = prev.modules.filter((m) => m.roofFaceId !== faceId);
       if (remaining.length === prev.modules.length) return prev;
       return {
         ...prev,
@@ -387,33 +437,13 @@ export default function SolarPlanner({ mapSettings }: Props) {
     });
   }, []);
 
-  const handleMapRightClick = useCallback(
-    (p: LngLat) => {
-      if (!manualPlacementMode || !building) return;
-      const existing = findModuleUnderClick(p, building.modules, building.center);
-      if (!existing) return;
-      removeModuleById(existing.id);
-    },
-    [manualPlacementMode, building, removeModuleById],
-  );
+  const openFaceModal = useCallback((faceId: string) => {
+    setModalFaceId(faceId);
+  }, []);
 
-  const handlePlaceAtFacePoint = useCallback(
-    (point: Vec3, face: RoofFace) => {
-      if (!building) return;
-      const result = validatePlacementAtFacePoint(
-        point,
-        face,
-        building,
-        settings,
-      );
-      if (!result.ok) {
-        setToast(formatPlacementReason(result.reason, result.face?.label));
-        return;
-      }
-      addModuleToBuilding(result.module);
-    },
-    [building, settings, addModuleToBuilding],
-  );
+  const closeFaceModal = useCallback(() => {
+    setModalFaceId(null);
+  }, []);
 
   const recenter = useCallback(() => {
     setRecenterTick((t) => t + 1);
@@ -488,7 +518,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
           ridgeAzimuthDeg: manualParams.ridgeAzimuthDeg ?? undefined,
           label: data.building.address ?? "Per Klick gewählt",
         });
-        const computed = recomputeBuilding(built, built.roofFaces, settings);
+        const computed = recomputeBuilding(built, built.roofFaces);
         setBuilding(computed);
         // Slider-Wert auf die jetzt verwendete First-Richtung setzen, damit
         // der User danach unmittelbar an dieser Achse drehen kann.
@@ -524,7 +554,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
         setLoading(false);
       }
     },
-    [manualParams, recomputeBuilding, settings],
+    [manualParams, recomputeBuilding],
   );
 
   /* -------- Manual: Drawing (Polygon + optional First-Linie zeichnen) -------- */
@@ -590,7 +620,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
         ridgeAzimuthDeg: effectiveAz,
         label: "Manuell gezeichnet",
       });
-      const computed = recomputeBuilding(built, built.roofFaces, settings);
+      const computed = recomputeBuilding(built, built.roofFaces);
       setBuilding(computed);
       // Slider matcht jetzt die tatsächliche Hausrichtung.
       setManualParams((prev) => ({
@@ -616,6 +646,9 @@ export default function SolarPlanner({ mapSettings }: Props) {
     }
   }
 
+  /* Klicks aus der Karte für Picking- und Drawing-Modus. Slots und Face-
+   * Modal werden direkt in MapView per queryRenderedFeatures abgewickelt
+   * und kommen NICHT über diesen Callback rein. */
   const handleMapClick = useCallback(
     (p: LngLat) => {
       if (pickingMode) {
@@ -632,32 +665,9 @@ export default function SolarPlanner({ mapSettings }: Props) {
         }
         return;
       }
-      if (manualPlacementMode && building) {
-        // Linksklick platziert nur noch. Entfernen läuft über Rechtsklick.
-        const result = validatePlacementAtLngLat(p, building, settings);
-        if (!result.ok) {
-          setToast(formatPlacementReason(result.reason, result.face?.label));
-          return;
-        }
-        addModuleToBuilding(result.module);
-      }
     },
-    [
-      pickingMode,
-      drawingMode,
-      drawingPhase,
-      pickHouseAt,
-      manualPlacementMode,
-      building,
-      settings,
-      addModuleToBuilding,
-    ],
+    [pickingMode, drawingMode, drawingPhase, pickHouseAt],
   );
-
-  const toggleManualPlacement = useCallback(() => {
-    setManualPlacementMode((m) => !m);
-    setRotatingMode(false);
-  }, []);
 
   const undoLastPoint = useCallback(() => {
     if (drawingPhase === "ridge") {
@@ -689,7 +699,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
         ...f,
         selected: selectedIds.size === 0 ? f.selected : selectedIds.has(f.id),
       }));
-      setBuilding(recomputeBuilding(built, faces, settings));
+      setBuilding(recomputeBuilding(built, faces));
     } catch {
       /* Pitch/Form-Update darf bestehenden State nicht killen. */
     }
@@ -765,7 +775,10 @@ export default function SolarPlanner({ mapSettings }: Props) {
             <MapView
               building={building}
               mapSettings={mapSettings}
-              moduleSettings={settings}
+              slots={slots}
+              occupiedSlotIds={occupiedSlotIds}
+              onToggleSlot={toggleSlot}
+              onOpenFaceModal={openFaceModal}
               recenterTick={recenterTick}
               drawingMode={drawingMode}
               drawingPhase={drawingPhase}
@@ -773,13 +786,11 @@ export default function SolarPlanner({ mapSettings }: Props) {
               drawnPoints={drawnPoints}
               ridgePoints={ridgePoints}
               onMapClick={handleMapClick}
-              onMapRightClick={handleMapRightClick}
               cameraTarget={searchedLocation}
               cameraTick={cameraTick}
               rotatingMode={rotatingMode}
               currentRidgeAzimuthDeg={manualParams.ridgeAzimuthDeg}
               onRotateRequest={handleRotateRequest}
-              manualPlacementMode={manualPlacementMode}
             />
           </div>
           <div
@@ -792,34 +803,12 @@ export default function SolarPlanner({ mapSettings }: Props) {
             <Building3DView
               building={building}
               active={activeTab === "3d"}
-              manualPlacementMode={manualPlacementMode}
-              moduleSettings={settings}
-              onPlaceAtFacePoint={handlePlaceAtFacePoint}
-              onRemoveModule={removeModuleById}
+              slots={slots}
+              occupiedSlotIds={occupiedSlotIds}
+              onToggleSlot={toggleSlot}
+              onOpenFaceModal={openFaceModal}
             />
           </div>
-
-          {toast && (
-            <div
-              style={{
-                position: "absolute",
-                left: "50%",
-                bottom: 24,
-                transform: "translateX(-50%)",
-                zIndex: 20,
-                padding: "10px 16px",
-                background: "rgba(15, 23, 42, 0.92)",
-                color: "#ffffff",
-                fontSize: 13,
-                fontWeight: 500,
-                borderRadius: 8,
-                boxShadow: "0 10px 30px rgba(15, 23, 42, 0.25)",
-                pointerEvents: "none",
-              }}
-            >
-              {toast}
-            </div>
-          )}
         </div>
       </div>
       {!presentationMode && (
@@ -831,7 +820,6 @@ export default function SolarPlanner({ mapSettings }: Props) {
           onLoadDemo={() => void loadDemo()}
           onCycleDemo={cycleDemo}
           onRecenter={recenter}
-          onReplaceModules={replaceModules}
           onClearAllModules={clearAllModules}
           loading={loading}
           error={error}
@@ -867,15 +855,29 @@ export default function SolarPlanner({ mapSettings }: Props) {
         <PresentationOverlay
           building={building}
           providerLabel={providerLabel}
-          manualPlacementMode={manualPlacementMode}
-          onToggleManualPlacement={toggleManualPlacement}
-          onExit={() => {
-            setPresentationMode(false);
-            setManualPlacementMode(false);
-          }}
+          onExit={() => setPresentationMode(false)}
           onRecenter={recenter}
         />
       )}
+
+      {modalFaceId && building && (() => {
+        const face = building.roofFaces.find((f) => f.id === modalFaceId);
+        if (!face) return null;
+        const moduleCount = building.modules.filter(
+          (m) => m.roofFaceId === modalFaceId,
+        ).length;
+        return (
+          <FaceDetailModal
+            face={face}
+            moduleCount={moduleCount}
+            onClose={closeFaceModal}
+            onClearFaceModules={() => {
+              clearFaceModules(modalFaceId);
+              closeFaceModal();
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }
@@ -885,8 +887,6 @@ export default function SolarPlanner({ mapSettings }: Props) {
 type PresentationOverlayProps = {
   building: DetectedBuilding | null;
   providerLabel: string | null;
-  manualPlacementMode: boolean;
-  onToggleManualPlacement: () => void;
   onExit: () => void;
   onRecenter: () => void;
 };
@@ -894,8 +894,6 @@ type PresentationOverlayProps = {
 function PresentationOverlay({
   building,
   providerLabel,
-  manualPlacementMode,
-  onToggleManualPlacement,
   onExit,
   onRecenter,
 }: PresentationOverlayProps) {
@@ -957,25 +955,6 @@ function PresentationOverlay({
       >
         <button
           type="button"
-          onClick={onToggleManualPlacement}
-          style={{
-            padding: "10px 14px",
-            background: manualPlacementMode ? "#1e50e0" : "rgba(255,255,255,0.96)",
-            color: manualPlacementMode ? "#ffffff" : "#1e3a8a",
-            border: manualPlacementMode ? "none" : "1px solid #bfdbfe",
-            borderRadius: 10,
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-            boxShadow: "0 4px 12px rgba(15,23,42,0.10)",
-          }}
-        >
-          {manualPlacementMode
-            ? "✓ Modul-Modus beenden"
-            : "Module manuell setzen"}
-        </button>
-        <button
-          type="button"
           onClick={onRecenter}
           style={{
             padding: "10px 14px",
@@ -1010,31 +989,6 @@ function PresentationOverlay({
         </button>
       </div>
 
-      {manualPlacementMode && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: 24,
-            left: "50%",
-            transform: "translateX(-50%)",
-            padding: "12px 18px",
-            background: "rgba(30,80,224,0.96)",
-            color: "#ffffff",
-            borderRadius: 12,
-            fontSize: 13,
-            fontWeight: 500,
-            boxShadow: "0 8px 24px rgba(30,80,224,0.35)",
-            zIndex: 20,
-            textAlign: "center",
-            maxWidth: 520,
-          }}
-        >
-          <strong style={{ fontWeight: 700 }}>Manueller Modul-Modus:</strong>{" "}
-          Klick auf eine Dachfläche setzt ein Modul. Klick auf ein
-          bestehendes Modul entfernt es. Rechtsklick + Ziehen dreht die
-          360°-Ansicht.
-        </div>
-      )}
     </>
   );
 }

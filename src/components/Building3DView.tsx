@@ -3,35 +3,19 @@
 /**
  * Building3DView
  *
- * Freistehende Three.js-Szene, die das Gebäude entkoppelt von der Karte
- * rendert. Nutzt denselben Geometrie-Builder wie ThreeBuildingLayer
- * (`buildBuildingGroup`), damit beide Ansichten zwingend dieselbe
- * Geometrie zeigen.
+ * Freistehende Three.js-Szene mit dem Gebäude. Slot-basierte Platzierung:
+ * leere Modul-Slots werden als helle, semi-transparente Quads gezeichnet
+ * und sind klickbar. Klick auf einen Slot setzt oder entfernt das Modul,
+ * Klick auf eine Dachfläche außerhalb der Slots öffnet das Detail-Modal.
  *
- * Koordinatensystem: X = Ost, Y = Nord, Z = Höhe. Damit OrbitControls,
- * Kamera und Schatten sich daran orientieren, ist `camera.up = (0,0,1)`.
- *
- * Lifecycle:
- *   - 1× Mount: Scene, PerspectiveCamera, WebGLRenderer, OrbitControls,
- *     Sonne (mit Shadow-Map), AmbientLight, Bodenplane, RAF-Loop,
- *     ResizeObserver.
- *   - building-Prop wechselt: alte Building-Group disposen, neue über
- *     `buildBuildingGroup({ mode: "local" })` aufbauen, in die Szene
- *     hängen, Kamera-Target an die Building-Höhe anpassen.
- *   - Unmount: RAF stop, Controls dispose, Renderer dispose, alle
- *     Geometrien + Materialien disposen.
+ * Koordinatensystem: X = Ost, Y = Nord, Z = Höhe. `camera.up = (0, 0, 1)`.
  */
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-import type {
-  DetectedBuilding,
-  ModuleSettings,
-  RoofFace,
-  Vec3,
-} from "@/types/solar";
+import type { DetectedBuilding, ModuleSlot } from "@/types/solar";
 import {
   buildBuildingGroup,
   disposeBuildingGroup,
@@ -43,21 +27,17 @@ import {
   type Materials,
 } from "@/lib/map/materials";
 import { MAX_MODULES_PER_FACE } from "@/lib/constants";
-import {
-  createModuleAtFacePoint,
-  findModuleAtPoint3D,
-  validatePlacementAtFacePoint,
-} from "@/lib/geometry/manualModulePlacement";
+import { calculateEfficiency, efficiencyColor } from "@/lib/efficiency";
+import { orientationLabel } from "@/lib/orientationLabel";
 
 type Building3DViewProps = {
   building: DetectedBuilding | null;
   /** Wenn false, pausiert der RAF-Loop (Tab nicht sichtbar). */
   active: boolean;
-  /** Aktiviert Hover-Geist, Klick-Platzierung und Rechtsklick-Entfernen. */
-  manualPlacementMode: boolean;
-  moduleSettings: ModuleSettings;
-  onPlaceAtFacePoint: (point: Vec3, face: RoofFace) => void;
-  onRemoveModule: (id: string) => void;
+  slots: ModuleSlot[];
+  occupiedSlotIds: Set<string>;
+  onToggleSlot: (slotId: string) => void;
+  onOpenFaceModal: (faceId: string) => void;
 };
 
 type SelectedFaceInfo = {
@@ -75,10 +55,10 @@ const DEFAULT_CAM_TARGET = new THREE.Vector3(0, 0, 4);
 export default function Building3DView({
   building,
   active,
-  manualPlacementMode,
-  moduleSettings,
-  onPlaceAtFacePoint,
-  onRemoveModule,
+  slots,
+  occupiedSlotIds,
+  onToggleSlot,
+  onOpenFaceModal,
 }: Building3DViewProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -86,6 +66,7 @@ export default function Building3DView({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const buildingGroupRef = useRef<THREE.Group | null>(null);
+  const slotsGroupRef = useRef<THREE.Group | null>(null);
   const materialsRef = useRef<Materials | null>(null);
   const rafRef = useRef<number | null>(null);
   const activeRef = useRef(active);
@@ -93,15 +74,10 @@ export default function Building3DView({
 
   const buildingRef = useRef<DetectedBuilding | null>(building);
   buildingRef.current = building;
-  const manualPlacementRef = useRef(manualPlacementMode);
-  manualPlacementRef.current = manualPlacementMode;
-  const moduleSettingsRef = useRef(moduleSettings);
-  moduleSettingsRef.current = moduleSettings;
-  const onPlaceRef = useRef(onPlaceAtFacePoint);
-  onPlaceRef.current = onPlaceAtFacePoint;
-  const onRemoveRef = useRef(onRemoveModule);
-  onRemoveRef.current = onRemoveModule;
-  const ghostMeshRef = useRef<THREE.Mesh | null>(null);
+  const onToggleSlotRef = useRef(onToggleSlot);
+  onToggleSlotRef.current = onToggleSlot;
+  const onOpenFaceModalRef = useRef(onOpenFaceModal);
+  onOpenFaceModalRef.current = onOpenFaceModal;
 
   const [showModules, setShowModules] = useState(true);
   const [selectedFace, setSelectedFace] = useState<SelectedFaceInfo | null>(
@@ -117,7 +93,6 @@ export default function Building3DView({
     const w = mount.clientWidth || 1;
     const h = mount.clientHeight || 1;
 
-    // Scene + Kamera (Z-up).
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#f1f5f9");
     sceneRef.current = scene;
@@ -128,7 +103,6 @@ export default function Building3DView({
     camera.lookAt(DEFAULT_CAM_TARGET);
     cameraRef.current = camera;
 
-    // Renderer mit Schatten.
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(w, h);
@@ -138,7 +112,6 @@ export default function Building3DView({
     mount.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Lichter.
     const ambient = new THREE.AmbientLight(0xffffff, 0.55);
     scene.add(ambient);
     const sun = new THREE.DirectionalLight(0xffffff, 1.2);
@@ -154,7 +127,6 @@ export default function Building3DView({
     sun.shadow.bias = -0.0005;
     scene.add(sun);
 
-    // Bodenplane als Shadow-Receiver.
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(200, 200),
       new THREE.MeshStandardMaterial({
@@ -167,12 +139,6 @@ export default function Building3DView({
     ground.userData = { kind: "ground" };
     scene.add(ground);
 
-    // OrbitControls.
-    // - Azimuth (Drehung um die Up-Achse) explizit auf -Infinity..Infinity:
-    //   keine Begrenzung, der User kann das Haus unendlich oft umrunden.
-    // - Polar von ~5,7° (0,1 rad) bis knapp π/2: nicht ganz von senkrecht oben
-    //   und nicht unter den Boden, sonst flippt das Bild.
-    // - Damping aktiv, RAF-Loop ruft jeden Frame controls.update() auf.
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.minAzimuthAngle = -Infinity;
     controls.maxAzimuthAngle = Infinity;
@@ -188,34 +154,9 @@ export default function Building3DView({
     controls.update();
     controlsRef.current = controls;
 
-    // Materialien.
     const materials = createMaterials();
     materialsRef.current = materials;
 
-    // Ghost-Mesh für Hover-Vorschau bei manueller Modulplatzierung.
-    // 4 Vertices (quad), 2 Triangles via Index. Position-Attribute wird pro
-    // Mausbewegung neu gesetzt; Material-Farbe wechselt grün ↔ rot.
-    const ghostGeom = new THREE.BufferGeometry();
-    ghostGeom.setIndex([0, 1, 2, 0, 2, 3]);
-    ghostGeom.setAttribute(
-      "position",
-      new THREE.BufferAttribute(new Float32Array(12), 3),
-    );
-    const ghostMat = new THREE.MeshBasicMaterial({
-      color: 0x22c55e,
-      transparent: true,
-      opacity: 0.4,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    const ghost = new THREE.Mesh(ghostGeom, ghostMat);
-    ghost.visible = false;
-    ghost.userData = { kind: "ghost" };
-    ghost.renderOrder = 10;
-    scene.add(ghost);
-    ghostMeshRef.current = ghost;
-
-    // RAF-Loop.
     const animate = () => {
       rafRef.current = requestAnimationFrame(animate);
       if (!activeRef.current) return;
@@ -224,7 +165,6 @@ export default function Building3DView({
     };
     animate();
 
-    // Resize-Observer.
     const ro = new ResizeObserver(() => {
       const w2 = mount.clientWidth || 1;
       const h2 = mount.clientHeight || 1;
@@ -243,10 +183,11 @@ export default function Building3DView({
         disposeBuildingGroup(buildingGroupRef.current);
         buildingGroupRef.current = null;
       }
-      scene.remove(ghost);
-      ghostGeom.dispose();
-      ghostMat.dispose();
-      ghostMeshRef.current = null;
+      if (slotsGroupRef.current) {
+        scene.remove(slotsGroupRef.current);
+        disposeSlotGroup(slotsGroupRef.current);
+        slotsGroupRef.current = null;
+      }
       ground.geometry.dispose();
       (ground.material as THREE.Material).dispose();
       disposeMaterials(materials);
@@ -290,13 +231,30 @@ export default function Building3DView({
     scene.add(group);
     buildingGroupRef.current = group;
 
-    // Kamera-Target auf etwa halbe Firsthöhe.
     if (controls) {
       const ridge = estimateRidgeHeight(building);
       controls.target.set(0, 0, ridge / 2 || 4);
       controls.update();
     }
   }, [building]);
+
+  /* ------------------------------------------------------------------ */
+  /* Slots rendern (nur leere Slots; besetzte versteckt der Module-Mesh)*/
+  /* ------------------------------------------------------------------ */
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const materials = materialsRef.current;
+    if (!scene || !materials) return;
+    if (slotsGroupRef.current) {
+      scene.remove(slotsGroupRef.current);
+      disposeSlotGroup(slotsGroupRef.current);
+      slotsGroupRef.current = null;
+    }
+    if (slots.length === 0) return;
+    const group = buildSlotGroup(slots, occupiedSlotIds, materials);
+    scene.add(group);
+    slotsGroupRef.current = group;
+  }, [slots, occupiedSlotIds]);
 
   /* ------------------------------------------------------------------ */
   /* Module ein-/ausblenden                                             */
@@ -311,22 +269,8 @@ export default function Building3DView({
     });
   }, [showModules, building]);
 
-  /* Ghost ausblenden, sobald der manuelle Modus aus ist (oder das Building
-   * sich ändert). Auch das Highlight wird zurückgesetzt, weil das Info-Panel
-   * im Manuellen-Modus die UX stört. */
-  useEffect(() => {
-    if (!manualPlacementMode) {
-      const ghost = ghostMeshRef.current;
-      if (ghost) ghost.visible = false;
-    } else {
-      setSelectedFace(null);
-      applyHighlight(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manualPlacementMode, building]);
-
   /* ------------------------------------------------------------------ */
-  /* Pointer-Events: Klick / Hover / Rechtsklick                        */
+  /* Pointer-Events: Klick auf Slot / Modul / Roof                       */
   /* ------------------------------------------------------------------ */
   useEffect(() => {
     const renderer = rendererRef.current;
@@ -339,20 +283,6 @@ export default function Building3DView({
     let downY = 0;
     let isDown = false;
 
-    const setMouseFromEvent = (e: { clientX: number; clientY: number }) => {
-      const rect = dom.getBoundingClientRect();
-      const mouse = new THREE.Vector2(
-        ((e.clientX - rect.left) / rect.width) * 2 - 1,
-        -((e.clientY - rect.top) / rect.height) * 2 + 1,
-      );
-      ray.setFromCamera(mouse, camera);
-    };
-
-    const hideGhost = () => {
-      const ghost = ghostMeshRef.current;
-      if (ghost) ghost.visible = false;
-    };
-
     const onDown = (e: PointerEvent) => {
       isDown = true;
       downX = e.clientX;
@@ -364,38 +294,57 @@ export default function Building3DView({
       isDown = false;
       const dx = Math.abs(e.clientX - downX);
       const dy = Math.abs(e.clientY - downY);
-      if (dx > 4 || dy > 4) return; // Drag, kein Klick
+      if (dx > 4 || dy > 4) return;
 
       const group = buildingGroupRef.current;
+      const slotGroup = slotsGroupRef.current;
       const b = buildingRef.current;
-      if (!group || !b) return;
-      setMouseFromEvent(e);
+      if (!b) return;
+      const rect = dom.getBoundingClientRect();
+      const mouse = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1,
+      );
+      ray.setFromCamera(mouse, camera);
+
+      // Slot hat höchste Priorität (liegt knapp über dem Dach).
+      if (slotGroup) {
+        const slotHits = ray.intersectObject(slotGroup, true);
+        const slotHit = slotHits.find(
+          (h) => (h.object as THREE.Mesh).isMesh,
+        );
+        if (slotHit) {
+          const slotId = slotHit.object.userData?.slotId as
+            | string
+            | undefined;
+          if (slotId) {
+            onToggleSlotRef.current(slotId);
+            return;
+          }
+        }
+      }
+
+      if (!group) return;
       const hits = ray.intersectObject(group, true);
+      const moduleHit = hits.find(
+        (h) =>
+          (h.object as THREE.Mesh).isMesh &&
+          h.object.userData?.kind === "module",
+      );
+      if (moduleHit) {
+        const slotId = moduleHit.object.userData?.slotId as string | undefined;
+        if (slotId) {
+          onToggleSlotRef.current(slotId);
+          return;
+        }
+      }
       const roofHit = hits.find(
         (h) =>
           (h.object as THREE.Mesh).isMesh &&
           h.object.userData?.kind === "roof",
       );
-
-      if (manualPlacementRef.current) {
-        if (!roofHit) return;
-        const ud = roofHit.object.userData as { roofFaceId: string };
-        const face = b.roofFaces.find((f) => f.id === ud.roofFaceId);
-        if (!face) return;
-        onPlaceRef.current(
-          {
-            x: roofHit.point.x,
-            y: roofHit.point.y,
-            z: roofHit.point.z,
-          },
-          face,
-        );
-        return;
-      }
-
       if (!roofHit) {
         setSelectedFace(null);
-        applyHighlight(null);
         return;
       }
       const ud = roofHit.object.userData as {
@@ -416,140 +365,17 @@ export default function Building3DView({
         azimuthDeg: ud.azimuthDeg,
         moduleCount,
       });
-      applyHighlight(ud.roofFaceId);
-    };
-
-    const onMove = (e: PointerEvent) => {
-      if (!manualPlacementRef.current) {
-        hideGhost();
-        return;
-      }
-      const group = buildingGroupRef.current;
-      const b = buildingRef.current;
-      const ghost = ghostMeshRef.current;
-      if (!group || !b || !ghost) return;
-      setMouseFromEvent(e);
-      const hits = ray.intersectObject(group, true);
-      const roofHit = hits.find(
-        (h) =>
-          (h.object as THREE.Mesh).isMesh &&
-          h.object.userData?.kind === "roof",
-      );
-      if (!roofHit) {
-        ghost.visible = false;
-        return;
-      }
-      const ud = roofHit.object.userData as { roofFaceId: string };
-      const face = b.roofFaces.find((f) => f.id === ud.roofFaceId);
-      if (!face || !face.selected) {
-        ghost.visible = false;
-        return;
-      }
-      const point: Vec3 = {
-        x: roofHit.point.x,
-        y: roofHit.point.y,
-        z: roofHit.point.z,
-      };
-      const settings = moduleSettingsRef.current;
-      const candidate = createModuleAtFacePoint(point, face, settings);
-      if (!candidate) {
-        ghost.visible = false;
-        return;
-      }
-      const result = validatePlacementAtFacePoint(point, face, b, settings);
-      const positionsAttr = (ghost.geometry as THREE.BufferGeometry).getAttribute(
-        "position",
-      ) as THREE.BufferAttribute;
-      for (let i = 0; i < 4; i++) {
-        const v = candidate.vertices3d[i]!;
-        positionsAttr.setXYZ(i, v.x, v.y, v.z);
-      }
-      positionsAttr.needsUpdate = true;
-      ghost.geometry.computeVertexNormals();
-      (ghost.material as THREE.MeshBasicMaterial).color.set(
-        result.ok ? 0x22c55e : 0xef4444,
-      );
-      ghost.visible = true;
-    };
-
-    const onLeave = () => {
-      hideGhost();
-    };
-
-    const onContextMenu = (e: MouseEvent) => {
-      if (!manualPlacementRef.current) return;
-      e.preventDefault();
-      const group = buildingGroupRef.current;
-      const b = buildingRef.current;
-      if (!group || !b) return;
-      setMouseFromEvent(e);
-      const hits = ray.intersectObject(group, true);
-      const moduleHit = hits.find(
-        (h) =>
-          (h.object as THREE.Mesh).isMesh &&
-          h.object.userData?.kind === "module",
-      );
-      if (moduleHit) {
-        const ud = moduleHit.object.userData as { moduleId: string };
-        onRemoveRef.current(ud.moduleId);
-        return;
-      }
-      // Fallback: nearest module along raycast (greift Module, deren Mesh
-      // an der Stelle nicht direkt getroffen wird).
-      const roofHit = hits.find(
-        (h) => (h.object as THREE.Mesh).isMesh && h.object.userData?.kind === "roof",
-      );
-      if (!roofHit) return;
-      const point: Vec3 = {
-        x: roofHit.point.x,
-        y: roofHit.point.y,
-        z: roofHit.point.z,
-      };
-      const mod = findModuleAtPoint3D(point, b.modules);
-      if (mod) onRemoveRef.current(mod.id);
+      // Detail-Modal aufrufen.
+      onOpenFaceModalRef.current(ud.roofFaceId);
     };
 
     dom.addEventListener("pointerdown", onDown);
     dom.addEventListener("pointerup", onUp);
-    dom.addEventListener("pointermove", onMove);
-    dom.addEventListener("pointerleave", onLeave);
-    dom.addEventListener("contextmenu", onContextMenu);
     return () => {
       dom.removeEventListener("pointerdown", onDown);
       dom.removeEventListener("pointerup", onUp);
-      dom.removeEventListener("pointermove", onMove);
-      dom.removeEventListener("pointerleave", onLeave);
-      dom.removeEventListener("contextmenu", onContextMenu);
     };
   }, []);
-
-  /** Setzt Emissive auf dem markierten Roof-Mesh, entfernt es auf allen anderen. */
-  function applyHighlight(activeId: string | null) {
-    const group = buildingGroupRef.current;
-    if (!group) return;
-    group.traverse((obj) => {
-      if (obj.userData?.kind !== "roof") return;
-      const mesh = obj as THREE.Mesh;
-      if (!mesh.isMesh) return;
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      if (!mat || !("emissive" in mat)) return;
-      // Wir clonen das Material on-demand, damit das Highlight nicht
-      // alle anderen Flächen mit demselben gemeinsamen Material mit-färbt.
-      if (obj.userData.roofFaceId === activeId) {
-        if (!mesh.userData.__origMat) {
-          mesh.userData.__origMat = mat;
-          mesh.material = mat.clone();
-        }
-        const m = mesh.material as THREE.MeshStandardMaterial;
-        m.emissive = new THREE.Color(0x2563eb);
-        m.emissiveIntensity = 0.45;
-      } else if (mesh.userData.__origMat) {
-        (mesh.material as THREE.Material).dispose();
-        mesh.material = mesh.userData.__origMat as THREE.Material;
-        delete mesh.userData.__origMat;
-      }
-    });
-  }
 
   /* ------------------------------------------------------------------ */
   /* Reset-View                                                         */
@@ -644,8 +470,8 @@ export default function Building3DView({
             borderRadius: 10,
             boxShadow: "0 6px 20px rgba(15,23,42,0.14)",
             fontSize: 12,
-            minWidth: 200,
-            maxWidth: 260,
+            minWidth: 220,
+            maxWidth: 280,
           }}
         >
           <p
@@ -668,13 +494,19 @@ export default function Building3DView({
               color: "#0f172a",
             }}
           >
-            {selectedFace.label}
+            {orientationLabel(selectedFace.azimuthDeg)}
           </p>
-          <Row label="Fläche" value={`${selectedFace.areaM2.toFixed(1)} m²`} />
           <Row label="Neigung" value={`${selectedFace.pitchDeg.toFixed(0)}°`} />
+          <Row label="Fläche" value={`${selectedFace.areaM2.toFixed(1)} m²`} />
           <Row
-            label="Ausrichtung"
-            value={`${selectedFace.azimuthDeg.toFixed(0)}°`}
+            label="Effizienz"
+            value={`${calculateEfficiency(selectedFace.azimuthDeg, selectedFace.pitchDeg)} %`}
+            valueColor={efficiencyColor(
+              calculateEfficiency(
+                selectedFace.azimuthDeg,
+                selectedFace.pitchDeg,
+              ),
+            )}
           />
           <Row
             label="Module"
@@ -685,41 +517,68 @@ export default function Building3DView({
                 : "#0f172a"
             }
           />
-          <div
-            style={{
-              marginTop: 4,
-              height: 4,
-              background: "#e2e8f0",
-              borderRadius: 2,
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: `${Math.min(100, (selectedFace.moduleCount / MAX_MODULES_PER_FACE) * 100)}%`,
-                height: "100%",
-                background:
-                  selectedFace.moduleCount >= MAX_MODULES_PER_FACE
-                    ? "#e11d48"
-                    : "#1e50e0",
-                transition: "width 200ms ease",
-              }}
-            />
-          </div>
-          <p
-            style={{
-              margin: "6px 0 0",
-              fontSize: 10,
-              color: "#94a3b8",
-              userSelect: "all",
-            }}
-          >
-            ID: {selectedFace.id}
-          </p>
         </div>
       )}
     </div>
   );
+}
+
+/* ===================== Slot rendering helpers ===================== */
+
+function buildSlotGroup(
+  slots: ModuleSlot[],
+  occupiedSlotIds: Set<string>,
+  materials: Materials,
+): THREE.Group {
+  const group = new THREE.Group();
+  group.userData = { kind: "slots" };
+  for (const slot of slots) {
+    if (occupiedSlotIds.has(slot.id)) continue;
+    const [a, b, c, d] = slot.corners;
+    if (!a || !b || !c || !d) continue;
+    const positions = new Float32Array([
+      a.x, a.y, a.z,
+      b.x, b.y, b.z,
+      c.x, c.y, c.z,
+      a.x, a.y, a.z,
+      c.x, c.y, c.z,
+      d.x, d.y, d.z,
+    ]);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geom.computeVertexNormals();
+    const mesh = new THREE.Mesh(geom, materials.slotEmpty);
+    mesh.userData = {
+      kind: "slot",
+      slotId: slot.id,
+      roofFaceId: slot.roofFaceId,
+    };
+    mesh.renderOrder = 5;
+    group.add(mesh);
+
+    // Outline um den Slot.
+    const edgePos = new Float32Array([
+      a.x, a.y, a.z, b.x, b.y, b.z,
+      b.x, b.y, b.z, c.x, c.y, c.z,
+      c.x, c.y, c.z, d.x, d.y, d.z,
+      d.x, d.y, d.z, a.x, a.y, a.z,
+    ]);
+    const edgeGeom = new THREE.BufferGeometry();
+    edgeGeom.setAttribute("position", new THREE.BufferAttribute(edgePos, 3));
+    const lines = new THREE.LineSegments(edgeGeom, materials.slotEmptyEdge);
+    lines.userData = { kind: "slot-edge", slotId: slot.id };
+    lines.renderOrder = 6;
+    group.add(lines);
+  }
+  return group;
+}
+
+function disposeSlotGroup(group: THREE.Group) {
+  group.traverse((obj) => {
+    const m = obj as THREE.Mesh | THREE.LineSegments;
+    const geom = m.geometry as THREE.BufferGeometry | undefined;
+    geom?.dispose();
+  });
 }
 
 function Row({

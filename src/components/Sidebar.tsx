@@ -30,7 +30,6 @@ type Props = {
   onLoadDemo: () => void;
   onCycleDemo: () => void;
   onRecenter: () => void;
-  onReplaceModules: () => void;
   onClearAllModules: () => void;
   loading: boolean;
   error: string | null;
@@ -94,7 +93,6 @@ export default function Sidebar({
   onLoadDemo,
   onCycleDemo,
   onRecenter,
-  onReplaceModules,
   onClearAllModules,
   loading,
   error,
@@ -262,16 +260,9 @@ export default function Sidebar({
             <button
               type="button"
               onClick={onRecenter}
-              className="rounded-md border border-slate-300 bg-white px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              className="col-span-2 rounded-md border border-slate-300 bg-white px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
             >
               Ansicht zentrieren
-            </button>
-            <button
-              type="button"
-              onClick={onReplaceModules}
-              className="rounded-md border border-slate-300 bg-white px-2 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Module neu platzieren
             </button>
             <button
               type="button"
