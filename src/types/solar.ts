@@ -23,6 +23,7 @@ export type DataSource =
   | "google-solar"
   | "lod2"
   | "osm"
+  | "vision"
   | "manual";
 
 /**

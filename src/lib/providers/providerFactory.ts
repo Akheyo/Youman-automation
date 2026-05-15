@@ -2,19 +2,22 @@
  * Wählt eine Provider-Kette für RoofDetection.
  *
  * Standard-Reihenfolge (Auto-Modus):
- *   1. Google Solar API – beste Solar-Stats und Panel-Layouts (wenn Key gesetzt).
- *   2. OSM Overpass     – echter Footprint des Gebäudes, immer verfügbar.
- *   3. Mock             – Fallback mit generischen Walmdach-/Satteldach-Templates.
+ *   1. LoD2 (wenn registriert)         – amtliche 3D-Geometrie für DE.
+ *   2. Google Solar API (wenn Key)     – beste Solar-Stats und Panel-Layouts.
+ *   3. Vision Orientation (wenn Key)   – KI-Analyse des Satellitenbilds.
+ *   4. OSM Overpass                    – echter Footprint des Gebäudes.
+ *   5. Mock                            – generischer Notnagel.
  *
- * LoD2 ist optional und wird nur aktiv, wenn eine konkrete `Lod2DataSource`
- * eingehängt wird (siehe lod2RoofProvider.ts). Der ProviderFactory selbst
- * weiß nichts von einzelnen LoD2-Quellen – er konsumiert nur das Interface.
+ * Vision und LoD2 sind optional und werden nur aktiviert, wenn die jeweiligen
+ * Voraussetzungen erfüllt sind (ANTHROPIC_API_KEY bzw. registrierte
+ * Lod2DataSource).
  */
 
 import type { RoofDetectionProvider } from "./roofDetectionProvider";
 import { MockRoofDetectionProvider } from "./mockRoofDetectionProvider";
 import { GoogleSolarRoofProvider } from "./googleSolarRoofProvider";
 import { OSMRoofProvider } from "./osmRoofProvider";
+import { VisionOrientationProvider } from "./visionOrientation";
 import {
   Lod2RoofProvider,
   type Lod2DataSource,
@@ -25,6 +28,7 @@ export type ProviderOverride =
   | "mock"
   | "google-solar"
   | "osm"
+  | "vision"
   | "lod2";
 
 export type ProviderChain = {
@@ -48,10 +52,14 @@ export function selectProviderChain(
   override: ProviderOverride = "auto",
 ): ProviderChain {
   const googleKey = process.env.GOOGLE_SOLAR_API_KEY;
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const mock = new MockRoofDetectionProvider();
   const osm = new OSMRoofProvider();
   const lod2 = new Lod2RoofProvider(lod2Source);
   const google = googleKey ? new GoogleSolarRoofProvider(googleKey) : null;
+  const vision = anthropicKey
+    ? new VisionOrientationProvider(anthropicKey)
+    : null;
 
   if (override === "mock") {
     return { providers: [mock], reason: "Override: mock." };
@@ -88,12 +96,21 @@ export function selectProviderChain(
       reason: "Override: Google Solar, Fallback OSM/Mock.",
     };
   }
+  if (override === "vision") {
+    if (!vision) {
+      return {
+        providers: [osm, mock],
+        reason:
+          "Override Vision angefragt, aber ANTHROPIC_API_KEY fehlt – nutze OSM, dann Mock.",
+      };
+    }
+    return {
+      providers: [vision, osm, mock],
+      reason: "Override: Vision Satellitenbild-Analyse, Fallback OSM/Mock.",
+    };
+  }
 
-  // auto – Standardkette. Wichtig: Mock wird hier bewusst NICHT angehängt.
-  // 'Dach automatisch erkennen' soll ehrlich scheitern, wenn weder Google
-  // Solar noch OSM Daten haben – statt einen generischen Mock-Walmdach
-  // anzuzeigen, der den User in die Irre führt. Mock ist explizit über
-  // 'Demo laden' (Frontend) bzw. provider="mock" Override erreichbar.
+  // auto – Standardkette. Mock liegt am Ende als letzter Notnagel.
   const chain: RoofDetectionProvider[] = [];
   const reasons: string[] = [];
   if (lod2Source) {
@@ -104,8 +121,14 @@ export function selectProviderChain(
     chain.push(google);
     reasons.push("Google Solar API");
   }
+  if (vision) {
+    chain.push(vision);
+    reasons.push("Claude Vision (Satellitenbild)");
+  }
   chain.push(osm);
   reasons.push("OSM Overpass");
+  chain.push(mock);
+  reasons.push("Mock");
 
   return {
     providers: chain,

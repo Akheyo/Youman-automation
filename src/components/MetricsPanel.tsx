@@ -73,6 +73,8 @@ function sourceLabel(s: DetectedBuilding["source"]): string {
       return "LoD2";
     case "osm":
       return "OpenStreetMap";
+    case "vision":
+      return "Vision (Satellitenbild)";
     case "manual":
       return "Manuell";
   }

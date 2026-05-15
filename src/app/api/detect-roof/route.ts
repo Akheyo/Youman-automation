@@ -33,7 +33,7 @@ type DetectRoofBody = {
   address?: string;
   lat?: number;
   lng?: number;
-  provider?: "auto" | "mock" | "google-solar" | "osm" | "lod2";
+  provider?: "auto" | "mock" | "google-solar" | "osm" | "vision" | "lod2";
 };
 
 export async function POST(req: Request) {

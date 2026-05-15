@@ -655,6 +655,8 @@ export default function SolarPlanner({ mapSettings }: Props) {
         return "LoD2 (amtlich)";
       case "osm":
         return "OpenStreetMap";
+      case "vision":
+        return "KI-Analyse Satellitenbild";
       case "manual":
         return "Manuell gezeichnet";
       case "mock":
