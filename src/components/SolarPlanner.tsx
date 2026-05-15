@@ -29,6 +29,7 @@ import {
   findFaceUnderClick,
   findModuleUnderClick,
 } from "@/lib/geometry/manualModulePlacement";
+import { MAX_MODULES_PER_FACE } from "@/lib/constants";
 import { fitOrientedBox } from "@/lib/geometry/roofShapeHeuristic";
 import Building3DView from "./Building3DView";
 import {
@@ -137,6 +138,14 @@ export default function SolarPlanner({ mapSettings }: Props) {
     null,
   );
   const [cameraTick, setCameraTick] = useState(0);
+  // Transienter Toast, der nach 3 s wieder verschwindet (z. B. Limit erreicht).
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 3000);
+    return () => window.clearTimeout(t);
+  }, [toast]);
 
   /* -------- Helpers -------- */
 
@@ -331,6 +340,17 @@ export default function SolarPlanner({ mapSettings }: Props) {
       return recomputeBuilding(prev, prev.roofFaces, settings);
     });
   }, [recomputeBuilding, settings]);
+
+  const clearAllModules = useCallback(() => {
+    setBuilding((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        modules: [],
+        metrics: { ...prev.metrics, moduleCount: 0, totalKwp: 0 },
+      };
+    });
+  }, []);
 
   const recenter = useCallback(() => {
     setRecenterTick((t) => t + 1);
@@ -576,6 +596,15 @@ export default function SolarPlanner({ mapSettings }: Props) {
         // 2) Klick auf eine ausgewählte Dachfläche → neues Modul setzen.
         const face = findFaceUnderClick(p, building);
         if (!face) return;
+        const modulesOnFace = building.modules.filter(
+          (m) => m.roofFaceId === face.id,
+        ).length;
+        if (modulesOnFace >= MAX_MODULES_PER_FACE) {
+          setToast(
+            `Maximum von ${MAX_MODULES_PER_FACE} Modulen auf „${face.label}" erreicht.`,
+          );
+          return;
+        }
         const mod = createModuleAtClick(p, face, building, settings);
         if (!mod) return;
         setBuilding((prev) => {
@@ -715,6 +744,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
             <MapView
               building={building}
               mapSettings={mapSettings}
+              moduleSettings={settings}
               recenterTick={recenterTick}
               drawingMode={drawingMode}
               drawingPhase={drawingPhase}
@@ -739,6 +769,28 @@ export default function SolarPlanner({ mapSettings }: Props) {
           >
             <Building3DView building={building} active={activeTab === "3d"} />
           </div>
+
+          {toast && (
+            <div
+              style={{
+                position: "absolute",
+                left: "50%",
+                bottom: 24,
+                transform: "translateX(-50%)",
+                zIndex: 20,
+                padding: "10px 16px",
+                background: "rgba(15, 23, 42, 0.92)",
+                color: "#ffffff",
+                fontSize: 13,
+                fontWeight: 500,
+                borderRadius: 8,
+                boxShadow: "0 10px 30px rgba(15, 23, 42, 0.25)",
+                pointerEvents: "none",
+              }}
+            >
+              {toast}
+            </div>
+          )}
         </div>
       </div>
       {!presentationMode && (
@@ -751,6 +803,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
           onCycleDemo={cycleDemo}
           onRecenter={recenter}
           onReplaceModules={replaceModules}
+          onClearAllModules={clearAllModules}
           loading={loading}
           error={error}
           building={building}

@@ -37,6 +37,7 @@ import {
   disposeMaterials,
   type Materials,
 } from "@/lib/map/materials";
+import { MAX_MODULES_PER_FACE } from "@/lib/constants";
 
 type Building3DViewProps = {
   building: DetectedBuilding | null;
@@ -480,7 +481,36 @@ export default function Building3DView({
             label="Ausrichtung"
             value={`${selectedFace.azimuthDeg.toFixed(0)}°`}
           />
-          <Row label="Module" value={`${selectedFace.moduleCount}`} />
+          <Row
+            label="Module"
+            value={`${selectedFace.moduleCount} / ${MAX_MODULES_PER_FACE}`}
+            valueColor={
+              selectedFace.moduleCount >= MAX_MODULES_PER_FACE
+                ? "#e11d48"
+                : "#0f172a"
+            }
+          />
+          <div
+            style={{
+              marginTop: 4,
+              height: 4,
+              background: "#e2e8f0",
+              borderRadius: 2,
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${Math.min(100, (selectedFace.moduleCount / MAX_MODULES_PER_FACE) * 100)}%`,
+                height: "100%",
+                background:
+                  selectedFace.moduleCount >= MAX_MODULES_PER_FACE
+                    ? "#e11d48"
+                    : "#1e50e0",
+                transition: "width 200ms ease",
+              }}
+            />
+          </div>
           <p
             style={{
               margin: "6px 0 0",
@@ -497,7 +527,15 @@ export default function Building3DView({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({
+  label,
+  value,
+  valueColor,
+}: {
+  label: string;
+  value: string;
+  valueColor?: string;
+}) {
   return (
     <div
       style={{
@@ -508,7 +546,9 @@ function Row({ label, value }: { label: string; value: string }) {
       }}
     >
       <span style={{ color: "#64748b" }}>{label}</span>
-      <span style={{ color: "#0f172a", fontWeight: 500 }}>{value}</span>
+      <span style={{ color: valueColor ?? "#0f172a", fontWeight: 500 }}>
+        {value}
+      </span>
     </div>
   );
 }

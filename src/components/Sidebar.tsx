@@ -31,6 +31,7 @@ type Props = {
   onCycleDemo: () => void;
   onRecenter: () => void;
   onReplaceModules: () => void;
+  onClearAllModules: () => void;
   loading: boolean;
   error: string | null;
   building: DetectedBuilding | null;
@@ -94,6 +95,7 @@ export default function Sidebar({
   onCycleDemo,
   onRecenter,
   onReplaceModules,
+  onClearAllModules,
   loading,
   error,
   building,
@@ -248,7 +250,11 @@ export default function Sidebar({
         </Section>
 
         <Section title="Kennzahlen" step={5}>
-          <MetricsPanel building={building} providerName={providerLabel} />
+          <MetricsPanel
+            building={building}
+            providerName={providerLabel}
+            onClearAllModules={onClearAllModules}
+          />
         </Section>
 
         <Section title="Aktionen">

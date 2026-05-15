@@ -28,6 +28,7 @@ import {
   normalize,
   subtract,
 } from "@/lib/geometry/roofMath";
+import { MAX_MODULES_PER_FACE } from "@/lib/constants";
 
 type UVPoint = { u: number; v: number };
 
@@ -105,8 +106,9 @@ export function placeModulesOnRoofFace(
   const modules: PVModule[] = [];
   let idx = 0;
 
-  for (let cv = minV; cv + moduleV <= maxV + 1e-6; cv += stepV) {
+  outer: for (let cv = minV; cv + moduleV <= maxV + 1e-6; cv += stepV) {
     for (let cu = minU; cu + moduleU <= maxU + 1e-6; cu += stepU) {
+      if (modules.length >= MAX_MODULES_PER_FACE) break outer;
       const corners2D: UVPoint[] = [
         { u: cu, v: cv },
         { u: cu + moduleU, v: cv },

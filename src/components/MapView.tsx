@@ -20,13 +20,26 @@ import maplibregl, {
 } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import type { DetectedBuilding, LngLat, MapSettings } from "@/types/solar";
+import type {
+  DetectedBuilding,
+  LngLat,
+  MapSettings,
+  ModuleSettings,
+} from "@/types/solar";
 import { NativeBuildingLayer } from "@/lib/map/NativeBuildingLayer";
 import { ThreeBuildingLayer } from "@/lib/map/ThreeBuildingLayer";
+import {
+  createModuleAtClick,
+  findFaceUnderClick,
+} from "@/lib/geometry/manualModulePlacement";
+import { localMetersToLngLat } from "@/lib/geometry/coordinates";
+import { MAX_MODULES_PER_FACE } from "@/lib/constants";
 
 type MapViewProps = {
   building: DetectedBuilding | null;
   mapSettings: MapSettings;
+  /** Module-Settings für die Ghost-Vorschau bei der manuellen Platzierung. */
+  moduleSettings: ModuleSettings;
   /** Bei jeder Erhöhung wird die Kamera neu auf das Gebäude zentriert. */
   recenterTick: number;
   /** Drawing-Modus: Polygon-Eckpunkte / First-Linie sammeln. */
@@ -58,6 +71,14 @@ const DRAW_SRC = "youman-draw";
 const DRAW_LINE_LAYER = "youman-draw-line";
 const DRAW_FILL_LAYER = "youman-draw-fill";
 const DRAW_POINT_LAYER = "youman-draw-points";
+
+const GHOST_SRC = "youman-ghost";
+const GHOST_FILL_LAYER = "youman-ghost-fill";
+const GHOST_LINE_LAYER = "youman-ghost-line";
+
+function emptyGhost(): GeoJSON.FeatureCollection {
+  return { type: "FeatureCollection", features: [] };
+}
 
 function buildStyle(
   tileUrl: string | undefined,
@@ -110,6 +131,7 @@ function buildStyle(
 export default function MapView({
   building,
   mapSettings,
+  moduleSettings,
   recenterTick,
   drawingMode,
   drawingPhase,
@@ -140,6 +162,8 @@ export default function MapView({
   ridgeAzRef.current = currentRidgeAzimuthDeg;
   const onRotateRequestRef = useRef(onRotateRequest);
   onRotateRequestRef.current = onRotateRequest;
+  const moduleSettingsRef = useRef(moduleSettings);
+  moduleSettingsRef.current = moduleSettings;
 
   const style = useMemo(
     () => buildStyle(mapSettings.tileUrl, mapSettings.tileAttribution),
@@ -252,6 +276,41 @@ export default function MapView({
         },
       });
 
+      // Ghost-Vorschau für manuelle Modulplatzierung: grün wenn Platz, rot
+      // wenn die jeweilige Dachfläche bereits am 32er-Limit ist.
+      mapRef.current.addSource(GHOST_SRC, {
+        type: "geojson",
+        data: emptyGhost(),
+      });
+      mapRef.current.addLayer({
+        id: GHOST_FILL_LAYER,
+        type: "fill",
+        source: GHOST_SRC,
+        paint: {
+          "fill-color": [
+            "case",
+            ["==", ["get", "full"], true],
+            "#ef4444",
+            "#22c55e",
+          ],
+          "fill-opacity": 0.45,
+        },
+      });
+      mapRef.current.addLayer({
+        id: GHOST_LINE_LAYER,
+        type: "line",
+        source: GHOST_SRC,
+        paint: {
+          "line-color": [
+            "case",
+            ["==", ["get", "full"], true],
+            "#dc2626",
+            "#16a34a",
+          ],
+          "line-width": 2,
+        },
+      });
+
       const b = buildingRef.current;
       if (b) {
         layer.setBuilding(b);
@@ -330,6 +389,73 @@ export default function MapView({
     else if (rotatingMode) canvas.style.cursor = "grab";
     else canvas.style.cursor = "";
   }, [drawingMode, pickingMode, rotatingMode, manualPlacementMode]);
+
+  /* Hover-Vorschau in der manuellen Platzierung: Geist-Modul an der
+   * Mausposition. Farbe = grün, solange auf der Fläche noch Platz ist;
+   * rot, wenn die Fläche bereits 32 Module trägt. */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const setGhost = (data: GeoJSON.FeatureCollection) => {
+      const src = map.getSource(GHOST_SRC) as
+        | maplibregl.GeoJSONSource
+        | undefined;
+      src?.setData(data);
+    };
+    if (!manualPlacementMode || !building) {
+      setGhost(emptyGhost());
+      return;
+    }
+    const onMove = (e: maplibregl.MapMouseEvent) => {
+      const b = buildingRef.current;
+      if (!b) return;
+      const click: LngLat = { lng: e.lngLat.lng, lat: e.lngLat.lat };
+      const face = findFaceUnderClick(click, b);
+      if (!face) {
+        setGhost(emptyGhost());
+        return;
+      }
+      const mod = createModuleAtClick(
+        click,
+        face,
+        b,
+        moduleSettingsRef.current,
+      );
+      if (!mod) {
+        setGhost(emptyGhost());
+        return;
+      }
+      const ring = mod.vertices3d.map((v) =>
+        localMetersToLngLat(v.x, v.y, b.center.lng, b.center.lat),
+      );
+      ring.push(ring[0]!);
+      const moduleCount = b.modules.filter(
+        (m) => m.roofFaceId === face.id,
+      ).length;
+      const full = moduleCount >= MAX_MODULES_PER_FACE;
+      setGhost({
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: { full },
+            geometry: {
+              type: "Polygon",
+              coordinates: [ring.map((p) => [p.lng, p.lat])],
+            },
+          },
+        ],
+      });
+    };
+    const onLeave = () => setGhost(emptyGhost());
+    map.on("mousemove", onMove);
+    map.on("mouseout", onLeave);
+    return () => {
+      map.off("mousemove", onMove);
+      map.off("mouseout", onLeave);
+      setGhost(emptyGhost());
+    };
+  }, [manualPlacementMode, building]);
 
   /* Drag-to-rotate: Mausziehen dreht das Haus um seinen Mittelpunkt.
    * Während aktiv ist MapLibre's Pan/Rotate disabled. */
