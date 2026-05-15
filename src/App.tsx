@@ -262,8 +262,8 @@ export default function App() {
               Daten manuell zwischen PCs übertragen
             </div>
             <p className="text-xs text-slate-500 mb-2">
-              Auf PC 1 <b>Exportieren</b> klicken → Datei per Mail/USB an PC 2 senden → dort
-              <b> Importieren</b> klicken. Importieren ersetzt alle aktuellen Daten auf diesem PC.
+              Auf einem Gerät <b>Exportieren</b> klicken → Datei per Mail/USB an das andere Gerät senden → dort
+              <b> Importieren</b> klicken. Importieren ersetzt alle aktuellen Daten auf diesem Gerät.
             </p>
             <div className="grid grid-cols-2 gap-2">
               <button

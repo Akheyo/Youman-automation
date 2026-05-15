@@ -22,13 +22,16 @@ import {
 } from '@/lib/storage';
 import {
   CloudSyncError,
+  clearSyncMeta,
   generateSyncCode,
   isValidSyncCode,
   loadLocalConfig,
+  loadSyncMeta,
   normalizeSyncCode,
   pullFromCloud,
   pushToCloud,
   saveLocalConfig,
+  saveSyncMeta,
 } from '@/lib/cloudSync';
 import { createPoloSeed } from '@/lib/seed';
 
@@ -88,7 +91,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [localConfig, setLocalConfig] = useState<LocalConfig>(DEFAULT_LOCAL_CONFIG);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('off');
   const [syncError, setSyncError] = useState<string | null>(null);
-  const [cloudTimestamp, setCloudTimestamp] = useState<string | null>(null);
+  const [cloudTimestamp, setCloudTimestamp] = useState<string | null>(
+    () => loadSyncMeta().cloudTimestamp,
+  );
 
   // Refs zur Vermeidung von Race-Conditions
   const skipNextSaveRef = useRef<boolean>(true);
@@ -97,6 +102,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const localConfigRef = useRef<LocalConfig>(DEFAULT_LOCAL_CONFIG);
   const vehiclesRef = useRef<Vehicle[]>([]);
   const settingsRef = useRef<Settings>(DEFAULT_SETTINGS);
+  // True, solange lokale Änderungen noch nicht in die Cloud gepusht sind.
+  // Verhindert, dass ein Polling-Pull die ungespeicherten Änderungen überschreibt.
+  const localDirtyRef = useRef<boolean>(false);
+  // True, solange ein cloudPush gerade läuft. Verhindert paralleles Pull/Push.
+  const pushInFlightRef = useRef<boolean>(false);
 
   useEffect(() => {
     cloudTimestampRef.current = cloudTimestamp;
@@ -141,42 +151,64 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* ---------- Auto-save (lokal + cloud) ---------- */
+  /* ---------- Disk-Save (sofort, ohne Debounce) ---------- */
+  // Festplatte wird bei jeder Änderung sofort beschrieben, damit ein schneller
+  // App-Close keine Daten verliert. Atomar (siehe storage.ts).
   useEffect(() => {
     if (!initialLoadDoneRef.current) return;
     if (skipNextSaveRef.current) {
       skipNextSaveRef.current = false;
       return;
     }
+    void saveAll(vehicles, settings).then((res) => {
+      setLastSyncedAt(res.timestamp);
+    });
+    // Markiere lokale Änderung als ungepushed — schützt vor Polling-Pull-Overwrite.
+    const cfg = localConfigRef.current;
+    if (cfg.syncEnabled && cfg.syncCode) {
+      localDirtyRef.current = true;
+    }
+  }, [vehicles, settings]);
+
+  /* ---------- Cloud-Push (debounced) ---------- */
+  // Cloud-Push wird gedrosselt, damit schnelle Tipper nicht jedes Tastendruck-Update
+  // hochladen. Nur wenn `localDirtyRef` true ist und die Debounce-Phase überlebt,
+  // wird tatsächlich gepusht.
+  useEffect(() => {
+    if (!initialLoadDoneRef.current) return;
+    const cfg = localConfigRef.current;
+    if (!cfg.syncEnabled || !cfg.syncCode) return;
+    if (!localDirtyRef.current) return;
+    const code = cfg.syncCode;
     const handle = setTimeout(() => {
-      void saveAll(vehicles, settings).then((res) => {
-        setLastSyncedAt(res.timestamp);
-      });
-      const cfg = localConfigRef.current;
-      if (cfg.syncEnabled && cfg.syncCode) {
-        void cloudPush(cfg.syncCode);
-      }
-    }, 400);
+      if (localDirtyRef.current) void cloudPush(code);
+    }, 800);
     return () => clearTimeout(handle);
   }, [vehicles, settings]);
 
   /* ---------- Cloud Pull & Push ---------- */
 
   const cloudPull = useCallback(async (code: string) => {
+    // Wenn lokale Änderungen noch nicht gepusht sind oder ein Push läuft,
+    // KEIN Pull — sonst überschreibt die Cloud unsere ungespeicherten Daten.
+    if (localDirtyRef.current || pushInFlightRef.current) return;
     setSyncStatus('syncing');
     setSyncError(null);
     try {
       const entry = await pullFromCloud(code);
       if (entry.exists && entry.payload && entry.updatedAt) {
-        // Nur übernehmen, wenn der Cloud-Stand neuer ist als unser zuletzt gesehener
-        if (
-          !cloudTimestampRef.current ||
-          new Date(entry.updatedAt) > new Date(cloudTimestampRef.current)
-        ) {
-          skipNextSaveRef.current = true; // verhindert direktes Zurückschreiben
+        const cloudTs = cloudTimestampRef.current;
+        // Cloud nur übernehmen, wenn sie *strikt* neuer ist. Wenn wir noch keinen
+        // Stand kennen (cloudTs == null), nehmen wir den Cloud-Stand an —
+        // typischer Fall: erster Start nach "Vorhandenem Sync beitreten".
+        const cloudIsNewer =
+          !cloudTs || new Date(entry.updatedAt) > new Date(cloudTs);
+        if (cloudIsNewer) {
+          skipNextSaveRef.current = true;
           setVehicles(entry.payload.vehicles);
           setSettings(entry.payload.settings);
           setCloudTimestamp(entry.updatedAt);
+          saveSyncMeta({ cloudTimestamp: entry.updatedAt });
           setLastSyncedAt(entry.updatedAt);
         }
       }
@@ -189,6 +221,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const cloudPush = useCallback(async (code: string) => {
+    if (pushInFlightRef.current) return;
+    pushInFlightRef.current = true;
     setSyncStatus('syncing');
     setSyncError(null);
     try {
@@ -197,12 +231,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         settings: settingsRef.current,
       });
       setCloudTimestamp(result.updatedAt);
+      saveSyncMeta({ cloudTimestamp: result.updatedAt });
       setLastSyncedAt(result.updatedAt);
+      // Erfolgreich gepusht → lokal nicht mehr dirty.
+      localDirtyRef.current = false;
       setSyncStatus('online');
     } catch (e) {
       const msg = e instanceof CloudSyncError ? e.message : 'Sync fehlgeschlagen.';
       setSyncError(msg);
       setSyncStatus('offline');
+      // localDirty bleibt true → nächster Auto-Push-Versuch wird's nochmal probieren.
+    } finally {
+      pushInFlightRef.current = false;
     }
   }, []);
 
@@ -249,8 +289,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const enableSyncWithNewCode = useCallback(async () => {
     const code = generateSyncCode();
+    // Sync-Meta zurücksetzen — neuer Code, neuer Cloud-Stand.
+    clearSyncMeta();
+    setCloudTimestamp(null);
     updateLocalConfig({ syncEnabled: true, syncCode: code });
-    // Sofort die aktuellen Daten in die Cloud schieben, damit der zweite PC sie findet
+    // Lokale Daten sind quasi der initiale Stand für den neuen Sync.
+    localDirtyRef.current = true;
     await cloudPush(code);
     return code;
   }, [cloudPush, updateLocalConfig]);
@@ -266,9 +310,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         throw new Error('Zu diesem Sync-Code wurden keine Daten gefunden.');
       }
       skipNextSaveRef.current = true;
+      localDirtyRef.current = false;
       setVehicles(entry.payload.vehicles);
       setSettings(entry.payload.settings);
       setCloudTimestamp(entry.updatedAt);
+      saveSyncMeta({ cloudTimestamp: entry.updatedAt });
       setLastSyncedAt(entry.updatedAt);
       updateLocalConfig({ syncEnabled: true, syncCode: code });
       setSyncStatus('online');
@@ -281,6 +327,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     updateLocalConfig({ syncEnabled: false, syncCode: null });
     setSyncStatus('off');
     setCloudTimestamp(null);
+    clearSyncMeta();
+    localDirtyRef.current = false;
   }, [updateLocalConfig]);
 
   const syncNow = useCallback(async () => {

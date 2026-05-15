@@ -138,6 +138,7 @@ export async function pushToCloud(
 /* ------------------------------------------------------------------ */
 
 const LOCAL_CONFIG_KEY = 'daev.localConfig.v1';
+const SYNC_META_KEY = 'daev.syncMeta.v1';
 
 export function loadLocalConfig(): LocalConfig {
   if (typeof window === 'undefined') {
@@ -161,4 +162,36 @@ export function loadLocalConfig(): LocalConfig {
 
 export function saveLocalConfig(config: LocalConfig): void {
   localStorage.setItem(LOCAL_CONFIG_KEY, JSON.stringify(config));
+}
+
+/* ------------------------------------------------------------------ */
+/* SyncMeta — persistente Cloud-Zeitstempel pro Gerät                 */
+/* ------------------------------------------------------------------ */
+
+export interface SyncMeta {
+  /** Letzter bekannter Cloud-Stand-Zeitstempel (entweder gepusht oder geholt). */
+  cloudTimestamp: string | null;
+}
+
+export function loadSyncMeta(): SyncMeta {
+  if (typeof window === 'undefined') return { cloudTimestamp: null };
+  try {
+    const raw = localStorage.getItem(SYNC_META_KEY);
+    if (!raw) return { cloudTimestamp: null };
+    const parsed = JSON.parse(raw) as Partial<SyncMeta>;
+    return {
+      cloudTimestamp:
+        typeof parsed.cloudTimestamp === 'string' ? parsed.cloudTimestamp : null,
+    };
+  } catch {
+    return { cloudTimestamp: null };
+  }
+}
+
+export function saveSyncMeta(meta: SyncMeta): void {
+  localStorage.setItem(SYNC_META_KEY, JSON.stringify(meta));
+}
+
+export function clearSyncMeta(): void {
+  localStorage.removeItem(SYNC_META_KEY);
 }

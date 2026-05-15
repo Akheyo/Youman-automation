@@ -80,7 +80,9 @@ export function SyncSection({ onClose }: Props) {
       {/* Aktiver Sync-Zustand */}
       {isOn && (
         <div className="rounded-md bg-emerald-50 border border-emerald-200 p-3 space-y-2">
-          <div className="text-xs text-emerald-700">Sync ist aktiv. Code für PC 2:</div>
+          <div className="text-xs text-emerald-700">
+            Sync ist aktiv. Auf weiteren Geräten unter „Vorhandenem Sync beitreten“ diesen Code eingeben:
+          </div>
           <div className="flex items-center gap-2">
             <code className="flex-1 font-mono text-base bg-white border border-emerald-300 rounded px-2 py-1 text-center tracking-wider select-all">
               {cfg.syncCode}
@@ -125,8 +127,13 @@ export function SyncSection({ onClose }: Props) {
       {!isOn && mode === 'idle' && (
         <div className="space-y-2">
           <p className="text-xs text-slate-500">
-            Verknüpft zwei PCs über einen privaten Sync-Code. Änderungen erscheinen
-            binnen 10 Sekunden auf dem anderen PC. Braucht Internet.
+            Verknüpft mehrere Geräte über einen privaten Sync-Code. Änderungen erscheinen
+            binnen 10 Sekunden auf den anderen Geräten. Braucht Internet.
+          </p>
+          <p className="text-xs text-slate-500">
+            <strong>Erstes Gerät:</strong> „Neuen Sync einrichten“ klicken — du bekommst einen Code.
+            <br />
+            <strong>Weitere Geräte:</strong> „Vorhandenem Sync beitreten“ klicken und den Code eintragen.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
@@ -135,14 +142,14 @@ export function SyncSection({ onClose }: Props) {
               disabled={busy}
             >
               {busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-              Neuen Sync starten
+              Neuen Sync einrichten
             </button>
             <button
               className="btn-secondary"
               onClick={() => setMode('join')}
               disabled={busy}
             >
-              <LogIn size={14} /> Code von PC 1 eingeben
+              <LogIn size={14} /> Vorhandenem Sync beitreten
             </button>
           </div>
         </div>
@@ -152,7 +159,7 @@ export function SyncSection({ onClose }: Props) {
       {!isOn && mode === 'join' && (
         <div className="space-y-2">
           <label className="label" htmlFor="join-code">
-            Sync-Code von PC 1 eintragen
+            Sync-Code des bereits eingerichteten Geräts eintragen
           </label>
           <input
             id="join-code"

@@ -1,7 +1,7 @@
 {
   "name": "daev-margin-tool",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "DAEV Margin Tool — lokales Margen-Tool für Gebrauchtwagenhändler mit Differenzbesteuerung.",
   "scripts": {
