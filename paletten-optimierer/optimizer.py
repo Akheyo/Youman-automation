@@ -16,7 +16,18 @@ Einheit = Literal["mm", "prozent"]
 
 @dataclass
 class Palette:
-    """Eingabe-Palette aus der Excel-Datei."""
+    """Eingabe-Palette aus der Excel-Datei.
+
+    ``laenge`` und ``breite`` sind kanonisch normalisiert (``laenge`` ist
+    immer die längere Achse). Die Felder ``laenge_original`` und
+    ``breite_original`` halten die ursprüngliche Schreibweise aus der
+    Excel-Datei fest, damit der User in der UI wiedererkennt was er
+    importiert hat — auch wenn der Algorithmus die Maße rotiert hat.
+
+    Hintergrund: Eine Palette 1200×800 und 800×1200 sind physisch die
+    gleiche Sache (Drahtgitter-Paletten kann man auf dem LKW drehen).
+    Ohne Normalisierung landeten beide in unterschiedlichen Clustern.
+    """
 
     artikelnummer: str
     laenge: float
@@ -29,6 +40,18 @@ class Palette:
     auftrag: str = ""
     kw_lieferung: str = ""
     menge: int = 0
+    laenge_original: float = 0.0
+    breite_original: float = 0.0
+
+    def __post_init__(self) -> None:
+        # Falls nicht explizit gesetzt, halte die Original-Werte parallel.
+        if self.laenge_original == 0.0:
+            self.laenge_original = self.laenge
+        if self.breite_original == 0.0:
+            self.breite_original = self.breite
+        # Kanonische Form: lange Seite zuerst.
+        if self.breite > self.laenge:
+            self.laenge, self.breite = self.breite, self.laenge
 
 
 @dataclass
@@ -546,9 +569,13 @@ def optimiere(
 
     # === Phase 1: Kandidaten ===
     # Für jeden Anker einen "maximalen kompatiblen Cluster" bauen.
-    # Sortier-Reihenfolge der Hinzunahme: nach Anzahl absteigend, damit
-    # Cluster mit hochvolumigen Mitgliedern entstehen.
-    sortier_by_demand = sorted(range(n), key=lambda j: anzahl[j], reverse=True)
+    # Sortier-Reihenfolge der Hinzunahme: nach Anzahl absteigend, mit
+    # Artikelnummer als Tie-Breaker — sonst ist das Ergebnis nicht
+    # deterministisch, wenn mehrere Aufträge die gleiche anzahl haben.
+    sortier_by_demand = sorted(
+        range(n),
+        key=lambda j: (-anzahl[j], zu_std[j].artikelnummer, j),
+    )
 
     kandidaten: list[tuple[float, float, float, frozenset[int]]] = []
     seen: set[tuple[float, float, float, frozenset[int]]] = set()
@@ -744,8 +771,8 @@ def mitglieder_wirtschaftlichkeit(
             "artikelnummer": m.artikelnummer,
             "kunde": m.kunde,
             "auftrag": m.auftrag,
-            "original_l": m.laenge,
-            "original_b": m.breite,
+            "original_l": m.laenge_original or m.laenge,
+            "original_b": m.breite_original or m.breite,
             "anzahl": m.anzahl,
             "ersparnis_pro_pal": e_per,
             "mehrkosten_pro_pal": k_per,

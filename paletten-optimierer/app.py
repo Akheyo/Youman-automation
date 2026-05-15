@@ -1087,11 +1087,13 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
                 tds.append(f'<td style="font-family:ui-monospace,SF Mono,Menlo,monospace;font-size:12px;">{escape(m.auftrag)}</td>')
             tds.append(f"<td style='text-align:right;'>{fmt_int(m.anzahl)}</td>")
             tds.append(f"<td style='text-align:right;'>{fmt_int(m.stueck_pro_palette)}</td>")
+            l_anzeige = m.laenge_original or m.laenge
+            b_anzeige = m.breite_original or m.breite
             if has_hoehe:
-                h_str = (f"{int(round(m.laenge))} × {int(round(m.breite))} × {int(round(m.hoehe))}"
-                         if m.hoehe > 0 else f"{int(round(m.laenge))} × {int(round(m.breite))}")
+                h_str = (f"{int(round(l_anzeige))} × {int(round(b_anzeige))} × {int(round(m.hoehe))}"
+                         if m.hoehe > 0 else f"{int(round(l_anzeige))} × {int(round(b_anzeige))}")
             else:
-                h_str = f"{int(round(m.laenge))} × {int(round(m.breite))}"
+                h_str = f"{int(round(l_anzeige))} × {int(round(b_anzeige))}"
             tds.append(f"<td>{h_str}</td>")
             tds.append('<td><span class="badge badge-ok">✓ innerhalb Toleranz</span></td>')
             rows.append("<tr>" + "".join(tds) + "</tr>")
@@ -1118,7 +1120,8 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
         kombi_row += (
             f"<td style='text-align:right;'>{fmt_int(m.anzahl)}</td>"
             f"<td style='text-align:right;'>{fmt_int(m.stueck_pro_palette)}</td>"
-            f"<td>{int(round(m.laenge))} × {int(round(m.breite))}</td>"
+            f"<td>{int(round(m.laenge_original or m.laenge))} × "
+            f"{int(round(m.breite_original or m.breite))}</td>"
             f'<td><span class="badge badge-kombi">⚡ Kombination</span></td>'
             "</tr>"
         )
@@ -1159,7 +1162,8 @@ def card_ergebnis(erg: OptimierungsErgebnis) -> None:
             f"<tr><td>{escape(p.artikelnummer)}</td>"
             f"<td>{escape(p.kunde[:35]) if p.kunde else ''}</td>"
             f"<td style='font-family:ui-monospace,monospace;font-size:12px;'>{escape(p.auftrag) if p.auftrag else ''}</td>"
-            f"<td>{int(round(p.laenge))} × {int(round(p.breite))}</td>"
+            f"<td>{int(round(p.laenge_original or p.laenge))} × "
+            f"{int(round(p.breite_original or p.breite))}</td>"
             f"<td style='text-align:right;'>{fmt_int(p.anzahl)}</td></tr>"
             for p in erg.sonderpaletten
         )
@@ -1531,7 +1535,9 @@ def seite_datenimport() -> None:
         df = pd.DataFrame([
             {
                 "Artikel": p.artikelnummer, "Kunde": p.kunde, "Auftrag": p.auftrag,
-                "Länge": p.laenge, "Breite": p.breite, "Höhe": p.hoehe or "",
+                "Länge": p.laenge_original or p.laenge,
+                "Breite": p.breite_original or p.breite,
+                "Höhe": p.hoehe or "",
                 "Anzahl": p.anzahl, "Stk/Pal": p.stueck_pro_palette,
                 "Kosten alt (€)": p.kosten_alt,
             }

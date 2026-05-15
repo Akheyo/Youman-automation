@@ -289,6 +289,8 @@ def importiere_excel(
                     artikelnummer=artikel,
                     laenge=laenge,
                     breite=breite,
+                    laenge_original=laenge,
+                    breite_original=breite,
                     anzahl=anzahl,
                     kosten_alt=_float(_val(row, "kosten_alt"), 0.0),
                     stueck_pro_palette=_int(_val(row, "stueck_pro_palette")),
@@ -359,7 +361,12 @@ def exportiere_ergebnis_excel(ergebnis: OptimierungsErgebnis) -> bytes:
     for s in ergebnis.standards:
         for m in s.members:
             ws_det.append(
-                [s.label, m.artikelnummer, m.laenge, m.breite, m.anzahl]
+                [
+                    s.label, m.artikelnummer,
+                    m.laenge_original or m.laenge,
+                    m.breite_original or m.breite,
+                    m.anzahl,
+                ]
             )
     for col_idx in range(1, len(spalten_det) + 1):
         ws_det.column_dimensions[get_column_letter(col_idx)].width = 22
@@ -385,8 +392,8 @@ def exportiere_ergebnis_excel(ergebnis: OptimierungsErgebnis) -> bytes:
             ws_kombi.append(
                 [
                     k.palette.artikelnummer,
-                    k.palette.laenge,
-                    k.palette.breite,
+                    k.palette.laenge_original or k.palette.laenge,
+                    k.palette.breite_original or k.palette.breite,
                     zusammensetzung,
                     richtung,
                     len(k.standards),

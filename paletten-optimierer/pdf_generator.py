@@ -238,8 +238,8 @@ def erstelle_bestellung_pdf(
             detail_rows.append(
                 [
                     m.artikelnummer,
-                    str(int(round(m.laenge))),
-                    str(int(round(m.breite))),
+                    str(int(round(m.laenge_original or m.laenge))),
+                    str(int(round(m.breite_original or m.breite))),
                     str(m.anzahl),
                     f"+{diff_l}",
                 ]
