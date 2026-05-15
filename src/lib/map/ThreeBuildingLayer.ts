@@ -27,6 +27,7 @@ import type {
 import type {
   DetectedBuilding,
   LngLat,
+  ModuleSlot,
   PVModule,
   RoofFace,
 } from "@/types/solar";
@@ -34,7 +35,13 @@ import {
   buildBuildingGroup,
   disposeBuildingGroup,
 } from "@/lib/buildingGeometry";
+import { buildSlotGroup, disposeSlotGroup } from "@/lib/slotGeometry";
 import { createMaterials, disposeMaterials, type Materials } from "./materials";
+
+export type LayerHit =
+  | { kind: "slot"; slotId: string }
+  | { kind: "module"; slotId?: string; moduleId: string }
+  | { kind: "roof"; roofFaceId: string };
 
 type LayerOptions = {
   showEdges?: boolean;
@@ -50,8 +57,13 @@ export class ThreeBuildingLayer implements CustomLayerInterface {
   private scene: THREE.Scene = new THREE.Scene();
   private camera: THREE.Camera = new THREE.Camera();
   private buildingGroup: THREE.Group = new THREE.Group();
+  private slotsGroup: THREE.Group | null = null;
   private materials: Materials = createMaterials();
   private currentBuilding: DetectedBuilding | null = null;
+  /** Speichert die letzte Render-Matrix (Map-Projection × Local-Transform).
+   *  Wird vom hitTest invertiert, um Screen-Klicks auf eine Ray im lokalen
+   *  Meter-Koordinatensystem abzubilden. */
+  private lastRenderMatrix: THREE.Matrix4 | null = null;
 
   private origin: { mx: number; my: number; mz: number; meterScale: number } = {
     mx: 0,
@@ -104,7 +116,9 @@ export class ThreeBuildingLayer implements CustomLayerInterface {
       // Y-Achse ist in Mercator nach Süden positiv → Flip.
       .scale(new THREE.Vector3(s, -s, s));
 
-    this.camera.projectionMatrix = m.multiply(local);
+    const combined = m.multiply(local);
+    this.lastRenderMatrix = combined.clone();
+    this.camera.projectionMatrix = combined;
     this.renderer.resetState();
     this.renderer.render(this.scene, this.camera);
     // GL-State, der MapLibre's Folge-Draws beeinflusst, defensiv zurücksetzen.
@@ -152,6 +166,91 @@ export class ThreeBuildingLayer implements CustomLayerInterface {
     this.setBuilding(this.currentBuilding);
   }
 
+  /**
+   * Setzt die sichtbaren Modul-Slots. Eingabe `slots` sind die kompletten
+   * Slot-Geometrien in lokalen Metern (Vec3 relativ zum Gebäudezentrum);
+   * `occupiedSlotIds` filtert die belegten Positionen aus.
+   */
+  setSlots(slots: ModuleSlot[], occupiedSlotIds: Set<string>) {
+    // Alte Slot-Group entfernen.
+    if (this.slotsGroup) {
+      this.buildingGroup.remove(this.slotsGroup);
+      disposeSlotGroup(this.slotsGroup);
+      this.slotsGroup = null;
+    }
+    if (slots.length === 0) {
+      this.map?.triggerRepaint();
+      return;
+    }
+    const group = buildSlotGroup(slots, occupiedSlotIds, this.materials);
+    this.buildingGroup.add(group);
+    this.slotsGroup = group;
+    this.map?.triggerRepaint();
+  }
+
+  /**
+   * Wandelt einen Klick auf der Karte in einen Treffer auf einen Slot, ein
+   * Modul oder eine Dachfläche um. Nutzt die zuletzt gerenderte
+   * Projection-Matrix, um aus dem NDC-Punkt eine Ray im lokalen
+   * Meter-Koordinatensystem zu rekonstruieren.
+   */
+  hitTest(point: { x: number; y: number }): LayerHit | null {
+    if (!this.map || !this.lastRenderMatrix) return null;
+    const canvas = this.map.getCanvas();
+    const w = canvas.clientWidth || 1;
+    const h = canvas.clientHeight || 1;
+    const ndcX = (point.x / w) * 2 - 1;
+    const ndcY = -((point.y / h) * 2 - 1);
+
+    const inv = this.lastRenderMatrix.clone().invert();
+    const near = new THREE.Vector4(ndcX, ndcY, -1, 1).applyMatrix4(inv);
+    if (near.w !== 0) near.divideScalar(near.w);
+    const far = new THREE.Vector4(ndcX, ndcY, 1, 1).applyMatrix4(inv);
+    if (far.w !== 0) far.divideScalar(far.w);
+
+    const origin = new THREE.Vector3(near.x, near.y, near.z);
+    const dir = new THREE.Vector3(
+      far.x - near.x,
+      far.y - near.y,
+      far.z - near.z,
+    ).normalize();
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.ray.origin.copy(origin);
+    raycaster.ray.direction.copy(dir);
+    raycaster.far = 1e6;
+
+    const hits = raycaster.intersectObject(this.buildingGroup, true);
+
+    // Reihenfolge der Priorität: Slot > Modul > Dach.
+    const slotHit = hits.find(
+      (hh) => (hh.object as THREE.Mesh).isMesh && hh.object.userData?.kind === "slot",
+    );
+    if (slotHit) {
+      return { kind: "slot", slotId: slotHit.object.userData.slotId as string };
+    }
+    const moduleHit = hits.find(
+      (hh) => (hh.object as THREE.Mesh).isMesh && hh.object.userData?.kind === "module",
+    );
+    if (moduleHit) {
+      return {
+        kind: "module",
+        moduleId: moduleHit.object.userData.moduleId as string,
+        slotId: moduleHit.object.userData.slotId as string | undefined,
+      };
+    }
+    const roofHit = hits.find(
+      (hh) => (hh.object as THREE.Mesh).isMesh && hh.object.userData?.kind === "roof",
+    );
+    if (roofHit) {
+      return {
+        kind: "roof",
+        roofFaceId: roofHit.object.userData.roofFaceId as string,
+      };
+    }
+    return null;
+  }
+
   /* ------------------------------------------------------------------ */
   /* Internals                                                          */
   /* ------------------------------------------------------------------ */
@@ -178,5 +277,6 @@ export class ThreeBuildingLayer implements CustomLayerInterface {
         (child as THREE.Mesh).geometry.dispose();
       }
     }
+    this.slotsGroup = null;
   }
 }

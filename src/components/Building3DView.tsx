@@ -29,6 +29,7 @@ import {
 import { MAX_MODULES_PER_FACE } from "@/lib/constants";
 import { calculateEfficiency, efficiencyColor } from "@/lib/efficiency";
 import { orientationLabel } from "@/lib/orientationLabel";
+import { buildSlotGroup, disposeSlotGroup } from "@/lib/slotGeometry";
 
 type Building3DViewProps = {
   building: DetectedBuilding | null;
@@ -521,64 +522,6 @@ export default function Building3DView({
       )}
     </div>
   );
-}
-
-/* ===================== Slot rendering helpers ===================== */
-
-function buildSlotGroup(
-  slots: ModuleSlot[],
-  occupiedSlotIds: Set<string>,
-  materials: Materials,
-): THREE.Group {
-  const group = new THREE.Group();
-  group.userData = { kind: "slots" };
-  for (const slot of slots) {
-    if (occupiedSlotIds.has(slot.id)) continue;
-    const [a, b, c, d] = slot.corners;
-    if (!a || !b || !c || !d) continue;
-    const positions = new Float32Array([
-      a.x, a.y, a.z,
-      b.x, b.y, b.z,
-      c.x, c.y, c.z,
-      a.x, a.y, a.z,
-      c.x, c.y, c.z,
-      d.x, d.y, d.z,
-    ]);
-    const geom = new THREE.BufferGeometry();
-    geom.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geom.computeVertexNormals();
-    const mesh = new THREE.Mesh(geom, materials.slotEmpty);
-    mesh.userData = {
-      kind: "slot",
-      slotId: slot.id,
-      roofFaceId: slot.roofFaceId,
-    };
-    mesh.renderOrder = 5;
-    group.add(mesh);
-
-    // Outline um den Slot.
-    const edgePos = new Float32Array([
-      a.x, a.y, a.z, b.x, b.y, b.z,
-      b.x, b.y, b.z, c.x, c.y, c.z,
-      c.x, c.y, c.z, d.x, d.y, d.z,
-      d.x, d.y, d.z, a.x, a.y, a.z,
-    ]);
-    const edgeGeom = new THREE.BufferGeometry();
-    edgeGeom.setAttribute("position", new THREE.BufferAttribute(edgePos, 3));
-    const lines = new THREE.LineSegments(edgeGeom, materials.slotEmptyEdge);
-    lines.userData = { kind: "slot-edge", slotId: slot.id };
-    lines.renderOrder = 6;
-    group.add(lines);
-  }
-  return group;
-}
-
-function disposeSlotGroup(group: THREE.Group) {
-  group.traverse((obj) => {
-    const m = obj as THREE.Mesh | THREE.LineSegments;
-    const geom = m.geometry as THREE.BufferGeometry | undefined;
-    geom?.dispose();
-  });
 }
 
 function Row({

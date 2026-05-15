@@ -28,8 +28,6 @@ import type {
 } from "@/types/solar";
 import { NativeBuildingLayer } from "@/lib/map/NativeBuildingLayer";
 import { ThreeBuildingLayer } from "@/lib/map/ThreeBuildingLayer";
-import { findFaceUnderClick } from "@/lib/geometry/manualModulePlacement";
-import { localMetersToLngLat } from "@/lib/geometry/coordinates";
 
 type MapViewProps = {
   building: DetectedBuilding | null;
@@ -71,14 +69,6 @@ const DRAW_SRC = "youman-draw";
 const DRAW_LINE_LAYER = "youman-draw-line";
 const DRAW_FILL_LAYER = "youman-draw-fill";
 const DRAW_POINT_LAYER = "youman-draw-points";
-
-const SLOT_SRC = "youman-slots";
-const SLOT_FILL_LAYER = "youman-slot-fill";
-const SLOT_LINE_LAYER = "youman-slot-line";
-
-function emptySlotData(): GeoJSON.FeatureCollection {
-  return { type: "FeatureCollection", features: [] };
-}
 
 function buildStyle(
   tileUrl: string | undefined,
@@ -280,47 +270,6 @@ export default function MapView({
         },
       });
 
-      // Slot-Layer: leerer Slot = helle Fläche, besetzter Slot = transparent
-      // (das Three.js-Modul darüber bleibt sichtbar), aber bleibt klickbar
-      // für queryRenderedFeatures.
-      mapRef.current.addSource(SLOT_SRC, {
-        type: "geojson",
-        data: emptySlotData(),
-      });
-      mapRef.current.addLayer({
-        id: SLOT_FILL_LAYER,
-        type: "fill",
-        source: SLOT_SRC,
-        paint: {
-          "fill-color": [
-            "case",
-            ["==", ["get", "occupied"], true],
-            "#0f172a",
-            "rgb(220,220,220)",
-          ],
-          "fill-opacity": [
-            "case",
-            ["==", ["get", "occupied"], true],
-            0.0,
-            0.35,
-          ],
-        },
-      });
-      mapRef.current.addLayer({
-        id: SLOT_LINE_LAYER,
-        type: "line",
-        source: SLOT_SRC,
-        paint: {
-          "line-color": [
-            "case",
-            ["==", ["get", "occupied"], true],
-            "rgba(15,23,42,0)",
-            "#ffffff",
-          ],
-          "line-width": 1,
-        },
-      });
-
       const b = buildingRef.current;
       if (b) {
         layer.setBuilding(b);
@@ -328,31 +277,30 @@ export default function MapView({
       }
     });
 
-    // Klick-Dispatch: Drawing/Picking haben Priorität. Sonst Slot oder Face.
+    // Klick-Dispatch: Drawing/Picking haben Priorität. Sonst Three-hitTest
+    // (Slot/Module/Roof in echtem 3D-Raum). queryRenderedFeatures kann das
+    // nicht, weil Slots im Three.js-Custom-Layer leben.
     map.on("click", (e) => {
       if (captureModeRef.current) {
         onMapClickRef.current({ lng: e.lngLat.lng, lat: e.lngLat.lat });
         return;
       }
-      const map2 = mapRef.current;
-      if (!map2) return;
-      const slotFeatures = map2.queryRenderedFeatures(e.point, {
-        layers: [SLOT_FILL_LAYER],
-      });
-      if (slotFeatures.length > 0) {
-        const slotId = slotFeatures[0]!.properties?.slotId as
-          | string
-          | undefined;
-        if (slotId) {
-          onToggleSlotRef.current(slotId);
-          return;
-        }
+      const three = threeRef.current;
+      if (!three) return;
+      const hit = three.hitTest({ x: e.point.x, y: e.point.y });
+      if (!hit) return;
+      if (hit.kind === "slot") {
+        onToggleSlotRef.current(hit.slotId);
+        return;
       }
-      const b2 = buildingRef.current;
-      if (!b2) return;
-      const click = { lng: e.lngLat.lng, lat: e.lngLat.lat };
-      const face = findFaceUnderClick(click, b2);
-      if (face) onOpenFaceModalRef.current(face.id);
+      if (hit.kind === "module" && hit.slotId) {
+        onToggleSlotRef.current(hit.slotId);
+        return;
+      }
+      if (hit.kind === "roof") {
+        onOpenFaceModalRef.current(hit.roofFaceId);
+        return;
+      }
     });
 
     return () => {
@@ -420,40 +368,13 @@ export default function MapView({
     else canvas.style.cursor = "";
   }, [drawingMode, pickingMode, rotatingMode]);
 
-  /* Slots ins Map-Source schreiben. Jeder Slot wird zu einem Polygon mit
-   * `slotId` und `occupied`-Property. Leere Slots sind sichtbar
-   * (helles Rechteck), besetzte Slots transparent (das Three.js-Modul
-   * darüber bleibt sichtbar), aber für queryRenderedFeatures klickbar. */
+  /* Slots an den Three-Layer übergeben. Slot-Meshes erben damit die gleiche
+   * Mercator-Transformation wie Wände, Dach und Module – Slots sitzen
+   * exakt auf der Dachebene, nicht flach auf dem Boden. */
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    const src = map.getSource(SLOT_SRC) as
-      | maplibregl.GeoJSONSource
-      | undefined;
-    if (!src) return;
-    if (!building) {
-      src.setData(emptySlotData());
-      return;
-    }
-    const features: GeoJSON.Feature[] = slots.map((slot) => {
-      const ring = slot.corners.map((v) =>
-        localMetersToLngLat(v.x, v.y, building.center.lng, building.center.lat),
-      );
-      ring.push(ring[0]!);
-      return {
-        type: "Feature",
-        properties: {
-          slotId: slot.id,
-          faceId: slot.roofFaceId,
-          occupied: occupiedSlotIds.has(slot.id),
-        },
-        geometry: {
-          type: "Polygon",
-          coordinates: [ring.map((p) => [p.lng, p.lat])],
-        },
-      };
-    });
-    src.setData({ type: "FeatureCollection", features });
+    const three = threeRef.current;
+    if (!three) return;
+    three.setSlots(slots, occupiedSlotIds);
   }, [slots, occupiedSlotIds, building]);
 
   /* Drag-to-rotate: Mausziehen dreht das Haus um seinen Mittelpunkt.

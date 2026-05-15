@@ -233,12 +233,17 @@ function buildRoofFace(
 
   if (face.selected) {
     // Highlight-Material pro Fläche clonen, damit jede Fläche ihre
-    // Effizienz-Farbe trägt. dispose erfolgt über die `__cloneMat`-Markierung
-    // in disposeBuildingGroup.
+    // Effizienz-Farbe trägt. Bewusst halbtransparent (0.35), damit die
+    // Anthrazit-Basis durchscheint und die Modul-Slots darüber gut
+    // erkennbar sind. depthWrite=false verhindert, dass darüberliegende
+    // Module/Slots vom Overlay weggeclippt werden.
     const overlayMat = (materials.roofHighlight as THREE.MeshStandardMaterial)
       .clone() as THREE.MeshStandardMaterial;
     const eff = calculateEfficiency(face.azimuthDeg, face.pitchDeg);
     overlayMat.color = new THREE.Color(efficiencyColor(eff));
+    overlayMat.transparent = true;
+    overlayMat.opacity = 0.35;
+    overlayMat.depthWrite = false;
     const overlayMesh = new THREE.Mesh(geom, overlayMat);
     overlayMesh.castShadow = false;
     overlayMesh.receiveShadow = false;

@@ -81,8 +81,8 @@ function ridgeAzimuthFromPoints(a: LngLat, b: LngLat): number {
 
 const DEFAULT_SETTINGS: ModuleSettings = {
   moduleWp: 430,
-  moduleWidthM: 1.13,
-  moduleLengthM: 1.72,
+  moduleWidthM: 1.14,
+  moduleLengthM: 1.76,
   edgeMarginM: 0.3,
   moduleGapM: 0.02,
   orientation: "portrait",
