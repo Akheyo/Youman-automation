@@ -112,6 +112,17 @@ export function estimateRidgeHeight(b: DetectedBuilding): number {
 
 /* --- Wände --- */
 
+/**
+ * Hausvolumen als geschlossenes Solid via THREE.ExtrudeGeometry.
+ *
+ * Vorteile gegenüber per-Hand triangulierten Wand-Quads:
+ *   - Wasserdicht: Boden, Top und alle Seitenwände werden in EINEM Mesh
+ *     erzeugt, keine fehlenden Faces, kein „durch die Wand gucken".
+ *   - Korrekte Außen-Normals unabhängig vom Winding des Footprints.
+ *     Falls der Polygon im Uhrzeigersinn vorliegt (z. B. aus OSM oder
+ *     mock-Generator), drehen wir vorher um.
+ *   - computeVertexNormals() liefert konsistente flat-shaded Wände.
+ */
 function buildWalls(
   footprint: Vec3[],
   baseZ: number,
@@ -121,33 +132,32 @@ function buildWalls(
 ): THREE.Object3D {
   const group = new THREE.Group();
   group.userData = { kind: "walls" };
-  const positions: number[] = [];
-  const normals: number[] = [];
+  if (footprint.length < 3) return group;
 
-  for (let i = 0; i < footprint.length; i++) {
-    const a = footprint[i]!;
-    const b = footprint[(i + 1) % footprint.length]!;
-    const ab = { x: b.x - a.x, y: b.y - a.y };
-    const len = Math.hypot(ab.x, ab.y) || 1;
-    const nx = ab.y / len;
-    const ny = -ab.x / len;
-
-    const v0 = [a.x, a.y, baseZ];
-    const v1 = [b.x, b.y, baseZ];
-    const v2 = [b.x, b.y, topZ];
-    const v3 = [a.x, a.y, topZ];
-
-    positions.push(...v0, ...v1, ...v2, ...v0, ...v2, ...v3);
-    for (let k = 0; k < 6; k++) normals.push(nx, ny, 0);
+  // 2D-Shape aus dem Footprint. ExtrudeGeometry erwartet CCW-Reihenfolge
+  // für die Außenkante; CW würde als Loch interpretiert werden.
+  const points = footprint.map((v) => new THREE.Vector2(v.x, v.y));
+  if (THREE.ShapeUtils.isClockWise(points)) {
+    points.reverse();
   }
-  const geom = new THREE.BufferGeometry();
-  geom.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
-  geom.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
+  const shape = new THREE.Shape(points);
+
+  const depth = Math.max(0.1, topZ - baseZ);
+  const geom = new THREE.ExtrudeGeometry(shape, {
+    depth,
+    bevelEnabled: false,
+    steps: 1,
+  });
+  // ExtrudeGeometry extrudiert in +Z. Bottom liegt bei z=0; auf baseZ heben.
+  if (baseZ !== 0) geom.translate(0, 0, baseZ);
+  geom.computeVertexNormals();
+
   const mesh = new THREE.Mesh(geom, materials.building);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   group.add(mesh);
 
+  // Optisch markante Top-Edges + vertikale Eckkanten als Linien.
   if (showEdges) {
     const edgePos: number[] = [];
     for (let i = 0; i < footprint.length; i++) {
