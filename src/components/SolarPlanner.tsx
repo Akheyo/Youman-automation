@@ -30,6 +30,7 @@ import {
   findModuleUnderClick,
 } from "@/lib/geometry/manualModulePlacement";
 import { fitOrientedBox } from "@/lib/geometry/roofShapeHeuristic";
+import Building3DView from "./Building3DView";
 import {
   MockRoofDetectionProvider,
   getAvailableMockKinds,
@@ -107,6 +108,10 @@ export default function SolarPlanner({ mapSettings }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [demoCycleIdx, setDemoCycleIdx] = useState(0);
+  // Tab oberhalb des Map-Containers: 'map' (default) oder '3d' (freistehend).
+  // Beide Views bleiben gemountet, der inaktive wird via display:none ausgeblendet,
+  // damit MapLibre und der Three-Renderer keinen WebGL-Context-Verlust haben.
+  const [activeTab, setActiveTab] = useState<"map" | "3d">("map");
   // Präsentationsmodus: nach erfolgreicher Hausgenerierung wird die Sidebar
   // ausgeblendet und das 3D-Modell füllt den ganzen Screen. Ein Overlay-
   // Button bringt den User zurück in die Bearbeitung.
@@ -661,24 +666,78 @@ export default function SolarPlanner({ mapSettings }: Props) {
 
   return (
     <div className="relative flex h-full w-full flex-row">
-      <div style={{ flex: "1 1 auto", minWidth: 0, height: "100%", position: "relative" }}>
-        <MapView
-          building={building}
-          mapSettings={mapSettings}
-          recenterTick={recenterTick}
-          drawingMode={drawingMode}
-          drawingPhase={drawingPhase}
-          pickingMode={pickingMode}
-          drawnPoints={drawnPoints}
-          ridgePoints={ridgePoints}
-          onMapClick={handleMapClick}
-          cameraTarget={searchedLocation}
-          cameraTick={cameraTick}
-          rotatingMode={rotatingMode}
-          currentRidgeAzimuthDeg={manualParams.ridgeAzimuthDeg}
-          onRotateRequest={handleRotateRequest}
-          manualPlacementMode={manualPlacementMode}
-        />
+      <div
+        style={{
+          flex: "1 1 auto",
+          minWidth: 0,
+          height: "100%",
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Tab-Leiste oberhalb der Views. Sidebar wird in presentationMode
+            ausgeblendet, der Tab-Header bleibt aber sichtbar. */}
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            padding: "8px 12px",
+            background: "#ffffff",
+            borderBottom: "1px solid #e2e8f0",
+            flex: "0 0 auto",
+            zIndex: 5,
+          }}
+        >
+          <TabButton
+            active={activeTab === "map"}
+            onClick={() => setActiveTab("map")}
+            label="Karte"
+          />
+          <TabButton
+            active={activeTab === "3d"}
+            onClick={() => setActiveTab("3d")}
+            label="3D-Ansicht"
+          />
+        </div>
+
+        {/* Beide Views bleiben gemountet – nur Sichtbarkeit toggeln. */}
+        <div style={{ position: "relative", flex: "1 1 auto", minHeight: 0 }}>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: activeTab === "map" ? "block" : "none",
+            }}
+          >
+            <MapView
+              building={building}
+              mapSettings={mapSettings}
+              recenterTick={recenterTick}
+              drawingMode={drawingMode}
+              drawingPhase={drawingPhase}
+              pickingMode={pickingMode}
+              drawnPoints={drawnPoints}
+              ridgePoints={ridgePoints}
+              onMapClick={handleMapClick}
+              cameraTarget={searchedLocation}
+              cameraTick={cameraTick}
+              rotatingMode={rotatingMode}
+              currentRidgeAzimuthDeg={manualParams.ridgeAzimuthDeg}
+              onRotateRequest={handleRotateRequest}
+              manualPlacementMode={manualPlacementMode}
+            />
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: activeTab === "3d" ? "block" : "none",
+            }}
+          >
+            <Building3DView building={building} active={activeTab === "3d"} />
+          </div>
+        </div>
       </div>
       {!presentationMode && (
         <Sidebar
@@ -893,5 +952,39 @@ function PresentationOverlay({
         </div>
       )}
     </>
+  );
+}
+
+
+/* ----------------------------- TabButton ----------------------------- */
+
+function TabButton({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        padding: "6px 14px",
+        borderRadius: 8,
+        border: "1px solid",
+        borderColor: active ? "#1e50e0" : "#cbd5e1",
+        background: active ? "#1e50e0" : "#ffffff",
+        color: active ? "#ffffff" : "#334155",
+        fontSize: 13,
+        fontWeight: 600,
+        cursor: "pointer",
+        transition: "background 0.15s, color 0.15s, border-color 0.15s",
+      }}
+    >
+      {label}
+    </button>
   );
 }
