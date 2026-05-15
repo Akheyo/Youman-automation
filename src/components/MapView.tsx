@@ -30,10 +30,9 @@ import { NativeBuildingLayer } from "@/lib/map/NativeBuildingLayer";
 import { ThreeBuildingLayer } from "@/lib/map/ThreeBuildingLayer";
 import {
   createModuleAtClick,
-  findFaceUnderClick,
+  validatePlacementAtLngLat,
 } from "@/lib/geometry/manualModulePlacement";
 import { localMetersToLngLat } from "@/lib/geometry/coordinates";
-import { MAX_MODULES_PER_FACE } from "@/lib/constants";
 
 type MapViewProps = {
   building: DetectedBuilding | null;
@@ -54,6 +53,8 @@ type MapViewProps = {
   ridgePoints: LngLat[];
   /** Callback bei jedem Klick (Parent dispatcht je nach Modus). */
   onMapClick: (p: LngLat) => void;
+  /** Rechtsklick: nur in manualPlacementMode interessant (Modul entfernen). */
+  onMapRightClick: (p: LngLat) => void;
   /** Kamera fliegt hierhin, wenn cameraTick sich erhöht (z. B. nach Suche). */
   cameraTarget: LngLat | null;
   cameraTick: number;
@@ -139,6 +140,7 @@ export default function MapView({
   drawnPoints,
   ridgePoints,
   onMapClick,
+  onMapRightClick,
   cameraTarget,
   cameraTick,
   rotatingMode,
@@ -158,6 +160,8 @@ export default function MapView({
   captureClicksRef.current = drawingMode || pickingMode || manualPlacementMode;
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
+  const onMapRightClickRef = useRef(onMapRightClick);
+  onMapRightClickRef.current = onMapRightClick;
   const ridgeAzRef = useRef<number | null>(currentRidgeAzimuthDeg);
   ridgeAzRef.current = currentRidgeAzimuthDeg;
   const onRotateRequestRef = useRef(onRotateRequest);
@@ -289,11 +293,11 @@ export default function MapView({
         paint: {
           "fill-color": [
             "case",
-            ["==", ["get", "full"], true],
+            ["==", ["get", "invalid"], true],
             "#ef4444",
             "#22c55e",
           ],
-          "fill-opacity": 0.45,
+          "fill-opacity": 0.4,
         },
       });
       mapRef.current.addLayer({
@@ -303,7 +307,7 @@ export default function MapView({
         paint: {
           "line-color": [
             "case",
-            ["==", ["get", "full"], true],
+            ["==", ["get", "invalid"], true],
             "#dc2626",
             "#16a34a",
           ],
@@ -322,6 +326,13 @@ export default function MapView({
     map.on("click", (e) => {
       if (!captureClicksRef.current) return;
       onMapClickRef.current({ lng: e.lngLat.lng, lat: e.lngLat.lat });
+    });
+
+    // Rechtsklick: Browser-Kontextmenü unterdrücken und Parent informieren
+    // (nutzt das aktuell für „Modul entfernen" in manualPlacementMode).
+    map.on("contextmenu", (e) => {
+      e.preventDefault();
+      onMapRightClickRef.current({ lng: e.lngLat.lng, lat: e.lngLat.lat });
     });
 
     return () => {
@@ -410,35 +421,39 @@ export default function MapView({
       const b = buildingRef.current;
       if (!b) return;
       const click: LngLat = { lng: e.lngLat.lng, lat: e.lngLat.lat };
-      const face = findFaceUnderClick(click, b);
-      if (!face) {
-        setGhost(emptyGhost());
-        return;
-      }
-      const mod = createModuleAtClick(
+      const result = validatePlacementAtLngLat(
         click,
-        face,
         b,
         moduleSettingsRef.current,
       );
-      if (!mod) {
+      // Außerhalb einer Fläche: keine Vorschau (Cursor steht im Nichts).
+      if (!result.face) {
         setGhost(emptyGhost());
         return;
       }
-      const ring = mod.vertices3d.map((v) =>
+      // Auch im ungültigen Fall ein Vorschau-Polygon zeigen, damit der User
+      // die Modulgröße sieht. Wir bauen das Kandidaten-Modul direkt aus
+      // klick + Fläche, unabhängig vom Validierungs-Ergebnis.
+      const candidateMod = createModuleAtClick(
+        click,
+        result.face,
+        b,
+        moduleSettingsRef.current,
+      );
+      if (!candidateMod) {
+        setGhost(emptyGhost());
+        return;
+      }
+      const ring = candidateMod.vertices3d.map((v) =>
         localMetersToLngLat(v.x, v.y, b.center.lng, b.center.lat),
       );
       ring.push(ring[0]!);
-      const moduleCount = b.modules.filter(
-        (m) => m.roofFaceId === face.id,
-      ).length;
-      const full = moduleCount >= MAX_MODULES_PER_FACE;
       setGhost({
         type: "FeatureCollection",
         features: [
           {
             type: "Feature",
-            properties: { full },
+            properties: { invalid: !result.ok },
             geometry: {
               type: "Polygon",
               coordinates: [ring.map((p) => [p.lng, p.lat])],

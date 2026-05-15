@@ -21,15 +21,17 @@ import type {
   LngLat,
   MapSettings,
   ModuleSettings,
+  PVModule,
   RoofFace,
+  Vec3,
 } from "@/types/solar";
 import { placeModulesOnSelectedFaces } from "@/lib/geometry/modulePlacement";
 import {
-  createModuleAtClick,
-  findFaceUnderClick,
   findModuleUnderClick,
+  formatPlacementReason,
+  validatePlacementAtFacePoint,
+  validatePlacementAtLngLat,
 } from "@/lib/geometry/manualModulePlacement";
-import { MAX_MODULES_PER_FACE } from "@/lib/constants";
 import { fitOrientedBox } from "@/lib/geometry/roofShapeHeuristic";
 import Building3DView from "./Building3DView";
 import {
@@ -352,6 +354,67 @@ export default function SolarPlanner({ mapSettings }: Props) {
     });
   }, []);
 
+  const addModuleToBuilding = useCallback((mod: PVModule) => {
+    setBuilding((prev) => {
+      if (!prev) return prev;
+      const next = [...prev.modules, mod];
+      return {
+        ...prev,
+        modules: next,
+        metrics: {
+          ...prev.metrics,
+          moduleCount: next.length,
+          totalKwp: next.reduce((s, m) => s + m.wp, 0) / 1000,
+        },
+      };
+    });
+  }, []);
+
+  const removeModuleById = useCallback((id: string) => {
+    setBuilding((prev) => {
+      if (!prev) return prev;
+      const remaining = prev.modules.filter((m) => m.id !== id);
+      if (remaining.length === prev.modules.length) return prev;
+      return {
+        ...prev,
+        modules: remaining,
+        metrics: {
+          ...prev.metrics,
+          moduleCount: remaining.length,
+          totalKwp: remaining.reduce((s, m) => s + m.wp, 0) / 1000,
+        },
+      };
+    });
+  }, []);
+
+  const handleMapRightClick = useCallback(
+    (p: LngLat) => {
+      if (!manualPlacementMode || !building) return;
+      const existing = findModuleUnderClick(p, building.modules, building.center);
+      if (!existing) return;
+      removeModuleById(existing.id);
+    },
+    [manualPlacementMode, building, removeModuleById],
+  );
+
+  const handlePlaceAtFacePoint = useCallback(
+    (point: Vec3, face: RoofFace) => {
+      if (!building) return;
+      const result = validatePlacementAtFacePoint(
+        point,
+        face,
+        building,
+        settings,
+      );
+      if (!result.ok) {
+        setToast(formatPlacementReason(result.reason, result.face?.label));
+        return;
+      }
+      addModuleToBuilding(result.module);
+    },
+    [building, settings, addModuleToBuilding],
+  );
+
   const recenter = useCallback(() => {
     setRecenterTick((t) => t + 1);
   }, []);
@@ -570,56 +633,13 @@ export default function SolarPlanner({ mapSettings }: Props) {
         return;
       }
       if (manualPlacementMode && building) {
-        // 1) Klick auf bestehendes Modul → entfernen.
-        const existing = findModuleUnderClick(
-          p,
-          building.modules,
-          building.center,
-        );
-        if (existing) {
-          setBuilding((prev) => {
-            if (!prev) return prev;
-            const remaining = prev.modules.filter((m) => m.id !== existing.id);
-            return {
-              ...prev,
-              modules: remaining,
-              metrics: {
-                ...prev.metrics,
-                moduleCount: remaining.length,
-                totalKwp:
-                  remaining.reduce((s, m) => s + m.wp, 0) / 1000,
-              },
-            };
-          });
+        // Linksklick platziert nur noch. Entfernen läuft über Rechtsklick.
+        const result = validatePlacementAtLngLat(p, building, settings);
+        if (!result.ok) {
+          setToast(formatPlacementReason(result.reason, result.face?.label));
           return;
         }
-        // 2) Klick auf eine ausgewählte Dachfläche → neues Modul setzen.
-        const face = findFaceUnderClick(p, building);
-        if (!face) return;
-        const modulesOnFace = building.modules.filter(
-          (m) => m.roofFaceId === face.id,
-        ).length;
-        if (modulesOnFace >= MAX_MODULES_PER_FACE) {
-          setToast(
-            `Maximum von ${MAX_MODULES_PER_FACE} Modulen auf „${face.label}" erreicht.`,
-          );
-          return;
-        }
-        const mod = createModuleAtClick(p, face, building, settings);
-        if (!mod) return;
-        setBuilding((prev) => {
-          if (!prev) return prev;
-          const next = [...prev.modules, mod];
-          return {
-            ...prev,
-            modules: next,
-            metrics: {
-              ...prev.metrics,
-              moduleCount: next.length,
-              totalKwp: next.reduce((s, m) => s + m.wp, 0) / 1000,
-            },
-          };
-        });
+        addModuleToBuilding(result.module);
       }
     },
     [
@@ -630,6 +650,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
       manualPlacementMode,
       building,
       settings,
+      addModuleToBuilding,
     ],
   );
 
@@ -752,6 +773,7 @@ export default function SolarPlanner({ mapSettings }: Props) {
               drawnPoints={drawnPoints}
               ridgePoints={ridgePoints}
               onMapClick={handleMapClick}
+              onMapRightClick={handleMapRightClick}
               cameraTarget={searchedLocation}
               cameraTick={cameraTick}
               rotatingMode={rotatingMode}
@@ -767,7 +789,14 @@ export default function SolarPlanner({ mapSettings }: Props) {
               display: activeTab === "3d" ? "block" : "none",
             }}
           >
-            <Building3DView building={building} active={activeTab === "3d"} />
+            <Building3DView
+              building={building}
+              active={activeTab === "3d"}
+              manualPlacementMode={manualPlacementMode}
+              moduleSettings={settings}
+              onPlaceAtFacePoint={handlePlaceAtFacePoint}
+              onRemoveModule={removeModuleById}
+            />
           </div>
 
           {toast && (

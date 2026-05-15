@@ -26,7 +26,12 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-import type { DetectedBuilding } from "@/types/solar";
+import type {
+  DetectedBuilding,
+  ModuleSettings,
+  RoofFace,
+  Vec3,
+} from "@/types/solar";
 import {
   buildBuildingGroup,
   disposeBuildingGroup,
@@ -38,11 +43,21 @@ import {
   type Materials,
 } from "@/lib/map/materials";
 import { MAX_MODULES_PER_FACE } from "@/lib/constants";
+import {
+  createModuleAtFacePoint,
+  findModuleAtPoint3D,
+  validatePlacementAtFacePoint,
+} from "@/lib/geometry/manualModulePlacement";
 
 type Building3DViewProps = {
   building: DetectedBuilding | null;
   /** Wenn false, pausiert der RAF-Loop (Tab nicht sichtbar). */
   active: boolean;
+  /** Aktiviert Hover-Geist, Klick-Platzierung und Rechtsklick-Entfernen. */
+  manualPlacementMode: boolean;
+  moduleSettings: ModuleSettings;
+  onPlaceAtFacePoint: (point: Vec3, face: RoofFace) => void;
+  onRemoveModule: (id: string) => void;
 };
 
 type SelectedFaceInfo = {
@@ -60,6 +75,10 @@ const DEFAULT_CAM_TARGET = new THREE.Vector3(0, 0, 4);
 export default function Building3DView({
   building,
   active,
+  manualPlacementMode,
+  moduleSettings,
+  onPlaceAtFacePoint,
+  onRemoveModule,
 }: Building3DViewProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -71,6 +90,18 @@ export default function Building3DView({
   const rafRef = useRef<number | null>(null);
   const activeRef = useRef(active);
   activeRef.current = active;
+
+  const buildingRef = useRef<DetectedBuilding | null>(building);
+  buildingRef.current = building;
+  const manualPlacementRef = useRef(manualPlacementMode);
+  manualPlacementRef.current = manualPlacementMode;
+  const moduleSettingsRef = useRef(moduleSettings);
+  moduleSettingsRef.current = moduleSettings;
+  const onPlaceRef = useRef(onPlaceAtFacePoint);
+  onPlaceRef.current = onPlaceAtFacePoint;
+  const onRemoveRef = useRef(onRemoveModule);
+  onRemoveRef.current = onRemoveModule;
+  const ghostMeshRef = useRef<THREE.Mesh | null>(null);
 
   const [showModules, setShowModules] = useState(true);
   const [selectedFace, setSelectedFace] = useState<SelectedFaceInfo | null>(
@@ -161,6 +192,29 @@ export default function Building3DView({
     const materials = createMaterials();
     materialsRef.current = materials;
 
+    // Ghost-Mesh für Hover-Vorschau bei manueller Modulplatzierung.
+    // 4 Vertices (quad), 2 Triangles via Index. Position-Attribute wird pro
+    // Mausbewegung neu gesetzt; Material-Farbe wechselt grün ↔ rot.
+    const ghostGeom = new THREE.BufferGeometry();
+    ghostGeom.setIndex([0, 1, 2, 0, 2, 3]);
+    ghostGeom.setAttribute(
+      "position",
+      new THREE.BufferAttribute(new Float32Array(12), 3),
+    );
+    const ghostMat = new THREE.MeshBasicMaterial({
+      color: 0x22c55e,
+      transparent: true,
+      opacity: 0.4,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const ghost = new THREE.Mesh(ghostGeom, ghostMat);
+    ghost.visible = false;
+    ghost.userData = { kind: "ghost" };
+    ghost.renderOrder = 10;
+    scene.add(ghost);
+    ghostMeshRef.current = ghost;
+
     // RAF-Loop.
     const animate = () => {
       rafRef.current = requestAnimationFrame(animate);
@@ -189,6 +243,10 @@ export default function Building3DView({
         disposeBuildingGroup(buildingGroupRef.current);
         buildingGroupRef.current = null;
       }
+      scene.remove(ghost);
+      ghostGeom.dispose();
+      ghostMat.dispose();
+      ghostMeshRef.current = null;
       ground.geometry.dispose();
       (ground.material as THREE.Material).dispose();
       disposeMaterials(materials);
@@ -253,24 +311,54 @@ export default function Building3DView({
     });
   }, [showModules, building]);
 
+  /* Ghost ausblenden, sobald der manuelle Modus aus ist (oder das Building
+   * sich ändert). Auch das Highlight wird zurückgesetzt, weil das Info-Panel
+   * im Manuellen-Modus die UX stört. */
+  useEffect(() => {
+    if (!manualPlacementMode) {
+      const ghost = ghostMeshRef.current;
+      if (ghost) ghost.visible = false;
+    } else {
+      setSelectedFace(null);
+      applyHighlight(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manualPlacementMode, building]);
+
   /* ------------------------------------------------------------------ */
-  /* Roof-Klick via Raycaster + Highlight                               */
+  /* Pointer-Events: Klick / Hover / Rechtsklick                        */
   /* ------------------------------------------------------------------ */
   useEffect(() => {
     const renderer = rendererRef.current;
     const camera = cameraRef.current;
     if (!renderer || !camera) return;
     const dom = renderer.domElement;
+    const ray = new THREE.Raycaster();
 
     let downX = 0;
     let downY = 0;
     let isDown = false;
+
+    const setMouseFromEvent = (e: { clientX: number; clientY: number }) => {
+      const rect = dom.getBoundingClientRect();
+      const mouse = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1,
+      );
+      ray.setFromCamera(mouse, camera);
+    };
+
+    const hideGhost = () => {
+      const ghost = ghostMeshRef.current;
+      if (ghost) ghost.visible = false;
+    };
 
     const onDown = (e: PointerEvent) => {
       isDown = true;
       downX = e.clientX;
       downY = e.clientY;
     };
+
     const onUp = (e: PointerEvent) => {
       if (!isDown) return;
       isDown = false;
@@ -279,35 +367,47 @@ export default function Building3DView({
       if (dx > 4 || dy > 4) return; // Drag, kein Klick
 
       const group = buildingGroupRef.current;
-      if (!group) return;
-      const rect = dom.getBoundingClientRect();
-      const mouse = new THREE.Vector2(
-        ((e.clientX - rect.left) / rect.width) * 2 - 1,
-        -((e.clientY - rect.top) / rect.height) * 2 + 1,
-      );
-      const ray = new THREE.Raycaster();
-      ray.setFromCamera(mouse, camera);
+      const b = buildingRef.current;
+      if (!group || !b) return;
+      setMouseFromEvent(e);
       const hits = ray.intersectObject(group, true);
-      const hit = hits.find(
+      const roofHit = hits.find(
         (h) =>
           (h.object as THREE.Mesh).isMesh &&
           h.object.userData?.kind === "roof",
       );
-      if (!hit) {
+
+      if (manualPlacementRef.current) {
+        if (!roofHit) return;
+        const ud = roofHit.object.userData as { roofFaceId: string };
+        const face = b.roofFaces.find((f) => f.id === ud.roofFaceId);
+        if (!face) return;
+        onPlaceRef.current(
+          {
+            x: roofHit.point.x,
+            y: roofHit.point.y,
+            z: roofHit.point.z,
+          },
+          face,
+        );
+        return;
+      }
+
+      if (!roofHit) {
         setSelectedFace(null);
         applyHighlight(null);
         return;
       }
-      const ud = hit.object.userData as {
+      const ud = roofHit.object.userData as {
         roofFaceId: string;
         label: string;
         areaM2: number;
         pitchDeg: number;
         azimuthDeg: number;
       };
-      const moduleCount =
-        building?.modules.filter((m) => m.roofFaceId === ud.roofFaceId)
-          .length ?? 0;
+      const moduleCount = b.modules.filter(
+        (m) => m.roofFaceId === ud.roofFaceId,
+      ).length;
       setSelectedFace({
         id: ud.roofFaceId,
         label: ud.label,
@@ -319,14 +419,109 @@ export default function Building3DView({
       applyHighlight(ud.roofFaceId);
     };
 
+    const onMove = (e: PointerEvent) => {
+      if (!manualPlacementRef.current) {
+        hideGhost();
+        return;
+      }
+      const group = buildingGroupRef.current;
+      const b = buildingRef.current;
+      const ghost = ghostMeshRef.current;
+      if (!group || !b || !ghost) return;
+      setMouseFromEvent(e);
+      const hits = ray.intersectObject(group, true);
+      const roofHit = hits.find(
+        (h) =>
+          (h.object as THREE.Mesh).isMesh &&
+          h.object.userData?.kind === "roof",
+      );
+      if (!roofHit) {
+        ghost.visible = false;
+        return;
+      }
+      const ud = roofHit.object.userData as { roofFaceId: string };
+      const face = b.roofFaces.find((f) => f.id === ud.roofFaceId);
+      if (!face || !face.selected) {
+        ghost.visible = false;
+        return;
+      }
+      const point: Vec3 = {
+        x: roofHit.point.x,
+        y: roofHit.point.y,
+        z: roofHit.point.z,
+      };
+      const settings = moduleSettingsRef.current;
+      const candidate = createModuleAtFacePoint(point, face, settings);
+      if (!candidate) {
+        ghost.visible = false;
+        return;
+      }
+      const result = validatePlacementAtFacePoint(point, face, b, settings);
+      const positionsAttr = (ghost.geometry as THREE.BufferGeometry).getAttribute(
+        "position",
+      ) as THREE.BufferAttribute;
+      for (let i = 0; i < 4; i++) {
+        const v = candidate.vertices3d[i]!;
+        positionsAttr.setXYZ(i, v.x, v.y, v.z);
+      }
+      positionsAttr.needsUpdate = true;
+      ghost.geometry.computeVertexNormals();
+      (ghost.material as THREE.MeshBasicMaterial).color.set(
+        result.ok ? 0x22c55e : 0xef4444,
+      );
+      ghost.visible = true;
+    };
+
+    const onLeave = () => {
+      hideGhost();
+    };
+
+    const onContextMenu = (e: MouseEvent) => {
+      if (!manualPlacementRef.current) return;
+      e.preventDefault();
+      const group = buildingGroupRef.current;
+      const b = buildingRef.current;
+      if (!group || !b) return;
+      setMouseFromEvent(e);
+      const hits = ray.intersectObject(group, true);
+      const moduleHit = hits.find(
+        (h) =>
+          (h.object as THREE.Mesh).isMesh &&
+          h.object.userData?.kind === "module",
+      );
+      if (moduleHit) {
+        const ud = moduleHit.object.userData as { moduleId: string };
+        onRemoveRef.current(ud.moduleId);
+        return;
+      }
+      // Fallback: nearest module along raycast (greift Module, deren Mesh
+      // an der Stelle nicht direkt getroffen wird).
+      const roofHit = hits.find(
+        (h) => (h.object as THREE.Mesh).isMesh && h.object.userData?.kind === "roof",
+      );
+      if (!roofHit) return;
+      const point: Vec3 = {
+        x: roofHit.point.x,
+        y: roofHit.point.y,
+        z: roofHit.point.z,
+      };
+      const mod = findModuleAtPoint3D(point, b.modules);
+      if (mod) onRemoveRef.current(mod.id);
+    };
+
     dom.addEventListener("pointerdown", onDown);
     dom.addEventListener("pointerup", onUp);
+    dom.addEventListener("pointermove", onMove);
+    dom.addEventListener("pointerleave", onLeave);
+    dom.addEventListener("contextmenu", onContextMenu);
     return () => {
       dom.removeEventListener("pointerdown", onDown);
       dom.removeEventListener("pointerup", onUp);
+      dom.removeEventListener("pointermove", onMove);
+      dom.removeEventListener("pointerleave", onLeave);
+      dom.removeEventListener("contextmenu", onContextMenu);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [building]);
+  }, []);
 
   /** Setzt Emissive auf dem markierten Roof-Mesh, entfernt es auf allen anderen. */
   function applyHighlight(activeId: string | null) {
