@@ -1030,3 +1030,138 @@ def berechne_wirtschaftlichkeit(
         kosten_pro_lademeter=kosten_pro_lademeter,
         setup_kosten_einmalig=setup_kosten_einmalig,
     )
+
+
+def baue_zuordnungs_tabelle(ergebnis: OptimierungsErgebnis) -> list[dict]:
+    """Eine Zeile pro Auftragsposition mit der vollständigen Standard-
+    Zuordnung. Liefert das was die Detailansicht im Tab „Ergebnisse"
+    rendern soll.
+
+    Status pro Zeile:
+        - ``standard``     → Auftrag fällt unter eine Standardpalette
+        - ``kombination``  → Auftrag wird durch 2-3 Standards abgedeckt
+        - ``sonder``       → Auftrag bleibt Sonderpalette (unter
+                             Mengen-Schwelle o.ä.)
+
+    Jede Zeile enthält Original-Maße (NICHT normalisiert), zugewiesenen
+    Standard, Abweichung pro Dimension und die maximale Abweichung als
+    Sortierkriterium für die UI.
+    """
+    rows: list[dict] = []
+
+    def _orig(p: Palette) -> tuple[float, float]:
+        return (p.laenge_original or p.laenge, p.breite_original or p.breite)
+
+    def _abweichung(std_l: float, std_b: float, std_h: float, p: Palette) -> dict:
+        # Abweichung wird gegen die kanonischen (Algorithmus-)Werte
+        # gerechnet, weil das Set Cover damit arbeitet. Anzeige nutzt
+        # Originalmaße in 'original_l'/'original_b'.
+        return {
+            "abw_l": int(round(std_l - p.laenge)),
+            "abw_b": int(round(std_b - p.breite)),
+            "abw_h": int(round(std_h - p.hoehe)) if p.hoehe > 0 else 0,
+            "abw_max": max(
+                int(round(std_l - p.laenge)),
+                int(round(std_b - p.breite)),
+                int(round(std_h - p.hoehe)) if p.hoehe > 0 else 0,
+            ),
+        }
+
+    # 1. Reguläre Standards
+    for std in ergebnis.standards:
+        std_label = std.label
+        for m in std.members:
+            orig_l, orig_b = _orig(m)
+            abw = _abweichung(std.laenge, std.breite, std.hoehe, m)
+            rows.append({
+                "auftrag": m.auftrag,
+                "kunde": m.kunde,
+                "artikelnummer": m.artikelnummer,
+                "original_l": orig_l,
+                "original_b": orig_b,
+                "original_h": m.hoehe,
+                "anzahl": m.anzahl,
+                "stk_pal": m.stueck_pro_palette,
+                "standard_label": std_label,
+                "standard_l": std.laenge,
+                "standard_b": std.breite,
+                "standard_h": std.hoehe,
+                "status": "standard",
+                **abw,
+            })
+
+    # 2. Kombinationen (mehrere Standards pro Auftrag)
+    for k in ergebnis.kombinationen:
+        m = k.palette
+        orig_l, orig_b = _orig(m)
+        # Zähle gleiche Standards: "2× 1000×800 + 1× 800×600"
+        from collections import Counter
+        labels = [s.label for s in k.standards]
+        zaehlung = Counter(labels)
+        kombi_label = " + ".join(
+            f"{n}× {lbl}" if n > 1 else lbl
+            for lbl, n in zaehlung.items()
+        )
+        # Größte Abweichung in der gestapelten Richtung
+        if k.richtung == "laenge":
+            sum_l = sum(s.laenge for s in k.standards)
+            max_b = max(s.breite for s in k.standards)
+            abw = {
+                "abw_l": int(round(sum_l - m.laenge)),
+                "abw_b": int(round(max_b - m.breite)),
+                "abw_h": 0,
+                "abw_max": max(
+                    int(round(sum_l - m.laenge)),
+                    int(round(max_b - m.breite)),
+                ),
+            }
+        else:
+            sum_b = sum(s.breite for s in k.standards)
+            max_l = max(s.laenge for s in k.standards)
+            abw = {
+                "abw_l": int(round(max_l - m.laenge)),
+                "abw_b": int(round(sum_b - m.breite)),
+                "abw_h": 0,
+                "abw_max": max(
+                    int(round(max_l - m.laenge)),
+                    int(round(sum_b - m.breite)),
+                ),
+            }
+        rows.append({
+            "auftrag": m.auftrag,
+            "kunde": m.kunde,
+            "artikelnummer": m.artikelnummer,
+            "original_l": orig_l,
+            "original_b": orig_b,
+            "original_h": m.hoehe,
+            "anzahl": m.anzahl,
+            "stk_pal": m.stueck_pro_palette,
+            "standard_label": kombi_label,
+            "standard_l": None,
+            "standard_b": None,
+            "standard_h": None,
+            "status": "kombination",
+            **abw,
+        })
+
+    # 3. Sonderpaletten
+    for p in ergebnis.sonderpaletten:
+        orig_l, orig_b = _orig(p)
+        rows.append({
+            "auftrag": p.auftrag,
+            "kunde": p.kunde,
+            "artikelnummer": p.artikelnummer,
+            "original_l": orig_l,
+            "original_b": orig_b,
+            "original_h": p.hoehe,
+            "anzahl": p.anzahl,
+            "stk_pal": p.stueck_pro_palette,
+            "standard_label": "—",
+            "standard_l": None,
+            "standard_b": None,
+            "standard_h": None,
+            "status": "sonder",
+            "abw_l": 0, "abw_b": 0, "abw_h": 0, "abw_max": 0,
+        })
+
+    return rows

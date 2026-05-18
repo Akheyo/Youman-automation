@@ -20,6 +20,7 @@ import streamlit as st
 from excel_handler import (
     erstelle_beispiel_excel,
     exportiere_ergebnis_excel,
+    exportiere_zuordnung_excel,
     importiere_excel,
 )
 from optimizer import (
@@ -29,6 +30,7 @@ from optimizer import (
     PalettenKalkulation,
     StandardPalette,
     WirtschaftlichkeitsErgebnis,
+    baue_zuordnungs_tabelle,
     berechne_wirtschaftlichkeit,
     break_even_analyse,
     mitglieder_wirtschaftlichkeit,
@@ -1798,14 +1800,186 @@ def seite_ergebnisse() -> None:
         return
     erg = st.session_state.ergebnis
     wirt = st.session_state.wirtschaftlichkeit
-    card_ergebnis(erg)
-    a, b, c = st.columns(3)
-    with a:
-        card_wirtschaftlichkeit(wirt, erg.anzahl_eingabe_typen, erg.anzahl_standards)
-    with b:
-        card_logistik(wirt)
-    with c:
-        card_kosten_simulation(wirt)
+
+    # KPIs oben
+    kpi_uebersicht(erg, wirt)
+
+    st.markdown(
+        '<h3 style="color:#1a2944;margin:24px 0 12px 0;">Detail-Zuordnung Auftrag → Standard</h3>',
+        unsafe_allow_html=True,
+    )
+
+    # Daten bauen
+    rows = baue_zuordnungs_tabelle(erg)
+    if not rows:
+        st.info("Keine Zuordnungs-Daten verfügbar.")
+        return
+
+    # Steuerleiste: Umschalter + Suche + Filter + Export
+    c1, c2, c3, c4 = st.columns([1.2, 2, 1.2, 1.2])
+    with c1:
+        ansicht = st.radio(
+            "Ansicht",
+            ["nach Auftrag", "nach Standard"],
+            horizontal=True,
+            key="zuord_ansicht",
+            label_visibility="collapsed",
+        )
+    with c2:
+        suche = st.text_input(
+            "Suche",
+            value="",
+            placeholder="Auftrag, Kunde, Artikelnr …",
+            key="zuord_suche",
+            label_visibility="collapsed",
+        )
+    with c3:
+        status_filter = st.selectbox(
+            "Status",
+            ["alle", "Standard", "Kombination", "Sonderpalette"],
+            key="zuord_status",
+            label_visibility="collapsed",
+        )
+    with c4:
+        xlsx_bytes = exportiere_zuordnung_excel(rows)
+        st.download_button(
+            "📥 Zuordnung exportieren",
+            data=xlsx_bytes,
+            file_name=f"zuordnung_{date.today().isoformat()}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+            key="zuord_download",
+        )
+
+    # Filtern
+    suche_clean = (suche or "").strip().lower()
+    status_map = {"Standard": "standard", "Kombination": "kombination", "Sonderpalette": "sonder"}
+    filt = []
+    for r in rows:
+        if status_filter != "alle" and r["status"] != status_map.get(status_filter):
+            continue
+        if suche_clean:
+            hay = " ".join([
+                str(r.get("auftrag", "")), str(r.get("kunde", "")),
+                str(r.get("artikelnummer", "")),
+            ]).lower()
+            if suche_clean not in hay:
+                continue
+        filt.append(r)
+
+    if ansicht == "nach Auftrag":
+        _detail_nach_auftrag(filt)
+    else:
+        _detail_nach_standard(filt)
+
+
+def _detail_nach_auftrag(rows: list[dict]) -> None:
+    """Flache Tabelle: eine Zeile pro Auftragsposition, sortierbar."""
+    if not rows:
+        st.info("Keine Einträge für die aktuellen Filter.")
+        return
+
+    status_labels = {
+        "standard": "🟢 Standard",
+        "kombination": "🔵 Kombination",
+        "sonder": "⚪ Sonderpalette",
+    }
+    df = pd.DataFrame([
+        {
+            "Auftrag": r.get("auftrag", "") or "—",
+            "Kunde": (r.get("kunde", "") or "")[:35],
+            "Artikelnummer": r.get("artikelnummer", ""),
+            "Original (mm)": (
+                f"{int(r['original_l'])} × {int(r['original_b'])}"
+                + (f" × {int(r['original_h'])}" if r.get("original_h") else "")
+            ),
+            "P-Anzahl": r.get("anzahl", 0),
+            "Zugewiesener Standard": r.get("standard_label", "—"),
+            "Abw. L": r.get("abw_l", 0),
+            "Abw. B": r.get("abw_b", 0),
+            "Abw. max": r.get("abw_max", 0),
+            "Status": status_labels.get(r.get("status", ""), r.get("status", "")),
+        }
+        for r in rows
+    ])
+
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        height=540,
+        column_config={
+            "Abw. max": st.column_config.NumberColumn(
+                "Abw. max (mm)",
+                help="Größte Abweichung zur Original-Palette in mm. "
+                     "Spalte klicken zum Sortieren.",
+                format="%d mm",
+            ),
+            "Abw. L": st.column_config.NumberColumn("Abw. L (mm)", format="%d mm"),
+            "Abw. B": st.column_config.NumberColumn("Abw. B (mm)", format="%d mm"),
+            "P-Anzahl": st.column_config.NumberColumn(format="%d"),
+        },
+    )
+    st.caption(
+        f"{len(rows)} Auftragspositionen · "
+        f"Summe P-Anzahl: {sum(r.get('anzahl', 0) for r in rows)} · "
+        "Spaltenkopf klicken zum Sortieren (z.B. Abw. max für Grenzfälle)."
+    )
+
+
+def _detail_nach_standard(rows: list[dict]) -> None:
+    """Aufklappbare Gruppen-Sicht pro Standard."""
+    if not rows:
+        st.info("Keine Einträge für die aktuellen Filter.")
+        return
+
+    # Gruppieren nach Standard-Label
+    groups: dict[str, list[dict]] = {}
+    for r in rows:
+        key = r.get("standard_label", "—")
+        groups.setdefault(key, []).append(r)
+
+    # Sortieren: Standards mit meisten Paletten zuerst, Sonderpaletten ans Ende
+    def _sort_key(item):
+        label, rs = item
+        ist_sonder = any(r["status"] == "sonder" for r in rs)
+        summe = sum(r.get("anzahl", 0) for r in rs)
+        return (1 if ist_sonder else 0, -summe)
+
+    for label, group_rows in sorted(groups.items(), key=_sort_key):
+        anzahl_auftraege = len(group_rows)
+        summe_paletten = sum(r.get("anzahl", 0) for r in group_rows)
+        unique_masse = len(set(
+            (r["original_l"], r["original_b"], r.get("original_h", 0))
+            for r in group_rows
+        ))
+        ist_sonder = group_rows[0]["status"] == "sonder"
+        ist_kombi = group_rows[0]["status"] == "kombination"
+        badge = "⚪" if ist_sonder else ("🔵" if ist_kombi else "🟢")
+        kategorie = "Sonderpalette" if ist_sonder else ("Kombination" if ist_kombi else "Standard")
+
+        with st.expander(
+            f"{badge} **{label}** — ersetzt {unique_masse} Original-Maße · "
+            f"{anzahl_auftraege} Aufträge · {summe_paletten} Paletten ({kategorie})",
+            expanded=False,
+        ):
+            df = pd.DataFrame([
+                {
+                    "Auftrag": r.get("auftrag", "") or "—",
+                    "Kunde": (r.get("kunde", "") or "")[:35],
+                    "Artikelnummer": r.get("artikelnummer", ""),
+                    "Original (mm)": (
+                        f"{int(r['original_l'])} × {int(r['original_b'])}"
+                        + (f" × {int(r['original_h'])}" if r.get("original_h") else "")
+                    ),
+                    "P-Anzahl": r.get("anzahl", 0),
+                    "Abw. L (mm)": r.get("abw_l", 0),
+                    "Abw. B (mm)": r.get("abw_b", 0),
+                    "Abw. max (mm)": r.get("abw_max", 0),
+                }
+                for r in group_rows
+            ])
+            st.dataframe(df, use_container_width=True, hide_index=True)
 
 
 def seite_bestand() -> None:

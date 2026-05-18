@@ -543,3 +543,61 @@ def paletten_aus_iterable(
         except (KeyError, TypeError, ValueError):
             continue
     return out
+
+
+def exportiere_zuordnung_excel(rows: list[dict]) -> bytes:
+    """Exportiert die Auftrag→Standard-Zuordnungstabelle als Excel-Datei.
+
+    Spalten entsprechen der Detail-Tabelle in der UI (eine Zeile pro
+    Auftragsposition mit Status-Spalte und Abweichung in mm).
+    """
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Zuordnung"
+
+    spalten = [
+        "Auftrag", "Kunde", "Artikelnummer",
+        "Original L", "Original B", "Original H",
+        "P-Anzahl", "Stk/Pal",
+        "Zugewiesener Standard", "Abw. L (mm)", "Abw. B (mm)",
+        "Abw. H (mm)", "Größte Abw. (mm)", "Status",
+    ]
+    ws.append(spalten)
+
+    header_fill = PatternFill("solid", fgColor="1A2944")
+    header_font = Font(color="FFFFFF", bold=True)
+    for col_idx, _ in enumerate(spalten, start=1):
+        c = ws.cell(row=1, column=col_idx)
+        c.fill = header_fill
+        c.font = header_font
+        c.alignment = Alignment(horizontal="center")
+
+    status_label = {
+        "standard": "Standard",
+        "kombination": "Kombination",
+        "sonder": "Sonderpalette",
+    }
+    for r in rows:
+        ws.append([
+            r.get("auftrag", ""),
+            r.get("kunde", ""),
+            r.get("artikelnummer", ""),
+            int(r["original_l"]) if r.get("original_l") else "",
+            int(r["original_b"]) if r.get("original_b") else "",
+            int(r["original_h"]) if r.get("original_h") else "",
+            r.get("anzahl", 0),
+            r.get("stk_pal", 0),
+            r.get("standard_label", ""),
+            r.get("abw_l", 0),
+            r.get("abw_b", 0),
+            r.get("abw_h", 0),
+            r.get("abw_max", 0),
+            status_label.get(r.get("status", ""), r.get("status", "")),
+        ])
+
+    for col_idx in range(1, len(spalten) + 1):
+        ws.column_dimensions[get_column_letter(col_idx)].width = 18
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
