@@ -420,7 +420,20 @@ def aktualisiere_bestellstatus_db(bestell_id: str, status: str) -> None:
 # ---------------------------------------------------------------------------
 
 def markiere_aw_bearbeitet(awnrn: list[str], quelle: str = "") -> int:
-    """Markiert AWs als bearbeitet. Returns Anzahl neu hinzugefügter."""
+    """Markiert AWs als bearbeitet. Returns Anzahl neu hinzugefügter.
+
+    TODO (bekanntes Problem): Die Auftragsnummer ist NICHT eindeutig.
+    In den echten Draht-Müller-Daten taucht z.B. AW 110055 mehrfach
+    mit unterschiedlichen Positions-Suffixen auf (Artikelnummer
+    .../006 und .../004 — beides separate Auftragspositionen unter
+    derselben AW). Aktueller Schlüssel ist nur die AW-Nummer, daher
+    wird die zweite Position als 'schon bekannt' geflaggt obwohl es
+    eine andere Position ist.
+
+    Lösung wenn nötig: Schlüssel auf (auftrag_nr, artikelnummer) oder
+    (auftrag_nr, position) umstellen, sowohl im Schema (UNIQUE-Index)
+    als auch in filtere_neue_aws/markiere_aw_bearbeitet.
+    """
     con = get_connection()
     cur = con.cursor()
     jetzt = datetime.now().isoformat(timespec="seconds")
