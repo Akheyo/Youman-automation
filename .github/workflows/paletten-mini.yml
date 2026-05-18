@@ -74,6 +74,8 @@ jobs:
 
       - name: Pflicht-Test (assert 15/1/16 — Build bricht ab wenn rot)
         shell: pwsh
+        env:
+          PYTHONIOENCODING: utf-8
         run: python tests/test_kern.py
 
       - name: Icon erzeugen (Platzhalter, reuse aus Hauptapp)

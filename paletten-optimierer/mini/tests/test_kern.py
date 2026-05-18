@@ -1,13 +1,21 @@
 """Pflicht-Test gegen Paletten_DM.xlsx.
 
 Soll-Werte laut User-Spec:
-- tol_mm=100, kombi_max=3  →  standards=15, sonder=1, gesamt=16  (Optimal)
-- tol_mm=100, kombi_max=1  →  deutlich mehr Standards (Gegenprobe)
+- tol_mm=100, kombi_max=3  -> standards=15, sonder=1, gesamt=16  (Optimal)
+- tol_mm=100, kombi_max=1  -> deutlich mehr Standards (Gegenprobe)
 """
 from __future__ import annotations
 
+import io
 import sys
 from pathlib import Path
+
+# stdout/stderr auf UTF-8 zwingen — auf Windows ist Default cp1252,
+# das wirft UnicodeEncodeError bei jedem '->' / 'OK' mit Sonderzeichen
+# und verschluckt die eigentliche assert-Fehlermeldung.
+if hasattr(sys.stdout, "buffer"):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -53,7 +61,7 @@ def test_kombi_1_gegenprobe_deutlich_mehr():
     res = optimiere(dat["mit_mass"], tol_mm=100, kombi_max=1,
                     coverage="zweiseitig", sonder_deckel=None,
                     zeit_limit_s=30)
-    print(f"\n  Tol=100, Kombi=1, zweiseitig → status={res['status']}, "
+    print(f"\n  Tol=100, Kombi=1, zweiseitig -> status={res['status']}, "
           f"standards={len(res['standards'])}, sonder={len(res['sonder'])}, "
           f"gesamt={res['gesamt']}")
     assert res["status"] == "Optimal"
