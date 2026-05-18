@@ -428,6 +428,7 @@ def init_state() -> None:
         "tol_h": 200.0,
         "hoehe_aktiv": False,
         "mengen_schwelle": 0,
+        "sonder_budget": 0,
         "letzte_opt_signatur": "",
         "raster": 100,
         "wirtschaftliche_filterung": False,
@@ -590,6 +591,7 @@ def run_optimierung() -> None:
         mengen_schwelle=int(st.session_state.mengen_schwelle),
         hoehe_aktiv=st.session_state.hoehe_aktiv,
         toleranz_h=st.session_state.tol_h,
+        sonder_budget=int(st.session_state.get("sonder_budget", 0)),
     )
     wirt = berechne_wirtschaftlichkeit(erg, params)
     st.session_state.ergebnis = erg
@@ -1133,6 +1135,23 @@ def card_toleranz() -> None:
             "behandelt. 0 = aus."
         ),
     )
+
+    n_auftraege = len(st.session_state.get("paletten", []) or [])
+    st.session_state.sonder_budget = st.number_input(
+        "Sonder-Budget (max. Anzahl Aufträge als Sonderpalette)",
+        min_value=0,
+        max_value=max(0, n_auftraege),
+        value=int(st.session_state.get("sonder_budget", 0)),
+        step=1,
+        key="sonder_budget_in",
+        help=(
+            "Höchstens so viele Aufträge dürfen ungebunden als Sonder "
+            "bleiben. Je höher das Budget, desto weniger Standards "
+            "werden benötigt — Trade-off zwischen Vielfalt der Standards "
+            "und Vielfalt der Sonder. 0 = jeder Auftrag muss einem "
+            "Standard zugeordnet werden."
+        ),
+    )
     st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -1409,6 +1428,22 @@ def card_ergebnis(erg: OptimierungsErgebnis) -> None:
 
     # === KPI-Übersicht (st.metric per Spec) ===
     kpi_uebersicht(erg, st.session_state.wirtschaftlichkeit)
+
+    # Trade-off-Zeile: Stellschrauben → Resultat. Macht sichtbar warum
+    # diese Anzahl Standards entsteht, ohne dass der User raten muss.
+    tol_einh = "%" if st.session_state.tol_einheit == "prozent" else "mm"
+    tradeoff = (
+        f"Toleranz L={st.session_state.tol_l:g}{tol_einh} · "
+        f"B={st.session_state.tol_b:g}{tol_einh} · "
+        f"Sonder-Budget={int(st.session_state.get('sonder_budget', 0))} "
+        f"→ <b>{erg.anzahl_standards} Standards</b>, {erg.anzahl_sonder} Sonder"
+    )
+    st.markdown(
+        f'<div style="background:#f8fafc;border:1px solid #e2e8f0;'
+        f'border-radius:6px;padding:8px 12px;margin:8px 0;font-size:12px;'
+        f'color:#475569;">⚙️ {tradeoff}</div>',
+        unsafe_allow_html=True,
+    )
 
     st.markdown(
         f'<div class="card" style="max-height:680px;overflow:auto;">'

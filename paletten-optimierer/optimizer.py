@@ -27,6 +27,15 @@ class Palette:
     Hintergrund: Eine Palette 1200×800 und 800×1200 sind physisch die
     gleiche Sache (Drahtgitter-Paletten kann man auf dem LKW drehen).
     Ohne Normalisierung landeten beide in unterschiedlichen Clustern.
+
+    TODO (Logistik-/Lademeter-Modul, NICHT jetzt implementieren):
+    Standardisierung ist orientierungs-frei (1200×800 = 800×1200),
+    aber LKW-Ladeplanung ist orientierungs-abhängig — pro
+    zugeordnetem Auftrag muss die gewählte Drehrichtung mitgeführt
+    werden (z.B. ein zusätzliches Feld ``ladeorientierung: 0|90``
+    in der Zuordnungs-Tabelle). Damit kann der Lademeter-Algorithmus
+    Paletten gezielt drehen, um Lademeter zu sparen, ohne die
+    Standardisierungs-Logik zu beeinflussen.
     """
 
     artikelnummer: str
@@ -529,6 +538,7 @@ def optimiere(
     mengen_schwelle: int = 0,
     toleranz_h: float | None = None,
     hoehe_aktiv: bool = False,
+    sonder_budget: int = 0,
 ) -> OptimierungsErgebnis:
     """Set-Cover-Optimierung der Paletten zu Standardpaletten.
 
@@ -568,7 +578,24 @@ def optimiere(
             standards=[], kombinationen=[], eingabe_paletten=[], sonderpaletten=[]
         )
 
-    zu_std = list(paletten)
+    # Kanonische Sortierung der internen Arbeitskopie: macht das
+    # Ergebnis unabhängig von der Eingabe-Reihenfolge. Ohne diese
+    # Sortierung produzieren `for anker in range(n)` und der Greedy-
+    # Tie-Breaker bei wechselnder Excel-Spalten-Sortierung oder DB-
+    # Insert-Reihenfolge unterschiedliche Standard-Mengen.
+    # ``eingabe_paletten`` (für UI / Ergebnis-Properties) bleibt
+    # weiter in User-Reihenfolge.
+    zu_std = sorted(
+        paletten,
+        key=lambda p: (
+            -int(max(1, p.anzahl)),
+            -float(p.laenge),
+            -float(p.breite),
+            -float(p.hoehe or 0.0),
+            str(p.artikelnummer or ""),
+            str(p.auftrag or ""),
+        ),
+    )
     n = len(zu_std)
     L_min = [p.laenge for p in zu_std]
     W_min = [p.breite for p in zu_std]
@@ -653,16 +680,33 @@ def optimiere(
     nicht_abgedeckt: set[int] = set(range(n))
     auswahl: list[tuple[float, float, float, set[int]]] = []
     while nicht_abgedeckt:
+        # Sonder-Budget K: sobald nur noch K Aufträge ungebunden, abbrechen.
+        # Die übrigen werden Sonderpaletten — sie zwingen keinen weiteren
+        # Standard, weil der User K Sonder explizit erlaubt hat.
+        if sonder_budget > 0 and len(nicht_abgedeckt) <= sonder_budget:
+            break
         bester: tuple[float, float, float, set[int]] | None = None
-        bester_score = (-1.0, -1.0)
+        # 4-Tupel: (score_prim, score_fb, anzahl_aufträge, -L_s, -W_s,
+        # sortierte Member-Indizes). Bei Gleichstand im Score gewinnt
+        # der Kandidat mit MEHR Aufträgen (kleineres Set-Cover-Resultat),
+        # danach das kleinere Standardmaß, danach lexikografisch nach
+        # Members — alles deterministisch und reihenfolge-unabhängig.
+        bester_key: tuple = (-1.0, -1.0, -1, 0.0, 0.0, tuple())
         for L_s, W_s, H_s, members in kandidaten:
             cov = members & nicht_abgedeckt
             if not cov:
                 continue
             score = _score(L_s, W_s, cov)
-            if score > bester_score:
-                bester_score = score
+            key = (
+                score[0], score[1],
+                len(cov),         # mehr Aufträge ⇒ weniger Standards insgesamt
+                -float(L_s), -float(W_s),  # kleineres Maß bevorzugt
+                tuple(sorted(cov)),
+            )
+            if key > bester_key:
+                bester_key = key
                 bester = (L_s, W_s, H_s, set(cov))
+        bester_score = (bester_key[0], bester_key[1]) if bester else (-1.0, -1.0)
         if bester is None:
             for i in nicht_abgedeckt:
                 auswahl.append((L_min[i], W_min[i], H_min[i], {i}))
@@ -711,8 +755,11 @@ def optimiere(
 
     standards.sort(key=lambda g: g.gesamt_anzahl, reverse=True)
 
+    # === Sonder-Budget: Aufträge, die der Greedy bewusst ungebunden ließ ===
+    # (weil sonder_budget > 0 den Restbestand <= K erlaubt hat)
+    sonder: list[Palette] = [zu_std[i] for i in sorted(nicht_abgedeckt)]
+
     # === Mengen-Schwelle: kleine Cluster werden Sonderpaletten ===
-    sonder: list[Palette] = []
     if mengen_schwelle > 0:
         haupt = [s for s in standards if s.gesamt_anzahl >= mengen_schwelle]
         klein = [s for s in standards if s.gesamt_anzahl < mengen_schwelle]
