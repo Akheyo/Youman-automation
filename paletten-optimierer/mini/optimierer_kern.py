@@ -250,6 +250,7 @@ def optimiere(
             "auftrag": p.get("auftrag", ""),
             "name": p.get("name", ""),
             "artikelnummer": p.get("artikelnummer", ""),
+            "anzahl": int(p.get("anzahl", 0) or 0),
             "original": auftrags_canon[i],
             "ziel": None,
             "typ": None,

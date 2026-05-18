@@ -386,18 +386,19 @@ def render_zuord_table(res: dict) -> str:
     sort_key = lambda kv: (kv[0][0] != "standard", kv[0][0] != "kombi", len(kv[1]) * -1)
     for (typ_kat, ziel, typ), members in sorted(gruppen.items(), key=sort_key):
         rs = max(1, len(members))
+        gruppe_summe = sum(m.get("anzahl", 0) for m in members)
         for i, m in enumerate(members):
             tds = []
             if i == 0:
                 if typ_kat == "kombi":
                     label = " + ".join(_label(t) for t in ziel)
-                    sub = f"{len(ziel)}× kombiniert"
+                    sub = f"{len(ziel)}× kombiniert · Σ {gruppe_summe} Pal."
                 elif typ_kat == "sonder":
                     label = _label(ziel)
-                    sub = "Sonder"
+                    sub = f"Sonder · Σ {gruppe_summe} Pal."
                 else:
                     label = _label(ziel)
-                    sub = f"{rs} Aufträge"
+                    sub = f"{rs} Aufträge · Σ {gruppe_summe} Pal."
                 tds.append(
                     f'<td rowspan="{rs}" class="standard-cell">{label}'
                     f'<div class="sub-line">{sub}</div></td>'
@@ -407,6 +408,8 @@ def render_zuord_table(res: dict) -> str:
                        f'{escape(m["name"][:35])}</div></td>')
             tds.append(f'<td style="font-family:ui-monospace,monospace;font-size:12px;">'
                        f'{escape(m["auftrag"])}</td>')
+            tds.append(f'<td style="text-align:right;font-weight:700;">'
+                       f'{_fmt_int(m.get("anzahl", 0))}</td>')
             tds.append(f'<td>{_label(m["original"])}</td>')
             if typ_kat == "standard":
                 tds.append('<td><span class="badge badge-ok">✓ Standard</span></td>')
@@ -421,6 +424,7 @@ def render_zuord_table(res: dict) -> str:
         "<th>Standard / Sonder (mm)</th>"
         "<th>Artikel / Kunde</th>"
         "<th>Auftrag</th>"
+        "<th style='text-align:right;' title=\"Palettenanzahl pro Auftrag = Spalte 'Menge'\">Paletten</th>"
         "<th>Original (mm)</th>"
         "<th>Typ</th>"
         "</tr></thead>"
@@ -516,6 +520,7 @@ def seite_ergebnisse() -> None:
             "Auftrag": z["auftrag"],
             "Kunde": z["name"],
             "Artikelnummer": z["artikelnummer"],
+            "Paletten (Menge)": z.get("anzahl", 0),
             "Original": _label(z["original"]),
             "Ziel": _label(z["ziel"]),
             "Typ": z["typ"],
