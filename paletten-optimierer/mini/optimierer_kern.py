@@ -147,10 +147,10 @@ def _kombi_optionen(
 def optimiere(
     paletten: Iterable[dict],
     tol_mm: float = 100,
-    kombi_max: int = 3,
-    coverage: str = "einseitig",
+    kombi_max: int = 2,
+    coverage: str = "zweiseitig",
     sonder_deckel: int | None = None,
-    zeit_limit_s: int = 60,
+    zeit_limit_s: int = 30,
 ) -> dict:
     """Set-Cover-ILP über die Aufträge.
 
@@ -236,7 +236,13 @@ def optimiere(
     prob.solve(solver)
     status = pulp.LpStatus[prob.status]
 
-    if status != "Optimal":
+    # Wenn der Solver KEINE Lösung gefunden hat: leeres Ergebnis.
+    # Eine Suboptimal-Lösung (Time-Limit überschritten) hat aber meist
+    # gesetzte Variablen-Werte — die nutzen wir trotzdem, mit Warnung.
+    hat_werte = (
+        x and x[0].value() is not None
+    )
+    if not hat_werte:
         return {"standards": [], "sonder": [], "gesamt": 0,
                 "zuordnung": [], "status": status, "kandidaten": K}
 

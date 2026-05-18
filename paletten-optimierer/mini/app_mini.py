@@ -46,9 +46,9 @@ def init_state() -> None:
     defaults = {
         "datei_name": "",
         "import_dat": None,        # dict aus import_excel.importiere
-        "params": {                # Optimierungs-Parameter (Default-Spec)
+        "params": {                # Optimierungs-Parameter
             "tol_mm": 100,
-            "kombi_max": 3,
+            "kombi_max": 2,        # Default 2 = schnell; 3 dauert deutlich länger
             "coverage": "zweiseitig",
             "sonder_deckel_aktiv": False,
             "sonder_deckel": 1,
@@ -260,21 +260,21 @@ def run_optimierung() -> None:
     p = st.session_state.params
     mit_mass = st.session_state.import_dat["mit_mass"]
     deckel = int(p["sonder_deckel"]) if p["sonder_deckel_aktiv"] else None
-    hinweis = (
-        f"ILP-Solver (CBC) optimiert {len(mit_mass)} Aufträge mit "
-        f"kombi_max={int(p['kombi_max'])}, coverage={p['coverage']}, "
-        f"tol={int(p['tol_mm'])}mm — "
-    )
-    if int(p["kombi_max"]) >= 3:
-        hinweis += "kombi_max=3 kann bei vielen Aufträgen bis zu 90 Sekunden dauern."
+    km = int(p["kombi_max"])
+    if km >= 3:
+        zeit_limit = 30
+        hinweis = (f"kombi_max=3 — Solver läuft mit 30s Time-Limit. "
+                   f"Liefert bei Timeout die beste bisher gefundene Lösung.")
     else:
-        hinweis += "läuft typischerweise unter 10 Sekunden."
+        zeit_limit = 15
+        hinweis = (f"Solver läuft mit {zeit_limit}s Time-Limit — "
+                   f"typischerweise in wenigen Sekunden fertig.")
     with st.spinner(hinweis):
         res = optimiere(
             mit_mass,
-            tol_mm=p["tol_mm"], kombi_max=int(p["kombi_max"]),
+            tol_mm=p["tol_mm"], kombi_max=km,
             coverage=p["coverage"], sonder_deckel=deckel,
-            zeit_limit_s=120,
+            zeit_limit_s=zeit_limit,
         )
     st.session_state.ergebnis = res
 
