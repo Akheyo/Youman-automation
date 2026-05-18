@@ -32,9 +32,12 @@ metadata = (
 
 import os as _os
 
+# PyInstaller fuehrt die Spec aus dem Verzeichnis aus, in dem
+# 'pyinstaller paletten-mini.spec' aufgerufen wird (im Workflow:
+# paletten-optimierer/mini/build). '__file__' ist in der Spec
+# nicht garantiert vorhanden — daher mit os.getcwd() arbeiten.
 _status_quelle = "../selbsttest_status.json"
-_status_pfad = _os.path.join(_os.path.dirname(__file__), _status_quelle)
-_has_status = _os.path.exists(_status_pfad)
+_has_status = _os.path.exists(_status_quelle)
 
 # Eigene Mini-App-Module mitpacken
 app_datas = [
