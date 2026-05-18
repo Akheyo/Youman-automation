@@ -77,12 +77,14 @@ def selbsttest_banner() -> None:
         )
         return
     if s.get("passed"):
+        sha = s.get("kern_sha", "?")
         st.markdown(
             f'<div style="background:#dcfce7;border:1px solid #86efac;'
             f'color:#166534;padding:6px 12px;border-radius:6px;'
             f'font-size:12px;margin-bottom:10px;font-weight:600;">'
             f'✓ Selbsttest bestanden — Soll-Logik verifiziert '
             f'({s["passed_count"]}/{s["total"]} Asserts · '
+            f'Kern SHA {escape(sha)} · '
             f'{escape(s.get("timestamp", ""))}).'
             f'</div>',
             unsafe_allow_html=True,
@@ -227,8 +229,6 @@ def seite_datenimport() -> None:
     mit_n = len(dat["mit_mass"])
     ohne_n = len(dat["ohne_mass"])
     paletten_summe = sum(p["anzahl"] for p in dat["mit_mass"])
-    varianten = len({(max(p["laenge"], p["breite"]), min(p["laenge"], p["breite"]))
-                     for p in dat["mit_mass"]})
     st.markdown(
         f'<div class="diag-box">'
         f'<div class="title">📊 Import-Diagnose</div>'
@@ -236,8 +236,7 @@ def seite_datenimport() -> None:
         f'<div><b>Header in Datei-Zeile:</b> {dat["header_zeile"]}</div>'
         f'<div><b>Aufträge mit Maß:</b> {mit_n} · '
         f'<b>ohne Maß:</b> {ohne_n} · '
-        f'<b>Paletten gesamt:</b> {paletten_summe} · '
-        f'<b>Varianten (normalisiert):</b> {varianten}</div>'
+        f'<b>Paletten gesamt:</b> {paletten_summe}</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -402,29 +401,22 @@ def kpi_uebersicht() -> None:
         unsafe_allow_html=True,
     )
 
-    varianten = len({(max(p["laenge"], p["breite"]), min(p["laenge"], p["breite"]))
-                     for p in dat["mit_mass"]})
     paletten_summe = sum(p["anzahl"] for p in dat["mit_mass"])
     n_std = len(res["standards"])
     n_son = len(res["sonder"])
     gesamt = res["gesamt"]
-    delta_vs_varianten = gesamt - varianten
 
-    c1, c2, c3, c4, c5 = st.columns([1.4, 1, 1, 1, 1.2])
+    c1, c2, c3, c4 = st.columns([1.4, 1, 1, 1.2])
     c1.metric(
         "GESAMT (Standards + Sonder)",
         _fmt_int(gesamt),
-        f"{delta_vs_varianten:+d} vs. Varianten" if delta_vs_varianten else None,
-        delta_color="inverse",
         help="Standards + verschiedene Sonder-Maße. Das ist die Zielgröße.",
     )
     c2.metric("Standards", _fmt_int(n_std),
               help="Anzahl gewählter Standardpaletten-Maße.")
     c3.metric("Sonder", _fmt_int(n_son),
               help="Anzahl verschiedener Sonder-Maße (Aufträge ohne passenden Standard).")
-    c4.metric("Original-Varianten", _fmt_int(varianten),
-              help="Unique kanonische Maße (laenge ≥ breite) in der Eingabe.")
-    c5.metric("Paletten gesamt", _fmt_int(paletten_summe),
+    c4.metric("Paletten gesamt", _fmt_int(paletten_summe),
               help="Σ der Mengen aller Aufträge mit Maß.")
 
     # Trade-off-Zeile (wie in der großen App). Kandidaten-Zahl prominent —

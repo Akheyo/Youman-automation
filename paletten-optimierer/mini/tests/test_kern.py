@@ -337,14 +337,37 @@ if __name__ == "__main__":
     print(f"{erfolge}/{len(tests)} Tests bestanden.")
     print("=" * 60)
 
+    # In-Prozess-Verifikation: App ruft GENAU diesen Kern auf.
+    # Beweis: SHA256 der Kern-Datei + statische Pruefung des
+    # App-Import-Statements (kein voller Streamlit-Import noetig).
+    import hashlib
+    kern_pfad = Path(__file__).resolve().parent.parent / "optimierer_kern.py"
+    app_pfad = Path(__file__).resolve().parent.parent / "app_mini.py"
+    kern_sha = hashlib.sha256(kern_pfad.read_bytes()).hexdigest()[:12]
+    app_src = app_pfad.read_text(encoding="utf-8")
+    # App muss den Kern direkt importieren — KEINE eigene optimiere-Def
+    identitaet_ok = (
+        "from optimierer_kern import optimiere" in app_src
+        and "\ndef optimiere(" not in app_src
+    )
+    print(f"\nKern-Datei: {kern_pfad.name}  SHA256[:12]={kern_sha}")
+    print(f"app_mini.py importiert Kern direkt: {identitaet_ok}")
+    if not identitaet_ok:
+        failures.append(
+            "app_mini.py importiert optimiere() NICHT direkt aus dem Kern "
+            "ODER definiert eine eigene optimiere()."
+        )
+
     # Status-JSON neben den App-Modulen — der App-Start liest das beim
     # Bootup ein und zeigt Badge oder Banner.
     status_pfad = HIER.parent / "selbsttest_status.json"
     status = {
-        "passed": erfolge == len(tests),
+        "passed": erfolge == len(tests) and identitaet_ok,
         "passed_count": erfolge,
         "total": len(tests),
-        "failures": failures[:5],   # erste 5 für den Banner
+        "failures": failures[:5],
+        "kern_sha": kern_sha,
+        "kern_identitaet_ok": identitaet_ok,
         "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
     }
     status_pfad.write_text(_json.dumps(status, ensure_ascii=False, indent=2),
