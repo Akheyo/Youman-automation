@@ -175,11 +175,18 @@ def optimiere(
     # Kanonisierte Auftragsmaße
     auftrags_canon = [_kanon(float(p["laenge"]), float(p["breite"])) for p in paletten]
 
-    # Kandidaten = unique kanonische Maße (jeder Auftrag ist ein potenzieller
-    # Standard für sich selbst; mehr Kandidaten als das brauchen wir bei
-    # einseitig nicht, weil ein Standard immer >= Auftrag sein muss und
-    # der "nächstgrößte aus den Daten" optimal ist).
-    kandidaten = sorted(set(auftrags_canon))
+    # === KANDIDATEN: volles Gitter ====================================
+    # Identisch zum verifizierten Referenz-Kern: alle Paare
+    # (kurze, lange) aus den vorkommenden kurzen × langen Seiten —
+    # NICHT auf die 158 tatsächlich vorkommenden Maße reduzieren.
+    # Das volle Gitter erlaubt z.B. einen Standard (850×1300), auch
+    # wenn keine einzelne Eingabezeile genau dieses Maß hat — der
+    # Solver kann damit mehr Cluster bilden, was die echte Minimum-
+    # Lösung erst erreichbar macht.
+    S_vals = sorted({min(a, b) for a, b in auftrags_canon})
+    L_vals = sorted({max(a, b) for a, b in auftrags_canon})
+    kandidaten = [(cl, cs) for cs in S_vals for cl in L_vals if cs <= cl]
+    kandidaten.sort()
     K = len(kandidaten)
     n = len(paletten)
 
@@ -196,9 +203,9 @@ def optimiere(
         for i in range(n)
     ]
 
-    # Sonder-Maß-Index pro Auftrag (= Position in kandidaten, weil jeder
-    # Auftrag sein eigenes kanonisches Maß als Sonder bekommen darf)
-    sonder_idx = [kandidaten.index(auftrags_canon[i]) for i in range(n)]
+    # Sonder-Maß-Index pro Auftrag (O(1)-Lookup statt list.index)
+    kand_pos = {m: idx for idx, m in enumerate(kandidaten)}
+    sonder_idx = [kand_pos[auftrags_canon[i]] for i in range(n)]
 
     prob = pulp.LpProblem("min_standards_sonder", pulp.LpMinimize)
 

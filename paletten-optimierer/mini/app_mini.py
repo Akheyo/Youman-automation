@@ -352,16 +352,19 @@ def kpi_uebersicht() -> None:
     c5.metric("Paletten gesamt", _fmt_int(paletten_summe),
               help="Σ der Mengen aller Aufträge mit Maß.")
 
-    # Trade-off-Zeile (wie in der großen App)
+    # Trade-off-Zeile (wie in der großen App). Kandidaten-Zahl prominent —
+    # bei vollem Gitter typisch ~4000-5000, bei reduziertem Set <200.
     p = st.session_state.params
     deckel_text = f"{p['sonder_deckel']}" if p["sonder_deckel_aktiv"] else "frei"
+    kand = res["kandidaten"]
+    kand_warn = "" if kand >= 1000 else " ⚠️ verdächtig wenig — Kern soll volles Gitter liefern"
     st.markdown(
         f'<div style="background:#f8fafc;border:1px solid #e2e8f0;'
         f'border-radius:6px;padding:8px 12px;margin:8px 0 16px;'
         f'font-size:12px;color:#475569;">'
         f'⚙️ tol_mm={int(p["tol_mm"])} · kombi_max={int(p["kombi_max"])} · '
         f'coverage={p["coverage"]} · sonder_deckel={deckel_text} · '
-        f'Kandidaten={res["kandidaten"]} · ILP-Status={res["status"]}'
+        f'<b>Kandidaten={kand}</b>{kand_warn} · ILP-Status={res["status"]}'
         f'</div>',
         unsafe_allow_html=True,
     )

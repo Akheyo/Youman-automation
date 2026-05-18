@@ -72,9 +72,8 @@ jobs:
           Set-Content -Path "_build_info.py" -Value $content -Encoding UTF8
           Write-Host "Build-Stempel: $sha / $when / v$ver"
 
-      - name: Selbsttest (assert 15/1/16 wenn moeglich)
+      - name: Pflicht-Test (assert 15/1/16 — Build bricht ab wenn rot)
         shell: pwsh
-        continue-on-error: true
         run: python tests/test_kern.py
 
       - name: Icon erzeugen (Platzhalter, reuse aus Hauptapp)
