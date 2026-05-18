@@ -1189,7 +1189,6 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
             if has_auftrag:
                 tds.append(f'<td style="font-family:ui-monospace,SF Mono,Menlo,monospace;font-size:12px;">{escape(m.auftrag)}</td>')
             tds.append(f"<td style='text-align:right;'>{fmt_int(m.anzahl)}</td>")
-            tds.append(f"<td style='text-align:right;'>{fmt_int(m.stueck_pro_palette)}</td>")
             l_anzeige = m.laenge_original or m.laenge
             b_anzeige = m.breite_original or m.breite
             if has_hoehe:
@@ -1222,7 +1221,6 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
             kombi_row += f'<td style="font-family:ui-monospace,monospace;font-size:12px;">{escape(m.auftrag)}</td>'
         kombi_row += (
             f"<td style='text-align:right;'>{fmt_int(m.anzahl)}</td>"
-            f"<td style='text-align:right;'>{fmt_int(m.stueck_pro_palette)}</td>"
             f"<td>{int(round(m.laenge_original or m.laenge))} × "
             f"{int(round(m.breite_original or m.breite))}</td>"
             f'<td><span class="badge badge-kombi">⚡ Kombination</span></td>'
@@ -1236,8 +1234,6 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
     head_cells.extend([
         "<th style='text-align:right;' title=\"Palettenanzahl pro Auftrag = Spalte 'Menge' aus der Excel\">"
         "Paletten</th>",
-        "<th style='text-align:right;color:#9ca3af;' title=\"Stückzahl pro Palette aus Spalte 'Stck Pal' — nur Info, fließt NICHT in die Palettenzahl ein\">"
-        "Stk / Pal (Info)</th>",
         "<th>Original (mm)</th>",
         "<th>Bemerkung</th>",
     ])
