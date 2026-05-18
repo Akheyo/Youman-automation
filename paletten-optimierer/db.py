@@ -7,7 +7,7 @@ Eine einzige DB-Datei hält alle Anwendungsdaten:
 - ``palettenpreise``   — Stückkosten pro Palettentyp (Override des
                          globalen Defaults aus ``settings``)
 - ``settings``         — Key-Value-Store für Toleranz, Modus, LKW-Kosten,
-                         Mengen-Schwelle etc.
+                         Sonder-Budget etc.
 - ``bestand``          — Lagerbestand je Palettentyp
 - ``bestellungen``     — Bestellhistorie
 - ``bearbeitete_auftraege`` — AW-Tracking für Doppelimport-Schutz

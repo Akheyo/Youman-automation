@@ -427,7 +427,6 @@ def init_state() -> None:
         "tol_b": 100.0,
         "tol_h": 200.0,
         "hoehe_aktiv": False,
-        "mengen_schwelle": 0,
         "sonder_budget": 0,
         "letzte_opt_signatur": "",
         "raster": 100,
@@ -471,7 +470,7 @@ def init_state() -> None:
     # Werte die der User irgendwann mal gesetzt hat, überschreiben Defaults
     PERSISTENT_KEYS = (
         "tol_einheit", "tol_l", "tol_b", "tol_h", "hoehe_aktiv",
-        "mengen_schwelle", "raster", "wirtschaftliche_filterung",
+        "sonder_budget", "raster", "wirtschaftliche_filterung",
         "kombinieren_erlaubt", "setup_kosten_pro_standard",
         "kosten_pro_lkw", "nutzbare_ladelaenge", "lkw_breite",
         "palettenkosten_neu", "palettenkosten_alt",
@@ -534,7 +533,7 @@ def _opt_signatur() -> str:
     return "|".join(str(x) for x in [
         len(s.paletten), s.tol_einheit, s.tol_l, s.tol_b, s.raster,
         s.kombinieren_erlaubt, s.wirtschaftliche_filterung,
-        s.mengen_schwelle, s.hoehe_aktiv, s.tol_h,
+        s.sonder_budget, s.hoehe_aktiv, s.tol_h,
         s.palettenkosten_alt, s.palettenkosten_neu, s.kosten_pro_lkw,
         s.nutzbare_ladelaenge, s.lkw_breite, s.setup_kosten_pro_standard,
         s.kalkulation_aktiv,
@@ -588,7 +587,6 @@ def run_optimierung() -> None:
         kombinieren_erlaubt=st.session_state.kombinieren_erlaubt,
         wirtschaftliche_filterung=st.session_state.wirtschaftliche_filterung,
         kosten_parameter=params,
-        mengen_schwelle=int(st.session_state.mengen_schwelle),
         hoehe_aktiv=st.session_state.hoehe_aktiv,
         toleranz_h=st.session_state.tol_h,
         sonder_budget=int(st.session_state.get("sonder_budget", 0)),
@@ -1122,20 +1120,6 @@ def card_toleranz() -> None:
     )
     st.session_state.raster = raster_val[raster_label.index(sel)]
 
-    st.session_state.mengen_schwelle = st.number_input(
-        "Mengen-Schwelle (kleine Cluster werden Sonderpaletten)",
-        min_value=0,
-        max_value=50,
-        value=int(st.session_state.mengen_schwelle),
-        step=1,
-        key="schwelle_in",
-        help=(
-            "Cluster mit weniger als dieser Anzahl Paletten gesamt werden "
-            "aus dem Standardsortiment ausgegliedert und als Sonderpaletten "
-            "behandelt. 0 = aus."
-        ),
-    )
-
     n_auftraege = len(st.session_state.get("paletten", []) or [])
     st.session_state.sonder_budget = st.number_input(
         "Sonder-Budget (max. Anzahl Aufträge als Sonderpalette)",
@@ -1338,12 +1322,12 @@ def kpi_uebersicht(
             f"L ±{int(st.session_state.tol_l)} / "
             f"B ±{int(st.session_state.tol_b)} {tol_einheit_sym}"
         )
-    schwelle = int(st.session_state.mengen_schwelle)
-    schwelle_text = f"≥ {schwelle} Paletten" if schwelle > 0 else "aus"
+    budget = int(st.session_state.get("sonder_budget", 0))
+    budget_text = f"max {budget} Aufträge" if budget > 0 else "aus"
     stand = st.session_state.get("datei_zeit", "—") or "—"
     st.markdown(
         f'<div style="font-size:12px;color:#6b7280;margin-bottom:14px;">'
-        f'Toleranz: {tol_text} · Mengen-Schwelle: {schwelle_text} '
+        f'Toleranz: {tol_text} · Sonder-Budget: {budget_text} '
         f'· Stand: {escape(stand)}'
         f'</div>',
         unsafe_allow_html=True,
@@ -1397,8 +1381,8 @@ def kpi_uebersicht(
         "Sonderpaletten",
         fmt_int(n_sonder),
         help=(
-            "Aufträge, die wegen Mengen-Schwelle oder Toleranz nicht "
-            "unter einen Standard fallen."
+            "Aufträge, die der Optimierer innerhalb der Toleranz und "
+            "des Sonder-Budgets keinem Standard zuordnen konnte."
         ),
     )
     c4.metric(
@@ -1464,7 +1448,7 @@ def card_ergebnis(erg: OptimierungsErgebnis) -> None:
             for p in erg.sonderpaletten
         )
         st.markdown(
-            f'<div class="card"><h3>Sonderpaletten ({n_sonder}) — unter Mengen-Schwelle</h3>'
+            f'<div class="card"><h3>Sonderpaletten ({n_sonder}) — ohne passenden Standard</h3>'
             '<table class="result-tbl">'
             '<thead><tr><th>Artikelnummer</th><th>Kunde</th><th>Auftrag</th>'
             "<th>Maße (mm)</th><th style='text-align:right;'>Paletten</th></tr></thead>"

@@ -33,15 +33,17 @@ def test_jeder_auftrag_taucht_genau_einmal_auf():
 
 
 def test_sonderpaletten_haben_keinen_standard():
-    """Aufträge unter der Mengen-Schwelle → status='sonder', kein Standard-Label."""
+    """Aufträge die der Optimierer nicht standardisiert hat (per
+    sonder_budget) → status='sonder', kein Standard-Label."""
     paletten = [
-        # Cluster mit hoher Menge → bleibt Standard
+        # 5 Aufträge gleiches Maß → 1 Standard
         *[Palette(f"VIEL-{i}", 1200, 800, anzahl=10, auftrag=f"V{i}")
           for i in range(5)],
-        # Singleton mit niedriger Menge → wird Sonderpalette bei schwelle=10
+        # 1 Auftrag mit anderem Maß außerhalb Toleranz
         Palette("EINMAL", 1700, 1100, anzahl=1, auftrag="E1"),
     ]
-    erg = optimiere(paletten, 50, 50, "mm", raster=0, mengen_schwelle=10)
+    # sonder_budget=1 erlaubt einen Sonder — der Outlier bleibt drin
+    erg = optimiere(paletten, 50, 50, "mm", raster=0, sonder_budget=1)
     rows = baue_zuordnungs_tabelle(erg)
 
     standards = [r for r in rows if r["status"] == "standard"]

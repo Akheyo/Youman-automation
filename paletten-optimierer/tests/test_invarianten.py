@@ -33,8 +33,8 @@ def _opt(ps, tol, **kw):
         raster=kw.get("raster", 100),
         kombinieren_erlaubt=kw.get("kombi", False),
         wirtschaftliche_filterung=False,
-        mengen_schwelle=kw.get("schwelle", 0),
         hoehe_aktiv=False,
+        sonder_budget=kw.get("budget", 0),
     )
 
 
@@ -124,7 +124,7 @@ def test_sonder_budget_groesser_niemals_mehr_standards():
         erg = optimiere(
             ps, toleranz_l=200, toleranz_b=200, einheit="mm",
             raster=100, kombinieren_erlaubt=False,
-            wirtschaftliche_filterung=False, mengen_schwelle=0,
+            wirtschaftliche_filterung=False,
             hoehe_aktiv=False, sonder_budget=k,
         )
         werte.append((k, erg.anzahl_standards, erg.anzahl_sonder))
@@ -142,12 +142,32 @@ def test_sonder_budget_respektiert_max_anzahl_sonder():
     erg = optimiere(
         ps, toleranz_l=200, toleranz_b=200, einheit="mm",
         raster=100, kombinieren_erlaubt=False,
-        wirtschaftliche_filterung=False, mengen_schwelle=0,
+        wirtschaftliche_filterung=False,
         hoehe_aktiv=False, sonder_budget=10,
     )
     print(f"\n  Budget=10 → Standards: {erg.anzahl_standards}, Sonder: {erg.anzahl_sonder}")
     assert erg.anzahl_sonder <= 10, (
         f"Budget=10 erlaubt höchstens 10 Sonder, bekam {erg.anzahl_sonder}"
+    )
+
+
+def test_kleine_stueckzahl_wird_nicht_vorab_zu_sonder():
+    """Aufträge mit wenigen Paletten dürfen NIE allein wegen kleiner
+    Stückzahl Sonder werden — der frühere ``mengen_schwelle``-Vorfilter
+    ist KOMPLETT ENTFERNT. Sonder entsteht nur durch Optimierer-Logik."""
+    paletten = [
+        # 4 Aufträge mit gleichem Maß und hoher Stückzahl
+        *[Palette(f"GROSS-{i}", 1200, 800, anzahl=50, auftrag=f"G{i}")
+          for i in range(4)],
+        # 1 Auftrag mit gleichem Maß aber nur 1 Palette
+        Palette("KLEIN", 1200, 800, anzahl=1, auftrag="K1"),
+    ]
+    erg = _opt(paletten, tol=0, budget=0)
+    print(f"\n  4×große (50) + 1×kleine (1), gleiches Maß "
+          f"→ {erg.anzahl_standards} Std, {erg.anzahl_sonder} Sonder")
+    assert erg.anzahl_standards == 1, "Alle 5 → 1 Standard (gleiches Maß)"
+    assert erg.anzahl_sonder == 0, (
+        f"KLEIN darf nicht Sonder werden nur wegen 1 Stück Stückzahl"
     )
 
 
@@ -215,6 +235,7 @@ if __name__ == "__main__":
         test_determinismus_zeilen_mischen_liefert_identische_standards,
         test_sonder_budget_groesser_niemals_mehr_standards,
         test_sonder_budget_respektiert_max_anzahl_sonder,
+        test_kleine_stueckzahl_wird_nicht_vorab_zu_sonder,
         test_keine_zwei_standards_mit_gleichen_kanonischen_massen,
         test_jeder_auftrag_passt_in_seinen_zugewiesenen_standard,
     ]

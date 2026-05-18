@@ -535,7 +535,6 @@ def optimiere(
     kombinieren_erlaubt: bool = False,
     wirtschaftliche_filterung: bool = False,
     kosten_parameter: KostenParameter | None = None,
-    mengen_schwelle: int = 0,
     toleranz_h: float | None = None,
     hoehe_aktiv: bool = False,
     sonder_budget: int = 0,
@@ -569,9 +568,9 @@ def optimiere(
         kombinieren_erlaubt: Phase 4 aktivieren.
         wirtschaftliche_filterung: Phase 5 aktivieren.
         kosten_parameter: erforderlich wenn Phase 5 aktiv.
-        mengen_schwelle: Artikel mit ``anzahl < mengen_schwelle`` werden
-            als Sonderpaletten ausgewiesen und nicht standardisiert
-            (Spec: "Sondergröße in Verkleidung" vermeiden).
+        sonder_budget: max. Anzahl Aufträge, die als Sonderpalette
+            ungebunden bleiben dürfen (0 = jeder Auftrag muss einem
+            Standard zugeordnet werden).
     """
     if not paletten:
         return OptimierungsErgebnis(
@@ -755,17 +754,10 @@ def optimiere(
 
     standards.sort(key=lambda g: g.gesamt_anzahl, reverse=True)
 
-    # === Sonder-Budget: Aufträge, die der Greedy bewusst ungebunden ließ ===
-    # (weil sonder_budget > 0 den Restbestand <= K erlaubt hat)
+    # === Sonderpaletten: Aufträge, die der Greedy nicht abdecken konnte ===
+    # (= unvermeidbare Ausreißer, sowie diejenigen die durch sonder_budget
+    # ungebunden bleiben durften). KEIN Vorfilter nach Stückzahl.
     sonder: list[Palette] = [zu_std[i] for i in sorted(nicht_abgedeckt)]
-
-    # === Mengen-Schwelle: kleine Cluster werden Sonderpaletten ===
-    if mengen_schwelle > 0:
-        haupt = [s for s in standards if s.gesamt_anzahl >= mengen_schwelle]
-        klein = [s for s in standards if s.gesamt_anzahl < mengen_schwelle]
-        for s in klein:
-            sonder.extend(s.members)
-        standards = haupt
 
     ergebnis = OptimierungsErgebnis(
         standards=standards,
@@ -1109,8 +1101,8 @@ def baue_zuordnungs_tabelle(ergebnis: OptimierungsErgebnis) -> list[dict]:
     Status pro Zeile:
         - ``standard``     → Auftrag fällt unter eine Standardpalette
         - ``kombination``  → Auftrag wird durch 2-3 Standards abgedeckt
-        - ``sonder``       → Auftrag bleibt Sonderpalette (unter
-                             Mengen-Schwelle o.ä.)
+        - ``sonder``       → Auftrag bleibt Sonderpalette (unvermeidbarer
+                             Ausreißer ohne passenden Standard)
 
     Jede Zeile enthält Original-Maße (NICHT normalisiert), zugewiesenen
     Standard, Abweichung pro Dimension und die maximale Abweichung als
