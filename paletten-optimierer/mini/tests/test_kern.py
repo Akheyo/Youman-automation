@@ -20,12 +20,18 @@ FIXTURE = Path(__file__).resolve().parent / "fixtures" / "paletten_dm.xlsx"
 
 def test_kombi_3_liefert_15_1_16():
     """HARTER ANKER (User-Spec):
-       tol_mm=100, kombi_max=3, coverage=zweiseitig  ⇒ 15/1/16 Optimal."""
+       tol_mm=100, kombi_max=3, coverage=zweiseitig  ⇒ 15/1/16 Optimal.
+
+    Solver-Limit 60s: wenn CBC länger braucht, gilt das Ergebnis als
+    suboptimal — Test schlägt fehl, blockiert Build, aber NICHT durch
+    Job-Timeout. Wenn der Original-Kern im Mini-App-Code aktiv ist,
+    löst er innerhalb des Limits zu Optimal."""
     dat = importiere(FIXTURE)
     print(f"\n  Import: Header Z.{dat['header_zeile']}, "
           f"mit_mass={len(dat['mit_mass'])}, ohne_mass={len(dat['ohne_mass'])}")
     res = optimiere(dat["mit_mass"], tol_mm=100, kombi_max=3,
-                    coverage="zweiseitig", sonder_deckel=None)
+                    coverage="zweiseitig", sonder_deckel=None,
+                    zeit_limit_s=60)
     print(f"  Resultat: status={res['status']}, kandidaten={res['kandidaten']}, "
           f"standards={len(res['standards'])}, sonder={len(res['sonder'])}, "
           f"gesamt={res['gesamt']}")
@@ -45,7 +51,8 @@ def test_kombi_1_gegenprobe_deutlich_mehr():
     """Ohne Kombi (kombi_max=1) müssen DEUTLICH mehr Maße entstehen."""
     dat = importiere(FIXTURE)
     res = optimiere(dat["mit_mass"], tol_mm=100, kombi_max=1,
-                    coverage="zweiseitig", sonder_deckel=None)
+                    coverage="zweiseitig", sonder_deckel=None,
+                    zeit_limit_s=30)
     print(f"\n  Tol=100, Kombi=1, zweiseitig → status={res['status']}, "
           f"standards={len(res['standards'])}, sonder={len(res['sonder'])}, "
           f"gesamt={res['gesamt']}")

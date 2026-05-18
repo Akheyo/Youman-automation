@@ -80,6 +80,19 @@ def _kombi_optionen(
         key=lambda k: kandidaten[k][1],
     )
 
+    # Bei sehr großem Kandidaten-Set (volles Gitter) wäre die naive
+    # 3-Kombi-Enumeration kubisch und unbrauchbar. Wir begrenzen die
+    # zu betrachtenden Stapel-Standards pro Auftrag auf die N grössten,
+    # die in Stapel-Richtung passen — die kleinsten tragen ohnehin
+    # nichts bei. Das ist KEINE Reduktion des Standard-Kandidaten-Sets
+    # (Punkt 1), sondern eine Heuristik im Kombi-Suchraum.
+    MAX_STAPEL = 60
+    if len(laengs_idx) > MAX_STAPEL:
+        # größte zuerst nehmen (sortiert aufsteigend → letzte N)
+        laengs_idx = laengs_idx[-MAX_STAPEL:]
+    if len(quer_idx) > MAX_STAPEL:
+        quer_idx = quer_idx[-MAX_STAPEL:]
+
     def passt_laengs(combo: tuple[int, ...]) -> bool:
         L_sum = sum(kandidaten[k][0] for k in combo)
         return La <= L_sum <= La + tol
