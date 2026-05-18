@@ -129,8 +129,9 @@ def seite_datenimport() -> None:
     cols = st.columns(2)
     if cols[0].button("📥 Importieren", use_container_width=True, type="primary",
                        disabled=up is None):
-        with st.spinner(f"Lese {up.name} ..."):
-            dat = importiere(io.BytesIO(up.read()))
+        roh = up.read()
+        with st.spinner(f"Lese {up.name} ({len(roh) / 1024:.0f} KB) ..."):
+            dat = importiere(io.BytesIO(roh))
         st.session_state.datei_name = up.name
         st.session_state.import_dat = dat
         st.session_state.ergebnis = None
@@ -173,7 +174,13 @@ def seite_datenimport() -> None:
 
     if mit_n:
         card_open(f"Importierte Aufträge ({mit_n})")
-        df = pd.DataFrame(dat["mit_mass"])
+        # Bei sehr großen Dateien Vorschau begrenzen — die volle Liste
+        # fließt unverändert in die Optimierung.
+        if mit_n > 500:
+            df = pd.DataFrame(dat["mit_mass"][:500])
+            st.caption(f"Vorschau: erste 500 von {mit_n} Aufträgen.")
+        else:
+            df = pd.DataFrame(dat["mit_mass"])
         st.dataframe(df, use_container_width=True, hide_index=True, height=380)
         card_close()
 
@@ -253,12 +260,21 @@ def run_optimierung() -> None:
     p = st.session_state.params
     mit_mass = st.session_state.import_dat["mit_mass"]
     deckel = int(p["sonder_deckel"]) if p["sonder_deckel_aktiv"] else None
-    with st.spinner(f"ILP-Solver (CBC) optimiert {len(mit_mass)} Aufträge ..."):
+    hinweis = (
+        f"ILP-Solver (CBC) optimiert {len(mit_mass)} Aufträge mit "
+        f"kombi_max={int(p['kombi_max'])}, coverage={p['coverage']}, "
+        f"tol={int(p['tol_mm'])}mm — "
+    )
+    if int(p["kombi_max"]) >= 3:
+        hinweis += "kombi_max=3 kann bei vielen Aufträgen bis zu 90 Sekunden dauern."
+    else:
+        hinweis += "läuft typischerweise unter 10 Sekunden."
+    with st.spinner(hinweis):
         res = optimiere(
             mit_mass,
             tol_mm=p["tol_mm"], kombi_max=int(p["kombi_max"]),
             coverage=p["coverage"], sonder_deckel=deckel,
-            zeit_limit_s=90,
+            zeit_limit_s=120,
         )
     st.session_state.ergebnis = res
 
