@@ -2,30 +2,32 @@
 
 Set-Cover-Formulierung als Binär-ILP (pulp + CBC), exakt.
 
-Zielfunktion: minimiere (Anzahl unterschiedlicher Standards) +
-(Anzahl unterschiedlicher Sonder-Maße). Standards und Sonder werden
-gleich gewichtet, weil beide aus Kundensicht "ein zusätzliches Maß
-auf der Liste" bedeuten.
+Aufgebaut nach User-Spec ('paletten_optimierer_kern.py'):
 
-Coverage (ein Auftrag a wird von Standard s abgedeckt):
-- "einseitig":  S.lang >= a.lang  UND  S.kurz >= a.kurz
-                UND  S.lang-a.lang <= tol  UND  S.kurz-a.kurz <= tol
-                (Last muss physisch draufpassen)
-- "zweiseitig": |S.lang-a.lang| <= tol  UND  |S.kurz-a.kurz| <= tol
-                (egal welcher größer; Standard darf kleiner sein)
+1) Kandidaten = volles Gitter aus den vorkommenden kurzen × langen
+   Seiten der Aufträge: ``cands = [(cs, cl) for cs in S_vals
+   for cl in L_vals if cs <= cl]``. KEINE Reduktion auf unique
+   vorkommende Maße.
 
-Kombinationen (kombi_max in {1, 2, 3}):
-- kombi_max=1: nur Einzel-Standards decken
-- kombi_max=2: zusätzlich 2-fach längs/quer (zwei kleinere
-                Standards aneinandergestellt füllen das Auftragsmaß)
-- kombi_max=3: zusätzlich 3-fach
+2) Coverage inkl. Stapelung in EINER Funktion (KEINE Kombi-
+   Variablen im ILP). Für einen Standard ``(cs, cl)`` und einen
+   Auftrag ``(os_, ol)`` (jeweils kurz, lang) gilt Coverage wenn:
+   - direkt: abs(cs-os_) <= T und abs(cl-ol) <= T  (zweiseitig)
+             oder cs>=os_, cl>=ol mit Differenz <= T  (einseitig)
+   - oder per k-fach Stapelung (k = 2..kombi_max), in Längs-
+     oder Querrichtung — wie im Referenz-Kern:
+       for k in range(2, kombi_max+1):
+         for e0,e1 in ((cs,cl*k),(cs*k,cl),(cl,cs*k),(cl*k,cs)):
+           es0,es1 = sorted([e0,e1])
+           passt? -> True
 
-Sonder-Deckel:
-- None: kein Limit (jeder Auftrag, der nicht standardisierbar
-        ist, wird Sonder)
-- int K: höchstens K verschiedene Sonder-Maße erlaubt; gibt es
-         mehr Maße ohne Standard-Deckung, wird die LP infeasible
-         (Status != Optimal).
+3) Zielfunktion:
+   prob += lpSum(x) + lpSum(z.values())
+   (Standards + verschiedene Sonder-Maße). Nichts anderes.
+
+Damit gibt es keine c-Variablen für Kombinationen — die Stapelung
+ist in die Coverage gefaltet. Das hält das ILP klein (~K x-Vars
+und ~|unique-Auftragsmaße| z-Vars) und korrekt.
 """
 from __future__ import annotations
 
@@ -35,149 +37,67 @@ import pulp
 
 
 def _kanon(L: float, B: float) -> tuple[float, float]:
-    """Lange Seite zuerst, kurze danach."""
-    return (max(L, B), min(L, B))
+    """Kanonische Reihenfolge: (kurz, lang)."""
+    return (min(L, B), max(L, B))
 
 
-def _deckt(std: tuple[float, float], auf: tuple[float, float],
-           tol: float, coverage: str) -> bool:
-    Ls, Ws = std
-    La, Wa = auf
-    if coverage == "einseitig":
-        return (Ls >= La and Ws >= Wa
-                and (Ls - La) <= tol and (Ws - Wa) <= tol)
-    if coverage == "zweiseitig":
-        return abs(Ls - La) <= tol and abs(Ws - Wa) <= tol
-    raise ValueError(f"Unbekannter coverage-Modus: {coverage!r}")
-
-
-def _kombi_optionen(
-    auftrag: tuple[float, float],
-    kandidaten: list[tuple[float, float]],
+def _deckt_inkl_stapelung(
+    std: tuple[float, float],
+    auf: tuple[float, float],
     tol: float,
+    coverage: str,
     kombi_max: int,
-) -> list[tuple[tuple[int, ...], str]]:
-    """Liste aller Kombi-Möglichkeiten (combo_idx-tuple, richtung)
-    die ``auftrag`` durch Aneinanderstellen kleinerer Kandidaten
-    abdecken. Stark vorgefiltert für ILP-Komplexität."""
-    if kombi_max < 2:
-        return []
-    La, Wa = auftrag
-    optionen: list[tuple[tuple[int, ...], str]] = []
+) -> bool:
+    """Standard deckt Auftrag — direkt ODER per k-fach-Stapelung.
 
-    # Vorfilter: für jede Richtung (längs/quer) nur passende Standards.
-    # Längs: jeder Standard muss kürzer als La sein (sonst kein Stapeln),
-    # aber Wa <= W_s <= Wa + tol (Breite muss passen).
-    # Nach Länge sortieren, damit break-Schranken im 3-Kombi-Loop greifen.
-    laengs_idx = sorted(
-        [k for k, (Ls, Ws) in enumerate(kandidaten)
-         if Ls < La and Wa <= Ws <= Wa + tol],
-        key=lambda k: kandidaten[k][0],
-    )
-    quer_idx = sorted(
-        [k for k, (Ls, Ws) in enumerate(kandidaten)
-         if Ws < Wa and La <= Ls <= La + tol],
-        key=lambda k: kandidaten[k][1],
-    )
+    std und auf sind beide (kurz, lang). Stapelung k-fach exakt nach
+    User-Spec: vier Permutationen (cs,cl*k),(cs*k,cl),(cl,cs*k),
+    (cl*k,cs), sortiert, dann gegen (os_, ol) geprüft.
+    """
+    cs, cl = std
+    os_, ol = auf
+    T = tol
 
-    # Bei sehr großem Kandidaten-Set (volles Gitter) wäre die naive
-    # 3-Kombi-Enumeration kubisch und unbrauchbar. Wir begrenzen die
-    # zu betrachtenden Stapel-Standards pro Auftrag auf die N grössten,
-    # die in Stapel-Richtung passen — die kleinsten tragen ohnehin
-    # nichts bei. Das ist KEINE Reduktion des Standard-Kandidaten-Sets
-    # (Punkt 1), sondern eine Heuristik im Kombi-Suchraum.
-    MAX_STAPEL = 60
-    if len(laengs_idx) > MAX_STAPEL:
-        # größte zuerst nehmen (sortiert aufsteigend → letzte N)
-        laengs_idx = laengs_idx[-MAX_STAPEL:]
-    if len(quer_idx) > MAX_STAPEL:
-        quer_idx = quer_idx[-MAX_STAPEL:]
+    def _passt(es0: float, es1: float) -> bool:
+        if coverage == "zweiseitig":
+            return abs(es0 - os_) <= T and abs(es1 - ol) <= T
+        if coverage == "einseitig":
+            return (es0 >= os_ and es1 >= ol
+                    and (es0 - os_) <= T and (es1 - ol) <= T)
+        raise ValueError(f"Unbekannter coverage-Modus: {coverage!r}")
 
-    def passt_laengs(combo: tuple[int, ...]) -> bool:
-        L_sum = sum(kandidaten[k][0] for k in combo)
-        return La <= L_sum <= La + tol
+    # direkte Coverage (k=1, kein Stapeln)
+    if _passt(cs, cl):
+        return True
 
-    def passt_quer(combo: tuple[int, ...]) -> bool:
-        W_sum = sum(kandidaten[k][1] for k in combo)
-        return Wa <= W_sum <= Wa + tol
-
-    # 2-Kombi
-    L = len(laengs_idx)
-    for ai in range(L):
-        k1 = laengs_idx[ai]
-        for bi in range(ai, L):
-            k2 = laengs_idx[bi]
-            if passt_laengs((k1, k2)):
-                optionen.append(((k1, k2), "laengs"))
-    Q = len(quer_idx)
-    for ai in range(Q):
-        k1 = quer_idx[ai]
-        for bi in range(ai, Q):
-            k2 = quer_idx[bi]
-            if passt_quer((k1, k2)):
-                optionen.append(((k1, k2), "quer"))
-    # 3-Kombi
-    if kombi_max >= 3:
-        for ai in range(L):
-            k1 = laengs_idx[ai]
-            L1 = kandidaten[k1][0]
-            if 3 * L1 > La + tol:  # alle 3 = k1 schon zu lang
-                break
-            for bi in range(ai, L):
-                k2 = laengs_idx[bi]
-                L2 = kandidaten[k2][0]
-                if L1 + 2 * L2 > La + tol:
-                    continue
-                for ci in range(bi, L):
-                    k3 = laengs_idx[ci]
-                    L3 = kandidaten[k3][0]
-                    s = L1 + L2 + L3
-                    if s > La + tol:
-                        break
-                    if s >= La:
-                        optionen.append(((k1, k2, k3), "laengs"))
-        for ai in range(Q):
-            k1 = quer_idx[ai]
-            W1 = kandidaten[k1][1]
-            if 3 * W1 > Wa + tol:
-                break
-            for bi in range(ai, Q):
-                k2 = quer_idx[bi]
-                W2 = kandidaten[k2][1]
-                if W1 + 2 * W2 > Wa + tol:
-                    continue
-                for ci in range(bi, Q):
-                    k3 = quer_idx[ci]
-                    W3 = kandidaten[k3][1]
-                    s = W1 + W2 + W3
-                    if s > Wa + tol:
-                        break
-                    if s >= Wa:
-                        optionen.append(((k1, k2, k3), "quer"))
-    return optionen
+    # Stapel-Coverage k-fach (User-Spec wortwörtlich)
+    if kombi_max >= 2:
+        for k in range(2, kombi_max + 1):
+            for e0, e1 in ((cs, cl * k), (cs * k, cl), (cl, cs * k), (cl * k, cs)):
+                es0, es1 = sorted([e0, e1])
+                if _passt(es0, es1):
+                    return True
+    return False
 
 
 def optimiere(
     paletten: Iterable[dict],
     tol_mm: float = 100,
-    kombi_max: int = 2,
+    kombi_max: int = 3,
     coverage: str = "zweiseitig",
     sonder_deckel: int | None = None,
-    zeit_limit_s: int = 30,
+    zeit_limit_s: int = 60,
 ) -> dict:
-    """Set-Cover-ILP über die Aufträge.
-
-    Erwartete dict-Schlüssel pro Palette: 'auftrag', 'name',
-    'artikelnummer', 'laenge', 'breite', 'anzahl' (optional 'hoehe').
+    """Set-Cover-ILP.
 
     Returns:
         {
-            'standards':   list[(L, B)],          # gewählte Standardmaße
-            'sonder':      list[(L, B)],          # gewählte Sonder-Maße
-            'gesamt':      int,                    # = len(standards) + len(sonder)
-            'zuordnung':   list[dict],            # pro Auftrag: ziel + typ
-            'status':      str,                    # 'Optimal' / 'Infeasible' / ...
-            'kandidaten':  int,                    # Anzahl Kandidaten-Maße
+            'standards':  list[(kurz, lang)],
+            'sonder':     list[(kurz, lang)],
+            'gesamt':     int,                    # |Standards| + |Sonder|
+            'zuordnung':  list[dict],            # pro Auftrag: ziel + typ
+            'status':     str,                    # 'Optimal' / ...
+            'kandidaten': int,                    # |volles Gitter|
         }
     """
     paletten = list(paletten)
@@ -185,89 +105,61 @@ def optimiere(
         return {"standards": [], "sonder": [], "gesamt": 0,
                 "zuordnung": [], "status": "leer", "kandidaten": 0}
 
-    # Kanonisierte Auftragsmaße
-    auftrags_canon = [_kanon(float(p["laenge"]), float(p["breite"])) for p in paletten]
-
-    # === KANDIDATEN: volles Gitter ====================================
-    # Identisch zum verifizierten Referenz-Kern: alle Paare
-    # (kurze, lange) aus den vorkommenden kurzen × langen Seiten —
-    # NICHT auf die 158 tatsächlich vorkommenden Maße reduzieren.
-    # Das volle Gitter erlaubt z.B. einen Standard (850×1300), auch
-    # wenn keine einzelne Eingabezeile genau dieses Maß hat — der
-    # Solver kann damit mehr Cluster bilden, was die echte Minimum-
-    # Lösung erst erreichbar macht.
-    S_vals = sorted({min(a, b) for a, b in auftrags_canon})
-    L_vals = sorted({max(a, b) for a, b in auftrags_canon})
-    kandidaten = [(cl, cs) for cs in S_vals for cl in L_vals if cs <= cl]
-    kandidaten.sort()
-    K = len(kandidaten)
+    # Kanonisiere Aufträge auf (kurz, lang)
+    auftrags_canon = [_kanon(float(p["laenge"]), float(p["breite"]))
+                      for p in paletten]
     n = len(paletten)
 
-    # Coverage-Matrix: für jeden Auftrag i, Liste der Kandidaten-Indizes
-    # die i einzeln abdecken
-    deckt_einzel = [
-        [k for k in range(K) if _deckt(kandidaten[k], auftrags_canon[i], tol_mm, coverage)]
+    # === KANDIDATEN: volles Gitter ====================================
+    S_vals = sorted({a for a, _ in auftrags_canon})
+    L_vals = sorted({b for _, b in auftrags_canon})
+    kandidaten = [(cs, cl) for cs in S_vals for cl in L_vals if cs <= cl]
+    K = len(kandidaten)
+
+    # Coverage-Matrix: ein Standard deckt einen Auftrag entweder direkt
+    # oder per k-fach-Stapelung (siehe _deckt_inkl_stapelung).
+    deckt_von = [
+        [k for k in range(K)
+         if _deckt_inkl_stapelung(kandidaten[k], auftrags_canon[i],
+                                  tol_mm, coverage, kombi_max)]
         for i in range(n)
     ]
 
-    # Kombi-Optionen pro Auftrag (bei kombi_max >= 2)
-    kombi_pro_auftrag = [
-        _kombi_optionen(auftrags_canon[i], kandidaten, tol_mm, kombi_max)
-        for i in range(n)
-    ]
-
-    # Sonder-Maß-Index pro Auftrag (O(1)-Lookup statt list.index)
-    kand_pos = {m: idx for idx, m in enumerate(kandidaten)}
-    sonder_idx = [kand_pos[auftrags_canon[i]] for i in range(n)]
-
+    # ILP-Variablen — exakt zwei Familien (User-Spec):
+    # x[k] = 1  ⇔  Standard-Kandidat k wird verwendet
+    # z[m] = 1  ⇔  unique Auftrags-Maß m wird zu einer Sonder-Palette
     prob = pulp.LpProblem("min_standards_sonder", pulp.LpMinimize)
+    x = [pulp.LpVariable(f"x_{k}", cat="Binary") for k in range(K)]
+    unique_auftrags_masse = sorted(set(auftrags_canon))
+    z = {m: pulp.LpVariable(f"z_{i}", cat="Binary")
+         for i, m in enumerate(unique_auftrags_masse)}
 
-    # Binär-Variablen
-    x = [pulp.LpVariable(f"x_{k}", cat="Binary") for k in range(K)]   # Standard k gewählt?
-    y = [pulp.LpVariable(f"y_{k}", cat="Binary") for k in range(K)]   # Sonder-Maß k benutzt?
-
-    # Kombi-Variablen pro (auftrag, kombi-option)
-    c: dict[tuple[int, int], pulp.LpVariable] = {}
-    for i, optionen in enumerate(kombi_pro_auftrag):
-        for j, _ in enumerate(optionen):
-            c[(i, j)] = pulp.LpVariable(f"c_{i}_{j}", cat="Binary")
-
-    # Coverage-Constraint: jeder Auftrag muss abgedeckt sein
+    # Coverage-Constraint: jeder Auftrag muss durch (Standard ODER
+    # Sonder seines Maßes) abgedeckt sein.
     for i in range(n):
-        teile = [x[k] for k in deckt_einzel[i]]
-        teile += [c[(i, j)] for j in range(len(kombi_pro_auftrag[i]))]
-        teile.append(y[sonder_idx[i]])
+        teile = [x[k] for k in deckt_von[i]]
+        teile.append(z[auftrags_canon[i]])
         prob += pulp.lpSum(teile) >= 1, f"cov_{i}"
 
-    # Kombi-Constraint: c[(i, j)] = 1 ⇒ alle beteiligten x[k] = 1
-    for i, optionen in enumerate(kombi_pro_auftrag):
-        for j, (combo, _) in enumerate(optionen):
-            for k in set(combo):
-                prob += c[(i, j)] <= x[k], f"kombi_{i}_{j}_{k}"
-
-    # Sonder-Deckel
+    # Sonder-Deckel (optional)
     if sonder_deckel is not None and sonder_deckel >= 0:
-        prob += pulp.lpSum(y) <= sonder_deckel, "sonder_max"
+        prob += pulp.lpSum(z.values()) <= sonder_deckel, "sonder_max"
 
-    # Zielfunktion
-    prob += pulp.lpSum(x) + pulp.lpSum(y)
+    # Zielfunktion — EXAKT nach User-Spec
+    prob += pulp.lpSum(x) + pulp.lpSum(z.values())
 
     solver = pulp.PULP_CBC_CMD(msg=0, timeLimit=zeit_limit_s)
     prob.solve(solver)
     status = pulp.LpStatus[prob.status]
 
-    # Wenn der Solver KEINE Lösung gefunden hat: leeres Ergebnis.
-    # Eine Suboptimal-Lösung (Time-Limit überschritten) hat aber meist
-    # gesetzte Variablen-Werte — die nutzen wir trotzdem, mit Warnung.
-    hat_werte = (
-        x and x[0].value() is not None
-    )
-    if not hat_werte:
+    # Bei Timeout/Unsolved: leeres Ergebnis (Variablen könnten None sein)
+    if not x or x[0].value() is None:
         return {"standards": [], "sonder": [], "gesamt": 0,
                 "zuordnung": [], "status": status, "kandidaten": K}
 
-    standards = [kandidaten[k] for k in range(K) if x[k].value() and x[k].value() > 0.5]
-    sonder = [kandidaten[k] for k in range(K) if y[k].value() and y[k].value() > 0.5]
+    standards = [kandidaten[k] for k in range(K)
+                 if x[k].value() and x[k].value() > 0.5]
+    sonder = [m for m, v in z.items() if v.value() and v.value() > 0.5]
 
     # Zuordnung pro Auftrag
     zuordnung: list[dict] = []
@@ -281,33 +173,39 @@ def optimiere(
             "ziel": None,
             "typ": None,
         }
-        # Standard? (kleinster passender wins; deterministisch)
         gewaehlt_std = sorted(
-            [k for k in deckt_einzel[i]
+            [k for k in deckt_von[i]
              if x[k].value() and x[k].value() > 0.5],
             key=lambda k: kandidaten[k],
         )
         if gewaehlt_std:
-            eintrag["typ"] = "standard"
-            eintrag["ziel"] = kandidaten[gewaehlt_std[0]]
-        else:
-            # Kombi?
-            kombi_treffer = [
-                (j, opt) for j, opt in enumerate(kombi_pro_auftrag[i])
-                if c.get((i, j)) and c[(i, j)].value() and c[(i, j)].value() > 0.5
-            ]
-            if kombi_treffer:
-                j, (combo, richtung) = kombi_treffer[0]
-                eintrag["typ"] = f"kombi-{len(combo)}-{richtung}"
-                eintrag["ziel"] = [kandidaten[k] for k in combo]
+            # kleinster passender Standard
+            k_best = gewaehlt_std[0]
+            std_mass = kandidaten[k_best]
+            # Direkt oder Stapelung? Bei Stapelung Typ-Hinweis.
+            cs, cl = std_mass
+            os_, ol = auftrags_canon[i]
+            T = tol_mm
+            direkt = (
+                (coverage == "zweiseitig" and abs(cs - os_) <= T and abs(cl - ol) <= T)
+                or (coverage == "einseitig" and cs >= os_ and cl >= ol
+                    and (cs - os_) <= T and (cl - ol) <= T)
+            )
+            if direkt:
+                eintrag["typ"] = "standard"
+                eintrag["ziel"] = std_mass
             else:
-                # Sonder
-                if y[sonder_idx[i]].value() and y[sonder_idx[i]].value() > 0.5:
-                    eintrag["typ"] = "sonder"
-                    eintrag["ziel"] = auftrags_canon[i]
-                else:
-                    eintrag["typ"] = "ungelöst"
-                    eintrag["ziel"] = None
+                # k-fach Stapelung
+                eintrag["typ"] = "kombi"
+                eintrag["ziel"] = std_mass
+        else:
+            sonder_mass = auftrags_canon[i]
+            if z.get(sonder_mass) is not None and z[sonder_mass].value() and z[sonder_mass].value() > 0.5:
+                eintrag["typ"] = "sonder"
+                eintrag["ziel"] = sonder_mass
+            else:
+                eintrag["typ"] = "ungeloest"
+                eintrag["ziel"] = None
         zuordnung.append(eintrag)
 
     return {
