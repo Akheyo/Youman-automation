@@ -60,26 +60,24 @@ def parse_tsv(pfad: Path) -> list[dict]:
             if laenge <= 0 or breite <= 0:
                 continue
             stk_pal = _i(13)
-            # 9999 = "individuelle Verpackung", für die Optimierung nicht
-            # repräsentativ — Stk/Pal lassen wir aber stehen, da sie bekannt
-            # sind. Nur tatsächlich fehlende Maße werden gefiltert.
-            p_anzahl = _i(17) or 1
             artikel = parts[9].strip() or parts[10].strip()
             if not artikel:
                 continue
+            # Menge (Spalte M / Index 12) = Anzahl Paletten — der einzige
+            # maßgebliche Wert. Spalte R "P-Anzahl" wird ignoriert.
+            menge = _i(12)
 
             rows.append({
                 "Artikelnummer": artikel,
                 "Laenge": laenge,
                 "Breite": breite,
                 "Hoehe": _f(16),
-                "Benoetigte_Paletten": p_anzahl,
+                "Menge": menge,
                 "Stueckzahl_pro_Palette": stk_pal,
-                "Palettenkosten": 0.0,  # Default → globaler Wert aus KostenParameter
+                "Palettenkosten": 0.0,
                 "Kunde": parts[7].strip(),
                 "Auftrag": parts[4].strip(),
                 "KW_Lieferung": parts[3].strip(),
-                "Menge": _i(12),
                 "KW_Fertigung": parts[1].strip(),
             })
     return rows
@@ -95,13 +93,12 @@ def schreibe_excel(rows: list[dict], ziel: Path) -> None:
         "Laenge",
         "Breite",
         "Hoehe",
-        "Benoetigte_Paletten",
+        "Menge",
         "Stueckzahl_pro_Palette",
         "Palettenkosten",
         "Kunde",
         "Auftrag",
         "KW_Lieferung",
-        "Menge",
         "KW_Fertigung",
     ]
     ws.append(spalten)

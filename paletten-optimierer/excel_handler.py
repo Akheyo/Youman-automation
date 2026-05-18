@@ -72,25 +72,22 @@ SPALTEN_MAPPING: dict[str, list[str]] = {
         "p.höhe",
     ],
     "anzahl": [
+        # 'Menge' ist die maßgebliche Spalte für die Palettenanzahl pro
+        # Auftrag (Spalte M in der Draht-Müller-Excel). 'P-Anzahl' wird
+        # bewusst NICHT mehr gemappt — diese Spalte wird ignoriert.
+        "menge",
+        "mng",
         "anzahl",
-        "benoetigte_paletten",
-        "benötigte_paletten",
-        "benoetigte paletten",
-        "benötigte paletten",
-        "p-anzahl",
-        "p_anzahl",
-        "p.anzahl",
-        "panzahl",
-        "palettenanzahl",
         "anzahl_paletten",
         "anzahl paletten",
-        "pal-anzahl",
-        "pal_anzahl",
-        "paletten",
+        "palettenanzahl",
         "pallet_count",
         "qty_pallets",
         "n_pallets",
         "pallets",
+        "qty",
+        "quantity",
+        "amount",
     ],
     "stueck_pro_palette": [
         "stueckzahl_pro_palette",
@@ -228,25 +225,21 @@ def importiere_excel(
     Erkennt die Header-Zeile automatisch (Titel-Zeilen darüber werden
     übersprungen). Pflichtspalten: Artikelnummer, Länge, Breite.
 
-    Für die Palettenanzahl pro Auftrag (Spalte ``P-Anzahl`` o.ä.) gilt:
-
-    - Direkter Wert aus der Spalte wird verwendet, wenn vorhanden.
-    - Wenn leer: Fallback auf ``ceil(Menge / Stck_Pal)`` mit Warnung.
-    - Wenn der Excel-Wert um mehr als 1 vom rechnerischen Fallback
-      abweicht, wird eine Warnung erzeugt, aber der Excel-Wert bleibt
-      maßgeblich (Spalte schlägt Berechnung).
+    Palettenanzahl pro Auftrag = Spalte ``Menge`` (Aliase: Mng, Anzahl).
+    Wenn Menge leer oder 0 ist, wird der Auftrag mit 0 Paletten erfasst
+    (zählt nicht in die Gesamt-Palettenzahl, das Maß zählt aber weiter
+    als Variante) und eine Warnung in ``warnungen`` geschrieben.
 
     Args:
         file_or_buffer: Pfad oder Datei-ähnliches Objekt (z.B. Streamlit-Upload).
         sheet_name: Optionaler Name des Sheets, sonst das erste.
         warnungen: Optionale Liste, in die Diagnose-Meldungen geschrieben
-            werden (Plausibilitäts-Hinweise, Fallback-Verwendung).
+            werden (z.B. Aufträge mit leerer Menge).
 
     Returns:
         Liste valider ``Palette``-Objekte. Ungültige Zeilen werden
         übersprungen.
     """
-    import math
     log = warnungen if warnungen is not None else []
     wb = openpyxl.load_workbook(file_or_buffer, data_only=True, read_only=True)
     ws = wb[sheet_name] if sheet_name else wb.active
@@ -302,43 +295,16 @@ def importiere_excel(
                 continue
 
             auftrag_id = _str(_val(row, "auftrag")) or f"Zeile {row_nr}"
-            menge_val = _int(_val(row, "menge"))
+            # Palettenanzahl = Wert aus Spalte 'Menge' (Spalte M).
+            # Wenn leer oder 0 → Auftrag mit 0 Paletten erfassen + Warnung.
+            anzahl = _int(_val(row, "anzahl"))
             stk_pal = _int(_val(row, "stueck_pro_palette"))
-            anzahl_raw = _val(row, "anzahl")
-            anzahl_excel = _int(anzahl_raw)
-
-            # Fallback wenn P-Anzahl leer/0 ist: ceil(menge / stk_pal)
-            fallback_anzahl = 0
-            if menge_val > 0 and stk_pal > 0:
-                fallback_anzahl = math.ceil(menge_val / stk_pal)
-
-            if anzahl_excel > 0:
-                anzahl = anzahl_excel
-                # Plausibilitäts-Check (Abweichung > 1 → Warnung)
-                if fallback_anzahl > 0 and abs(anzahl - fallback_anzahl) > 1:
-                    log.append(
-                        f"⚠️ Plausibilität Auftrag {auftrag_id}: "
-                        f"P-Anzahl={anzahl} weicht von ceil(Menge/Stk_Pal)="
-                        f"{fallback_anzahl} ab (Menge={menge_val}, "
-                        f"Stk_Pal={stk_pal}). Excel-Wert wird verwendet."
-                    )
-            elif fallback_anzahl > 0:
-                anzahl = fallback_anzahl
+            if anzahl <= 0:
                 log.append(
-                    f"ℹ️ Fallback Auftrag {auftrag_id}: P-Anzahl leer → "
-                    f"ceil({menge_val}/{stk_pal}) = {anzahl} angenommen."
+                    f"⚠️ Auftrag {auftrag_id}: Spalte 'Menge' leer oder 0 "
+                    "— Auftrag zählt 0 Paletten."
                 )
-            else:
-                # Weder Excel-Wert noch berechenbar — defaultet auf 1
-                anzahl = 1
-                if anzahl_raw is None or _str(anzahl_raw) == "":
-                    log.append(
-                        f"ℹ️ Auftrag {auftrag_id}: keine P-Anzahl, "
-                        "keine Menge — Default 1 verwendet."
-                    )
-
-            if anzahl < 0:
-                continue
+                anzahl = 0
 
             paletten.append(
                 Palette(
@@ -354,7 +320,7 @@ def importiere_excel(
                     kunde=_str(_val(row, "kunde")),
                     auftrag=_str(_val(row, "auftrag")),
                     kw_lieferung=_str(_val(row, "kw_lieferung")),
-                    menge=menge_val,
+                    menge=anzahl,  # 'Menge' = Palettenanzahl (mit anzahl gleichgesetzt)
                 )
             )
         except (TypeError, ValueError):
@@ -558,7 +524,7 @@ def exportiere_zuordnung_excel(rows: list[dict]) -> bytes:
     spalten = [
         "Auftrag", "Kunde", "Artikelnummer",
         "Original L", "Original B", "Original H",
-        "P-Anzahl", "Stk/Pal",
+        "Menge (Paletten)", "Stk/Pal",
         "Zugewiesener Standard", "Abw. L (mm)", "Abw. B (mm)",
         "Abw. H (mm)", "Größte Abw. (mm)", "Status",
     ]

@@ -127,6 +127,28 @@ class OptimierungsErgebnis:
         return len(self.sonderpaletten)
 
     @property
+    def paletten_gesamt(self) -> int:
+        """Summe der Palettenmengen (Spalte 'Menge') aller Eingabe-Aufträge.
+
+        Das ist die echte Stückzahl-Anzahl der Paletten — nicht zu
+        verwechseln mit ``anzahl_eingabe_typen`` (das ist die Zahl der
+        Auftragspositionen, also Excel-Zeilen).
+        """
+        return sum(int(p.anzahl) for p in self.eingabe_paletten)
+
+    @property
+    def paletten_in_standards(self) -> int:
+        return sum(int(s.gesamt_anzahl) for s in self.standards)
+
+    @property
+    def paletten_in_kombinationen(self) -> int:
+        return sum(int(k.palette.anzahl) for k in self.kombinationen)
+
+    @property
+    def paletten_in_sonder(self) -> int:
+        return sum(int(p.anzahl) for p in self.sonderpaletten)
+
+    @property
     def reduktion_prozent(self) -> float:
         if self.anzahl_eingabe_typen == 0:
             return 0.0

@@ -851,27 +851,19 @@ def _importiere_quelle(quelle, anzeigename: str) -> bool:
         st.error(f"❌ Import-Fehler: {exc}")
         return False
 
-    # Zeige Plausibilitäts-Warnungen (z.B. P-Anzahl-Abweichungen)
+    # Zeige Import-Warnungen (z.B. Aufträge mit leerer Menge)
     if import_warnungen:
-        plausib = [w for w in import_warnungen if "Plausibilität" in w]
-        fallbacks = [w for w in import_warnungen if "Fallback" in w]
-        if plausib:
-            with st.expander(
-                f"⚠️ {len(plausib)} Plausibilitäts-Warnung(en) "
-                "(P-Anzahl weicht von Menge/Stk-Pal ab)"
-            ):
-                for w in plausib[:50]:
-                    st.markdown(f"<div style='font-size:12px;'>{escape(w)}</div>",
-                                unsafe_allow_html=True)
-                if len(plausib) > 50:
-                    st.caption(f"... und {len(plausib) - 50} weitere.")
-        if fallbacks:
-            with st.expander(f"ℹ️ {len(fallbacks)} Fallback(s) für leere P-Anzahl"):
-                for w in fallbacks[:50]:
-                    st.markdown(f"<div style='font-size:12px;'>{escape(w)}</div>",
-                                unsafe_allow_html=True)
-                if len(fallbacks) > 50:
-                    st.caption(f"... und {len(fallbacks) - 50} weitere.")
+        with st.expander(
+            f"⚠️ {len(import_warnungen)} Warnung(en) beim Import "
+            "(z.B. Aufträge mit leerer 'Menge')"
+        ):
+            for w in import_warnungen[:50]:
+                st.markdown(
+                    f"<div style='font-size:12px;'>{escape(w)}</div>",
+                    unsafe_allow_html=True,
+                )
+            if len(import_warnungen) > 50:
+                st.caption(f"... und {len(import_warnungen) - 50} weitere.")
 
     if not ps:
         st.warning(
@@ -1304,9 +1296,9 @@ def kpi_uebersicht(
     delta_standards = n_standards - original_varianten  # negativ = Reduktion
     n_sonder = erg.anzahl_sonder
 
-    paletten_gesamt = sum(p.anzahl for p in erg.eingabe_paletten)
-    pal_in_std = sum(s.gesamt_anzahl for s in erg.standards)
-    pal_in_kombi = sum(k.palette.anzahl for k in erg.kombinationen)
+    paletten_gesamt = erg.paletten_gesamt
+    pal_in_std = erg.paletten_in_standards
+    pal_in_kombi = erg.paletten_in_kombinationen
     abdeckung = (
         (pal_in_std + pal_in_kombi) / paletten_gesamt * 100 if paletten_gesamt else 0
     )
@@ -1349,7 +1341,7 @@ def kpi_uebersicht(
         "Abdeckung Standards",
         f"{abdeckung:.1f} %".replace(".", ","),
         help=(
-            "Anteil der Paletten (gewichtet nach P-Anzahl), die durch "
+            "Anteil der Paletten (gewichtet nach Menge), die durch "
             "einen Standard oder eine Kombination abgedeckt werden."
         ),
     )
@@ -1376,7 +1368,7 @@ def card_ergebnis(erg: OptimierungsErgebnis) -> None:
     st.markdown(
         f'<div class="card" style="max-height:680px;overflow:auto;">'
         f'<h3>Optimierungs-Ergebnis · {erg.anzahl_standards} Standards aus '
-        f'{erg.anzahl_eingabe_typen} Aufträgen ({fmt_int(paletten_gesamt)} Stk Paletten){extras_str}</h3>'
+        f'{erg.anzahl_eingabe_typen} Aufträgen ({fmt_int(erg.paletten_gesamt)} Paletten){extras_str}</h3>'
         f'{render_result_table(erg)}</div>',
         unsafe_allow_html=True,
     )
@@ -1893,7 +1885,7 @@ def _detail_nach_auftrag(rows: list[dict]) -> None:
                 f"{int(r['original_l'])} × {int(r['original_b'])}"
                 + (f" × {int(r['original_h'])}" if r.get("original_h") else "")
             ),
-            "P-Anzahl": r.get("anzahl", 0),
+            "Menge (Paletten)": r.get("anzahl", 0),
             "Zugewiesener Standard": r.get("standard_label", "—"),
             "Abw. L": r.get("abw_l", 0),
             "Abw. B": r.get("abw_b", 0),
@@ -1917,12 +1909,12 @@ def _detail_nach_auftrag(rows: list[dict]) -> None:
             ),
             "Abw. L": st.column_config.NumberColumn("Abw. L (mm)", format="%d mm"),
             "Abw. B": st.column_config.NumberColumn("Abw. B (mm)", format="%d mm"),
-            "P-Anzahl": st.column_config.NumberColumn(format="%d"),
+            "Menge (Paletten)": st.column_config.NumberColumn(format="%d"),
         },
     )
     st.caption(
         f"{len(rows)} Auftragspositionen · "
-        f"Summe P-Anzahl: {sum(r.get('anzahl', 0) for r in rows)} · "
+        f"Summe Menge: {sum(r.get('anzahl', 0) for r in rows)} Paletten · "
         "Spaltenkopf klicken zum Sortieren (z.B. Abw. max für Grenzfälle)."
     )
 
@@ -1972,7 +1964,7 @@ def _detail_nach_standard(rows: list[dict]) -> None:
                         f"{int(r['original_l'])} × {int(r['original_b'])}"
                         + (f" × {int(r['original_h'])}" if r.get("original_h") else "")
                     ),
-                    "P-Anzahl": r.get("anzahl", 0),
+                    "Menge (Paletten)": r.get("anzahl", 0),
                     "Abw. L (mm)": r.get("abw_l", 0),
                     "Abw. B (mm)": r.get("abw_b", 0),
                     "Abw. max (mm)": r.get("abw_max", 0),
