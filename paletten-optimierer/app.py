@@ -61,6 +61,17 @@ from storage_handler import (
 
 APP_NAME = "Youman"
 APP_TAGLINE = "Industriepaletten · Standardisierung & Kostenanalyse"
+
+
+def _build_stempel() -> str:
+    """Liefert die Build-Identität: Git-SHA + Datum, fällt im Dev-Modus
+    auf 'dev' zurück. Damit lässt sich in der installierten EXE prüfen,
+    welcher Code-Stand wirklich läuft."""
+    try:
+        from _build_info import BUILD_SHA, BUILD_DATE, BUILD_VERSION  # type: ignore
+        return f"Build {BUILD_SHA} · {BUILD_DATE} · v{BUILD_VERSION}"
+    except Exception:
+        return "Build dev"
 PRIMARY = "#0f1f3d"
 PRIMARY_LIGHT = "#1a2944"
 ACCENT = "#fbbf24"
@@ -757,9 +768,16 @@ def lizenz_banner() -> None:
 
 def topbar() -> None:
     lizenz_banner()
+    stempel = _build_stempel()
     st.markdown(
-        f'<div class="topbar"><div><div class="title">{escape(st.session_state.firma)}</div>'
-        f'<div class="sub">{APP_TAGLINE}</div></div></div>',
+        f'<div class="topbar" style="display:flex;justify-content:space-between;align-items:flex-end;">'
+        f'<div><div class="title">{escape(st.session_state.firma)}</div>'
+        f'<div class="sub">{APP_TAGLINE}</div></div>'
+        f'<div style="font-family:ui-monospace,SF Mono,Menlo,monospace;'
+        f'font-size:11px;color:#9ca3af;text-align:right;'
+        f'background:#f3f4f6;padding:4px 8px;border-radius:4px;'
+        f'border:1px solid #e5e7eb;">{escape(stempel)}</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -851,19 +869,46 @@ def _importiere_quelle(quelle, anzeigename: str) -> bool:
         st.error(f"❌ Import-Fehler: {exc}")
         return False
 
-    # Zeige Import-Warnungen (z.B. Aufträge mit leerer Menge)
-    if import_warnungen:
-        with st.expander(
-            f"⚠️ {len(import_warnungen)} Warnung(en) beim Import "
-            "(z.B. Aufträge mit leerer 'Menge')"
-        ):
-            for w in import_warnungen[:50]:
+    # Diagnose direkt im UI: prominente Box mit Laufzeit-Beweis dass
+    # der UI-Pfad wirklich die korrekte Spalte gemappt hat. Damit ist
+    # die Lücke "Test grün, EXE zeigt was anderes" für den Nutzer
+    # sichtbar geschlossen — er sieht die Summe direkt.
+    summe_paletten = sum(int(getattr(p, "anzahl", 0) or 0) for p in ps)
+    diag_zeilen = [w for w in import_warnungen if w.startswith("ℹ️")]
+    warn_zeilen = [w for w in import_warnungen if not w.startswith("ℹ️")]
+
+    diag_html_parts = [
+        f"<div><b>Datei:</b> {escape(anzeigename)}</div>",
+        f"<div><b>Aufträge erkannt:</b> {len(ps)}</div>",
+        (
+            f"<div><b>Summe Palettenanzahl (Spalte 'Menge'):</b> "
+            f"<span style='font-family:ui-monospace,monospace;font-weight:700;'>"
+            f"{summe_paletten}</span></div>"
+        ),
+    ]
+    for d in diag_zeilen:
+        diag_html_parts.append(
+            f"<div style='font-size:12px;color:#1e3a8a;'>{escape(d)}</div>"
+        )
+    diag_html = "".join(diag_html_parts)
+    st.markdown(
+        f'<div style="background:#eff6ff;border:1px solid #bfdbfe;'
+        f'border-radius:8px;padding:12px 14px;margin:8px 0 12px 0;'
+        f'font-size:13px;color:#1e3a8a;">'
+        f'<div style="font-weight:700;margin-bottom:6px;">📊 Import-Diagnose</div>'
+        f'{diag_html}</div>',
+        unsafe_allow_html=True,
+    )
+
+    if warn_zeilen:
+        with st.expander(f"⚠️ {len(warn_zeilen)} Warnung(en) beim Import"):
+            for w in warn_zeilen[:50]:
                 st.markdown(
                     f"<div style='font-size:12px;'>{escape(w)}</div>",
                     unsafe_allow_html=True,
                 )
-            if len(import_warnungen) > 50:
-                st.caption(f"... und {len(import_warnungen) - 50} weitere.")
+            if len(warn_zeilen) > 50:
+                st.caption(f"... und {len(warn_zeilen) - 50} weitere.")
 
     if not ps:
         st.warning(
@@ -897,11 +942,13 @@ def _importiere_quelle(quelle, anzeigename: str) -> bool:
     # === Persistent in die DB schreiben ===
     try:
         batch_id = db.neuer_import_batch(anzeigename, len(ps), quelle=anzeigename)
-        eingefuegt = db.speichere_auftraege(ps, batch_id)
-        if eingefuegt < len(ps):
+        ergebnis = db.speichere_auftraege(ps, batch_id)
+        n_neu = ergebnis.get("neu", 0)
+        n_upd = ergebnis.get("aktualisiert", 0)
+        if n_upd > 0:
             st.info(
-                f"📋 {eingefuegt} von {len(ps)} Aufträgen neu in die DB geschrieben "
-                f"(Rest war schon vorhanden)."
+                f"📋 {n_neu} neue Aufträge eingefügt, {n_upd} bestehende "
+                f"Aufträge mit aktuellen Werten überschrieben."
             )
         # Aktuelle Sicht: ALLE Aufträge in der DB, nicht nur die neuen
         from optimizer import Palette

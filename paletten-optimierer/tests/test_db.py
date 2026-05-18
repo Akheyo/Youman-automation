@@ -55,8 +55,9 @@ def test_speichere_und_lade_auftraege():
         Palette("ART-2", 1500, 900, anzahl=1, auftrag="110002"),
     ]
     batch_id = db.neuer_import_batch("test.xlsx", len(paletten))
-    eingefuegt = db.speichere_auftraege(paletten, batch_id)
-    assert eingefuegt == 2
+    ergebnis = db.speichere_auftraege(paletten, batch_id)
+    assert ergebnis["neu"] == 2
+    assert ergebnis["aktualisiert"] == 0
     assert db.anzahl_auftraege() == 2
 
     geladen = db.lade_alle_auftraege()
@@ -65,22 +66,35 @@ def test_speichere_und_lade_auftraege():
     assert geladen[0]["anzahl"] == 2
 
 
-def test_duplikat_auftrag_wird_nicht_doppelt_gespeichert():
+def test_re_import_aktualisiert_alte_werte():
+    """Re-Import derselben AW+Artikel-Kombination MUSS die alten Werte
+    überschreiben — sonst behält die DB veraltete Stände aus früheren
+    EXE-Builds und der User sieht trotz Fix die alten Zahlen."""
     _setup_temp_db()
     import db
     db.reset_migration_flag()
     from optimizer import Palette
 
-    # Gleiche AW + Artikelnummer = Duplikat
+    # Erster Import: alte (falsche) anzahl=2
     p1 = Palette("ART-1", 1200, 800, anzahl=2, auftrag="110001")
-    p2 = Palette("ART-1", 1200, 800, anzahl=5, auftrag="110001")  # Duplikat
-
     batch1 = db.neuer_import_batch("a.xlsx", 1)
-    db.speichere_auftraege([p1], batch1)
+    erg1 = db.speichere_auftraege([p1], batch1)
+    assert erg1["neu"] == 1 and erg1["aktualisiert"] == 0
+
+    # Zweiter Import: gleicher AW+Artikel, aber jetzt anzahl=48
+    p2 = Palette("ART-1", 1200, 800, anzahl=48, auftrag="110001")
     batch2 = db.neuer_import_batch("b.xlsx", 1)
-    eingefuegt = db.speichere_auftraege([p2], batch2)
-    assert eingefuegt == 0, f"Duplikat sollte nicht eingefügt werden, war {eingefuegt}"
-    assert db.anzahl_auftraege() == 1
+    erg2 = db.speichere_auftraege([p2], batch2)
+    assert erg2["aktualisiert"] == 1, (
+        f"Re-Import muss als 'aktualisiert' zählen, war {erg2}"
+    )
+
+    assert db.anzahl_auftraege() == 1, "Es darf weiter genau 1 Auftrag sein"
+    geladen = db.lade_alle_auftraege()
+    assert geladen[0]["anzahl"] == 48, (
+        f"DB hat anzahl={geladen[0]['anzahl']}, erwartet 48 (neuer Wert). "
+        f"INSERT OR IGNORE würde hier weiter den alten Wert 2 liefern."
+    )
 
 
 def test_leere_aw_erlaubt_mehrfach_import():

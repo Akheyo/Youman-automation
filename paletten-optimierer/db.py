@@ -180,20 +180,36 @@ def lade_letzten_batch() -> dict | None:
 # Aufträge (Roh-Daten)
 # ---------------------------------------------------------------------------
 
-def speichere_auftraege(paletten: list, batch_id: int) -> int:
-    """Schreibt eine Liste ``Palette`` in die DB. Duplikate (gleiche AW +
-    Artikelnummer) werden via INSERT OR IGNORE übersprungen.
+def speichere_auftraege(paletten: list, batch_id: int) -> dict:
+    """Schreibt eine Liste ``Palette`` in die DB. Bei Konflikt mit
+    bestehender Zeile (gleiche AW + Artikelnummer) wird die alte
+    Zeile **überschrieben**, NICHT ignoriert.
 
-    Returns: Anzahl tatsächlich neu eingetragener Zeilen.
+    Damit gewinnt beim Re-Import einer Datei immer der jüngere Wert —
+    sonst behält die DB veraltete Stände aus früheren EXE-Versionen
+    und der User sieht die alten Zahlen trotz Fix.
+
+    Returns: dict mit ``{"neu": int, "aktualisiert": int}``.
     """
     con = get_connection()
     cur = con.cursor()
     jetzt = datetime.now().isoformat(timespec="seconds")
-    eingefuegt = 0
+    neu = 0
+    aktualisiert = 0
     for p in paletten:
         try:
+            # Bestehende Zeile mit gleicher AW + Artikel löschen (nur wenn
+            # AW vorhanden — bei leerer AW gibt es keine Identität, mehrfach-
+            # Inserts sind dann erlaubt).
+            geloescht = 0
+            if p.auftrag:
+                cur.execute(
+                    "DELETE FROM auftraege WHERE auftrag_nr = ? AND artikelnummer = ?",
+                    (p.auftrag, p.artikelnummer),
+                )
+                geloescht = cur.rowcount or 0
             cur.execute(
-                """INSERT OR IGNORE INTO auftraege (
+                """INSERT INTO auftraege (
                     batch_id, artikelnummer, laenge, breite, hoehe,
                     laenge_original, breite_original, anzahl, menge,
                     stueck_pro_palette, kosten_alt, kunde, auftrag_nr,
@@ -207,12 +223,14 @@ def speichere_auftraege(paletten: list, batch_id: int) -> int:
                     p.kunde, p.auftrag, p.kw_lieferung, jetzt,
                 ),
             )
-            if cur.rowcount > 0:
-                eingefuegt += 1
+            if geloescht > 0:
+                aktualisiert += 1
+            else:
+                neu += 1
         except sqlite3.IntegrityError:
             continue
     con.commit()
-    return eingefuegt
+    return {"neu": neu, "aktualisiert": aktualisiert}
 
 
 def lade_alle_auftraege() -> list[dict]:
