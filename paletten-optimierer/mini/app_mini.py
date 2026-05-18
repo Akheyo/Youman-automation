@@ -436,6 +436,47 @@ def seite_ergebnisse() -> None:
 
     kpi_uebersicht()
 
+    # === Inline-Anpassung: Toleranz + Sonder-Budget direkt hier ändern ===
+    # Damit muss der User nicht zurück in "Einstellungen", sondern kann
+    # die Stellschrauben am Ergebnis vergleichen.
+    card_open("🔁 Parameter anpassen und neu rechnen")
+    p = st.session_state.params
+    c1, c2, c3, c4, c5 = st.columns([1.2, 1.2, 1.4, 1, 1.4])
+    with c1:
+        p["tol_mm"] = st.number_input(
+            "Toleranz (mm)", min_value=0, max_value=2000,
+            value=int(p["tol_mm"]), step=10, key="erg_tol",
+        )
+    with c2:
+        p["kombi_max"] = st.selectbox(
+            "kombi_max", [1, 2, 3],
+            index=[1, 2, 3].index(int(p["kombi_max"])),
+            key="erg_km",
+        )
+    with c3:
+        p["coverage"] = st.radio(
+            "Coverage", ["zweiseitig", "einseitig"],
+            index=0 if p["coverage"] == "zweiseitig" else 1,
+            horizontal=True, key="erg_cov",
+        )
+    with c4:
+        p["sonder_deckel_aktiv"] = st.toggle(
+            "Sonder-Deckel", value=p["sonder_deckel_aktiv"], key="erg_sd_a",
+        )
+    with c5:
+        if p["sonder_deckel_aktiv"]:
+            p["sonder_deckel"] = st.number_input(
+                "max. Sonder", min_value=0, max_value=500,
+                value=int(p["sonder_deckel"]), step=1, key="erg_sd_n",
+            )
+        else:
+            st.caption("Sonder unbegrenzt — der Solver entscheidet.")
+    if st.button("🔄 Neu optimieren mit diesen Werten",
+                 type="primary", use_container_width=True, key="erg_rerun"):
+        run_optimierung()
+        st.rerun()
+    card_close()
+
     if res["status"] != "Optimal":
         st.warning(f"ILP-Status: {res['status']} — Ergebnis evtl. nicht beweisbar optimal.")
 
