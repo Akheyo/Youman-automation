@@ -35,6 +35,7 @@ app_datas = [
     ("../app_mini.py", "."),
     ("../optimierer_kern.py", "."),
     ("../import_excel.py", "."),
+    ("../_ui_chrome.py", "."),
     ("../_build_info.py", "."),
 ]
 

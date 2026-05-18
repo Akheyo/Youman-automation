@@ -19,17 +19,16 @@ FIXTURE = Path(__file__).resolve().parent / "fixtures" / "paletten_dm.xlsx"
 
 
 def test_kombi_3_liefert_15_1_16():
-    """HARTER ANKER: tol=100, kombi=3 ⇒ 15/1/16 Optimal."""
+    """HARTER ANKER (User-Spec):
+       tol_mm=100, kombi_max=3, coverage=zweiseitig  ⇒ 15/1/16 Optimal."""
     dat = importiere(FIXTURE)
     print(f"\n  Import: Header Z.{dat['header_zeile']}, "
           f"mit_mass={len(dat['mit_mass'])}, ohne_mass={len(dat['ohne_mass'])}")
     res = optimiere(dat["mit_mass"], tol_mm=100, kombi_max=3,
-                    coverage="einseitig", sonder_deckel=None)
+                    coverage="zweiseitig", sonder_deckel=None)
     print(f"  Resultat: status={res['status']}, kandidaten={res['kandidaten']}, "
           f"standards={len(res['standards'])}, sonder={len(res['sonder'])}, "
           f"gesamt={res['gesamt']}")
-    print(f"  Standards: {res['standards']}")
-    print(f"  Sonder: {res['sonder']}")
     assert res["status"] == "Optimal", f"ILP-Status: {res['status']}"
     assert len(res["standards"]) == 15, (
         f"Standards = {len(res['standards'])}, erwartet 15"
@@ -43,18 +42,16 @@ def test_kombi_3_liefert_15_1_16():
 
 
 def test_kombi_1_gegenprobe_deutlich_mehr():
-    """Ohne Kombi (kombi_max=1) müssen DEUTLICH mehr Standards
-    entstehen — weil viele Aufträge nur via Kombi auflösbar waren."""
+    """Ohne Kombi (kombi_max=1) müssen DEUTLICH mehr Maße entstehen."""
     dat = importiere(FIXTURE)
     res = optimiere(dat["mit_mass"], tol_mm=100, kombi_max=1,
-                    coverage="einseitig", sonder_deckel=None)
-    print(f"\n  Tol=100, Kombi=1 → status={res['status']}, "
+                    coverage="zweiseitig", sonder_deckel=None)
+    print(f"\n  Tol=100, Kombi=1, zweiseitig → status={res['status']}, "
           f"standards={len(res['standards'])}, sonder={len(res['sonder'])}, "
           f"gesamt={res['gesamt']}")
     assert res["status"] == "Optimal"
     assert res["gesamt"] >= 25, (
-        f"kombi=1 sollte deutlich mehr als 16 Maße liefern, "
-        f"bekam gesamt={res['gesamt']}"
+        f"kombi=1 sollte deutlich mehr als 16 liefern, bekam gesamt={res['gesamt']}"
     )
 
 
