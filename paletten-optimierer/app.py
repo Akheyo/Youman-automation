@@ -1234,8 +1234,10 @@ def render_result_table(erg: OptimierungsErgebnis) -> str:
     if has_auftrag:
         head_cells.append("<th>Auftrag</th>")
     head_cells.extend([
-        "<th style='text-align:right;'>Paletten</th>",
-        "<th style='text-align:right;'>Stk / Pal</th>",
+        "<th style='text-align:right;' title=\"Palettenanzahl pro Auftrag = Spalte 'Menge' aus der Excel\">"
+        "Paletten</th>",
+        "<th style='text-align:right;color:#9ca3af;' title=\"Stückzahl pro Palette aus Spalte 'Stck Pal' — nur Info, fließt NICHT in die Palettenzahl ein\">"
+        "Stk / Pal (Info)</th>",
         "<th>Original (mm)</th>",
         "<th>Bemerkung</th>",
     ])

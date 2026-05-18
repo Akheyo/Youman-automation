@@ -140,14 +140,6 @@ SPALTEN_MAPPING: dict[str, list[str]] = {
         "lief-kw",
         "delivery_week",
     ],
-    "menge": [
-        "menge",
-        "stueck",
-        "stück",
-        "qty",
-        "quantity",
-        "amount",
-    ],
 }
 
 
@@ -249,6 +241,19 @@ def importiere_excel(
         return []
 
     header_idx, spalten, header = _finde_header_zeile(rows)
+
+    # Diagnose-Hinweise: welche Spalte wurde als 'Palettenanzahl' (Menge) erkannt?
+    if "anzahl" in spalten:
+        anzahl_col = header[spalten["anzahl"]] if spalten["anzahl"] < len(header) else "?"
+        log.append(
+            f"ℹ️ Palettenanzahl pro Auftrag wird aus Spalte '{anzahl_col}' gelesen "
+            f"(Spalten-Index {spalten['anzahl'] + 1})."
+        )
+    else:
+        log.append(
+            "⚠️ Keine Spalte für die Palettenanzahl erkannt (erwartet: 'Menge'). "
+            "Aufträge zählen mit anzahl=0."
+        )
 
     fehlend = [p for p in PFLICHT_SPALTEN if p not in spalten]
     if fehlend:
