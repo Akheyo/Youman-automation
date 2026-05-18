@@ -309,9 +309,46 @@ if __name__ == "__main__":
         test_l_kein_mengen_schwelle_in_app_modulen,
         test_m_p_anzahl_wird_nicht_als_palettenanzahl_gemappt,
     ]
-    erfolge = sum(1 for t in tests if _run(t))
+    # Fail-Details fürs Status-JSON sammeln
+    import datetime as _dt
+    import json as _json
+
+    failures: list[str] = []
+
+    def _run_collect(fn) -> bool:
+        name = fn.__name__
+        try:
+            fn()
+            print(f"OK  {name}")
+            return True
+        except AssertionError as e:
+            print(f"FAIL {name}: {e}")
+            failures.append(f"{name}: {e}")
+            return False
+        except Exception as e:
+            print(f"ERR  {name}: {type(e).__name__}: {e}")
+            failures.append(f"{name} (ERR): {type(e).__name__}: {e}")
+            import traceback; traceback.print_exc()
+            return False
+
+    erfolge = sum(1 for t in tests if _run_collect(t))
     print()
     print("=" * 60)
     print(f"{erfolge}/{len(tests)} Tests bestanden.")
     print("=" * 60)
-    sys.exit(0 if erfolge == len(tests) else 1)
+
+    # Status-JSON neben den App-Modulen — der App-Start liest das beim
+    # Bootup ein und zeigt Badge oder Banner.
+    status_pfad = HIER.parent / "selbsttest_status.json"
+    status = {
+        "passed": erfolge == len(tests),
+        "passed_count": erfolge,
+        "total": len(tests),
+        "failures": failures[:5],   # erste 5 für den Banner
+        "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
+    }
+    status_pfad.write_text(_json.dumps(status, ensure_ascii=False, indent=2),
+                            encoding="utf-8")
+    print(f"\nStatus geschrieben nach: {status_pfad}")
+
+    sys.exit(0 if status["passed"] else 1)

@@ -10,6 +10,7 @@ KEINE Logik der alten Hauptapp.
 from __future__ import annotations
 
 import io
+import json
 import sys
 from html import escape
 from pathlib import Path
@@ -37,6 +38,79 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 inject_css()
+
+
+# ---------------------------------------------------------------------------
+# Selbsttest-Status laden (vom CI-Lauf geschrieben).
+# ---------------------------------------------------------------------------
+def _lade_selbsttest_status() -> dict | None:
+    kandidaten = [
+        Path(__file__).resolve().parent / "selbsttest_status.json",
+    ]
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        kandidaten.append(Path(meipass) / "selbsttest_status.json")
+    for p in kandidaten:
+        if p.exists():
+            try:
+                return json.loads(p.read_text(encoding="utf-8"))
+            except Exception:
+                return None
+    return None
+
+
+def selbsttest_banner() -> None:
+    """Zeigt OBEN das Resultat des CI-Selbsttests:
+    - passed=true  → kleines grünes Badge
+    - passed=false → grosses rotes Banner mit Abweichungs-Hinweis
+    - kein Status  → grauer Hinweis (dev-Build)
+    """
+    s = _lade_selbsttest_status()
+    if s is None:
+        st.markdown(
+            '<div style="background:#f3f4f6;border:1px solid #e5e7eb;'
+            'color:#6b7280;padding:6px 12px;border-radius:6px;'
+            'font-size:12px;margin-bottom:10px;">'
+            'ℹ️ Selbsttest-Status nicht verfügbar (Dev-Build).'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        return
+    if s.get("passed"):
+        st.markdown(
+            f'<div style="background:#dcfce7;border:1px solid #86efac;'
+            f'color:#166534;padding:6px 12px;border-radius:6px;'
+            f'font-size:12px;margin-bottom:10px;font-weight:600;">'
+            f'✓ Selbsttest bestanden — Soll-Logik verifiziert '
+            f'({s["passed_count"]}/{s["total"]} Asserts · '
+            f'{escape(s.get("timestamp", ""))}).'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        return
+    # Rot
+    fails = s.get("failures") or []
+    fail_html = "".join(
+        f'<div style="font-size:11px;margin-top:4px;'
+        f'font-family:ui-monospace,SF Mono,Menlo,monospace;'
+        f'background:rgba(255,255,255,0.18);padding:4px 8px;'
+        f'border-radius:4px;">• {escape(str(f))}</div>'
+        for f in fails
+    )
+    st.markdown(
+        f'<div style="background:#dc2626;color:#fff;padding:14px 18px;'
+        f'border-radius:8px;margin-bottom:14px;font-size:14px;'
+        f'box-shadow:0 4px 12px rgba(220,38,38,0.25);">'
+        f'<div style="font-weight:800;font-size:16px;">'
+        f'⚠ UNGEPRÜFTE VERSION — Optimierung NICHT verifiziert'
+        f'</div>'
+        f'<div style="margin-top:6px;">Zahlen können falsch sein. '
+        f'<b>NICHT für Kunden verwenden.</b> '
+        f'{s["passed_count"]}/{s["total"]} Asserts bestanden.</div>'
+        f'{fail_html}'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -100,6 +174,7 @@ with st.sidebar:
 # ---------------------------------------------------------------------------
 # Top-Header — identisch zur Hauptapp
 # ---------------------------------------------------------------------------
+selbsttest_banner()
 topbar("Youman Mini", "Industriepaletten · Standardisierung")
 step_indicator(aktiver_schritt())
 

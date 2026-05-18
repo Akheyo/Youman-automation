@@ -50,3 +50,6 @@ htmlcov/
 
 # Logs
 *.log
+
+# Vom CI-Lauf erzeugt, nicht ins Repo
+mini/selbsttest_status.json

@@ -30,6 +30,12 @@ metadata = (
     + copy_metadata("numpy")
 )
 
+import os as _os
+
+_status_quelle = "../selbsttest_status.json"
+_status_pfad = _os.path.join(_os.path.dirname(__file__), _status_quelle)
+_has_status = _os.path.exists(_status_pfad)
+
 # Eigene Mini-App-Module mitpacken
 app_datas = [
     ("../app_mini.py", "."),
@@ -38,6 +44,9 @@ app_datas = [
     ("../_ui_chrome.py", "."),
     ("../_build_info.py", "."),
 ]
+# selbsttest_status.json optional mitpacken (vom CI-Lauf erzeugt)
+if _has_status:
+    app_datas.append((_status_quelle, "."))
 
 extra_hidden = [
     "streamlit", "streamlit.web", "streamlit.web.cli", "streamlit.web.bootstrap",
