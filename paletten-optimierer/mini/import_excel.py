@@ -144,8 +144,13 @@ def importiere(file_or_path: str | Path | IO[bytes]) -> dict:
         L = _zahl(val(row, "laenge"))
         B = _zahl(val(row, "breite"))
         H = _zahl(val(row, "hoehe")) or 0.0
-        anzahl = _zahl(val(row, "menge"))
-        anzahl = int(anzahl) if anzahl and anzahl > 0 else 0
+        anzahl_roh = _zahl(val(row, "menge"))
+        # Spec-Konform: fehlt die Menge, wird 1 angenommen
+        # (NICHT 0 — sonst geht der Auftrag in der Summe verloren).
+        if anzahl_roh and anzahl_roh > 0:
+            anzahl = int(anzahl_roh)
+        else:
+            anzahl = 1
         eintrag = {
             "auftrag":       _str(val(row, "auftrag")),
             "name":          _str(val(row, "name")),
@@ -161,10 +166,19 @@ def importiere(file_or_path: str | Path | IO[bytes]) -> dict:
         else:
             ohne_mass.append(eintrag)
 
+    # Diagnose-Aggregate (Spec-Soll-Werte)
+    paletten_gesamt = sum(p["anzahl"] for p in mit_mass)
+    unique_normalisiert = len({
+        (min(p["laenge"], p["breite"]), max(p["laenge"], p["breite"]))
+        for p in mit_mass
+    })
+
     return {
         "header_zeile": idx + 1,  # 1-basiert für UI
         "mapping": mapping,
         "mit_mass": mit_mass,
         "ohne_mass": ohne_mass,
         "datenzeilen_gesamt": daten,
+        "paletten_gesamt": paletten_gesamt,
+        "unique_normalisierte_masse": unique_normalisiert,
     }

@@ -150,6 +150,43 @@ def test_app_importiert_kern_direkt():
 
 
 # ---------------------------------------------------------------------
+# Spec-Soll-Werte des Imports (Verifikations-Kennzahlen aus User-Spec)
+# Greifen nur wenn die echte Paletten_DM.xlsx im fixtures-Ordner liegt.
+# ---------------------------------------------------------------------
+SOLL_ECHTE_DATEI = {
+    "header_zeile":              5,
+    "datenzeilen_gesamt":        508,
+    "mit_mass":                  469,
+    "ohne_mass":                 39,
+    "paletten_gesamt":           2724,
+    "unique_normalisierte_masse": 158,
+}
+
+
+def test_import_spec_kennzahlen_echte_datei():
+    """Wenn die echte Paletten_DM.xlsx als Fixture vorliegt: pruefe
+    die in der Spec verifizierten Werte. Wenn nicht: skipped."""
+    pfad = HIER / "fixtures" / "Paletten_DM.xlsx"
+    if not pfad.exists():
+        print(f"\n  Skipped — echte Datei nicht in {pfad.relative_to(HIER.parent)}")
+        return
+    dat = importiere(pfad)
+    print(f"\n  Header in Z.{dat['header_zeile']}, "
+          f"{dat['datenzeilen_gesamt']} Datenzeilen, "
+          f"{len(dat['mit_mass'])} mit / {len(dat['ohne_mass'])} ohne Maß")
+    print(f"  Paletten gesamt: {dat['paletten_gesamt']}, "
+          f"Unique norm. Maße: {dat['unique_normalisierte_masse']}")
+    assert dat["header_zeile"] == SOLL_ECHTE_DATEI["header_zeile"], (
+        f"Header-Zeile {dat['header_zeile']} != Soll {SOLL_ECHTE_DATEI['header_zeile']}"
+    )
+    assert dat["datenzeilen_gesamt"] == SOLL_ECHTE_DATEI["datenzeilen_gesamt"]
+    assert len(dat["mit_mass"]) == SOLL_ECHTE_DATEI["mit_mass"]
+    assert len(dat["ohne_mass"]) == SOLL_ECHTE_DATEI["ohne_mass"]
+    assert dat["paletten_gesamt"] == SOLL_ECHTE_DATEI["paletten_gesamt"]
+    assert dat["unique_normalisierte_masse"] == SOLL_ECHTE_DATEI["unique_normalisierte_masse"]
+
+
+# ---------------------------------------------------------------------
 # Runner — sammelt Failures, schreibt selbsttest_status.json
 # ---------------------------------------------------------------------
 if __name__ == "__main__":
@@ -158,6 +195,7 @@ if __name__ == "__main__":
         test_2_kombi_fallback_a_plus_b,
         test_3_echte_datei_invariante_ok,
         test_app_importiert_kern_direkt,
+        test_import_spec_kennzahlen_echte_datei,
     ]
     failures: list[str] = []
 

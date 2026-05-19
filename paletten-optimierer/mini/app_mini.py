@@ -225,18 +225,22 @@ def seite_datenimport() -> None:
     if dat is None:
         return
 
-    # Diagnose-Box (Mini-Version, gleiches Design wie große App)
+    # Diagnose-Box (Spec-Soll-Werte sichtbar)
     mit_n = len(dat["mit_mass"])
     ohne_n = len(dat["ohne_mass"])
-    paletten_summe = sum(p["anzahl"] for p in dat["mit_mass"])
+    paletten_summe = dat.get("paletten_gesamt",
+                              sum(p["anzahl"] for p in dat["mit_mass"]))
+    unique_n = dat.get("unique_normalisierte_masse", 0)
     st.markdown(
         f'<div class="diag-box">'
         f'<div class="title">📊 Import-Diagnose</div>'
         f'<div><b>Datei:</b> {escape(st.session_state.datei_name)}</div>'
-        f'<div><b>Header in Datei-Zeile:</b> {dat["header_zeile"]}</div>'
+        f'<div><b>Header in Datei-Zeile:</b> {dat["header_zeile"]} · '
+        f'<b>Datenzeilen nach Filter:</b> {dat.get("datenzeilen_gesamt", mit_n+ohne_n)}</div>'
         f'<div><b>Aufträge mit Maß:</b> {mit_n} · '
         f'<b>ohne Maß:</b> {ohne_n} · '
-        f'<b>Paletten gesamt:</b> {paletten_summe}</div>'
+        f'<b>Paletten gesamt:</b> {paletten_summe} · '
+        f'<b>Unique normalisierte Maße:</b> {unique_n}</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
