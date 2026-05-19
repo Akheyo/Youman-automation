@@ -440,29 +440,46 @@ def kpi_uebersicht() -> None:
 def render_zuord_table(res: dict) -> str:
     """Zuordnungstabelle Standard → Mitglieder im Result-Table-Stil
     der Hauptapp (gruppiert, mit Sub-Zeile pro Mitglied)."""
-    # Gruppiere Zuordnung nach Ziel
+    # Gruppiere Zuordnung nach Ziel + Typ. Wichtig: bei k-Stapelung
+    # ist 'ziel' ein einzelnes Tupel, aber 'typ' == 'kombi'.
     gruppen: dict = {}
     for z in res["zuordnung"]:
         ziel = z["ziel"]
-        if isinstance(ziel, list):
-            key = ("kombi", tuple(ziel), z["typ"])
-        elif z["typ"] == "sonder":
-            key = ("sonder", ziel, z["typ"])
+        typ = z.get("typ", "")
+        if typ == "sonder":
+            key = ("sonder", ziel)
+        elif typ == "kombi":
+            # Stapel-Variante in den Gruppen-Key reinnehmen, damit
+            # 2-fach längs und 3-fach quer als getrennte Gruppen erscheinen
+            k = z.get("stapel_k", 0)
+            r = z.get("stapel_richtung", "")
+            key = ("kombi", ziel, k, r)
         else:
-            key = ("standard", ziel, z["typ"])
+            key = ("standard", ziel)
         gruppen.setdefault(key, []).append(z)
 
     rows = []
-    sort_key = lambda kv: (kv[0][0] != "standard", kv[0][0] != "kombi", len(kv[1]) * -1)
-    for (typ_kat, ziel, typ), members in sorted(gruppen.items(), key=sort_key):
+    # Sortierung: erst Standards, dann Kombis, dann Sonder; jeweils nach Größe
+    sort_key = lambda kv: (
+        {"standard": 0, "kombi": 1, "sonder": 2}.get(kv[0][0], 3),
+        -sum(m.get("anzahl", 0) for m in kv[1]),
+    )
+    for key, members in sorted(gruppen.items(), key=sort_key):
+        typ_kat = key[0]
+        ziel = key[1]
         rs = max(1, len(members))
         gruppe_summe = sum(m.get("anzahl", 0) for m in members)
         for i, m in enumerate(members):
             tds = []
             if i == 0:
                 if typ_kat == "kombi":
-                    label = " + ".join(_label(t) for t in ziel)
-                    sub = f"{len(ziel)}× kombiniert · Σ {gruppe_summe} Pal."
+                    k = key[2] if len(key) > 2 else 0
+                    r = key[3] if len(key) > 3 else ""
+                    r_text = {"laengs": "längs", "quer": "quer"}.get(r, r)
+                    label = (f"{int(round(ziel[0]))} × {int(round(ziel[1]))} mm"
+                             f"<div style='font-size:11px;color:#3b82f6;margin-top:2px;'>"
+                             f"× {k} ({r_text}) gestapelt</div>")
+                    sub = f"{rs} Aufträge · Σ {gruppe_summe} Pal."
                 elif typ_kat == "sonder":
                     label = _label(ziel)
                     sub = f"Sonder · Σ {gruppe_summe} Pal."

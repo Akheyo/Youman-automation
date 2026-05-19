@@ -182,7 +182,7 @@ def optimiere(
             # kleinster passender Standard
             k_best = gewaehlt_std[0]
             std_mass = kandidaten[k_best]
-            # Direkt oder Stapelung? Bei Stapelung Typ-Hinweis.
+            # Direkt oder Stapelung? Bei Stapelung Typ-Hinweis + Info
             cs, cl = std_mass
             os_, ol = auftrags_canon[i]
             T = tol_mm
@@ -194,10 +194,37 @@ def optimiere(
             if direkt:
                 eintrag["typ"] = "standard"
                 eintrag["ziel"] = std_mass
+                eintrag["stapel_k"] = 1
+                eintrag["stapel_richtung"] = ""
             else:
-                # k-fach Stapelung
+                # Welche k-Stapelung deckt den Auftrag? Erste passende nehmen.
                 eintrag["typ"] = "kombi"
                 eintrag["ziel"] = std_mass
+                eintrag["stapel_k"] = 0
+                eintrag["stapel_richtung"] = "?"
+                for kk in range(2, kombi_max + 1):
+                    # 4 Permutationen wie im Kern-Algorithmus
+                    optionen = [
+                        ((cs, cl * kk), "laengs"),
+                        ((cs * kk, cl), "quer"),
+                        ((cl, cs * kk), "quer"),
+                        ((cl * kk, cs), "laengs"),
+                    ]
+                    treffer = False
+                    for (e0, e1), richtung in optionen:
+                        es0, es1 = sorted([e0, e1])
+                        if coverage == "zweiseitig":
+                            ok = abs(es0 - os_) <= T and abs(es1 - ol) <= T
+                        else:
+                            ok = (es0 >= os_ and es1 >= ol
+                                  and (es0 - os_) <= T and (es1 - ol) <= T)
+                        if ok:
+                            eintrag["stapel_k"] = kk
+                            eintrag["stapel_richtung"] = richtung
+                            treffer = True
+                            break
+                    if treffer:
+                        break
         else:
             sonder_mass = auftrags_canon[i]
             if z.get(sonder_mass) is not None and z[sonder_mass].value() and z[sonder_mass].value() > 0.5:
