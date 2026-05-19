@@ -122,12 +122,10 @@ def init_state() -> None:
     defaults = {
         "datei_name": "",
         "import_dat": None,        # dict aus import_excel.importiere
-        "params": {                # Optimierungs-Parameter
-            "tol_mm": 100,
-            "kombi_max": 2,        # Default 2 = schnell; 3 dauert deutlich länger
-            "coverage": "einseitig",  # physisch korrekt: Standard >= Auftrag
-            "sonder_deckel_aktiv": False,
-            "sonder_deckel": 1,
+        "params": {                # Kern-v2-Parameter
+            "tol_mm": 200,            # max. Übermaß (mm), Default 200
+            "kombinieren": True,      # Boolean — Default an
+            "max_kombi_teile": 3,
         },
         "ergebnis": None,
         "seite": "Datenimport",
@@ -272,54 +270,33 @@ def seite_einstellungen() -> None:
     with col_l:
         card_open("Toleranz")
         p["tol_mm"] = st.number_input(
-            "Toleranz (mm)", min_value=0, max_value=2000,
+            "max. Übermaß (mm)", min_value=0, max_value=2000,
             value=int(p["tol_mm"]), step=10, key="tol_mm_in",
-        )
-        p["coverage"] = st.radio(
-            "Coverage-Modus",
-            ["einseitig", "zweiseitig"],
-            index=0 if p["coverage"] == "einseitig" else 1,
-            horizontal=True, key="cov_in",
-            help=("einseitig (Default, physisch korrekt): Standard ≥ Auftrag "
-                  "in beiden Dimensionen, Differenz ≤ tol. Last passt immer drauf.\n"
-                  "zweiseitig: |S − A| ≤ tol je Dimension — Standard darf auch "
-                  "KLEINER sein als Auftrag, Last hängt dann über. "
-                  "Mathematisch optimaler (weniger Standards), physisch riskant."),
+            help="Wieviel mm darf der gewählte Standard über die Auftragsmaße "
+                 "hinausgehen (in jeder Dimension). Standard ≥ Last ist immer "
+                 "garantiert (einseitige Coverage, physisch korrekt).",
         )
         card_close()
 
-        card_open("Sonder-Budget")
-        p["sonder_deckel_aktiv"] = st.toggle(
-            "Sonder-Deckel aktiv", value=p["sonder_deckel_aktiv"], key="sd_a",
+        card_open("Kombinieren")
+        p["kombinieren"] = st.toggle(
+            "Kombi-Fallback aktiv",
+            value=bool(p.get("kombinieren", True)),
+            key="kombi_in",
+            help="Wenn aktiv: Aufträge, die kein einzelner Standard abdeckt, "
+                 "werden per Kombination aus 2 bis 3 GEWÄHLTEN Standards "
+                 "abgedeckt (Typ A + Typ B). Spart Sonderpaletten.",
         )
-        if p["sonder_deckel_aktiv"]:
-            p["sonder_deckel"] = st.number_input(
-                "max. verschiedene Sonder-Maße",
-                min_value=0, max_value=200, value=int(p["sonder_deckel"]),
-                step=1, key="sd_n",
-            )
-        else:
-            st.caption("Kein Deckel — Optimierer entscheidet zwischen Standard und Sonder rein nach Minimierung.")
         card_close()
 
     with col_r:
-        card_open("Kombinationen")
-        p["kombi_max"] = st.selectbox(
-            "kombi_max",
-            options=[1, 2, 3],
-            index=[1, 2, 3].index(int(p["kombi_max"])),
-            key="km_in",
-            help=("1 = nur Einzel-Standards · 2 = zusätzlich 2-fach · "
-                  "3 = zusätzlich 3-fach (längs/quer aneinandergestellt)."),
-        )
-        card_close()
-
         card_open("In der Mini-Version nicht verfügbar")
         for feat in [
             "Wirtschaftlichkeits-Optimierung",
             "Höhe als 3. Dimension",
             "Lade-Raster",
             "Mengen-Schwelle (bewusst entfernt)",
+            "Coverage zweiseitig (physisch ausgeschlossen)",
         ]:
             disabled_feature(feat)
         card_close()
@@ -336,23 +313,30 @@ def seite_einstellungen() -> None:
 def run_optimierung() -> None:
     p = st.session_state.params
     mit_mass = st.session_state.import_dat["mit_mass"]
-    deckel = int(p["sonder_deckel"]) if p["sonder_deckel_aktiv"] else None
-    km = int(p["kombi_max"])
-    if km >= 3:
-        zeit_limit = 30
-        hinweis = (f"kombi_max=3 — Solver läuft mit 30s Time-Limit. "
-                   f"Liefert bei Timeout die beste bisher gefundene Lösung.")
-    else:
-        zeit_limit = 15
-        hinweis = (f"Solver läuft mit {zeit_limit}s Time-Limit — "
-                   f"typischerweise in wenigen Sekunden fertig.")
+
+    # Mini-Format -> Kern-v2-Format
+    orders = [
+        {"L": pal["laenge"], "B": pal["breite"], "menge": pal["anzahl"],
+         "auftrag": pal["auftrag"], "name": pal["name"]}
+        for pal in mit_mass
+    ]
+    # artikelnummer fuer UI-Anzeige spaeter joinen (Kern braucht sie nicht)
+    artikel_lookup = [pal.get("artikelnummer", "") for pal in mit_mass]
+
+    hinweis = (f"ILP-Solver (CBC) optimiert {len(orders)} Aufträge — "
+               f"Übermaß ≤ {int(p['tol_mm'])} mm, "
+               f"Kombi {'an' if p['kombinieren'] else 'aus'}.")
     with st.spinner(hinweis):
         res = optimiere(
-            mit_mass,
-            tol_mm=p["tol_mm"], kombi_max=km,
-            coverage=p["coverage"], sonder_deckel=deckel,
-            zeit_limit_s=zeit_limit,
+            orders,
+            tol_mm=int(p["tol_mm"]),
+            kombinieren=bool(p.get("kombinieren", True)),
+            max_kombi_teile=int(p.get("max_kombi_teile", 3)),
+            zeitlimit_s=120,
         )
+    # Artikelnummer nachreichen
+    for idx, zg in enumerate(res.get("zuordnung", [])):
+        zg["artikelnummer"] = artikel_lookup[idx] if idx < len(artikel_lookup) else ""
     st.session_state.ergebnis = res
 
 
@@ -367,11 +351,9 @@ def seite_optimierung() -> None:
         card_open("Aktuelle Parameter")
         st.markdown(
             f"<div style='font-size:13px;color:#374151;line-height:1.8;'>"
-            f"<b>tol_mm:</b> {int(p['tol_mm'])}<br>"
-            f"<b>kombi_max:</b> {int(p['kombi_max'])}<br>"
-            f"<b>coverage:</b> {p['coverage']}<br>"
-            f"<b>sonder_deckel:</b> "
-            f"{int(p['sonder_deckel']) if p['sonder_deckel_aktiv'] else 'frei'}"
+            f"<b>max. Übermaß:</b> {int(p['tol_mm'])} mm<br>"
+            f"<b>Kombinieren:</b> {'an' if p['kombinieren'] else 'aus'}<br>"
+            f"<b>Coverage:</b> einseitig (Standard ≥ Last)"
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -404,6 +386,31 @@ def kpi_uebersicht() -> None:
         unsafe_allow_html=True,
     )
 
+    # === Physikalische Invariante — rotes Banner wenn verletzt ===
+    if not res.get("invariante_ok", True):
+        verl = res.get("verletzungen", [])
+        beispiele = "".join(
+            f'<div style="font-size:11px;margin-top:4px;'
+            f'font-family:ui-monospace,monospace;background:rgba(255,255,255,0.18);'
+            f'padding:4px 8px;border-radius:4px;">• AW {escape(str(v.get("auftrag", "")))} '
+            f'Last {v.get("L")}×{v.get("B")} → Ziel {escape(str(v.get("ziel", "")))} '
+            f'({escape(str(v.get("typ", "")))})</div>'
+            for v in verl[:5]
+        )
+        st.markdown(
+            f'<div style="background:#dc2626;color:#fff;padding:14px 18px;'
+            f'border-radius:8px;margin-bottom:14px;font-size:14px;'
+            f'box-shadow:0 4px 12px rgba(220,38,38,0.25);">'
+            f'<div style="font-weight:800;font-size:16px;">'
+            f'⚠ PHYSIKALISCH UNGÜLTIG — {len(verl)} Verletzung(en)</div>'
+            f'<div style="margin-top:6px;">Bei mindestens einer Zuordnung ist '
+            f'die Last GRÖSSER als die zugewiesene Palette. '
+            f'<b>Ergebnis darf nicht produktiv genutzt werden.</b></div>'
+            f'{beispiele}'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
     paletten_summe = sum(p["anzahl"] for p in dat["mit_mass"])
     n_std = len(res["standards"])
     n_son = len(res["sonder"])
@@ -422,88 +429,89 @@ def kpi_uebersicht() -> None:
     c4.metric("Paletten gesamt", _fmt_int(paletten_summe),
               help="Σ der Mengen aller Aufträge mit Maß.")
 
-    # Trade-off-Zeile (wie in der großen App). Kandidaten-Zahl prominent —
-    # bei vollem Gitter typisch ~4000-5000, bei reduziertem Set <200.
+    # Trade-off-Zeile mit Kern-v2-Parametern + Invariante-Status.
     p = st.session_state.params
-    deckel_text = f"{p['sonder_deckel']}" if p["sonder_deckel_aktiv"] else "frei"
-    kand = res["kandidaten"]
-    kand_warn = "" if kand >= 1000 else " ⚠️ verdächtig wenig — Kern soll volles Gitter liefern"
+    inv_text = ("Invariante OK" if res.get("invariante_ok", True)
+                else f"INVARIANTE VERLETZT ({len(res.get('verletzungen', []))})")
+    inv_color = "#16a34a" if res.get("invariante_ok", True) else "#dc2626"
     st.markdown(
         f'<div style="background:#f8fafc;border:1px solid #e2e8f0;'
         f'border-radius:6px;padding:8px 12px;margin:8px 0 16px;'
         f'font-size:12px;color:#475569;">'
-        f'⚙️ tol_mm={int(p["tol_mm"])} · kombi_max={int(p["kombi_max"])} · '
-        f'coverage={p["coverage"]} · sonder_deckel={deckel_text} · '
-        f'<b>Kandidaten={kand}</b>{kand_warn} · ILP-Status={res["status"]}'
+        f'⚙️ max. Übermaß = {int(p["tol_mm"])} mm · '
+        f'Kombinieren = {"an" if p["kombinieren"] else "aus"} · '
+        f'Coverage = einseitig · ILP-Status = {res.get("status", "?")} · '
+        f'<span style="color:{inv_color};font-weight:700;">{inv_text}</span>'
         f'</div>',
         unsafe_allow_html=True,
     )
 
 
+def _ziel_label(ziel_str: str) -> str:
+    """'1500x720' -> '1500 × 720 mm'; '400x800 + 800x1200' -> '400 × 800 + 800 × 1200 mm'."""
+    teile = [t.strip() for t in ziel_str.split("+")]
+    schoen = []
+    for t in teile:
+        try:
+            a, b = t.split("x")
+            schoen.append(f"{int(a)} × {int(b)}")
+        except Exception:
+            schoen.append(t)
+    return " + ".join(schoen) + " mm"
+
+
 def render_zuord_table(res: dict) -> str:
-    """Zuordnungstabelle Standard → Mitglieder im Result-Table-Stil
-    der Hauptapp (gruppiert, mit Sub-Zeile pro Mitglied)."""
-    # Gruppiere Zuordnung nach Ziel + Typ. Wichtig: bei k-Stapelung
-    # ist 'ziel' ein einzelnes Tupel, aber 'typ' == 'kombi'.
-    gruppen: dict = {}
+    """Zuordnungstabelle nach Kern-v2-Output.
+    Gruppiert nach (typ, ziel-String). Kombinationen werden mit
+    'TypA + TypB' angezeigt; Sonder als eigene Gruppe."""
+    gruppen: dict[tuple[str, str], list[dict]] = {}
     for z in res["zuordnung"]:
-        ziel = z["ziel"]
-        typ = z.get("typ", "")
-        if typ == "sonder":
-            key = ("sonder", ziel)
-        elif typ == "kombi":
-            # Stapel-Variante in den Gruppen-Key reinnehmen, damit
-            # 2-fach längs und 3-fach quer als getrennte Gruppen erscheinen
-            k = z.get("stapel_k", 0)
-            r = z.get("stapel_richtung", "")
-            key = ("kombi", ziel, k, r)
-        else:
-            key = ("standard", ziel)
+        key = (z.get("typ", "Sonder"), z.get("ziel", ""))
         gruppen.setdefault(key, []).append(z)
 
-    rows = []
-    # Sortierung: erst Standards, dann Kombis, dann Sonder; jeweils nach Größe
     sort_key = lambda kv: (
-        {"standard": 0, "kombi": 1, "sonder": 2}.get(kv[0][0], 3),
-        -sum(m.get("anzahl", 0) for m in kv[1]),
+        {"Standard": 0, "Kombination": 1, "Sonder": 2}.get(kv[0][0], 3),
+        -sum(m.get("menge", 0) for m in kv[1]),
     )
-    for key, members in sorted(gruppen.items(), key=sort_key):
-        typ_kat = key[0]
-        ziel = key[1]
+
+    rows = []
+    for (typ, ziel_str), members in sorted(gruppen.items(), key=sort_key):
         rs = max(1, len(members))
-        gruppe_summe = sum(m.get("anzahl", 0) for m in members)
+        gruppe_summe = sum(m.get("menge", 0) for m in members)
         for i, m in enumerate(members):
             tds = []
             if i == 0:
-                if typ_kat == "kombi":
-                    k = key[2] if len(key) > 2 else 0
-                    r = key[3] if len(key) > 3 else ""
-                    r_text = {"laengs": "längs", "quer": "quer"}.get(r, r)
-                    label = (f"{int(round(ziel[0]))} × {int(round(ziel[1]))} mm"
-                             f"<div style='font-size:11px;color:#3b82f6;margin-top:2px;'>"
-                             f"× {k} ({r_text}) gestapelt</div>")
-                    sub = f"{rs} Aufträge · Σ {gruppe_summe} Pal."
-                elif typ_kat == "sonder":
-                    label = _label(ziel)
+                label = _ziel_label(ziel_str)
+                if typ == "Kombination":
+                    sub = f"Typ A + Typ B · {rs} Aufträge · Σ {gruppe_summe} Pal."
+                elif typ == "Sonder":
                     sub = f"Sonder · Σ {gruppe_summe} Pal."
                 else:
-                    label = _label(ziel)
                     sub = f"{rs} Aufträge · Σ {gruppe_summe} Pal."
                 tds.append(
                     f'<td rowspan="{rs}" class="standard-cell">{label}'
                     f'<div class="sub-line">{sub}</div></td>'
                 )
-            tds.append(f'<td><div style="font-weight:600;">{escape(m["artikelnummer"])}</div>'
-                       f'<div style="font-size:11px;color:#6b7280;margin-top:2px;">'
-                       f'{escape(m["name"][:35])}</div></td>')
-            tds.append(f'<td style="font-family:ui-monospace,monospace;font-size:12px;">'
-                       f'{escape(m["auftrag"])}</td>')
-            tds.append(f'<td style="text-align:right;font-weight:700;">'
-                       f'{_fmt_int(m.get("anzahl", 0))}</td>')
-            tds.append(f'<td>{_label(m["original"])}</td>')
-            if typ_kat == "standard":
+            tds.append(
+                f'<td><div style="font-weight:600;">'
+                f'{escape(str(m.get("artikelnummer", "")))}</div>'
+                f'<div style="font-size:11px;color:#6b7280;margin-top:2px;">'
+                f'{escape(str(m.get("name", ""))[:35])}</div></td>'
+            )
+            tds.append(
+                f'<td style="font-family:ui-monospace,monospace;font-size:12px;">'
+                f'{escape(str(m.get("auftrag", "")))}</td>'
+            )
+            tds.append(
+                f'<td style="text-align:right;font-weight:700;">'
+                f'{_fmt_int(m.get("menge", 0))}</td>'
+            )
+            tds.append(
+                f'<td>{int(m.get("L", 0))} × {int(m.get("B", 0))} mm</td>'
+            )
+            if typ == "Standard":
                 tds.append('<td><span class="badge badge-ok">✓ Standard</span></td>')
-            elif typ_kat == "kombi":
+            elif typ == "Kombination":
                 tds.append('<td><span class="badge badge-kombi">⚡ Kombination</span></td>')
             else:
                 tds.append('<td><span class="badge badge-sonder">○ Sonderpalette</span></td>')
@@ -511,11 +519,11 @@ def render_zuord_table(res: dict) -> str:
 
     head = (
         "<thead><tr>"
-        "<th>Standard / Sonder (mm)</th>"
+        "<th>Standard / Sonder / Kombi (mm)</th>"
         "<th>Artikel / Kunde</th>"
         "<th>Auftrag</th>"
         "<th style='text-align:right;' title=\"Palettenanzahl pro Auftrag = Spalte 'Menge'\">Paletten</th>"
-        "<th>Original (mm)</th>"
+        "<th>Last (mm)</th>"
         "<th>Typ</th>"
         "</tr></thead>"
     )
@@ -530,49 +538,33 @@ def seite_ergebnisse() -> None:
 
     kpi_uebersicht()
 
-    # === Inline-Anpassung: Toleranz + Sonder-Budget direkt hier ändern ===
-    # Damit muss der User nicht zurück in "Einstellungen", sondern kann
-    # die Stellschrauben am Ergebnis vergleichen.
+    # === Inline-Anpassung: Übermaß + Kombi-Toggle direkt hier ===
     card_open("🔁 Parameter anpassen und neu rechnen")
     p = st.session_state.params
-    c1, c2, c3, c4, c5 = st.columns([1.2, 1.2, 1.4, 1, 1.4])
+    c1, c2 = st.columns([1, 1])
     with c1:
         p["tol_mm"] = st.number_input(
-            "Toleranz (mm)", min_value=0, max_value=2000,
+            "max. Übermaß (mm)", min_value=0, max_value=2000,
             value=int(p["tol_mm"]), step=10, key="erg_tol",
+            help="Standard ≥ Last in beiden Dimensionen, höchstens X mm größer.",
         )
     with c2:
-        p["kombi_max"] = st.selectbox(
-            "kombi_max", [1, 2, 3],
-            index=[1, 2, 3].index(int(p["kombi_max"])),
-            key="erg_km",
+        p["kombinieren"] = st.toggle(
+            "Kombi-Fallback aktiv",
+            value=bool(p.get("kombinieren", True)),
+            key="erg_kombi",
+            help="Aufträge ohne einzelnen passenden Standard werden per "
+                 "Kombination aus 2-3 gewählten Standards (Typ A + Typ B) "
+                 "abgedeckt. Spart Sonderpaletten.",
         )
-    with c3:
-        p["coverage"] = st.radio(
-            "Coverage", ["zweiseitig", "einseitig"],
-            index=0 if p["coverage"] == "zweiseitig" else 1,
-            horizontal=True, key="erg_cov",
-        )
-    with c4:
-        p["sonder_deckel_aktiv"] = st.toggle(
-            "Sonder-Deckel", value=p["sonder_deckel_aktiv"], key="erg_sd_a",
-        )
-    with c5:
-        if p["sonder_deckel_aktiv"]:
-            p["sonder_deckel"] = st.number_input(
-                "max. Sonder", min_value=0, max_value=500,
-                value=int(p["sonder_deckel"]), step=1, key="erg_sd_n",
-            )
-        else:
-            st.caption("Sonder unbegrenzt — der Solver entscheidet.")
     if st.button("🔄 Neu optimieren mit diesen Werten",
                  type="primary", use_container_width=True, key="erg_rerun"):
         run_optimierung()
         st.rerun()
     card_close()
 
-    if res["status"] != "Optimal":
-        st.warning(f"ILP-Status: {res['status']} — Ergebnis evtl. nicht beweisbar optimal.")
+    if res.get("status") != "Optimal":
+        st.warning(f"ILP-Status: {res.get('status')} — Ergebnis evtl. nicht beweisbar optimal.")
 
     cl, cr = st.columns([2, 1])
     with cl:
@@ -603,17 +595,18 @@ def seite_ergebnisse() -> None:
             st.caption("Keine Sonder.")
         card_close()
 
-    # CSV-Export
+    # CSV-Export — Kern-v2-Format
     rows = []
     for z in res["zuordnung"]:
         rows.append({
-            "Auftrag": z["auftrag"],
-            "Kunde": z["name"],
-            "Artikelnummer": z["artikelnummer"],
-            "Paletten (Menge)": z.get("anzahl", 0),
-            "Original": _label(z["original"]),
-            "Ziel": _label(z["ziel"]),
-            "Typ": z["typ"],
+            "Auftrag": z.get("auftrag", ""),
+            "Kunde": z.get("name", ""),
+            "Artikelnummer": z.get("artikelnummer", ""),
+            "Paletten (Menge)": z.get("menge", 0),
+            "Last L": z.get("L", 0),
+            "Last B": z.get("B", 0),
+            "Ziel": z.get("ziel", ""),
+            "Typ": z.get("typ", ""),
         })
     csv = pd.DataFrame(rows).to_csv(index=False, sep=";", encoding="utf-8-sig").encode("utf-8-sig")
     st.download_button(

@@ -1,245 +1,194 @@
-"""Optimierungs-Kern für die Mini-App.
-
-Set-Cover-Formulierung als Binär-ILP (pulp + CBC), exakt.
-
-Aufgebaut nach User-Spec ('paletten_optimierer_kern.py'):
-
-1) Kandidaten = volles Gitter aus den vorkommenden kurzen × langen
-   Seiten der Aufträge: ``cands = [(cs, cl) for cs in S_vals
-   for cl in L_vals if cs <= cl]``. KEINE Reduktion auf unique
-   vorkommende Maße.
-
-2) Coverage inkl. Stapelung in EINER Funktion (KEINE Kombi-
-   Variablen im ILP). Für einen Standard ``(cs, cl)`` und einen
-   Auftrag ``(os_, ol)`` (jeweils kurz, lang) gilt Coverage wenn:
-   - direkt: abs(cs-os_) <= T und abs(cl-ol) <= T  (zweiseitig)
-             oder cs>=os_, cl>=ol mit Differenz <= T  (einseitig)
-   - oder per k-fach Stapelung (k = 2..kombi_max), in Längs-
-     oder Querrichtung — wie im Referenz-Kern:
-       for k in range(2, kombi_max+1):
-         for e0,e1 in ((cs,cl*k),(cs*k,cl),(cl,cs*k),(cl*k,cs)):
-           es0,es1 = sorted([e0,e1])
-           passt? -> True
-
-3) Zielfunktion:
-   prob += lpSum(x) + lpSum(z.values())
-   (Standards + verschiedene Sonder-Maße). Nichts anderes.
-
-Damit gibt es keine c-Variablen für Kombinationen — die Stapelung
-ist in die Coverage gefaltet. Das hält das ILP klein (~K x-Vars
-und ~|unique-Auftragsmaße| z-Vars) und korrekt.
 """
-from __future__ import annotations
+Paletten-Optimierungskern v2 — VERIFIZIERTE REFERENZ.
 
-from typing import Iterable
+Encodet die 3 Optimierungs-Punkte als ausführbare Wahrheit:
+ - Punkt 1+2: minimiere Gesamtzahl verschiedener Paletten, einseitig
+   (Standard MUSS >= Last in beiden Maßen -> Last passt physisch drauf)
+ - Punkt 3:   Kombinieren als FALLBACK (Boolean). Nur wenn KEIN einzelner
+   Standard passt, wird geprüft ob 2-3 GEWÄHLTE Standards (Typ A + Typ B)
+   die Last abdecken -> spart Sonderpaletten.
+ - Physikalische Invariante: KEIN zugewiesener Standard (auch keine
+   Kombination) darf kleiner sein als die Last. Wird hart geprüft.
 
+Punkt 4 (Doppelbestellungen/AW/Bestand) ist NICHT hier — eigener,
+stateful Layer, kommt nach dem Einfrieren dieses Kerns.
+
+Abhängigkeit: pulp
+"""
 import pulp
+from itertools import combinations, product
 
 
-def _kanon(L: float, B: float) -> tuple[float, float]:
-    """Kanonische Reihenfolge: (kurz, lang)."""
-    return (min(L, B), max(L, B))
+def _passt_einzeln(cand, last, T):
+    c0, c1 = sorted(cand)
+    l0, l1 = sorted(last)
+    return c0 >= l0 and c1 >= l1 and (c0 - l0) <= T and (c1 - l1) <= T
 
 
-def _deckt_inkl_stapelung(
-    std: tuple[float, float],
-    auf: tuple[float, float],
-    tol: float,
-    coverage: str,
-    kombi_max: int,
-) -> bool:
-    """Standard deckt Auftrag — direkt ODER per k-fach-Stapelung.
-
-    std und auf sind beide (kurz, lang). Stapelung k-fach exakt nach
-    User-Spec: vier Permutationen (cs,cl*k),(cs*k,cl),(cl,cs*k),
-    (cl*k,cs), sortiert, dann gegen (os_, ol) geprüft.
-    """
-    cs, cl = std
-    os_, ol = auf
-    T = tol
-
-    def _passt(es0: float, es1: float) -> bool:
-        if coverage == "zweiseitig":
-            return abs(es0 - os_) <= T and abs(es1 - ol) <= T
-        if coverage == "einseitig":
-            return (es0 >= os_ and es1 >= ol
-                    and (es0 - os_) <= T and (es1 - ol) <= T)
-        raise ValueError(f"Unbekannter coverage-Modus: {coverage!r}")
-
-    # direkte Coverage (k=1, kein Stapeln)
-    if _passt(cs, cl):
-        return True
-
-    # Stapel-Coverage k-fach (User-Spec wortwörtlich)
-    if kombi_max >= 2:
-        for k in range(2, kombi_max + 1):
-            for e0, e1 in ((cs, cl * k), (cs * k, cl), (cl, cs * k), (cl * k, cs)):
-                es0, es1 = sorted([e0, e1])
-                if _passt(es0, es1):
-                    return True
+def _passt_kombi(teile, last, T):
+    l0, l1 = sorted(last)
+    for variante in product(*[((a, b), (b, a)) for (a, b) in teile]):
+        sx = sum(t[0] for t in variante)
+        my = max(t[1] for t in variante)
+        b0, b1 = sorted((sx, my))
+        if b0 >= l0 and b1 >= l1 and (b0 - l0) <= T and (b1 - l1) <= T:
+            return True
+        sy = sum(t[1] for t in variante)
+        mx = max(t[0] for t in variante)
+        b0, b1 = sorted((mx, sy))
+        if b0 >= l0 and b1 >= l1 and (b0 - l0) <= T and (b1 - l1) <= T:
+            return True
     return False
 
 
-def optimiere(
-    paletten: Iterable[dict],
-    tol_mm: float = 100,
-    kombi_max: int = 3,
-    coverage: str = "zweiseitig",
-    sonder_deckel: int | None = None,
-    zeit_limit_s: int = 60,
-) -> dict:
-    """Set-Cover-ILP.
+def optimiere(orders, tol_mm=200, kombinieren=True, max_kombi_teile=3,
+              zeitlimit_s=120):
+    if not orders:
+        return {'standards': [], 'sonder': [], 'gesamt': 0,
+                'zuordnung': [], 'invariante_ok': True,
+                'verletzungen': [], 'status': 'leer'}
 
-    Returns:
-        {
-            'standards':  list[(kurz, lang)],
-            'sonder':     list[(kurz, lang)],
-            'gesamt':     int,                    # |Standards| + |Sonder|
-            'zuordnung':  list[dict],            # pro Auftrag: ziel + typ
-            'status':     str,                    # 'Optimal' / ...
-            'kandidaten': int,                    # |volles Gitter|
-        }
-    """
-    paletten = list(paletten)
-    if not paletten:
-        return {"standards": [], "sonder": [], "gesamt": 0,
-                "zuordnung": [], "status": "leer", "kandidaten": 0}
+    O = [(int(round(o['L'])), int(round(o['B'])),
+          int(o['menge']), o.get('auftrag'), o.get('name'))
+         for o in orders]
+    N = len(O)
+    T = tol_mm
 
-    # Kanonisiere Aufträge auf (kurz, lang)
-    auftrags_canon = [_kanon(float(p["laenge"]), float(p["breite"]))
-                      for p in paletten]
-    n = len(paletten)
+    S = sorted({min(a, b) for a, b, *_ in O})
+    Lv = sorted({max(a, b) for a, b, *_ in O})
+    cands = [(cs, cl) for cs in S for cl in Lv if cs <= cl]
 
-    # === KANDIDATEN: volles Gitter ====================================
-    S_vals = sorted({a for a, _ in auftrags_canon})
-    L_vals = sorted({b for _, b in auftrags_canon})
-    kandidaten = [(cs, cl) for cs in S_vals for cl in L_vals if cs <= cl]
-    K = len(kandidaten)
+    keep, cov = [], []
+    for c in cands:
+        s = {i for i, (a, b, *_ ) in enumerate(O)
+             if _passt_einzeln(c, (a, b), T)}
+        if s:
+            keep.append(c)
+            cov.append(s)
 
-    # Coverage-Matrix: ein Standard deckt einen Auftrag entweder direkt
-    # oder per k-fach-Stapelung (siehe _deckt_inkl_stapelung).
-    deckt_von = [
-        [k for k in range(K)
-         if _deckt_inkl_stapelung(kandidaten[k], auftrags_canon[i],
-                                  tol_mm, coverage, kombi_max)]
-        for i in range(n)
-    ]
+    groups = {}
+    for i, (a, b, *_ ) in enumerate(O):
+        groups.setdefault(tuple(sorted((a, b))), []).append(i)
 
-    # ILP-Variablen — exakt zwei Familien (User-Spec):
-    # x[k] = 1  ⇔  Standard-Kandidat k wird verwendet
-    # z[m] = 1  ⇔  unique Auftrags-Maß m wird zu einer Sonder-Palette
-    prob = pulp.LpProblem("min_standards_sonder", pulp.LpMinimize)
-    x = [pulp.LpVariable(f"x_{k}", cat="Binary") for k in range(K)]
-    unique_auftrags_masse = sorted(set(auftrags_canon))
-    z = {m: pulp.LpVariable(f"z_{i}", cat="Binary")
-         for i, m in enumerate(unique_auftrags_masse)}
+    p = pulp.LpProblem("min_gesamt", pulp.LpMinimize)
+    x = [pulp.LpVariable(f"x{j}", cat="Binary") for j in range(len(keep))]
+    z = {g: pulp.LpVariable(f"z{gi}", cat="Binary")
+         for gi, g in enumerate(groups)}
+    p += pulp.lpSum(x) + pulp.lpSum(z.values())
+    for i, (a, b, *_ ) in enumerate(O):
+        g = tuple(sorted((a, b)))
+        p += (pulp.lpSum(x[j] for j in range(len(keep)) if i in cov[j])
+              + z[g] >= 1)
+    p.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=zeitlimit_s))
 
-    # Coverage-Constraint: jeder Auftrag muss durch (Standard ODER
-    # Sonder seines Maßes) abgedeckt sein.
-    for i in range(n):
-        teile = [x[k] for k in deckt_von[i]]
-        teile.append(z[auftrags_canon[i]])
-        prob += pulp.lpSum(teile) >= 1, f"cov_{i}"
+    standards = sorted(keep[j] for j in range(len(keep))
+                       if x[j].value() and x[j].value() > 0.5)
 
-    # Sonder-Deckel (optional)
-    if sonder_deckel is not None and sonder_deckel >= 0:
-        prob += pulp.lpSum(z.values()) <= sonder_deckel, "sonder_max"
-
-    # Zielfunktion — EXAKT nach User-Spec
-    prob += pulp.lpSum(x) + pulp.lpSum(z.values())
-
-    solver = pulp.PULP_CBC_CMD(msg=0, timeLimit=zeit_limit_s)
-    prob.solve(solver)
-    status = pulp.LpStatus[prob.status]
-
-    # Bei Timeout/Unsolved: leeres Ergebnis (Variablen könnten None sein)
-    if not x or x[0].value() is None:
-        return {"standards": [], "sonder": [], "gesamt": 0,
-                "zuordnung": [], "status": status, "kandidaten": K}
-
-    standards = [kandidaten[k] for k in range(K)
-                 if x[k].value() and x[k].value() > 0.5]
-    sonder = [m for m, v in z.items() if v.value() and v.value() > 0.5]
-
-    # Zuordnung pro Auftrag
-    zuordnung: list[dict] = []
-    for i, p in enumerate(paletten):
-        eintrag = {
-            "auftrag": p.get("auftrag", ""),
-            "name": p.get("name", ""),
-            "artikelnummer": p.get("artikelnummer", ""),
-            "anzahl": int(p.get("anzahl", 0) or 0),
-            "original": auftrags_canon[i],
-            "ziel": None,
-            "typ": None,
-        }
-        gewaehlt_std = sorted(
-            [k for k in deckt_von[i]
-             if x[k].value() and x[k].value() > 0.5],
-            key=lambda k: kandidaten[k],
-        )
-        if gewaehlt_std:
-            # kleinster passender Standard
-            k_best = gewaehlt_std[0]
-            std_mass = kandidaten[k_best]
-            # Direkt oder Stapelung? Bei Stapelung Typ-Hinweis + Info
-            cs, cl = std_mass
-            os_, ol = auftrags_canon[i]
-            T = tol_mm
-            direkt = (
-                (coverage == "zweiseitig" and abs(cs - os_) <= T and abs(cl - ol) <= T)
-                or (coverage == "einseitig" and cs >= os_ and cl >= ol
-                    and (cs - os_) <= T and (cl - ol) <= T)
-            )
-            if direkt:
-                eintrag["typ"] = "standard"
-                eintrag["ziel"] = std_mass
-                eintrag["stapel_k"] = 1
-                eintrag["stapel_richtung"] = ""
-            else:
-                # Welche k-Stapelung deckt den Auftrag? Erste passende nehmen.
-                eintrag["typ"] = "kombi"
-                eintrag["ziel"] = std_mass
-                eintrag["stapel_k"] = 0
-                eintrag["stapel_richtung"] = "?"
-                for kk in range(2, kombi_max + 1):
-                    # 4 Permutationen wie im Kern-Algorithmus
-                    optionen = [
-                        ((cs, cl * kk), "laengs"),
-                        ((cs * kk, cl), "quer"),
-                        ((cl, cs * kk), "quer"),
-                        ((cl * kk, cs), "laengs"),
-                    ]
-                    treffer = False
-                    for (e0, e1), richtung in optionen:
-                        es0, es1 = sorted([e0, e1])
-                        if coverage == "zweiseitig":
-                            ok = abs(es0 - os_) <= T and abs(es1 - ol) <= T
-                        else:
-                            ok = (es0 >= os_ and es1 >= ol
-                                  and (es0 - os_) <= T and (es1 - ol) <= T)
-                        if ok:
-                            eintrag["stapel_k"] = kk
-                            eintrag["stapel_richtung"] = richtung
-                            treffer = True
-                            break
-                    if treffer:
+    zuordnung, sonder_grp = [], set()
+    for i, (a, b, m, au, nm) in enumerate(O):
+        einz = next((s for s in standards
+                     if _passt_einzeln(s, (a, b), T)), None)
+        if einz:
+            zuordnung.append({'auftrag': au, 'name': nm, 'L': a, 'B': b,
+                              'menge': m, 'typ': 'Standard',
+                              'ziel': f"{einz[0]}x{einz[1]}"})
+            continue
+        kombi = None
+        if kombinieren and standards:
+            for r in range(2, max_kombi_teile + 1):
+                for combo in combinations(standards, r):
+                    if _passt_kombi(combo, (a, b), T):
+                        kombi = combo
                         break
+                if kombi:
+                    break
+        if kombi:
+            zuordnung.append({'auftrag': au, 'name': nm, 'L': a, 'B': b,
+                              'menge': m, 'typ': 'Kombination',
+                              'ziel': " + ".join(f"{c[0]}x{c[1]}"
+                                                 for c in kombi)})
         else:
-            sonder_mass = auftrags_canon[i]
-            if z.get(sonder_mass) is not None and z[sonder_mass].value() and z[sonder_mass].value() > 0.5:
-                eintrag["typ"] = "sonder"
-                eintrag["ziel"] = sonder_mass
-            else:
-                eintrag["typ"] = "ungeloest"
-                eintrag["ziel"] = None
-        zuordnung.append(eintrag)
+            sonder_grp.add(tuple(sorted((a, b))))
+            zuordnung.append({'auftrag': au, 'name': nm, 'L': a, 'B': b,
+                              'menge': m, 'typ': 'Sonder',
+                              'ziel': f"{min(a,b)}x{max(a,b)}"})
 
-    return {
-        "standards": sorted(standards),
-        "sonder": sorted(sonder),
-        "gesamt": len(standards) + len(sonder),
-        "zuordnung": zuordnung,
-        "status": status,
-        "kandidaten": K,
-    }
+    verletzungen = []
+    for zg in zuordnung:
+        if zg['typ'] == 'Sonder':
+            continue
+        l0, l1 = sorted((zg['L'], zg['B']))
+        if zg['typ'] == 'Standard':
+            cs, cl = map(int, zg['ziel'].split('x'))
+            if not (min(cs, cl) >= l0 and max(cs, cl) >= l1):
+                verletzungen.append(zg)
+        else:
+            teile = [tuple(map(int, t.split('x')))
+                     for t in zg['ziel'].split(" + ")]
+            if not _passt_kombi(teile, (zg['L'], zg['B']), T):
+                verletzungen.append(zg)
+
+    return {'standards': standards,
+            'sonder': sorted(sonder_grp),
+            'gesamt': len(standards) + len(sonder_grp),
+            'zuordnung': zuordnung,
+            'invariante_ok': len(verletzungen) == 0,
+            'verletzungen': verletzungen,
+            'status': pulp.LpStatus[p.status]}
+
+
+if __name__ == "__main__":
+    cluster = [{'L': 1520, 'B': 720, 'menge': 1, 'auftrag': 'A', 'name': ''},
+               {'L': 1550, 'B': 700, 'menge': 1, 'auftrag': 'B', 'name': ''},
+               {'L': 1500, 'B': 750, 'menge': 1, 'auftrag': 'C', 'name': ''},
+               {'L': 1530, 'B': 710, 'menge': 1, 'auftrag': 'D', 'name': ''}]
+    r = optimiere(cluster, tol_mm=200, kombinieren=False)
+    print("Cluster:", r['standards'], "| Sonder:", r['sonder'],
+          "| invariante_ok:", r['invariante_ok'])
+    assert len(r['standards']) == 1, r['standards']
+    assert len(r['sonder']) == 0
+    assert r['invariante_ok']
+    s = r['standards'][0]
+    for o in cluster:
+        assert min(s) >= min(o['L'], o['B']) and max(s) >= max(o['L'], o['B'])
+    print("OK Selbsttest 1 (Cluster -> 1 Standard, deckt alle, einseitig)")
+
+    base = [{'L': 1200, 'B': 800, 'menge': 9, 'auftrag': 'S1', 'name': ''},
+            {'L': 400, 'B': 800, 'menge': 9, 'auftrag': 'S2', 'name': ''},
+            {'L': 1500, 'B': 700, 'menge': 1, 'auftrag': 'X', 'name': ''}]
+    ro = optimiere(base, tol_mm=200, kombinieren=False)
+    rk = optimiere(base, tol_mm=200, kombinieren=True)
+    tx_o = [z['typ'] for z in ro['zuordnung'] if z['auftrag'] == 'X'][0]
+    tx_k = [z for z in rk['zuordnung'] if z['auftrag'] == 'X'][0]
+    print("X ohne Kombi:", tx_o, "| mit Kombi:", tx_k['typ'],
+          "->", tx_k['ziel'])
+    assert tx_o == 'Sonder'
+    assert tx_k['typ'] == 'Kombination'
+    assert rk['invariante_ok']
+    print("OK Selbsttest 2 (Kombi-Fallback Typ A + Typ B)")
+
+    from openpyxl import load_workbook
+    wb = load_workbook('/mnt/user-data/uploads/Paletten_DM.xlsx',
+                        read_only=True)
+    ws = wb.active
+    ords = []
+    for row in ws.iter_rows(min_row=7, values_only=True):
+        if row is None:
+            continue
+        a, n, m, L, B = row[4], row[7], row[12], row[14], row[15]
+        if a in (None, '') and L in (None, '') and B in (None, ''):
+            continue
+        if not (isinstance(L, (int, float))
+                and isinstance(B, (int, float))):
+            continue
+        ords.append({'L': L, 'B': B,
+                     'menge': int(m) if isinstance(m, (int, float)) and m
+                     else 1, 'auftrag': a, 'name': n})
+    for T in (100, 200):
+        rr = optimiere(ords, tol_mm=T, kombinieren=True)
+        print(f"Echt T={T}: Std={len(rr['standards'])} "
+              f"Sonder={len(rr['sonder'])} Gesamt={rr['gesamt']} "
+              f"invariante_ok={rr['invariante_ok']} "
+              f"Verletzungen={len(rr['verletzungen'])}")
+        assert rr['invariante_ok'], "PHYSIKALISCHE INVARIANTE VERLETZT"
+    print("OK Selbsttest 3 (echte Datei, einseitig, 0 Verletzungen)")

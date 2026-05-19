@@ -72,9 +72,8 @@ jobs:
           Set-Content -Path "_build_info.py" -Value $content -Encoding UTF8
           Write-Host "Build-Stempel: $sha / $when / v$ver"
 
-      - name: Pflicht-Test (schreibt selbsttest_status.json — Build laeuft IMMER weiter)
+      - name: Pflicht-Test Kern v2 (alle 4 muessen gruen sein, sonst Build rot)
         shell: pwsh
-        continue-on-error: true
         env:
           PYTHONIOENCODING: utf-8
         run: python tests/test_kern.py

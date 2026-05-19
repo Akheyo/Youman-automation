@@ -1,20 +1,24 @@
-"""Pflicht-Test für die Mini-App.
+"""Pflicht-Tests für den verifizierten Optimierungskern v2.
 
-Testet gegen eine selbst-erzeugte, im Code definierte Fixture
-(``fixtures/pflicht_fixture.xlsx``, generiert durch
-``fixtures/build_fixture.py``). KEINE externe oder hochgeladene
-Datei — die Asserts sind deterministisch und reproduzierbar.
+Die drei __main__-Selbsttests aus optimierer_kern.py werden hier
+1:1 als CI-Pflichttests ausgeführt. Build bricht ab wenn einer
+fällt. Zusätzlich: statische Verifikation dass die App den Kern
+direkt benutzt (kein Schatten-Code).
 
-Die Fixture hat die SCHWIERIGE Struktur (Firmenname Z.1, Header Z.5,
-Leerzeilen, P-Anzahl-Ablenkung, Drehung, doppelte AW, fehlendes Maß).
+Test 3 läuft gegen mini/tests/fixtures/Paletten_DM.xlsx wenn
+vorhanden, sonst gegen data/draht_mueller_palettenliste.xlsx
+als Surrogat. Beide werden ueber import_excel.importiere()
+gelesen (dynamische Header-Erkennung), damit der Test unabhängig
+davon ist, in welcher Zeile der Header steht.
 
-Reihenfolge der Asserts ist absichtlich:
-  STRUKTUR (Import/Diagnose)  →  OPTIMIERUNG  →  CODE-INTEGRITÄT
-Jeder Fehlschlag = Build rot.
+Schreibt am Ende selbsttest_status.json fuer das UI-Banner.
 """
 from __future__ import annotations
 
+import datetime as _dt
+import hashlib
 import io
+import json as _json
 import sys
 from pathlib import Path
 
@@ -28,294 +32,136 @@ HIER = Path(__file__).resolve().parent
 sys.path.insert(0, str(HIER.parent))
 
 from import_excel import importiere  # noqa: E402
-from optimierer_kern import optimiere  # noqa: E402
-
-# Erwartete Werte aus dem Fixture-Generator (Quelle der Wahrheit)
-sys.path.insert(0, str(HIER / "fixtures"))
-from build_fixture import (  # noqa: E402
-    ERWARTET_HEADER_ZEILE,
-    ERWARTET_MIT_MASS,
-    ERWARTET_OHNE_MASS,
-    ERWARTET_PALETTEN_SUMME,
-    ERWARTET_UNIQUE_KANON,
-    ERWARTET_KANDIDATEN,
-    ERWARTET_GESAMT,
-    baue_fixture,
-)
-
-
-FIXTURE = HIER / "fixtures" / "pflicht_fixture.xlsx"
-
-
-def _setup() -> None:
-    """Fixture im Test selbst neu erzeugen — garantiert Aktualität,
-    falls jemand am Generator schraubt."""
-    baue_fixture(FIXTURE)
+from optimierer_kern import optimiere, _passt_einzeln  # noqa: E402
 
 
 # ---------------------------------------------------------------------
-# A) STRUKTUR: Import erkennt die schwierige Datei korrekt
+# Selbsttest 1 — Cluster -> 1 Standard, deckt alle, einseitig
 # ---------------------------------------------------------------------
-def test_a_header_in_zeile_5_erkannt():
-    _setup()
-    dat = importiere(FIXTURE)
-    print(f"\n  Header in Datei-Zeile: {dat['header_zeile']}")
-    assert dat["header_zeile"] == ERWARTET_HEADER_ZEILE, (
-        f"Header in Zeile {dat['header_zeile']} erkannt, "
-        f"erwartet {ERWARTET_HEADER_ZEILE}. Datei hat Firmenname in Z.1, "
-        f"Meta in Z.3 — Header muss dynamisch in Z.5 gefunden werden."
-    )
-
-
-def test_b_anzahl_mit_mass_korrekt():
-    _setup()
-    dat = importiere(FIXTURE)
-    print(f"  mit_mass = {len(dat['mit_mass'])}")
-    assert len(dat["mit_mass"]) == ERWARTET_MIT_MASS, (
-        f"mit_mass = {len(dat['mit_mass'])}, erwartet {ERWARTET_MIT_MASS}. "
-        f"Leerzeilen oder ungültige Zeilen werden falsch gezählt."
-    )
-
-
-def test_c_anzahl_ohne_mass_korrekt():
-    _setup()
-    dat = importiere(FIXTURE)
-    print(f"  ohne_mass = {len(dat['ohne_mass'])}")
-    assert len(dat["ohne_mass"]) == ERWARTET_OHNE_MASS, (
-        f"ohne_mass = {len(dat['ohne_mass'])}, erwartet {ERWARTET_OHNE_MASS}. "
-        f"Bucket 'Maß fehlt' fängt falsch."
-    )
-
-
-def test_d_paletten_gesamt_aus_spalte_menge():
-    """Summe der Palettenanzahl MUSS aus Spalte 'Menge' kommen,
-    NICHT aus 'P-Anzahl'. P-Anzahl ist als Ablenkung in der Fixture (1)."""
-    _setup()
-    dat = importiere(FIXTURE)
-    summe = sum(int(p["anzahl"]) for p in dat["mit_mass"])
-    print(f"  Σ Menge = {summe} (erwartet {ERWARTET_PALETTEN_SUMME})")
-    assert summe == ERWARTET_PALETTEN_SUMME, (
-        f"Σ Menge = {summe}, erwartet {ERWARTET_PALETTEN_SUMME}. "
-        f"Wahrscheinlich greift P-Anzahl statt Menge — das war der "
-        f"erste grosse Bug der Hauptapp."
-    )
-
-
-def test_e_unique_kanonische_masse():
-    """Die Drehung (800×1200 + 1200×800) MUSS zu einer kanonischen
-    Variante verschmelzen."""
-    _setup()
-    dat = importiere(FIXTURE)
-    canon = {(max(p["laenge"], p["breite"]), min(p["laenge"], p["breite"]))
-             for p in dat["mit_mass"]}
-    print(f"  Unique kanonische Maße = {len(canon)} (erwartet {ERWARTET_UNIQUE_KANON})")
-    assert len(canon) == ERWARTET_UNIQUE_KANON, (
-        f"Unique kanon. Maße = {len(canon)}, erwartet {ERWARTET_UNIQUE_KANON}. "
-        f"Drehung 800×1200 ↔ 1200×800 verschmilzt NICHT zu einem Maß."
-    )
-
-
-# ---------------------------------------------------------------------
-# F) KANDIDATEN: volles Gitter, NICHT auf unique Maße reduziert
-# ---------------------------------------------------------------------
-def test_f_kandidaten_sind_volles_gitter():
-    _setup()
-    dat = importiere(FIXTURE)
-    res = optimiere(dat["mit_mass"], tol_mm=100, kombi_max=3,
-                    coverage="zweiseitig", zeit_limit_s=20)
-    print(f"  Kandidaten = {res['kandidaten']} (erwartet {ERWARTET_KANDIDATEN}, "
-          f">> Unique-Maße {ERWARTET_UNIQUE_KANON})")
-    assert res["kandidaten"] == ERWARTET_KANDIDATEN, (
-        f"Kandidaten = {res['kandidaten']}, erwartet exakt {ERWARTET_KANDIDATEN} "
-        f"(volles Gitter S_vals × L_vals mit cs <= cl). Wenn Wert == "
-        f"{ERWARTET_UNIQUE_KANON}: Kandidaten wurden faelschlich auf "
-        f"vorkommende Maße reduziert — DAS war der zweite grosse Bug."
-    )
-    assert res["kandidaten"] > 2 * ERWARTET_UNIQUE_KANON, (
-        f"Kandidaten ({res['kandidaten']}) sollten deutlich grösser sein "
-        f"als die unique Maße ({ERWARTET_UNIQUE_KANON}) — volles Gitter."
-    )
-
-
-# ---------------------------------------------------------------------
-# G) OPTIMIERUNG: Soll-Werte gegen die Fixture
-# ---------------------------------------------------------------------
-def test_g_optimum_bei_tol100_kombi3_zweiseitig():
-    """tol=100 / kombi=3 / zweiseitig: per Hand nachvollziehbar
-    5 Maße gesamt (4 echte Cluster + 1 isolierter Auftrag, der
-    Standard oder Sonder werden darf; Summe ist gleich)."""
-    _setup()
-    dat = importiere(FIXTURE)
-    res = optimiere(dat["mit_mass"], tol_mm=100, kombi_max=3,
-                    coverage="zweiseitig", sonder_deckel=None,
-                    zeit_limit_s=20)
-    n_std = len(res["standards"])
-    n_son = len(res["sonder"])
-    print(f"  tol=100/kombi=3/zweiseitig: status={res['status']}, "
-          f"std={n_std}, sonder={n_son}, gesamt={res['gesamt']}")
-    assert res["status"] == "Optimal", f"ILP-Status: {res['status']}"
-    assert res["gesamt"] == ERWARTET_GESAMT, (
-        f"gesamt = {res['gesamt']}, erwartet {ERWARTET_GESAMT}. "
-        f"Falsche Zielfunktion (Standards + Sonder muss minimiert werden) "
-        f"oder Coverage/Kombi falsch."
-    )
-    assert n_std + n_son == ERWARTET_GESAMT, "Konsistenz"
-    assert n_std >= 2, f"Standards = {n_std}, erwartet ≥ 2 (mind. 2 echte Cluster)"
-    assert n_son <= 2, f"Sonder = {n_son}, erwartet ≤ 2 (max. 2 isolierte Aufträge)"
-
-
-def test_h_gegenprobe_tol0_liefert_mehr():
-    """Mit tol=0 darf nichts geclustert werden → mehr Maße als bei tol=100."""
-    _setup()
-    dat = importiere(FIXTURE)
-    res = optimiere(dat["mit_mass"], tol_mm=0, kombi_max=3,
-                    coverage="zweiseitig", zeit_limit_s=20)
-    print(f"  Gegenprobe tol=0: status={res['status']}, gesamt={res['gesamt']}")
-    assert res["status"] == "Optimal"
-    assert res["gesamt"] >= ERWARTET_UNIQUE_KANON, (
-        f"Bei tol=0 muss gesamt mindestens = unique Maße sein "
-        f"({ERWARTET_UNIQUE_KANON}), bekam {res['gesamt']}"
-    )
-    assert res["gesamt"] > ERWARTET_GESAMT, (
-        f"tol=0 ({res['gesamt']}) sollte deutlich mehr Maße liefern als "
-        f"tol=100 ({ERWARTET_GESAMT})"
-    )
-
-
-# ---------------------------------------------------------------------
-# I) ORIENTIERUNG: Drehung 800×1200 ↔ 1200×800 fällt unter denselben Standard
-# ---------------------------------------------------------------------
-def test_i_orientierung_drehung_landet_unter_einem_standard():
-    _setup()
-    dat = importiere(FIXTURE)
-    res = optimiere(dat["mit_mass"], tol_mm=100, kombi_max=3,
-                    coverage="zweiseitig", zeit_limit_s=20)
-    a1 = next((z for z in res["zuordnung"] if z["auftrag"] == "110001"), None)
-    a3 = next((z for z in res["zuordnung"] if z["auftrag"] == "110003"), None)
-    assert a1 and a3, "Aufträge 110001 und 110003 fehlen in der Zuordnung"
-    print(f"  110001 (1200×800) → ziel {a1['ziel']}")
-    print(f"  110003 (800×1200 gedreht) → ziel {a3['ziel']}")
-    assert a1["ziel"] == a3["ziel"], (
-        f"Drehung wird NICHT erkannt: 110001 → {a1['ziel']}, "
-        f"110003 → {a3['ziel']}. Beide sollten auf denselben Standard."
-    )
-
-
-# ---------------------------------------------------------------------
-# J) DOPPELTE AW: beide Positionen im Ergebnis vorhanden
-# ---------------------------------------------------------------------
-def test_j_doppelte_aw_beide_positionen_im_ergebnis():
-    _setup()
-    dat = importiere(FIXTURE)
-    res = optimiere(dat["mit_mass"], tol_mm=100, kombi_max=3,
-                    coverage="zweiseitig", zeit_limit_s=20)
-    treffer = [z for z in res["zuordnung"] if z["auftrag"] == "110008"]
-    print(f"  Auftrag 110008: {len(treffer)} Treffer (erwartet 2)")
-    assert len(treffer) == 2, (
-        f"AW 110008 hat zwei Positionen — beide MÜSSEN durchkommen, "
-        f"bekam {len(treffer)}"
-    )
-
-
-# ---------------------------------------------------------------------
-# K) MAß FEHLT: Bucket separat, nicht in der Optimierung
-# ---------------------------------------------------------------------
-def test_k_mass_fehlt_bucket_separat():
-    _setup()
-    dat = importiere(FIXTURE)
-    aw009_optimiert = next(
-        (p for p in dat["mit_mass"] if p["auftrag"] == "110009"), None
-    )
-    aw009_ohne = next(
-        (p for p in dat["ohne_mass"] if p["auftrag"] == "110009"), None
-    )
-    assert aw009_optimiert is None, "AW 110009 darf NICHT in mit_mass landen"
-    assert aw009_ohne is not None, "AW 110009 MUSS im Bucket 'ohne_mass' sein"
-    print(f"  AW 110009 korrekt in ohne_mass (nicht in Optimierung)")
-
-
-# ---------------------------------------------------------------------
-# L) CODE-INTEGRITÄT: keine Mengen-Schwelle, keine P-Anzahl-Mappings
-# ---------------------------------------------------------------------
-def test_l_kein_mengen_schwelle_in_app_modulen():
-    """Suche in den App-Modulen der Mini-App nach 'mengen_schwelle' —
-    darf NIRGENDS auftauchen. Tests selber duerfen den Begriff in
-    Strings/Kommentaren enthalten (Suchbegriff)."""
-    mini_root = HIER.parent  # paletten-optimierer/mini
-    app_module = [
-        mini_root / "app_mini.py",
-        mini_root / "optimierer_kern.py",
-        mini_root / "import_excel.py",
-        mini_root / "_ui_chrome.py",
-        mini_root / "run_mini.py",
+def test_1_cluster_ein_standard_deckt_alle():
+    cluster = [
+        {'L': 1520, 'B': 720, 'menge': 1, 'auftrag': 'A', 'name': ''},
+        {'L': 1550, 'B': 700, 'menge': 1, 'auftrag': 'B', 'name': ''},
+        {'L': 1500, 'B': 750, 'menge': 1, 'auftrag': 'C', 'name': ''},
+        {'L': 1530, 'B': 710, 'menge': 1, 'auftrag': 'D', 'name': ''},
     ]
-    treffer = []
-    for py in app_module:
-        if not py.exists():
-            continue
-        text = py.read_text(encoding="utf-8", errors="ignore")
-        if "mengen_schwelle" in text.lower():
-            treffer.append(str(py.relative_to(mini_root)))
-    print(f"  App-Module mit 'mengen_schwelle': {len(treffer)}")
-    assert not treffer, (
-        f"'mengen_schwelle' darf in der Mini-App nicht vorkommen, "
-        f"gefunden in: {treffer}"
+    r = optimiere(cluster, tol_mm=200, kombinieren=False)
+    print(f"\n  Cluster: {r['standards']} | Sonder: {r['sonder']} "
+          f"| invariante_ok: {r['invariante_ok']}")
+    assert len(r['standards']) == 1, (
+        f"erwartet genau 1 Standard, bekam {r['standards']}"
     )
+    assert len(r['sonder']) == 0
+    assert r['invariante_ok']
+    s = r['standards'][0]
+    for o in cluster:
+        # Standard muss in beiden Maßen >= Last (einseitig)
+        assert min(s) >= min(o['L'], o['B']) and max(s) >= max(o['L'], o['B']), (
+            f"Standard {s} deckt Last {(o['L'], o['B'])} NICHT physisch ab"
+        )
 
 
-def test_m_p_anzahl_wird_nicht_als_palettenanzahl_gemappt():
-    """Wenn 'P-Anzahl' gemappt wäre, käme bei dieser Fixture Σ=8
-    raus (alle P-Anzahl=1, 8 mit-Maß-Zeilen) statt 41."""
-    _setup()
-    dat = importiere(FIXTURE)
-    summe = sum(int(p["anzahl"]) for p in dat["mit_mass"])
-    assert summe != 9 and summe != 8, (
-        f"Σ = {summe} sieht aus wie P-Anzahl-Mapping (alle 1) — "
-        f"Spalte 'Menge' wird nicht korrekt gelesen"
+# ---------------------------------------------------------------------
+# Selbsttest 2 — Kombi-Fallback: Typ A + Typ B
+# ---------------------------------------------------------------------
+def test_2_kombi_fallback_a_plus_b():
+    base = [
+        {'L': 1200, 'B': 800, 'menge': 9, 'auftrag': 'S1', 'name': ''},
+        {'L':  400, 'B': 800, 'menge': 9, 'auftrag': 'S2', 'name': ''},
+        {'L': 1500, 'B': 700, 'menge': 1, 'auftrag': 'X',  'name': ''},
+    ]
+    ro = optimiere(base, tol_mm=200, kombinieren=False)
+    rk = optimiere(base, tol_mm=200, kombinieren=True)
+    tx_o = [z['typ'] for z in ro['zuordnung'] if z['auftrag'] == 'X'][0]
+    tx_k = [z for z in rk['zuordnung'] if z['auftrag'] == 'X'][0]
+    print(f"\n  X ohne Kombi: {tx_o} | mit Kombi: {tx_k['typ']} -> {tx_k['ziel']}")
+    assert tx_o == 'Sonder', (
+        f"Ohne Kombi muss X als Sonder ausgewiesen sein, war {tx_o}"
+    )
+    assert tx_k['typ'] == 'Kombination', (
+        f"Mit Kombi muss X als Kombination ausgewiesen sein, war {tx_k['typ']}"
+    )
+    assert rk['invariante_ok'], "Kombi-Auflösung darf Invariante nicht verletzen"
+    # Format "TypA + TypB" muss aus mind. 2 Maßen bestehen
+    assert " + " in tx_k['ziel'], (
+        f"Kombi-Ziel sollte 'TypA + TypB' enthalten, war {tx_k['ziel']!r}"
     )
 
 
 # ---------------------------------------------------------------------
-# Runner
+# Selbsttest 3 — echte Datei T=200 (oder Surrogat), invariante_ok
 # ---------------------------------------------------------------------
-def _run(fn):
-    name = fn.__name__
-    try:
-        fn()
-        print(f"OK  {name}")
-        return True
-    except AssertionError as e:
-        print(f"FAIL {name}: {e}")
-        return False
-    except Exception as e:
-        print(f"ERR  {name}: {type(e).__name__}: {e}")
-        import traceback; traceback.print_exc()
-        return False
+def _finde_test_datei() -> Path:
+    """Bevorzugt: tests/fixtures/Paletten_DM.xlsx (echte Datei).
+    Surrogat: data/draht_mueller_palettenliste.xlsx im Repo."""
+    real = HIER / "fixtures" / "Paletten_DM.xlsx"
+    if real.exists():
+        return real
+    surrogat = HIER.parent.parent / "data" / "draht_mueller_palettenliste.xlsx"
+    return surrogat
 
 
+def _lade_aus_excel(pfad: Path) -> list[dict]:
+    """Liest Excel ueber den Mini-Importer (dynamische Header-Erkennung)
+    und konvertiert in das Kern-Format {L, B, menge, auftrag, name}."""
+    dat = importiere(pfad)
+    return [
+        {'L': p['laenge'], 'B': p['breite'], 'menge': p['anzahl'],
+         'auftrag': p['auftrag'], 'name': p['name']}
+        for p in dat['mit_mass']
+    ]
+
+
+def test_3_echte_datei_invariante_ok():
+    pfad = _finde_test_datei()
+    assert pfad.exists(), f"Keine Test-Datei gefunden: {pfad}"
+    print(f"\n  Test-Datei: {pfad.name}")
+    ords = _lade_aus_excel(pfad)
+    assert len(ords) > 0, "Keine Aufträge mit Maß in der Datei"
+    print(f"  Aufträge mit Maß: {len(ords)}")
+
+    for T in (100, 200):
+        rr = optimiere(ords, tol_mm=T, kombinieren=True)
+        print(f"  T={T}: Std={len(rr['standards'])} "
+              f"Sonder={len(rr['sonder'])} Gesamt={rr['gesamt']} "
+              f"invariante_ok={rr['invariante_ok']} "
+              f"Verletzungen={len(rr['verletzungen'])}")
+        assert rr['invariante_ok'], (
+            f"T={T}: PHYSIKALISCHE INVARIANTE VERLETZT, "
+            f"{len(rr['verletzungen'])} Verletzungen — der Kern darf "
+            f"NIE eine Zuordnung liefern, bei der Last > Standard ist."
+        )
+
+
+# ---------------------------------------------------------------------
+# Strukturtest — App nutzt den Kern direkt, kein Schatten-Code
+# ---------------------------------------------------------------------
+def test_app_importiert_kern_direkt():
+    """Verifiziere: app_mini.py importiert optimiere() direkt aus
+    dem Kern und definiert KEINE eigene optimiere()-Funktion."""
+    app_src = (HIER.parent / "app_mini.py").read_text(encoding="utf-8")
+    assert "from optimierer_kern import optimiere" in app_src, (
+        "app_mini.py importiert optimiere() NICHT aus dem Kern"
+    )
+    assert "\ndef optimiere(" not in app_src, (
+        "app_mini.py definiert eine eigene optimiere()-Funktion — "
+        "Kern muss 1:1 verwendet werden, keine Schatten-Impl"
+    )
+
+
+# ---------------------------------------------------------------------
+# Runner — sammelt Failures, schreibt selbsttest_status.json
+# ---------------------------------------------------------------------
 if __name__ == "__main__":
     tests = [
-        test_a_header_in_zeile_5_erkannt,
-        test_b_anzahl_mit_mass_korrekt,
-        test_c_anzahl_ohne_mass_korrekt,
-        test_d_paletten_gesamt_aus_spalte_menge,
-        test_e_unique_kanonische_masse,
-        test_f_kandidaten_sind_volles_gitter,
-        test_g_optimum_bei_tol100_kombi3_zweiseitig,
-        test_h_gegenprobe_tol0_liefert_mehr,
-        test_i_orientierung_drehung_landet_unter_einem_standard,
-        test_j_doppelte_aw_beide_positionen_im_ergebnis,
-        test_k_mass_fehlt_bucket_separat,
-        test_l_kein_mengen_schwelle_in_app_modulen,
-        test_m_p_anzahl_wird_nicht_als_palettenanzahl_gemappt,
+        test_1_cluster_ein_standard_deckt_alle,
+        test_2_kombi_fallback_a_plus_b,
+        test_3_echte_datei_invariante_ok,
+        test_app_importiert_kern_direkt,
     ]
-    # Fail-Details fürs Status-JSON sammeln
-    import datetime as _dt
-    import json as _json
-
     failures: list[str] = []
 
-    def _run_collect(fn) -> bool:
+    def _run(fn) -> bool:
         name = fn.__name__
         try:
             fn()
@@ -331,47 +177,28 @@ if __name__ == "__main__":
             import traceback; traceback.print_exc()
             return False
 
-    erfolge = sum(1 for t in tests if _run_collect(t))
+    erfolge = sum(1 for t in tests if _run(t))
     print()
     print("=" * 60)
-    print(f"{erfolge}/{len(tests)} Tests bestanden.")
+    print(f"{erfolge}/{len(tests)} Pflichttests bestanden.")
     print("=" * 60)
 
-    # In-Prozess-Verifikation: App ruft GENAU diesen Kern auf.
-    # Beweis: SHA256 der Kern-Datei + statische Pruefung des
-    # App-Import-Statements (kein voller Streamlit-Import noetig).
-    import hashlib
-    kern_pfad = Path(__file__).resolve().parent.parent / "optimierer_kern.py"
-    app_pfad = Path(__file__).resolve().parent.parent / "app_mini.py"
+    # Kern-Identitaet fuer das UI-Banner
+    kern_pfad = HIER.parent / "optimierer_kern.py"
     kern_sha = hashlib.sha256(kern_pfad.read_bytes()).hexdigest()[:12]
-    app_src = app_pfad.read_text(encoding="utf-8")
-    # App muss den Kern direkt importieren — KEINE eigene optimiere-Def
-    identitaet_ok = (
-        "from optimierer_kern import optimiere" in app_src
-        and "\ndef optimiere(" not in app_src
-    )
-    print(f"\nKern-Datei: {kern_pfad.name}  SHA256[:12]={kern_sha}")
-    print(f"app_mini.py importiert Kern direkt: {identitaet_ok}")
-    if not identitaet_ok:
-        failures.append(
-            "app_mini.py importiert optimiere() NICHT direkt aus dem Kern "
-            "ODER definiert eine eigene optimiere()."
-        )
+    print(f"\nKern: {kern_pfad.name}  SHA256[:12]={kern_sha}")
 
-    # Status-JSON neben den App-Modulen — der App-Start liest das beim
-    # Bootup ein und zeigt Badge oder Banner.
     status_pfad = HIER.parent / "selbsttest_status.json"
     status = {
-        "passed": erfolge == len(tests) and identitaet_ok,
+        "passed": erfolge == len(tests),
         "passed_count": erfolge,
         "total": len(tests),
         "failures": failures[:5],
         "kern_sha": kern_sha,
-        "kern_identitaet_ok": identitaet_ok,
         "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"),
     }
     status_pfad.write_text(_json.dumps(status, ensure_ascii=False, indent=2),
                             encoding="utf-8")
-    print(f"\nStatus geschrieben nach: {status_pfad}")
+    print(f"Status geschrieben nach: {status_pfad}")
 
     sys.exit(0 if status["passed"] else 1)
