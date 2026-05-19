@@ -42,7 +42,7 @@ def _passt_kombi(teile, last, T):
 
 
 def optimiere(orders, tol_mm=200, kombinieren=True, max_kombi_teile=3,
-              zeitlimit_s=120):
+              zeitlimit_s=120, sonder_deckel=None):
     if not orders:
         return {'standards': [], 'sonder': [], 'gesamt': 0,
                 'zuordnung': [], 'invariante_ok': True,
@@ -79,6 +79,10 @@ def optimiere(orders, tol_mm=200, kombinieren=True, max_kombi_teile=3,
         g = tuple(sorted((a, b)))
         p += (pulp.lpSum(x[j] for j in range(len(keep)) if i in cov[j])
               + z[g] >= 1)
+    # OPTIONALE Erweiterung (nicht in v2-Spec, aber additiv):
+    # max. Anzahl verschiedener Sonder-Maße. None = unbegrenzt.
+    if sonder_deckel is not None and sonder_deckel >= 0:
+        p += pulp.lpSum(z.values()) <= sonder_deckel, "sonder_max"
     p.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=zeitlimit_s))
 
     standards = sorted(keep[j] for j in range(len(keep))

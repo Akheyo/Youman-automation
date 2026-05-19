@@ -126,6 +126,8 @@ def init_state() -> None:
             "tol_mm": 200,            # max. Übermaß (mm), Default 200
             "kombinieren": True,      # Boolean — Default an
             "max_kombi_teile": 3,
+            "sonder_deckel_aktiv": False,
+            "sonder_deckel": 5,
         },
         "ergebnis": None,
         "seite": "Datenimport",
@@ -289,6 +291,25 @@ def seite_einstellungen() -> None:
         )
         card_close()
 
+        card_open("Sonder-Deckel")
+        p["sonder_deckel_aktiv"] = st.toggle(
+            "Anzahl Sonderpaletten begrenzen",
+            value=bool(p.get("sonder_deckel_aktiv", False)),
+            key="sd_a",
+            help="Begrenzt die Anzahl unterschiedlicher Sonder-Maße im "
+                 "Ergebnis. Mehr Sonder erlaubt → weniger Standards möglich.",
+        )
+        if p["sonder_deckel_aktiv"]:
+            p["sonder_deckel"] = st.number_input(
+                "max. verschiedene Sonder",
+                min_value=0, max_value=500,
+                value=int(p.get("sonder_deckel", 5)),
+                step=1, key="sd_n",
+            )
+        else:
+            st.caption("Unbegrenzt — der Solver entscheidet.")
+        card_close()
+
     with col_r:
         card_open("In der Mini-Version nicht verfügbar")
         for feat in [
@@ -323,9 +344,12 @@ def run_optimierung() -> None:
     # artikelnummer fuer UI-Anzeige spaeter joinen (Kern braucht sie nicht)
     artikel_lookup = [pal.get("artikelnummer", "") for pal in mit_mass]
 
+    deckel = (int(p["sonder_deckel"])
+              if p.get("sonder_deckel_aktiv") else None)
     hinweis = (f"ILP-Solver (CBC) optimiert {len(orders)} Aufträge — "
                f"Übermaß ≤ {int(p['tol_mm'])} mm, "
-               f"Kombi {'an' if p['kombinieren'] else 'aus'}.")
+               f"Kombi {'an' if p['kombinieren'] else 'aus'}, "
+               f"Sonder-Deckel {deckel if deckel is not None else 'frei'}.")
     with st.spinner(hinweis):
         res = optimiere(
             orders,
@@ -333,6 +357,7 @@ def run_optimierung() -> None:
             kombinieren=bool(p.get("kombinieren", True)),
             max_kombi_teile=int(p.get("max_kombi_teile", 3)),
             zeitlimit_s=120,
+            sonder_deckel=deckel,
         )
     # Artikelnummer nachreichen
     for idx, zg in enumerate(res.get("zuordnung", [])):
@@ -349,10 +374,13 @@ def seite_optimierung() -> None:
     col_l, col_r = st.columns([1, 2])
     with col_l:
         card_open("Aktuelle Parameter")
+        deckel = (int(p["sonder_deckel"]) if p.get("sonder_deckel_aktiv")
+                  else "frei")
         st.markdown(
             f"<div style='font-size:13px;color:#374151;line-height:1.8;'>"
             f"<b>max. Übermaß:</b> {int(p['tol_mm'])} mm<br>"
             f"<b>Kombinieren:</b> {'an' if p['kombinieren'] else 'aus'}<br>"
+            f"<b>Sonder-Deckel:</b> {deckel}<br>"
             f"<b>Coverage:</b> einseitig (Standard ≥ Last)"
             f"</div>",
             unsafe_allow_html=True,
@@ -434,12 +462,15 @@ def kpi_uebersicht() -> None:
     inv_text = ("Invariante OK" if res.get("invariante_ok", True)
                 else f"INVARIANTE VERLETZT ({len(res.get('verletzungen', []))})")
     inv_color = "#16a34a" if res.get("invariante_ok", True) else "#dc2626"
+    deckel_txt = (str(int(p["sonder_deckel"]))
+                  if p.get("sonder_deckel_aktiv") else "frei")
     st.markdown(
         f'<div style="background:#f8fafc;border:1px solid #e2e8f0;'
         f'border-radius:6px;padding:8px 12px;margin:8px 0 16px;'
         f'font-size:12px;color:#475569;">'
         f'⚙️ max. Übermaß = {int(p["tol_mm"])} mm · '
         f'Kombinieren = {"an" if p["kombinieren"] else "aus"} · '
+        f'Sonder-Deckel = {deckel_txt} · '
         f'Coverage = einseitig · ILP-Status = {res.get("status", "?")} · '
         f'<span style="color:{inv_color};font-weight:700;">{inv_text}</span>'
         f'</div>',
@@ -538,10 +569,10 @@ def seite_ergebnisse() -> None:
 
     kpi_uebersicht()
 
-    # === Inline-Anpassung: Übermaß + Kombi-Toggle direkt hier ===
+    # === Inline-Anpassung: Übermaß + Kombi-Toggle + Sonder-Deckel ===
     card_open("🔁 Parameter anpassen und neu rechnen")
     p = st.session_state.params
-    c1, c2 = st.columns([1, 1])
+    c1, c2, c3, c4 = st.columns([1.2, 1, 1, 1.2])
     with c1:
         p["tol_mm"] = st.number_input(
             "max. Übermaß (mm)", min_value=0, max_value=2000,
@@ -554,9 +585,24 @@ def seite_ergebnisse() -> None:
             value=bool(p.get("kombinieren", True)),
             key="erg_kombi",
             help="Aufträge ohne einzelnen passenden Standard werden per "
-                 "Kombination aus 2-3 gewählten Standards (Typ A + Typ B) "
-                 "abgedeckt. Spart Sonderpaletten.",
+                 "Kombination aus 2-3 gewählten Standards abgedeckt.",
         )
+    with c3:
+        p["sonder_deckel_aktiv"] = st.toggle(
+            "Sonder-Deckel",
+            value=bool(p.get("sonder_deckel_aktiv", False)),
+            key="erg_sd_a",
+        )
+    with c4:
+        if p["sonder_deckel_aktiv"]:
+            p["sonder_deckel"] = st.number_input(
+                "max. verschiedene Sonder",
+                min_value=0, max_value=500,
+                value=int(p.get("sonder_deckel", 5)),
+                step=1, key="erg_sd_n",
+            )
+        else:
+            st.caption("Sonder unbegrenzt.")
     if st.button("🔄 Neu optimieren mit diesen Werten",
                  type="primary", use_container_width=True, key="erg_rerun"):
         run_optimierung()
