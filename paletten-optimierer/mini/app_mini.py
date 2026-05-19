@@ -125,7 +125,7 @@ def init_state() -> None:
         "params": {                # Optimierungs-Parameter
             "tol_mm": 100,
             "kombi_max": 2,        # Default 2 = schnell; 3 dauert deutlich länger
-            "coverage": "zweiseitig",
+            "coverage": "einseitig",  # physisch korrekt: Standard >= Auftrag
             "sonder_deckel_aktiv": False,
             "sonder_deckel": 1,
         },
@@ -277,11 +277,14 @@ def seite_einstellungen() -> None:
         )
         p["coverage"] = st.radio(
             "Coverage-Modus",
-            ["zweiseitig", "einseitig"],
-            index=0 if p["coverage"] == "zweiseitig" else 1,
+            ["einseitig", "zweiseitig"],
+            index=0 if p["coverage"] == "einseitig" else 1,
             horizontal=True, key="cov_in",
-            help=("zweiseitig: |S − A| ≤ tol je Dimension. "
-                  "einseitig: S ≥ A und S − A ≤ tol (Last muss draufpassen)."),
+            help=("einseitig (Default, physisch korrekt): Standard ≥ Auftrag "
+                  "in beiden Dimensionen, Differenz ≤ tol. Last passt immer drauf.\n"
+                  "zweiseitig: |S − A| ≤ tol je Dimension — Standard darf auch "
+                  "KLEINER sein als Auftrag, Last hängt dann über. "
+                  "Mathematisch optimaler (weniger Standards), physisch riskant."),
         )
         card_close()
 
