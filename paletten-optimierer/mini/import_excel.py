@@ -17,6 +17,20 @@ from typing import IO
 import openpyxl
 
 
+# ---------------------------------------------------------------------
+# Domain-Konvention Draht-Müller:
+# Die Spalten 'P-Länge' und 'P-Breite' der Excel sind die BENÖTIGTEN
+# PALETTEN-Maße (also Außen-Maß der Palette). Das transportierte
+# PRODUKT ist in beiden Dimensionen um einen festen Wert KLEINER —
+# 50 mm bei Draht-Müller. Der Optimierer arbeitet mit den Produkt-
+# Maßen (nicht den Paletten-Maßen).
+#
+# Wenn ein anderer Kunde keinen 50-mm-Aufschlag nutzt, ist nur
+# diese eine Konstante anzupassen.
+# ---------------------------------------------------------------------
+PALETTEN_AUFSCHLAG_MM = 50
+
+
 # Erwartete Spalten (deutsch, mit Aliasen). Wert ist eine Liste
 # normalisierter Aliase, die alle auf das logische Feld mappen.
 SPALTEN = {
@@ -141,29 +155,43 @@ def importiere(file_or_path: str | Path | IO[bytes]) -> dict:
         if all(c is None or _str(c) == "" for c in row):
             continue
         daten += 1
-        L = _zahl(val(row, "laenge"))
-        B = _zahl(val(row, "breite"))
+        # P-Länge / P-Breite aus Excel sind PALETTEN-Maße.
+        # Produkt = Palette − Aufschlag (Domain-Konvention oben).
+        palette_L = _zahl(val(row, "laenge"))
+        palette_B = _zahl(val(row, "breite"))
         H = _zahl(val(row, "hoehe")) or 0.0
         anzahl_roh = _zahl(val(row, "menge"))
-        # Spec-Konform: fehlt die Menge, wird 1 angenommen
-        # (NICHT 0 — sonst geht der Auftrag in der Summe verloren).
+        # Spec-konform: fehlt die Menge, wird 1 angenommen.
         if anzahl_roh and anzahl_roh > 0:
             anzahl = int(anzahl_roh)
         else:
             anzahl = 1
+
+        # Produkt-Maße berechnen (wenn Palettenmaße vorhanden)
+        produkt_L = (palette_L - PALETTEN_AUFSCHLAG_MM) if palette_L else None
+        produkt_B = (palette_B - PALETTEN_AUFSCHLAG_MM) if palette_B else None
+
         eintrag = {
-            "auftrag":       _str(val(row, "auftrag")),
-            "name":          _str(val(row, "name")),
-            "artikelnummer": _str(val(row, "artikelnummer")),
-            "laenge":        L,
-            "breite":        B,
-            "hoehe":         H,
-            "anzahl":        anzahl,
+            "auftrag":          _str(val(row, "auftrag")),
+            "name":             _str(val(row, "name")),
+            "artikelnummer":    _str(val(row, "artikelnummer")),
+            # 'laenge' / 'breite' = PRODUKT-Maße (geht in die Optimierung)
+            "laenge":           produkt_L,
+            "breite":           produkt_B,
+            "hoehe":            H,
+            "anzahl":           anzahl,
+            # Roh-Excel-Werte ZUR ANZEIGE, NICHT zur Optimierung
+            "palette_L_excel":  palette_L,
+            "palette_B_excel":  palette_B,
         }
-        # Gültiges Maß = L und B > 0
-        if L and B and L > 0 and B > 0:
+        # Gültiges Maß = Produkt L UND Produkt B > 0
+        if (produkt_L is not None and produkt_B is not None
+                and produkt_L > 0 and produkt_B > 0):
             mit_mass.append(eintrag)
         else:
+            # Auch Faelle mit P-L/P-B <= 50 (Aufschlag) landen hier —
+            # ein Produkt mit 0 oder negativer Kantenlaenge ist nicht
+            # optimierbar.
             ohne_mass.append(eintrag)
 
     # Diagnose-Aggregate (Spec-Soll-Werte)

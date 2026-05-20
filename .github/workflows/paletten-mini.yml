@@ -84,6 +84,12 @@ jobs:
           PYTHONIOENCODING: utf-8
         run: python tests/test_verlauf.py
 
+      - name: Pflicht-Test Produkt-Maße (Domain-Fix Paletten -> Produkt)
+        shell: pwsh
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python tests/test_produkt_mass.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |

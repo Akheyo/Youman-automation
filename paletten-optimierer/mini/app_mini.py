@@ -375,14 +375,20 @@ def run_optimierung() -> None:
     p = st.session_state.params
     mit_mass = st.session_state.import_dat["mit_mass"]
 
-    # Mini-Format -> Kern-v2-Format
+    # Mini-Format -> Kern-v2-Format. WICHTIG: L/B sind die PRODUKT-Maße
+    # (Excel P-L/P-B minus PALETTEN_AUFSCHLAG_MM, im Importer berechnet).
     orders = [
         {"L": pal["laenge"], "B": pal["breite"], "menge": pal["anzahl"],
          "auftrag": pal["auftrag"], "name": pal["name"]}
         for pal in mit_mass
     ]
-    # artikelnummer fuer UI-Anzeige spaeter joinen (Kern braucht sie nicht)
+    # Pro Auftrag artikelnummer + Roh-Palettenmaße fuer die UI-Anzeige
+    # mitschleppen (Kern braucht sie nicht).
     artikel_lookup = [pal.get("artikelnummer", "") for pal in mit_mass]
+    palette_excel_lookup = [
+        (pal.get("palette_L_excel"), pal.get("palette_B_excel"))
+        for pal in mit_mass
+    ]
 
     deckel = (int(p["sonder_deckel"])
               if p.get("sonder_deckel_aktiv") else None)
@@ -399,9 +405,14 @@ def run_optimierung() -> None:
             zeitlimit_s=120,
             sonder_deckel=deckel,
         )
-    # Artikelnummer nachreichen
+    # Artikelnummer + Roh-Palettenmaße aus Excel nachreichen
     for idx, zg in enumerate(res.get("zuordnung", [])):
-        zg["artikelnummer"] = artikel_lookup[idx] if idx < len(artikel_lookup) else ""
+        zg["artikelnummer"] = (artikel_lookup[idx]
+                                if idx < len(artikel_lookup) else "")
+        if idx < len(palette_excel_lookup):
+            pL, pB = palette_excel_lookup[idx]
+            zg["palette_L_excel"] = pL
+            zg["palette_B_excel"] = pB
     st.session_state.ergebnis = res
 
     # Optimierungs-Block in der Historie ergaenzen
@@ -574,6 +585,11 @@ def render_zuord_table(res: dict) -> str:
     for (typ, ziel_str), members in sorted(gruppen.items(), key=sort_key):
         rs = max(1, len(members))
         gruppe_summe = sum(m.get("menge", 0) for m in members)
+        # Kombi-Zeilen optisch herausheben: hellblauer Hintergrund
+        # via inline-row-style.
+        row_style = (
+            ' style="background:#eff6ff;"' if typ == "Kombination" else ""
+        )
         for i, m in enumerate(members):
             tds = []
             if i == 0:
@@ -602,16 +618,44 @@ def render_zuord_table(res: dict) -> str:
                 f'<td style="text-align:right;font-weight:700;">'
                 f'{_fmt_int(m.get("menge", 0))}</td>'
             )
+            # LAST = Produkt-Maße (das was der Optimierer sieht)
             tds.append(
                 f'<td>{int(m.get("L", 0))} × {int(m.get("B", 0))} mm</td>'
             )
-            if typ == "Standard":
-                tds.append('<td><span class="badge badge-ok">✓ Standard</span></td>')
-            elif typ == "Kombination":
-                tds.append('<td><span class="badge badge-kombi">⚡ Kombination</span></td>')
+            # Excel P-L × P-B als kleiner Roh-Hinweis daneben
+            pL = m.get("palette_L_excel")
+            pB = m.get("palette_B_excel")
+            if pL and pB:
+                excel_str = (
+                    f'<span style="font-family:ui-monospace,monospace;'
+                    f'font-size:11px;color:#6b7280;" '
+                    f'title="Roh-Werte aus Excel-Spalten P-Länge / P-Breite '
+                    f'(vor Abzug Palettenaufschlag)">'
+                    f'{int(pL)} × {int(pB)}</span>'
+                )
             else:
-                tds.append('<td><span class="badge badge-sonder">○ Sonderpalette</span></td>')
-            rows.append("<tr>" + "".join(tds) + "</tr>")
+                excel_str = '<span style="color:#9ca3af;">—</span>'
+            tds.append(f'<td>{excel_str}</td>')
+            if typ == "Standard":
+                tds.append(
+                    '<td><span class="badge badge-ok">✓ Standard</span></td>'
+                )
+            elif typ == "Kombination":
+                # Fettschrift, Kettensymbol, ziel-Maße direkt daneben
+                tds.append(
+                    f'<td><span class="badge badge-kombi" '
+                    f'style="font-weight:800;">🔗 Kombination</span>'
+                    f'<div style="font-family:ui-monospace,monospace;'
+                    f'font-size:11px;color:#1e3a8a;margin-top:3px;">'
+                    f'{escape(_ziel_label(ziel_str))}</div></td>'
+                )
+            else:
+                tds.append(
+                    '<td><span class="badge badge-sonder" '
+                    'style="color:#fff;background:#dc2626;'
+                    'font-weight:700;">Sonder</span></td>'
+                )
+            rows.append(f"<tr{row_style}>" + "".join(tds) + "</tr>")
 
     head = (
         "<thead><tr>"
@@ -619,7 +663,8 @@ def render_zuord_table(res: dict) -> str:
         "<th>Artikel / Kunde</th>"
         "<th>Auftrag</th>"
         "<th style='text-align:right;' title=\"Palettenanzahl pro Auftrag = Spalte 'Menge'\">Paletten</th>"
-        "<th>Last (mm)</th>"
+        "<th title=\"Produkt-Maße (was der Optimierer sieht — Excel P-Werte minus Palettenaufschlag)\">Last (mm)</th>"
+        "<th title=\"Roh-Werte aus Excel-Spalten P-Länge / P-Breite\">Excel P-L × P-B</th>"
         "<th>Typ</th>"
         "</tr></thead>"
     )
@@ -714,8 +759,10 @@ def seite_ergebnisse() -> None:
             "Kunde": z.get("name", ""),
             "Artikelnummer": z.get("artikelnummer", ""),
             "Paletten (Menge)": z.get("menge", 0),
-            "Last L": z.get("L", 0),
-            "Last B": z.get("B", 0),
+            "Excel P-L": z.get("palette_L_excel", ""),
+            "Excel P-B": z.get("palette_B_excel", ""),
+            "Produkt L (= P-L - Aufschlag)": z.get("L", 0),
+            "Produkt B (= P-B - Aufschlag)": z.get("B", 0),
             "Ziel": z.get("ziel", ""),
             "Typ": z.get("typ", ""),
         })
