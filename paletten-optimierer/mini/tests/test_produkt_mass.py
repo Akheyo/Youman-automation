@@ -173,37 +173,33 @@ def test_c_echte_datei_soll_werte():
 def test_d_anzeige_kombination_format():
     """Konstruiere ein Mini-Szenario, in dem Kombi getriggert wird,
     und pruefe dass die UI-Render-Funktion render_zuord_table() den
-    String '🔗 Kombination' und die zwei Standards mit '+' liefert."""
-    import app_mini  # noqa: E402
+    String '🔗 Kombination' und die zwei Standards mit '+' liefert.
+
+    Wichtig: wir importieren _render (reine Render-Funktion ohne
+    Streamlit-Side-Effects) statt app_mini — damit der Test auch
+    auf einem CI-Runner ohne Streamlit-Runtime sauber durchlaeuft."""
+    from _render import render_zuord_table  # noqa: E402
 
     # Drei Aufträge: S1 (1200×800), S2 (400×800), X (1500×700)
-    # Bei tol=200 ohne Kombi würde X als Sonder kommen, mit Kombi als
-    # "TypA + TypB" aus 1200×800 und 400×800.
     orders = [
         {"L": 1200, "B": 800, "menge": 9, "auftrag": "S1", "name": ""},
         {"L":  400, "B": 800, "menge": 9, "auftrag": "S2", "name": ""},
         {"L": 1500, "B": 700, "menge": 1, "auftrag": "X",  "name": ""},
     ]
     r = optimiere(orders, tol_mm=200, kombinieren=True)
-    # Sicherstellen dass es eine Kombi-Zuordnung gibt
     kombi = [z for z in r["zuordnung"] if z["typ"] == "Kombination"]
     assert kombi, "Setup-Erwartung: mit Kombi muss X als Kombination kommen"
     assert " + " in kombi[0]["ziel"]
 
-    # Roh-Palettenmasse fehlen im konstruierten orders — nichtkritisch fuer
-    # die HTML-Pruefung, also leere Defaults vergeben
+    # Render erwartet artikelnummer + palette_L/B_excel pro Eintrag
     for z in r["zuordnung"]:
         z.setdefault("artikelnummer", "")
         z.setdefault("palette_L_excel", None)
         z.setdefault("palette_B_excel", None)
 
-    html = app_mini.render_zuord_table(r)
-    assert "🔗 Kombination" in html, (
-        "Render muss '🔗 Kombination' enthalten"
-    )
-    # Die zwei Maße mit '+' verbunden (im Sub-Label oder ziel-String)
-    assert "+" in html and " mm" in html
-    # Hellblauer Hintergrund auf der Kombi-Zeile
+    html = render_zuord_table(r)
+    assert "🔗 Kombination" in html, "Render muss '🔗 Kombination' enthalten"
+    assert "+" in html and " mm" in html, "Maße mit '+' verbunden"
     assert 'background:#eff6ff' in html, (
         "Kombi-Zeilen muessen optisch hervorgehoben sein (hellblau)"
     )
