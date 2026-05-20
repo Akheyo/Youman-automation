@@ -29,6 +29,7 @@ from import_verlauf import (  # noqa: E402
     neuer_eintrag, update_optimierung, alle as verlauf_alle,
     finde_per_hash, leere_verlauf, hash_bytes, verlauf_pfad_str,
 )
+import palettenkatalog as katalog_modul  # noqa: E402
 from _render import render_zuord_table, ziel_label as _ziel_label  # noqa: E402
 from _ui_chrome import (  # noqa: E402
     inject_css, topbar, step_indicator, card_open, card_close,
@@ -163,7 +164,7 @@ with st.sidebar:
 
     sidebar_section("Workflow")
     SEITEN_LISTE = ["Datenimport", "Einstellungen", "Optimierung",
-                    "Ergebnisse", "Verlauf"]
+                    "Ergebnisse", "Verlauf", "Katalog"]
     if st.session_state.seite not in SEITEN_LISTE:
         st.session_state.seite = "Datenimport"
     seite_neu = st.radio(
@@ -405,6 +406,11 @@ def run_optimierung() -> None:
                f"Übermaß B≤{int(p['tol_kurz_mm'])}mm L≤{int(p['tol_lang_mm'])}mm, "
                f"Kombi {'an' if kombi else 'aus'}, "
                f"Sonder-Deckel {deckel if deckel is not None else 'frei'}.")
+    # Katalog-Maße als Tie-Breaker mitgeben (bevorzugt aber nicht erzwingend)
+    try:
+        kat_masse = katalog_modul.aktive_masse()
+    except Exception:
+        kat_masse = []
     with st.spinner(hinweis):
         res = optimiere(
             orders,
@@ -414,6 +420,7 @@ def run_optimierung() -> None:
             heterogen_fallback=kombi,
             sonder_deckel=deckel,
             zeitlimit_s=120,
+            katalog=kat_masse,
         )
     # Artikelnummer + Roh-Palettenmaße aus Excel nachreichen
     for idx, zg in enumerate(res.get("zuordnung", [])):
@@ -631,13 +638,67 @@ def seite_ergebnisse() -> None:
     if res.get("status") != "Optimal":
         st.warning(f"ILP-Status: {res.get('status')} — Ergebnis evtl. nicht beweisbar optimal.")
 
+    # Katalog-Maße fuer die K-Badges + Wirtschaftlichkeit
+    try:
+        katalog_set = set(katalog_modul.aktive_masse())
+    except Exception:
+        katalog_set = set()
+
+    # Wirtschaftlichkeit: nur fuer Standards die im Katalog sind und Preise haben
+    wirt_zeilen = []
+    if katalog_set:
+        # Pro Standard: Anzahl direkter Standard-Zuordnungen + Σ Menge
+        from collections import defaultdict
+        std_mengen = defaultdict(int)
+        for z in res.get("zuordnung", []):
+            if z.get("typ") == "Standard":
+                try:
+                    a, b = z["ziel"].split("x")
+                    canon = (min(int(a), int(b)), max(int(a), int(b)))
+                    std_mengen[canon] += int(z.get("menge", 0))
+                except Exception:
+                    pass
+        for s, menge in std_mengen.items():
+            preise = katalog_modul.lookup_preise(s[1], s[0])  # L=max, B=min
+            if preise:
+                ek = preise["einkaufspreis_eur"] * menge
+                vk = preise["verkaufspreis_eur"] * menge
+                wirt_zeilen.append({
+                    "Standard (mm)": f"{s[1]} × {s[0]}",
+                    "Paletten": menge,
+                    "Einkauf gesamt (€)": ek,
+                    "Verkauf gesamt (€)": vk,
+                    "Marge (€)": vk - ek,
+                })
+
+    if wirt_zeilen:
+        card_open(f"💰 Wirtschaftlichkeit (Katalog-Treffer)")
+        df_wirt = pd.DataFrame(wirt_zeilen)
+        summe_ek = df_wirt["Einkauf gesamt (€)"].sum()
+        summe_vk = df_wirt["Verkauf gesamt (€)"].sum()
+        summe_marge = summe_vk - summe_ek
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Σ Einkauf", f"{summe_ek:,.2f} €".replace(",", "."))
+        c2.metric("Σ Verkauf", f"{summe_vk:,.2f} €".replace(",", "."))
+        c3.metric("Marge gesamt", f"{summe_marge:,.2f} €".replace(",", "."))
+        st.dataframe(df_wirt, use_container_width=True, hide_index=True,
+                     column_config={
+                         "Paletten": st.column_config.NumberColumn(format="%d"),
+                         "Einkauf gesamt (€)": st.column_config.NumberColumn(format="%.2f €"),
+                         "Verkauf gesamt (€)": st.column_config.NumberColumn(format="%.2f €"),
+                         "Marge (€)": st.column_config.NumberColumn(format="%.2f €"),
+                     })
+        st.caption("Nur Einzel-Standards mit Preisen im Katalog. "
+                   "Kombi und Sonder fehlen — Preise dort unbekannt.")
+        card_close()
+
     cl, cr = st.columns([2, 1])
     with cl:
         card_open(f"Detail-Zuordnung — {res['gesamt']} Maße "
                   f"({len(res['standards'])} Std + {len(res['sonder'])} Sonder)")
         st.markdown(
             f'<div style="max-height:560px;overflow:auto;">'
-            f'{render_zuord_table(res)}</div>',
+            f'{render_zuord_table(res, katalog_set)}</div>',
             unsafe_allow_html=True,
         )
         card_close()
@@ -797,11 +858,157 @@ def seite_verlauf() -> None:
 # ---------------------------------------------------------------------------
 # Page-Router
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Seite 6: Palettenkatalog (Stammdaten, persistent)
+# ---------------------------------------------------------------------------
+def _fmt_eur(x: float) -> str:
+    return f"{x:.2f} €".replace(".", ",")
+
+
+def seite_katalog() -> None:
+    eintraege = katalog_modul.alle()
+    card_open(f"Palettenkatalog ({len(eintraege)} Eintr&auml;ge)")
+    st.markdown(
+        '<div style="font-size:13px;color:#475569;margin-bottom:8px;">'
+        'Bekannte Paletten-Maße mit Einkaufs- und Verkaufspreis. '
+        'Der Optimierer <b>bevorzugt</b> diese Maße bei der Auswahl der '
+        'Standards — er wählt sie aber NUR wenn es das Gesamt-Optimum '
+        'nicht verschlechtert. Andere Maße bleiben weiterhin möglich.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    # === Neuer Eintrag anlegen ===
+    with st.expander("➕ Neue Palette hinzufügen", expanded=not eintraege):
+        c1, c2, c3, c4, c5 = st.columns([1, 1, 1.2, 1.2, 1.6])
+        with c1:
+            n_L = st.number_input("Länge (mm)", min_value=0, max_value=10000,
+                                   value=1200, step=10, key="kat_new_L")
+        with c2:
+            n_B = st.number_input("Breite (mm)", min_value=0, max_value=10000,
+                                   value=800, step=10, key="kat_new_B")
+        with c3:
+            n_ek = st.number_input("Einkaufspreis (€)", min_value=0.0,
+                                    value=0.0, step=0.50, format="%.2f",
+                                    key="kat_new_ek")
+        with c4:
+            n_vk = st.number_input("Verkaufspreis (€)", min_value=0.0,
+                                    value=0.0, step=0.50, format="%.2f",
+                                    key="kat_new_vk")
+        with c5:
+            n_notiz = st.text_input("Notiz (optional)", value="",
+                                     key="kat_new_notiz")
+        if st.button("Palette hinzufügen", type="primary",
+                      use_container_width=True, key="kat_add_btn"):
+            if n_L > 0 and n_B > 0:
+                katalog_modul.neuer_eintrag(int(n_L), int(n_B),
+                                            float(n_ek), float(n_vk),
+                                            n_notiz, aktiv=True)
+                st.success(f"Eintrag {int(max(n_L,n_B))}×{int(min(n_L,n_B))} "
+                           f"hinzugefügt.")
+                st.rerun()
+            else:
+                st.error("Länge und Breite müssen > 0 sein.")
+    card_close()
+
+    if not eintraege:
+        st.info("Noch keine Paletten im Katalog. Füge oben welche hinzu — "
+                "der Optimierer wird sie bei zukünftigen Läufen bevorzugen.")
+        st.caption(f"Speicherort: {katalog_modul.katalog_pfad_str()}")
+        return
+
+    # === Katalog-Tabelle + CRUD ===
+    card_open(f"Vorhandene Paletten ({len(eintraege)})")
+    df = pd.DataFrame([
+        {
+            "id": e["id"],
+            "Länge": e["L_mm"],
+            "Breite": e["B_mm"],
+            "Einkauf (€)": e.get("einkaufspreis_eur", 0.0),
+            "Verkauf (€)": e.get("verkaufspreis_eur", 0.0),
+            "Marge (€)": (e.get("verkaufspreis_eur", 0.0)
+                          - e.get("einkaufspreis_eur", 0.0)),
+            "Aktiv": e.get("aktiv", True),
+            "Notiz": e.get("notiz", ""),
+            "Erstellt": e.get("datum_erstellt", "")[:16].replace("T", " "),
+        }
+        for e in eintraege
+    ])
+    st.dataframe(df.drop(columns=["id"]),
+                 use_container_width=True, hide_index=True, height=300,
+                 column_config={
+                     "Einkauf (€)": st.column_config.NumberColumn(format="%.2f €"),
+                     "Verkauf (€)": st.column_config.NumberColumn(format="%.2f €"),
+                     "Marge (€)":  st.column_config.NumberColumn(format="%.2f €"),
+                     "Aktiv":      st.column_config.CheckboxColumn(),
+                 })
+
+    # Auswahl für Edit/Delete
+    ids = [r["id"] for r in df.to_dict("records")]
+    auswahl_idx = st.selectbox(
+        "Eintrag bearbeiten / löschen",
+        options=range(len(eintraege)),
+        format_func=lambda i: (f"{eintraege[i]['L_mm']}×{eintraege[i]['B_mm']} "
+                                f"({_fmt_eur(eintraege[i].get('einkaufspreis_eur', 0))} "
+                                f"→ {_fmt_eur(eintraege[i].get('verkaufspreis_eur', 0))})"),
+        key="kat_sel",
+    )
+    eintrag = eintraege[auswahl_idx]
+    with st.expander(f"Bearbeiten: {eintrag['L_mm']}×{eintrag['B_mm']}",
+                      expanded=False):
+        c1, c2, c3, c4 = st.columns([1, 1, 1.2, 1.2])
+        with c1:
+            e_L = st.number_input("Länge (mm)", min_value=0, max_value=10000,
+                                   value=int(eintrag["L_mm"]), step=10,
+                                   key=f"kat_edit_L_{eintrag['id']}")
+        with c2:
+            e_B = st.number_input("Breite (mm)", min_value=0, max_value=10000,
+                                   value=int(eintrag["B_mm"]), step=10,
+                                   key=f"kat_edit_B_{eintrag['id']}")
+        with c3:
+            e_ek = st.number_input("Einkaufspreis (€)", min_value=0.0,
+                                    value=float(eintrag.get("einkaufspreis_eur", 0.0)),
+                                    step=0.50, format="%.2f",
+                                    key=f"kat_edit_ek_{eintrag['id']}")
+        with c4:
+            e_vk = st.number_input("Verkaufspreis (€)", min_value=0.0,
+                                    value=float(eintrag.get("verkaufspreis_eur", 0.0)),
+                                    step=0.50, format="%.2f",
+                                    key=f"kat_edit_vk_{eintrag['id']}")
+        e_notiz = st.text_input("Notiz", value=eintrag.get("notiz", ""),
+                                 key=f"kat_edit_notiz_{eintrag['id']}")
+        e_aktiv = st.toggle("Aktiv (wird vom Optimierer berücksichtigt)",
+                             value=bool(eintrag.get("aktiv", True)),
+                             key=f"kat_edit_aktiv_{eintrag['id']}")
+        cs, cd = st.columns(2)
+        if cs.button("💾 Speichern", type="primary",
+                      use_container_width=True,
+                      key=f"kat_save_{eintrag['id']}"):
+            katalog_modul.update_eintrag(eintrag["id"], L_mm=int(e_L),
+                                          B_mm=int(e_B),
+                                          einkaufspreis_eur=float(e_ek),
+                                          verkaufspreis_eur=float(e_vk),
+                                          notiz=e_notiz, aktiv=bool(e_aktiv))
+            st.success("Gespeichert.")
+            st.rerun()
+        if cd.button("🗑️ Löschen", use_container_width=True,
+                      key=f"kat_del_{eintrag['id']}"):
+            katalog_modul.loesche_eintrag(eintrag["id"])
+            st.warning("Eintrag gelöscht.")
+            st.rerun()
+    st.caption(f"Speicherort: {katalog_modul.katalog_pfad_str()}")
+    card_close()
+
+
+# ---------------------------------------------------------------------------
+# Page-Router
+# ---------------------------------------------------------------------------
 SEITEN = {
     "Datenimport":   seite_datenimport,
     "Einstellungen": seite_einstellungen,
     "Optimierung":   seite_optimierung,
     "Ergebnisse":    seite_ergebnisse,
     "Verlauf":       seite_verlauf,
+    "Katalog":       seite_katalog,
 }
 SEITEN[st.session_state.seite]()

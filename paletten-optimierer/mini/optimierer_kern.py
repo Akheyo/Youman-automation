@@ -65,12 +65,17 @@ def _passt_heterogen(teile, last, Tk, Tl):
 
 def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
               heterogen_fallback=True, sonder_deckel=None,
-              zeitlimit_s=120):
+              zeitlimit_s=120, katalog=None):
     """
     orders: Liste dicts mit 'L','B','menge','auftrag','name'.
     tol_kurz_mm: max Übermaß auf der KURZ-Achse (Breite).
     tol_lang_mm: max Übermaß auf der LANG-Achse (Länge). None -> = tol_kurz.
     sonder_deckel: max Anzahl verschiedener Sonder-Maße. None = unbegrenzt.
+    katalog: optionale Liste (cs, cl)-Tupel bekannter Maße. Wirkt als
+        TIE-BREAKER: bei mehreren Lösungen mit gleichem Gesamt-Optimum
+        bevorzugt der Solver die mit den meisten Katalog-Hits. Der
+        Bonus ist klein genug, dass er das Gesamt-Optimum NIE
+        verändert (nur Auswahl unter optimalen Lösungen).
     """
     if not orders:
         return {'standards': [], 'sonder': [], 'gesamt': 0,
@@ -95,6 +100,18 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
     Lv = sorted({max(a, b) for a, b, *_ in O})
     cands = [(cs, cl) for cs in S for cl in Lv if cs <= cl]
 
+    # Katalog-Maße zusaetzlich als Kandidaten zulassen (auch wenn sie nicht
+    # in den Auftragsmaßen vorkommen). So kann der Solver sie waehlen wenn
+    # sie das Optimum erreichen oder per Tie-Breaker bevorzugt werden.
+    if katalog:
+        cand_set = set(cands)
+        for cs, cl in katalog:
+            csi, cli = int(round(min(cs, cl))), int(round(max(cs, cl)))
+            if (csi, cli) not in cand_set:
+                cands.append((csi, cli))
+                cand_set.add((csi, cli))
+        cands = sorted(cands)
+
     keep, cov = [], []
     for c in cands:
         s = {i for i, (a, b, *_) in enumerate(O)
@@ -111,7 +128,25 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
     x = [pulp.LpVariable(f"x{j}", cat="Binary") for j in range(len(keep))]
     z = {g: pulp.LpVariable(f"z{gi}", cat="Binary")
          for gi, g in enumerate(groups)}
-    p += pulp.lpSum(x) + pulp.lpSum(z.values())
+
+    # Katalog-Tie-Breaker: kleiner Bonus pro Kandidat der im Katalog ist.
+    # Bonus-Gewicht = 1/(K+1) wo K = max moegliche Anzahl Katalog-Hits.
+    # Damit kann der Bonus NIE einen ganzen Standard/Sonder kompensieren —
+    # er bricht nur Ties unter mathematisch gleichwertigen Loesungen.
+    katalog_set = set()
+    if katalog:
+        for cs, cl in katalog:
+            cs_i, cl_i = int(round(min(cs, cl))), int(round(max(cs, cl)))
+            katalog_set.add((cs_i, cl_i))
+    katalog_indizes = [j for j, k in enumerate(keep) if k in katalog_set]
+    n_max = max(1, len(katalog_indizes) + 1)
+    eps = 1.0 / (n_max + 1)
+
+    obj = pulp.lpSum(x) + pulp.lpSum(z.values())
+    if katalog_indizes:
+        obj -= eps * pulp.lpSum(x[j] for j in katalog_indizes)
+    p += obj
+
     for i, (a, b, *_) in enumerate(O):
         g = tuple(sorted((a, b)))
         p += (pulp.lpSum(x[j] for j in range(len(keep)) if i in cov[j])
@@ -201,4 +236,5 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
             'parameter': {'tol_kurz_mm': Tk, 'tol_lang_mm': Tl,
                           'max_kombi_teile': K,
                           'heterogen_fallback': heterogen_fallback,
-                          'sonder_deckel': sonder_deckel}}
+                          'sonder_deckel': sonder_deckel,
+                          'katalog_groesse': len(katalog_set)}}

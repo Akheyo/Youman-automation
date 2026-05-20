@@ -47,18 +47,23 @@ def _row_bg(typ: str) -> str:
     }.get(typ, "")
 
 
-def _badge_html(typ: str, ziel_str: str) -> str:
+def _badge_html(typ: str, ziel_str: str, aus_katalog: bool = False) -> str:
+    katalog_badge = ('<span style="margin-left:6px;padding:2px 6px;'
+                     'background:#fbbf24;color:#1a2944;font-weight:800;'
+                     'border-radius:4px;font-size:10px;" '
+                     'title="Maß ist im Palettenkatalog">'
+                     'K</span>') if aus_katalog else ""
     if typ == "Standard":
         return ('<span class="badge badge-ok" style="background:#16a34a;'
-                'color:#fff;font-weight:700;">✓ Standard</span>')
+                f'color:#fff;font-weight:700;">✓ Standard</span>{katalog_badge}')
     if typ == "Kombi-Stapel":
         return (f'<span class="badge badge-kombi" '
                 f'style="background:#2563eb;color:#fff;font-weight:800;">'
-                f'🔗 Stapel {escape(ziel_str)}</span>')
+                f'🔗 Stapel {escape(ziel_str)}</span>{katalog_badge}')
     if typ == "Kombi-Heterogen":
         return (f'<span class="badge badge-kombi" '
                 f'style="background:#2563eb;color:#fff;font-weight:800;">'
-                f'🔗 Kombination {escape(ziel_str)}</span>')
+                f'🔗 Kombination {escape(ziel_str)}</span>{katalog_badge}')
     if typ == "Sonder":
         return ('<span class="badge badge-sonder" '
                 'style="color:#fff;background:#dc2626;font-weight:700;">'
@@ -66,11 +71,15 @@ def _badge_html(typ: str, ziel_str: str) -> str:
     return escape(typ)
 
 
-def render_zuord_table(res: dict) -> str:
+def render_zuord_table(res: dict, katalog_masse: set | None = None) -> str:
     """Detail-Zuordnungstabelle (HTML).
     Spalten: STANDARD/ZIEL | ARTIKEL/KUNDE | AUFTRAG | PALETTEN |
              LAST (mm) | EXCEL P-LxP-B | TYP
+
+    katalog_masse: optionale Menge von (cs, cl)-Tupeln aus dem
+    Katalog. Standards die dort vorkommen bekommen ein K-Badge.
     """
+    katalog_masse = katalog_masse or set()
     gruppen: dict[tuple[str, str], list[dict]] = {}
     for z in res["zuordnung"]:
         key = (z.get("typ", "Sonder"), z.get("ziel", ""))
@@ -135,7 +144,16 @@ def render_zuord_table(res: dict) -> str:
             else:
                 excel_str = '<span style="color:#9ca3af;">—</span>'
             tds.append(f'<td>{excel_str}</td>')
-            tds.append(f'<td>{_badge_html(typ, ziel_str)}</td>')
+            # K-Badge nur fuer Einzel-Standards (nicht Kombis/Sonder)
+            aus_katalog = False
+            if typ == "Standard" and ziel_str:
+                try:
+                    a, b = ziel_str.split("x")
+                    canon = (min(int(a), int(b)), max(int(a), int(b)))
+                    aus_katalog = canon in katalog_masse
+                except Exception:
+                    aus_katalog = False
+            tds.append(f'<td>{_badge_html(typ, ziel_str, aus_katalog)}</td>')
             rows.append(f"<tr{row_style}>" + "".join(tds) + "</tr>")
 
     head = (

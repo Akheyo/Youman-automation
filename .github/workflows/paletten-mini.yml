@@ -107,6 +107,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_verlauf.py
 
+      - name: Pflicht-Test Palettenkatalog (Tie-Breaker + CRUD)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_katalog.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |
