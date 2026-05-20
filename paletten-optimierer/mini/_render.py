@@ -1,10 +1,11 @@
 """Reine Rendering-Helfer ohne Streamlit-Abhaengigkeit.
 
-Extrahiert aus app_mini.py, damit Tests die Funktionen direkt
-aufrufen koennen ohne den Streamlit-Modul-Body von app_mini.py
-auszufuehren (der haette st.set_page_config / st.sidebar /
-st.markdown-Aufrufe als Side-Effects beim Import — auf
-Windows-CI ohne Streamlit-Runtime ein Problem).
+Kern-v4-Typen: 'Standard', 'Kombi-Stapel', 'Kombi-Heterogen', 'Sonder'.
+Farb-Codes pro Zeile gemaess FINAL-LOCK-Spec:
+  Standard         -> gruener Hintergrund (#dcfce7), "✓ Standard"
+  Kombi-Stapel     -> hellblau (#eff6ff),         "🔗 Stapel ..."
+  Kombi-Heterogen  -> hellblau (#eff6ff),         "🔗 Kombination ..."
+  Sonder           -> roter Hintergrund (#fee2e2),"Sonder"
 """
 from __future__ import annotations
 
@@ -16,22 +17,59 @@ def fmt_int(n) -> str:
 
 
 def ziel_label(ziel_str: str) -> str:
-    """'1500x720' -> '1500 × 720 mm'
-    '400x800 + 800x1200' -> '400 × 800 + 800 × 1200 mm'"""
-    teile = [t.strip() for t in ziel_str.split("+")]
-    schoen = []
-    for t in teile:
-        try:
-            a, b = t.split("x")
-            schoen.append(f"{int(a)} × {int(b)}")
-        except Exception:
-            schoen.append(t)
-    return " + ".join(schoen) + " mm"
+    """Schoenes mm-Label fuer Ziel-Strings:
+      '1500x720'                -> '1500 × 720 mm'
+      '2x (800x1200)'           -> '2x (800 × 1200) mm'
+      '400x800 + 800x1200'      -> '400 × 800 + 800 × 1200 mm'
+    """
+    if "+" in ziel_str:
+        return " + ".join(_einzel(t.strip()) for t in ziel_str.split("+")) + " mm"
+    if "(" in ziel_str:
+        head, rest = ziel_str.split("x ", 1)
+        return f"{head}x ({_einzel(rest.strip('()'))}) mm"
+    return _einzel(ziel_str) + " mm"
+
+
+def _einzel(t: str) -> str:
+    try:
+        a, b = t.split("x")
+        return f"{int(a)} × {int(b)}"
+    except Exception:
+        return t
+
+
+def _row_bg(typ: str) -> str:
+    return {
+        "Standard": "#dcfce7",          # gruen
+        "Kombi-Stapel": "#eff6ff",      # hellblau
+        "Kombi-Heterogen": "#eff6ff",   # hellblau
+        "Sonder": "#fee2e2",            # rot
+    }.get(typ, "")
+
+
+def _badge_html(typ: str, ziel_str: str) -> str:
+    if typ == "Standard":
+        return ('<span class="badge badge-ok" style="background:#16a34a;'
+                'color:#fff;font-weight:700;">✓ Standard</span>')
+    if typ == "Kombi-Stapel":
+        return (f'<span class="badge badge-kombi" '
+                f'style="background:#2563eb;color:#fff;font-weight:800;">'
+                f'🔗 Stapel {escape(ziel_str)}</span>')
+    if typ == "Kombi-Heterogen":
+        return (f'<span class="badge badge-kombi" '
+                f'style="background:#2563eb;color:#fff;font-weight:800;">'
+                f'🔗 Kombination {escape(ziel_str)}</span>')
+    if typ == "Sonder":
+        return ('<span class="badge badge-sonder" '
+                'style="color:#fff;background:#dc2626;font-weight:700;">'
+                'Sonder</span>')
+    return escape(typ)
 
 
 def render_zuord_table(res: dict) -> str:
-    """Zuordnungstabelle (HTML-String).
-    Erwartet das Kern-v2-Output-Format mit 'zuordnung'-Liste.
+    """Detail-Zuordnungstabelle (HTML).
+    Spalten: STANDARD/ZIEL | ARTIKEL/KUNDE | AUFTRAG | PALETTEN |
+             LAST (mm) | EXCEL P-LxP-B | TYP
     """
     gruppen: dict[tuple[str, str], list[dict]] = {}
     for z in res["zuordnung"]:
@@ -39,7 +77,8 @@ def render_zuord_table(res: dict) -> str:
         gruppen.setdefault(key, []).append(z)
 
     sort_key = lambda kv: (
-        {"Standard": 0, "Kombination": 1, "Sonder": 2}.get(kv[0][0], 3),
+        {"Standard": 0, "Kombi-Stapel": 1, "Kombi-Heterogen": 2,
+         "Sonder": 3}.get(kv[0][0], 9),
         -sum(m.get("menge", 0) for m in kv[1]),
     )
 
@@ -47,14 +86,16 @@ def render_zuord_table(res: dict) -> str:
     for (typ, ziel_str), members in sorted(gruppen.items(), key=sort_key):
         rs = max(1, len(members))
         gruppe_summe = sum(m.get("menge", 0) for m in members)
-        row_style = (
-            ' style="background:#eff6ff;"' if typ == "Kombination" else ""
-        )
+        bg = _row_bg(typ)
+        row_style = f' style="background:{bg};"' if bg else ""
+
         for i, m in enumerate(members):
             tds = []
             if i == 0:
                 label = ziel_label(ziel_str)
-                if typ == "Kombination":
+                if typ == "Kombi-Stapel":
+                    sub = f"Stapelung · {rs} Aufträge · Σ {gruppe_summe} Pal."
+                elif typ == "Kombi-Heterogen":
                     sub = f"Typ A + Typ B · {rs} Aufträge · Σ {gruppe_summe} Pal."
                 elif typ == "Sonder":
                     sub = f"Sonder · Σ {gruppe_summe} Pal."
@@ -88,35 +129,18 @@ def render_zuord_table(res: dict) -> str:
                     f'<span style="font-family:ui-monospace,monospace;'
                     f'font-size:11px;color:#6b7280;" '
                     f'title="Roh-Werte aus Excel-Spalten P-Länge / P-Breite '
-                    f'(vor Abzug Palettenaufschlag)">'
+                    f'(vor Abzug Palettenaufschlag 50 mm)">'
                     f'{int(pL)} × {int(pB)}</span>'
                 )
             else:
                 excel_str = '<span style="color:#9ca3af;">—</span>'
             tds.append(f'<td>{excel_str}</td>')
-            if typ == "Standard":
-                tds.append(
-                    '<td><span class="badge badge-ok">✓ Standard</span></td>'
-                )
-            elif typ == "Kombination":
-                tds.append(
-                    f'<td><span class="badge badge-kombi" '
-                    f'style="font-weight:800;">🔗 Kombination</span>'
-                    f'<div style="font-family:ui-monospace,monospace;'
-                    f'font-size:11px;color:#1e3a8a;margin-top:3px;">'
-                    f'{escape(ziel_label(ziel_str))}</div></td>'
-                )
-            else:
-                tds.append(
-                    '<td><span class="badge badge-sonder" '
-                    'style="color:#fff;background:#dc2626;'
-                    'font-weight:700;">Sonder</span></td>'
-                )
+            tds.append(f'<td>{_badge_html(typ, ziel_str)}</td>')
             rows.append(f"<tr{row_style}>" + "".join(tds) + "</tr>")
 
     head = (
         "<thead><tr>"
-        "<th>Standard / Sonder / Kombi (mm)</th>"
+        "<th>Standard / Ziel (mm)</th>"
         "<th>Artikel / Kunde</th>"
         "<th>Auftrag</th>"
         "<th style='text-align:right;' title=\"Palettenanzahl pro Auftrag = Spalte 'Menge'\">Paletten</th>"

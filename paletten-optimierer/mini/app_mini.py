@@ -128,12 +128,12 @@ def init_state() -> None:
     defaults = {
         "datei_name": "",
         "import_dat": None,        # dict aus import_excel.importiere
-        "historie_id": None,       # uuid des aktuellen Historie-Eintrags
-        "params": {                # Kern-v2-Parameter
-            "tol_mm": 200,            # max. Übermaß (mm), Default 200
-            "kombinieren": True,      # Boolean — Default an
-            "max_kombi_teile": 3,
-            "sonder_deckel_aktiv": False,
+        "historie_id": None,       # uuid des aktuellen Verlauf-Eintrags
+        "params": {                # Kern-v4-Parameter (FINAL LOCK Defaults)
+            "tol_kurz_mm": 200,
+            "tol_lang_mm": 400,
+            "kombinieren": True,
+            "sonder_deckel_aktiv": True,
             "sonder_deckel": 5,
         },
         "ergebnis": None,
@@ -235,17 +235,21 @@ def seite_datenimport() -> None:
         st.session_state.datei_name = up.name
         st.session_state.import_dat = dat
         st.session_state.ergebnis = None
-        # Verlaufseintrag schreiben (persistent im User-Profil)
         try:
             st.session_state.historie_id = neuer_eintrag(
                 datei_pfad=up.name,
                 ergebnis=dat,
                 datei_bytes=roh,
             )
-        except Exception as exc:  # noqa: BLE001 — Verlauf darf Import nicht blockieren
+        except Exception as exc:  # noqa: BLE001
             st.session_state.historie_id = None
             st.warning(f"Verlauf konnte nicht geschrieben werden: {exc}")
-        st.session_state.seite = "Einstellungen"
+        # Auto-Optimierung mit Defaults (FINAL LOCK Punkt 10)
+        if dat.get("mit_mass"):
+            run_optimierung()
+            st.session_state.seite = "Ergebnisse"
+        else:
+            st.session_state.seite = "Einstellungen"
         st.rerun()
     cols[1].markdown(
         '<div style="opacity:0.55;padding-top:6px;font-size:12px;">'
@@ -311,44 +315,45 @@ def seite_einstellungen() -> None:
     col_l, col_r = st.columns([1, 1])
     p = st.session_state.params
     with col_l:
-        card_open("Toleranz")
-        p["tol_mm"] = st.number_input(
-            "max. Übermaß (mm)", min_value=0, max_value=2000,
-            value=int(p["tol_mm"]), step=10, key="tol_mm_in",
-            help="Wieviel mm darf der gewählte Standard über die Auftragsmaße "
-                 "hinausgehen (in jeder Dimension). Standard ≥ Last ist immer "
-                 "garantiert (einseitige Coverage, physisch korrekt).",
+        card_open("Toleranz (getrennt nach Achse)")
+        p["tol_kurz_mm"] = st.number_input(
+            "max. Übermaß BREITE (mm)", min_value=0, max_value=2000,
+            value=int(p["tol_kurz_mm"]), step=10, key="tol_kurz_in",
+            help="Übermaß auf der kurzen Achse. Standard ≥ Last ist garantiert.",
+        )
+        p["tol_lang_mm"] = st.number_input(
+            "max. Übermaß LÄNGE (mm)", min_value=0, max_value=2000,
+            value=int(p["tol_lang_mm"]), step=10, key="tol_lang_in",
+            help="Übermaß auf der langen Achse. Sweet-Spot 400 (12 Standards).",
         )
         card_close()
 
         card_open("Kombinieren")
         p["kombinieren"] = st.toggle(
-            "Kombi-Fallback aktiv",
+            "Kombinieren aktiv",
             value=bool(p.get("kombinieren", True)),
             key="kombi_in",
-            help="Wenn aktiv: Aufträge, die kein einzelner Standard abdeckt, "
-                 "werden per Kombination aus 2 bis 3 GEWÄHLTEN Standards "
-                 "abgedeckt (Typ A + Typ B). Spart Sonderpaletten.",
+            help="ON = max_kombi_teile=3 + heterogen_fallback=True. "
+                 "OFF = nur Einzel-Standards, keine Kombinationen.",
         )
         card_close()
 
         card_open("Sonder-Deckel")
         p["sonder_deckel_aktiv"] = st.toggle(
-            "Anzahl Sonderpaletten begrenzen",
-            value=bool(p.get("sonder_deckel_aktiv", False)),
+            "Sonder-Deckel aktiv",
+            value=bool(p.get("sonder_deckel_aktiv", True)),
             key="sd_a",
-            help="Begrenzt die Anzahl unterschiedlicher Sonder-Maße im "
-                 "Ergebnis. Mehr Sonder erlaubt → weniger Standards möglich.",
+            help="ON = max. Anzahl verschiedener Sonder-Maße ist begrenzt. "
+                 "OFF = unbegrenzt (Optimierer entscheidet).",
         )
-        if p["sonder_deckel_aktiv"]:
-            p["sonder_deckel"] = st.number_input(
-                "max. verschiedene Sonder",
-                min_value=0, max_value=500,
-                value=int(p.get("sonder_deckel", 5)),
-                step=1, key="sd_n",
-            )
-        else:
-            st.caption("Unbegrenzt — der Solver entscheidet.")
+        p["sonder_deckel"] = st.number_input(
+            "Max. Sonderpaletten erlaubt",
+            min_value=0, max_value=500,
+            value=int(p.get("sonder_deckel", 5)),
+            step=1, key="sd_n",
+            disabled=not p["sonder_deckel_aktiv"],
+            help="Greift nur wenn der Toggle 'Sonder-Deckel aktiv' an ist.",
+        )
         card_close()
 
     with col_r:
@@ -376,35 +381,39 @@ def run_optimierung() -> None:
     p = st.session_state.params
     mit_mass = st.session_state.import_dat["mit_mass"]
 
-    # Mini-Format -> Kern-v2-Format. WICHTIG: L/B sind die PRODUKT-Maße
+    # Mini-Format -> Kern-v4-Format. L/B sind die PRODUKT-Maße
     # (Excel P-L/P-B minus PALETTEN_AUFSCHLAG_MM, im Importer berechnet).
     orders = [
         {"L": pal["laenge"], "B": pal["breite"], "menge": pal["anzahl"],
          "auftrag": pal["auftrag"], "name": pal["name"]}
         for pal in mit_mass
     ]
-    # Pro Auftrag artikelnummer + Roh-Palettenmaße fuer die UI-Anzeige
-    # mitschleppen (Kern braucht sie nicht).
     artikel_lookup = [pal.get("artikelnummer", "") for pal in mit_mass]
     palette_excel_lookup = [
         (pal.get("palette_L_excel"), pal.get("palette_B_excel"))
         for pal in mit_mass
     ]
 
+    # Toggle-Verdrahtung 1:1 nach FINAL-LOCK-Spec:
+    #   Kombi ON  -> max_kombi_teile=3, heterogen_fallback=True
+    #   Kombi OFF -> max_kombi_teile=1, heterogen_fallback=False
+    kombi = bool(p.get("kombinieren", True))
     deckel = (int(p["sonder_deckel"])
               if p.get("sonder_deckel_aktiv") else None)
+
     hinweis = (f"ILP-Solver (CBC) optimiert {len(orders)} Aufträge — "
-               f"Übermaß ≤ {int(p['tol_mm'])} mm, "
-               f"Kombi {'an' if p['kombinieren'] else 'aus'}, "
+               f"Übermaß B≤{int(p['tol_kurz_mm'])}mm L≤{int(p['tol_lang_mm'])}mm, "
+               f"Kombi {'an' if kombi else 'aus'}, "
                f"Sonder-Deckel {deckel if deckel is not None else 'frei'}.")
     with st.spinner(hinweis):
         res = optimiere(
             orders,
-            tol_mm=int(p["tol_mm"]),
-            kombinieren=bool(p.get("kombinieren", True)),
-            max_kombi_teile=int(p.get("max_kombi_teile", 3)),
-            zeitlimit_s=120,
+            tol_kurz_mm=int(p["tol_kurz_mm"]),
+            tol_lang_mm=int(p["tol_lang_mm"]),
+            max_kombi_teile=3 if kombi else 1,
+            heterogen_fallback=kombi,
             sonder_deckel=deckel,
+            zeitlimit_s=120,
         )
     # Artikelnummer + Roh-Palettenmaße aus Excel nachreichen
     for idx, zg in enumerate(res.get("zuordnung", [])):
@@ -416,30 +425,24 @@ def run_optimierung() -> None:
             zg["palette_B_excel"] = pB
     st.session_state.ergebnis = res
 
-    # Optimierungs-Block in der Historie ergaenzen
+    # Verlauf ergaenzen (Kern-v4-Schema)
     hist_id = st.session_state.get("historie_id")
     if hist_id:
         try:
             update_optimierung(hist_id, {
                 "zeitstempel": datetime.now().isoformat(timespec="seconds"),
-                "parameter": {
-                    "tol_mm": int(p["tol_mm"]),
-                    "kombinieren": bool(p.get("kombinieren", True)),
-                    "max_kombi_teile": int(p.get("max_kombi_teile", 3)),
-                    "sonder_deckel": deckel,
-                    "coverage": "einseitig",
-                },
-                "ergebnis": {
-                    "standards": len(res.get("standards", [])),
-                    "sonder": len(res.get("sonder", [])),
-                    "gesamt": int(res.get("gesamt", 0)),
-                    "invariante_ok": bool(res.get("invariante_ok", True)),
-                    "verletzungen": len(res.get("verletzungen", [])),
-                    "status": res.get("status", ""),
-                },
+                "tol_kurz_mm": int(p["tol_kurz_mm"]),
+                "tol_lang_mm": int(p["tol_lang_mm"]),
+                "kombinieren": kombi,
+                "sonder_deckel": deckel,
+                "standards": len(res.get("standards", [])),
+                "sonder": len(res.get("sonder", [])),
+                "gesamt": int(res.get("gesamt", 0)),
+                "invariante_ok": bool(res.get("invariante_ok", True)),
+                "status": res.get("status", ""),
             })
         except Exception:
-            pass  # Historie ist Bonus, nie kritisch
+            pass  # Verlauf ist Bonus, nie kritisch
 
 
 def seite_optimierung() -> None:
@@ -455,7 +458,8 @@ def seite_optimierung() -> None:
                   else "frei")
         st.markdown(
             f"<div style='font-size:13px;color:#374151;line-height:1.8;'>"
-            f"<b>max. Übermaß:</b> {int(p['tol_mm'])} mm<br>"
+            f"<b>max. Übermaß BREITE:</b> {int(p['tol_kurz_mm'])} mm<br>"
+            f"<b>max. Übermaß LÄNGE:</b> {int(p['tol_lang_mm'])} mm<br>"
             f"<b>Kombinieren:</b> {'an' if p['kombinieren'] else 'aus'}<br>"
             f"<b>Sonder-Deckel:</b> {deckel}<br>"
             f"<b>Coverage:</b> einseitig (Standard ≥ Last)"
@@ -534,21 +538,25 @@ def kpi_uebersicht() -> None:
     c4.metric("Paletten gesamt", _fmt_int(paletten_summe),
               help="Σ der Mengen aller Aufträge mit Maß.")
 
-    # Trade-off-Zeile mit Kern-v2-Parametern + Invariante-Status.
-    p = st.session_state.params
+    # Trade-off-Zeile = SINGLE SOURCE OF TRUTH (aus res['parameter']!)
+    # NICHT aus session_state — zeigt genau das was an optimiere() ging.
     inv_text = ("Invariante OK" if res.get("invariante_ok", True)
                 else f"INVARIANTE VERLETZT ({len(res.get('verletzungen', []))})")
     inv_color = "#16a34a" if res.get("invariante_ok", True) else "#dc2626"
-    deckel_txt = (str(int(p["sonder_deckel"]))
-                  if p.get("sonder_deckel_aktiv") else "frei")
+    rparam = res.get("parameter", {}) or {}
+    deckel_real = rparam.get("sonder_deckel")
+    deckel_txt = "frei" if deckel_real is None else str(int(deckel_real))
+    kombi_real = bool(rparam.get("heterogen_fallback")) and int(rparam.get("max_kombi_teile", 1)) > 1
     st.markdown(
         f'<div style="background:#f8fafc;border:1px solid #e2e8f0;'
         f'border-radius:6px;padding:8px 12px;margin:8px 0 16px;'
         f'font-size:12px;color:#475569;">'
-        f'⚙️ max. Übermaß = {int(p["tol_mm"])} mm · '
-        f'Kombinieren = {"an" if p["kombinieren"] else "aus"} · '
+        f'⚙️ max. Übermaß: BREITE {int(rparam.get("tol_kurz_mm", 0))}mm · '
+        f'LÄNGE {int(rparam.get("tol_lang_mm", 0))}mm · '
+        f'Kombinieren = {"an" if kombi_real else "aus"} · '
         f'Sonder-Deckel = {deckel_txt} · '
-        f'Coverage = einseitig · ILP-Status = {res.get("status", "?")} · '
+        f'Coverage = einseitig · '
+        f'ILP-Status = {res.get("status", "?")} · '
         f'<span style="color:{inv_color};font-weight:700;">{inv_text}</span>'
         f'</div>',
         unsafe_allow_html=True,
@@ -563,45 +571,62 @@ def seite_ergebnisse() -> None:
 
     kpi_uebersicht()
 
-    # === Inline-Anpassung: Übermaß + Kombi-Toggle + Sonder-Deckel ===
+    # === Inline-Anpassung: 4 Eingaben gem. FINAL-LOCK-Spec ===
     card_open("🔁 Parameter anpassen und neu rechnen")
     p = st.session_state.params
-    c1, c2, c3, c4 = st.columns([1.2, 1, 1, 1.2])
+    c1, c2, c3, c4 = st.columns([1.2, 1.2, 1, 1.2])
     with c1:
-        p["tol_mm"] = st.number_input(
-            "max. Übermaß (mm)", min_value=0, max_value=2000,
-            value=int(p["tol_mm"]), step=10, key="erg_tol",
-            help="Standard ≥ Last in beiden Dimensionen, höchstens X mm größer.",
+        p["tol_kurz_mm"] = st.number_input(
+            "max. Übermaß BREITE (mm)", min_value=0, max_value=2000,
+            value=int(p["tol_kurz_mm"]), step=10, key="erg_tol_kurz",
+        )
+        p["tol_lang_mm"] = st.number_input(
+            "max. Übermaß LÄNGE (mm)", min_value=0, max_value=2000,
+            value=int(p["tol_lang_mm"]), step=10, key="erg_tol_lang",
         )
     with c2:
         p["kombinieren"] = st.toggle(
-            "Kombi-Fallback aktiv",
+            "Kombinieren aktiv",
             value=bool(p.get("kombinieren", True)),
             key="erg_kombi",
-            help="Aufträge ohne einzelnen passenden Standard werden per "
-                 "Kombination aus 2-3 gewählten Standards abgedeckt.",
+            help="ON = Stapel + heterogene Kombi erlaubt. OFF = nur Einzel.",
         )
     with c3:
         p["sonder_deckel_aktiv"] = st.toggle(
-            "Sonder-Deckel",
-            value=bool(p.get("sonder_deckel_aktiv", False)),
+            "Sonder-Deckel aktiv",
+            value=bool(p.get("sonder_deckel_aktiv", True)),
             key="erg_sd_a",
         )
     with c4:
-        if p["sonder_deckel_aktiv"]:
-            p["sonder_deckel"] = st.number_input(
-                "max. verschiedene Sonder",
-                min_value=0, max_value=500,
-                value=int(p.get("sonder_deckel", 5)),
-                step=1, key="erg_sd_n",
-            )
-        else:
-            st.caption("Sonder unbegrenzt.")
+        p["sonder_deckel"] = st.number_input(
+            "Max. Sonderpaletten erlaubt",
+            min_value=0, max_value=500,
+            value=int(p.get("sonder_deckel", 5)),
+            step=1, key="erg_sd_n",
+            disabled=not p["sonder_deckel_aktiv"],
+        )
     if st.button("🔄 Neu optimieren mit diesen Werten",
                  type="primary", use_container_width=True, key="erg_rerun"):
         run_optimierung()
         st.rerun()
     card_close()
+
+    # Physikalisch ungültig: GROSSES rotes Banner ueber den KPIs (Punkt 8)
+    if not res.get("invariante_ok", True):
+        verl = res.get("verletzungen", [])
+        st.markdown(
+            f'<div style="background:#dc2626;color:#fff;padding:14px 18px;'
+            f'border-radius:8px;margin:0 0 14px 0;font-size:14px;'
+            f'box-shadow:0 4px 12px rgba(220,38,38,0.25);">'
+            f'<div style="font-weight:800;font-size:16px;">'
+            f'⚠ PHYSIKALISCH UNGÜLTIG — Lasten passen nicht auf Paletten'
+            f'</div>'
+            f'<div style="margin-top:6px;">'
+            f'{len(verl)} Verletzung(en) — Ergebnis darf NICHT '
+            f'produktiv genutzt werden.</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
     if res.get("status") != "Optimal":
         st.warning(f"ILP-Status: {res.get('status')} — Ergebnis evtl. nicht beweisbar optimal.")

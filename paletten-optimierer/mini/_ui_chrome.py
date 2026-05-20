@@ -209,16 +209,41 @@ def inject_css() -> None:
     st.markdown(CSS, unsafe_allow_html=True)
 
 
+def _kern_sha7() -> str:
+    """SHA256[:7] des Optimierer-Kerns — beweist welcher Stand laeuft."""
+    import hashlib
+    import sys
+    from pathlib import Path
+    candidates = [
+        Path(__file__).resolve().parent / "optimierer_kern.py",
+    ]
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        candidates.append(Path(meipass) / "optimierer_kern.py")
+    for p in candidates:
+        if p.exists():
+            try:
+                return hashlib.sha256(p.read_bytes()).hexdigest()[:7]
+            except Exception:
+                return "?"
+    return "?"
+
+
 def build_stempel() -> str:
+    """Format gemaess FINAL-LOCK-Spec:
+       'Build {sha7} · Kern {kern_sha7} · v1.0.0'"""
     try:
-        from _build_info import BUILD_SHA, BUILD_DATE, BUILD_VERSION  # type: ignore
-        return f"Build {BUILD_SHA} · {BUILD_DATE} · v{BUILD_VERSION}"
+        from _build_info import BUILD_SHA, BUILD_VERSION  # type: ignore
+        build_sha = BUILD_SHA[:7] if BUILD_SHA else "dev"
+        version = BUILD_VERSION or "dev"
     except Exception:
-        return "Build dev"
+        build_sha = "dev"
+        version = "dev"
+    return f"Build {build_sha} · Kern {_kern_sha7()} · v{version}"
 
 
 def topbar(title: str, sub: str) -> None:
-    """Header oben rechts mit Build-Stempel — analog app.py:topbar()."""
+    """Header oben rechts mit Build- und Kern-SHA — analog app.py:topbar()."""
     st.markdown(
         f'<div class="topbar">'
         f'  <div><div class="title">{escape(title)}</div>'

@@ -1,58 +1,95 @@
 """
-Paletten-Optimierungskern v2 — VERIFIZIERTE REFERENZ.
+Paletten-Optimierungskern v4 — FINAL LOCK.
 
-Encodet die 3 Optimierungs-Punkte als ausführbare Wahrheit:
- - Punkt 1+2: minimiere Gesamtzahl verschiedener Paletten, einseitig
-   (Standard MUSS >= Last in beiden Maßen -> Last passt physisch drauf)
- - Punkt 3:   Kombinieren als FALLBACK (Boolean). Nur wenn KEIN einzelner
-   Standard passt, wird geprüft ob 2-3 GEWÄHLTE Standards (Typ A + Typ B)
-   die Last abdecken -> spart Sonderpaletten.
- - Physikalische Invariante: KEIN zugewiesener Standard (auch keine
-   Kombination) darf kleiner sein als die Last. Wird hart geprüft.
+Was drin ist:
+ - MODELL A (Kombinieren integriert): das ILP rechnet beim Auswählen der
+   Standards schon mit k-Stapelung. Heterogene Kombination (Typ A + Typ B)
+   bleibt als zusätzlicher Fallback.
+ - Getrennte Toleranz: tol_kurz_mm für die SHORT-Achse (Breite),
+   tol_lang_mm für die LONG-Achse (Länge). Erlaubt z.B. großzügige
+   Toleranz auf der Länge bei enger Toleranz auf der Breite.
+ - Sonder-Deckel als OBERGRENZE (≤ N). Optimierer nutzt Sonder NUR
+   wenn sie das Gesamt verringern — sonst nicht.
+ - Einseitig (Standard ≥ Last) — physikalisch zwingend.
+ - Min Gesamt (Standards + verschiedene Sonder-Maße).
+ - Physikalische Invariante hart geprüft.
 
-Punkt 4 (Doppelbestellungen/AW/Bestand) ist NICHT hier — eigener,
-stateful Layer, kommt nach dem Einfrieren dieses Kerns.
-
-Abhängigkeit: pulp
+Ergebnis-Typen pro Zuordnung:
+ - 'Standard'         : einzelner Standard deckt die Last direkt
+ - 'Kombi-Stapel'     : k Kopien eines Standards in einer Reihe
+ - 'Kombi-Heterogen'  : 2-3 verschiedene Standards in einer Reihe
+ - 'Sonder'           : eigenes Maß, nicht standardisierbar
 """
 import pulp
 from itertools import combinations, product
 
 
-def _passt_einzeln(cand, last, T):
+def _passt_einzeln(cand, last, Tk, Tl):
     c0, c1 = sorted(cand)
     l0, l1 = sorted(last)
-    return c0 >= l0 and c1 >= l1 and (c0 - l0) <= T and (c1 - l1) <= T
+    return c0 >= l0 and c1 >= l1 and (c0 - l0) <= Tk and (c1 - l1) <= Tl
 
 
-def _passt_kombi(teile, last, T):
+def _passt_kstapel(cand, last, Tk, Tl, kmax):
+    cs, cl = cand
+    l0, l1 = sorted(last)
+    for k in range(2, kmax + 1):
+        for ec0, ec1 in ((cs, cl * k), (cs * k, cl)):
+            e0, e1 = sorted((ec0, ec1))
+            if e0 >= l0 and e1 >= l1 and (e0 - l0) <= Tk and (e1 - l1) <= Tl:
+                return (k, (ec0, ec1))
+    return None
+
+
+def _kann_decken(cand, last, Tk, Tl, kmax):
+    if _passt_einzeln(cand, last, Tk, Tl):
+        return ('direkt', None)
+    k = _passt_kstapel(cand, last, Tk, Tl, kmax)
+    if k is not None:
+        return ('kstapel', k)
+    return None
+
+
+def _passt_heterogen(teile, last, Tk, Tl):
     l0, l1 = sorted(last)
     for variante in product(*[((a, b), (b, a)) for (a, b) in teile]):
-        sx = sum(t[0] for t in variante)
-        my = max(t[1] for t in variante)
-        b0, b1 = sorted((sx, my))
-        if b0 >= l0 and b1 >= l1 and (b0 - l0) <= T and (b1 - l1) <= T:
-            return True
-        sy = sum(t[1] for t in variante)
-        mx = max(t[0] for t in variante)
-        b0, b1 = sorted((mx, sy))
-        if b0 >= l0 and b1 >= l1 and (b0 - l0) <= T and (b1 - l1) <= T:
-            return True
+        for arrangement in (
+            (sum(t[0] for t in variante), max(t[1] for t in variante)),
+            (max(t[0] for t in variante), sum(t[1] for t in variante)),
+        ):
+            b0, b1 = sorted(arrangement)
+            if b0 >= l0 and b1 >= l1 and (b0 - l0) <= Tk and (b1 - l1) <= Tl:
+                return True
     return False
 
 
-def optimiere(orders, tol_mm=200, kombinieren=True, max_kombi_teile=3,
-              zeitlimit_s=120, sonder_deckel=None):
+def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
+              heterogen_fallback=True, sonder_deckel=None,
+              zeitlimit_s=120):
+    """
+    orders: Liste dicts mit 'L','B','menge','auftrag','name'.
+    tol_kurz_mm: max Übermaß auf der KURZ-Achse (Breite).
+    tol_lang_mm: max Übermaß auf der LANG-Achse (Länge). None -> = tol_kurz.
+    sonder_deckel: max Anzahl verschiedener Sonder-Maße. None = unbegrenzt.
+    """
     if not orders:
         return {'standards': [], 'sonder': [], 'gesamt': 0,
                 'zuordnung': [], 'invariante_ok': True,
-                'verletzungen': [], 'status': 'leer'}
+                'verletzungen': [], 'status': 'leer',
+                'parameter': {'tol_kurz_mm': tol_kurz_mm,
+                              'tol_lang_mm': tol_lang_mm or tol_kurz_mm,
+                              'max_kombi_teile': max_kombi_teile,
+                              'heterogen_fallback': heterogen_fallback,
+                              'sonder_deckel': sonder_deckel}}
+
+    if tol_lang_mm is None:
+        tol_lang_mm = tol_kurz_mm
+    Tk, Tl = tol_kurz_mm, tol_lang_mm
 
     O = [(int(round(o['L'])), int(round(o['B'])),
           int(o['menge']), o.get('auftrag'), o.get('name'))
          for o in orders]
-    N = len(O)
-    T = tol_mm
+    K = max_kombi_teile
 
     S = sorted({min(a, b) for a, b, *_ in O})
     Lv = sorted({max(a, b) for a, b, *_ in O})
@@ -60,14 +97,14 @@ def optimiere(orders, tol_mm=200, kombinieren=True, max_kombi_teile=3,
 
     keep, cov = [], []
     for c in cands:
-        s = {i for i, (a, b, *_ ) in enumerate(O)
-             if _passt_einzeln(c, (a, b), T)}
+        s = {i for i, (a, b, *_) in enumerate(O)
+             if _kann_decken(c, (a, b), Tk, Tl, K) is not None}
         if s:
             keep.append(c)
             cov.append(s)
 
     groups = {}
-    for i, (a, b, *_ ) in enumerate(O):
+    for i, (a, b, *_) in enumerate(O):
         groups.setdefault(tuple(sorted((a, b))), []).append(i)
 
     p = pulp.LpProblem("min_gesamt", pulp.LpMinimize)
@@ -75,14 +112,12 @@ def optimiere(orders, tol_mm=200, kombinieren=True, max_kombi_teile=3,
     z = {g: pulp.LpVariable(f"z{gi}", cat="Binary")
          for gi, g in enumerate(groups)}
     p += pulp.lpSum(x) + pulp.lpSum(z.values())
-    for i, (a, b, *_ ) in enumerate(O):
+    for i, (a, b, *_) in enumerate(O):
         g = tuple(sorted((a, b)))
         p += (pulp.lpSum(x[j] for j in range(len(keep)) if i in cov[j])
               + z[g] >= 1)
-    # OPTIONALE Erweiterung (nicht in v2-Spec, aber additiv):
-    # max. Anzahl verschiedener Sonder-Maße. None = unbegrenzt.
-    if sonder_deckel is not None and sonder_deckel >= 0:
-        p += pulp.lpSum(z.values()) <= sonder_deckel, "sonder_max"
+    if sonder_deckel is not None:
+        p += pulp.lpSum(z.values()) <= sonder_deckel
     p.solve(pulp.PULP_CBC_CMD(msg=0, timeLimit=zeitlimit_s))
 
     standards = sorted(keep[j] for j in range(len(keep))
@@ -91,26 +126,38 @@ def optimiere(orders, tol_mm=200, kombinieren=True, max_kombi_teile=3,
     zuordnung, sonder_grp = [], set()
     for i, (a, b, m, au, nm) in enumerate(O):
         einz = next((s for s in standards
-                     if _passt_einzeln(s, (a, b), T)), None)
+                     if _passt_einzeln(s, (a, b), Tk, Tl)), None)
         if einz:
             zuordnung.append({'auftrag': au, 'name': nm, 'L': a, 'B': b,
                               'menge': m, 'typ': 'Standard',
                               'ziel': f"{einz[0]}x{einz[1]}"})
             continue
-        kombi = None
-        if kombinieren and standards:
-            for r in range(2, max_kombi_teile + 1):
-                for combo in combinations(standards, r):
-                    if _passt_kombi(combo, (a, b), T):
-                        kombi = combo
-                        break
-                if kombi:
-                    break
-        if kombi:
+        kstapel = None
+        for s in standards:
+            kr = _passt_kstapel(s, (a, b), Tk, Tl, K)
+            if kr is not None:
+                kstapel = (s, kr[0])
+                break
+        if kstapel:
+            s, k = kstapel
             zuordnung.append({'auftrag': au, 'name': nm, 'L': a, 'B': b,
-                              'menge': m, 'typ': 'Kombination',
+                              'menge': m, 'typ': 'Kombi-Stapel',
+                              'ziel': f"{k}x ({s[0]}x{s[1]})"})
+            continue
+        heterogen = None
+        if heterogen_fallback and standards:
+            for r in range(2, K + 1):
+                for combo in combinations(standards, r):
+                    if _passt_heterogen(combo, (a, b), Tk, Tl):
+                        heterogen = combo
+                        break
+                if heterogen:
+                    break
+        if heterogen:
+            zuordnung.append({'auftrag': au, 'name': nm, 'L': a, 'B': b,
+                              'menge': m, 'typ': 'Kombi-Heterogen',
                               'ziel': " + ".join(f"{c[0]}x{c[1]}"
-                                                 for c in kombi)})
+                                                 for c in heterogen)})
         else:
             sonder_grp.add(tuple(sorted((a, b))))
             zuordnung.append({'auftrag': au, 'name': nm, 'L': a, 'B': b,
@@ -126,10 +173,22 @@ def optimiere(orders, tol_mm=200, kombinieren=True, max_kombi_teile=3,
             cs, cl = map(int, zg['ziel'].split('x'))
             if not (min(cs, cl) >= l0 and max(cs, cl) >= l1):
                 verletzungen.append(zg)
+        elif zg['typ'] == 'Kombi-Stapel':
+            head, rest = zg['ziel'].split('x ', 1)
+            k = int(head)
+            cs, cl = map(int, rest.strip('()').split('x'))
+            ok = False
+            for ec0, ec1 in ((cs, cl * k), (cs * k, cl)):
+                e0, e1 = sorted((ec0, ec1))
+                if e0 >= l0 and e1 >= l1:
+                    ok = True
+                    break
+            if not ok:
+                verletzungen.append(zg)
         else:
             teile = [tuple(map(int, t.split('x')))
                      for t in zg['ziel'].split(" + ")]
-            if not _passt_kombi(teile, (zg['L'], zg['B']), T):
+            if not _passt_heterogen(teile, (zg['L'], zg['B']), Tk, Tl):
                 verletzungen.append(zg)
 
     return {'standards': standards,
@@ -138,61 +197,8 @@ def optimiere(orders, tol_mm=200, kombinieren=True, max_kombi_teile=3,
             'zuordnung': zuordnung,
             'invariante_ok': len(verletzungen) == 0,
             'verletzungen': verletzungen,
-            'status': pulp.LpStatus[p.status]}
-
-
-if __name__ == "__main__":
-    cluster = [{'L': 1520, 'B': 720, 'menge': 1, 'auftrag': 'A', 'name': ''},
-               {'L': 1550, 'B': 700, 'menge': 1, 'auftrag': 'B', 'name': ''},
-               {'L': 1500, 'B': 750, 'menge': 1, 'auftrag': 'C', 'name': ''},
-               {'L': 1530, 'B': 710, 'menge': 1, 'auftrag': 'D', 'name': ''}]
-    r = optimiere(cluster, tol_mm=200, kombinieren=False)
-    print("Cluster:", r['standards'], "| Sonder:", r['sonder'],
-          "| invariante_ok:", r['invariante_ok'])
-    assert len(r['standards']) == 1, r['standards']
-    assert len(r['sonder']) == 0
-    assert r['invariante_ok']
-    s = r['standards'][0]
-    for o in cluster:
-        assert min(s) >= min(o['L'], o['B']) and max(s) >= max(o['L'], o['B'])
-    print("OK Selbsttest 1 (Cluster -> 1 Standard, deckt alle, einseitig)")
-
-    base = [{'L': 1200, 'B': 800, 'menge': 9, 'auftrag': 'S1', 'name': ''},
-            {'L': 400, 'B': 800, 'menge': 9, 'auftrag': 'S2', 'name': ''},
-            {'L': 1500, 'B': 700, 'menge': 1, 'auftrag': 'X', 'name': ''}]
-    ro = optimiere(base, tol_mm=200, kombinieren=False)
-    rk = optimiere(base, tol_mm=200, kombinieren=True)
-    tx_o = [z['typ'] for z in ro['zuordnung'] if z['auftrag'] == 'X'][0]
-    tx_k = [z for z in rk['zuordnung'] if z['auftrag'] == 'X'][0]
-    print("X ohne Kombi:", tx_o, "| mit Kombi:", tx_k['typ'],
-          "->", tx_k['ziel'])
-    assert tx_o == 'Sonder'
-    assert tx_k['typ'] == 'Kombination'
-    assert rk['invariante_ok']
-    print("OK Selbsttest 2 (Kombi-Fallback Typ A + Typ B)")
-
-    from openpyxl import load_workbook
-    wb = load_workbook('/mnt/user-data/uploads/Paletten_DM.xlsx',
-                        read_only=True)
-    ws = wb.active
-    ords = []
-    for row in ws.iter_rows(min_row=7, values_only=True):
-        if row is None:
-            continue
-        a, n, m, L, B = row[4], row[7], row[12], row[14], row[15]
-        if a in (None, '') and L in (None, '') and B in (None, ''):
-            continue
-        if not (isinstance(L, (int, float))
-                and isinstance(B, (int, float))):
-            continue
-        ords.append({'L': L, 'B': B,
-                     'menge': int(m) if isinstance(m, (int, float)) and m
-                     else 1, 'auftrag': a, 'name': n})
-    for T in (100, 200):
-        rr = optimiere(ords, tol_mm=T, kombinieren=True)
-        print(f"Echt T={T}: Std={len(rr['standards'])} "
-              f"Sonder={len(rr['sonder'])} Gesamt={rr['gesamt']} "
-              f"invariante_ok={rr['invariante_ok']} "
-              f"Verletzungen={len(rr['verletzungen'])}")
-        assert rr['invariante_ok'], "PHYSIKALISCHE INVARIANTE VERLETZT"
-    print("OK Selbsttest 3 (echte Datei, einseitig, 0 Verletzungen)")
+            'status': pulp.LpStatus[p.status],
+            'parameter': {'tol_kurz_mm': Tk, 'tol_lang_mm': Tl,
+                          'max_kombi_teile': K,
+                          'heterogen_fallback': heterogen_fallback,
+                          'sonder_deckel': sonder_deckel}}

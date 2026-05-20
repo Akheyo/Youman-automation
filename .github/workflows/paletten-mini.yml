@@ -72,23 +72,40 @@ jobs:
           Set-Content -Path "_build_info.py" -Value $content -Encoding UTF8
           Write-Host "Build-Stempel: $sha / $when / v$ver"
 
-      - name: Pflicht-Test Kern v2 (alle muessen gruen sein, sonst Build rot)
+      - name: Pflicht-Test Kern Modell A (v4, Cluster + Deckel-Obergrenze)
         shell: pwsh
-        env:
-          PYTHONIOENCODING: utf-8
-        run: python tests/test_kern.py
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_kern_modell_a.py
 
-      - name: Pflicht-Test Import-Verlauf (4 Hard-Asserts, Build rot wenn rot)
+      - name: Pflicht-Test Struktur (Code-erzeugte Fixtures)
         shell: pwsh
-        env:
-          PYTHONIOENCODING: utf-8
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_kern_struktur.py
+
+      - name: Optionaler Test Echtdatei (Skip wenn Paletten_DM.xlsx fehlt)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_kern_echt.py
+
+      - name: Pflicht-Test Import-Produkt (Domain-Fix P-Werte -> Produkt)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_import_produkt.py
+
+      - name: Pflicht-Test Toggle-Wiring (UI -> Kern v4 1:1)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_toggle_wiring.py
+
+      - name: Pflicht-Test Typ-Anzeige (4 Typen + Farbcodes)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_typ_anzeige.py
+
+      - name: Pflicht-Test Import-Verlauf
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_verlauf.py
-
-      - name: Pflicht-Test Produkt-Maße (Domain-Fix Paletten -> Produkt)
-        shell: pwsh
-        env:
-          PYTHONIOENCODING: utf-8
-        run: python tests/test_produkt_mass.py
 
       - name: Selbsttest-Status anzeigen
         shell: pwsh
