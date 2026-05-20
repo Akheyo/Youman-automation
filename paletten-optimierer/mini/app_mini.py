@@ -878,9 +878,28 @@ def seite_katalog() -> None:
         unsafe_allow_html=True,
     )
 
+    # Warn-Banner fuer kritische Bestaende
+    kritisch = katalog_modul.kritische_bestaende()
+    if kritisch:
+        meldungen = "<br>".join(
+            f'• {e["L_mm"]}×{e["B_mm"]} mm — '
+            f'Bestand {int(e.get("bestand", 0))} ≤ '
+            f'Meldebestand {int(e.get("meldebestand", 0))}'
+            for e in kritisch
+        )
+        st.markdown(
+            f'<div style="background:#fef3c7;border:1px solid #fbbf24;'
+            f'color:#92400e;padding:12px 14px;border-radius:8px;'
+            f'margin-bottom:14px;font-size:13px;">'
+            f'<div style="font-weight:700;margin-bottom:6px;">'
+            f'⚠️ Meldebestand erreicht ({len(kritisch)})</div>'
+            f'{meldungen}</div>',
+            unsafe_allow_html=True,
+        )
+
     # === Neuer Eintrag anlegen ===
     with st.expander("➕ Neue Palette hinzufügen", expanded=not eintraege):
-        c1, c2, c3, c4, c5 = st.columns([1, 1, 1.2, 1.2, 1.6])
+        c1, c2, c3, c4 = st.columns([1, 1, 1.2, 1.2])
         with c1:
             n_L = st.number_input("Länge (mm)", min_value=0, max_value=10000,
                                    value=1200, step=10, key="kat_new_L")
@@ -895,7 +914,18 @@ def seite_katalog() -> None:
             n_vk = st.number_input("Verkaufspreis (€)", min_value=0.0,
                                     value=0.0, step=0.50, format="%.2f",
                                     key="kat_new_vk")
+        c5, c6, c7 = st.columns([1, 1, 2])
         with c5:
+            n_best = st.number_input("Bestand (Stk)", min_value=0,
+                                      max_value=100000, value=0, step=1,
+                                      key="kat_new_best",
+                                      help="Aktuelle Lagermenge in Stück.")
+        with c6:
+            n_meld = st.number_input("Meldebestand (Stk)", min_value=0,
+                                      max_value=100000, value=0, step=1,
+                                      key="kat_new_meld",
+                                      help="Warnung wenn Bestand ≤ diesem Wert.")
+        with c7:
             n_notiz = st.text_input("Notiz (optional)", value="",
                                      key="kat_new_notiz")
         if st.button("Palette hinzufügen", type="primary",
@@ -903,6 +933,7 @@ def seite_katalog() -> None:
             if n_L > 0 and n_B > 0:
                 katalog_modul.neuer_eintrag(int(n_L), int(n_B),
                                             float(n_ek), float(n_vk),
+                                            int(n_best), int(n_meld),
                                             n_notiz, aktiv=True)
                 st.success(f"Eintrag {int(max(n_L,n_B))}×{int(min(n_L,n_B))} "
                            f"hinzugefügt.")
@@ -928,19 +959,25 @@ def seite_katalog() -> None:
             "Verkauf (€)": e.get("verkaufspreis_eur", 0.0),
             "Marge (€)": (e.get("verkaufspreis_eur", 0.0)
                           - e.get("einkaufspreis_eur", 0.0)),
+            "Bestand": int(e.get("bestand", 0)),
+            "Meldebestand": int(e.get("meldebestand", 0)),
+            "Status": ("⚠️ niedrig" if (int(e.get("meldebestand", 0)) > 0
+                       and int(e.get("bestand", 0))
+                       <= int(e.get("meldebestand", 0))) else "✓ ok"),
             "Aktiv": e.get("aktiv", True),
             "Notiz": e.get("notiz", ""),
-            "Erstellt": e.get("datum_erstellt", "")[:16].replace("T", " "),
         }
         for e in eintraege
     ])
     st.dataframe(df.drop(columns=["id"]),
                  use_container_width=True, hide_index=True, height=300,
                  column_config={
-                     "Einkauf (€)": st.column_config.NumberColumn(format="%.2f €"),
-                     "Verkauf (€)": st.column_config.NumberColumn(format="%.2f €"),
-                     "Marge (€)":  st.column_config.NumberColumn(format="%.2f €"),
-                     "Aktiv":      st.column_config.CheckboxColumn(),
+                     "Einkauf (€)":   st.column_config.NumberColumn(format="%.2f €"),
+                     "Verkauf (€)":   st.column_config.NumberColumn(format="%.2f €"),
+                     "Marge (€)":     st.column_config.NumberColumn(format="%.2f €"),
+                     "Bestand":       st.column_config.NumberColumn(format="%d"),
+                     "Meldebestand":  st.column_config.NumberColumn(format="%d"),
+                     "Aktiv":         st.column_config.CheckboxColumn(),
                  })
 
     # Auswahl für Edit/Delete
@@ -975,6 +1012,21 @@ def seite_katalog() -> None:
                                     value=float(eintrag.get("verkaufspreis_eur", 0.0)),
                                     step=0.50, format="%.2f",
                                     key=f"kat_edit_vk_{eintrag['id']}")
+        c5, c6 = st.columns([1, 1])
+        with c5:
+            e_best = st.number_input("Bestand (Stk)", min_value=0,
+                                      max_value=100000,
+                                      value=int(eintrag.get("bestand", 0)),
+                                      step=1,
+                                      key=f"kat_edit_best_{eintrag['id']}",
+                                      help="Aktuelle Lagermenge.")
+        with c6:
+            e_meld = st.number_input("Meldebestand (Stk)", min_value=0,
+                                      max_value=100000,
+                                      value=int(eintrag.get("meldebestand", 0)),
+                                      step=1,
+                                      key=f"kat_edit_meld_{eintrag['id']}",
+                                      help="Warnung wenn Bestand ≤ diesem Wert.")
         e_notiz = st.text_input("Notiz", value=eintrag.get("notiz", ""),
                                  key=f"kat_edit_notiz_{eintrag['id']}")
         e_aktiv = st.toggle("Aktiv (wird vom Optimierer berücksichtigt)",
@@ -988,6 +1040,8 @@ def seite_katalog() -> None:
                                           B_mm=int(e_B),
                                           einkaufspreis_eur=float(e_ek),
                                           verkaufspreis_eur=float(e_vk),
+                                          bestand=int(e_best),
+                                          meldebestand=int(e_meld),
                                           notiz=e_notiz, aktiv=bool(e_aktiv))
             st.success("Gespeichert.")
             st.rerun()

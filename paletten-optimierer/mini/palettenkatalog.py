@@ -10,13 +10,18 @@ Schema pro Eintrag:
   {
     "id": "uuid-hex",
     "datum_erstellt": "ISO8601",
-    "L_mm": int,            # Lange Seite (kanonisch: laeng >= kurz)
+    "L_mm": int,            # Lange Seite (kanonisch: lang >= kurz)
     "B_mm": int,            # Kurze Seite
     "einkaufspreis_eur": float,
     "verkaufspreis_eur": float,
+    "bestand": int,         # aktueller Lagerbestand (Stueck)
+    "meldebestand": int,    # ab diesem Bestand wird gewarnt
     "notiz": str,           # optional
     "aktiv": bool           # nicht-aktive werden NICHT als Bonus benutzt
   }
+
+Rueckwaerts-kompatibel: alte JSON-Eintraege ohne bestand/meldebestand
+werden als 0 interpretiert.
 
 Robust: korrupte/fehlende Datei -> [] (kein Crash).
 """
@@ -74,6 +79,8 @@ def _kanon(L: float, B: float) -> tuple[int, int]:
 def neuer_eintrag(L: int, B: int,
                    einkaufspreis: float = 0.0,
                    verkaufspreis: float = 0.0,
+                   bestand: int = 0,
+                   meldebestand: int = 0,
                    notiz: str = "",
                    aktiv: bool = True) -> str:
     """Fuegt einen neuen Katalog-Eintrag hinzu. Maß wird kanonisiert.
@@ -87,6 +94,8 @@ def neuer_eintrag(L: int, B: int,
         "B_mm": B_k,
         "einkaufspreis_eur": float(einkaufspreis),
         "verkaufspreis_eur": float(verkaufspreis),
+        "bestand": int(bestand),
+        "meldebestand": int(meldebestand),
         "notiz": str(notiz),
         "aktiv": bool(aktiv),
     }
@@ -98,9 +107,11 @@ def neuer_eintrag(L: int, B: int,
 
 def update_eintrag(eintrag_id: str, **felder) -> bool:
     """Aktualisiert ein paar Felder. Erlaubte Felder:
-    L_mm, B_mm, einkaufspreis_eur, verkaufspreis_eur, notiz, aktiv."""
+    L_mm, B_mm, einkaufspreis_eur, verkaufspreis_eur,
+    bestand, meldebestand, notiz, aktiv."""
     erlaubt = {"L_mm", "B_mm", "einkaufspreis_eur",
-               "verkaufspreis_eur", "notiz", "aktiv"}
+               "verkaufspreis_eur", "bestand", "meldebestand",
+               "notiz", "aktiv"}
     h = _read_raw()
     for e in h:
         if e.get("id") == eintrag_id:
@@ -155,6 +166,24 @@ def lookup_preise(L: int, B: int) -> dict | None:
                 "id": e.get("id", ""),
             }
     return None
+
+
+def set_bestand(eintrag_id: str, neu_bestand: int) -> bool:
+    """Spezialisierter Helper — setzt nur den Bestand eines Eintrags."""
+    return update_eintrag(eintrag_id, bestand=int(max(0, neu_bestand)))
+
+
+def kritische_bestaende() -> list[dict[str, Any]]:
+    """Liefert alle aktiven Eintraege, bei denen bestand <= meldebestand."""
+    out = []
+    for e in _read_raw():
+        if not e.get("aktiv", True):
+            continue
+        m = int(e.get("meldebestand", 0) or 0)
+        b = int(e.get("bestand", 0) or 0)
+        if m > 0 and b <= m:
+            out.append(e)
+    return out
 
 
 def leere_katalog() -> int:

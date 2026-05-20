@@ -38,21 +38,86 @@ def _reset():
 
 def test_a_crud():
     _reset()
-    e1 = kat.neuer_eintrag(1200, 800, 14.50, 22.00, "Standard EU")
-    e2 = kat.neuer_eintrag(1500, 1000, 18.00, 28.00, "EUR2")
-    e3 = kat.neuer_eintrag(2000, 600, 16.00, 24.00, "schmal-lang")
+    e1 = kat.neuer_eintrag(1200, 800, 14.50, 22.00,
+                            bestand=100, meldebestand=20, notiz="EU")
+    e2 = kat.neuer_eintrag(1500, 1000, 18.00, 28.00)
+    e3 = kat.neuer_eintrag(2000, 600, 16.00, 24.00)
     assert len(kat.alle()) == 3
-    # Update
-    assert kat.update_eintrag(e2, verkaufspreis_eur=30.00) is True
+    # Update inkl. neue Bestand/Meldebestand-Felder
+    assert kat.update_eintrag(e2, verkaufspreis_eur=30.00,
+                                bestand=50, meldebestand=10) is True
     e2_now = next(e for e in kat.alle() if e["id"] == e2)
     assert e2_now["verkaufspreis_eur"] == 30.00
+    assert e2_now["bestand"] == 50
+    assert e2_now["meldebestand"] == 10
     # Delete
     assert kat.loesche_eintrag(e3) is True
     assert len(kat.alle()) == 2
-    # Aktive Masse (kanonisch (kurz, lang))
     masse = sorted(kat.aktive_masse())
     assert masse == [(800, 1200), (1000, 1500)], masse
-    print(f"  CRUD OK — {len(kat.alle())} Eintraege, Maße {masse}")
+    print(f"  CRUD OK — {len(kat.alle())} Eintraege, Maße {masse}, "
+          f"e1.bestand=100/meld=20, e2.bestand=50/meld=10")
+
+
+def test_e_meldebestand_warnung():
+    """kritische_bestaende liefert nur Eintraege mit Meldebestand>0
+    UND Bestand<=Meldebestand UND aktiv."""
+    _reset()
+    # Normal: Bestand > Meldebestand → keine Warnung
+    eA = kat.neuer_eintrag(1200, 800, 0, 0, bestand=100, meldebestand=20)
+    # Kritisch: Bestand == Meldebestand → Warnung
+    eB = kat.neuer_eintrag(1500, 1000, 0, 0, bestand=10, meldebestand=10)
+    # Kritisch: Bestand < Meldebestand → Warnung
+    eC = kat.neuer_eintrag(2000, 600, 0, 0, bestand=2, meldebestand=5)
+    # Meldebestand=0 (= aus) → niemals Warnung
+    eD = kat.neuer_eintrag(1100, 700, 0, 0, bestand=0, meldebestand=0)
+    # Inaktiv → ignoriert
+    eE = kat.neuer_eintrag(900, 600, 0, 0, bestand=0, meldebestand=10,
+                           aktiv=False)
+
+    kritisch = kat.kritische_bestaende()
+    ids = {e["id"] for e in kritisch}
+    print(f"  Kritische IDs: {[e['L_mm'] for e in kritisch]}")
+    assert eA not in ids, "Bestand=100 > Meldebestand=20 -> KEINE Warnung"
+    assert eB in ids, "Bestand=10 = Meldebestand=10 -> Warnung"
+    assert eC in ids, "Bestand=2 < Meldebestand=5 -> Warnung"
+    assert eD not in ids, "Meldebestand=0 -> NIE Warnung"
+    assert eE not in ids, "Inaktiv -> ignoriert"
+    print(f"  Meldebestand-Logik OK ({len(kritisch)} kritisch von 5).")
+
+
+def test_f_set_bestand():
+    _reset()
+    eid = kat.neuer_eintrag(1200, 800, 0, 0, bestand=100, meldebestand=20)
+    assert kat.set_bestand(eid, 50) is True
+    e = next(x for x in kat.alle() if x["id"] == eid)
+    assert e["bestand"] == 50
+    # Negative Werte werden auf 0 geclampt
+    kat.set_bestand(eid, -10)
+    e = next(x for x in kat.alle() if x["id"] == eid)
+    assert e["bestand"] == 0
+    print(f"  set_bestand: 100 -> 50 -> 0 (negative clamped).")
+
+
+def test_g_alte_json_ohne_bestand_felder():
+    """Rueckwaerts-Kompatibilitaet: alte JSON ohne bestand/meldebestand."""
+    _reset()
+    # Direkt eine Alt-Version reinschreiben
+    import json
+    altes_schema = [{
+        "id": "alt1", "datum_erstellt": "2024-01-01T00:00:00",
+        "L_mm": 1200, "B_mm": 800,
+        "einkaufspreis_eur": 14.0, "verkaufspreis_eur": 22.0,
+        "notiz": "", "aktiv": True,
+        # KEINE bestand/meldebestand-Felder
+    }]
+    Path(_TMP.name).write_text(json.dumps(altes_schema), encoding="utf-8")
+    eintraege = kat.alle()
+    assert len(eintraege) == 1
+    # kritische_bestaende kommt nicht ins Stolpern
+    krit = kat.kritische_bestaende()
+    assert krit == []
+    print(f"  Alte JSON ohne bestand/meldebestand: kein Crash.")
 
 
 def test_b_korrupte_json():
@@ -125,7 +190,10 @@ def _run(fn):
 if __name__ == "__main__":
     tests = [test_a_crud, test_b_korrupte_json,
              test_c_tiebreaker_aendert_gesamt_nicht,
-             test_d_lookup_preise_kanonisch]
+             test_d_lookup_preise_kanonisch,
+             test_e_meldebestand_warnung,
+             test_f_set_bestand,
+             test_g_alte_json_ohne_bestand_felder]
     erfolge = sum(1 for t in tests if _run(t))
     print()
     print(f"{erfolge}/{len(tests)} Katalog-Tests bestanden.")
