@@ -125,8 +125,14 @@ def importiere(file_or_path: str | Path | IO[bytes]) -> dict:
         }
     """
     wb = openpyxl.load_workbook(file_or_path, data_only=True, read_only=True)
-    ws = wb.active
-    rows = list(ws.iter_rows(values_only=True))
+    try:
+        ws = wb.active
+        rows = list(ws.iter_rows(values_only=True))
+    finally:
+        # WICHTIG: read_only=True haelt einen ZIP-Handle offen.
+        # Ohne wb.close() laesst Windows die Datei nicht loeschen
+        # (PermissionError [WinError 32]).
+        wb.close()
 
     idx, mapping = _finde_header_zeile(rows)
     if idx < 0:

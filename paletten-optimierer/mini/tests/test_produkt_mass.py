@@ -64,77 +64,89 @@ def _baue_minimal_xlsx(tmp: Path, zeilen: list[dict]) -> Path:
     return tmp
 
 
+def _tmp_xlsx(name: str) -> Path:
+    """Plattform-neutraler Pfad fuer eine temporaere xlsx."""
+    import tempfile
+    return Path(tempfile.gettempdir()) / f"paletten_test_{name}.xlsx"
+
+
+def _cleanup(p: Path) -> None:
+    """Robust loeschen — auf Windows kann Datei kurz noch belegt sein."""
+    try:
+        if p.exists():
+            p.unlink()
+    except (PermissionError, OSError):
+        pass  # Test-Erfolg darf nicht am Cleanup haengen
+
+
 # ---------------------------------------------------------------------
 # a) P-L=1450, P-B=850 -> L=1400, B=800 beim Optimierer
 # ---------------------------------------------------------------------
 def test_a_subtraktion_50_mm():
     assert PALETTEN_AUFSCHLAG_MM == 50, "Konstante muss 50 sein (Draht-Mueller)"
-    import tempfile
-    tmp = Path(tempfile.mktemp(suffix=".xlsx"))
-    _baue_minimal_xlsx(tmp, [
-        {"auftrag": "A1", "name": "K1", "artikelnr": "ART1",
-         "menge": 1, "L": 1450, "B": 850},
-    ])
-    dat = importiere(tmp)
-    assert len(dat["mit_mass"]) == 1
-    e = dat["mit_mass"][0]
-    assert e["laenge"] == 1400, (
-        f"Produkt-L = {e['laenge']}, erwartet 1400 (1450 − 50)"
-    )
-    assert e["breite"] == 800, (
-        f"Produkt-B = {e['breite']}, erwartet 800 (850 − 50)"
-    )
-    assert e["palette_L_excel"] == 1450, "Roh-P-L muss erhalten bleiben"
-    assert e["palette_B_excel"] == 850, "Roh-P-B muss erhalten bleiben"
+    tmp = _tmp_xlsx("a_subtraktion")
+    try:
+        _baue_minimal_xlsx(tmp, [
+            {"auftrag": "A1", "name": "K1", "artikelnr": "ART1",
+             "menge": 1, "L": 1450, "B": 850},
+        ])
+        dat = importiere(tmp)
+        assert len(dat["mit_mass"]) == 1
+        e = dat["mit_mass"][0]
+        assert e["laenge"] == 1400, (
+            f"Produkt-L = {e['laenge']}, erwartet 1400 (1450 − 50)"
+        )
+        assert e["breite"] == 800, (
+            f"Produkt-B = {e['breite']}, erwartet 800 (850 − 50)"
+        )
+        assert e["palette_L_excel"] == 1450, "Roh-P-L muss erhalten bleiben"
+        assert e["palette_B_excel"] == 850, "Roh-P-B muss erhalten bleiben"
 
-    # An den Kern gehen die PRODUKT-Maße
-    orders = [{"L": e["laenge"], "B": e["breite"], "menge": e["anzahl"],
-               "auftrag": e["auftrag"], "name": e["name"]}]
-    r = optimiere(orders, tol_mm=200, kombinieren=True)
-    assert r["zuordnung"][0]["typ"] == "Standard", (
-        f"Erwartet Typ=Standard, bekam {r['zuordnung'][0]['typ']!r}"
-    )
-    assert r["zuordnung"][0]["L"] == 1400
-    assert r["zuordnung"][0]["B"] == 800
-    assert r["invariante_ok"], "Invariante muss OK sein"
-    print(f"  OK — P-L=1450/P-B=850 -> Produkt 1400×800, "
-          f"Roh-Werte erhalten, Standard, Invariante OK.")
-    tmp.unlink(missing_ok=True)
+        orders = [{"L": e["laenge"], "B": e["breite"], "menge": e["anzahl"],
+                   "auftrag": e["auftrag"], "name": e["name"]}]
+        r = optimiere(orders, tol_mm=200, kombinieren=True)
+        assert r["zuordnung"][0]["typ"] == "Standard", (
+            f"Erwartet Typ=Standard, bekam {r['zuordnung'][0]['typ']!r}"
+        )
+        assert r["zuordnung"][0]["L"] == 1400
+        assert r["zuordnung"][0]["B"] == 800
+        assert r["invariante_ok"], "Invariante muss OK sein"
+        print(f"  OK — P-L=1450/P-B=850 -> Produkt 1400×800, "
+              f"Roh-Werte erhalten, Standard, Invariante OK.")
+    finally:
+        _cleanup(tmp)
 
 
 # ---------------------------------------------------------------------
 # b) P-L=40, P-B=850 -> produkt_L=-10 -> ohne_mass-Bucket, kein Crash
 # ---------------------------------------------------------------------
 def test_b_zu_kleiner_palettenwert_landet_in_bucket():
-    import tempfile
-    tmp = Path(tempfile.mktemp(suffix=".xlsx"))
-    _baue_minimal_xlsx(tmp, [
-        {"auftrag": "OHNE", "name": "K0", "artikelnr": "ART0",
-         "menge": 1, "L": 40, "B": 850},
-        {"auftrag": "MIT",  "name": "K1", "artikelnr": "ART1",
-         "menge": 2, "L": 1200, "B": 800},
-    ])
-    dat = importiere(tmp)
-    auftrags_mit = {p["auftrag"] for p in dat["mit_mass"]}
-    auftrags_ohne = {p["auftrag"] for p in dat["ohne_mass"]}
-    print(f"  mit_mass={auftrags_mit}, ohne_mass={auftrags_ohne}")
-    assert "OHNE" in auftrags_ohne, (
-        "Auftrag mit P-L=40 (Produkt-L=-10) MUSS in ohne_mass landen"
-    )
-    assert "OHNE" not in auftrags_mit, (
-        "Negativ-Produkt darf NICHT in mit_mass auftauchen"
-    )
-    assert "MIT" in auftrags_mit, (
-        "Auftrag mit P-L=1200 muss normal in mit_mass landen"
-    )
-    # Importer wirft keinen Fehler, Optimierer kann die Liste verarbeiten
-    orders = [{"L": p["laenge"], "B": p["breite"], "menge": p["anzahl"],
-               "auftrag": p["auftrag"], "name": p["name"]}
-              for p in dat["mit_mass"]]
-    r = optimiere(orders, tol_mm=200, kombinieren=True)
-    assert r["invariante_ok"]
-    print(f"  OK — Auftrag mit P-L=40 landet in 'Maß fehlt', kein Crash.")
-    tmp.unlink(missing_ok=True)
+    tmp = _tmp_xlsx("b_kleiner")
+    try:
+        _baue_minimal_xlsx(tmp, [
+            {"auftrag": "OHNE", "name": "K0", "artikelnr": "ART0",
+             "menge": 1, "L": 40, "B": 850},
+            {"auftrag": "MIT",  "name": "K1", "artikelnr": "ART1",
+             "menge": 2, "L": 1200, "B": 800},
+        ])
+        dat = importiere(tmp)
+        auftrags_mit = {p["auftrag"] for p in dat["mit_mass"]}
+        auftrags_ohne = {p["auftrag"] for p in dat["ohne_mass"]}
+        print(f"  mit_mass={auftrags_mit}, ohne_mass={auftrags_ohne}")
+        assert "OHNE" in auftrags_ohne, (
+            "Auftrag mit P-L=40 (Produkt-L=-10) MUSS in ohne_mass landen"
+        )
+        assert "OHNE" not in auftrags_mit
+        assert "MIT" in auftrags_mit
+
+        orders = [{"L": p["laenge"], "B": p["breite"], "menge": p["anzahl"],
+                   "auftrag": p["auftrag"], "name": p["name"]}
+                  for p in dat["mit_mass"]]
+        r = optimiere(orders, tol_mm=200, kombinieren=True)
+        assert r["invariante_ok"]
+        print(f"  OK — Auftrag mit P-L=40 landet in 'Maß fehlt', kein Crash.")
+    finally:
+        _cleanup(tmp)
 
 
 # ---------------------------------------------------------------------
