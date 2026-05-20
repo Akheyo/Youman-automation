@@ -72,11 +72,17 @@ jobs:
           Set-Content -Path "_build_info.py" -Value $content -Encoding UTF8
           Write-Host "Build-Stempel: $sha / $when / v$ver"
 
-      - name: Pflicht-Test Kern v2 (alle 4 muessen gruen sein, sonst Build rot)
+      - name: Pflicht-Test Kern v2 (alle muessen gruen sein, sonst Build rot)
         shell: pwsh
         env:
           PYTHONIOENCODING: utf-8
         run: python tests/test_kern.py
+
+      - name: Pflicht-Test Import-Verlauf (4 Hard-Asserts, Build rot wenn rot)
+        shell: pwsh
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python tests/test_verlauf.py
 
       - name: Selbsttest-Status anzeigen
         shell: pwsh

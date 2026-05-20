@@ -12,6 +12,7 @@ from __future__ import annotations
 import io
 import json
 import sys
+from datetime import datetime
 from html import escape
 from pathlib import Path
 
@@ -24,6 +25,10 @@ if str(HIER) not in sys.path:
 
 from import_excel import importiere  # noqa: E402
 from optimierer_kern import optimiere  # noqa: E402
+from import_verlauf import (  # noqa: E402
+    neuer_eintrag, update_optimierung, alle as verlauf_alle,
+    finde_per_hash, leere_verlauf, hash_bytes, verlauf_pfad_str,
+)
 from _ui_chrome import (  # noqa: E402
     inject_css, topbar, step_indicator, card_open, card_close,
     disabled_feature, sidebar_brand, sidebar_section, sidebar_disabled_item,
@@ -122,6 +127,7 @@ def init_state() -> None:
     defaults = {
         "datei_name": "",
         "import_dat": None,        # dict aus import_excel.importiere
+        "historie_id": None,       # uuid des aktuellen Historie-Eintrags
         "params": {                # Kern-v2-Parameter
             "tol_mm": 200,            # max. Übermaß (mm), Default 200
             "kombinieren": True,      # Boolean — Default an
@@ -155,12 +161,14 @@ with st.sidebar:
     sidebar_brand()
 
     sidebar_section("Workflow")
+    SEITEN_LISTE = ["Datenimport", "Einstellungen", "Optimierung",
+                    "Ergebnisse", "Verlauf"]
+    if st.session_state.seite not in SEITEN_LISTE:
+        st.session_state.seite = "Datenimport"
     seite_neu = st.radio(
         "Seite",
-        ["Datenimport", "Einstellungen", "Optimierung", "Ergebnisse"],
-        index=["Datenimport", "Einstellungen", "Optimierung", "Ergebnisse"].index(
-            st.session_state.seite
-        ),
+        SEITEN_LISTE,
+        index=SEITEN_LISTE.index(st.session_state.seite),
         label_visibility="collapsed",
     )
     if seite_neu != st.session_state.seite:
@@ -207,11 +215,35 @@ def seite_datenimport() -> None:
     if cols[0].button("📥 Importieren", use_container_width=True, type="primary",
                        disabled=up is None):
         roh = up.read()
+        # Vor-Import: gleiche Datei schon mal verarbeitet?
+        st.session_state.duplikat_hinweise = []
+        try:
+            sha = hash_bytes(roh)
+            treffer = finde_per_hash(sha)
+            if treffer:
+                for t in treffer:
+                    st.session_state.duplikat_hinweise.append(
+                        f"Diese Datei wurde am {t.get('datum','?')[:16].replace('T',' ')} "
+                        f"schon importiert (als '{t.get('datei_name','?')}')."
+                    )
+        except Exception:
+            pass
+
         with st.spinner(f"Lese {up.name} ({len(roh) / 1024:.0f} KB) ..."):
             dat = importiere(io.BytesIO(roh))
         st.session_state.datei_name = up.name
         st.session_state.import_dat = dat
         st.session_state.ergebnis = None
+        # Verlaufseintrag schreiben (persistent im User-Profil)
+        try:
+            st.session_state.historie_id = neuer_eintrag(
+                datei_pfad=up.name,
+                ergebnis=dat,
+                datei_bytes=roh,
+            )
+        except Exception as exc:  # noqa: BLE001 — Verlauf darf Import nicht blockieren
+            st.session_state.historie_id = None
+            st.warning(f"Verlauf konnte nicht geschrieben werden: {exc}")
         st.session_state.seite = "Einstellungen"
         st.rerun()
     cols[1].markdown(
@@ -224,6 +256,10 @@ def seite_datenimport() -> None:
     dat = st.session_state.import_dat
     if dat is None:
         return
+
+    # Duplikat-Hinweise (vor-Import-Check per SHA256)
+    for hinweis in st.session_state.get("duplikat_hinweise", []):
+        st.info(hinweis)
 
     # Diagnose-Box (Spec-Soll-Werte sichtbar)
     mit_n = len(dat["mit_mass"])
@@ -367,6 +403,31 @@ def run_optimierung() -> None:
     for idx, zg in enumerate(res.get("zuordnung", [])):
         zg["artikelnummer"] = artikel_lookup[idx] if idx < len(artikel_lookup) else ""
     st.session_state.ergebnis = res
+
+    # Optimierungs-Block in der Historie ergaenzen
+    hist_id = st.session_state.get("historie_id")
+    if hist_id:
+        try:
+            update_optimierung(hist_id, {
+                "zeitstempel": datetime.now().isoformat(timespec="seconds"),
+                "parameter": {
+                    "tol_mm": int(p["tol_mm"]),
+                    "kombinieren": bool(p.get("kombinieren", True)),
+                    "max_kombi_teile": int(p.get("max_kombi_teile", 3)),
+                    "sonder_deckel": deckel,
+                    "coverage": "einseitig",
+                },
+                "ergebnis": {
+                    "standards": len(res.get("standards", [])),
+                    "sonder": len(res.get("sonder", [])),
+                    "gesamt": int(res.get("gesamt", 0)),
+                    "invariante_ok": bool(res.get("invariante_ok", True)),
+                    "verletzungen": len(res.get("verletzungen", [])),
+                    "status": res.get("status", ""),
+                },
+            })
+        except Exception:
+            pass  # Historie ist Bonus, nie kritisch
 
 
 def seite_optimierung() -> None:
@@ -669,6 +730,115 @@ def seite_ergebnisse() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Seite 5: Verlauf
+# ---------------------------------------------------------------------------
+def _fmt_datum(iso: str) -> str:
+    """ISO8601 → 'DD.MM.YYYY HH:MM'"""
+    try:
+        dt = datetime.fromisoformat(iso)
+        return dt.strftime("%d.%m.%Y %H:%M")
+    except Exception:
+        return iso[:16]
+
+
+def seite_verlauf() -> None:
+    eintraege = verlauf_alle()
+    card_open(f"Import-Verlauf ({len(eintraege)} Eintr&auml;ge)")
+    if not eintraege:
+        st.info("Noch kein Import — der Verlauf wird beim ersten Upload "
+                "automatisch angelegt.")
+        st.caption(f"Speicherort: {verlauf_pfad_str()}")
+        card_close()
+        return
+
+    # Tabelle, neueste oben
+    df_rows = []
+    for e in eintraege:
+        erg = e.get("ergebnis", {}) or {}
+        opt = e.get("optimierung")
+        if opt:
+            opt_erg = opt.get("ergebnis", {}) or {}
+            opt_txt = f"{opt_erg.get('standards', '?')}+{opt_erg.get('sonder', '?')}"
+        else:
+            opt_txt = "—"
+        df_rows.append({
+            "Datum": _fmt_datum(e.get("datum", "")),
+            "Datei": e.get("datei_name", ""),
+            "Datenzeilen": erg.get("datenzeilen", 0),
+            "mit Maß": erg.get("auftraege_mit_mass", 0),
+            "Paletten gesamt": erg.get("paletten_gesamt", 0),
+            "letzte Optimierung": opt_txt,
+            "id": e.get("id", ""),
+        })
+    df = pd.DataFrame(df_rows)
+    st.dataframe(
+        df.drop(columns=["id"]),
+        use_container_width=True, hide_index=True, height=320,
+    )
+
+    # Auswahl per selectbox -> Expander mit allen Feldern
+    ids = [r["id"] for r in df_rows]
+    auswahl_label = st.selectbox(
+        "Eintrag-Details anzeigen",
+        options=range(len(df_rows)),
+        format_func=lambda i: f"{df_rows[i]['Datum']} — {df_rows[i]['Datei']}",
+        key="verlauf_auswahl",
+    )
+    eintrag = next((e for e in eintraege if e["id"] == ids[auswahl_label]), None)
+    if eintrag:
+        sha = eintrag.get("datei_hash_sha256", "")
+        sha_kurz = sha[:12] + "…" if len(sha) > 12 else sha
+        with st.expander(f"Details: {eintrag.get('datei_name','?')} "
+                          f"({_fmt_datum(eintrag.get('datum',''))})",
+                          expanded=True):
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f"**ID:** `{eintrag.get('id','')}`")
+                st.markdown(f"**Datum:** {eintrag.get('datum','')}")
+                st.markdown(f"**Datei:** {eintrag.get('datei_name','')}")
+                st.markdown(f"**Original-Pfad:** "
+                            f"`{eintrag.get('datei_pfad_original','') or '—'}`")
+                st.markdown(f"**Größe:** {eintrag.get('datei_groesse_bytes',0):,} bytes"
+                            .replace(",", "."))
+            with col2:
+                erg = eintrag.get("ergebnis", {})
+                st.markdown(f"**Datenzeilen:** {erg.get('datenzeilen', 0)}")
+                st.markdown(f"**Aufträge mit Maß:** {erg.get('auftraege_mit_mass', 0)}")
+                st.markdown(f"**Aufträge ohne Maß:** {erg.get('auftraege_ohne_mass', 0)}")
+                st.markdown(f"**Paletten gesamt:** {erg.get('paletten_gesamt', 0)}")
+                st.markdown(f"**Normalisierte Maße:** {erg.get('normalisierte_masse', 0)}")
+            st.markdown(f"**SHA256:** `{sha_kurz}`")
+            st.code(sha, language=None)
+            opt = eintrag.get("optimierung")
+            if opt:
+                st.markdown("**Letzte Optimierung:**")
+                st.json(opt)
+            else:
+                st.caption("Noch nicht optimiert.")
+
+    st.divider()
+    st.caption(f"Verlauf gespeichert in: {verlauf_pfad_str()}")
+    col_l, col_r = st.columns([3, 1])
+    with col_r:
+        if st.session_state.get("verlauf_loeschen_bestaetigen"):
+            if st.button("⚠️ JA, endgültig löschen", type="primary",
+                          use_container_width=True, key="verlauf_del_yes"):
+                n = leere_verlauf()
+                st.session_state.verlauf_loeschen_bestaetigen = False
+                st.success(f"{n} Eintr&auml;ge geloescht.")
+                st.rerun()
+            if st.button("Abbrechen", use_container_width=True, key="verlauf_del_no"):
+                st.session_state.verlauf_loeschen_bestaetigen = False
+                st.rerun()
+        else:
+            if st.button("🗑️ Verlauf leeren", use_container_width=True,
+                          key="verlauf_del_btn"):
+                st.session_state.verlauf_loeschen_bestaetigen = True
+                st.rerun()
+    card_close()
+
+
+# ---------------------------------------------------------------------------
 # Page-Router
 # ---------------------------------------------------------------------------
 SEITEN = {
@@ -676,5 +846,6 @@ SEITEN = {
     "Einstellungen": seite_einstellungen,
     "Optimierung":   seite_optimierung,
     "Ergebnisse":    seite_ergebnisse,
+    "Verlauf":       seite_verlauf,
 }
 SEITEN[st.session_state.seite]()
