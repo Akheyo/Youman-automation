@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller-Spec für Paletten Mini (eigenständig)."""
+"""PyInstaller-Spec für Youman (eigenständig)."""
 
 from PyInstaller.utils.hooks import collect_all, collect_data_files, copy_metadata
 
@@ -100,7 +100,7 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 exe = EXE(
     pyz, a.scripts, [],
     exclude_binaries=True,
-    name="PalettenMini",
+    name="Youman",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False, upx=False,
@@ -116,5 +116,5 @@ exe = EXE(
 coll = COLLECT(
     exe, a.binaries, a.zipfiles, a.datas,
     strip=False, upx=False, upx_exclude=[],
-    name="PalettenMini",
+    name="Youman",
 )

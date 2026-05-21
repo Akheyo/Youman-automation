@@ -1,4 +1,4 @@
-name: Paletten Mini - Build Installer
+name: Youman - Build Installer
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
       - "claude/palette-optimizer-build-**"
     paths:
       - "paletten-optimierer/mini/**"
+      - "paletten-optimierer/assets/**"
       - ".github/workflows/paletten-mini.yml"
   workflow_dispatch:
     inputs:
@@ -172,15 +173,10 @@ jobs:
             Write-Host "WARN: kein selbsttest_status.json gefunden"
           }
 
-      - name: Icon erzeugen (Platzhalter, reuse aus Hauptapp)
+      - name: Icon aus Youman-Logo erzeugen (icon.ico)
         shell: pwsh
         working-directory: paletten-optimierer/mini/build
-        run: |
-          if (Test-Path "..\..\build\icon.ico") {
-            Copy-Item "..\..\build\icon.ico" "icon.ico"
-          } else {
-            python -c "from PIL import Image; img=Image.new('RGB',(256,256),'#2563eb'); img.save('icon.ico')"
-          }
+        run: python ../tools/make_icon.py ../../assets/youman_logo.png icon.ico
 
       - name: PyInstaller-Build
         shell: pwsh
@@ -202,7 +198,7 @@ jobs:
       - name: Artifact hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: PalettenMini-Setup-${{ steps.vars.outputs.version }}
+          name: Youman-Setup-${{ steps.vars.outputs.version }}
           path: paletten-optimierer/mini/build/output/*.exe
           if-no-files-found: error
           retention-days: 30
