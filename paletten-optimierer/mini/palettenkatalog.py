@@ -1,32 +1,41 @@
-"""Palettenkatalog — vom Nutzer gepflegte bekannte Paletten-Maße
-mit Einkaufs-/Verkaufspreis. Persistent im User-Profil.
+"""Palettenkatalog — vom Nutzer gepflegte Paletten-Maße mit Bestand,
+EK/VK, Verbrauchshäufigkeit. Persistent im User-Profil.
 
 Pfad:
   Windows:    %APPDATA%/PalettenMini/palettenkatalog.json
   Linux/Mac:  ~/.palettenmini/palettenkatalog.json
   ENV-Override: PALETTENMINI_KATALOG
 
-Schema pro Eintrag:
+Schema pro Eintrag (Spec §5):
   {
     "id": "uuid-hex",
     "datum_erstellt": "ISO8601",
-    "L_mm": int,            # Lange Seite (kanonisch: lang >= kurz)
-    "B_mm": int,            # Kurze Seite
+    "datum_geaendert": "ISO8601",       # last update
+    "name": str,                         # z.B. "Europalette"
+    "L_mm": int,                         # Lange Seite (kanonisch: lang >= kurz)
+    "B_mm": int,                         # Kurze Seite
+    "hoehe_mm": int,                     # optional (0 = unbekannt)
     "einkaufspreis_eur": float,
     "verkaufspreis_eur": float,
-    "bestand": int,         # aktueller Lagerbestand (Stueck)
-    "meldebestand": int,    # ab diesem Bestand wird gewarnt
-    "notiz": str,           # optional
-    "aktiv": bool           # nicht-aktive werden NICHT als Bonus benutzt
+    "bestand": int,                      # aktueller Lagerbestand (Stueck)
+    "meldebestand": int,                 # ab diesem Bestand wird gewarnt
+    "typ": str,                          # "standard" | "sonder" | "kombi-teil"
+    "quelle": str,                       # "manuell" | "auto_aus_optimierung"
+    "verbrauchshaeufigkeit": int,        # +1 pro Bestellung-getaetigt
+    "notiz": str,                        # optional
+    "aktiv": bool
   }
 
-Rueckwaerts-kompatibel: alte JSON-Eintraege ohne bestand/meldebestand
-werden als 0 interpretiert.
+Backward-kompatibel: alte JSON-Eintraege ohne neue Felder werden mit
+sinnvollen Defaults aufgefuellt (typ="standard", quelle="manuell",
+name="", hoehe_mm=0, verbrauchshaeufigkeit=0).
 
 Robust: korrupte/fehlende Datei -> [] (kein Crash).
 """
 from __future__ import annotations
 
+import csv
+import io
 import json
 import os
 import sys
@@ -58,9 +67,30 @@ def _read_raw() -> list[dict[str, Any]]:
         return []
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
-        return data if isinstance(data, list) else []
+        if not isinstance(data, list):
+            return []
+        # Migration: alten Eintraegen fehlende Felder auffuellen
+        for e in data:
+            _migriere_eintrag(e)
+        return data
     except (OSError, json.JSONDecodeError):
         return []
+
+
+def _migriere_eintrag(e: dict[str, Any]) -> None:
+    """Erweitert alte Eintraege um neue Felder ohne sie zu ueberschreiben."""
+    e.setdefault("name", "")
+    e.setdefault("hoehe_mm", 0)
+    e.setdefault("typ", "standard")
+    e.setdefault("quelle", "manuell")
+    e.setdefault("verbrauchshaeufigkeit", 0)
+    e.setdefault("bestand", 0)
+    e.setdefault("meldebestand", 0)
+    e.setdefault("notiz", "")
+    e.setdefault("aktiv", True)
+    e.setdefault("einkaufspreis_eur", 0.0)
+    e.setdefault("verkaufspreis_eur", 0.0)
+    e.setdefault("datum_geaendert", e.get("datum_erstellt", ""))
 
 
 def _write_raw(eintraege: list[dict[str, Any]]) -> None:
@@ -71,9 +101,17 @@ def _write_raw(eintraege: list[dict[str, Any]]) -> None:
 
 
 def _kanon(L: float, B: float) -> tuple[int, int]:
-    """Kanonische Form (lang, kurz). Eingaben sind int oder float."""
+    """Kanonische Form (lang, kurz)."""
     a, b = int(round(L)), int(round(B))
     return (max(a, b), min(a, b))
+
+
+def _now() -> str:
+    return datetime.now().isoformat(timespec="seconds")
+
+
+_TYP_ERLAUBT = {"standard", "sonder", "kombi-teil"}
+_QUELLE_ERLAUBT = {"manuell", "auto_aus_optimierung"}
 
 
 def neuer_eintrag(L: int, B: int,
@@ -82,20 +120,36 @@ def neuer_eintrag(L: int, B: int,
                    bestand: int = 0,
                    meldebestand: int = 0,
                    notiz: str = "",
-                   aktiv: bool = True) -> str:
+                   aktiv: bool = True,
+                   name: str = "",
+                   hoehe_mm: int = 0,
+                   typ: str = "standard",
+                   quelle: str = "manuell",
+                   verbrauchshaeufigkeit: int = 0) -> str:
     """Fuegt einen neuen Katalog-Eintrag hinzu. Maß wird kanonisiert.
     Liefert die id."""
     L_k, B_k = _kanon(L, B)
+    if typ not in _TYP_ERLAUBT:
+        typ = "standard"
+    if quelle not in _QUELLE_ERLAUBT:
+        quelle = "manuell"
     eid = uuid.uuid4().hex
+    jetzt = _now()
     eintrag = {
         "id": eid,
-        "datum_erstellt": datetime.now().isoformat(timespec="seconds"),
+        "datum_erstellt": jetzt,
+        "datum_geaendert": jetzt,
+        "name": str(name),
         "L_mm": L_k,
         "B_mm": B_k,
+        "hoehe_mm": int(max(0, hoehe_mm)),
         "einkaufspreis_eur": float(einkaufspreis),
         "verkaufspreis_eur": float(verkaufspreis),
-        "bestand": int(bestand),
-        "meldebestand": int(meldebestand),
+        "bestand": int(max(0, bestand)),
+        "meldebestand": int(max(0, meldebestand)),
+        "typ": typ,
+        "quelle": quelle,
+        "verbrauchshaeufigkeit": int(max(0, verbrauchshaeufigkeit)),
         "notiz": str(notiz),
         "aktiv": bool(aktiv),
     }
@@ -106,22 +160,28 @@ def neuer_eintrag(L: int, B: int,
 
 
 def update_eintrag(eintrag_id: str, **felder) -> bool:
-    """Aktualisiert ein paar Felder. Erlaubte Felder:
-    L_mm, B_mm, einkaufspreis_eur, verkaufspreis_eur,
-    bestand, meldebestand, notiz, aktiv."""
+    """Aktualisiert ein paar Felder."""
     erlaubt = {"L_mm", "B_mm", "einkaufspreis_eur",
                "verkaufspreis_eur", "bestand", "meldebestand",
-               "notiz", "aktiv"}
+               "notiz", "aktiv", "name", "hoehe_mm", "typ", "quelle",
+               "verbrauchshaeufigkeit"}
     h = _read_raw()
     for e in h:
         if e.get("id") == eintrag_id:
             for k, v in felder.items():
                 if k in erlaubt:
+                    if k in ("bestand", "meldebestand",
+                             "verbrauchshaeufigkeit", "hoehe_mm"):
+                        v = int(max(0, int(v)))
+                    if k == "typ" and v not in _TYP_ERLAUBT:
+                        continue
+                    if k == "quelle" and v not in _QUELLE_ERLAUBT:
+                        continue
                     e[k] = v
-            # Wenn L/B aktualisiert: kanonisieren
             if "L_mm" in felder or "B_mm" in felder:
                 L_k, B_k = _kanon(e.get("L_mm", 0), e.get("B_mm", 0))
                 e["L_mm"], e["B_mm"] = L_k, B_k
+            e["datum_geaendert"] = _now()
             _write_raw(h)
             return True
     return False
@@ -143,16 +203,25 @@ def alle() -> list[dict[str, Any]]:
 
 
 def aktive_masse() -> list[tuple[int, int]]:
-    """Liefert die aktiven Katalog-Maße als kanonische (kurz, lang)-Tupel.
-    Format passt zum Kern-Parameter ``katalog``."""
-    # WICHTIG: Kern v4 verwendet (cs, cl) = (kurze, lange) Seite.
+    """Liefert die aktiven Maße als (kurz, lang)-Tupel — passt zum Kern."""
     return [(min(e["L_mm"], e["B_mm"]), max(e["L_mm"], e["B_mm"]))
             for e in _read_raw() if e.get("aktiv", True)]
 
 
+def vollstaendig(e: dict[str, Any]) -> bool:
+    """Spec §5: 'vollständig' = EK > 0 UND VK > 0."""
+    return (float(e.get("einkaufspreis_eur", 0) or 0) > 0
+            and float(e.get("verkaufspreis_eur", 0) or 0) > 0)
+
+
+def unvollstaendige() -> list[dict[str, Any]]:
+    """Aktive Eintraege ohne EK oder VK — fuer Banner '§5'."""
+    return [e for e in _read_raw()
+            if e.get("aktiv", True) and not vollstaendig(e)]
+
+
 def lookup_preise(L: int, B: int) -> dict | None:
-    """Liefert Einkaufs- und Verkaufspreis fuer ein Maß (kanonisch
-    matchend) — None wenn nicht im Katalog oder inaktiv."""
+    """Liefert Preise + Bestand + ID fuer ein Maß (kanonisch matchend)."""
     cs_q, cl_q = min(L, B), max(L, B)
     for e in _read_raw():
         if not e.get("aktiv", True):
@@ -162,19 +231,57 @@ def lookup_preise(L: int, B: int) -> dict | None:
             return {
                 "einkaufspreis_eur": float(e.get("einkaufspreis_eur", 0.0)),
                 "verkaufspreis_eur": float(e.get("verkaufspreis_eur", 0.0)),
+                "bestand": int(e.get("bestand", 0)),
+                "verbrauchshaeufigkeit": int(e.get("verbrauchshaeufigkeit", 0)),
+                "name": e.get("name", ""),
                 "notiz": e.get("notiz", ""),
                 "id": e.get("id", ""),
+                "typ": e.get("typ", "standard"),
             }
     return None
 
 
+def lookup_id(L: int, B: int) -> str | None:
+    """Liefert die id eines aktiven Eintrags fuer das Maß."""
+    p = lookup_preise(L, B)
+    return p["id"] if p else None
+
+
 def set_bestand(eintrag_id: str, neu_bestand: int) -> bool:
-    """Spezialisierter Helper — setzt nur den Bestand eines Eintrags."""
+    """Setzt den Bestand absolut. Negative Werte werden auf 0 geclampt."""
     return update_eintrag(eintrag_id, bestand=int(max(0, neu_bestand)))
 
 
+def aendere_bestand(eintrag_id: str, delta: int) -> int | None:
+    """Erhoeht/vermindert den Bestand um delta. Bestand DARF negativ
+    werden (Vormerkung, Spec §12). Liefert neuen Bestand oder None."""
+    h = _read_raw()
+    for e in h:
+        if e.get("id") == eintrag_id:
+            neu = int(e.get("bestand", 0)) + int(delta)
+            e["bestand"] = neu
+            e["datum_geaendert"] = _now()
+            _write_raw(h)
+            return neu
+    return None
+
+
+def inkrement_verbrauch(eintrag_id: str, delta: int = 1) -> int | None:
+    """Erhoeht Verbrauchshäufigkeit. Liefert neuen Wert oder None."""
+    h = _read_raw()
+    for e in h:
+        if e.get("id") == eintrag_id:
+            neu = int(e.get("verbrauchshaeufigkeit", 0)) + int(delta)
+            e["verbrauchshaeufigkeit"] = max(0, neu)
+            e["datum_geaendert"] = _now()
+            _write_raw(h)
+            return e["verbrauchshaeufigkeit"]
+    return None
+
+
 def kritische_bestaende() -> list[dict[str, Any]]:
-    """Liefert alle aktiven Eintraege, bei denen bestand <= meldebestand."""
+    """Liefert alle aktiven Eintraege, bei denen Bestand <= Meldebestand
+    und Meldebestand > 0."""
     out = []
     for e in _read_raw():
         if not e.get("aktiv", True):
@@ -191,3 +298,105 @@ def leere_katalog() -> int:
     n = len(h)
     _write_raw([])
     return n
+
+
+# ---------------------------------------------------------------------------
+# CSV-Import/Export (Spec §5)
+# ---------------------------------------------------------------------------
+CSV_SPALTEN = ("name", "laenge", "breite", "hoehe",
+               "bestand", "meldebestand", "ek", "vk",
+               "typ", "notiz")
+
+
+def nach_csv() -> str:
+    """Exportiert alle Eintraege als CSV-String (UTF-8, Semikolon).
+    Spalten: name;laenge;breite;hoehe;bestand;meldebestand;ek;vk;typ;notiz"""
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";", lineterminator="\n")
+    w.writerow(CSV_SPALTEN)
+    for e in _read_raw():
+        w.writerow([
+            e.get("name", ""),
+            int(e.get("L_mm", 0)),
+            int(e.get("B_mm", 0)),
+            int(e.get("hoehe_mm", 0)),
+            int(e.get("bestand", 0)),
+            int(e.get("meldebestand", 0)),
+            f"{float(e.get('einkaufspreis_eur', 0)):.2f}",
+            f"{float(e.get('verkaufspreis_eur', 0)):.2f}",
+            e.get("typ", "standard"),
+            e.get("notiz", ""),
+        ])
+    return buf.getvalue()
+
+
+def aus_csv(text: str, ersetze_alles: bool = False) -> dict[str, Any]:
+    """Liest CSV (UTF-8, Semikolon oder Komma).
+    Pflichtspalten: name, laenge, breite, bestand.
+    Optional: hoehe, meldebestand, ek, vk, typ, notiz.
+    Liefert dict mit 'importiert', 'fehler', 'gesamt'.
+    Spec §12: klare Fehlermeldung bei fehlenden Spalten."""
+    if not text or not text.strip():
+        return {"importiert": 0, "fehler": ["Leere Datei"], "gesamt": 0}
+    # Trenner-Sniff
+    erste_zeile = text.splitlines()[0]
+    delim = ";" if erste_zeile.count(";") >= erste_zeile.count(",") else ","
+    reader = csv.DictReader(io.StringIO(text), delimiter=delim)
+    header = [h.strip().lower() for h in (reader.fieldnames or [])]
+    reader.fieldnames = header  # normalisiere
+    pflicht = {"name", "laenge", "breite", "bestand"}
+    fehlend = pflicht - set(header)
+    if fehlend:
+        return {"importiert": 0,
+                "fehler": [f"Pflichtspalten fehlen: {sorted(fehlend)}. "
+                            f"Erwartet: {sorted(pflicht)}, gefunden: {header}"],
+                "gesamt": 0}
+
+    if ersetze_alles:
+        _write_raw([])
+
+    importiert, fehler = 0, []
+    for i, row in enumerate(reader, start=2):  # Zeile 2 = erste Datenzeile
+        try:
+            name = (row.get("name") or "").strip()
+            L = int(float((row.get("laenge") or "0").replace(",", ".")))
+            B = int(float((row.get("breite") or "0").replace(",", ".")))
+            bestand = int(float((row.get("bestand") or "0").replace(",", ".")))
+            if L <= 0 or B <= 0:
+                raise ValueError(f"Zeile {i}: L/B muss > 0 sein ({L}/{B})")
+            hoehe = int(float((row.get("hoehe") or "0").replace(",", ".")))
+            meld = int(float((row.get("meldebestand") or "0").replace(",", ".")))
+            ek = float((row.get("ek") or "0").replace(",", "."))
+            vk = float((row.get("vk") or "0").replace(",", "."))
+            typ = (row.get("typ") or "standard").strip().lower()
+            if typ not in _TYP_ERLAUBT:
+                typ = "standard"
+            notiz = (row.get("notiz") or "").strip()
+            neuer_eintrag(L, B,
+                          einkaufspreis=ek, verkaufspreis=vk,
+                          bestand=bestand, meldebestand=meld,
+                          notiz=notiz, name=name, hoehe_mm=hoehe,
+                          typ=typ, quelle="manuell")
+            importiert += 1
+        except Exception as exc:
+            fehler.append(f"Zeile {i}: {exc}")
+    return {"importiert": importiert, "fehler": fehler,
+            "gesamt": importiert + len(fehler)}
+
+
+def als_sonder_uebernehmen(L: int, B: int, hoehe_mm: int = 0,
+                            name: str = "") -> str:
+    """Spec §6b: legt einen neuen Eintrag fuer eine Sonder-/Kombi-Größe
+    aus der Optimierung an — typ='sonder', quelle='auto_aus_optimierung',
+    bestand=0, EK/VK leer (unvollstaendig). Liefert die id."""
+    L_k, B_k = _kanon(L, B)
+    if not name:
+        name = f"Sonder {L_k}×{B_k}"
+    return neuer_eintrag(
+        L_k, B_k,
+        einkaufspreis=0.0, verkaufspreis=0.0,
+        bestand=0, meldebestand=0,
+        notiz="Auto aus Optimierung — EK/VK nachtragen",
+        name=name, hoehe_mm=hoehe_mm,
+        typ="sonder", quelle="auto_aus_optimierung",
+    )

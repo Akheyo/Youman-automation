@@ -88,10 +88,12 @@ def _passt_heterogen(teile, last, Tk, Tl, Pk=None, Pl=None):
 
 DEFAULT_GEWICHTE = {
     "w1": 1.0,    # pro unterschiedlichem Palettentyp
-    "w2": 0.0,    # Σ benötigter Paletten (konstant - meist Info-only)
+    "w2": 0.0,    # Σ benötigter Paletten (Info, post-hoc im Score)
     "w3": 0.0,    # Verbrauchshäufigkeits-Match (negativ = Bonus)
-    "w4": 0.0,    # Σ Kosten der gewählten Standards
-    "w5": 0.0,    # extra Penalty pro Sonder-Typ (zusätzlich zu w1)
+    "w4": 0.0,    # Σ Einkaufskosten (EK · Σ menge)
+    "w5": 0.0,    # − Σ Marge (VK − EK) · Σ menge — Bonus
+    "w6": 0.0,    # extra Penalty pro Sonder-Typ (zusätzlich zu w1)
+    "w7": 0.0,    # pro Kombi-Zuordnung (Stapel oder heterogen)
 }
 
 
@@ -101,7 +103,8 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
               tol_kurz_pct=None, tol_lang_pct=None,
               sonder_erlaubt=True, sonder_min_artikel=0,
               sonder_aufschlag_mm=0,
-              gewichte=None, katalog_kosten=None, katalog_verbrauch=None):
+              gewichte=None, katalog_kosten=None, katalog_verbrauch=None,
+              katalog_marge=None, katalog_bestand=None):
     """
     orders: Liste dicts mit 'L','B','menge','auftrag','name'.
     tol_kurz_mm: max Übermaß auf der KURZ-Achse (Breite).
@@ -124,11 +127,20 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
         bündelt. 0 = kein Mindest-Bündel.
     sonder_aufschlag_mm: int. Bei der Erzeugung von Sonder-Kandidaten
         wird das Maß je Achse + Aufschlag verwendet (Sicherheitsmarge).
-    gewichte: dict mit w1..w5. Siehe DEFAULT_GEWICHTE oben:
-        Score = w1*(#Std + #Sonder) + w4*Σ_Kosten - w3*Σ_Verbrauch
-              + w5*#Sonder
-    katalog_kosten: dict (cs,cl) → kosten_eur (pro Standard) für w4.
-    katalog_verbrauch: dict (cs,cl) → verbrauch_score für w3.
+    gewichte: dict mit w1..w7 (Spec §7):
+        Score = w1·#Palettentypen
+              + w2·Σ Paletten (post-hoc info)
+              − w3·Σ Verbrauchshäufigkeit_match
+              + w4·Σ Einkaufskosten
+              − w5·Σ Marge
+              + w6·#Sonder-Typen
+              + w7·#Kombi-Zuordnungen (post-hoc)
+              + BIG·#nicht zuordenbar
+    katalog_kosten: dict (cs,cl) → EK_pro_Stueck (für w4).
+    katalog_verbrauch: dict (cs,cl) → verbrauchshäufigkeit (für w3).
+    katalog_marge: dict (cs,cl) → marge_pro_stueck (= VK − EK) für w5.
+    katalog_bestand: dict (cs,cl) → bestand (Spec §8 — Bestand > 0
+        bevorzugen). Wirkt als kleiner ε-Bonus auf der Objective.
     """
     if not orders:
         return {'standards': [], 'sonder': [], 'gesamt': 0,
@@ -136,6 +148,7 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
                 'verletzungen': [], 'nicht_zuordenbar': [],
                 'status': 'leer',
                 'score': 0.0, 'score_breakdown': {},
+                'bestand_nutzung': {},
                 'parameter': {'tol_kurz_mm': tol_kurz_mm,
                               'tol_lang_mm': tol_lang_mm or tol_kurz_mm,
                               'tol_kurz_pct': tol_kurz_pct,
@@ -145,7 +158,8 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
                               'sonder_deckel': sonder_deckel,
                               'sonder_erlaubt': sonder_erlaubt,
                               'sonder_min_artikel': sonder_min_artikel,
-                              'sonder_aufschlag_mm': sonder_aufschlag_mm}}
+                              'sonder_aufschlag_mm': sonder_aufschlag_mm,
+                              'gewichte': dict(DEFAULT_GEWICHTE)}}
 
     if tol_lang_mm is None:
         tol_lang_mm = tol_kurz_mm
@@ -219,35 +233,57 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
     katalog_indizes = [j for j, k in enumerate(keep) if k in katalog_set]
     sonder_indizes = [j for j, k in enumerate(keep) if k not in katalog_set]
 
-    # Ziel-Funktion (Score nach §3-Spec):
-    #   Σ_x [w1 + w4*kosten - w3*verbrauch]
-    # + Σ_x_sonder [w5]                       (extra Penalty)
-    # + Σ_z [w1 + w5]                          (Auftrags-eigene Sonder)
-    # + BIG * Σ_slack                          (nicht zuordenbar)
-    # - eps * Σ_x_katalog                      (Tie-Breaker)
+    # Ziel-Funktion (Score nach §7-Spec, 7 Gewichte):
+    #   Σ_x_katalog [w1 + w4·EK·meng_summe − w5·marge·meng_summe
+    #                − w3·verbrauch − bestand_bonus]
+    # + Σ_x_sonder [w1 + w6]                 (Sonder ueber Kandidaten)
+    # + Σ_z [w1 + w6]                         (Auftrags-eigene Sonder)
+    # + BIG · Σ_slack                         (nicht zuordenbar)
+    # − ε · Σ_x_katalog                       (klassischer Tie-Breaker)
+    # w2 (Σ Paletten) und w7 (Kombi-Count) wirken POST-HOC im Score —
+    # nicht im ILP-Objective.
     eps = 1.0 / max(1, len(katalog_indizes) + 2)
     kosten_map = {tuple(sorted(k)): float(v) for k, v in (katalog_kosten or {}).items()}
     verbrauch_map = {tuple(sorted(k)): float(v) for k, v in (katalog_verbrauch or {}).items()}
+    marge_map = {tuple(sorted(k)): float(v) for k, v in (katalog_marge or {}).items()}
+    bestand_map = {tuple(sorted(k)): int(v) for k, v in (katalog_bestand or {}).items()}
+
+    # menge_kand[j] = Σ menge der Auftraege die kand j theoretisch deckt.
+    # Pragma: pro x[j]=1 ein Approximations-Term für w4/w5.
+    mengen_pro_order = [int(o[2]) for o in O]
+    menge_kand = [sum(mengen_pro_order[i] for i in cov[j])
+                  for j in range(len(keep))]
+
+    # Bestand-Bonus: tie-breaking, nicht überwältigend.
+    # Spec §8 sagt Bestand > 0 zuerst — mit ε-Bonus pro x[j].
+    eps_bestand = 0.5 * eps
 
     obj_terms = []
     for j, kand in enumerate(keep):
         koeff = W["w1"]
-        # w4*Kosten (nur fuer Katalog-Maße)
-        if kand in katalog_set and kosten_map:
-            koeff += W["w4"] * kosten_map.get(kand, 0.0)
-        # w3*Verbrauch (negativ = Bonus, nur fuer Katalog)
-        if kand in katalog_set and verbrauch_map:
-            koeff -= W["w3"] * verbrauch_map.get(kand, 0.0)
-        # w5: extra Penalty pro NICHT-Katalog-Maß (= Sonder)
-        if kand not in katalog_set:
-            koeff += W["w5"]
-        obj_terms.append(koeff * x[j])
-        # Katalog-Tie-Breaker
         if kand in katalog_set:
-            obj_terms.append(-eps * x[j])
+            # w4: Σ EK-Kosten (= EK pro Stk × Menge der gedeckten Aufträge)
+            if kosten_map:
+                koeff += W["w4"] * kosten_map.get(kand, 0.0) * menge_kand[j]
+            # w5: − Σ Marge (= VK−EK × Menge)
+            if marge_map:
+                koeff -= W["w5"] * marge_map.get(kand, 0.0) * menge_kand[j]
+            # w3: Verbrauchshäufigkeit-Match (negativ = Bonus)
+            if verbrauch_map:
+                koeff -= W["w3"] * verbrauch_map.get(kand, 0.0)
+            # Bestand-Bonus (Spec §8 — Bestand priorisieren)
+            if bestand_map.get(kand, 0) > 0:
+                koeff -= eps_bestand
+            # Katalog-Tie-Breaker
+            koeff -= eps
+        else:
+            # Sonder: extra Penalty w6
+            koeff += W["w6"]
+        obj_terms.append(koeff * x[j])
+
     # z (Sonder = Auftragsmaß als eigene Palette) zaehlt als Sonder-Typ
     for zg in z.values():
-        obj_terms.append((W["w1"] + W["w5"]) * zg)
+        obj_terms.append((W["w1"] + W["w6"]) * zg)
     # Slack: hoher Penalty
     for sv in s_slack:
         obj_terms.append(BIG * sv)
@@ -375,21 +411,58 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
             if not _passt_heterogen(teile, (zg['L'], zg['B']), Tk, Tl, Pk, Pl):
                 verletzungen.append(zg)
 
-    # Score-Breakdown (Spec §3): einzelne Komponenten getrennt ausweisen
+    # === Score-Breakdown nach Spec §7 (alle 7 Gewichte exakt post-hoc) ===
     n_std_kat = sum(1 for s in standards if s in katalog_set)
     n_std_son = sum(1 for s in standards if s not in katalog_set)
     n_son_total = n_std_son + len(sonder_grp)  # vom Solver erzeugte neue Maße
+    n_typen_gesamt = len(standards) + len(sonder_grp)
     sum_paletten = sum(int(o[2]) for o in O)
-    sum_kosten = sum(kosten_map.get(s, 0.0) for s in standards if s in katalog_set)
+
+    # Mengen pro tatsaechlicher Zuordnung — fuer exakte EK/Marge im Score
+    sum_ek_pro_std: dict[tuple, float] = {}
+    sum_marge_pro_std: dict[tuple, float] = {}
+    bestand_nutzung: dict[tuple, dict] = {}
+    n_kombi = 0
+
+    for zg in zuordnung:
+        typ = zg.get('typ', '')
+        menge = int(zg.get('menge', 0))
+        if typ == 'Standard':
+            try:
+                a, b = zg['ziel'].split('x')
+                kand = (min(int(a), int(b)), max(int(a), int(b)))
+                if kand in katalog_set:
+                    sum_ek_pro_std[kand] = sum_ek_pro_std.get(kand, 0.0) + \
+                        kosten_map.get(kand, 0.0) * menge
+                    sum_marge_pro_std[kand] = sum_marge_pro_std.get(kand, 0.0) + \
+                        marge_map.get(kand, 0.0) * menge
+                    bn = bestand_nutzung.setdefault(kand, {
+                        "benoetigt": 0, "bestand": bestand_map.get(kand, 0),
+                        "differenz": 0,
+                    })
+                    bn["benoetigt"] += menge
+            except Exception:
+                pass
+        elif typ in ('Kombi-Stapel', 'Kombi-Heterogen'):
+            n_kombi += 1
+        # Sonder/Nicht zuordenbar = kein EK/Marge (kein Katalog-Match)
+
+    for kand, bn in bestand_nutzung.items():
+        bn["differenz"] = max(0, bn["benoetigt"] - bn["bestand"])
+
+    sum_kosten = sum(sum_ek_pro_std.values())
+    sum_marge = sum(sum_marge_pro_std.values())
     sum_verbrauch = sum(verbrauch_map.get(s, 0.0)
                          for s in standards if s in katalog_set)
-    n_typen_gesamt = len(standards) + len(sonder_grp)
+
     score_breakdown = {
         "w1_palettentypen": W["w1"] * n_typen_gesamt,
         "w2_gesamt_paletten": W["w2"] * sum_paletten,
         "w3_verbrauch_bonus": -W["w3"] * sum_verbrauch,
-        "w4_gesamtkosten": W["w4"] * sum_kosten,
-        "w5_sonder_penalty": W["w5"] * n_son_total,
+        "w4_gesamtkosten_ek": W["w4"] * sum_kosten,
+        "w5_marge_bonus": -W["w5"] * sum_marge,
+        "w6_sonder_penalty": W["w6"] * n_son_total,
+        "w7_kombi_penalty": W["w7"] * n_kombi,
         "slack_nicht_zuordenbar": BIG * len(nicht_zuordenbar_liste),
     }
     score = sum(score_breakdown.values())
@@ -404,6 +477,8 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
             'status': pulp.LpStatus[p.status],
             'score': score,
             'score_breakdown': score_breakdown,
+            'bestand_nutzung': {f"{k[1]}x{k[0]}": v
+                                  for k, v in bestand_nutzung.items()},
             'parameter': {'tol_kurz_mm': Tk, 'tol_lang_mm': Tl,
                           'tol_kurz_pct': Pk, 'tol_lang_pct': Pl,
                           'max_kombi_teile': K,

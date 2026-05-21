@@ -147,14 +147,21 @@ def init_state() -> None:
             "sonder_aufschlag_mm": 0,
             # Score-Gewichte (Spec §3)
             "w1": 1.0,   # Anzahl unterschiedlicher Palettentypen
-            "w2": 0.0,   # Σ Paletten (meist info-only)
-            "w3": 0.0,   # Verbrauchshäufigkeits-Bonus
-            "w4": 0.0,   # Σ Kosten
-            "w5": 0.0,   # Penalty pro Sonder-Typ
+            "w2": 0.0,   # Σ Paletten (info-only, post-hoc)
+            "w3": 0.0,   # Verbrauchshäufigkeits-Bonus (Bestand-Match)
+            "w4": 0.0,   # Σ EK-Kosten (Neubeschaffung)
+            "w5": 0.0,   # Marge-Bonus (negativ)
+            "w6": 0.0,   # Penalty pro Sonder-Typ
+            "w7": 0.0,   # Penalty pro Kombi-Zuordnung
             # Filter in der Ergebnis-Tabelle
             "ergebnis_filter": "alle",
         },
         "ergebnis": None,
+        "ergebnis_id": None,           # UUID pro Optimierungslauf
+        "bestellt_ergebnisse": set(),  # Idempotenz: schon-bestellte ergebnis_ids
+        "bestellt_pro_kand": {},        # pro (ergebnis_id, kand) bool
+        "neue_sonder_uebernommen": {}, # pro (ergebnis_id, kand) bool
+        "vergleich": None,             # Compare-Modus-Resultat
         "seite": "Datenimport",
     }
     for k, v in defaults.items():
@@ -226,6 +233,30 @@ with st.sidebar:
 selbsttest_banner()
 topbar("Youman Mini", "Industriepaletten · Standardisierung")
 step_indicator(aktiver_schritt())
+
+
+def _unvollstaendige_banner() -> None:
+    """Globaler Hinweis (Spec §5 + §11): X Paletten ohne EK/VK."""
+    try:
+        unvoll = katalog_modul.unvollstaendige()
+    except Exception:
+        return
+    if not unvoll:
+        return
+    n = len(unvoll)
+    st.markdown(
+        f'<div style="background:#fef3c7;border:1px solid #fde68a;'
+        f'color:#92400e;padding:8px 14px;border-radius:6px;'
+        f'margin-bottom:10px;font-size:13px;">'
+        f'⚠️ <b>{n}</b> Palette{"n" if n != 1 else ""} ohne EK/VK — '
+        f'im Tab <b>Katalog</b> nachtragen, damit Wirtschaftlichkeit '
+        f'und Score korrekt berechnet werden.'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
+_unvollstaendige_banner()
 
 
 # ---------------------------------------------------------------------------
@@ -457,36 +488,50 @@ def seite_einstellungen() -> None:
         )
         card_close()
 
-        card_open("Score-Gewichte (w1 – w5)")
+        card_open("Score-Gewichte (w1 – w7, Spec §7)")
         st.caption(
-            "Score = w1·#Palettentypen + w4·ΣKosten − w3·ΣVerbrauch "
-            "+ w5·#Sonder.  w2 = ΣPaletten (info-only). "
-            "Default: nur w1 wirkt (= klassisches Minimum)."
+            "Score = w1·#Typen + w2·ΣPaletten − w3·Verbrauch "
+            "+ w4·ΣEK − w5·ΣMarge + w6·#Sonder + w7·#Kombi.  "
+            "Default: nur w1 wirkt (klassisches Min-Typ-Optimum). "
+            "Bestand > 0 wird IMMER bevorzugt (Tie-Breaker, Spec §8)."
         )
         p["w1"] = st.slider(
-            "w1 — pro unterschiedlichem Palettentyp", 0.0, 5.0,
+            "w1 — # unterschiedlicher Palettentypen", 0.0, 5.0,
             float(p.get("w1", 1.0)), step=0.1, key="w1_in",
             help="Standard-Strafe — höher = weniger verschiedene Maße.",
         )
         p["w2"] = st.slider(
             "w2 — Σ benötigter Paletten (info)", 0.0, 1.0,
             float(p.get("w2", 0.0)), step=0.05, key="w2_in",
-            help="Reine Anzeige im Score-Breakdown.",
+            help="Info-Term im Score-Breakdown — beeinflusst Solver nicht.",
         )
         p["w3"] = st.slider(
-            "w3 — Verbrauchs-Bonus (Bestand)", 0.0, 5.0,
+            "w3 — Verbrauchs-Bonus (negativ = besser)", 0.0, 5.0,
             float(p.get("w3", 0.0)), step=0.1, key="w3_in",
-            help="Höher = Katalog-Maße mit hohem Bestand werden bevorzugt.",
+            help="Höher = Katalog-Maße mit hoher Verbrauchshäufigkeit "
+                 "werden bevorzugt.",
         )
         p["w4"] = st.slider(
-            "w4 — Σ Kosten (EUR/Stk Einkauf)", 0.0, 1.0,
+            "w4 — Σ Einkaufskosten", 0.0, 1.0,
             float(p.get("w4", 0.0)), step=0.05, key="w4_in",
-            help="Höher = preisgünstige Katalog-Maße werden bevorzugt.",
+            help="Höher = preisgünstige Katalog-Maße werden bevorzugt "
+                 "(EK · Σ Menge der gedeckten Aufträge).",
         )
         p["w5"] = st.slider(
-            "w5 — extra Penalty pro Sonder-Typ", 0.0, 10.0,
-            float(p.get("w5", 0.0)), step=0.5, key="w5_in",
+            "w5 — Σ Marge-Bonus (VK − EK)", 0.0, 1.0,
+            float(p.get("w5", 0.0)), step=0.05, key="w5_in",
+            help="Höher = Katalog-Maße mit hoher Marge werden bevorzugt.",
+        )
+        p["w6"] = st.slider(
+            "w6 — extra Penalty pro Sonder-Typ", 0.0, 10.0,
+            float(p.get("w6", 0.0)), step=0.5, key="w6_in",
             help="Zusätzlich zu w1 — höher = noch weniger Sonder.",
+        )
+        p["w7"] = st.slider(
+            "w7 — Penalty pro Kombi-Zuordnung", 0.0, 5.0,
+            float(p.get("w7", 0.0)), step=0.1, key="w7_in",
+            help="Post-hoc — höher = Kombi-Zuordnungen schlechter "
+                 "bewertet (Single-Standard bevorzugt).",
         )
         card_close()
 
@@ -556,27 +601,24 @@ def run_optimierung() -> None:
     sonder_erlaubt = bool(p.get("sonder_erlaubt", True))
     sonder_min = int(p.get("sonder_min_artikel", 0))
     sonder_auf = int(p.get("sonder_aufschlag_mm", 0))
-    gewichte = {
-        "w1": float(p.get("w1", 1.0)),
-        "w2": float(p.get("w2", 0.0)),
-        "w3": float(p.get("w3", 0.0)),
-        "w4": float(p.get("w4", 0.0)),
-        "w5": float(p.get("w5", 0.0)),
-    }
+    gewichte = {f"w{i}": float(p.get(f"w{i}", 0.0)) for i in range(1, 8)}
+    gewichte["w1"] = float(p.get("w1", 1.0))
 
     hinweis = (f"ILP-Solver (CBC) optimiert {len(orders)} Aufträge — "
                f"{modus_text}, "
                f"Kombi {'an' if kombi else 'aus'}, "
                f"Sonder-Deckel {deckel if deckel is not None else 'frei'}, "
                f"Sonder {'erlaubt' if sonder_erlaubt else 'verboten'}.")
-    # Katalog-Maße + Kosten/Verbrauch fuer Score-Gewichte
+    # Katalog-Maße + Kosten/Marge/Verbrauch/Bestand fuer Score-Gewichte
     try:
         kat_eintraege = katalog_modul.alle()
     except Exception:
         kat_eintraege = []
     kat_masse = []
     katalog_kosten: dict[tuple[int, int], float] = {}
+    katalog_marge: dict[tuple[int, int], float] = {}
     katalog_verbrauch: dict[tuple[int, int], float] = {}
+    katalog_bestand: dict[tuple[int, int], int] = {}
     for e in kat_eintraege:
         if not e.get("aktiv", True):
             continue
@@ -587,11 +629,18 @@ def run_optimierung() -> None:
             continue
         kat_masse.append((cs, cl))
         ek = float(e.get("einkaufspreis_eur", 0) or 0)
+        vk = float(e.get("verkaufspreis_eur", 0) or 0)
         if ek > 0:
             katalog_kosten[(cs, cl)] = ek
-        verbrauch = float(e.get("bestand", 0) or 0)
-        if verbrauch > 0:
-            katalog_verbrauch[(cs, cl)] = verbrauch
+        if vk > 0 and ek > 0:
+            katalog_marge[(cs, cl)] = vk - ek
+        # w3-Bonus = tatsaechliche Verbrauchshaufigkeit (Spec §7)
+        vh = int(e.get("verbrauchshaeufigkeit", 0) or 0)
+        if vh > 0:
+            katalog_verbrauch[(cs, cl)] = float(vh)
+        bestand = int(e.get("bestand", 0) or 0)
+        if bestand > 0:
+            katalog_bestand[(cs, cl)] = bestand
 
     with st.spinner(hinweis):
         res = optimiere(
@@ -610,8 +659,12 @@ def run_optimierung() -> None:
             sonder_aufschlag_mm=sonder_auf,
             gewichte=gewichte,
             katalog_kosten=katalog_kosten or None,
+            katalog_marge=katalog_marge or None,
             katalog_verbrauch=katalog_verbrauch or None,
+            katalog_bestand=katalog_bestand or None,
         )
+    import uuid as _uuid
+    st.session_state.ergebnis_id = _uuid.uuid4().hex
     # Artikelnummer + Roh-Palettenmaße aus Excel nachreichen
     for idx, zg in enumerate(res.get("zuordnung", [])):
         zg["artikelnummer"] = (artikel_lookup[idx]
@@ -782,6 +835,184 @@ def kpi_uebersicht() -> None:
     )
 
 
+def _dashboard_workflow(res: dict, katalog_set: set) -> None:
+    """Dashboard pro Paletten-Typ (Spec §6 + §10): Benoetigt / Bestand /
+    Differenz / EK gesamt + Aktionen 'Bestellung getätigt' und
+    'Als neue Größe übernehmen'. Idempotent per ergebnis_id."""
+    erg_id = st.session_state.get("ergebnis_id")
+    if not erg_id:
+        return
+
+    bn = res.get("bestand_nutzung", {}) or {}
+    # Σ Menge pro Standard-Maß aus zuordnung (auch Maße ohne Katalog)
+    from collections import defaultdict
+    std_menge: dict[tuple, int] = defaultdict(int)
+    sonder_menge: dict[tuple, int] = defaultdict(int)
+    nz_menge = 0
+    for z in res.get("zuordnung", []):
+        typ = z.get("typ", "")
+        menge = int(z.get("menge", 0))
+        if typ == "Standard":
+            try:
+                a, b = z["ziel"].split("x")
+                kand = (min(int(a), int(b)), max(int(a), int(b)))
+                std_menge[kand] += menge
+            except Exception:
+                pass
+        elif typ == "Sonder":
+            try:
+                a, b = z["ziel"].split("x")
+                kand = (min(int(a), int(b)), max(int(a), int(b)))
+                sonder_menge[kand] += menge
+            except Exception:
+                pass
+        elif typ == "Nicht zuordenbar":
+            nz_menge += menge
+
+    if not std_menge and not sonder_menge:
+        return
+
+    card_open("📋 Dashboard — Aktionen pro Paletten-Typ (Spec §6 + §10)")
+
+    rows = []
+    for kand, menge in sorted(std_menge.items()):
+        preise = katalog_modul.lookup_preise(kand[1], kand[0])
+        bestand_aktuell = int(preise["bestand"]) if preise else 0
+        ek = float(preise["einkaufspreis_eur"]) if preise else 0.0
+        vk = float(preise["verkaufspreis_eur"]) if preise else 0.0
+        diff = max(0, menge - bestand_aktuell)
+        rows.append({
+            "kand": kand,
+            "typ": "Standard",
+            "name": (preise.get("name", "") if preise else ""),
+            "benoetigt": menge,
+            "bestand": bestand_aktuell,
+            "differenz": diff,
+            "ek_gesamt": diff * ek,
+            "vk_gesamt": menge * vk if vk > 0 else 0.0,
+            "kat_id": preise["id"] if preise else None,
+            "vollstaendig": (preise is not None and ek > 0 and vk > 0),
+        })
+    for kand, menge in sorted(sonder_menge.items()):
+        preise = katalog_modul.lookup_preise(kand[1], kand[0])
+        rows.append({
+            "kand": kand,
+            "typ": "Sonder",
+            "name": (preise.get("name", "") if preise else "—"),
+            "benoetigt": menge,
+            "bestand": int(preise["bestand"]) if preise else 0,
+            "differenz": menge - (int(preise["bestand"]) if preise else 0),
+            "ek_gesamt": 0.0,
+            "vk_gesamt": 0.0,
+            "kat_id": preise["id"] if preise else None,
+            "vollstaendig": False,
+        })
+
+    # Status-Spalte Render
+    bestellt_set = st.session_state.get("bestellt_pro_kand", {})
+    uebernommen_set = st.session_state.get("neue_sonder_uebernommen", {})
+    for r in rows:
+        key = (erg_id, r["kand"])
+        r["bestellt"] = bool(bestellt_set.get(key))
+        r["uebernommen"] = bool(uebernommen_set.get(key))
+
+    # Tabelle
+    df_disp = pd.DataFrame([
+        {
+            "Typ": r["typ"],
+            "Name": r["name"],
+            "Maß (mm)": f"{r['kand'][1]} × {r['kand'][0]}",
+            "Benötigt": r["benoetigt"],
+            "Bestand": r["bestand"],
+            "Differenz": r["differenz"],
+            "EK gesamt (€)": r["ek_gesamt"],
+            "Status": (
+                "✓ bestellt" if r["bestellt"]
+                else ("➕ übernommen" if r["uebernommen"]
+                      else ("⚠ EK/VK fehlt" if not r["vollstaendig"]
+                            else "offen"))
+            ),
+        }
+        for r in rows
+    ])
+    st.dataframe(
+        df_disp, use_container_width=True, hide_index=True,
+        column_config={
+            "Benötigt": st.column_config.NumberColumn(format="%d"),
+            "Bestand": st.column_config.NumberColumn(format="%d"),
+            "Differenz": st.column_config.NumberColumn(format="%d"),
+            "EK gesamt (€)": st.column_config.NumberColumn(format="%.2f €"),
+        },
+    )
+
+    if nz_menge > 0:
+        st.warning(
+            f"⚠️ {nz_menge} Paletten in 'Nicht zuordenbar' — Toleranz "
+            f"erweitern oder Sonderpaletten zulassen."
+        )
+
+    # Aktions-Buttons pro Zeile
+    st.markdown("**Aktionen pro Typ**")
+    for i, r in enumerate(rows):
+        c1, c2, c3, c4 = st.columns([2, 1, 1.4, 1.4])
+        c1.markdown(
+            f"<div style='padding-top:6px;font-size:13px;'>"
+            f"<b>{r['typ']}</b> · {r['kand'][1]} × {r['kand'][0]} mm — "
+            f"{r['benoetigt']} benötigt / Bestand {r['bestand']} / "
+            f"Differenz <b>{r['differenz']}</b></div>",
+            unsafe_allow_html=True,
+        )
+        key = (erg_id, r["kand"])
+        # "Bestellung getätigt" — nur fuer Maße mit Katalog-Eintrag
+        if r["kat_id"]:
+            if r["bestellt"]:
+                c2.success("✓ bestellt")
+            else:
+                if c2.button("📦 Bestellung", key=f"bes_{i}",
+                              help="Bestand wird um Benötigt reduziert "
+                                   "(Vormerkung erlaubt). Idempotent."):
+                    katalog_modul.aendere_bestand(r["kat_id"],
+                                                    -r["benoetigt"])
+                    katalog_modul.inkrement_verbrauch(r["kat_id"])
+                    bestellt_set[key] = True
+                    st.session_state.bestellt_pro_kand = bestellt_set
+                    st.session_state.bestellt_ergebnisse = \
+                        st.session_state.get("bestellt_ergebnisse",
+                                              set()) | {erg_id}
+                    st.rerun()
+        else:
+            c2.caption("kein Katalog")
+
+        # "Als neue Größe übernehmen" — fuer Sonder ohne Katalog
+        if r["typ"] == "Sonder" and not r["kat_id"]:
+            if r["uebernommen"]:
+                c3.success("➕ angelegt")
+            else:
+                if c3.button("➕ neue Größe übernehmen", key=f"snd_{i}"):
+                    nid = katalog_modul.als_sonder_uebernehmen(
+                        r["kand"][1], r["kand"][0]
+                    )
+                    uebernommen_set[key] = nid
+                    st.session_state.neue_sonder_uebernommen = uebernommen_set
+                    st.success(
+                        f"Neue Palettengröße {r['kand'][1]}×{r['kand'][0]} "
+                        f"angelegt. Bitte EK und VK im Bestand nachtragen."
+                    )
+                    st.rerun()
+        elif r["typ"] == "Sonder" and r["kat_id"]:
+            c3.caption("bereits im Katalog")
+
+        # Marge anzeigen wenn vorhanden
+        if r["vollstaendig"]:
+            marge = (r["vk_gesamt"] - r["benoetigt"]
+                      * float(katalog_modul.lookup_preise(r['kand'][1],
+                              r['kand'][0])['einkaufspreis_eur']))
+            c4.metric("Marge gesamt", f"{marge:.2f} €",
+                       label_visibility="visible")
+
+    card_close()
+
+
 def seite_ergebnisse() -> None:
     if st.session_state.ergebnis is None:
         st.info("Erst optimieren.")
@@ -926,7 +1157,7 @@ def seite_ergebnisse() -> None:
                    "Kombi und Sonder fehlen — Preise dort unbekannt.")
         card_close()
 
-    # --- Score-Breakdown (alle 5 Gewichte sichtbar) ---
+    # --- Score-Breakdown (alle 7 Gewichte sichtbar, Spec §7) ---
     bd = res.get("score_breakdown") or {}
     if bd:
         card_open(f"📊 Score-Breakdown — Gesamt {res.get('score', 0.0):.2f}")
@@ -934,8 +1165,10 @@ def seite_ergebnisse() -> None:
             ("w1 · # Palettentypen", bd.get("w1_palettentypen", 0.0)),
             ("w2 · Σ Paletten (info)", bd.get("w2_gesamt_paletten", 0.0)),
             ("w3 · Verbrauchs-Bonus", bd.get("w3_verbrauch_bonus", 0.0)),
-            ("w4 · Σ Kosten", bd.get("w4_gesamtkosten", 0.0)),
-            ("w5 · Sonder-Penalty", bd.get("w5_sonder_penalty", 0.0)),
+            ("w4 · Σ EK-Kosten", bd.get("w4_gesamtkosten_ek", 0.0)),
+            ("w5 · Marge-Bonus", bd.get("w5_marge_bonus", 0.0)),
+            ("w6 · Sonder-Penalty", bd.get("w6_sonder_penalty", 0.0)),
+            ("w7 · Kombi-Penalty", bd.get("w7_kombi_penalty", 0.0)),
             ("BIG · # nicht zuordenbar", bd.get("slack_nicht_zuordenbar", 0.0)),
         ]
         df_score = pd.DataFrame(
@@ -991,6 +1224,11 @@ def seite_ergebnisse() -> None:
         ]
     else:
         res_gefiltert = res
+
+    # --- Dashboard-Workflow (Spec §6 + §10): pro Standard
+    # Benoetigt / Bestand / Differenz + "Bestellung getätigt"-Button.
+    # Sonder ohne Katalog-Match: "Als neue Größe übernehmen"-Button.
+    _dashboard_workflow(res, katalog_set)
 
     cl, cr = st.columns([2, 1])
     with cl:
@@ -1304,6 +1542,13 @@ def seite_katalog() -> None:
 
     # === Neuer Eintrag anlegen ===
     with st.expander("➕ Neue Palette hinzufügen", expanded=not eintraege):
+        c0a, c0b = st.columns([2, 1])
+        with c0a:
+            n_name = st.text_input("Name", value="", key="kat_new_name",
+                                    placeholder="z.B. Europalette")
+        with c0b:
+            n_typ = st.selectbox("Typ", ["standard", "sonder", "kombi-teil"],
+                                  index=0, key="kat_new_typ")
         c1, c2, c3, c4 = st.columns([1, 1, 1.2, 1.2])
         with c1:
             n_L = st.number_input("Länge (mm)", min_value=0, max_value=10000,
@@ -1312,40 +1557,92 @@ def seite_katalog() -> None:
             n_B = st.number_input("Breite (mm)", min_value=0, max_value=10000,
                                    value=800, step=10, key="kat_new_B")
         with c3:
+            n_hoehe = st.number_input("Höhe (mm, optional)", min_value=0,
+                                       max_value=5000, value=0, step=5,
+                                       key="kat_new_hoehe",
+                                       help="0 = nicht angegeben.")
+        with c4:
             n_ek = st.number_input("Einkaufspreis (€)", min_value=0.0,
                                     value=0.0, step=0.50, format="%.2f",
                                     key="kat_new_ek")
-        with c4:
+        c5, c6, c7, c8 = st.columns([1, 1, 1, 2])
+        with c5:
             n_vk = st.number_input("Verkaufspreis (€)", min_value=0.0,
                                     value=0.0, step=0.50, format="%.2f",
                                     key="kat_new_vk")
-        c5, c6, c7 = st.columns([1, 1, 2])
-        with c5:
+        with c6:
             n_best = st.number_input("Bestand (Stk)", min_value=0,
                                       max_value=100000, value=0, step=1,
                                       key="kat_new_best",
                                       help="Aktuelle Lagermenge in Stück.")
-        with c6:
+        with c7:
             n_meld = st.number_input("Meldebestand (Stk)", min_value=0,
                                       max_value=100000, value=0, step=1,
                                       key="kat_new_meld",
-                                      help="Warnung wenn Bestand ≤ diesem Wert.")
-        with c7:
+                                      help="Warnung wenn Bestand ≤ Wert.")
+        with c8:
             n_notiz = st.text_input("Notiz (optional)", value="",
                                      key="kat_new_notiz")
+        # Validierung VK >= EK (Warnung, nicht hart)
+        if n_vk > 0 and n_ek > 0 and n_vk < n_ek:
+            st.warning("VK < EK — negative Marge. Wirklich speichern?")
         if st.button("Palette hinzufügen", type="primary",
                       use_container_width=True, key="kat_add_btn"):
             if n_L > 0 and n_B > 0:
                 katalog_modul.neuer_eintrag(int(n_L), int(n_B),
                                             float(n_ek), float(n_vk),
                                             int(n_best), int(n_meld),
-                                            n_notiz, aktiv=True)
+                                            n_notiz, aktiv=True,
+                                            name=n_name,
+                                            hoehe_mm=int(n_hoehe),
+                                            typ=n_typ,
+                                            quelle="manuell")
                 st.success(f"Eintrag {int(max(n_L,n_B))}×{int(min(n_L,n_B))} "
                            f"hinzugefügt.")
                 st.rerun()
             else:
                 st.error("Länge und Breite müssen > 0 sein.")
     card_close()
+
+    # === CSV-Import/Export (Spec §5) ===
+    with st.expander("📂 CSV-Import / -Export", expanded=False):
+        st.caption(
+            "Spalten: `name;laenge;breite;hoehe;bestand;meldebestand;ek;vk;typ;notiz`. "
+            "Trenner Semikolon oder Komma, UTF-8. Pflicht: name, laenge, "
+            "breite, bestand."
+        )
+        c_imp, c_exp = st.columns(2)
+        with c_imp:
+            uploaded = st.file_uploader("CSV hochladen", type=["csv"],
+                                          key="kat_csv_up")
+            ersetzen = st.toggle("Bestehende Einträge ersetzen",
+                                  value=False, key="kat_csv_ersetzen",
+                                  help="ON = Katalog wird vorher geleert.")
+            if uploaded and st.button("CSV importieren", key="kat_csv_imp_btn"):
+                try:
+                    text = uploaded.read().decode("utf-8", errors="replace")
+                except Exception:
+                    text = uploaded.read().decode("latin-1", errors="replace")
+                erg = katalog_modul.aus_csv(text, ersetze_alles=ersetzen)
+                if erg["importiert"] > 0:
+                    st.success(f"{erg['importiert']} Einträge importiert.")
+                if erg["fehler"]:
+                    st.error(
+                        f"{len(erg['fehler'])} Fehler:\n" +
+                        "\n".join(f"• {f}" for f in erg["fehler"][:10])
+                    )
+                if erg["importiert"] > 0:
+                    st.rerun()
+        with c_exp:
+            csv_text = katalog_modul.nach_csv()
+            st.download_button(
+                "📥 Katalog als CSV exportieren",
+                data=csv_text.encode("utf-8"),
+                file_name="palettenkatalog.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+            st.caption(f"{len(eintraege)} Einträge bereit zum Export.")
 
     if not eintraege:
         st.info("Noch keine Paletten im Katalog. Füge oben welche hinzu — "
@@ -1358,17 +1655,23 @@ def seite_katalog() -> None:
     df = pd.DataFrame([
         {
             "id": e["id"],
+            "Name": e.get("name", ""),
+            "Typ": e.get("typ", "standard"),
             "Länge": e["L_mm"],
             "Breite": e["B_mm"],
+            "Höhe": int(e.get("hoehe_mm", 0)) or "—",
             "Einkauf (€)": e.get("einkaufspreis_eur", 0.0),
             "Verkauf (€)": e.get("verkaufspreis_eur", 0.0),
             "Marge (€)": (e.get("verkaufspreis_eur", 0.0)
                           - e.get("einkaufspreis_eur", 0.0)),
             "Bestand": int(e.get("bestand", 0)),
             "Meldebestand": int(e.get("meldebestand", 0)),
+            "Verbrauch": int(e.get("verbrauchshaeufigkeit", 0)),
+            "Vollständig": "✓" if katalog_modul.vollstaendig(e) else "⚠️ EK/VK",
             "Status": ("⚠️ niedrig" if (int(e.get("meldebestand", 0)) > 0
                        and int(e.get("bestand", 0))
                        <= int(e.get("meldebestand", 0))) else "✓ ok"),
+            "Quelle": e.get("quelle", "manuell"),
             "Aktiv": e.get("aktiv", True),
             "Notiz": e.get("notiz", ""),
         }
@@ -1382,6 +1685,7 @@ def seite_katalog() -> None:
                      "Marge (€)":     st.column_config.NumberColumn(format="%.2f €"),
                      "Bestand":       st.column_config.NumberColumn(format="%d"),
                      "Meldebestand":  st.column_config.NumberColumn(format="%d"),
+                     "Verbrauch":     st.column_config.NumberColumn(format="%d"),
                      "Aktiv":         st.column_config.CheckboxColumn(),
                  })
 
@@ -1396,8 +1700,22 @@ def seite_katalog() -> None:
         key="kat_sel",
     )
     eintrag = eintraege[auswahl_idx]
-    with st.expander(f"Bearbeiten: {eintrag['L_mm']}×{eintrag['B_mm']}",
-                      expanded=False):
+    titel = (eintrag.get("name", "") or
+              f"{eintrag['L_mm']}×{eintrag['B_mm']}")
+    with st.expander(f"Bearbeiten: {titel}", expanded=False):
+        c0a, c0b = st.columns([2, 1])
+        with c0a:
+            e_name = st.text_input("Name",
+                                     value=eintrag.get("name", ""),
+                                     key=f"kat_edit_name_{eintrag['id']}")
+        with c0b:
+            typ_opt = ["standard", "sonder", "kombi-teil"]
+            e_typ = st.selectbox(
+                "Typ", typ_opt,
+                index=typ_opt.index(eintrag.get("typ", "standard"))
+                       if eintrag.get("typ", "standard") in typ_opt else 0,
+                key=f"kat_edit_typ_{eintrag['id']}",
+            )
         c1, c2, c3, c4 = st.columns([1, 1, 1.2, 1.2])
         with c1:
             e_L = st.number_input("Länge (mm)", min_value=0, max_value=10000,
@@ -1408,30 +1726,38 @@ def seite_katalog() -> None:
                                    value=int(eintrag["B_mm"]), step=10,
                                    key=f"kat_edit_B_{eintrag['id']}")
         with c3:
+            e_hoehe = st.number_input("Höhe (mm)", min_value=0,
+                                       max_value=5000,
+                                       value=int(eintrag.get("hoehe_mm", 0)),
+                                       step=5,
+                                       key=f"kat_edit_hoehe_{eintrag['id']}")
+        with c4:
             e_ek = st.number_input("Einkaufspreis (€)", min_value=0.0,
                                     value=float(eintrag.get("einkaufspreis_eur", 0.0)),
                                     step=0.50, format="%.2f",
                                     key=f"kat_edit_ek_{eintrag['id']}")
-        with c4:
+        c5, c6, c7 = st.columns([1.2, 1, 1])
+        with c5:
             e_vk = st.number_input("Verkaufspreis (€)", min_value=0.0,
                                     value=float(eintrag.get("verkaufspreis_eur", 0.0)),
                                     step=0.50, format="%.2f",
                                     key=f"kat_edit_vk_{eintrag['id']}")
-        c5, c6 = st.columns([1, 1])
-        with c5:
-            e_best = st.number_input("Bestand (Stk)", min_value=0,
+        with c6:
+            e_best = st.number_input("Bestand (Stk)", min_value=-100000,
                                       max_value=100000,
                                       value=int(eintrag.get("bestand", 0)),
                                       step=1,
                                       key=f"kat_edit_best_{eintrag['id']}",
                                       help="Aktuelle Lagermenge.")
-        with c6:
+        with c7:
             e_meld = st.number_input("Meldebestand (Stk)", min_value=0,
                                       max_value=100000,
                                       value=int(eintrag.get("meldebestand", 0)),
                                       step=1,
                                       key=f"kat_edit_meld_{eintrag['id']}",
                                       help="Warnung wenn Bestand ≤ diesem Wert.")
+        if e_vk > 0 and e_ek > 0 and e_vk < e_ek:
+            st.warning("VK < EK — negative Marge.")
         e_notiz = st.text_input("Notiz", value=eintrag.get("notiz", ""),
                                  key=f"kat_edit_notiz_{eintrag['id']}")
         e_aktiv = st.toggle("Aktiv (wird vom Optimierer berücksichtigt)",
@@ -1441,11 +1767,14 @@ def seite_katalog() -> None:
         if cs.button("💾 Speichern", type="primary",
                       use_container_width=True,
                       key=f"kat_save_{eintrag['id']}"):
-            katalog_modul.update_eintrag(eintrag["id"], L_mm=int(e_L),
-                                          B_mm=int(e_B),
+            katalog_modul.update_eintrag(eintrag["id"],
+                                          name=e_name,
+                                          typ=e_typ,
+                                          L_mm=int(e_L), B_mm=int(e_B),
+                                          hoehe_mm=int(e_hoehe),
                                           einkaufspreis_eur=float(e_ek),
                                           verkaufspreis_eur=float(e_vk),
-                                          bestand=int(e_best),
+                                          bestand=int(max(0, e_best)),
                                           meldebestand=int(e_meld),
                                           notiz=e_notiz, aktiv=bool(e_aktiv))
             st.success("Gespeichert.")

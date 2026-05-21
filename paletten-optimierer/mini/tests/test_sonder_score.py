@@ -120,8 +120,8 @@ def test_e_sonder_aufschlag_mm():
     assert r50["parameter"]["sonder_aufschlag_mm"] == 50
 
 
-def test_f_score_breakdown_alle_5_gewichte():
-    """Score-Breakdown enthält alle Komponenten und ist additiv = score."""
+def test_f_score_breakdown_alle_7_gewichte():
+    """Score-Breakdown enthält alle 7 Komponenten und ist additiv = score."""
     orders = [
         {'L': 1200, 'B': 800, 'menge': 3, 'auftrag': 'A', 'name': ''},
         {'L': 1500, 'B': 1000, 'menge': 2, 'auftrag': 'B', 'name': ''},
@@ -130,8 +130,10 @@ def test_f_score_breakdown_alle_5_gewichte():
     r = optimiere(orders, tol_kurz_mm=50, tol_lang_mm=50,
                   katalog=katalog,
                   gewichte={"w1": 1.0, "w2": 0.1, "w3": 0.5,
-                            "w4": 0.2, "w5": 2.0},
+                            "w4": 0.2, "w5": 0.1, "w6": 2.0,
+                            "w7": 0.5},
                   katalog_kosten={(800, 1200): 14.5, (1000, 1500): 18.0},
+                  katalog_marge={(800, 1200): 8.0, (1000, 1500): 10.0},
                   katalog_verbrauch={(800, 1200): 100.0,
                                       (1000, 1500): 50.0})
     bd = r["score_breakdown"]
@@ -141,17 +143,17 @@ def test_f_score_breakdown_alle_5_gewichte():
     assert abs(erwartet - r["score"]) < 1e-6, (
         f"Σ Komponenten {erwartet} ≠ score {r['score']}"
     )
-    # Alle 6 Schluessel vorhanden (5 Gewichte + slack)
     for k in ("w1_palettentypen", "w2_gesamt_paletten",
-              "w3_verbrauch_bonus", "w4_gesamtkosten",
-              "w5_sonder_penalty", "slack_nicht_zuordenbar"):
+              "w3_verbrauch_bonus", "w4_gesamtkosten_ek",
+              "w5_marge_bonus", "w6_sonder_penalty", "w7_kombi_penalty",
+              "slack_nicht_zuordenbar"):
         assert k in bd, f"Fehlend: {k}"
 
 
-def test_g_w5_reduziert_sonder():
-    """Hohes w5 (Sonder-Penalty) erzwingt Solver weg von Sonder.
+def test_g_w6_reduziert_sonder():
+    """Hohes w6 (Sonder-Penalty) erzwingt Solver weg von Sonder.
     Setup: 2 Auftraege, einer exotisch — ohne Penalty waere ein
-    Standard + ein Sonder optimal, mit hohem w5 + freier Toleranz
+    Standard + ein Sonder optimal, mit hohem w6 + freier Toleranz
     waere 1 großer Standard fuer beide besser."""
     orders = [
         {'L': 1000, 'B': 800, 'menge': 10, 'auftrag': 'A', 'name': ''},
@@ -159,13 +161,13 @@ def test_g_w5_reduziert_sonder():
     ]
     # Enge Toleranz: Auftrag B muss eigener Sonder werden
     r_lo = optimiere(orders, tol_kurz_mm=50, tol_lang_mm=50,
-                     gewichte={"w1": 1.0, "w5": 0.0})
-    # Weite Toleranz + hohes w5: 1 Std (900, 1200) deckt beide -> 1 Typ
+                     gewichte={"w1": 1.0, "w6": 0.0})
+    # Weite Toleranz + hohes w6: 1 Std (900, 1200) deckt beide -> 1 Typ
     r_hi = optimiere(orders, tol_kurz_mm=200, tol_lang_mm=200,
-                     gewichte={"w1": 1.0, "w5": 5.0})
-    print(f"  enge+w5=0: gesamt={r_lo['gesamt']} "
+                     gewichte={"w1": 1.0, "w6": 5.0})
+    print(f"  enge+w6=0: gesamt={r_lo['gesamt']} "
           f"son={len(r_lo['sonder'])}")
-    print(f"  weit+w5=5: gesamt={r_hi['gesamt']} "
+    print(f"  weit+w6=5: gesamt={r_hi['gesamt']} "
           f"son={len(r_hi['sonder'])}")
     assert r_lo["gesamt"] >= r_hi["gesamt"]
 
@@ -235,8 +237,8 @@ if __name__ == "__main__":
         test_c_sonder_verboten_katalog_deckt_alle,
         test_d_sonder_min_artikel,
         test_e_sonder_aufschlag_mm,
-        test_f_score_breakdown_alle_5_gewichte,
-        test_g_w5_reduziert_sonder,
+        test_f_score_breakdown_alle_7_gewichte,
+        test_g_w6_reduziert_sonder,
         test_h_leere_auftrag_liste,
         test_i_leerer_katalog_sonder_verboten,
         test_j_w4_bevorzugt_guenstige_katalog_maße,

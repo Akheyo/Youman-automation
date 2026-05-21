@@ -122,6 +122,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_sonder_score.py
 
+      - name: Pflicht-Test Bestandsverwaltung + Dashboard-Workflow
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_bestand_workflow.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |
