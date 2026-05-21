@@ -101,14 +101,15 @@ CSS = f"""
         color: #fff !important; font-weight: 600;
     }}
     .sidebar-brand {{
-        display: flex; align-items: center; gap: 12px;
-        padding: 22px 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.06);
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        padding: 22px 14px 24px; border-bottom: 1px solid rgba(255,255,255,0.06);
         margin-bottom: 14px;
     }}
-    .sidebar-brand img {{ width: 38px; height: 38px; border-radius: 8px;
-        background: #fff; padding: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);}}
-    .sidebar-brand .name {{ color: #fff; font-weight: 800; font-size: 22px; line-height: 1; letter-spacing: -0.5px;}}
-    .sidebar-brand .sub  {{ color: #94a3b8; font-size: 11px; margin-top: 4px; letter-spacing: 0.3px;}}
+    .sidebar-brand img {{ width: 100%; max-width: 200px; height: auto;
+        background: #fff; padding: 8px 12px; border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15);}}
+    .sidebar-brand .sub  {{ color: #94a3b8; font-size: 10px; letter-spacing: 0.4px;
+        text-transform: uppercase; text-align: center;}}
     .sidebar-section-label {{
         font-size: 10px; color: #64748b; font-weight: 700;
         text-transform: uppercase; letter-spacing: 1px;
@@ -126,10 +127,8 @@ CSS = f"""
         display: flex; justify-content: space-between; align-items: center;
         margin-bottom: 14px; gap: 16px;
     }}
-    .topbar .titleblock {{ display: flex; align-items: center; gap: 14px; }}
-    .topbar img {{ width: 56px; height: 56px; border-radius: 10px;
-        box-shadow: 0 2px 6px rgba(15,31,61,0.12); }}
-    .topbar .title {{ color: {PRIMARY_LIGHT}; font-size: 28px; font-weight: 800; line-height: 1; letter-spacing: -0.5px;}}
+    .topbar .titleblock {{ display: flex; align-items: center; gap: 16px; }}
+    .topbar img {{ height: 52px; width: auto; max-width: 220px; }}
     .topbar .sub   {{ color: #6b7280; font-size: 12px; margin-top: 4px;}}
     .topbar .stamp {{
         font-family: ui-monospace, SF Mono, Menlo, monospace;
@@ -284,15 +283,16 @@ def build_stempel() -> str:
 
 
 def topbar(title: str, sub: str) -> None:
-    """Header oben mit Logo, Titel, Sub und Build-Stempel."""
+    """Header oben mit Logo, Sub und Build-Stempel. Der Titel ist im
+    Logo-Wordmark enthalten — daneben steht nur noch der Sub-Text."""
     logo = _logo_base64()
-    logo_html = (f'<img src="{logo}" alt="Youman">' if logo else "")
+    logo_html = (f'<img src="{logo}" alt="Youman Automation">'
+                  if logo else f'<div class="title">{escape(title)}</div>')
     st.markdown(
         f'<div class="topbar">'
         f'  <div class="titleblock">'
         f'    {logo_html}'
-        f'    <div><div class="title">{escape(title)}</div>'
-        f'         <div class="sub">{escape(sub)}</div></div>'
+        f'    <div class="sub">{escape(sub)}</div>'
         f'  </div>'
         f'  <div class="stamp">{escape(build_stempel())}</div>'
         f'</div>',
@@ -335,12 +335,14 @@ def disabled_feature(name: str, grund: str = "in dieser Mini-Version nicht verf�
 
 def sidebar_brand() -> None:
     logo = _logo_base64()
-    logo_html = (f'<img src="{logo}" alt="Youman">' if logo else "")
+    logo_html = (f'<img src="{logo}" alt="Youman Automation">'
+                  if logo else
+                  '<div style="color:#fff;font-weight:800;font-size:22px;">'
+                  'Youman</div>')
     st.markdown(
         f'<div class="sidebar-brand">'
         f'{logo_html}'
-        f'<div><div class="name">Youman</div>'
-        f'<div class="sub">Automation · Industriepaletten</div></div>'
+        f'<div class="sub">Industriepaletten</div>'
         f'</div>',
         unsafe_allow_html=True,
     )

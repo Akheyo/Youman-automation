@@ -286,7 +286,7 @@ with st.sidebar:
 # Top-Header — identisch zur Hauptapp
 # ---------------------------------------------------------------------------
 selbsttest_banner()
-topbar("Youman", "Automation · Industriepaletten · Standardisierung")
+topbar("Youman", "Industriepaletten · Standardisierung")
 step_indicator(aktiver_schritt())
 
 
