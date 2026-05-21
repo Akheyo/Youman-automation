@@ -53,6 +53,7 @@ app_datas = [
     ("../verbrauch.py", "."),
     ("../procurement.py", "."),
     ("../lieferanten.py", "."),
+    ("../kostenanalyse_szenarien.py", "."),
     ("../_render.py", "."),
     ("../_ui_chrome.py", "."),
     ("../_build_info.py", "."),

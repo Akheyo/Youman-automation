@@ -186,6 +186,16 @@ def leere_verlauf() -> int:
     return n
 
 
+def loesche_eintrag(eintrag_id: str) -> bool:
+    """Loescht einen einzelnen Verlauf-Eintrag. Liefert True bei Erfolg."""
+    h = _read_raw()
+    neu = [e for e in h if e.get("id") != eintrag_id]
+    if len(neu) == len(h):
+        return False
+    _write_raw(neu)
+    return True
+
+
 def hash_bytes(b: bytes) -> str:
     """Hilfsfunktion: SHA256 fuer beliebige Bytes (z.B. Streamlit-Upload)."""
     return hashlib.sha256(b).hexdigest()

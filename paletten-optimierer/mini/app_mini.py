@@ -28,6 +28,7 @@ from optimierer_kern import optimiere  # noqa: E402
 from import_verlauf import (  # noqa: E402
     neuer_eintrag, update_optimierung, alle as verlauf_alle,
     finde_per_hash, leere_verlauf, hash_bytes, verlauf_pfad_str,
+    loesche_eintrag as verlauf_loesche,
 )
 import palettenkatalog as katalog_modul  # noqa: E402
 import bestellungen as bestellungen_modul  # noqa: E402
@@ -36,6 +37,7 @@ import wirt_kandidaten as wirt_kand_modul  # noqa: E402
 import verbrauch as verbrauch_modul  # noqa: E402
 import procurement as procurement_modul  # noqa: E402
 import lieferanten as lieferanten_modul  # noqa: E402
+import kostenanalyse_szenarien as kosten_sz_modul  # noqa: E402
 from import_doppelschutz import pruefe_import as _pruefe_import  # noqa: E402
 from _render import render_zuord_table, ziel_label as _ziel_label  # noqa: E402
 from _ui_chrome import (  # noqa: E402
@@ -206,6 +208,12 @@ def init_state() -> None:
         "best_filter_suche": "",
         "best_eingang_modal": None,    # dict: {auftrag_id, ...} oder None
         "best_detail_aktiv": None,     # ausgeklappter Auftrag
+        # Kostenanalyse (Spec §1-§6)
+        "kosten_zeitraum_tage": 30,
+        "kosten_szenarien_auswahl": [],  # list[verlauf_id], max 3
+        "kosten_sim_params": None,        # was-wäre-wenn-Parameter (dict)
+        "kosten_sim_ergebnis": None,
+        "kosten_lauf_detail": None,       # aufgeklappter Detail-Snapshot
         "bestellung_modal": None,      # dict mit pending Bestellung-Daten
         "historie_filter": {            # Filter Historie-Page
             "status": "alle",
@@ -1014,7 +1022,7 @@ def run_optimierung() -> None:
             zg["palette_B_excel"] = pB
     st.session_state.ergebnis = res
 
-    # Verlauf ergaenzen (Kern-v4-Schema)
+    # Verlauf ergaenzen (Kern-v4-Schema + Snapshot fuer Kostenanalyse §2/§6)
     hist_id = st.session_state.get("historie_id")
     if hist_id:
         try:
@@ -1032,6 +1040,16 @@ def run_optimierung() -> None:
                 "gesamt": int(res.get("gesamt", 0)),
                 "invariante_ok": bool(res.get("invariante_ok", True)),
                 "status": res.get("status", ""),
+                # Spec Kostenanalyse §8: vollständige Snapshots
+                "params_snapshot": dict(p),
+                "ergebnis_snapshot": {
+                    "standards": [list(s) for s in res.get("standards", [])],
+                    "sonder": [list(s) for s in res.get("sonder", [])],
+                    "zuordnung_n": len(res.get("zuordnung", [])),
+                    "score": float(res.get("score", 0.0)),
+                    "score_breakdown": res.get("score_breakdown", {}),
+                    "nicht_zuordenbar_n": len(res.get("nicht_zuordenbar", [])),
+                },
             })
         except Exception:
             pass  # Verlauf ist Bonus, nie kritisch
@@ -4016,42 +4034,494 @@ def seite_wirtschaftlichkeit() -> None:
 
 
 def seite_kostenanalyse() -> None:
-    """Marge pro Standard nach Optimierung — schon teilweise im Ergebnisse-Tab,
-    hier separate Übersicht über alle Verlauf-Läufe."""
-    card_open("Kostenanalyse")
-    v = verlauf_alle()
-    optimierungen = [e for e in v if e.get("optimierung")]
+    """Kostenanalyse-Tab (Spec §1-§6): KPIs, Historie mit Aktionen,
+    Zeitverlaufs-Chart, Toleranz-Szenarien-Vergleich, Marge-Auswertung,
+    Was-wäre-wenn-Simulation."""
+    v_alle = verlauf_alle()
+    optimierungen = [e for e in v_alle if e.get("optimierung")]
+
+    # === §1: KPIs Top-Row ===
+    card_open("📊 KOSTENANALYSE")
     if not optimierungen:
-        st.info("Noch keine Optimierungen im Verlauf. → "
-                "Datei importieren + optimieren.")
+        st.info(
+            "Noch keine Optimierungen im Verlauf. "
+            "→ Datei importieren + optimieren, dann erscheinen hier "
+            "Kennzahlen, Trends und Vergleiche."
+        )
         card_close()
         return
+
+    from datetime import datetime as _dt, timedelta as _td
+    heute = _dt.now()
+    grenze_30 = heute - _td(days=30)
+    grenze_60 = heute - _td(days=60)
+
+    def _parse(iso: str) -> _dt | None:
+        try:
+            return _dt.fromisoformat((iso or "")[:19])
+        except (ValueError, TypeError):
+            return None
+
+    optim_30 = [e for e in optimierungen
+                 if (_parse(e.get("datum", "")) or heute) >= grenze_30]
+    optim_30_60 = [e for e in optimierungen
+                    if grenze_60 <= (_parse(e.get("datum", "")) or heute) < grenze_30]
+
+    def _avg(lst, key):
+        if not lst:
+            return 0.0
+        return sum(int(e["optimierung"].get(key, 0)) for e in lst) / len(lst)
+
+    avg_std_30 = _avg(optim_30, "standards")
+    avg_son_30 = _avg(optim_30, "sonder")
+    avg_std_60 = _avg(optim_30_60, "standards")
+    trend_std = avg_std_30 - avg_std_60
+    trend_pfeil = ("↗" if trend_std > 0.5 else
+                    "↘" if trend_std < -0.5 else "→")
+    trend_color = ("#dc2626" if trend_std > 0.5 else
+                    "#16a34a" if trend_std < -0.5 else "#64748b")
+
+    letzte = optimierungen[0]
+    letzte_opt = letzte["optimierung"]
+    letzte_datum = (letzte.get("datum", "") or "—")[:16].replace("T", " ")
+
+    k1, k2, k3, k4 = st.columns(4)
+    k1.metric("Ø Standards (30 T)", f"{avg_std_30:.1f}",
+                f"{len(optim_30)} Läufe", delta_color="off")
+    k2.metric("Ø Sonder (30 T)", f"{avg_son_30:.1f}",
+                f"{len(optim_30)} Läufe", delta_color="off")
+    k3.markdown(
+        f"<div style='font-size:13px;color:#6b7280;'>"
+        f"Trend Standards</div>"
+        f"<div style='font-size:28px;font-weight:800;color:{trend_color};'>"
+        f"{trend_pfeil} {abs(trend_std):+.1f}</div>"
+        f"<div style='font-size:11px;color:#94a3b8;'>"
+        f"vs. Vorperiode (30–60 T)</div>",
+        unsafe_allow_html=True,
+    )
+    k4.metric("Letzte Optimierung",
+                f"{letzte_opt.get('gesamt', 0)} Maße",
+                f"{letzte_datum}", delta_color="off")
+    card_close()
+
+    # === §3: Diagramm Standards-Anzahl im Zeitverlauf ===
+    card_open("📈 STANDARDS IM ZEITVERLAUF")
+    zr_opt = ["7T", "30T", "90T", "alle"]
+    zr_idx = zr_opt.index(
+        {7: "7T", 30: "30T", 90: "90T", 0: "alle"}.get(
+            st.session_state.get("kosten_zeitraum_tage", 30), "30T")
+    ) if st.session_state.get("kosten_zeitraum_tage", 30) in (7, 30, 90, 0) else 1
+    zr_sel = st.radio("Zeitraum", zr_opt, index=zr_idx, horizontal=True,
+                       key="kosten_zr_in", label_visibility="collapsed")
+    tage_map = {"7T": 7, "30T": 30, "90T": 90, "alle": 0}
+    tage = tage_map[zr_sel]
+    st.session_state.kosten_zeitraum_tage = tage
+
+    if tage > 0:
+        grenze = heute - _td(days=tage)
+        chart_data = [
+            (e, _parse(e.get("datum", "")) or heute)
+            for e in optimierungen
+            if (_parse(e.get("datum", "")) or heute) >= grenze
+        ]
+    else:
+        chart_data = [(e, _parse(e.get("datum", "")) or heute)
+                       for e in optimierungen]
+    chart_data.sort(key=lambda x: x[1])
+
+    if chart_data:
+        df_chart = pd.DataFrame([
+            {
+                "Datum": dt.strftime("%d.%m %H:%M"),
+                "Standards": e["optimierung"].get("standards", 0),
+                "Sonder": e["optimierung"].get("sonder", 0),
+                "Gesamt": e["optimierung"].get("gesamt", 0),
+            }
+            for e, dt in chart_data
+        ])
+        st.line_chart(df_chart.set_index("Datum"),
+                       use_container_width=True, height=280)
+        st.caption(
+            f"{len(chart_data)} Läufe im Zeitraum {zr_sel}. "
+            f"Hover für Werte, Linienauswahl per Legende."
+        )
+    else:
+        st.info(f"Keine Optimierungs-Läufe im Zeitraum {zr_sel}.")
+    card_close()
+
+    # === §2: Optimierungs-Historie mit Aktionen ===
+    card_open(f"📋 OPTIMIERUNGS-HISTORIE ({len(optimierungen)} Läufe)")
     rows = []
-    for e in optimierungen[:20]:
+    for e in optimierungen[:50]:
         opt = e["optimierung"]
+        tol_str = (
+            f"{opt.get('tol_kurz_pct', '?'):.0f}%/{opt.get('tol_lang_pct', '?'):.0f}%"
+            if opt.get("tol_modus") == "prozent"
+            else f"{opt.get('tol_kurz_mm', '?')}/{opt.get('tol_lang_mm', '?')} mm"
+        )
         rows.append({
-            "Datum": e.get("datum", "")[:16].replace("T", " "),
-            "Datei": e.get("datei_name", ""),
-            "Tol kurz": opt.get("tol_kurz_mm", "?"),
-            "Tol lang": opt.get("tol_lang_mm", "?"),
+            "id": e.get("id", ""),
+            "Datum": (e.get("datum", "") or "")[:16].replace("T", " "),
+            "Datei": (e.get("datei_name", "") or "")[:30],
+            "Toleranz": tol_str,
+            "Kombi": "✓" if opt.get("kombinieren") else "—",
             "Standards": opt.get("standards", 0),
             "Sonder": opt.get("sonder", 0),
             "Gesamt": opt.get("gesamt", 0),
+            "Invariante": "✓" if opt.get("invariante_ok") else "⚠",
         })
-    st.markdown("### Optimierungs-Historie")
-    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-    st.caption("Detail-Marge pro Standard liegt im 'Ergebnisse'-Tab — "
-               "dort wird Σ Einkauf/Verkauf/Marge live berechnet sobald "
-               "Standards im Katalog mit Preisen vorhanden sind.")
+    df_h = pd.DataFrame(rows)
+    st.dataframe(df_h.drop(columns=["id"]),
+                  use_container_width=True, hide_index=True,
+                  column_config={
+                      "Standards": st.column_config.NumberColumn(format="%d"),
+                      "Sonder": st.column_config.NumberColumn(format="%d"),
+                      "Gesamt": st.column_config.NumberColumn(format="%d"),
+                  })
+    # Aktionen
+    sel = st.selectbox(
+        "Lauf auswählen für Aktionen",
+        options=range(len(optimierungen[:50])),
+        format_func=lambda i: (
+            f"{(optimierungen[i].get('datum', '') or '')[:16].replace('T', ' ')} · "
+            f"{(optimierungen[i].get('datei_name', '') or '?')[:25]} · "
+            f"{optimierungen[i]['optimierung'].get('gesamt', 0)} Maße"
+        ),
+        key="kosten_sel",
+    )
+    aktiv = optimierungen[sel]
+    ac1, ac2, ac3 = st.columns(3)
+    if ac1.button("👁 Details", use_container_width=True, key="k_det"):
+        st.session_state.kosten_lauf_detail = (
+            None if st.session_state.get("kosten_lauf_detail") == aktiv.get("id")
+            else aktiv.get("id")
+        )
+        st.rerun()
+    if ac2.button("↻ Reproduzieren", use_container_width=True, key="k_repro",
+                    help="Lädt die Parameter dieses Laufs in den "
+                         "Optimierungs-Tab und triggert eine neue Optimierung."):
+        snap = aktiv["optimierung"].get("params_snapshot")
+        if snap:
+            st.session_state.params.update(snap)
+            # Auto-rerun, wenn Importdaten noch da
+            if st.session_state.get("import_dat"):
+                run_optimierung()
+                st.success("Parameter geladen + neu optimiert.")
+                st.session_state.seite = "Ergebnisse"
+                st.rerun()
+            else:
+                st.success("Parameter geladen — bitte erst eine Datei "
+                            "importieren.")
+                st.session_state.seite = "Datenimport"
+                st.rerun()
+        else:
+            st.error("Kein params_snapshot vorhanden — nur ältere Läufe.")
+    if ac3.button("🗑 Aus Verlauf löschen", use_container_width=True,
+                    key="k_del"):
+        if verlauf_loesche(aktiv.get("id", "")):
+            st.warning("Eintrag aus Verlauf gelöscht.")
+            st.rerun()
+        else:
+            st.error("Eintrag nicht gefunden.")
+
+    # Detail-Panel
+    if st.session_state.get("kosten_lauf_detail") == aktiv.get("id"):
+        with st.expander("📸 Snapshot Parameter + Ergebnis", expanded=True):
+            opt = aktiv["optimierung"]
+            snap_params = opt.get("params_snapshot", {})
+            snap_erg = opt.get("ergebnis_snapshot", {})
+            sc1, sc2 = st.columns(2)
+            with sc1:
+                st.markdown("**Parameter:**")
+                if snap_params:
+                    st.json(snap_params, expanded=False)
+                else:
+                    st.caption("Kein params_snapshot (alter Lauf).")
+            with sc2:
+                st.markdown("**Ergebnis-Snapshot:**")
+                if snap_erg:
+                    st.json(snap_erg, expanded=False)
+                else:
+                    st.caption("Kein ergebnis_snapshot (alter Lauf).")
     card_close()
 
-    # Geplante Ausbauten
-    _stub("Geplante Erweiterungen",
-          "Über die aktuelle Verlaufstabelle hinaus:",
-          ["Diagramme: Standards-Anzahl im Zeitverlauf",
-           "Vergleich verschiedener Toleranz-Szenarien nebeneinander",
-           "Marge-Auswertung mit Kombi/Sonder (sobald Preise verfügbar)",
-           "Was-wäre-wenn-Simulation: gleiche Daten, andere Parameter"])
+    # === §4: Toleranz-Szenarien-Vergleich (bis 3 nebeneinander) ===
+    card_open("🔬 TOLERANZ-SZENARIEN-VERGLEICH")
+    auswahl = list(st.session_state.get("kosten_szenarien_auswahl", []))
+    # Bereinige IDs, die nicht mehr im Verlauf sind
+    aktuelle_ids = {o.get("id") for o in optimierungen}
+    auswahl = [x for x in auswahl if x in aktuelle_ids]
+
+    opt_choices = list(range(len(optimierungen[:50])))
+    label_map = {
+        i: (f"{(optimierungen[i].get('datum', '') or '')[:16].replace('T', ' ')} · "
+            f"{optimierungen[i]['optimierung'].get('gesamt', 0)} Maße · "
+            f"{(optimierungen[i].get('datei_name', '') or '?')[:20]}")
+        for i in opt_choices
+    }
+    sv1, sv2 = st.columns([3, 1])
+    with sv1:
+        neu_idx = st.selectbox(
+            "Lauf zum Vergleich hinzufügen",
+            options=opt_choices,
+            format_func=lambda i: label_map[i],
+            key="kosten_sz_add_sel",
+        )
+    with sv2:
+        if st.button("➕ Hinzufügen", use_container_width=True,
+                       key="kosten_sz_add",
+                       disabled=len(auswahl) >= 3):
+            nid = optimierungen[neu_idx].get("id")
+            if nid and nid not in auswahl:
+                auswahl.append(nid)
+                st.session_state.kosten_szenarien_auswahl = auswahl
+                st.rerun()
+
+    if not auswahl:
+        st.caption("Wähle bis zu 3 Läufe für den Side-by-Side-Vergleich aus.")
+    else:
+        cols = st.columns(len(auswahl))
+        for col, sz_id in zip(cols, auswahl):
+            eintrag = next((o for o in optimierungen
+                             if o.get("id") == sz_id), None)
+            if not eintrag:
+                continue
+            opt = eintrag["optimierung"]
+            with col:
+                titel = (eintrag.get("datum", "") or "")[:10]
+                with st.container(border=True):
+                    st.markdown(
+                        f"<div style='font-size:13px;font-weight:700;color:#1e293b;'>"
+                        f"{titel}</div>"
+                        f"<div style='font-size:11px;color:#64748b;'>"
+                        f"{(eintrag.get('datei_name', '') or '')[:25]}</div>",
+                        unsafe_allow_html=True,
+                    )
+                    tol_anzeige = (
+                        f"{opt.get('tol_kurz_pct', '?'):.0f}% / "
+                        f"{opt.get('tol_lang_pct', '?'):.0f}%"
+                        if opt.get("tol_modus") == "prozent"
+                        else f"{opt.get('tol_kurz_mm', '?')} / "
+                             f"{opt.get('tol_lang_mm', '?')} mm"
+                    )
+                    st.caption(f"Tol: {tol_anzeige}")
+                    st.metric("Standards", opt.get("standards", 0))
+                    st.metric("Sonder", opt.get("sonder", 0))
+                    st.metric("Gesamt", opt.get("gesamt", 0))
+                    if st.button("Laden + Reproduzieren",
+                                   use_container_width=True,
+                                   key=f"sz_load_{sz_id}"):
+                        snap = opt.get("params_snapshot")
+                        if snap:
+                            st.session_state.params.update(snap)
+                            if st.session_state.get("import_dat"):
+                                run_optimierung()
+                                st.session_state.seite = "Ergebnisse"
+                            else:
+                                st.session_state.seite = "Datenimport"
+                            st.rerun()
+                        else:
+                            st.warning("Kein params_snapshot.")
+                    if st.button("✗ Entfernen", use_container_width=True,
+                                   key=f"sz_del_{sz_id}"):
+                        auswahl.remove(sz_id)
+                        st.session_state.kosten_szenarien_auswahl = auswahl
+                        st.rerun()
+    card_close()
+
+    # === §5: Marge-Auswertung (nur wenn EK/VK im Katalog) ===
+    card_open("💰 MARGE-AUSWERTUNG (letzte Optimierung)")
+    res_live = st.session_state.get("ergebnis")
+    if not res_live:
+        st.info(
+            "Keine aktive Optimierung — lade einen Lauf aus der Historie "
+            "via **Reproduzieren** oder importiere neue Daten."
+        )
+    else:
+        from collections import defaultdict as _dd
+        std_mengen: dict[tuple, int] = _dd(int)
+        for z in res_live.get("zuordnung", []):
+            if z.get("typ") == "Standard":
+                try:
+                    a, b = z["ziel"].split("x")
+                    std_mengen[(min(int(a), int(b)),
+                                  max(int(a), int(b)))] += int(z.get("menge", 0))
+                except (ValueError, KeyError):
+                    continue
+        marge_rows, fehlend = [], []
+        sum_ek = sum_vk = 0.0
+        for kand, menge in sorted(std_mengen.items()):
+            preise = katalog_modul.lookup_preise(kand[1], kand[0])
+            if preise and preise["einkaufspreis_eur"] > 0 and preise["verkaufspreis_eur"] > 0:
+                ek = float(preise["einkaufspreis_eur"])
+                vk = float(preise["verkaufspreis_eur"])
+                marge_rows.append({
+                    "Standard": f"{kand[1]} × {kand[0]} mm",
+                    "Stückzahl": menge,
+                    "Ø EK (€)": ek,
+                    "Ø VK (€)": vk,
+                    "Marge/Stk (€)": vk - ek,
+                    "Marge gesamt (€)": (vk - ek) * menge,
+                })
+                sum_ek += ek * menge
+                sum_vk += vk * menge
+            else:
+                fehlend.append(f"{kand[1]}×{kand[0]}")
+        if fehlend:
+            st.warning(
+                f"⚠️ Für {len(fehlend)} Standards fehlen Preise im Katalog "
+                f"({', '.join(fehlend[:5])}{'…' if len(fehlend) > 5 else ''}) "
+                f"– Marge unvollständig. → **Im Katalog ergänzen**."
+            )
+        if marge_rows:
+            df_m = pd.DataFrame(marge_rows)
+            sum_marge = sum_vk - sum_ek
+            avg_marge_stk = (sum_marge / sum(r["Stückzahl"] for r in marge_rows)
+                              if marge_rows else 0)
+            best = max(marge_rows, key=lambda r: r["Marge gesamt (€)"])
+            schlechtest = min(marge_rows, key=lambda r: r["Marge gesamt (€)"])
+            mc1, mc2, mc3, mc4 = st.columns(4)
+            mc1.metric("Σ Marge", f"{sum_marge:,.2f} €".replace(",", "."))
+            mc2.metric("Ø Marge / Stk", f"{avg_marge_stk:.2f} €")
+            mc3.metric("Bester", best["Standard"],
+                         f"+{best['Marge gesamt (€)']:.0f} €",
+                         delta_color="normal")
+            mc4.metric("Schlechtester", schlechtest["Standard"],
+                         f"+{schlechtest['Marge gesamt (€)']:.0f} €",
+                         delta_color="normal")
+            st.dataframe(df_m, use_container_width=True, hide_index=True,
+                          column_config={
+                              "Stückzahl": st.column_config.NumberColumn(format="%d"),
+                              "Ø EK (€)": st.column_config.NumberColumn(format="%.2f €"),
+                              "Ø VK (€)": st.column_config.NumberColumn(format="%.2f €"),
+                              "Marge/Stk (€)": st.column_config.NumberColumn(format="%.2f €"),
+                              "Marge gesamt (€)": st.column_config.NumberColumn(format="%.2f €"),
+                          })
+        elif not fehlend:
+            st.caption("Keine Standards mit Mengen im aktuellen Ergebnis.")
+    card_close()
+
+    # === §6: Was-wäre-wenn-Simulation ===
+    card_open("🧪 WAS-WÄRE-WENN-SIMULATION")
+    if not st.session_state.get("import_dat"):
+        st.info(
+            "Was-wäre-wenn benötigt aktive Importdaten. Erst eine Datei "
+            "importieren — dann hier die Parameter variieren ohne Re-Import."
+        )
+    else:
+        basis = dict(st.session_state.params)  # Snapshot
+        if st.session_state.get("kosten_sim_params") is None:
+            st.session_state.kosten_sim_params = dict(basis)
+        sim = st.session_state.kosten_sim_params
+
+        wc1, wc2 = st.columns(2)
+        with wc1:
+            st.markdown("**Basis (aktuell)** — read-only")
+            st.caption(
+                f"Toleranz: {basis.get('tol_kurz_mm')}/"
+                f"{basis.get('tol_lang_mm')} mm · "
+                f"Kombi: {'an' if basis.get('kombinieren') else 'aus'} · "
+                f"Sonder: {'an' if basis.get('sonder_erlaubt') else 'aus'}"
+            )
+            if st.session_state.get("ergebnis"):
+                rb = st.session_state.ergebnis
+                bm1, bm2, bm3 = st.columns(3)
+                bm1.metric("Standards", len(rb.get("standards", [])))
+                bm2.metric("Sonder", len(rb.get("sonder", [])))
+                bm3.metric("Gesamt", rb.get("gesamt", 0))
+            else:
+                st.caption("Noch nicht optimiert.")
+        with wc2:
+            st.markdown("**Simulation** — editierbar")
+            sim["tol_kurz_mm"] = st.number_input(
+                "Tol kurz (mm)", min_value=0, max_value=2000,
+                value=int(sim.get("tol_kurz_mm", 200)), step=10,
+                key="sim_tk",
+            )
+            sim["tol_lang_mm"] = st.number_input(
+                "Tol lang (mm)", min_value=0, max_value=2000,
+                value=int(sim.get("tol_lang_mm", 400)), step=10,
+                key="sim_tl",
+            )
+            sim["kombinieren"] = st.toggle(
+                "Kombinationen erlauben",
+                value=bool(sim.get("kombinieren", True)),
+                key="sim_kombi",
+            )
+            sim["sonder_erlaubt"] = st.toggle(
+                "Sonderpaletten erlauben",
+                value=bool(sim.get("sonder_erlaubt", True)),
+                key="sim_son",
+            )
+            sim["sonder_min_artikel"] = st.number_input(
+                "Min. Bündelung N",
+                min_value=0, max_value=10000,
+                value=int(sim.get("sonder_min_artikel", 5)), step=1,
+                key="sim_min",
+            )
+
+        rc1, rc2, rc3 = st.columns([1, 1, 2])
+        if rc1.button("▶ Simulation rechnen", type="primary",
+                        use_container_width=True, key="sim_run"):
+            backup = dict(st.session_state.params)
+            try:
+                st.session_state.params.update(sim)
+                # Berechnen, aber NICHT in den persistenten Verlauf
+                # schreiben (wir wollen Basis-Ergebnis erhalten)
+                _ergebnis_backup = st.session_state.get("ergebnis")
+                _hist_backup = st.session_state.get("historie_id")
+                st.session_state.historie_id = None  # kein Verlauf-Schreiben
+                run_optimierung()
+                st.session_state.kosten_sim_ergebnis = st.session_state.ergebnis
+                # Basis-Ergebnis zurueck (Simulation ist temporär)
+                st.session_state.ergebnis = _ergebnis_backup
+                st.session_state.historie_id = _hist_backup
+            finally:
+                st.session_state.params = backup
+            st.rerun()
+        if rc2.button("✓ In Optimierung übernehmen",
+                        use_container_width=True, key="sim_apply",
+                        disabled=st.session_state.get("kosten_sim_ergebnis")
+                                 is None):
+            st.session_state.params.update(sim)
+            run_optimierung()
+            st.success("Simulationsparameter übernommen + neu optimiert.")
+            st.session_state.kosten_sim_ergebnis = None
+            st.session_state.seite = "Ergebnisse"
+            st.rerun()
+        if rc3.button("↺ Verwerfen", use_container_width=True,
+                        key="sim_reset"):
+            st.session_state.kosten_sim_params = dict(basis)
+            st.session_state.kosten_sim_ergebnis = None
+            st.rerun()
+
+        sim_res = st.session_state.get("kosten_sim_ergebnis")
+        if sim_res and st.session_state.get("ergebnis"):
+            basis_res = st.session_state.ergebnis
+            st.markdown("**Ergebnis-Differenz (Basis → Simulation):**")
+            dc1, dc2, dc3 = st.columns(3)
+            d_std = (len(sim_res.get("standards", []))
+                      - len(basis_res.get("standards", [])))
+            d_son = (len(sim_res.get("sonder", []))
+                      - len(basis_res.get("sonder", [])))
+            d_ges = sim_res.get("gesamt", 0) - basis_res.get("gesamt", 0)
+            dc1.metric("Standards",
+                         f"{len(basis_res.get('standards', []))} → "
+                         f"{len(sim_res.get('standards', []))}",
+                         f"{d_std:+d}",
+                         delta_color="inverse" if d_std > 0 else "normal")
+            dc2.metric("Sonder",
+                         f"{len(basis_res.get('sonder', []))} → "
+                         f"{len(sim_res.get('sonder', []))}",
+                         f"{d_son:+d}",
+                         delta_color="inverse" if d_son > 0 else "normal")
+            dc3.metric("Gesamt",
+                         f"{basis_res.get('gesamt', 0)} → "
+                         f"{sim_res.get('gesamt', 0)}",
+                         f"{d_ges:+d}",
+                         delta_color="inverse" if d_ges > 0 else "normal")
+    card_close()
+    st.caption(f"Speicherort Szenarien: {kosten_sz_modul.pfad_str()}")
 
 
 def seite_stammdaten() -> None:

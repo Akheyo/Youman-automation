@@ -163,6 +163,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_bestellungen_tab.py
 
+      - name: Pflicht-Test Kostenanalyse (Szenarien + Snapshot + Verlauf-Loesch)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_kostenanalyse.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |
