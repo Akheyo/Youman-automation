@@ -47,6 +47,11 @@ SPALTEN = {
                       "p.hoehe", "p.höhe", "hoehe", "höhe", "height", "h"],
     "menge":         ["menge", "mng", "anzahl", "palettenanzahl",
                       "pallet_count", "pallets", "qty", "quantity"],
+    "verbrauchsdatum": ["verbrauchsdatum", "verbrauch_am", "verbrauchsdat",
+                        "geplantes_verbrauchsdatum", "vbd",
+                        "lieferdatum", "liefertermin", "liefer_termin",
+                        "termin", "due", "due_date", "fälligkeit",
+                        "faelligkeit"],
 }
 
 # Mindestens 4 dieser Felder müssen in der Zeile als Header erkannt
@@ -110,6 +115,31 @@ def _str(v) -> str:
     if v is None:
         return ""
     return str(v).strip()
+
+
+def _datum_iso(v) -> str:
+    """Normalisiert Datumswerte zu ISO YYYY-MM-DD. Liefert '' bei leer
+    oder unparsbar."""
+    if v is None:
+        return ""
+    # openpyxl liefert datetime.datetime / datetime.date wenn die Zelle
+    # als Datum formatiert ist
+    from datetime import date, datetime
+    if isinstance(v, datetime):
+        return v.date().isoformat()
+    if isinstance(v, date):
+        return v.isoformat()
+    s = str(v).strip()
+    if not s:
+        return ""
+    # Versuche gaengige Formate
+    for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y", "%d-%m-%Y",
+                "%Y/%m/%d", "%d.%m.%y"):
+        try:
+            return datetime.strptime(s, fmt).date().isoformat()
+        except ValueError:
+            continue
+    return ""
 
 
 def importiere(file_or_path: str | Path | IO[bytes]) -> dict:
@@ -177,6 +207,10 @@ def importiere(file_or_path: str | Path | IO[bytes]) -> dict:
         produkt_L = (palette_L - PALETTEN_AUFSCHLAG_MM) if palette_L else None
         produkt_B = (palette_B - PALETTEN_AUFSCHLAG_MM) if palette_B else None
 
+        # Verbrauchsdatum: Excel-Datum oder String
+        vbd_raw = val(row, "verbrauchsdatum")
+        vbd = _datum_iso(vbd_raw)
+
         eintrag = {
             "auftrag":          _str(val(row, "auftrag")),
             "name":             _str(val(row, "name")),
@@ -186,6 +220,7 @@ def importiere(file_or_path: str | Path | IO[bytes]) -> dict:
             "breite":           produkt_B,
             "hoehe":            H,
             "anzahl":           anzahl,
+            "verbrauchsdatum":  vbd,    # ISO-String (YYYY-MM-DD) oder ""
             # Roh-Excel-Werte ZUR ANZEIGE, NICHT zur Optimierung
             "palette_L_excel":  palette_L,
             "palette_B_excel":  palette_B,

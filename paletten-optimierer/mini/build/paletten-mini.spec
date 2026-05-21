@@ -46,6 +46,8 @@ app_datas = [
     ("../import_excel.py", "."),
     ("../import_verlauf.py", "."),
     ("../palettenkatalog.py", "."),
+    ("../bestellungen.py", "."),
+    ("../import_doppelschutz.py", "."),
     ("../_render.py", "."),
     ("../_ui_chrome.py", "."),
     ("../_build_info.py", "."),

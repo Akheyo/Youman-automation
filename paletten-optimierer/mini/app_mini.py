@@ -30,6 +30,8 @@ from import_verlauf import (  # noqa: E402
     finde_per_hash, leere_verlauf, hash_bytes, verlauf_pfad_str,
 )
 import palettenkatalog as katalog_modul  # noqa: E402
+import bestellungen as bestellungen_modul  # noqa: E402
+from import_doppelschutz import pruefe_import as _pruefe_import  # noqa: E402
 from _render import render_zuord_table, ziel_label as _ziel_label  # noqa: E402
 from _ui_chrome import (  # noqa: E402
     inject_css, topbar, step_indicator, card_open, card_close,
@@ -155,6 +157,9 @@ def init_state() -> None:
             "w7": 0.0,   # Penalty pro Kombi-Zuordnung
             # Filter in der Ergebnis-Tabelle
             "ergebnis_filter": "alle",
+            # Doppelschutz (Spec §8)
+            "doppelschutz_aktiv": True,
+            "doppelschutz_zeitfenster": 30,
         },
         "ergebnis": None,
         "ergebnis_id": None,           # UUID pro Optimierungslauf
@@ -162,6 +167,16 @@ def init_state() -> None:
         "bestellt_pro_kand": {},        # pro (ergebnis_id, kand) bool
         "neue_sonder_uebernommen": {}, # pro (ergebnis_id, kand) bool
         "vergleich": None,             # Compare-Modus-Resultat
+        "doppelschutz_preview": None,  # Ergebnis von pruefe_import
+        "doppelschutz_skip_ids": set(),# manuelle Skip-IDs (zeile-keys)
+        "bestellung_modal": None,      # dict mit pending Bestellung-Daten
+        "historie_filter": {            # Filter Historie-Page
+            "status": "alle",
+            "kunde": "",
+            "aw": "",
+            "datum_von": "",
+            "datum_bis": "",
+        },
         "seite": "Datenimport",
     }
     for k, v in defaults.items():
@@ -197,6 +212,7 @@ with st.sidebar:
         "Katalog",
         "Bestand & Disposition",
         "Bestellungen",
+        "Historie",
         "Kostenanalyse",
         "Stammdaten",
         "Berichte",
@@ -235,28 +251,44 @@ topbar("Youman Mini", "Industriepaletten · Standardisierung")
 step_indicator(aktiver_schritt())
 
 
-def _unvollstaendige_banner() -> None:
-    """Globaler Hinweis (Spec §5 + §11): X Paletten ohne EK/VK."""
+def _globale_banner() -> None:
+    """Globale Hinweise (Spec §5 + §13): X Paletten ohne EK/VK +
+    Y offene Bestellungen."""
     try:
         unvoll = katalog_modul.unvollstaendige()
     except Exception:
+        unvoll = []
+    try:
+        offene = bestellungen_modul.offene()
+    except Exception:
+        offene = []
+    teile = []
+    if unvoll:
+        n = len(unvoll)
+        teile.append(
+            f'⚠️ <b>{n}</b> Palette{"n" if n != 1 else ""} ohne EK/VK '
+            f'(Tab <b>Katalog</b>)'
+        )
+    if offene:
+        n = len(offene)
+        wert = sum(int(o.get("menge", 0)) for o in offene)
+        teile.append(
+            f'📋 <b>{n}</b> offene Bestellung{"en" if n != 1 else ""} '
+            f'({wert} Stk · Tab <b>Historie</b>)'
+        )
+    if not teile:
         return
-    if not unvoll:
-        return
-    n = len(unvoll)
     st.markdown(
         f'<div style="background:#fef3c7;border:1px solid #fde68a;'
         f'color:#92400e;padding:8px 14px;border-radius:6px;'
         f'margin-bottom:10px;font-size:13px;">'
-        f'⚠️ <b>{n}</b> Palette{"n" if n != 1 else ""} ohne EK/VK — '
-        f'im Tab <b>Katalog</b> nachtragen, damit Wirtschaftlichkeit '
-        f'und Score korrekt berechnet werden.'
+        f'{" · ".join(teile)}'
         f'</div>',
         unsafe_allow_html=True,
     )
 
 
-_unvollstaendige_banner()
+_globale_banner()
 
 
 # ---------------------------------------------------------------------------
@@ -304,6 +336,8 @@ def seite_datenimport() -> None:
         st.session_state.datei_name = up.name
         st.session_state.import_dat = dat
         st.session_state.ergebnis = None
+        st.session_state.doppelschutz_preview = None
+        st.session_state.doppelschutz_skip_ids = set()
         try:
             st.session_state.historie_id = neuer_eintrag(
                 datei_pfad=up.name,
@@ -313,13 +347,34 @@ def seite_datenimport() -> None:
         except Exception as exc:  # noqa: BLE001
             st.session_state.historie_id = None
             st.warning(f"Verlauf konnte nicht geschrieben werden: {exc}")
-        # Auto-Optimierung mit Defaults (FINAL LOCK Punkt 10)
-        if dat.get("mit_mass"):
+        # Doppelschutz-Check (Spec §8): pruefen ob Bedarfe schon in Historie
+        if (dat.get("mit_mass") and
+                st.session_state.params.get("doppelschutz_aktiv", True)):
+            try:
+                aktive = bestellungen_modul.aktive()
+                preview = _pruefe_import(
+                    dat["mit_mass"], aktive,
+                    zeitfenster_tage=int(
+                        st.session_state.params.get(
+                            "doppelschutz_zeitfenster", 30)),
+                )
+                st.session_state.doppelschutz_preview = preview
+            except Exception as exc:
+                st.warning(f"Doppelschutz uebersprungen: {exc}")
+        # Wenn Doppelschutz Treffer hat → User soll bestaetigen,
+        # sonst direkt zur Optimierung
+        if (st.session_state.doppelschutz_preview and
+                (st.session_state.doppelschutz_preview.get("schon_bestellt")
+                 or st.session_state.doppelschutz_preview.get("teilbedarf"))):
+            # auf der Import-Seite bleiben, Preview anzeigen
+            st.rerun()
+        elif dat.get("mit_mass"):
             run_optimierung()
             st.session_state.seite = "Ergebnisse"
+            st.rerun()
         else:
             st.session_state.seite = "Einstellungen"
-        st.rerun()
+            st.rerun()
     cols[1].markdown(
         '<div style="opacity:0.55;padding-top:6px;font-size:12px;">'
         '🔒 Beispieldaten in Mini-Version nicht enthalten</div>',
@@ -360,6 +415,11 @@ def seite_datenimport() -> None:
             df = pd.DataFrame(dat["ohne_mass"])
             st.dataframe(df, use_container_width=True, hide_index=True)
 
+    # === Doppelschutz-Preview (Spec §8) ===
+    preview = st.session_state.get("doppelschutz_preview")
+    if preview:
+        _doppelschutz_preview_ui(preview)
+
     if mit_n:
         card_open(f"Importierte Aufträge ({mit_n})")
         # Bei sehr großen Dateien Vorschau begrenzen — die volle Liste
@@ -371,6 +431,90 @@ def seite_datenimport() -> None:
             df = pd.DataFrame(dat["mit_mass"])
         st.dataframe(df, use_container_width=True, hide_index=True, height=380)
         card_close()
+
+
+def _doppelschutz_preview_ui(preview: dict) -> None:
+    """Spec §8: 3-Kategorien-Vorschau mit Bulk-Aktionen."""
+    n_neu = len(preview.get("neu", []))
+    n_schon = len(preview.get("schon_bestellt", []))
+    n_teil = len(preview.get("teilbedarf", []))
+    if n_neu + n_schon + n_teil == 0:
+        return
+
+    card_open(f"🛡️ Doppelschutz-Vorschau "
+              f"({n_neu} neu · {n_schon} schon · {n_teil} Teilbedarf)")
+
+    if n_schon > 0 or n_teil > 0:
+        st.warning(
+            f"{n_schon} Auftrag/Aufträge sind bereits in der Historie "
+            f"bestellt — diese werden NICHT erneut geplant. "
+            f"{n_teil} sind teilweise gedeckt — nur das Delta geht in "
+            f"die Optimierung."
+        )
+    else:
+        st.success("Alle Aufträge sind neue Bedarfe.")
+
+    rows = []
+    for z, info in preview.get("neu", []):
+        rows.append({
+            "Status": "✅ Neu",
+            "AW": z.get("auftrag", ""),
+            "Artikel": z.get("artikelnummer", ""),
+            "Kunde": z.get("name", ""),
+            "Menge": int(z.get("anzahl", 0)),
+            "Delta": "—",
+            "Match": "—",
+        })
+    for z, info in preview.get("teilbedarf", []):
+        rows.append({
+            "Status": f"➕ Teilbedarf ({info['gemachte_menge']} schon)",
+            "AW": z.get("auftrag", ""),
+            "Artikel": z.get("artikelnummer", ""),
+            "Kunde": z.get("name", ""),
+            "Menge": int(z.get("anzahl", 0)),
+            "Delta": int(info["delta_menge"]),
+            "Match": info.get("match_typ", "—"),
+        })
+    for z, info in preview.get("schon_bestellt", []):
+        rows.append({
+            "Status": "⚠️ schon bestellt",
+            "AW": z.get("auftrag", ""),
+            "Artikel": z.get("artikelnummer", ""),
+            "Kunde": z.get("name", ""),
+            "Menge": int(z.get("anzahl", 0)),
+            "Delta": 0,
+            "Match": info.get("match_typ", "—"),
+        })
+    if rows:
+        df = pd.DataFrame(rows)
+        st.dataframe(df, use_container_width=True, hide_index=True,
+                     height=min(400, 40 + 35 * len(rows)))
+
+    fuer_opt = preview.get("fuer_optimierung", [])
+    cc1, cc2 = st.columns([1, 1])
+    if cc1.button(
+        f"✅ {len(fuer_opt)} Aufträge übernehmen + optimieren",
+        type="primary", use_container_width=True, key="dops_uebernehmen",
+        disabled=len(fuer_opt) == 0,
+    ):
+        # Tausche mit_mass durch fuer_optimierung-Liste fuer den
+        # Optimierer-Lauf (Schon-Bestellte sind raus, Teilbedarf hat
+        # delta_menge).
+        dat = st.session_state.import_dat
+        dat["mit_mass"] = list(fuer_opt)
+        st.session_state.doppelschutz_preview = None
+        run_optimierung()
+        st.session_state.seite = "Ergebnisse"
+        st.rerun()
+    if cc2.button(
+        "❌ Doppelschutz ignorieren (alle übernehmen)",
+        use_container_width=True, key="dops_ignorieren",
+    ):
+        st.session_state.doppelschutz_preview = None
+        run_optimierung()
+        st.session_state.seite = "Ergebnisse"
+        st.rerun()
+    card_close()
 
 
 # ---------------------------------------------------------------------------
@@ -488,6 +632,27 @@ def seite_einstellungen() -> None:
         )
         card_close()
 
+        card_open("Doppelschutz (Spec §8)")
+        p["doppelschutz_aktiv"] = st.toggle(
+            "Doppelschutz aktiv",
+            value=bool(p.get("doppelschutz_aktiv", True)),
+            key="dops_aktiv",
+            help="ON = beim Import wird gegen Historie geprueft. "
+                 "Bereits bestellte AW+Artikel werden nicht erneut "
+                 "geplant; Teilbedarf nur als Delta. OFF = alle Bedarfe "
+                 "gehen direkt in die Optimierung.",
+        )
+        p["doppelschutz_zeitfenster"] = st.number_input(
+            "Fallback-Zeitfenster (Tage)",
+            min_value=0, max_value=365,
+            value=int(p.get("doppelschutz_zeitfenster", 30)),
+            step=5, key="dops_fenster",
+            disabled=not p["doppelschutz_aktiv"],
+            help="Wenn AW fehlt: Match ueber Kunde+Artikel innerhalb "
+                 "± dieser Tage gegen Bestelldatum.",
+        )
+        card_close()
+
         card_open("Score-Gewichte (w1 – w7, Spec §7)")
         st.caption(
             "Score = w1·#Typen + w2·ΣPaletten − w3·Verbrauch "
@@ -573,6 +738,7 @@ def run_optimierung() -> None:
         for pal in mit_mass
     ]
     artikel_lookup = [pal.get("artikelnummer", "") for pal in mit_mass]
+    vbd_lookup = [pal.get("verbrauchsdatum", "") for pal in mit_mass]
     palette_excel_lookup = [
         (pal.get("palette_L_excel"), pal.get("palette_B_excel"))
         for pal in mit_mass
@@ -669,6 +835,8 @@ def run_optimierung() -> None:
     for idx, zg in enumerate(res.get("zuordnung", [])):
         zg["artikelnummer"] = (artikel_lookup[idx]
                                 if idx < len(artikel_lookup) else "")
+        zg["verbrauchsdatum"] = (vbd_lookup[idx]
+                                  if idx < len(vbd_lookup) else "")
         if idx < len(palette_excel_lookup):
             pL, pB = palette_excel_lookup[idx]
             zg["palette_L_excel"] = pL
@@ -835,6 +1003,18 @@ def kpi_uebersicht() -> None:
     )
 
 
+def _erste_zuord_field(res: dict, kand: tuple, feld: str) -> str:
+    """Liefert den ersten Wert eines Felds aus den Zuordnungen, die
+    diesem Kandidaten (canonical kurz,lang) entsprechen."""
+    target = f"{kand[1]}x{kand[0]}"
+    for z in res.get("zuordnung", []):
+        if z.get("typ") == "Standard" and z.get("ziel") == target:
+            v = z.get(feld, "") or ""
+            if v:
+                return str(v)
+    return ""
+
+
 def _dashboard_workflow(res: dict, katalog_set: set) -> None:
     """Dashboard pro Paletten-Typ (Spec §6 + §10): Benoetigt / Bestand /
     Differenz / EK gesamt + Aktionen 'Bestellung getätigt' und
@@ -963,22 +1143,32 @@ def _dashboard_workflow(res: dict, katalog_set: set) -> None:
             unsafe_allow_html=True,
         )
         key = (erg_id, r["kand"])
-        # "Bestellung getätigt" — nur fuer Maße mit Katalog-Eintrag
+        # "Bestellung getätigt" — nur fuer Maße mit Katalog-Eintrag.
+        # Vor Anpassung: Modal-Form mit Pflichtfeldern (Spec §7).
         if r["kat_id"]:
             if r["bestellt"]:
                 c2.success("✓ bestellt")
             else:
                 if c2.button("📦 Bestellung", key=f"bes_{i}",
-                              help="Bestand wird um Benötigt reduziert "
-                                   "(Vormerkung erlaubt). Idempotent."):
-                    katalog_modul.aendere_bestand(r["kat_id"],
-                                                    -r["benoetigt"])
-                    katalog_modul.inkrement_verbrauch(r["kat_id"])
-                    bestellt_set[key] = True
-                    st.session_state.bestellt_pro_kand = bestellt_set
-                    st.session_state.bestellt_ergebnisse = \
-                        st.session_state.get("bestellt_ergebnisse",
-                                              set()) | {erg_id}
+                              help="Bestand -= Menge, Verbrauch +1, "
+                                   "Historie-Eintrag (Spec §7). Erst Pflicht"
+                                   "felder eingeben."):
+                    # Modal aktivieren: pflichtfelder werden weiter unten
+                    # in einem Expander abgefragt.
+                    st.session_state.bestellung_modal = {
+                        "ergebnis_id": erg_id,
+                        "kand": r["kand"],
+                        "kat_id": r["kat_id"],
+                        "benoetigt": r["benoetigt"],
+                        # Vorbelegung aus der ersten Zuordnung dieser kand
+                        "kunde": _erste_zuord_field(res, r["kand"], "name"),
+                        "artikelnummer": _erste_zuord_field(
+                            res, r["kand"], "artikelnummer"),
+                        "auftragsnummer_aw": _erste_zuord_field(
+                            res, r["kand"], "auftrag"),
+                        "vbd": _erste_zuord_field(
+                            res, r["kand"], "verbrauchsdatum"),
+                    }
                     st.rerun()
         else:
             c2.caption("kein Katalog")
@@ -1009,6 +1199,95 @@ def _dashboard_workflow(res: dict, katalog_set: set) -> None:
                               r['kand'][0])['einkaufspreis_eur']))
             c4.metric("Marge gesamt", f"{marge:.2f} €",
                        label_visibility="visible")
+
+    # === Bestellung-Modal (Spec §7 — Pflichtfelder vor Bestand-Aenderung) ===
+    modal = st.session_state.get("bestellung_modal")
+    if modal:
+        st.markdown("---")
+        card_open(f"📦 Bestellung bestätigen — "
+                  f"{modal['kand'][1]} × {modal['kand'][0]} mm")
+        st.caption(
+            "Vor der Bestand-Anpassung müssen Kunde, Artikelnummer, AW und "
+            "geplantes Verbrauchsdatum gesetzt sein. Die Werte werden im "
+            "Historie-Eintrag persistent gespeichert."
+        )
+        with st.form(f"bestellung_form_{modal['kand']}"):
+            mc1, mc2, mc3 = st.columns(3)
+            with mc1:
+                m_kunde = st.text_input("Kunde *",
+                                          value=modal.get("kunde", ""))
+                m_art = st.text_input("Artikelnummer *",
+                                        value=modal.get("artikelnummer", ""))
+            with mc2:
+                m_aw = st.text_input("Auftragsnummer (AW) *",
+                                       value=modal.get("auftragsnummer_aw", ""))
+                m_menge = st.number_input(
+                    "Menge *", min_value=1, max_value=1000000,
+                    value=int(modal.get("benoetigt", 1)), step=1,
+                )
+            with mc3:
+                from datetime import date as _date
+                m_vbd_default = modal.get("vbd", "") or ""
+                m_vbd = st.text_input(
+                    "Geplantes Verbrauchsdatum * (YYYY-MM-DD)",
+                    value=m_vbd_default,
+                    help="Datum im ISO-Format YYYY-MM-DD.",
+                )
+                m_bd = st.text_input(
+                    "Bestelldatum (YYYY-MM-DD)",
+                    value=_date.today().isoformat(),
+                )
+            m_notiz = st.text_input("Notiz (optional)", value="")
+            sb1, sb2 = st.columns([1, 1])
+            confirm = sb1.form_submit_button(
+                "✓ Bestellung bestätigen", type="primary",
+                use_container_width=True,
+            )
+            cancel = sb2.form_submit_button(
+                "✗ Abbrechen", use_container_width=True,
+            )
+            if confirm:
+                pflicht_fehlt = []
+                if not m_kunde.strip(): pflicht_fehlt.append("Kunde")
+                if not m_art.strip(): pflicht_fehlt.append("Artikelnummer")
+                if not m_aw.strip(): pflicht_fehlt.append("AW")
+                if not m_vbd.strip(): pflicht_fehlt.append("Verbrauchsdatum")
+                if pflicht_fehlt:
+                    st.error(
+                        f"Pflichtfelder fehlen: {', '.join(pflicht_fehlt)}"
+                    )
+                else:
+                    erg = bestellungen_modul.bestellung_atomar(
+                        katalog_modul=katalog_modul,
+                        palette_id=modal["kat_id"],
+                        menge=int(m_menge),
+                        kunde=m_kunde.strip(),
+                        artikelnummer=m_art.strip(),
+                        auftragsnummer_aw=m_aw.strip(),
+                        geplantes_verbrauchsdatum=m_vbd.strip(),
+                        bestelldatum=m_bd.strip(),
+                        ergebnis_id=st.session_state.get("ergebnis_id"),
+                        notiz=m_notiz.strip(),
+                    )
+                    if erg["ok"]:
+                        key = (modal["ergebnis_id"], modal["kand"])
+                        bestellt_set[key] = True
+                        st.session_state.bestellt_pro_kand = bestellt_set
+                        st.session_state.bestellt_ergebnisse = \
+                            st.session_state.get("bestellt_ergebnisse",
+                                                  set()) | {modal["ergebnis_id"]}
+                        st.session_state.bestellung_modal = None
+                        st.success(
+                            f"Bestellung gespeichert (id={erg['bestellung_id'][:8]}). "
+                            f"Bestand reduziert."
+                        )
+                        st.rerun()
+                    else:
+                        st.error(f"Fehler: {erg['fehler']}")
+            elif cancel:
+                st.session_state.bestellung_modal = None
+                st.rerun()
+        card_close()
 
     card_close()
 
@@ -1300,6 +1579,7 @@ def seite_ergebnisse() -> None:
             "Auftrag": z.get("auftrag", ""),
             "Kunde": z.get("name", ""),
             "Artikelnummer": z.get("artikelnummer", ""),
+            "Verbrauchsdatum": z.get("verbrauchsdatum", ""),
             "Paletten (Menge)": z.get("menge", 0),
             "Excel P-L": z.get("palette_L_excel", ""),
             "Excel P-B": z.get("palette_B_excel", ""),
@@ -1968,7 +2248,247 @@ def seite_bestellungen() -> None:
            "Status: offen / unterwegs / eingegangen",
            "Bei Eingang: Katalog-Bestand automatisch erhöhen",
            "Auto-Vorschlag aus Dispositions-Tab übernehmen",
-           "Historie aller Bestellungen (persistent)"])
+           "Historie aller Bestellungen → Tab 'Historie'"])
+
+
+def seite_historie() -> None:
+    """Historie aller bestätigten Bestellungen (Spec §7).
+    Sortier-/filterbar; Status-Wechsel; CSV-Export."""
+    alle_bes = bestellungen_modul.alle()
+    card_open(f"📋 Bestellungs-Historie ({len(alle_bes)} Einträge)")
+    if not alle_bes:
+        st.info(
+            "Noch keine Bestellungen. Eine Historie entsteht automatisch, "
+            "sobald im **Ergebnisse**-Tab 'Bestellung getätigt' geklickt wird."
+        )
+        st.caption(f"Speicherort: {bestellungen_modul.pfad_str()}")
+        card_close()
+        return
+
+    # === Aggregate (Spec §7) ===
+    offene = [e for e in alle_bes if e.get("status") == "offen"]
+    verbraucht = [e for e in alle_bes if e.get("status") == "verbraucht"]
+    storniert = [e for e in alle_bes if e.get("status") == "storniert"]
+    wert_offen = sum(int(e.get("menge", 0)) for e in offene)
+    # Top-3 Kunden nach Σ Menge
+    from collections import Counter
+    kunden = Counter()
+    for e in offene + verbraucht:
+        k = (e.get("kunde", "") or "—").strip()
+        kunden[k] += int(e.get("menge", 0))
+    top3 = kunden.most_common(3)
+
+    c1, c2, c3, c4 = st.columns([1, 1, 1, 2])
+    c1.metric("Offen", len(offene))
+    c2.metric("Verbraucht", len(verbraucht))
+    c3.metric("Storniert", len(storniert))
+    with c4:
+        st.markdown(
+            f"<div style='font-size:13px;color:#475569;'>"
+            f"Σ Menge offen: <b>{wert_offen}</b><br>"
+            f"Top-3 Kunden: " +
+            (", ".join(f"{k} ({v})" for k, v in top3) if top3 else "—")
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+    card_close()
+
+    # === Filter ===
+    f = st.session_state.historie_filter
+    card_open("🔍 Filter")
+    fc1, fc2, fc3, fc4, fc5 = st.columns([1, 1.2, 1.2, 1, 1])
+    with fc1:
+        f["status"] = st.selectbox(
+            "Status",
+            ["alle", "offen", "verbraucht", "storniert"],
+            index=["alle", "offen", "verbraucht",
+                    "storniert"].index(f.get("status", "alle")),
+            key="hist_f_status",
+        )
+    with fc2:
+        f["kunde"] = st.text_input(
+            "Kunde enthält", value=f.get("kunde", ""),
+            key="hist_f_kunde",
+        )
+    with fc3:
+        f["aw"] = st.text_input(
+            "AW enthält", value=f.get("aw", ""), key="hist_f_aw",
+        )
+    with fc4:
+        f["datum_von"] = st.text_input(
+            "von (YYYY-MM-DD)", value=f.get("datum_von", ""),
+            key="hist_f_von",
+        )
+    with fc5:
+        f["datum_bis"] = st.text_input(
+            "bis (YYYY-MM-DD)", value=f.get("datum_bis", ""),
+            key="hist_f_bis",
+        )
+    card_close()
+
+    # Filterung
+    def _passt(e: dict) -> bool:
+        if f["status"] != "alle" and e.get("status") != f["status"]:
+            return False
+        if f["kunde"] and f["kunde"].lower() not in (e.get("kunde", "") or "").lower():
+            return False
+        if f["aw"] and f["aw"].lower() not in (e.get("auftragsnummer_aw", "") or "").lower():
+            return False
+        bd = e.get("bestelldatum", "")
+        if f["datum_von"] and bd and bd < f["datum_von"]:
+            return False
+        if f["datum_bis"] and bd and bd > f["datum_bis"]:
+            return False
+        return True
+
+    gefiltert = [e for e in alle_bes if _passt(e)]
+
+    # === Tabelle ===
+    card_open(f"Bestellungen ({len(gefiltert)} angezeigt)")
+
+    # Berechnete Spalten: Tage bis Verbrauch + Wert
+    from datetime import date
+    heute = date.today()
+    rows = []
+    for e in gefiltert:
+        snap = e.get("palette_typ_snapshot", {}) or {}
+        # EK aus aktuellem Katalog (Snapshot hat keine Preise)
+        ek = 0.0
+        if e.get("palette_id"):
+            preise = katalog_modul.lookup_preise(snap.get("L_mm", 0),
+                                                   snap.get("B_mm", 0))
+            if preise:
+                ek = float(preise.get("einkaufspreis_eur", 0))
+        vbd_str = e.get("geplantes_verbrauchsdatum", "")
+        tage = ""
+        try:
+            from datetime import datetime as _dt
+            vd = _dt.fromisoformat(vbd_str).date()
+            tage = (vd - heute).days
+        except Exception:
+            pass
+        rows.append({
+            "id": e["id"],
+            "Bestelldatum": e.get("bestelldatum", ""),
+            "Status": e.get("status", ""),
+            "Kunde": e.get("kunde", ""),
+            "Artikel": e.get("artikelnummer", ""),
+            "AW": e.get("auftragsnummer_aw", ""),
+            "Palette": (
+                f"{snap.get('name', '')} "
+                f"{snap.get('L_mm', 0)}×{snap.get('B_mm', 0)}"
+                + (f"×{snap.get('hoehe_mm', 0)}"
+                    if snap.get("hoehe_mm") else "")
+            ),
+            "Menge": int(e.get("menge", 0)),
+            "Verbrauchsdatum": vbd_str,
+            "Tage bis V.": tage,
+            "Wert (€)": (float(e.get("menge", 0)) * ek) if ek > 0 else None,
+            "Erstellt": e.get("erstellt_am", "")[:16],
+        })
+
+    import pandas as _pd
+    df = _pd.DataFrame(rows)
+    if not df.empty:
+        st.dataframe(
+            df.drop(columns=["id"]),
+            use_container_width=True, hide_index=True, height=420,
+            column_config={
+                "Menge": st.column_config.NumberColumn(format="%d"),
+                "Tage bis V.": st.column_config.NumberColumn(format="%d"),
+                "Wert (€)": st.column_config.NumberColumn(format="%.2f €"),
+            },
+        )
+
+    # === Aktionen pro Zeile ===
+    if gefiltert:
+        st.markdown("**Status ändern pro Eintrag**")
+        sel_idx = st.selectbox(
+            "Eintrag wählen",
+            options=range(len(gefiltert)),
+            format_func=lambda i: (
+                f"{gefiltert[i].get('bestelldatum', '?')} · "
+                f"{gefiltert[i].get('auftragsnummer_aw', '?')} · "
+                f"{gefiltert[i].get('artikelnummer', '?')} · "
+                f"{gefiltert[i].get('menge', 0)} Stk · "
+                f"{gefiltert[i].get('status', '?')}"
+            ),
+            key="hist_sel",
+        )
+        eintrag = gefiltert[sel_idx]
+        cs1, cs2, cs3, cs4 = st.columns(4)
+        if eintrag["status"] == "offen":
+            if cs1.button("✓ Als verbraucht markieren",
+                            use_container_width=True, key="hist_ok"):
+                bestellungen_modul.update_status(eintrag["id"], "verbraucht")
+                st.success("Status auf 'verbraucht' geändert.")
+                st.rerun()
+            if cs2.button("✗ Stornieren",
+                            use_container_width=True, key="hist_storno"):
+                bestellungen_modul.update_status(eintrag["id"], "storniert")
+                st.success("Bestellung storniert.")
+                st.rerun()
+        elif eintrag["status"] in ("verbraucht", "storniert"):
+            if cs1.button("↩ Auf 'offen' zurücksetzen",
+                            use_container_width=True, key="hist_reopen"):
+                bestellungen_modul.update_status(eintrag["id"], "offen")
+                st.success("Status zurückgesetzt.")
+                st.rerun()
+        if cs3.button("🗑️ Löschen", use_container_width=True,
+                       key="hist_del"):
+            bestellungen_modul.loesche_eintrag(eintrag["id"])
+            st.warning("Eintrag gelöscht.")
+            st.rerun()
+        # Bearbeiten (eingeschraenkt — nur status==offen)
+        if eintrag["status"] == "offen":
+            with st.expander("✎ Bearbeiten (nur bei Status 'offen')"):
+                e_menge = st.number_input(
+                    "Menge", min_value=1, max_value=100000,
+                    value=int(eintrag.get("menge", 1)),
+                    key=f"hist_edit_m_{eintrag['id']}",
+                )
+                e_aw = st.text_input(
+                    "AW", value=eintrag.get("auftragsnummer_aw", ""),
+                    key=f"hist_edit_aw_{eintrag['id']}",
+                )
+                e_bd = st.text_input(
+                    "Bestelldatum (YYYY-MM-DD)",
+                    value=eintrag.get("bestelldatum", ""),
+                    key=f"hist_edit_bd_{eintrag['id']}",
+                )
+                e_vbd = st.text_input(
+                    "Verbrauchsdatum (YYYY-MM-DD)",
+                    value=eintrag.get("geplantes_verbrauchsdatum", ""),
+                    key=f"hist_edit_vbd_{eintrag['id']}",
+                )
+                e_notiz = st.text_input(
+                    "Notiz", value=eintrag.get("notiz", ""),
+                    key=f"hist_edit_n_{eintrag['id']}",
+                )
+                if st.button("💾 Speichern", type="primary",
+                              key=f"hist_save_{eintrag['id']}"):
+                    bestellungen_modul.update_eintrag(
+                        eintrag["id"],
+                        menge=int(e_menge),
+                        auftragsnummer_aw=e_aw,
+                        bestelldatum=e_bd,
+                        geplantes_verbrauchsdatum=e_vbd,
+                        notiz=e_notiz,
+                    )
+                    st.success("Gespeichert.")
+                    st.rerun()
+
+    # === Export ===
+    csv = bestellungen_modul.nach_csv()
+    st.download_button(
+        "📥 Historie als CSV exportieren",
+        data=csv.encode("utf-8"),
+        file_name="bestellungen.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
+    st.caption(f"Speicherort: {bestellungen_modul.pfad_str()}")
+    card_close()
 
 
 def seite_kostenanalyse() -> None:
@@ -2110,6 +2630,7 @@ SEITEN = {
     "Katalog":               seite_katalog,
     "Bestand & Disposition": seite_bestand_dispo,
     "Bestellungen":          seite_bestellungen,
+    "Historie":              seite_historie,
     "Kostenanalyse":         seite_kostenanalyse,
     "Stammdaten":            seite_stammdaten,
     "Berichte":              seite_berichte,

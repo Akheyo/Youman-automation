@@ -127,6 +127,16 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_bestand_workflow.py
 
+      - name: Pflicht-Test Bestellungs-Historie (Spec §7)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_bestellungen.py
+
+      - name: Pflicht-Test Doppelbestellungs-Vermeidung (Spec §8)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_doppelschutz.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |
