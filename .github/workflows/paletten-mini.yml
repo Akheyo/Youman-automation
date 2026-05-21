@@ -117,6 +117,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_toleranz_modus.py
 
+      - name: Pflicht-Test Sonderpaletten-Option + Score-Breakdown
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_sonder_score.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |

@@ -141,6 +141,18 @@ def init_state() -> None:
             "kombinieren": True,
             "sonder_deckel_aktiv": True,
             "sonder_deckel": 5,
+            # Sonderpaletten-Option (Spec §3)
+            "sonder_erlaubt": True,
+            "sonder_min_artikel": 5,
+            "sonder_aufschlag_mm": 0,
+            # Score-Gewichte (Spec §3)
+            "w1": 1.0,   # Anzahl unterschiedlicher Palettentypen
+            "w2": 0.0,   # Σ Paletten (meist info-only)
+            "w3": 0.0,   # Verbrauchshäufigkeits-Bonus
+            "w4": 0.0,   # Σ Kosten
+            "w5": 0.0,   # Penalty pro Sonder-Typ
+            # Filter in der Ergebnis-Tabelle
+            "ergebnis_filter": "alle",
         },
         "ergebnis": None,
         "seite": "Datenimport",
@@ -400,11 +412,20 @@ def seite_einstellungen() -> None:
         )
         card_close()
 
-        card_open("Sonder-Deckel")
+        card_open("Sonderpaletten")
+        p["sonder_erlaubt"] = st.toggle(
+            "Sonderpaletten zulassen",
+            value=bool(p.get("sonder_erlaubt", True)),
+            key="son_e",
+            help="ON = neue Maße dürfen erzeugt werden (auch außerhalb "
+                 "Katalog). OFF = nur Katalog-Maße — nicht zuordenbare "
+                 "Aufträge werden separat ausgewiesen.",
+        )
         p["sonder_deckel_aktiv"] = st.toggle(
             "Sonder-Deckel aktiv",
             value=bool(p.get("sonder_deckel_aktiv", True)),
             key="sd_a",
+            disabled=not p["sonder_erlaubt"],
             help="ON = max. Anzahl verschiedener Sonder-Maße ist begrenzt. "
                  "OFF = unbegrenzt (Optimierer entscheidet).",
         )
@@ -413,8 +434,59 @@ def seite_einstellungen() -> None:
             min_value=0, max_value=500,
             value=int(p.get("sonder_deckel", 5)),
             step=1, key="sd_n",
-            disabled=not p["sonder_deckel_aktiv"],
+            disabled=(not p["sonder_deckel_aktiv"]) or (not p["sonder_erlaubt"]),
             help="Greift nur wenn der Toggle 'Sonder-Deckel aktiv' an ist.",
+        )
+        p["sonder_min_artikel"] = st.number_input(
+            "Mindest-Bündel pro Sonder (N Artikel)",
+            min_value=0, max_value=10000,
+            value=int(p.get("sonder_min_artikel", 5)),
+            step=1, key="son_n",
+            disabled=not p["sonder_erlaubt"],
+            help="Ein Sonder wird nur eingeführt, wenn er ≥ N Artikel "
+                 "bündelt. 0 = kein Mindest-Bündel.",
+        )
+        p["sonder_aufschlag_mm"] = st.number_input(
+            "Sicherheits-Aufschlag pro Sonder (mm)",
+            min_value=0, max_value=500,
+            value=int(p.get("sonder_aufschlag_mm", 0)),
+            step=5, key="son_a",
+            disabled=not p["sonder_erlaubt"],
+            help="Wird auf jede Achse des Sonder-Maßes addiert "
+                 "(Standard-Maße bleiben unverändert).",
+        )
+        card_close()
+
+        card_open("Score-Gewichte (w1 – w5)")
+        st.caption(
+            "Score = w1·#Palettentypen + w4·ΣKosten − w3·ΣVerbrauch "
+            "+ w5·#Sonder.  w2 = ΣPaletten (info-only). "
+            "Default: nur w1 wirkt (= klassisches Minimum)."
+        )
+        p["w1"] = st.slider(
+            "w1 — pro unterschiedlichem Palettentyp", 0.0, 5.0,
+            float(p.get("w1", 1.0)), step=0.1, key="w1_in",
+            help="Standard-Strafe — höher = weniger verschiedene Maße.",
+        )
+        p["w2"] = st.slider(
+            "w2 — Σ benötigter Paletten (info)", 0.0, 1.0,
+            float(p.get("w2", 0.0)), step=0.05, key="w2_in",
+            help="Reine Anzeige im Score-Breakdown.",
+        )
+        p["w3"] = st.slider(
+            "w3 — Verbrauchs-Bonus (Bestand)", 0.0, 5.0,
+            float(p.get("w3", 0.0)), step=0.1, key="w3_in",
+            help="Höher = Katalog-Maße mit hohem Bestand werden bevorzugt.",
+        )
+        p["w4"] = st.slider(
+            "w4 — Σ Kosten (EUR/Stk Einkauf)", 0.0, 1.0,
+            float(p.get("w4", 0.0)), step=0.05, key="w4_in",
+            help="Höher = preisgünstige Katalog-Maße werden bevorzugt.",
+        )
+        p["w5"] = st.slider(
+            "w5 — extra Penalty pro Sonder-Typ", 0.0, 10.0,
+            float(p.get("w5", 0.0)), step=0.5, key="w5_in",
+            help="Zusätzlich zu w1 — höher = noch weniger Sonder.",
         )
         card_close()
 
@@ -481,15 +553,46 @@ def run_optimierung() -> None:
         Pk_eff, Pl_eff = None, None
         modus_text = f"Modus mm (B≤{Tk_eff}mm / L≤{Tl_eff}mm)"
 
+    sonder_erlaubt = bool(p.get("sonder_erlaubt", True))
+    sonder_min = int(p.get("sonder_min_artikel", 0))
+    sonder_auf = int(p.get("sonder_aufschlag_mm", 0))
+    gewichte = {
+        "w1": float(p.get("w1", 1.0)),
+        "w2": float(p.get("w2", 0.0)),
+        "w3": float(p.get("w3", 0.0)),
+        "w4": float(p.get("w4", 0.0)),
+        "w5": float(p.get("w5", 0.0)),
+    }
+
     hinweis = (f"ILP-Solver (CBC) optimiert {len(orders)} Aufträge — "
                f"{modus_text}, "
                f"Kombi {'an' if kombi else 'aus'}, "
-               f"Sonder-Deckel {deckel if deckel is not None else 'frei'}.")
-    # Katalog-Maße als Tie-Breaker mitgeben (bevorzugt aber nicht erzwingend)
+               f"Sonder-Deckel {deckel if deckel is not None else 'frei'}, "
+               f"Sonder {'erlaubt' if sonder_erlaubt else 'verboten'}.")
+    # Katalog-Maße + Kosten/Verbrauch fuer Score-Gewichte
     try:
-        kat_masse = katalog_modul.aktive_masse()
+        kat_eintraege = katalog_modul.alle()
     except Exception:
-        kat_masse = []
+        kat_eintraege = []
+    kat_masse = []
+    katalog_kosten: dict[tuple[int, int], float] = {}
+    katalog_verbrauch: dict[tuple[int, int], float] = {}
+    for e in kat_eintraege:
+        if not e.get("aktiv", True):
+            continue
+        try:
+            cs = int(min(e["L_mm"], e["B_mm"]))
+            cl = int(max(e["L_mm"], e["B_mm"]))
+        except Exception:
+            continue
+        kat_masse.append((cs, cl))
+        ek = float(e.get("einkaufspreis_eur", 0) or 0)
+        if ek > 0:
+            katalog_kosten[(cs, cl)] = ek
+        verbrauch = float(e.get("bestand", 0) or 0)
+        if verbrauch > 0:
+            katalog_verbrauch[(cs, cl)] = verbrauch
+
     with st.spinner(hinweis):
         res = optimiere(
             orders,
@@ -502,6 +605,12 @@ def run_optimierung() -> None:
             sonder_deckel=deckel,
             zeitlimit_s=120,
             katalog=kat_masse,
+            sonder_erlaubt=sonder_erlaubt,
+            sonder_min_artikel=sonder_min,
+            sonder_aufschlag_mm=sonder_auf,
+            gewichte=gewichte,
+            katalog_kosten=katalog_kosten or None,
+            katalog_verbrauch=katalog_verbrauch or None,
         )
     # Artikelnummer + Roh-Palettenmaße aus Excel nachreichen
     for idx, zg in enumerate(res.get("zuordnung", [])):
@@ -817,13 +926,81 @@ def seite_ergebnisse() -> None:
                    "Kombi und Sonder fehlen — Preise dort unbekannt.")
         card_close()
 
+    # --- Score-Breakdown (alle 5 Gewichte sichtbar) ---
+    bd = res.get("score_breakdown") or {}
+    if bd:
+        card_open(f"📊 Score-Breakdown — Gesamt {res.get('score', 0.0):.2f}")
+        score_zeilen = [
+            ("w1 · # Palettentypen", bd.get("w1_palettentypen", 0.0)),
+            ("w2 · Σ Paletten (info)", bd.get("w2_gesamt_paletten", 0.0)),
+            ("w3 · Verbrauchs-Bonus", bd.get("w3_verbrauch_bonus", 0.0)),
+            ("w4 · Σ Kosten", bd.get("w4_gesamtkosten", 0.0)),
+            ("w5 · Sonder-Penalty", bd.get("w5_sonder_penalty", 0.0)),
+            ("BIG · # nicht zuordenbar", bd.get("slack_nicht_zuordenbar", 0.0)),
+        ]
+        df_score = pd.DataFrame(
+            [{"Komponente": k, "Beitrag": float(v)} for k, v in score_zeilen]
+        )
+        st.dataframe(
+            df_score, use_container_width=True, hide_index=True,
+            column_config={
+                "Beitrag": st.column_config.NumberColumn(format="%.3f"),
+            },
+        )
+        n_nz = len(res.get("nicht_zuordenbar", []))
+        if n_nz > 0:
+            st.warning(
+                f"⚠️ {n_nz} Auftrag/Aufträge konnten weder durch Standard "
+                f"noch Sonder gedeckt werden (Sonderpaletten verboten oder "
+                f"Toleranz zu eng). Siehe Filter 'Nicht zuordenbar'."
+            )
+        card_close()
+
+    # --- Filter ---
+    filter_opt = ["alle", "Standard", "Kombi", "Sonder", "Nicht zuordenbar"]
+    aktiver_filter = p.get("ergebnis_filter", "alle")
+    if aktiver_filter not in filter_opt:
+        aktiver_filter = "alle"
+    sel = st.radio(
+        "🔍 Filter Detail-Tabelle",
+        filter_opt,
+        index=filter_opt.index(aktiver_filter),
+        horizontal=True,
+        key="erg_filter_in",
+    )
+    p["ergebnis_filter"] = sel
+
+    def _passt_filter(typ: str) -> bool:
+        if sel == "alle":
+            return True
+        if sel == "Standard":
+            return typ == "Standard"
+        if sel == "Kombi":
+            return typ in ("Kombi-Stapel", "Kombi-Heterogen")
+        if sel == "Sonder":
+            return typ == "Sonder"
+        if sel == "Nicht zuordenbar":
+            return typ == "Nicht zuordenbar"
+        return True
+
+    if sel != "alle":
+        # Gefilterte Kopie des Ergebnisses fuers Rendering
+        res_gefiltert = dict(res)
+        res_gefiltert["zuordnung"] = [
+            z for z in res.get("zuordnung", []) if _passt_filter(z.get("typ", ""))
+        ]
+    else:
+        res_gefiltert = res
+
     cl, cr = st.columns([2, 1])
     with cl:
         card_open(f"Detail-Zuordnung — {res['gesamt']} Maße "
-                  f"({len(res['standards'])} Std + {len(res['sonder'])} Sonder)")
+                  f"({len(res['standards'])} Std + {len(res['sonder'])} Sonder)"
+                  + (f" · Filter: {sel} ({len(res_gefiltert['zuordnung'])})"
+                     if sel != "alle" else ""))
         st.markdown(
             f'<div style="max-height:560px;overflow:auto;">'
-            f'{render_zuord_table(res, katalog_set)}</div>',
+            f'{render_zuord_table(res_gefiltert, katalog_set)}</div>',
             unsafe_allow_html=True,
         )
         card_close()
@@ -846,7 +1023,39 @@ def seite_ergebnisse() -> None:
             st.caption("Keine Sonder.")
         card_close()
 
-    # CSV-Export — Kern-v2-Format
+    # --- Compare-Modus: mit vs ohne Sonderpaletten ---
+    card_open("🔬 Vergleich: mit / ohne Sonderpaletten")
+    st.caption(
+        "Rechnet zwei Szenarien mit den aktuellen Parametern: "
+        "einmal mit Sonderpaletten erlaubt, einmal verboten. "
+        "Zeigt Trade-off zwischen # Palettentypen und # nicht zuordenbaren "
+        "Aufträgen."
+    )
+    if st.button("⚖️ Vergleich rechnen", key="cmp_run"):
+        _run_vergleich()
+    cmp = st.session_state.get("vergleich")
+    if cmp:
+        c1, c2 = st.columns(2)
+        for col, key, titel in (
+            (c1, "mit", "Mit Sonderpaletten"),
+            (c2, "ohne", "Ohne Sonderpaletten (nur Katalog)"),
+        ):
+            r = cmp.get(key, {})
+            with col:
+                st.markdown(
+                    f"<div style='font-size:14px;font-weight:700;color:#1e293b;'>"
+                    f"{titel}</div>",
+                    unsafe_allow_html=True,
+                )
+                st.metric("GESAMT", _fmt_int(r.get("gesamt", 0)))
+                st.metric("Standards", _fmt_int(len(r.get("standards", []))))
+                st.metric("Sonder", _fmt_int(len(r.get("sonder", []))))
+                st.metric("Nicht zuordenbar",
+                          _fmt_int(len(r.get("nicht_zuordenbar", []))))
+                st.metric("Score", f"{r.get('score', 0.0):.2f}")
+    card_close()
+
+    # --- Export-Zeile: CSV + JSON ---
     rows = []
     for z in res["zuordnung"]:
         rows.append({
@@ -862,13 +1071,84 @@ def seite_ergebnisse() -> None:
             "Typ": z.get("typ", ""),
         })
     csv = pd.DataFrame(rows).to_csv(index=False, sep=";", encoding="utf-8-sig").encode("utf-8-sig")
-    st.download_button(
+
+    json_export = {
+        "datei_name": st.session_state.get("datei_name", ""),
+        "zeitpunkt": datetime.now().isoformat(timespec="seconds"),
+        "parameter": res.get("parameter", {}),
+        "score": res.get("score", 0.0),
+        "score_breakdown": res.get("score_breakdown", {}),
+        "gesamt": res.get("gesamt", 0),
+        "standards": [list(s) for s in res.get("standards", [])],
+        "sonder": [list(s) for s in res.get("sonder", [])],
+        "nicht_zuordenbar": res.get("nicht_zuordenbar", []),
+        "zuordnung": rows,
+    }
+    json_bytes = json.dumps(json_export, ensure_ascii=False, indent=2,
+                             default=str).encode("utf-8")
+
+    ec1, ec2 = st.columns(2)
+    ec1.download_button(
         "📥 Zuordnung als CSV exportieren",
         data=csv,
         file_name="paletten-mini-zuordnung.csv",
         mime="text/csv",
         use_container_width=True,
     )
+    ec2.download_button(
+        "📥 Vollständiges Ergebnis (JSON)",
+        data=json_bytes,
+        file_name="paletten-mini-ergebnis.json",
+        mime="application/json",
+        use_container_width=True,
+    )
+
+
+def _run_vergleich() -> None:
+    """Rechnet zwei Szenarien (mit/ohne Sonder) mit aktuellen Params."""
+    if st.session_state.import_dat is None:
+        return
+    p = st.session_state.params
+    mit_mass = st.session_state.import_dat["mit_mass"]
+    orders = [
+        {"L": pal["laenge"], "B": pal["breite"], "menge": pal["anzahl"],
+         "auftrag": pal["auftrag"], "name": pal["name"]}
+        for pal in mit_mass
+    ]
+    kombi = bool(p.get("kombinieren", True))
+    deckel = (int(p["sonder_deckel"])
+              if p.get("sonder_deckel_aktiv") else None)
+    modus = p.get("tol_modus", "absolut")
+    if modus == "prozent":
+        Tk_eff, Tl_eff = 99999, 99999
+        Pk_eff = float(p.get("tol_kurz_pct", 15))
+        Pl_eff = float(p.get("tol_lang_pct", 10))
+    else:
+        Tk_eff = int(p.get("tol_kurz_mm", 200))
+        Tl_eff = int(p.get("tol_lang_mm", 400))
+        Pk_eff, Pl_eff = None, None
+    try:
+        kat_masse = katalog_modul.aktive_masse()
+    except Exception:
+        kat_masse = []
+    gewichte = {f"w{i}": float(p.get(f"w{i}", 0.0)) for i in range(1, 6)}
+    gewichte["w1"] = float(p.get("w1", 1.0))
+    gemeinsam = dict(
+        tol_kurz_mm=Tk_eff, tol_lang_mm=Tl_eff,
+        tol_kurz_pct=Pk_eff, tol_lang_pct=Pl_eff,
+        max_kombi_teile=3 if kombi else 1,
+        heterogen_fallback=kombi,
+        sonder_deckel=deckel,
+        zeitlimit_s=60,
+        katalog=kat_masse,
+        sonder_min_artikel=int(p.get("sonder_min_artikel", 0)),
+        sonder_aufschlag_mm=int(p.get("sonder_aufschlag_mm", 0)),
+        gewichte=gewichte,
+    )
+    with st.spinner("Vergleich rechnet …"):
+        r_mit = optimiere(orders, sonder_erlaubt=True, **gemeinsam)
+        r_ohne = optimiere(orders, sonder_erlaubt=False, **gemeinsam)
+    st.session_state.vergleich = {"mit": r_mit, "ohne": r_ohne}
 
 
 # ---------------------------------------------------------------------------
