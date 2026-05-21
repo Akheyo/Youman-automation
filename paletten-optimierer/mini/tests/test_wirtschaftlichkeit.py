@@ -136,9 +136,14 @@ def test_f_empfehlungstext():
 
 
 def test_g_break_even():
-    """Break-Even Kosten/Fahrt: berechnet bei welchem Wert Netto = 0."""
+    """Break-Even Kosten/Fahrt: berechnet bei welchem Wert Netto = 0.
+    Legacy-Pfad: alle Lademeter-Modi auf 0 setzen, damit
+    vergleich() den fahrten-Pfad nimmt."""
     cp = dict(w.DEFAULT_COST_PARAMS)
     cp["kosten_pro_fahrt_eur"] = 350
+    cp["kosten_pro_lkw_eur"] = 0
+    cp["kosten_pro_lademeter_eur"] = 0
+    cp["kosten_pro_m2_eur"] = 0
     alt = {
         "typen_count": 12,
         "paletten_count_per_typ": {(800, 1200): 280},

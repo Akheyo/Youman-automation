@@ -858,19 +858,30 @@ def run_optimierung() -> None:
         if bestand > 0:
             katalog_bestand[(cs, cl)] = bestand
 
-    # Logistik-Maps fuer w8/w9 — nur wenn Wirtschaftlichkeit aktiv
+    # Logistik-Maps fuer w8/w9 — nur wenn Wirtschaftlichkeit aktiv.
+    # Approximative pro-Typ-Kosten:
+    #   mehrkosten = (Δfläche zu durchschnittlicher Alternative) ·
+    #                 kosten_pro_lademeter / (lkw_breite · 1000)
+    #   einsparung = handling_pro_typ + varianten_pro_typ
+    # Da wir alternative Maße nicht im voraus kennen, nehmen wir als
+    # Approx: mehrkosten = palette_flaeche / (lkw_breite·1000) × kpl
+    # (= 'wieviele Lademeter belegt 1 Stk dieser Palette als single').
     log_mehr_map, log_einsp_map = None, None
     try:
         cp_w = wirt_modul.lade_params()
         if cp_w.get("aktiv"):
-            # Approximative pro-Typ-Kosten: jeder Typ-Aktivierung
-            # entspricht 1 'Variante' = handling + var Kosten −
-            # und Mehrkosten pro Fahrt approx fuer dedicated Lkw.
             handling = float(cp_w.get("handling_kosten_pro_palettentyp_eur", 0))
             varianten = float(cp_w.get("variantenkosten_pro_typ_eur", 0))
-            kf = wirt_modul.kostenpro_fahrt(cp_w)
-            log_mehr_map = {k: kf for k in kat_masse}  # 1 Fahrt-Approx
-            log_einsp_map = {k: handling + varianten for k in kat_masse}
+            kpl = wirt_modul.kosten_pro_lademeter(cp_w)
+            lkw_b = int(cp_w.get("lkw_breite_mm", 2450))
+            log_mehr_map = {}
+            log_einsp_map = {}
+            for k in kat_masse:
+                cs, cl = min(k), max(k)
+                # Palette-Flaeche / (lkw_b·1000) → Lademeter
+                lm_pro_stk = (cs * cl) / (max(1, lkw_b) * 1000.0)
+                log_mehr_map[k] = lm_pro_stk * kpl
+                log_einsp_map[k] = handling + varianten
     except Exception:
         pass
 
@@ -2792,7 +2803,8 @@ def seite_beschaffung() -> None:
 
 
 def seite_wirtschaftlichkeit() -> None:
-    """Wirtschaftlichkeits-Dashboard (Spec §11)."""
+    """Wirtschaftlichkeits-Dashboard (Spec §11). 3 Logistik-Modi, alle
+    Werte parallel persistiert (Spec §16 — Umschalten verliert nichts)."""
     cp = wirt_modul.lade_params()
     card_open("⚖️ Wirtschaftlichkeit + Logistikkosten (Spec §11)")
     st.caption(
@@ -2809,74 +2821,225 @@ def seite_wirtschaftlichkeit() -> None:
     )
     card_close()
 
-    # Eingabe-Parameter (Spec §11.1)
-    card_open("Transport (LKW)")
-    tc1, tc2, tc3 = st.columns(3)
+    # --- Logistik-Modi (Spec §11.1): A / B / C ---
+    card_open("Logistikkosten — Eingabemodus (Spec §11.1)")
+    modi = ["A — Pauschal pro LKW", "B — Direkt pro Lademeter",
+            "C — Pro m² × LKW-Breite"]
+    modi_keys = ["A", "B", "C"]
+    aktiv_modus = (cp.get("modus_logistik") or "A").upper()
+    idx = modi_keys.index(aktiv_modus) if aktiv_modus in modi_keys else 0
+    sel = st.radio(
+        "Modus",
+        modi,
+        index=idx,
+        horizontal=True,
+        key="wirt_modus_in",
+        help="Werte aller Modi bleiben parallel gespeichert — "
+             "Umschalten verliert nichts (Spec §16).",
+    )
+    cp["modus_logistik"] = modi_keys[modi.index(sel)]
+
+    # Pro Modus die Felder rendern, aber ALLE drei Wertfelder
+    # weiterhin im State halten
+    mc1, mc2, mc3 = st.columns([1.5, 1.5, 1.5])
+    with mc1:
+        cp["kosten_pro_lkw_eur"] = st.number_input(
+            "A: Kosten/LKW (€)", min_value=0.0, max_value=20000.0,
+            value=float(cp.get("kosten_pro_lkw_eur", 800.0)),
+            step=10.0, format="%.2f", key="wirt_klkw",
+            disabled=cp["modus_logistik"] != "A",
+        )
+        cp["lademeter_pro_lkw"] = st.number_input(
+            "A: Lademeter/LKW", min_value=0.0, max_value=20.0,
+            value=float(cp.get("lademeter_pro_lkw", 13.6)),
+            step=0.1, format="%.1f", key="wirt_lmlkw",
+            disabled=cp["modus_logistik"] != "A",
+        )
+    with mc2:
+        cp["kosten_pro_lademeter_eur"] = st.number_input(
+            "B: Kosten/Lademeter (€)", min_value=0.0, max_value=1000.0,
+            value=float(cp.get("kosten_pro_lademeter_eur", 60.0)),
+            step=1.0, format="%.2f", key="wirt_klm",
+            disabled=cp["modus_logistik"] != "B",
+        )
+    with mc3:
+        cp["kosten_pro_m2_eur"] = st.number_input(
+            "C: Kosten/m² (€)", min_value=0.0, max_value=1000.0,
+            value=float(cp.get("kosten_pro_m2_eur", 25.0)),
+            step=1.0, format="%.2f", key="wirt_km2",
+            disabled=cp["modus_logistik"] != "C",
+        )
+
+    # === Auto-Anzeige kosten_pro_lademeter ===
+    kpl = wirt_modul.kosten_pro_lademeter(cp)
+    ac1, ac2, ac3 = st.columns(3)
+    ac1.metric("📐 Kosten / Lademeter (auto)",
+                f"{kpl:.2f} €" if kpl > 0 else "— €")
+    if cp["modus_logistik"] == "A":
+        if float(cp["lademeter_pro_lkw"]) > 0:
+            ac2.caption(
+                f"= {cp['kosten_pro_lkw_eur']:.2f} € / "
+                f"{cp['lademeter_pro_lkw']:.1f} Lademeter"
+            )
+    elif cp["modus_logistik"] == "C":
+        ac2.caption(
+            f"= {cp['kosten_pro_m2_eur']:.2f} €/m² × "
+            f"{cp['lkw_breite_mm']/1000:.2f} m LKW-Breite"
+        )
+    # Validierung
+    fehler = wirt_modul.validierung(cp)
+    if fehler:
+        for f in fehler:
+            if f["art"] == "fehler":
+                st.error(f"⛔ {f['text']}")
+            elif f["art"] == "warnung":
+                st.warning(f"⚠️ {f['text']}")
+            else:
+                st.info(f"ℹ️ {f['text']}")
+    card_close()
+
+    # --- LKW-Geometrie (alle Modi) ---
+    card_open("LKW-Geometrie")
+    tc1, tc2, tc3, tc4 = st.columns(4)
     with tc1:
         cp["lkw_laenge_mm"] = st.number_input(
-            "LKW Länge (mm)", min_value=1000, max_value=30000,
+            "Länge (mm)", min_value=1000, max_value=30000,
             value=int(cp.get("lkw_laenge_mm", 13620)), step=10,
-        )
-        cp["max_palettenstapel"] = st.number_input(
-            "Max. Palettenstapel", min_value=1, max_value=5,
-            value=int(cp.get("max_palettenstapel", 2)), step=1,
+            key="wirt_lkw_l",
         )
     with tc2:
         cp["lkw_breite_mm"] = st.number_input(
-            "LKW Breite (mm)", min_value=1000, max_value=5000,
-            value=int(cp.get("lkw_breite_mm", 2480)), step=10,
-        )
-        cp["max_gewicht_kg"] = st.number_input(
-            "Max. Gewicht (kg)", min_value=0, max_value=100000,
-            value=int(cp.get("max_gewicht_kg", 24000)), step=100,
+            "Breite (mm)", min_value=1000, max_value=5000,
+            value=int(cp.get("lkw_breite_mm", 2450)), step=10,
+            key="wirt_lkw_b",
         )
     with tc3:
         cp["lkw_hoehe_mm"] = st.number_input(
-            "LKW Höhe (mm)", min_value=1000, max_value=5000,
+            "Höhe (mm)", min_value=1000, max_value=5000,
             value=int(cp.get("lkw_hoehe_mm", 2700)), step=10,
+            key="wirt_lkw_h",
         )
-        cp["kosten_pro_fahrt_eur"] = st.number_input(
-            "Kosten/Fahrt (€)", min_value=0.0, max_value=10000.0,
-            value=float(cp.get("kosten_pro_fahrt_eur", 350.0)),
-            step=10.0, format="%.2f",
+    with tc4:
+        cp["max_palettenstapel"] = st.number_input(
+            "Max. Stapel", min_value=1, max_value=5,
+            value=int(cp.get("max_palettenstapel", 2)), step=1,
+            key="wirt_stapel",
         )
+    cp["max_gewicht_kg"] = st.number_input(
+        "Max. Gewicht (kg)", min_value=0, max_value=100000,
+        value=int(cp.get("max_gewicht_kg", 24000)), step=100,
+        key="wirt_gewicht",
+    )
     card_close()
 
-    card_open("Lager + Handling")
+    card_open("Lager + Handling + Varianten")
     lc1, lc2, lc3, lc4 = st.columns(4)
     with lc1:
         cp["lagerkosten_pro_stellplatz_pro_tag_eur"] = st.number_input(
             "Lager €/Stellplatz/Tag", min_value=0.0, max_value=100.0,
             value=float(cp.get(
                 "lagerkosten_pro_stellplatz_pro_tag_eur", 0.5)),
-            step=0.05, format="%.2f",
+            step=0.05, format="%.2f", key="wirt_lag_tag",
         )
     with lc2:
         cp["avg_lagerdauer_tage"] = st.number_input(
             "Ø Lagerdauer (Tage)", min_value=0, max_value=365,
             value=int(cp.get("avg_lagerdauer_tage", 14)), step=1,
+            key="wirt_lag_dauer",
         )
     with lc3:
         cp["handling_kosten_pro_palettentyp_eur"] = st.number_input(
             "Handling €/Typ", min_value=0.0, max_value=10000.0,
             value=float(cp.get("handling_kosten_pro_palettentyp_eur", 50)),
-            step=10.0, format="%.2f",
+            step=10.0, format="%.2f", key="wirt_handl",
         )
     with lc4:
         cp["variantenkosten_pro_typ_eur"] = st.number_input(
             "Varianten €/Typ", min_value=0.0, max_value=10000.0,
             value=float(cp.get("variantenkosten_pro_typ_eur", 200)),
-            step=10.0, format="%.2f",
+            step=10.0, format="%.2f", key="wirt_var",
         )
-    cp["periode_tage"] = st.number_input(
-        "Standard-Periode (Tage) — Hochrechnung Jahr automatisch",
-        min_value=1, max_value=365,
-        value=int(cp.get("periode_tage", 30)), step=1,
+    p1, p2 = st.columns(2)
+    with p1:
+        cp["periode_tage"] = st.number_input(
+            "Standard-Periode (Tage)",
+            min_value=1, max_value=365,
+            value=int(cp.get("periode_tage", 30)), step=1,
+            help="Hochrechnung auf Jahr automatisch.",
+            key="wirt_periode",
+        )
+    with p2:
+        cp["paletten_pro_periode_manuell"] = st.number_input(
+            "Cold-Start: Paletten/Periode (manuell)",
+            min_value=0, max_value=1000000,
+            value=int(cp.get("paletten_pro_periode_manuell", 0)),
+            step=10, key="wirt_cold",
+            help="Fallback wenn keine Verbrauchsdaten vorhanden.",
+        )
+
+    # Berechnungs-Variante (Spec §11.2)
+    var_modi = ["flaeche (Variante 1, Default)",
+                "laenge (Variante 2, nur bei Δbreite ≈ 0)"]
+    var_keys = ["flaeche", "laenge"]
+    aktiv_var = cp.get("berechnung_variante", "flaeche")
+    var_idx = var_keys.index(aktiv_var) if aktiv_var in var_keys else 0
+    var_sel = st.radio(
+        "Δlademeter-Berechnungs-Variante",
+        var_modi, index=var_idx, horizontal=True,
+        key="wirt_var_sel",
+        help="Variante 1 ist genauer (Δfläche). Variante 2 ist linear "
+             "(nur Δlänge), nur sinnvoll wenn die Breite gleich bleibt.",
     )
+    cp["berechnung_variante"] = var_keys[var_modi.index(var_sel)]
+
     if st.button("💾 Parameter speichern", type="primary",
                   use_container_width=True, key="wirt_save"):
         wirt_modul.speichere_params(cp)
         st.success("Cost-Parameter gespeichert.")
+    card_close()
+
+    # --- Live-Beispielrechnung (Spec §11.3) ---
+    card_open("📐 Live-Beispielrechnung (Spec §11.3)")
+    bc1, bc2, bc3 = st.columns(3)
+    with bc1:
+        bsp_dl = st.number_input(
+            "Δlänge pro Palette (mm)", min_value=-1000, max_value=2000,
+            value=100, step=10, key="bsp_dl",
+            help="Negativer Wert = neue Palette kleiner als alt = Einsparung.",
+        )
+    with bc2:
+        bsp_paletten = st.number_input(
+            "Paletten / Periode", min_value=1, max_value=1000000,
+            value=200, step=10, key="bsp_n",
+        )
+    with bc3:
+        bsp_breite = st.number_input(
+            "Palettenbreite (mm) — für Variante 2",
+            min_value=400, max_value=3000, value=1200, step=10,
+            key="bsp_b",
+        )
+    bsp = wirt_modul.beispielrechnung(
+        cp, delta_laenge_pro_palette_mm=int(bsp_dl),
+        paletten_pro_periode=int(bsp_paletten),
+        palette_breite_mm=int(bsp_breite),
+    )
+    bm1, bm2, bm3, bm4 = st.columns(4)
+    bm1.metric("Kosten/Lademeter",
+                f"{bsp['kosten_pro_lademeter']:.2f} €")
+    bm2.metric("Δlademeter",
+                f"{bsp['delta_lademeter']:.2f} m",
+                delta=f"{bsp['delta_laenge_gesamt_mm']:.0f} mm gesamt",
+                delta_color="off")
+    bm3.metric("Mehrkosten / Periode",
+                f"{bsp['transport_mehrkosten_periode']:.2f} €",
+                delta_color="inverse" if bsp_dl < 0 else "normal")
+    bm4.metric("Hochrechnung Jahr",
+                f"{bsp['transport_mehrkosten_jahr']:.2f} €")
+    if bsp_dl < 0:
+        st.success(
+            f"💡 Δlänge negativ ({bsp_dl} mm) → neue Palette kleiner = "
+            f"Einsparung von {abs(bsp['transport_mehrkosten_periode']):.2f} €/Periode."
+        )
     card_close()
 
     # Vergleich rechnen — wenn ein Ergebnis vorliegt
@@ -2967,13 +3130,30 @@ def seite_wirtschaftlichkeit() -> None:
     df_v = pd.DataFrame(zeilen, columns=["Kennzahl", "Vorher", "Nachher"])
     st.dataframe(df_v, use_container_width=True, hide_index=True)
 
-    # KPIs Netto-Effekt
-    nc1, nc2, nc3 = st.columns(3)
-    nc1.metric("Netto pro Periode",
+    # KPIs Netto-Effekt + Top-Row (Spec §11.5)
+    kc1, kc2, kc3, kc4 = st.columns(4)
+    kc1.metric("Kosten / Lademeter",
+                f"{v.get('kosten_pro_lademeter', 0):.2f} €")
+    kc2.metric("Δlademeter / Periode",
+                f"{v.get('delta_lademeter_periode', 0):.2f} m")
+    kc3.metric("Transport-Mehrkosten",
+                f"{v['transport_mehrkosten']:,.0f} €".replace(",", "."))
+    kc4.metric("Netto-Effekt",
                 f"{v['netto_periode']:,.0f} €".replace(",", "."))
-    nc2.metric("Hochrechnung Jahr",
+    nc1, nc2 = st.columns(2)
+    nc1.metric("Hochrechnung Jahr",
                 f"{v['netto_jahr']:,.0f} €".replace(",", "."))
-    nc3.metric("Periode (Tage)", v["periode_tage"])
+    nc2.metric("Periode (Tage)", v["periode_tage"])
+
+    # Auslastungs-Hinweis (Spec §16)
+    aus = wirt_modul.auslastung_lkw(
+        paletten_count_per_typ=neu_typen, cp=cp,
+    )
+    if aus["auslastung"] > 0 and aus["auslastung"] < 0.5:
+        st.info(
+            f"🚚 LKW-Auslastung {aus['auslastung']:.0%} bei "
+            f"{aus['fahrten_total']} Fahrt(en) — Mischladung empfohlen."
+        )
 
     # Empfehlungstext
     text = wirt_modul.empfehlungstext(v)
@@ -3011,34 +3191,62 @@ def seite_wirtschaftlichkeit() -> None:
         "die Vergleichsdaten zu speichern. Break-Even wird unten "
         "angezeigt."
     )
-    sc1, sc2 = st.columns(2)
+    sc1, sc2, sc3 = st.columns(3)
     with sc1:
-        sens_kf = st.slider("Kosten pro Fahrt (€)", 0.0, 2000.0,
-                              float(cp.get("kosten_pro_fahrt_eur", 350)),
-                              step=10.0, key="sens_kf")
+        if cp["modus_logistik"] == "A":
+            sens_kf = st.slider("Kosten pro LKW (€)", 0.0, 5000.0,
+                                  float(cp.get("kosten_pro_lkw_eur", 800)),
+                                  step=10.0, key="sens_klkw")
+        elif cp["modus_logistik"] == "B":
+            sens_kf = st.slider("Kosten/Lademeter (€)", 0.0, 500.0,
+                                  float(cp.get("kosten_pro_lademeter_eur", 60)),
+                                  step=1.0, key="sens_klm")
+        else:
+            sens_kf = st.slider("Kosten/m² (€)", 0.0, 500.0,
+                                  float(cp.get("kosten_pro_m2_eur", 25)),
+                                  step=1.0, key="sens_km2")
     with sc2:
         sens_dauer = st.slider("Lagerdauer (Tage)", 0, 365,
                                 int(cp.get("avg_lagerdauer_tage", 14)),
                                 step=1, key="sens_dauer")
+    with sc3:
+        if cp["modus_logistik"] == "A":
+            sens_lm = st.slider("Lademeter/LKW", 0.1, 20.0,
+                                  float(cp.get("lademeter_pro_lkw", 13.6)),
+                                  step=0.1, key="sens_lm")
+        else:
+            sens_lm = None
+            st.caption("Lademeter/LKW nur in Modus A relevant.")
     cp_sens = dict(cp)
-    cp_sens["kosten_pro_fahrt_eur"] = sens_kf
+    if cp["modus_logistik"] == "A":
+        cp_sens["kosten_pro_lkw_eur"] = sens_kf
+        if sens_lm is not None:
+            cp_sens["lademeter_pro_lkw"] = sens_lm
+    elif cp["modus_logistik"] == "B":
+        cp_sens["kosten_pro_lademeter_eur"] = sens_kf
+    else:
+        cp_sens["kosten_pro_m2_eur"] = sens_kf
     cp_sens["avg_lagerdauer_tage"] = sens_dauer
     v_sens = wirt_modul.vergleich(zustand_alt=alt_zustand,
                                        zustand_neu=neu_zustand,
                                        cost_params=cp_sens)
-    sk1, sk2 = st.columns(2)
-    sk1.metric("Netto live",
+    sk1, sk2, sk3 = st.columns(3)
+    sk1.metric("Kosten/Lademeter live",
+                f"{v_sens.get('kosten_pro_lademeter', 0):.2f} €")
+    sk2.metric("Netto live",
                 f"{v_sens['netto_periode']:,.0f} €".replace(",", "."))
-    be = wirt_modul.break_even_kosten_pro_fahrt(alt_zustand, neu_zustand, cp)
+    be = wirt_modul.break_even_kosten_pro_lademeter(alt_zustand,
+                                                          neu_zustand, cp)
     if be is not None:
-        sk2.metric("Break-Even Kosten/Fahrt", f"{be:,.0f} €".replace(",", "."))
+        sk3.metric("Break-Even kpl",
+                     f"{be:,.2f} €".replace(",", "."))
         st.info(
-            f"💡 Ab Transportkosten > {be:,.0f} €/Fahrt kippt das Ergebnis "
-            f"in Mehrkosten.".replace(",", ".")
+            f"💡 Ab Kosten/Lademeter > {be:.2f} € kippt das Ergebnis."
+            .replace(",", ".")
         )
     else:
-        sk2.metric("Break-Even", "—")
-        st.info("💡 Fahrten alt = neu — Kosten/Fahrt haben keinen Einfluss.")
+        sk3.metric("Break-Even", "—")
+        st.info("💡 Δlademeter = 0 — Lademeter-Kosten haben keinen Einfluss.")
 
     # Szenario speichern
     ssc1, ssc2 = st.columns([2, 1])

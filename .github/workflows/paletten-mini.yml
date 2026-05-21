@@ -147,6 +147,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_verbrauch_und_beschaffung.py
 
+      - name: Pflicht-Test Logistikkosten 3-Modi + Lademeter (Spec §11.1+§11.2)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_wirt_logistikmodi.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |

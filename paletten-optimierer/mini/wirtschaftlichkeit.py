@@ -40,25 +40,41 @@ from typing import Any
 # Persistenz
 # ---------------------------------------------------------------------------
 DEFAULT_COST_PARAMS = {
-    # Transport (Standardsattel)
+    # Transport (Standardsattel) — LKW-Maße
     "lkw_laenge_mm": 13620,
-    "lkw_breite_mm": 2480,
+    "lkw_breite_mm": 2450,
     "lkw_hoehe_mm": 2700,
     "max_palettenstapel": 2,
     "max_gewicht_kg": 24000,
-    "kosten_pro_fahrt_eur": 350.0,    # alternativ: distanz_km × kosten_pro_km
-    "distanz_km": 0.0,
-    "kosten_pro_km_eur": 0.0,
-    # Lager
+    # Logistik-Modi (Spec §11.1) — alle drei Werte werden parallel
+    # gehalten, damit Umschalten keinen State verliert.
+    "modus_logistik": "A",                 # "A" | "B" | "C"
+    # Modus A — Pauschal pro LKW
+    "kosten_pro_lkw_eur": 800.0,
+    "lademeter_pro_lkw": 13.6,
+    # Modus B — Direkt pro Lademeter
+    "kosten_pro_lademeter_eur": 60.0,
+    # Modus C — Pro m² (× lkw_breite_m → Lademeter)
+    "kosten_pro_m2_eur": 25.0,
+    # Berechnungsvariante (§11.2)
+    "berechnung_variante": "flaeche",      # "flaeche" | "laenge"
+    # Lager (optional)
     "lagerkosten_pro_stellplatz_pro_tag_eur": 0.50,
     "avg_lagerdauer_tage": 14,
     # Paletten-Handling
     "handling_kosten_pro_palettentyp_eur": 50.0,
     "variantenkosten_pro_typ_eur": 200.0,
-    # Periode
+    # Cold Start: manuelle Paletten/Periode wenn keine Historie da ist
+    "paletten_pro_periode_manuell": 0,
+    # Periode (Spec §11.7)
     "periode_tage": 30,
     # Toggle (Spec §11 boolean)
     "aktiv": False,
+    # Legacy — kept for back-compat in vergleich(). 0 = ignoriert,
+    # neuer Mechanismus ist lademeter-basiert.
+    "kosten_pro_fahrt_eur": 0.0,
+    "distanz_km": 0.0,
+    "kosten_pro_km_eur": 0.0,
 }
 
 
@@ -249,10 +265,170 @@ def leerflaeche(p_l: int, p_b: int,
 
 
 # ---------------------------------------------------------------------------
+# Logistik-Kosten: 3 Modi → einheitlich kosten_pro_lademeter (Spec §11.1)
+# ---------------------------------------------------------------------------
+def kosten_pro_lademeter(cp: dict) -> float:
+    """Liefert kosten/Lademeter abhängig vom aktiven Modus.
+
+    Modus A: kosten_pro_lkw / lademeter_pro_lkw
+    Modus B: direkt
+    Modus C: kosten_pro_m2 × lkw_breite (in m)
+
+    Robust: bei lademeter_pro_lkw==0 (Modus A) → 0 (Validierung wirft
+    separat eine Fehlermeldung).
+    """
+    modus = (cp.get("modus_logistik") or "A").upper()
+    if modus == "A":
+        lm = float(cp.get("lademeter_pro_lkw", 0))
+        if lm <= 0:
+            return 0.0
+        return float(cp.get("kosten_pro_lkw_eur", 0)) / lm
+    if modus == "B":
+        return float(cp.get("kosten_pro_lademeter_eur", 0))
+    if modus == "C":
+        breite_m = float(cp.get("lkw_breite_mm", 0)) / 1000.0
+        return float(cp.get("kosten_pro_m2_eur", 0)) * breite_m
+    return 0.0
+
+
+def validierung(cp: dict) -> list[dict]:
+    """Liefert Liste von dicts mit 'art' ('fehler' | 'warnung' | 'info')
+    und 'text'. Spec §16."""
+    out: list[dict] = []
+    modus = (cp.get("modus_logistik") or "A").upper()
+    if modus == "A":
+        klkw = float(cp.get("kosten_pro_lkw_eur", 0))
+        lm = float(cp.get("lademeter_pro_lkw", 0))
+        if lm <= 0:
+            out.append({"art": "fehler",
+                         "text": "lademeter_pro_lkw muss > 0 sein "
+                                 "(Division durch Null)."})
+        if klkw <= 0:
+            out.append({"art": "warnung",
+                         "text": "kosten_pro_lkw = 0 → "
+                                 "kosten_pro_lademeter ebenfalls 0 — "
+                                 "Modus A bitte ausfüllen."})
+    elif modus == "B":
+        if float(cp.get("kosten_pro_lademeter_eur", 0)) <= 0:
+            out.append({"art": "warnung",
+                         "text": "kosten_pro_lademeter = 0 — Modus B "
+                                 "bitte ausfüllen."})
+    elif modus == "C":
+        if float(cp.get("kosten_pro_m2_eur", 0)) <= 0:
+            out.append({"art": "warnung",
+                         "text": "kosten_pro_m2 = 0 — Modus C bitte "
+                                 "ausfüllen."})
+        if float(cp.get("lkw_breite_mm", 0)) <= 0:
+            out.append({"art": "fehler",
+                         "text": "lkw_breite_mm muss > 0 sein "
+                                 "(sonst kein Lademeter berechenbar)."})
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Δlademeter (Spec §11.2 — zwei Berechnungs-Varianten)
+# ---------------------------------------------------------------------------
+def delta_lademeter_flaechenbasiert(*,
+                                       delta_flaeche_mm2: float,
+                                       lkw_breite_mm: int) -> float:
+    """Variante 1 (Default): Δlademeter = Δfläche / (lkw_breite × 1000)
+    (Δfläche in mm², lkw_breite in mm, Resultat in m)."""
+    if lkw_breite_mm <= 0:
+        return 0.0
+    # Δfläche [mm²] / (lkw_breite [mm] × 1000 [mm/m]) → [m]
+    return float(delta_flaeche_mm2) / (lkw_breite_mm * 1000.0)
+
+
+def delta_lademeter_laengenbasiert(*,
+                                       palette_breite_mm: int,
+                                       delta_laenge_pro_palette_mm: float,
+                                       paletten_pro_periode: int,
+                                       lkw_breite_mm: int) -> float:
+    """Variante 2 (vereinfacht, nur wenn Δbreite ≈ 0):
+    Δlängengesamt = Δlänge × n / paletten_pro_reihe → in m."""
+    if palette_breite_mm <= 0 or lkw_breite_mm <= 0:
+        return 0.0
+    paletten_pro_reihe = max(1, lkw_breite_mm // palette_breite_mm)
+    delta_mm = (float(delta_laenge_pro_palette_mm)
+                * int(paletten_pro_periode)) / paletten_pro_reihe
+    return delta_mm / 1000.0
+
+
+def auslastung_lkw(*, paletten_count_per_typ: dict[tuple, int],
+                     cp: dict) -> dict[str, float]:
+    """Spec §16: LKW-Auslastung als Bruch [0..1]. Aggregiert über alle
+    Typen, jeweils dedicated-LKW. < 50% → Mischladung empfehlenswert."""
+    lkw_l = int(cp.get("lkw_laenge_mm", 13620))
+    lkw_b = int(cp.get("lkw_breite_mm", 2450))
+    lkw_h = int(cp.get("lkw_hoehe_mm", 2700))
+    stapel = int(cp.get("max_palettenstapel", 2))
+    max_g = float(cp.get("max_gewicht_kg", 24000))
+    if not paletten_count_per_typ:
+        return {"auslastung": 0.0, "fahrten_total": 0,
+                 "paletten_total": 0}
+    fahrten_total = 0
+    pal_total = 0
+    pal_lkw_max_je_typ = []
+    for kand, count in paletten_count_per_typ.items():
+        cs, cl = min(kand), max(kand)
+        info = paletten_pro_lkw(lkw_l, lkw_b, lkw_h, stapel, max_g,
+                                  p_l=cl, p_b=cs)
+        pro = info.get("anzahl_total", 0)
+        if pro <= 0:
+            continue
+        fahrten = int(math.ceil(count / pro))
+        fahrten_total += fahrten
+        pal_total += count
+        pal_lkw_max_je_typ.append(pro)
+    if fahrten_total == 0 or not pal_lkw_max_je_typ:
+        return {"auslastung": 0.0, "fahrten_total": 0,
+                 "paletten_total": pal_total}
+    # Auslastung = realer Pal-Inhalt / Kapazität bei voller Belegung
+    avg_pro = sum(pal_lkw_max_je_typ) / len(pal_lkw_max_je_typ)
+    kapazitaet = fahrten_total * avg_pro
+    aus = pal_total / kapazitaet if kapazitaet > 0 else 0.0
+    return {"auslastung": min(1.0, aus),
+             "fahrten_total": fahrten_total,
+             "paletten_total": pal_total}
+
+
+# ---------------------------------------------------------------------------
+# Live-Beispielrechnung fuer das UI (Spec §11.3)
+# ---------------------------------------------------------------------------
+def beispielrechnung(cp: dict, *,
+                       delta_laenge_pro_palette_mm: int = 100,
+                       paletten_pro_periode: int = 200,
+                       palette_breite_mm: int = 1200) -> dict:
+    """Erzeugt das Spec-§11.3-Beispiel mit aktuellen User-Werten —
+    bleibt in jedem UI-Zustand sichtbar."""
+    kpl = kosten_pro_lademeter(cp)
+    lkw_b = int(cp.get("lkw_breite_mm", 2450))
+    paletten_pro_reihe = max(1, lkw_b // max(1, palette_breite_mm))
+    delta_laenge_gesamt_mm = (delta_laenge_pro_palette_mm
+                                * paletten_pro_periode) / paletten_pro_reihe
+    delta_laenge_m = delta_laenge_gesamt_mm / 1000.0
+    transport_mehrkosten = delta_laenge_m * kpl
+    periode_tage = int(cp.get("periode_tage", 30))
+    jahr_faktor = 365.0 / max(1, periode_tage)
+    return {
+        "kosten_pro_lademeter": kpl,
+        "paletten_pro_reihe": paletten_pro_reihe,
+        "delta_laenge_pro_palette_mm": delta_laenge_pro_palette_mm,
+        "paletten_pro_periode": paletten_pro_periode,
+        "delta_laenge_gesamt_mm": delta_laenge_gesamt_mm,
+        "delta_lademeter": delta_laenge_m,
+        "transport_mehrkosten_periode": transport_mehrkosten,
+        "transport_mehrkosten_jahr": transport_mehrkosten * jahr_faktor,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Wirtschaftlichkeits-Vergleich (Spec §11.2)
 # ---------------------------------------------------------------------------
 def kostenpro_fahrt(cost_params: dict) -> float:
-    """Liefert kosten_pro_fahrt oder distanz_km × kosten_pro_km."""
+    """Legacy: liefert kosten_pro_fahrt direkt oder distanz·€/km.
+    Wird nur fuer Rueckwaerts-Kompatibilitaet im alten vergleich-Pfad
+    genutzt — neue Logik nutzt kosten_pro_lademeter()."""
     direkt = float(cost_params.get("kosten_pro_fahrt_eur", 0))
     if direkt > 0:
         return direkt
@@ -278,10 +454,43 @@ def vergleich(*, zustand_alt: dict, zustand_neu: dict,
                                        cost_params)
     f_alt = fahrten_alt["total_fahrten"]
     f_neu = fahrten_neu["total_fahrten"]
-    kf = kostenpro_fahrt(cost_params)
-    transport_alt = f_alt * kf
-    transport_neu = f_neu * kf
-    transport_mehrkosten = transport_neu - transport_alt
+
+    # Transport-Mehrkosten: NEUE Lademeter-basierte Berechnung
+    # (Spec §11.2). Wenn Modus + Lademeter-Kosten gesetzt, dann:
+    #   delta_lademeter ≈ Δ(Σpalettenflaeche) / (lkw_breite × 1000)
+    # Fallback (Legacy): fahrten-basiert mit kostenpro_fahrt.
+    kpl = kosten_pro_lademeter(cost_params)
+    lkw_b = int(cost_params.get("lkw_breite_mm", 2450))
+    variante = (cost_params.get("berechnung_variante") or "flaeche").lower()
+    if kpl > 0 and lkw_b > 0:
+        delta_flaeche = (zustand_neu.get("paletten_flaeche_summe", 0)
+                          - zustand_alt.get("paletten_flaeche_summe", 0))
+        if variante == "laenge":
+            # Variante 2: nur sinnvoll wenn Δbreite ≈ 0
+            # Approximation: Δlänge/Palette × Σpaletten / paletten_pro_reihe
+            # Hier vereinfacht: nimm Lückenanteil-Differenz als pseudo-Δ
+            delta_lm = delta_lademeter_flaechenbasiert(
+                delta_flaeche_mm2=delta_flaeche,
+                lkw_breite_mm=lkw_b,
+            )
+        else:
+            delta_lm = delta_lademeter_flaechenbasiert(
+                delta_flaeche_mm2=delta_flaeche,
+                lkw_breite_mm=lkw_b,
+            )
+        transport_mehrkosten = delta_lm * kpl
+        # Δlademeter ist hier bereits 'mehr' — alt/neu beziffern wir
+        # ueber denselben Lademeter-Anteil pro Zustand:
+        transport_alt = 0.0  # Referenz
+        transport_neu = transport_mehrkosten
+        delta_lademeter_period = delta_lm
+    else:
+        # Legacy fahrt-basiert
+        kf = kostenpro_fahrt(cost_params)
+        transport_alt = f_alt * kf
+        transport_neu = f_neu * kf
+        transport_mehrkosten = transport_neu - transport_alt
+        delta_lademeter_period = 0.0
 
     # Lagerkosten: Stellplatz · Tag · Σ Paletten
     lager_pro_stk_tag = float(cost_params.get(
@@ -327,6 +536,8 @@ def vergleich(*, zustand_alt: dict, zustand_neu: dict,
     return {
         "transport_alt": transport_alt, "transport_neu": transport_neu,
         "transport_mehrkosten": transport_mehrkosten,
+        "delta_lademeter_periode": delta_lademeter_period,
+        "kosten_pro_lademeter": kpl,
         "fahrten_alt": f_alt, "fahrten_neu": f_neu,
         "fahrten_alt_detail": fahrten_alt,
         "fahrten_neu_detail": fahrten_neu,
@@ -346,7 +557,7 @@ def vergleich(*, zustand_alt: dict, zustand_neu: dict,
         "netto_periode": netto,
         "netto_jahr": netto * faktor_jahr,
         "periode_tage": periode,
-        "kosten_pro_fahrt": kf,
+        "kosten_pro_fahrt": kostenpro_fahrt(cost_params),
     }
 
 
@@ -364,6 +575,29 @@ def empfehlungstext(v: dict, sensitivitaet_pct: int = 5) -> str:
                 ).replace(",", ".")
     else:
         return "💡 Wirtschaftlich neutral — Toleranz oder Gewichte anpassen."
+
+
+def break_even_kosten_pro_lademeter(zustand_alt: dict, zustand_neu: dict,
+                                       cost_params: dict) -> float | None:
+    """Spec §11.6: ab welcher kosten_pro_lademeter kippt Netto auf 0?
+    None wenn Δlademeter == 0 (Lademeter-Kosten haben keinen Einfluss)."""
+    cp_zero = dict(cost_params)
+    # Allen Modi 0 setzen → kpl = 0 → transport_mehrkosten = 0
+    cp_zero["kosten_pro_lkw_eur"] = 0.0
+    cp_zero["kosten_pro_lademeter_eur"] = 0.0
+    cp_zero["kosten_pro_m2_eur"] = 0.0
+    v0 = vergleich(zustand_alt=zustand_alt, zustand_neu=zustand_neu,
+                    cost_params=cp_zero)
+    lkw_b = int(cost_params.get("lkw_breite_mm", 2450))
+    delta_flaeche = (zustand_neu.get("paletten_flaeche_summe", 0)
+                      - zustand_alt.get("paletten_flaeche_summe", 0))
+    delta_lm = delta_lademeter_flaechenbasiert(
+        delta_flaeche_mm2=delta_flaeche, lkw_breite_mm=lkw_b)
+    if abs(delta_lm) < 1e-9:
+        return None
+    konstant = (v0["handling_einsparung"] + v0["var_einsparung"]
+                 - v0["palettenkauf_diff"] - v0["lager_mehrkosten"])
+    return konstant / delta_lm
 
 
 def break_even_kosten_pro_fahrt(zustand_alt: dict, zustand_neu: dict,
