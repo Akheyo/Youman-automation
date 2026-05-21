@@ -157,6 +157,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_wirt_modus2.py
 
+      - name: Pflicht-Test Bestellungen-Tab (BST-Nr, Teilmengen, Idempotenz)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_bestellungen_tab.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |

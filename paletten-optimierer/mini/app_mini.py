@@ -35,6 +35,7 @@ import wirtschaftlichkeit as wirt_modul  # noqa: E402
 import wirt_kandidaten as wirt_kand_modul  # noqa: E402
 import verbrauch as verbrauch_modul  # noqa: E402
 import procurement as procurement_modul  # noqa: E402
+import lieferanten as lieferanten_modul  # noqa: E402
 from import_doppelschutz import pruefe_import as _pruefe_import  # noqa: E402
 from _render import render_zuord_table, ziel_label as _ziel_label  # noqa: E402
 from _ui_chrome import (  # noqa: E402
@@ -184,6 +185,12 @@ def init_state() -> None:
         "doppelschutz_preview": None,  # Ergebnis von pruefe_import
         "doppelschutz_skip_ids": set(),# manuelle Skip-IDs (zeile-keys)
         "modus2_ergebnis": None,       # Spec §11.9 Kandidaten-Result
+        "best_neu_modal_aktiv": False, # 'Neue Bestellung'-Modal sichtbar
+        "best_neu_positionen": [],     # Positionen-Draft fuer neue Bst.
+        "best_filter_status": "alle",
+        "best_filter_suche": "",
+        "best_eingang_modal": None,    # dict: {auftrag_id, ...} oder None
+        "best_detail_aktiv": None,     # ausgeklappter Auftrag
         "bestellung_modal": None,      # dict mit pending Bestellung-Daten
         "historie_filter": {            # Filter Historie-Page
             "status": "alle",
@@ -307,9 +314,16 @@ def _globale_banner() -> None:
             f'{"en" if len(offene) != 1 else ""}'
         )
     if offene_bes:
+        ausstehend = sum(
+            sum(int(p.get("menge_bestellt", 0))
+                 - int(p.get("menge_geliefert", 0))
+                 for p in a.get("positionen", []))
+            for a in offene_bes
+        )
         teile.append(
-            f'📦 <b>{len(offene_bes)}</b> offene Beschaffung'
-            f'{"en" if len(offene_bes) != 1 else ""}'
+            f'📦 <b>{len(offene_bes)}</b> offene Bestellung'
+            f'{"en" if len(offene_bes) != 1 else ""} '
+            f'({ausstehend} Stk ausstehend)'
         )
     if not teile:
         return
@@ -2091,6 +2105,7 @@ def seite_katalog() -> None:
             "Marge (€)": (e.get("verkaufspreis_eur", 0.0)
                           - e.get("einkaufspreis_eur", 0.0)),
             "Bestand": int(e.get("bestand", 0)),
+            "in Anlief.": int(e.get("bestand_bestellt", 0)),
             "Meldebestand": int(e.get("meldebestand", 0)),
             "Verbrauch": int(e.get("verbrauchshaeufigkeit", 0)),
             "Vollständig": "✓" if katalog_modul.vollstaendig(e) else "⚠️ EK/VK",
@@ -2110,6 +2125,11 @@ def seite_katalog() -> None:
                      "Verkauf (€)":   st.column_config.NumberColumn(format="%.2f €"),
                      "Marge (€)":     st.column_config.NumberColumn(format="%.2f €"),
                      "Bestand":       st.column_config.NumberColumn(format="%d"),
+                     "in Anlief.":    st.column_config.NumberColumn(
+                         format="%d",
+                         help="Aus offenen Beschaffungs-Bestellungen "
+                              "(Tab Bestellungen).",
+                     ),
                      "Meldebestand":  st.column_config.NumberColumn(format="%d"),
                      "Verbrauch":     st.column_config.NumberColumn(format="%d"),
                      "Aktiv":         st.column_config.CheckboxColumn(),
@@ -2418,15 +2438,492 @@ def seite_bestand_dispo() -> None:
     card_close()
 
 
+_STATUS_BADGE = {
+    "offen":         ("🟢", "#16a34a", "offen"),
+    "bestellt":      ("📤", "#0ea5e9", "bestellt"),
+    "unterwegs":     ("🟡", "#eab308", "unterwegs"),
+    "wareneingang":  ("✅", "#15803d", "eingegangen"),
+    "eingegangen":   ("✅", "#15803d", "eingegangen"),
+    "storniert":     ("⚫", "#64748b", "storniert"),
+}
+
+
+def _render_status(status: str) -> str:
+    icon, color, label = _STATUS_BADGE.get(status, ("?", "#64748b", status))
+    return (f"<span style='color:{color};font-weight:700;'>"
+            f"{icon} {label}</span>")
+
+
 def seite_bestellungen() -> None:
-    _stub("Bestellungen",
-          "Hier wirst du Bestellvorgänge anlegen, deren Status verfolgen "
-          "und nach Wareneingang den Bestand automatisch aktualisieren.",
-          ["Bestellvorgang anlegen (Lieferant, Datum, Positionen)",
-           "Status: offen / unterwegs / eingegangen",
-           "Bei Eingang: Katalog-Bestand automatisch erhöhen",
-           "Auto-Vorschlag aus Dispositions-Tab übernehmen",
-           "Historie aller Bestellungen → Tab 'Historie'"])
+    """Bestellungen-Tab (Spec Tab 4): Lieferanten-Bestellungen verwalten,
+    Wareneingang buchen (auch Teilmengen), Auto-Vorschlag aus Disposition."""
+    auftraege = procurement_modul.alle()
+    offene_n = len(procurement_modul.offene())
+    ausstehend = procurement_modul.ausstehende_eingaenge()
+
+    card_open(
+        f"📦 BESTELLUNGEN  "
+        f"<span style='font-size:13px;color:#64748b;font-weight:400;'>"
+        f"({len(auftraege)} gesamt · {offene_n} offen · "
+        f"{ausstehend} Stk in Anlieferung)</span>"
+    )
+
+    # === Toolbar ===
+    tc1, tc2, tc3, tc4 = st.columns([1.5, 1.8, 1.2, 2])
+    if tc1.button("➕ Neue Bestellung", type="primary",
+                    use_container_width=True, key="best_neu"):
+        st.session_state.best_neu_modal_aktiv = True
+        st.session_state.best_neu_positionen = []
+        st.rerun()
+    if tc2.button("↻ Aus Disposition vorschlagen",
+                    use_container_width=True, key="best_dispo"):
+        ergebnis = st.session_state.get("ergebnis")
+        if not ergebnis:
+            st.warning("Keine aktive Optimierung — erst im Tab "
+                        "**Ergebnisse** optimieren.")
+        else:
+            vorschlaege = procurement_modul.aus_disposition_vorschlag(
+                katalog_modul, ergebnis=ergebnis,
+            )
+            if not vorschlaege:
+                st.info("Disposition liefert keine offenen Bedarfe "
+                         "(Bestand + Anlieferung deckt alles).")
+            else:
+                st.session_state.best_neu_modal_aktiv = True
+                st.session_state.best_neu_positionen = vorschlaege
+                st.success(f"{len(vorschlaege)} Position(en) aus "
+                            f"Disposition vorgeschlagen.")
+                st.rerun()
+    with tc3:
+        filter_status = st.selectbox(
+            "Status-Filter",
+            ["alle", "offen", "bestellt", "unterwegs", "eingegangen",
+              "storniert"],
+            index=["alle", "offen", "bestellt", "unterwegs",
+                    "eingegangen", "storniert"].index(
+                st.session_state.get("best_filter_status", "alle")),
+            key="best_filter_in",
+            label_visibility="collapsed",
+        )
+        st.session_state.best_filter_status = filter_status
+    with tc4:
+        suche = st.text_input(
+            "Suche (BST/Lieferant)",
+            value=st.session_state.get("best_filter_suche", ""),
+            key="best_suche_in",
+            label_visibility="collapsed",
+            placeholder="🔍 BST-Nr oder Lieferant suchen",
+        )
+        st.session_state.best_filter_suche = suche
+
+    card_close()
+
+    # === Modal: Neue Bestellung anlegen ===
+    if st.session_state.get("best_neu_modal_aktiv"):
+        _bestellung_modal()
+
+    # === Modal: Wareneingang buchen ===
+    if st.session_state.get("best_eingang_modal"):
+        _wareneingang_modal()
+
+    # === Tabelle ===
+    gefiltert = []
+    suche_l = suche.lower()
+    for a in auftraege:
+        if filter_status != "alle" and a.get("status") != filter_status:
+            # 'wareneingang' und 'eingegangen' zusammenfassen
+            if not (filter_status == "eingegangen"
+                    and a.get("status") == "wareneingang"):
+                continue
+        if suche_l:
+            text_zur_suche = (a.get("bst_nummer", "")
+                                + " " + a.get("lieferant", "")).lower()
+            if suche_l not in text_zur_suche:
+                continue
+        gefiltert.append(a)
+
+    if not gefiltert:
+        card_open("Keine Bestellungen")
+        if not auftraege:
+            st.info(
+                "Noch keine Bestellungen. Klick auf **+ Neue Bestellung** "
+                "oder **↻ Aus Disposition vorschlagen**."
+            )
+        else:
+            st.info("Keine Bestellungen entsprechen den Filtern.")
+        st.caption(f"Speicherort: {procurement_modul.pfad_str()}")
+        card_close()
+        return
+
+    card_open(f"Aktive Bestellungen ({len(gefiltert)})")
+    rows = []
+    for a in gefiltert:
+        bst = a.get("bst_nummer") or a["id"][:8]
+        positionen = a.get("positionen", [])
+        stk = sum(int(p.get("menge_bestellt", p.get("menge", 0)))
+                   for p in positionen)
+        st_icon, _, st_label = _STATUS_BADGE.get(a.get("status", ""),
+                                                    ("?", "", a.get("status", "")))
+        rows.append({
+            "ID": bst,
+            "Lieferant": a.get("lieferant", "—") or "—",
+            "Datum": a.get("datum_erstellt", "")[:10],
+            "Erwartet": a.get("datum_geplant", "—") or "—",
+            "Positionen": f"{len(positionen)} ({stk} Stk)",
+            "Summe (€)": a.get("summe_netto_eur",
+                                a.get("summe_eur", 0)),
+            "Status": f"{st_icon} {st_label}",
+            "Tracking": a.get("tracking_nr", "") or "—",
+        })
+    df = pd.DataFrame(rows)
+    st.dataframe(df, use_container_width=True, hide_index=True,
+                  column_config={
+                      "Summe (€)": st.column_config.NumberColumn(
+                          format="%.2f €"),
+                  })
+
+    # === Aktionen pro Zeile ===
+    st.markdown("**Aktionen pro Bestellung:**")
+    sel_idx = st.selectbox(
+        "Bestellung wählen",
+        options=range(len(gefiltert)),
+        format_func=lambda i: (
+            f"{gefiltert[i].get('bst_nummer', gefiltert[i]['id'][:8])} · "
+            f"{gefiltert[i].get('lieferant', '—')} · "
+            f"{gefiltert[i].get('status', '?')}"
+        ),
+        key="best_sel",
+    )
+    aktiv = gefiltert[sel_idx]
+    status = aktiv.get("status", "offen")
+    bst_label = aktiv.get("bst_nummer") or aktiv["id"][:8]
+
+    ac1, ac2, ac3, ac4, ac5 = st.columns(5)
+    if status == "offen":
+        if ac1.button("▶ Senden", use_container_width=True, key="b_send"):
+            erg = procurement_modul.update_status(
+                aktiv["id"], "unterwegs", katalog_modul=katalog_modul,
+            )
+            if erg["ok"]:
+                st.success(f"{bst_label} → unterwegs")
+                st.rerun()
+            else:
+                st.error(erg["fehler"])
+    if status in ("offen", "bestellt", "unterwegs"):
+        if ac2.button("📦 Eingang buchen", use_container_width=True,
+                        type="primary", key="b_eingang"):
+            st.session_state.best_eingang_modal = {
+                "auftrag_id": aktiv["id"],
+                "bst": bst_label,
+            }
+            st.rerun()
+    if status not in ("eingegangen", "wareneingang", "storniert"):
+        if ac3.button("✗ Stornieren", use_container_width=True,
+                        key="b_storno"):
+            erg = procurement_modul.update_status(
+                aktiv["id"], "storniert", katalog_modul=katalog_modul,
+            )
+            if erg["ok"]:
+                st.success(f"{bst_label} storniert.")
+                st.rerun()
+            else:
+                st.error(erg["fehler"])
+    if ac4.button("👁 Details", use_container_width=True, key="b_det"):
+        st.session_state.best_detail_aktiv = (
+            None if st.session_state.get("best_detail_aktiv") == aktiv["id"]
+            else aktiv["id"]
+        )
+        st.rerun()
+    if ac5.button("🗑️ Löschen", use_container_width=True, key="b_del"):
+        procurement_modul.loesche_eintrag(aktiv["id"])
+        st.warning(f"{bst_label} gelöscht.")
+        st.rerun()
+
+    # === Detail-Panel (Spec UI-Layout: Klick auf Zeile → Detail rechts) ===
+    if st.session_state.get("best_detail_aktiv") == aktiv["id"]:
+        with st.expander(f"📋 Details {bst_label}", expanded=True):
+            dc1, dc2 = st.columns([2, 1])
+            with dc1:
+                st.markdown(
+                    f"**Lieferant:** {aktiv.get('lieferant', '—')}<br>"
+                    f"**Bestelldatum:** {aktiv.get('datum_erstellt', '—')[:10]}<br>"
+                    f"**Geplant:** {aktiv.get('datum_geplant', '—')}<br>"
+                    f"**Status:** {_render_status(aktiv.get('status', ''))}<br>"
+                    f"**Tracking:** {aktiv.get('tracking_nr', '—') or '—'}<br>"
+                    f"**Bemerkung:** {aktiv.get('bemerkung', '—') or '—'}",
+                    unsafe_allow_html=True,
+                )
+            with dc2:
+                st.metric("Summe netto",
+                            f"{aktiv.get('summe_netto_eur', 0):.2f} €")
+                st.metric("Summe brutto (×1.19)",
+                            f"{aktiv.get('summe_brutto_eur', 0):.2f} €")
+
+            # Positionen
+            pos_rows = [{
+                "Palette": (f"{p.get('snapshot', {}).get('name', '') or '—'} "
+                             f"{p.get('snapshot', {}).get('L_mm', 0)}×"
+                             f"{p.get('snapshot', {}).get('B_mm', 0)}"),
+                "Bestellt": p.get("menge_bestellt", p.get("menge", 0)),
+                "Geliefert": p.get("menge_geliefert", 0),
+                "Rest": (p.get("menge_bestellt", p.get("menge", 0))
+                         - p.get("menge_geliefert", 0)),
+                "EK/Stk (€)": p.get("ek_pro_stk_eur", 0),
+                "Σ (€)": p.get("ek_summe", 0),
+            } for p in aktiv.get("positionen", [])]
+            if pos_rows:
+                st.markdown("**Positionen:**")
+                st.dataframe(
+                    pd.DataFrame(pos_rows),
+                    use_container_width=True, hide_index=True,
+                    column_config={
+                        "Bestellt": st.column_config.NumberColumn(format="%d"),
+                        "Geliefert": st.column_config.NumberColumn(format="%d"),
+                        "Rest": st.column_config.NumberColumn(format="%d"),
+                        "EK/Stk (€)": st.column_config.NumberColumn(format="%.2f €"),
+                        "Σ (€)": st.column_config.NumberColumn(format="%.2f €"),
+                    },
+                )
+
+            # Audit-Log
+            log = aktiv.get("audit_log", [])
+            if log:
+                with st.expander(f"📜 Audit-Log ({len(log)})"):
+                    for e in log:
+                        st.caption(
+                            f"{e.get('datum', '')[:16]} · "
+                            f"**{e.get('user', '?')}** · "
+                            f"{e.get('action', '')} · "
+                            f"{e.get('details', '')}"
+                        )
+
+            # PDF-Download
+            text = procurement_modul.als_text(aktiv)
+            st.download_button(
+                "📄 Druckansicht als Text-Datei",
+                data=text.encode("utf-8"),
+                file_name=f"{bst_label}.txt",
+                mime="text/plain",
+                use_container_width=True,
+                key=f"dl_{aktiv['id']}",
+            )
+
+    card_close()
+
+    # Link zur Historie
+    st.markdown(
+        '<div style="text-align:right;font-size:13px;color:#3b82f6;'
+        'margin-top:8px;">→ Vollständige <b>Historie</b> der '
+        'Kunden-Bestellungen siehe Tab <b>Historie</b></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _bestellung_modal() -> None:
+    """Modal: Neue Bestellung anlegen (Spec §1.1)."""
+    st.markdown("---")
+    card_open("➕ Neue Bestellung anlegen")
+    paletten_alle = katalog_modul.alle()
+    lieferanten_alle = lieferanten_modul.aktive()
+    if not paletten_alle:
+        st.error("Keine Paletten im Katalog — bitte erst Paletten anlegen.")
+        if st.button("Abbrechen", key="bn_abb1"):
+            st.session_state.best_neu_modal_aktiv = False
+            st.rerun()
+        card_close()
+        return
+
+    mc1, mc2, mc3 = st.columns([2, 1, 1])
+    with mc1:
+        # Lieferant: bestehende + Inline 'neu anlegen'
+        liefer_opt = ["— (frei eingeben)"] + [l["name"] for l in lieferanten_alle]
+        sel_l = st.selectbox(
+            "Lieferant",
+            range(len(liefer_opt)),
+            format_func=lambda i: liefer_opt[i],
+            key="bn_lief_sel",
+        )
+        if sel_l == 0:
+            liefer_name = st.text_input("Lieferant-Name (frei)", key="bn_lief_frei")
+            liefer_id = None
+            if liefer_name.strip() and st.button(
+                    "Lieferant zu Stammdaten hinzufügen",
+                    key="bn_lief_save"):
+                liefer_id = lieferanten_modul.neuer_lieferant(
+                    name=liefer_name.strip())
+                st.success(f"Lieferant '{liefer_name}' angelegt.")
+                st.rerun()
+        else:
+            liefer = lieferanten_alle[sel_l - 1]
+            liefer_name = liefer["name"]
+            liefer_id = liefer["id"]
+    with mc2:
+        from datetime import date as _date, timedelta as _td
+        b_datum = st.date_input("Bestelldatum", value=_date.today(),
+                                  key="bn_b_datum")
+    with mc3:
+        e_datum = st.date_input("Erwartetes Lieferdatum",
+                                  value=_date.today() + _td(days=14),
+                                  key="bn_e_datum")
+    bemerkung = st.text_area("Bemerkung", value="", key="bn_bem",
+                                height=70)
+
+    # Positionen
+    positionen = st.session_state.best_neu_positionen
+    with st.form("bn_pos_add", clear_on_submit=True):
+        pc1, pc2, pc3 = st.columns([3, 1, 1])
+        with pc1:
+            pal_idx = st.selectbox(
+                "Palette",
+                options=range(len(paletten_alle)),
+                format_func=lambda i: (
+                    f"{paletten_alle[i].get('name', '') or '—'} · "
+                    f"{paletten_alle[i]['L_mm']}×{paletten_alle[i]['B_mm']}"
+                ),
+                key="bn_pal",
+            )
+        with pc2:
+            menge = st.number_input("Menge", min_value=1,
+                                      max_value=1000000, value=10, step=1,
+                                      key="bn_menge")
+        with pc3:
+            ek = st.number_input(
+                "EK/Stk (€)", min_value=0.0, max_value=10000.0,
+                value=float(paletten_alle[pal_idx].get(
+                    "einkaufspreis_eur", 0)),
+                step=0.50, format="%.2f", key="bn_ek",
+            )
+        if st.form_submit_button("➕ Position hinzufügen",
+                                     use_container_width=True):
+            positionen.append({
+                "palette_id": paletten_alle[pal_idx]["id"],
+                "menge": int(menge),
+                "ek_pro_stk_eur": float(ek),
+                "label": (
+                    f"{paletten_alle[pal_idx]['L_mm']}×"
+                    f"{paletten_alle[pal_idx]['B_mm']}"
+                ),
+            })
+
+    # Aktuelle Positionen + Auto-Summe
+    if positionen:
+        dfp = pd.DataFrame([
+            {"Palette": p.get("label", "—"),
+              "Menge": p["menge"], "EK/Stk (€)": p["ek_pro_stk_eur"],
+              "Σ (€)": p["menge"] * p["ek_pro_stk_eur"]}
+            for p in positionen
+        ])
+        st.dataframe(dfp, use_container_width=True, hide_index=True,
+                       column_config={
+                           "Menge": st.column_config.NumberColumn(format="%d"),
+                           "EK/Stk (€)": st.column_config.NumberColumn(format="%.2f €"),
+                           "Σ (€)": st.column_config.NumberColumn(format="%.2f €"),
+                       })
+        netto = sum(p["menge"] * p["ek_pro_stk_eur"] for p in positionen)
+        bm1, bm2 = st.columns(2)
+        bm1.metric("Σ netto", f"{netto:.2f} €")
+        bm2.metric("Σ brutto (×1.19)", f"{netto * 1.19:.2f} €")
+
+    bc1, bc2, bc3 = st.columns([2, 1, 1])
+    if bc1.button("✓ Bestellung anlegen", type="primary",
+                    use_container_width=True, key="bn_anlegen",
+                    disabled=not positionen):
+        erg = procurement_modul.neuer_auftrag(
+            katalog_modul=katalog_modul,
+            lieferant=liefer_name or "—",
+            lieferant_id=liefer_id,
+            positionen=positionen,
+            datum_bestellt=b_datum.isoformat(),
+            datum_geplant=e_datum.isoformat(),
+            bemerkung=bemerkung,
+            buchungsmodus="wareneingang",
+        )
+        if erg["ok"]:
+            st.success(
+                f"{erg['bst_nummer']} angelegt — {erg['positionen']} "
+                f"Positionen, Σ {erg['summe_eur']:.2f} €."
+            )
+            st.session_state.best_neu_modal_aktiv = False
+            st.session_state.best_neu_positionen = []
+            st.rerun()
+        else:
+            st.error("Konnte nicht angelegt werden.")
+    if bc2.button("🗑️ Positionen leeren", use_container_width=True,
+                    key="bn_clear"):
+        st.session_state.best_neu_positionen = []
+        st.rerun()
+    if bc3.button("✗ Abbrechen", use_container_width=True,
+                    key="bn_abb"):
+        st.session_state.best_neu_modal_aktiv = False
+        st.session_state.best_neu_positionen = []
+        st.rerun()
+    card_close()
+
+
+def _wareneingang_modal() -> None:
+    """Modal: Teilmengen-Eingang (Spec §1.2)."""
+    info = st.session_state.best_eingang_modal
+    if not info:
+        return
+    auftrag = next(
+        (a for a in procurement_modul.alle() if a["id"] == info["auftrag_id"]),
+        None,
+    )
+    if not auftrag:
+        st.session_state.best_eingang_modal = None
+        return
+    st.markdown("---")
+    card_open(f"📦 Wareneingang buchen — {info['bst']}")
+    st.caption(
+        "Pro Position die gelieferte Menge eintragen. Teilmengen "
+        "addieren sich; die Bestellung bleibt offen bis vollständig "
+        "geliefert."
+    )
+    eingaenge = {}
+    for pos in auftrag.get("positionen", []):
+        rest = (int(pos.get("menge_bestellt", 0))
+                 - int(pos.get("menge_geliefert", 0)))
+        snap = pos.get("snapshot", {})
+        label = (f"{snap.get('name', '') or '—'} "
+                  f"{snap.get('L_mm', 0)}×{snap.get('B_mm', 0)} · "
+                  f"Rest {rest} Stk")
+        m = st.number_input(
+            label, min_value=0, max_value=int(pos.get("menge_bestellt", 0)),
+            value=rest, step=1, key=f"we_{pos['id']}",
+        )
+        eingaenge[pos["id"]] = int(m)
+    we_datum = st.date_input("Wareneingangs-Datum", key="we_datum")
+    bc1, bc2 = st.columns(2)
+    if bc1.button("✓ Eingang buchen", type="primary",
+                    use_container_width=True, key="we_buchen"):
+        # Idempotenz-Token = stable hash der eingaenge + datum
+        import hashlib
+        token = hashlib.md5(
+            (str(sorted(eingaenge.items())) + we_datum.isoformat()).encode()
+        ).hexdigest()
+        erg = procurement_modul.wareneingang_buchen(
+            auftrag["id"],
+            positionen_mengen=eingaenge,
+            katalog_modul=katalog_modul,
+            datum=we_datum.isoformat(),
+            idempotenz_token=token,
+        )
+        if erg["ok"]:
+            if erg.get("bereits_gebucht"):
+                st.warning("Identischer Wareneingang wurde bereits "
+                            "gebucht (Idempotenz).")
+            else:
+                st.success(
+                    f"Eingang gebucht — neuer Status: {erg['neu_status']}."
+                )
+            st.session_state.best_eingang_modal = None
+            st.rerun()
+        else:
+            st.error(erg["fehler"])
+    if bc2.button("✗ Abbrechen", use_container_width=True, key="we_abb"):
+        st.session_state.best_eingang_modal = None
+        st.rerun()
+    card_close()
 
 
 def seite_historie() -> None:
@@ -3561,12 +4058,102 @@ def seite_stammdaten() -> None:
               help="Standard ≥ Last in beiden Dimensionen — physisch zwingend.")
     card_close()
 
-    _stub("Geplante Stammdaten-Verwaltung",
-          "Hier kommen über die Zeit:",
-          ["Kunden-Stammdaten (Name, Adresse, Rabatte)",
-           "Lieferanten-Stammdaten (mit Standard-Lieferzeiten)",
-           "Eigene Maßraster (z.B. 100mm-Raster für Standards)",
-           "Palettenaufschlag konfigurierbar machen (statt fix 50 mm)"])
+    # === Lieferanten-CRUD (Spec §4) ===
+    lieferanten_alle = lieferanten_modul.alle()
+    card_open(f"🏭 Lieferanten ({len(lieferanten_alle)})")
+    st.caption(
+        "Lieferanten-Stammdaten für den Tab **Bestellungen**. "
+        "Default-Paletten pro Lieferant erleichtern den Disposition-"
+        "Auto-Vorschlag."
+    )
+
+    with st.expander("➕ Neuen Lieferanten anlegen",
+                       expanded=not lieferanten_alle):
+        lc1, lc2 = st.columns([2, 2])
+        with lc1:
+            n_name = st.text_input("Name", key="lief_neu_name",
+                                     placeholder="z.B. Palettenwerk Müller GmbH")
+            n_kontakt = st.text_input("Kontakt (Email/Tel.)",
+                                         key="lief_neu_k")
+        with lc2:
+            n_notiz = st.text_input("Notiz", key="lief_neu_n")
+        if st.button("Anlegen", type="primary", use_container_width=True,
+                       key="lief_neu_btn"):
+            if not n_name.strip():
+                st.error("Name darf nicht leer sein.")
+            else:
+                lieferanten_modul.neuer_lieferant(
+                    name=n_name.strip(), kontakt=n_kontakt,
+                    notiz=n_notiz,
+                )
+                st.success(f"Lieferant '{n_name}' angelegt.")
+                st.rerun()
+
+    if lieferanten_alle:
+        df_l = pd.DataFrame([
+            {
+                "Name": l["name"],
+                "Kontakt": l.get("kontakt", ""),
+                "Aktiv": l.get("aktiv", True),
+                "Offene Bestellungen": int(
+                    procurement_modul.hat_lieferant_offene(l["id"])
+                ),
+                "Notiz": l.get("notiz", ""),
+                "Erstellt": l.get("datum_erstellt", "")[:10],
+            }
+            for l in lieferanten_alle
+        ])
+        st.dataframe(df_l, use_container_width=True, hide_index=True,
+                       column_config={
+                           "Aktiv": st.column_config.CheckboxColumn(),
+                           "Offene Bestellungen":
+                               st.column_config.NumberColumn(format="%d"),
+                       })
+        # Bearbeiten / Löschen
+        sel = st.selectbox(
+            "Lieferant wählen",
+            options=range(len(lieferanten_alle)),
+            format_func=lambda i: lieferanten_alle[i]["name"],
+            key="lief_sel",
+        )
+        aktiv_l = lieferanten_alle[sel]
+        with st.expander(f"Bearbeiten: {aktiv_l['name']}", expanded=False):
+            e_name = st.text_input("Name", value=aktiv_l["name"],
+                                      key=f"lief_e_n_{aktiv_l['id']}")
+            e_kontakt = st.text_input("Kontakt",
+                                          value=aktiv_l.get("kontakt", ""),
+                                          key=f"lief_e_k_{aktiv_l['id']}")
+            e_notiz = st.text_input("Notiz", value=aktiv_l.get("notiz", ""),
+                                       key=f"lief_e_z_{aktiv_l['id']}")
+            e_aktiv = st.toggle("Aktiv", value=aktiv_l.get("aktiv", True),
+                                  key=f"lief_e_a_{aktiv_l['id']}")
+            sc1, sc2 = st.columns(2)
+            if sc1.button("💾 Speichern", type="primary",
+                            use_container_width=True,
+                            key=f"lief_save_{aktiv_l['id']}"):
+                lieferanten_modul.update_lieferant(
+                    aktiv_l["id"], name=e_name, kontakt=e_kontakt,
+                    notiz=e_notiz, aktiv=e_aktiv,
+                )
+                st.success("Gespeichert.")
+                st.rerun()
+            if sc2.button("🗑️ Löschen", use_container_width=True,
+                            key=f"lief_del_{aktiv_l['id']}"):
+                # Spec §5: Blockt bei offener Bestellung
+                if procurement_modul.hat_lieferant_offene(aktiv_l["id"]):
+                    st.error(
+                        "Löschen blockiert: Lieferant hat offene "
+                        "Bestellungen. Erst abschließen/stornieren."
+                    )
+                else:
+                    erg = lieferanten_modul.loesche_lieferant(aktiv_l["id"])
+                    if erg["ok"]:
+                        st.warning("Lieferant gelöscht.")
+                        st.rerun()
+                    else:
+                        st.error(erg["fehler"])
+    st.caption(f"Speicherort: {lieferanten_modul.pfad_str()}")
+    card_close()
 
 
 def seite_berichte() -> None:
