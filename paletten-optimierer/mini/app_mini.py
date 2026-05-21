@@ -45,9 +45,24 @@ from _ui_chrome import (  # noqa: E402
 )
 
 
+def _favicon_path() -> str:
+    """Sucht das Logo für das Browser-Favicon."""
+    kandidaten = [
+        HIER / "assets" / "youman_logo.png",
+        HIER.parent / "assets" / "youman_logo.png",
+    ]
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        kandidaten.append(Path(meipass) / "assets" / "youman_logo.png")
+    for p in kandidaten:
+        if p.exists():
+            return str(p)
+    return "📦"  # Fallback
+
+
 st.set_page_config(
-    page_title="Youman Mini",
-    page_icon="📦",
+    page_title="Youman",
+    page_icon=_favicon_path(),
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -271,7 +286,7 @@ with st.sidebar:
 # Top-Header — identisch zur Hauptapp
 # ---------------------------------------------------------------------------
 selbsttest_banner()
-topbar("Youman Mini", "Industriepaletten · Standardisierung")
+topbar("Youman", "Automation · Industriepaletten · Standardisierung")
 step_indicator(aktiver_schritt())
 
 

@@ -7,9 +7,45 @@ hat aber nur das, was die Mini-App können soll.
 """
 from __future__ import annotations
 
+import base64
+import sys
 from html import escape
+from pathlib import Path
 
 import streamlit as st
+
+
+# ---------------------------------------------------------------------------
+# Logo (base64-embed) — sucht in mehreren Pfaden, damit es im Dev,
+# im PyInstaller-Bundle und auf jeder Plattform funktioniert.
+# ---------------------------------------------------------------------------
+def _logo_pfad() -> Path | None:
+    """Sucht das Logo in mehreren Standorten."""
+    kandidaten = [
+        Path(__file__).resolve().parent / "assets" / "youman_logo.png",
+        Path(__file__).resolve().parent.parent / "assets" / "youman_logo.png",
+    ]
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        kandidaten.append(Path(meipass) / "assets" / "youman_logo.png")
+        kandidaten.append(Path(meipass) / "youman_logo.png")
+    for p in kandidaten:
+        if p.exists():
+            return p
+    return None
+
+
+def _logo_base64() -> str | None:
+    """Liest das Logo und gibt einen data:image-URI zurück oder None."""
+    p = _logo_pfad()
+    if p is None:
+        return None
+    try:
+        raw = p.read_bytes()
+        b64 = base64.b64encode(raw).decode("ascii")
+        return f"data:image/png;base64,{b64}"
+    except OSError:
+        return None
 
 
 # --- Design-Tokens (identisch zur Hauptapp app.py:75-80) -------------
@@ -69,6 +105,8 @@ CSS = f"""
         padding: 22px 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.06);
         margin-bottom: 14px;
     }}
+    .sidebar-brand img {{ width: 38px; height: 38px; border-radius: 8px;
+        background: #fff; padding: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);}}
     .sidebar-brand .name {{ color: #fff; font-weight: 800; font-size: 22px; line-height: 1; letter-spacing: -0.5px;}}
     .sidebar-brand .sub  {{ color: #94a3b8; font-size: 11px; margin-top: 4px; letter-spacing: 0.3px;}}
     .sidebar-section-label {{
@@ -85,10 +123,13 @@ CSS = f"""
 
     /* Top header */
     .topbar {{
-        display: flex; justify-content: space-between; align-items: flex-end;
-        margin-bottom: 14px;
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 14px; gap: 16px;
     }}
-    .topbar .title {{ color: {PRIMARY_LIGHT}; font-size: 24px; font-weight: 800; line-height: 1; letter-spacing: -0.5px;}}
+    .topbar .titleblock {{ display: flex; align-items: center; gap: 14px; }}
+    .topbar img {{ width: 56px; height: 56px; border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(15,31,61,0.12); }}
+    .topbar .title {{ color: {PRIMARY_LIGHT}; font-size: 28px; font-weight: 800; line-height: 1; letter-spacing: -0.5px;}}
     .topbar .sub   {{ color: #6b7280; font-size: 12px; margin-top: 4px;}}
     .topbar .stamp {{
         font-family: ui-monospace, SF Mono, Menlo, monospace;
@@ -243,11 +284,16 @@ def build_stempel() -> str:
 
 
 def topbar(title: str, sub: str) -> None:
-    """Header oben rechts mit Build- und Kern-SHA — analog app.py:topbar()."""
+    """Header oben mit Logo, Titel, Sub und Build-Stempel."""
+    logo = _logo_base64()
+    logo_html = (f'<img src="{logo}" alt="Youman">' if logo else "")
     st.markdown(
         f'<div class="topbar">'
-        f'  <div><div class="title">{escape(title)}</div>'
-        f'       <div class="sub">{escape(sub)}</div></div>'
+        f'  <div class="titleblock">'
+        f'    {logo_html}'
+        f'    <div><div class="title">{escape(title)}</div>'
+        f'         <div class="sub">{escape(sub)}</div></div>'
+        f'  </div>'
         f'  <div class="stamp">{escape(build_stempel())}</div>'
         f'</div>',
         unsafe_allow_html=True,
@@ -288,11 +334,14 @@ def disabled_feature(name: str, grund: str = "in dieser Mini-Version nicht verf�
 
 
 def sidebar_brand() -> None:
+    logo = _logo_base64()
+    logo_html = (f'<img src="{logo}" alt="Youman">' if logo else "")
     st.markdown(
-        '<div class="sidebar-brand">'
-        '<div><div class="name">Youman <span style="opacity:0.5;font-size:14px;">Mini</span></div>'
-        '<div class="sub">Industriepaletten · Import + Optimierung</div></div>'
-        '</div>',
+        f'<div class="sidebar-brand">'
+        f'{logo_html}'
+        f'<div><div class="name">Youman</div>'
+        f'<div class="sub">Automation · Industriepaletten</div></div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 

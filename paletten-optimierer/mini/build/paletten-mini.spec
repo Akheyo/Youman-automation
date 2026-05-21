@@ -61,6 +61,13 @@ app_datas = [
 if _has_status:
     app_datas.append((_status_quelle, "."))
 
+# Logo + Assets mitpacken (Browser-Favicon, Sidebar-Brand, Topbar)
+_logo_quellen = ["../../assets/youman_logo.png", "../assets/youman_logo.png"]
+for _src in _logo_quellen:
+    if _os.path.exists(_src):
+        app_datas.append((_src, "assets"))
+        break
+
 extra_hidden = [
     "streamlit", "streamlit.web", "streamlit.web.cli", "streamlit.web.bootstrap",
     "streamlit.runtime", "streamlit.runtime.scriptrunner",
