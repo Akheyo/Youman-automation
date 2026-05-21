@@ -163,8 +163,21 @@ with st.sidebar:
     sidebar_brand()
 
     sidebar_section("Workflow")
-    SEITEN_LISTE = ["Datenimport", "Einstellungen", "Optimierung",
-                    "Ergebnisse", "Verlauf", "Katalog"]
+    SEITEN_LISTE = [
+        "Dashboard",
+        "Datenimport",
+        "Einstellungen",
+        "Optimierung",
+        "Ergebnisse",
+        "Verlauf",
+        "Katalog",
+        "Bestand & Disposition",
+        "Bestellungen",
+        "Kostenanalyse",
+        "Stammdaten",
+        "Berichte",
+        "App-Einstellungen",
+    ]
     if st.session_state.seite not in SEITEN_LISTE:
         st.session_state.seite = "Datenimport"
     seite_neu = st.radio(
@@ -177,10 +190,17 @@ with st.sidebar:
         st.session_state.seite = seite_neu
         st.rerun()
 
-    sidebar_section("Nicht in dieser Version")
-    for nicht in ["Dashboard", "Bestand & Disposition", "Bestellungen",
-                  "Kostenanalyse", "Stammdaten", "Berichte", "Einstellungen (App)"]:
-        sidebar_disabled_item(nicht)
+    sidebar_section("Info")
+    st.markdown(
+        '<div style="font-size:10px;color:#64748b;padding:4px 18px;'
+        'line-height:1.5;">'
+        'Persistente Daten im Profil:<br>'
+        '<code style="color:#94a3b8;">~/.palettenmini/</code><br>'
+        '└─ import_verlauf.json<br>'
+        '└─ palettenkatalog.json'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -358,15 +378,20 @@ def seite_einstellungen() -> None:
         card_close()
 
     with col_r:
-        card_open("In der Mini-Version nicht verfügbar")
-        for feat in [
-            "Wirtschaftlichkeits-Optimierung",
-            "Höhe als 3. Dimension",
-            "Lade-Raster",
-            "Mengen-Schwelle (bewusst entfernt)",
-            "Coverage zweiseitig (physisch ausgeschlossen)",
-        ]:
-            disabled_feature(feat)
+        card_open("Auf separaten Seiten")
+        st.markdown(
+            '<div style="font-size:13px;color:#475569;line-height:1.8;">'
+            '<b>Katalog</b> — Paletten mit Preisen + Bestand + Meldebestand<br>'
+            '<b>Bestand &amp; Disposition</b> — Lagerübersicht + Nachbestellbedarf<br>'
+            '<b>Kostenanalyse</b> — Marge pro Standard nach Optimierung<br>'
+            '<b>Verlauf</b> — alle Imports persistent gespeichert<br>'
+            '<b>Bestellungen</b> — Anlage von Bestellvorgängen<br>'
+            '<b>Berichte</b> — Exporte als CSV/Excel/PDF<br>'
+            '<b>Stammdaten</b> — z.B. Palettenaufschlag (50 mm)<br>'
+            '<b>App-Einstellungen</b> — Konfiguration und Speicherorte'
+            '</div>',
+            unsafe_allow_html=True,
+        )
         card_close()
 
     st.divider()
@@ -1055,14 +1080,330 @@ def seite_katalog() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Neue Seiten — werden nach und nach gefuellt. Aktiviert hier, damit
+# der Nutzer sie schon sieht und navigieren kann.
+# ---------------------------------------------------------------------------
+
+def _stub(name: str, beschreibung: str, geplant: list[str]) -> None:
+    """Platzhalter-Seite mit klarer Aussage was geplant ist."""
+    card_open(name)
+    st.markdown(
+        f'<div style="font-size:13px;color:#475569;margin-bottom:8px;">'
+        f'{escape(beschreibung)}</div>',
+        unsafe_allow_html=True,
+    )
+    st.info("Diese Seite wird in einem nächsten Schritt gefüllt — "
+            "noch in Entwicklung.")
+    st.markdown("**Geplante Inhalte:**")
+    for punkt in geplant:
+        st.markdown(f"- {escape(punkt)}")
+    card_close()
+
+
+def seite_dashboard() -> None:
+    """Zentrale Uebersicht: aktuelle Daten + Verlauf-Stats + kritische Bestände."""
+    card_open("Dashboard — Übersicht")
+
+    # KPIs aus aktueller Session
+    dat = st.session_state.get("import_dat")
+    erg = st.session_state.get("ergebnis")
+    c1, c2, c3, c4 = st.columns(4)
+    if dat:
+        c1.metric("Aufträge mit Maß", len(dat.get("mit_mass", [])))
+        c2.metric("Paletten gesamt",
+                   dat.get("paletten_gesamt", 0) or
+                   sum(p["anzahl"] for p in dat.get("mit_mass", [])))
+    else:
+        c1.metric("Aufträge mit Maß", "—")
+        c2.metric("Paletten gesamt", "—")
+    if erg:
+        c3.metric("Letzte Optimierung",
+                   f"{erg['gesamt']} Maße",
+                   f"{len(erg['standards'])} Std + {len(erg['sonder'])} Sonder",
+                   delta_color="off")
+    else:
+        c3.metric("Letzte Optimierung", "—")
+    try:
+        kat_n = len(katalog_modul.alle())
+    except Exception:
+        kat_n = 0
+    c4.metric("Paletten im Katalog", kat_n)
+    card_close()
+
+    # Verlauf-Mini-Tabelle
+    try:
+        v = verlauf_alle()
+    except Exception:
+        v = []
+    if v:
+        card_open(f"Letzte 5 Imports ({len(v)} insgesamt)")
+        rows = []
+        for e in v[:5]:
+            erg_e = e.get("ergebnis", {}) or {}
+            opt = e.get("optimierung")
+            opt_txt = (f"{opt.get('standards','?')}+{opt.get('sonder','?')}"
+                       if opt else "—")
+            rows.append({
+                "Datum": e.get("datum", "")[:16].replace("T", " "),
+                "Datei": e.get("datei_name", ""),
+                "mit Maß": erg_e.get("auftraege_mit_mass", 0),
+                "Paletten": erg_e.get("paletten_gesamt", 0),
+                "Letzte Opt.": opt_txt,
+            })
+        st.dataframe(pd.DataFrame(rows), use_container_width=True,
+                     hide_index=True)
+        card_close()
+
+    # Kritische Bestände
+    try:
+        krit = katalog_modul.kritische_bestaende()
+    except Exception:
+        krit = []
+    if krit:
+        card_open(f"⚠️ Kritische Bestände ({len(krit)})")
+        rows = [{
+            "Palette": f"{e['L_mm']} × {e['B_mm']} mm",
+            "Bestand": int(e.get("bestand", 0)),
+            "Meldebestand": int(e.get("meldebestand", 0)),
+            "Fehlmenge": (int(e.get("meldebestand", 0))
+                          - int(e.get("bestand", 0))),
+        } for e in krit]
+        st.dataframe(pd.DataFrame(rows), use_container_width=True,
+                     hide_index=True)
+        st.caption("→ Im Tab 'Bestand & Disposition' anpassen.")
+        card_close()
+
+
+def seite_bestand_dispo() -> None:
+    """Lagerübersicht + Schnell-Editor für Bestände."""
+    card_open("Bestand & Disposition")
+    eintraege = katalog_modul.alle()
+    if not eintraege:
+        st.info("Keine Paletten im Katalog. → Tab 'Katalog' füllen.")
+        card_close()
+        return
+    st.markdown(
+        '<div style="font-size:13px;color:#475569;margin-bottom:8px;">'
+        'Schneller Überblick über alle Palettenbestände. Bestand kann '
+        'hier direkt editiert werden — Änderungen werden sofort gespeichert.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Disposition: für jeden kritischen Eintrag Vorschlag "wieviel nachbestellen"
+    krit = katalog_modul.kritische_bestaende()
+    if krit:
+        rows = [{
+            "Palette": f"{e['L_mm']} × {e['B_mm']} mm",
+            "Bestand": int(e.get("bestand", 0)),
+            "Meldebestand": int(e.get("meldebestand", 0)),
+            "Nachbestellen (mind.)": max(0, int(e.get("meldebestand", 0))
+                                          * 2 - int(e.get("bestand", 0))),
+            "Einkauf gesamt (€)": (
+                max(0, int(e.get("meldebestand", 0)) * 2
+                    - int(e.get("bestand", 0)))
+                * float(e.get("einkaufspreis_eur", 0.0))
+            ),
+        } for e in krit]
+        st.markdown(f"### ⚠️ Dispositionsvorschlag ({len(krit)} Paletten)")
+        st.dataframe(
+            pd.DataFrame(rows), use_container_width=True, hide_index=True,
+            column_config={
+                "Einkauf gesamt (€)": st.column_config.NumberColumn(format="%.2f €"),
+            },
+        )
+        st.caption("Faustregel: auffüllen bis 2× Meldebestand. "
+                   "Bestellungen kommen später in den 'Bestellungen'-Tab.")
+
+    # Schnell-Editor pro Palette
+    st.markdown("### Bestand schnell editieren")
+    for e in eintraege:
+        c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
+        c1.markdown(f"**{e['L_mm']} × {e['B_mm']} mm**  "
+                    f"<span style='color:#6b7280;font-size:11px;'>"
+                    f"{escape(e.get('notiz',''))}</span>",
+                    unsafe_allow_html=True)
+        with c2:
+            neu_bestand = st.number_input(
+                "Bestand", min_value=0, max_value=100000,
+                value=int(e.get("bestand", 0)), step=1,
+                key=f"bd_bestand_{e['id']}",
+                label_visibility="collapsed",
+            )
+        with c3:
+            warn = (int(e.get("meldebestand", 0)) > 0
+                    and neu_bestand <= int(e.get("meldebestand", 0)))
+            st.markdown(
+                f'<div style="padding-top:6px;font-size:12px;'
+                f'color:{"#dc2626" if warn else "#16a34a"};">'
+                f'{"⚠️ Meldebestand" if warn else "✓ ok"} '
+                f'(Meld.: {int(e.get("meldebestand", 0))})'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+        with c4:
+            if neu_bestand != int(e.get("bestand", 0)):
+                if st.button("💾 Speichern",
+                              key=f"bd_save_{e['id']}",
+                              use_container_width=True):
+                    katalog_modul.set_bestand(e["id"], int(neu_bestand))
+                    st.rerun()
+    card_close()
+
+
+def seite_bestellungen() -> None:
+    _stub("Bestellungen",
+          "Hier wirst du Bestellvorgänge anlegen, deren Status verfolgen "
+          "und nach Wareneingang den Bestand automatisch aktualisieren.",
+          ["Bestellvorgang anlegen (Lieferant, Datum, Positionen)",
+           "Status: offen / unterwegs / eingegangen",
+           "Bei Eingang: Katalog-Bestand automatisch erhöhen",
+           "Auto-Vorschlag aus Dispositions-Tab übernehmen",
+           "Historie aller Bestellungen (persistent)"])
+
+
+def seite_kostenanalyse() -> None:
+    """Marge pro Standard nach Optimierung — schon teilweise im Ergebnisse-Tab,
+    hier separate Übersicht über alle Verlauf-Läufe."""
+    card_open("Kostenanalyse")
+    v = verlauf_alle()
+    optimierungen = [e for e in v if e.get("optimierung")]
+    if not optimierungen:
+        st.info("Noch keine Optimierungen im Verlauf. → "
+                "Datei importieren + optimieren.")
+        card_close()
+        return
+    rows = []
+    for e in optimierungen[:20]:
+        opt = e["optimierung"]
+        rows.append({
+            "Datum": e.get("datum", "")[:16].replace("T", " "),
+            "Datei": e.get("datei_name", ""),
+            "Tol kurz": opt.get("tol_kurz_mm", "?"),
+            "Tol lang": opt.get("tol_lang_mm", "?"),
+            "Standards": opt.get("standards", 0),
+            "Sonder": opt.get("sonder", 0),
+            "Gesamt": opt.get("gesamt", 0),
+        })
+    st.markdown("### Optimierungs-Historie")
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    st.caption("Detail-Marge pro Standard liegt im 'Ergebnisse'-Tab — "
+               "dort wird Σ Einkauf/Verkauf/Marge live berechnet sobald "
+               "Standards im Katalog mit Preisen vorhanden sind.")
+    card_close()
+
+    # Geplante Ausbauten
+    _stub("Geplante Erweiterungen",
+          "Über die aktuelle Verlaufstabelle hinaus:",
+          ["Diagramme: Standards-Anzahl im Zeitverlauf",
+           "Vergleich verschiedener Toleranz-Szenarien nebeneinander",
+           "Marge-Auswertung mit Kombi/Sonder (sobald Preise verfügbar)",
+           "Was-wäre-wenn-Simulation: gleiche Daten, andere Parameter"])
+
+
+def seite_stammdaten() -> None:
+    card_open("Stammdaten")
+    st.markdown(
+        '<div style="font-size:13px;color:#475569;margin-bottom:8px;">'
+        'Globale Konstanten und Mappings.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Aktive Konstanten anzeigen
+    from import_excel import PALETTEN_AUFSCHLAG_MM
+    c1, c2 = st.columns(2)
+    c1.metric("Palettenaufschlag (mm)", PALETTEN_AUFSCHLAG_MM,
+              help="P-L und P-B in der Excel sind Palettenmaße. Produkt = "
+                   "Palette − Aufschlag. Konstante in mini/import_excel.py.")
+    c2.metric("Coverage-Modus", "einseitig",
+              help="Standard ≥ Last in beiden Dimensionen — physisch zwingend.")
+    card_close()
+
+    _stub("Geplante Stammdaten-Verwaltung",
+          "Hier kommen über die Zeit:",
+          ["Kunden-Stammdaten (Name, Adresse, Rabatte)",
+           "Lieferanten-Stammdaten (mit Standard-Lieferzeiten)",
+           "Eigene Maßraster (z.B. 100mm-Raster für Standards)",
+           "Palettenaufschlag konfigurierbar machen (statt fix 50 mm)"])
+
+
+def seite_berichte() -> None:
+    _stub("Berichte",
+          "Export-Funktionen für Kundenberichte und Auswertungen.",
+          ["PDF-Report einer Optimierung (Standards + Zuordnung)",
+           "Excel-Export der vollständigen Zuordnung",
+           "Bestandsbericht (alle Paletten + Werte)",
+           "Wirtschaftlichkeitsbericht über mehrere Optimierungen",
+           "Lieferanten-bestelldokument aus Disposition"])
+    # Schon vorhanden im Ergebnisse-Tab:
+    st.info("ℹ️ Der CSV-Export der Detail-Zuordnung ist bereits im "
+            "**Ergebnisse**-Tab unter der Tabelle verfügbar.")
+
+
+def seite_app_einstellungen() -> None:
+    card_open("App-Einstellungen")
+    st.markdown(
+        '<div style="font-size:13px;color:#475569;line-height:1.8;">'
+        '<b>Persistente Speicherorte</b> (überleben App-Updates):</div>',
+        unsafe_allow_html=True,
+    )
+    from import_verlauf import verlauf_pfad_str
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**Import-Verlauf**")
+        st.code(verlauf_pfad_str(), language=None)
+        try:
+            n_v = len(verlauf_alle())
+        except Exception:
+            n_v = 0
+        st.caption(f"{n_v} Einträge")
+    with c2:
+        st.markdown("**Palettenkatalog**")
+        st.code(katalog_modul.katalog_pfad_str(), language=None)
+        try:
+            n_k = len(katalog_modul.alle())
+        except Exception:
+            n_k = 0
+        st.caption(f"{n_k} Einträge")
+    card_close()
+
+    # Build-Identitaet
+    card_open("Build / Kern")
+    from _ui_chrome import build_stempel
+    st.code(build_stempel(), language=None)
+    s = _lade_selbsttest_status()
+    if s:
+        st.markdown(f"**Selbsttest:** {s['passed_count']}/{s['total']} "
+                    f"({'bestanden' if s.get('passed') else 'FAIL'})")
+        st.caption(s.get("timestamp", ""))
+    card_close()
+
+    _stub("Geplante App-Einstellungen",
+          "Mehr Konfiguration kommt schrittweise:",
+          ["Dunkles/helles Theme umschaltbar",
+           "Solver-Zeitlimit konfigurierbar (aktuell 120 s)",
+           "Default-Werte für Toleranzen anpassbar",
+           "Backup/Restore von Verlauf und Katalog als ZIP",
+           "Sprache (de/en)"])
+
+
+# ---------------------------------------------------------------------------
 # Page-Router
 # ---------------------------------------------------------------------------
 SEITEN = {
-    "Datenimport":   seite_datenimport,
-    "Einstellungen": seite_einstellungen,
-    "Optimierung":   seite_optimierung,
-    "Ergebnisse":    seite_ergebnisse,
-    "Verlauf":       seite_verlauf,
-    "Katalog":       seite_katalog,
+    "Dashboard":             seite_dashboard,
+    "Datenimport":           seite_datenimport,
+    "Einstellungen":         seite_einstellungen,
+    "Optimierung":           seite_optimierung,
+    "Ergebnisse":            seite_ergebnisse,
+    "Verlauf":               seite_verlauf,
+    "Katalog":               seite_katalog,
+    "Bestand & Disposition": seite_bestand_dispo,
+    "Bestellungen":          seite_bestellungen,
+    "Kostenanalyse":         seite_kostenanalyse,
+    "Stammdaten":            seite_stammdaten,
+    "Berichte":              seite_berichte,
+    "App-Einstellungen":     seite_app_einstellungen,
 }
 SEITEN[st.session_state.seite]()
