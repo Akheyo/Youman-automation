@@ -15,30 +15,61 @@ from pathlib import Path
 from PIL import Image
 
 
+def _lanczos():
+    """Pillow >= 10 nutzt Image.Resampling.LANCZOS; <10 nutzt Image.LANCZOS."""
+    try:
+        return Image.Resampling.LANCZOS
+    except AttributeError:
+        return Image.LANCZOS  # type: ignore[attr-defined]
+
+
 def main(src: str, dest: str) -> int:
-    src_p = Path(src)
-    dest_p = Path(dest)
+    src_p = Path(src).resolve()
+    dest_p = Path(dest).resolve()
+    print(f"make_icon: src={src_p}", flush=True)
+    print(f"make_icon: dest={dest_p}", flush=True)
+    print(f"make_icon: PIL/Pillow Version = {Image.__version__}", flush=True)
+
     if not src_p.exists():
         print(f"WARN: {src_p} nicht gefunden, erzeuge Fallback-Icon.",
-              file=sys.stderr)
-        Image.new("RGBA", (256, 256), (37, 99, 235, 255)).save(dest_p)
+              file=sys.stderr, flush=True)
+        fb = Image.new("RGBA", (256, 256), (37, 99, 235, 255))
+        fb.save(dest_p, format="ICO",
+                  sizes=[(16, 16), (32, 32), (48, 48), (256, 256)])
         return 0
 
     logo = Image.open(src_p).convert("RGBA")
     w, h = logo.size
+    print(f"make_icon: Logo geladen ({w}×{h})", flush=True)
+
     size = 512
     canvas = Image.new("RGBA", (size, size), (255, 255, 255, 0))
-    # Proportional einpassen (max. 90 % der Canvas)
     scale = min((size * 0.9) / w, (size * 0.9) / h)
     new_w, new_h = max(1, int(w * scale)), max(1, int(h * scale))
-    logo_resized = logo.resize((new_w, new_h), Image.LANCZOS)
+    logo_resized = logo.resize((new_w, new_h), _lanczos())
     pos = ((size - new_w) // 2, (size - new_h) // 2)
     canvas.paste(logo_resized, pos, logo_resized)
-    canvas.save(
-        dest_p,
-        sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)],
-    )
-    print(f"icon.ico erzeugt aus {src_p} ({w}×{h} → {size}×{size})")
+    print(f"make_icon: Resized auf {new_w}×{new_h}, eingepasst in {size}×{size}",
+          flush=True)
+
+    # Multi-Resolution ICO. Pillow erstellt automatisch alle Größen
+    # wenn man sie via 'sizes=' angibt. Bei Fehler: einfaches Single-Size-ICO
+    # als Fallback.
+    try:
+        canvas.save(
+            dest_p,
+            format="ICO",
+            sizes=[(16, 16), (32, 32), (48, 48), (64, 64),
+                    (128, 128), (256, 256)],
+        )
+        print(f"make_icon: Multi-Resolution ICO gespeichert ({dest_p})",
+              flush=True)
+    except Exception as exc:
+        print(f"make_icon: Multi-Resolution failed ({exc}), "
+              f"versuche Single-Size 256×256.", file=sys.stderr, flush=True)
+        canvas.resize((256, 256), _lanczos()).save(dest_p, format="ICO")
+        print(f"make_icon: Single-Size ICO gespeichert ({dest_p})",
+              flush=True)
     return 0
 
 
