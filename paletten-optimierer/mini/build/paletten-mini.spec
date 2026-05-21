@@ -49,6 +49,7 @@ app_datas = [
     ("../bestellungen.py", "."),
     ("../import_doppelschutz.py", "."),
     ("../wirtschaftlichkeit.py", "."),
+    ("../wirt_kandidaten.py", "."),
     ("../verbrauch.py", "."),
     ("../procurement.py", "."),
     ("../_render.py", "."),

@@ -32,6 +32,7 @@ from import_verlauf import (  # noqa: E402
 import palettenkatalog as katalog_modul  # noqa: E402
 import bestellungen as bestellungen_modul  # noqa: E402
 import wirtschaftlichkeit as wirt_modul  # noqa: E402
+import wirt_kandidaten as wirt_kand_modul  # noqa: E402
 import verbrauch as verbrauch_modul  # noqa: E402
 import procurement as procurement_modul  # noqa: E402
 from import_doppelschutz import pruefe_import as _pruefe_import  # noqa: E402
@@ -165,6 +166,14 @@ def init_state() -> None:
             # Doppelschutz (Spec §8)
             "doppelschutz_aktiv": True,
             "doppelschutz_zeitfenster": 30,
+            # Optimierungs-Modus (Spec §11.9):
+            # 1 = Geometrisch (nur w1..w7, Logistik=0)
+            # 2 = Wirtschaftlich (harte Regel netto > schwellwert)
+            # 3 = Hybrid (w1..w9, kontinuierlich)
+            "opt_modus": 1,
+            "schwellwert_eur": 0.0,
+            "min_auslastung_pct": 65.0,
+            "manuelle_override": {},
         },
         "ergebnis": None,
         "ergebnis_id": None,           # UUID pro Optimierungslauf
@@ -174,6 +183,7 @@ def init_state() -> None:
         "vergleich": None,             # Compare-Modus-Resultat
         "doppelschutz_preview": None,  # Ergebnis von pruefe_import
         "doppelschutz_skip_ids": set(),# manuelle Skip-IDs (zeile-keys)
+        "modus2_ergebnis": None,       # Spec §11.9 Kandidaten-Result
         "bestellung_modal": None,      # dict mit pending Bestellung-Daten
         "historie_filter": {            # Filter Historie-Page
             "status": "alle",
@@ -858,6 +868,43 @@ def run_optimierung() -> None:
         if bestand > 0:
             katalog_bestand[(cs, cl)] = bestand
 
+    # Optimierungs-Modus (Spec §11.9): 1/2/3
+    opt_modus = int(p.get("opt_modus", 1))
+    if opt_modus == 1:
+        # Geometrisch: w8/w9 = 0 erzwingen
+        gewichte["w8"] = 0.0
+        gewichte["w9"] = 0.0
+    # Modus 2 + 3: Wirtschaftliche Kandidaten-Analyse
+    modus2_result = None
+    if opt_modus in (2, 3):
+        try:
+            cp_w = wirt_modul.lade_params()
+            schw = float(p.get("schwellwert_eur", 0.0))
+            min_aus = float(p.get("min_auslastung_pct", 65.0))
+            override = p.get("manuelle_override", {}) or {}
+            # EK-Lookup aus Katalog
+            ek_lookup_kand = {}
+            for e in katalog_modul.alle():
+                if e.get("aktiv", True) and float(
+                        e.get("einkaufspreis_eur", 0)) > 0:
+                    ek_lookup_kand[(min(e["L_mm"], e["B_mm"]),
+                                      max(e["L_mm"], e["B_mm"]))] = float(
+                        e["einkaufspreis_eur"])
+            modus2_result = wirt_kand_modul.modus2_auswahl(
+                orders, cp_w,
+                tol_kurz_mm=Tk_eff if modus != "prozent" else 200,
+                tol_lang_mm=Tl_eff if modus != "prozent" else 400,
+                aufschlag_mm=sonder_auf,
+                schwellwert_eur=schw,
+                min_auslastung_pct=min_aus,
+                ek_lookup=ek_lookup_kand,
+                manuelle_override=override,
+            )
+            st.session_state.modus2_ergebnis = modus2_result
+        except Exception as exc:
+            st.warning(f"Modus-2-Analyse fehlgeschlagen: {exc}")
+            modus2_result = None
+
     # Logistik-Maps fuer w8/w9 — nur wenn Wirtschaftlichkeit aktiv.
     # Approximative pro-Typ-Kosten:
     #   mehrkosten = (Δfläche zu durchschnittlicher Alternative) ·
@@ -885,6 +932,17 @@ def run_optimierung() -> None:
     except Exception:
         pass
 
+    # Modus 2: nur die wirtschaftlich übernommenen Kandidaten als
+    # Katalog zulassen. Sonder bleibt erlaubt (für Cluster, die als
+    # Sonder belassen werden — Solver waehlt z[g] der Auftragsmaße).
+    if opt_modus == 2 and modus2_result is not None:
+        uebernommen_masse = [u["kandidat"] for u in modus2_result["uebernommen"]]
+        # Erweitere Katalog um die wirtschaftlich gewaehlten Maße
+        kat_masse_modus2 = list({(min(k), max(k)) for k in
+                                    (kat_masse + uebernommen_masse)})
+    else:
+        kat_masse_modus2 = kat_masse
+
     with st.spinner(hinweis):
         res = optimiere(
             orders,
@@ -896,7 +954,7 @@ def run_optimierung() -> None:
             heterogen_fallback=kombi,
             sonder_deckel=deckel,
             zeitlimit_s=120,
-            katalog=kat_masse,
+            katalog=kat_masse_modus2,
             sonder_erlaubt=sonder_erlaubt,
             sonder_min_artikel=sonder_min,
             sonder_aufschlag_mm=sonder_auf,
@@ -908,6 +966,11 @@ def run_optimierung() -> None:
             logistik_mehrkosten_per_typ=log_mehr_map,
             logistik_einsparung_per_typ=log_einsp_map,
         )
+    # Begründungs-Texte pro Zuordnung anhaengen (Spec §11.9.6)
+    if modus2_result is not None:
+        for idx, zg in enumerate(res.get("zuordnung", [])):
+            zg["begruendung"] = wirt_kand_modul.begruendungs_text(
+                idx, modus2_result)
     import uuid as _uuid
     st.session_state.ergebnis_id = _uuid.uuid4().hex
     # Artikelnummer + Roh-Palettenmaße aus Excel nachreichen
@@ -1669,6 +1732,7 @@ def seite_ergebnisse() -> None:
             "Produkt B (= P-B - Aufschlag)": z.get("B", 0),
             "Ziel": z.get("ziel", ""),
             "Typ": z.get("typ", ""),
+            "Wirtschaftliche Begründung": z.get("begruendung", ""),
         })
     csv = pd.DataFrame(rows).to_csv(index=False, sep=";", encoding="utf-8-sig").encode("utf-8-sig")
 
@@ -2803,9 +2867,72 @@ def seite_beschaffung() -> None:
 
 
 def seite_wirtschaftlichkeit() -> None:
-    """Wirtschaftlichkeits-Dashboard (Spec §11). 3 Logistik-Modi, alle
-    Werte parallel persistiert (Spec §16 — Umschalten verliert nichts)."""
+    """Wirtschaftlichkeits-Dashboard (Spec §11 + §11.9). 3 Optimierungs-
+    Modi + 3 Logistik-Modi, alle Werte parallel persistiert."""
     cp = wirt_modul.lade_params()
+    p_state = st.session_state.params
+
+    # --- Optimierungs-Modus (Spec §11.9 + §14) ---
+    card_open("🎯 Optimierungs-Modus (Spec §11.9)")
+    st.markdown(
+        "<div style='font-size:13px;color:#475569;margin-bottom:6px;'>"
+        "<b>Modus 1 Geometrisch:</b> minimale Variantenzahl, ignoriert "
+        "Logistikkosten (klassische Set-Cover-Optimierung)<br>"
+        "<b>Modus 2 Wirtschaftlich:</b> Kandidaten-basiert mit harter "
+        "Entscheidungsregel <i>netto/Jahr &gt; Schwellwert</i>. "
+        "Anti-Aggregations-Schutz verhindert Mega-Paletten<br>"
+        "<b>Modus 3 Hybrid:</b> Score mit allen 9 Gewichten w1–w9 "
+        "kontinuierlich</div>",
+        unsafe_allow_html=True,
+    )
+    modi = ["1 — Geometrisch", "2 — Wirtschaftlich", "3 — Hybrid"]
+    modi_keys = [1, 2, 3]
+    aktiv_modus = int(p_state.get("opt_modus", 1))
+    idx_modus = (modi_keys.index(aktiv_modus)
+                  if aktiv_modus in modi_keys else 0)
+    sel_modus = st.radio(
+        "Aktiver Modus",
+        modi, index=idx_modus, horizontal=True,
+        key="opt_modus_in",
+        help="Modus-Wechsel erfordert Re-Run (Klick auf Optimieren).",
+    )
+    p_state["opt_modus"] = modi_keys[modi.index(sel_modus)]
+
+    # Modus 2/3 brauchen Schwellwert + min_auslastung
+    if p_state["opt_modus"] in (2, 3):
+        sc1, sc2 = st.columns(2)
+        with sc1:
+            schw = st.number_input(
+                "Schwellwert Netto/Jahr (€) — Standardisierung nur "
+                "wenn netto ≥ Schwellwert",
+                min_value=0.0, max_value=1000000.0,
+                value=float(p_state.get("schwellwert_eur", 0.0)),
+                step=100.0, format="%.0f",
+                key="wirt_schw",
+                help="0 = jeder netto-positive Kandidat wird "
+                     "übernommen.",
+            )
+            p_state["schwellwert_eur"] = schw
+        with sc2:
+            min_aus = st.number_input(
+                "Anti-Aggregation: min. Auslastung (%)",
+                min_value=0.0, max_value=100.0,
+                value=float(p_state.get("min_auslastung_pct", 65.0)),
+                step=1.0, format="%.0f",
+                key="wirt_min_aus",
+                help="Standard wird verworfen wenn Auslastung < "
+                     "Schwelle UND Mehrkosten > Einsparung. "
+                     "0 = deaktiviert.",
+            )
+            p_state["min_auslastung_pct"] = min_aus
+    if p_state["opt_modus"] != 1:
+        st.info(
+            "ℹ️ Bei Modus 2/3: nach dem nächsten Klick auf "
+            "**Optimieren** wird die Kandidaten-Analyse durchgeführt. "
+            "Resultate erscheinen unten im **Kandidaten-Tabelle**-Card."
+        )
+    card_close()
+
     card_open("⚖️ Wirtschaftlichkeit + Logistikkosten (Spec §11)")
     st.caption(
         "Rechnet Einsparung durch Variantenreduktion gegen Mehrkosten "
@@ -3276,6 +3403,104 @@ def seite_wirtschaftlichkeit() -> None:
                           "Kosten/Fahrt": st.column_config.NumberColumn(format="%.0f €"),
                       })
     card_close()
+
+    # --- Modus-2-Spezifika: Kandidaten-Tabelle + Empfehlungs-Report ---
+    m2 = st.session_state.get("modus2_ergebnis")
+    if p_state.get("opt_modus") in (2, 3) and m2 is not None:
+        card_open("📋 Kandidaten-Tabelle (Spec §11.9.5)")
+        st.caption(
+            "Pro Cluster ein potentieller Standardtyp. Sortiert "
+            "absteigend nach Netto-Effekt/Jahr. Grenzwert-Linie = "
+            f"{p_state.get('schwellwert_eur', 0):.0f} €/Jahr. "
+            "Manuelle Übersteuerung per Toggle pro Zeile."
+        )
+        rows = []
+        zeilen_all = m2.get("uebernommen", []) + m2.get("verworfen", [])
+        for r in sorted(zeilen_all, key=lambda x: x["netto_jahr"],
+                         reverse=True):
+            kand = r["kandidat"]
+            rows.append({
+                "Kandidat": f"{kand[1]}×{kand[0]}",
+                "Artikel": r["n_artikel"],
+                "Paletten/Periode": r["paletten_total"],
+                "Auslastung": f"{r['auslastung']*100:.0f} %",
+                "Δ Handling": f"{r['handling_einsparung']:.0f} €",
+                "Δ Varianten": f"{r['varianten_einsparung']:.0f} €",
+                "Δ Paletten": f"{r['paletten_einsparung']:.0f} €",
+                "Δ Transport": f"{-r['transport_mehrkosten']:.0f} €",
+                "Δ Lager": f"{-r['lager_mehrkosten']:.0f} €",
+                "Netto/Jahr (€)": r["netto_jahr"],
+                "Empfehlung": (
+                    "✅ standardisieren"
+                    if r["empfehlung"] == "standardisieren"
+                    else ("❌ Anti-Aggregation"
+                          if r["empfehlung"] == "anti-aggregation"
+                          else "❌ als Sonder belassen")
+                ),
+                "Begründung": r.get("grund", "")[:80],
+            })
+        if rows:
+            st.dataframe(pd.DataFrame(rows),
+                          use_container_width=True, hide_index=True,
+                          column_config={
+                              "Netto/Jahr (€)":
+                                  st.column_config.NumberColumn(format="%.0f €"),
+                              "Artikel":
+                                  st.column_config.NumberColumn(format="%d"),
+                              "Paletten/Periode":
+                                  st.column_config.NumberColumn(format="%d"),
+                          })
+            # Manuelle Übersteuerung
+            st.markdown("**Manuelle Übersteuerung pro Kandidat:**")
+            override = p_state.get("manuelle_override", {}) or {}
+            for r in sorted(zeilen_all, key=lambda x: x["netto_jahr"],
+                              reverse=True)[:20]:
+                kand = r["kandidat"]
+                key_str = f"{kand[1]}x{kand[0]}"
+                aktiv = override.get(kand)
+                oc1, oc2 = st.columns([4, 2])
+                with oc1:
+                    st.markdown(
+                        f"<div style='padding-top:6px;font-size:13px;'>"
+                        f"<b>{key_str}</b> · {r['n_artikel']} Artikel · "
+                        f"Netto {r['netto_jahr']:.0f} €/Jahr</div>",
+                        unsafe_allow_html=True,
+                    )
+                with oc2:
+                    opt = st.selectbox(
+                        "Override",
+                        ["—", "standardisieren", "verwerfen"],
+                        index=(0 if aktiv is None
+                                else (1 if aktiv == "standardisieren"
+                                       else 2)),
+                        key=f"mod2_o_{key_str}",
+                        label_visibility="collapsed",
+                    )
+                    if opt == "—" and kand in override:
+                        del override[kand]
+                    elif opt != "—":
+                        override[kand] = opt
+            p_state["manuelle_override"] = override
+            st.caption(
+                "Override wird beim nächsten Optimieren-Klick angewendet."
+            )
+        card_close()
+
+        # Empfehlungs-Report (Spec §11.9.7)
+        card_open("📊 Empfehlungs-Report")
+        # vorher_typen aus aktueller Optimierung
+        res = st.session_state.get("ergebnis")
+        dat = st.session_state.get("import_dat")
+        vorher_typen = None
+        if dat:
+            vorher_typen = len({
+                (min(p["laenge"], p["breite"]), max(p["laenge"], p["breite"]))
+                for p in dat.get("mit_mass", [])
+            })
+        report_md = wirt_kand_modul.empfehlungs_report(
+            m2, cp, vorher_typen=vorher_typen)
+        st.markdown(report_md)
+        card_close()
 
 
 def seite_kostenanalyse() -> None:

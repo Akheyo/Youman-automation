@@ -152,6 +152,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_wirt_logistikmodi.py
 
+      - name: Pflicht-Test Modus-2 Kandidaten + Anti-Aggregation (Spec §11.9)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_wirt_modus2.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |
