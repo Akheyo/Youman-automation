@@ -38,6 +38,7 @@ import verbrauch as verbrauch_modul  # noqa: E402
 import procurement as procurement_modul  # noqa: E402
 import lieferanten as lieferanten_modul  # noqa: E402
 import kostenanalyse_szenarien as kosten_sz_modul  # noqa: E402
+import berichte as berichte_modul  # noqa: E402
 from import_doppelschutz import pruefe_import as _pruefe_import  # noqa: E402
 from _render import render_zuord_table, ziel_label as _ziel_label  # noqa: E402
 from _ui_chrome import (  # noqa: E402
@@ -4642,15 +4643,296 @@ def seite_stammdaten() -> None:
 
 
 def seite_berichte() -> None:
-    _stub("Berichte",
-          "Export-Funktionen für Kundenberichte und Auswertungen.",
-          ["PDF-Report einer Optimierung (Standards + Zuordnung)",
-           "Excel-Export der vollständigen Zuordnung",
-           "Bestandsbericht (alle Paletten + Werte)",
-           "Wirtschaftlichkeitsbericht über mehrere Optimierungen",
-           "Lieferanten-bestelldokument aus Disposition"])
-    # Schon vorhanden im Ergebnisse-Tab:
-    st.info("ℹ️ Der CSV-Export der Detail-Zuordnung ist bereits im "
+    """Berichte-Tab: 5 Export-Karten in 2×3 Grid + Archiv (Spec §1-§9)."""
+    card_open("BERICHTE")
+    st.caption("Export-Funktionen für Kundenberichte und Auswertungen.")
+    card_close()
+
+    optimierungen = [e for e in verlauf_alle() if e.get("optimierung")]
+    res_live = st.session_state.get("ergebnis")
+
+    # Grid 2 Spalten × 3 Zeilen
+    row1c1, row1c2 = st.columns(2)
+    row2c1, row2c2 = st.columns(2)
+    row3c1, row3c2 = st.columns(2)
+
+    # === Bericht 1: PDF Optimierungs-Report ===
+    with row1c1:
+        card_open("📄 PDF-Report Optimierung")
+        st.caption("Vollständiger Optimierungs-Bericht (Parameter, "
+                    "KPIs, Standards, Detail-Zuordnung).")
+        if not optimierungen:
+            st.info("Erst optimieren — dann erscheinen Läufe hier.")
+        else:
+            sel_idx = st.selectbox(
+                "Lauf wählen",
+                options=range(len(optimierungen[:30])),
+                format_func=lambda i: (
+                    f"{(optimierungen[i].get('datum', '') or '')[:16].replace('T', ' ')} · "
+                    f"{(optimierungen[i].get('datei_name', '') or '?')[:25]}"
+                ),
+                key="ber_pdf_sel",
+            )
+            if st.button("📄 PDF erzeugen", type="primary",
+                            use_container_width=True, key="ber_pdf_gen"):
+                eintrag = optimierungen[sel_idx]
+                try:
+                    daten = berichte_modul.pdf_optimierungs_report(
+                        eintrag,
+                        ergebnis=res_live if eintrag.get("id") ==
+                                 st.session_state.get("historie_id") else None,
+                    )
+                    name = berichte_modul._dateiname("optimierung", "pdf")
+                    arch = berichte_modul.archiv_speichern(
+                        "pdf_optimierung", name, daten,
+                        quell_lauf_id=eintrag.get("id"),
+                    )
+                    st.success(f"✓ {name} ({arch['size_kb']} KB) erzeugt.")
+                    st.download_button("📥 Herunterladen", data=daten,
+                                          file_name=name, mime="application/pdf",
+                                          use_container_width=True,
+                                          key=f"ber_pdf_dl_{arch['id']}")
+                except Exception as exc:
+                    st.error(f"Fehler: {exc}")
+        card_close()
+
+    # === Bericht 2: Excel Zuordnung ===
+    with row1c2:
+        card_open("📊 Excel-Zuordnung")
+        st.caption("4-Sheet Workbook: Übersicht | Zuordnung | Standards | "
+                    "Nicht zuordenbar.")
+        if not optimierungen:
+            st.info("Erst optimieren.")
+        else:
+            sel_idx_x = st.selectbox(
+                "Lauf wählen",
+                options=range(len(optimierungen[:30])),
+                format_func=lambda i: (
+                    f"{(optimierungen[i].get('datum', '') or '')[:16].replace('T', ' ')} · "
+                    f"{(optimierungen[i].get('datei_name', '') or '?')[:25]}"
+                ),
+                key="ber_xlsx_sel",
+            )
+            if st.button("📊 Excel erzeugen", type="primary",
+                            use_container_width=True, key="ber_xlsx_gen"):
+                eintrag = optimierungen[sel_idx_x]
+                try:
+                    daten = berichte_modul.excel_zuordnung(
+                        eintrag,
+                        ergebnis=res_live if eintrag.get("id") ==
+                                 st.session_state.get("historie_id") else None,
+                    )
+                    name = berichte_modul._dateiname("zuordnung", "xlsx")
+                    arch = berichte_modul.archiv_speichern(
+                        "excel_zuordnung", name, daten,
+                        quell_lauf_id=eintrag.get("id"),
+                    )
+                    st.success(f"✓ {name} ({arch['size_kb']} KB) erzeugt.")
+                    st.download_button(
+                        "📥 Herunterladen", data=daten, file_name=name,
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True, key=f"ber_xlsx_dl_{arch['id']}",
+                    )
+                except Exception as exc:
+                    st.error(f"Fehler: {exc}")
+        card_close()
+
+    # === Bericht 3: Bestandsbericht ===
+    with row2c1:
+        card_open("📦 Bestandsbericht")
+        st.caption("Paletten + Bestand + EK/VK + Inventarwert. "
+                    "Format umschaltbar.")
+        b_format = st.radio("Format", ["PDF", "Excel"], horizontal=True,
+                              key="ber_best_format")
+        f1, f2 = st.columns(2)
+        with f1:
+            nur_bestand = st.checkbox("nur Bestand > 0",
+                                         key="ber_best_pos")
+        with f2:
+            nur_voll = st.checkbox("nur EK/VK vollständig",
+                                      key="ber_best_voll")
+        if st.button("📦 Erzeugen", type="primary",
+                        use_container_width=True, key="ber_best_gen"):
+            try:
+                kat_alle = katalog_modul.alle()
+                if b_format == "PDF":
+                    daten = berichte_modul.bestandsbericht_pdf(
+                        kat_alle, nur_bestand, nur_voll)
+                    ext, mime = "pdf", "application/pdf"
+                else:
+                    daten = berichte_modul.bestandsbericht_excel(
+                        kat_alle, nur_bestand, nur_voll)
+                    ext = "xlsx"
+                    mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                name = berichte_modul._dateiname("bestand", ext)
+                arch = berichte_modul.archiv_speichern(
+                    "bestand", name, daten)
+                st.success(f"✓ {name} ({arch['size_kb']} KB).")
+                st.download_button("📥 Herunterladen", data=daten,
+                                      file_name=name, mime=mime,
+                                      use_container_width=True,
+                                      key=f"ber_best_dl_{arch['id']}")
+            except Exception as exc:
+                st.error(f"Fehler: {exc}")
+        card_close()
+
+    # === Bericht 4: Wirtschaftlichkeitsbericht ===
+    with row2c2:
+        card_open("💰 Wirtschaftlichkeitsbericht")
+        st.caption("Trend-Diagramm + Vergleichstabelle + Management-"
+                    "Text über mehrere Läufe.")
+        zr_opts = ["7T", "30T", "90T", "alle"]
+        zr_w = st.radio("Zeitraum", zr_opts, index=1, horizontal=True,
+                         key="ber_wirt_zr")
+        if st.button("💰 Erzeugen", type="primary",
+                        use_container_width=True, key="ber_wirt_gen"):
+            try:
+                from datetime import datetime as _dt, timedelta as _td
+                tage_map = {"7T": 7, "30T": 30, "90T": 90, "alle": 0}
+                tage = tage_map[zr_w]
+                if tage > 0:
+                    grenze = _dt.now() - _td(days=tage)
+                    def _parse(iso):
+                        try:
+                            return _dt.fromisoformat((iso or "")[:19])
+                        except (ValueError, TypeError):
+                            return None
+                    filt = [e for e in optimierungen
+                             if (_parse(e.get("datum", "")) or _dt.now()) >= grenze]
+                else:
+                    filt = optimierungen
+                daten = berichte_modul.wirtschaftlichkeitsbericht_pdf(
+                    filt, zeitraum_label=zr_w)
+                name = berichte_modul._dateiname("wirtschaftlichkeit", "pdf")
+                arch = berichte_modul.archiv_speichern(
+                    "wirtschaftlichkeit", name, daten)
+                st.success(f"✓ {name} ({arch['size_kb']} KB).")
+                st.download_button("📥 Herunterladen", data=daten,
+                                      file_name=name, mime="application/pdf",
+                                      use_container_width=True,
+                                      key=f"ber_wirt_dl_{arch['id']}")
+            except Exception as exc:
+                st.error(f"Fehler: {exc}")
+        card_close()
+
+    # === Bericht 5: Lieferanten-Bestelldokument ===
+    with row3c1:
+        card_open("🚚 Lieferanten-Bestelldokument")
+        st.caption("Auftrag aus Tab **Bestellungen** als druckfertiges "
+                    "PDF mit Briefkopf + USt-Berechnung.")
+        auftraege = procurement_modul.alle()
+        if not auftraege:
+            st.info("Keine Beschaffungs-Aufträge — erst im Tab "
+                     "**Bestellungen** anlegen.")
+        else:
+            sel_idx_l = st.selectbox(
+                "Auftrag wählen",
+                options=range(len(auftraege[:30])),
+                format_func=lambda i: (
+                    f"{auftraege[i].get('bst_nummer', auftraege[i]['id'][:8])} · "
+                    f"{auftraege[i].get('lieferant', '—')} · "
+                    f"{auftraege[i].get('status', '?')}"
+                ),
+                key="ber_lief_sel",
+            )
+            if st.button("🚚 PDF erzeugen", type="primary",
+                            use_container_width=True, key="ber_lief_gen"):
+                a = auftraege[sel_idx_l]
+                # Lieferant-Lookup
+                lief_id = a.get("lieferant_id")
+                lieferant = (lieferanten_modul.finde(lief_id) if lief_id
+                              else {"name": a.get("lieferant", "—"),
+                                    "kontakt": ""})
+                positionen = []
+                for p in a.get("positionen", []):
+                    snap = p.get("snapshot", {})
+                    positionen.append({
+                        "name": snap.get("name", ""),
+                        "L": snap.get("L_mm", 0),
+                        "B": snap.get("B_mm", 0),
+                        "menge": int(p.get("menge_bestellt",
+                                              p.get("menge", 0))),
+                        "ek_pro_stk_eur": float(p.get(
+                            "ek_pro_stk_eur", 0)),
+                    })
+                try:
+                    daten = berichte_modul.lieferanten_bestelldokument_pdf(
+                        lieferant=lieferant,
+                        positionen=positionen,
+                        bestellnummer=a.get("bst_nummer",
+                                              a["id"][:8]),
+                        bestelldatum=a.get("datum_bestellt", "")[:10],
+                        wunschtermin=a.get("datum_geplant", ""),
+                        bemerkung=a.get("bemerkung", ""),
+                    )
+                    name = berichte_modul._dateiname(
+                        f"bestellung_{a.get('bst_nummer', 'X')}", "pdf")
+                    arch = berichte_modul.archiv_speichern(
+                        "bestellung", name, daten,
+                        quell_lauf_id=a.get("id"),
+                    )
+                    st.success(f"✓ {name} ({arch['size_kb']} KB).")
+                    st.download_button("📥 Herunterladen", data=daten,
+                                          file_name=name,
+                                          mime="application/pdf",
+                                          use_container_width=True,
+                                          key=f"ber_lief_dl_{arch['id']}")
+                except Exception as exc:
+                    st.error(f"Fehler: {exc}")
+        card_close()
+
+    # Placeholder für 6. Card (responsiv konsistent halten)
+    with row3c2:
+        card_open("📂 Archiv & Speicherort")
+        st.caption("Alle erzeugten Berichte werden lokal archiviert.")
+        st.markdown(
+            f"<div style='font-size:12px;color:#64748b;'>"
+            f"<code style='color:#475569;'>{berichte_modul.archiv_dir_str()}</code>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+        st.metric("Berichte gesamt", len(berichte_modul.archiv_alle()))
+        card_close()
+
+    # === Zuletzt erzeugte Berichte (Archiv-Liste, max 10) ===
+    card_open("🗂 Zuletzt erzeugte Berichte (max 10)")
+    archiv = berichte_modul.archiv_liste(limit=10)
+    if not archiv:
+        st.caption("Noch keine Berichte erzeugt.")
+    else:
+        for i, e in enumerate(archiv):
+            ac1, ac2, ac3, ac4 = st.columns([3, 1, 1, 1])
+            typ_icon = {
+                "pdf_optimierung": "📄", "excel_zuordnung": "📊",
+                "bestand": "📦", "wirtschaftlichkeit": "💰",
+                "bestellung": "🚚",
+            }.get(e["typ"], "📄")
+            ac1.markdown(
+                f"<div style='padding-top:8px;font-size:13px;'>"
+                f"{typ_icon} <b>{e['dateiname']}</b><br>"
+                f"<span style='font-size:11px;color:#64748b;'>"
+                f"{e.get('erzeugt_am', '')[:16].replace('T', ' ')} · "
+                f"{e.get('size_kb', 0)} KB · {e['typ']}</span></div>",
+                unsafe_allow_html=True,
+            )
+            daten = berichte_modul.archiv_lesen(e["id"])
+            if daten:
+                mime = ("application/pdf" if e["dateiname"].endswith(".pdf")
+                         else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                ac2.download_button("📥", data=daten,
+                                       file_name=e["dateiname"],
+                                       mime=mime,
+                                       key=f"arch_dl_{e['id']}",
+                                       help="Erneut herunterladen")
+            else:
+                ac2.caption("?")
+            if ac3.button("🗑", key=f"arch_del_{e['id']}",
+                            help="Aus Archiv löschen"):
+                berichte_modul.archiv_loeschen(e["id"])
+                st.rerun()
+    card_close()
+
+    st.info("ℹ️ Der CSV-Export der Detail-Zuordnung ist auch im "
             "**Ergebnisse**-Tab unter der Tabelle verfügbar.")
 
 

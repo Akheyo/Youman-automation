@@ -2,3 +2,4 @@ streamlit>=1.30
 pandas>=2.0
 openpyxl>=3.1
 pulp>=2.7
+fpdf2>=2.7

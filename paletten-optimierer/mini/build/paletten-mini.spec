@@ -19,6 +19,11 @@ try:
 except Exception:
     numpy_datas, numpy_binaries, numpy_hidden = [], [], []
 
+try:
+    fpdf_datas, fpdf_binaries, fpdf_hidden = collect_all("fpdf")
+except Exception:
+    fpdf_datas, fpdf_binaries, fpdf_hidden = [], [], []
+
 streamlit_static = collect_data_files("streamlit", include_py_files=False)
 streamlit_runtime_static = collect_data_files("streamlit.runtime", include_py_files=False)
 
@@ -29,6 +34,10 @@ metadata = (
     + copy_metadata("pulp")
     + copy_metadata("numpy")
 )
+try:
+    metadata += copy_metadata("fpdf2")
+except Exception:
+    pass
 
 import os as _os
 
@@ -54,6 +63,7 @@ app_datas = [
     ("../procurement.py", "."),
     ("../lieferanten.py", "."),
     ("../kostenanalyse_szenarien.py", "."),
+    ("../berichte.py", "."),
     ("../_render.py", "."),
     ("../_ui_chrome.py", "."),
     ("../_build_info.py", "."),
@@ -83,13 +93,15 @@ a = Analysis(
     ["../run_mini.py"],
     pathex=["..", "."],
     binaries=streamlit_binaries + pandas_binaries + openpyxl_binaries
-             + pulp_binaries + pyarrow_binaries + numpy_binaries,
+             + pulp_binaries + pyarrow_binaries + numpy_binaries
+             + fpdf_binaries,
     datas=app_datas + metadata + streamlit_datas
           + streamlit_static + streamlit_runtime_static
           + pandas_datas + openpyxl_datas + pulp_datas
-          + pyarrow_datas + numpy_datas,
+          + pyarrow_datas + numpy_datas + fpdf_datas,
     hiddenimports=streamlit_hidden + pandas_hidden + openpyxl_hidden
-                  + pulp_hidden + pyarrow_hidden + numpy_hidden + extra_hidden,
+                  + pulp_hidden + pyarrow_hidden + numpy_hidden
+                  + fpdf_hidden + extra_hidden,
     hookspath=[], hooksconfig={}, runtime_hooks=[],
     excludes=["matplotlib", "tkinter", "PyQt5", "PyQt6", "PySide2",
               "PySide6", "IPython", "jupyter", "notebook", "pytest", "sphinx"],

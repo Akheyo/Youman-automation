@@ -168,6 +168,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_kostenanalyse.py
 
+      - name: Pflicht-Test Berichte (PDF + Excel + Archiv)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_berichte.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |
