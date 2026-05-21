@@ -24,33 +24,49 @@ import pulp
 from itertools import combinations, product
 
 
-def _passt_einzeln(cand, last, Tk, Tl):
+def _passt_einzeln(cand, last, Tk, Tl, Pk=None, Pl=None):
     c0, c1 = sorted(cand)
     l0, l1 = sorted(last)
-    return c0 >= l0 and c1 >= l1 and (c0 - l0) <= Tk and (c1 - l1) <= Tl
+    if not (c0 >= l0 and c1 >= l1):
+        return False
+    if (c0 - l0) > Tk or (c1 - l1) > Tl:
+        return False
+    # Optional: prozentuale Zusatzbedingung
+    if Pk is not None and (c0 - l0) > l0 * Pk / 100.0:
+        return False
+    if Pl is not None and (c1 - l1) > l1 * Pl / 100.0:
+        return False
+    return True
 
 
-def _passt_kstapel(cand, last, Tk, Tl, kmax):
+def _passt_kstapel(cand, last, Tk, Tl, kmax, Pk=None, Pl=None):
     cs, cl = cand
     l0, l1 = sorted(last)
     for k in range(2, kmax + 1):
         for ec0, ec1 in ((cs, cl * k), (cs * k, cl)):
             e0, e1 = sorted((ec0, ec1))
-            if e0 >= l0 and e1 >= l1 and (e0 - l0) <= Tk and (e1 - l1) <= Tl:
-                return (k, (ec0, ec1))
+            if not (e0 >= l0 and e1 >= l1):
+                continue
+            if (e0 - l0) > Tk or (e1 - l1) > Tl:
+                continue
+            if Pk is not None and (e0 - l0) > l0 * Pk / 100.0:
+                continue
+            if Pl is not None and (e1 - l1) > l1 * Pl / 100.0:
+                continue
+            return (k, (ec0, ec1))
     return None
 
 
-def _kann_decken(cand, last, Tk, Tl, kmax):
-    if _passt_einzeln(cand, last, Tk, Tl):
+def _kann_decken(cand, last, Tk, Tl, kmax, Pk=None, Pl=None):
+    if _passt_einzeln(cand, last, Tk, Tl, Pk, Pl):
         return ('direkt', None)
-    k = _passt_kstapel(cand, last, Tk, Tl, kmax)
+    k = _passt_kstapel(cand, last, Tk, Tl, kmax, Pk, Pl)
     if k is not None:
         return ('kstapel', k)
     return None
 
 
-def _passt_heterogen(teile, last, Tk, Tl):
+def _passt_heterogen(teile, last, Tk, Tl, Pk=None, Pl=None):
     l0, l1 = sorted(last)
     for variante in product(*[((a, b), (b, a)) for (a, b) in teile]):
         for arrangement in (
@@ -58,24 +74,34 @@ def _passt_heterogen(teile, last, Tk, Tl):
             (max(t[0] for t in variante), sum(t[1] for t in variante)),
         ):
             b0, b1 = sorted(arrangement)
-            if b0 >= l0 and b1 >= l1 and (b0 - l0) <= Tk and (b1 - l1) <= Tl:
-                return True
+            if not (b0 >= l0 and b1 >= l1):
+                continue
+            if (b0 - l0) > Tk or (b1 - l1) > Tl:
+                continue
+            if Pk is not None and (b0 - l0) > l0 * Pk / 100.0:
+                continue
+            if Pl is not None and (b1 - l1) > l1 * Pl / 100.0:
+                continue
+            return True
     return False
 
 
 def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
               heterogen_fallback=True, sonder_deckel=None,
-              zeitlimit_s=120, katalog=None):
+              zeitlimit_s=120, katalog=None,
+              tol_kurz_pct=None, tol_lang_pct=None):
     """
     orders: Liste dicts mit 'L','B','menge','auftrag','name'.
     tol_kurz_mm: max Übermaß auf der KURZ-Achse (Breite).
     tol_lang_mm: max Übermaß auf der LANG-Achse (Länge). None -> = tol_kurz.
     sonder_deckel: max Anzahl verschiedener Sonder-Maße. None = unbegrenzt.
-    katalog: optionale Liste (cs, cl)-Tupel bekannter Maße. Wirkt als
-        TIE-BREAKER: bei mehreren Lösungen mit gleichem Gesamt-Optimum
-        bevorzugt der Solver die mit den meisten Katalog-Hits. Der
-        Bonus ist klein genug, dass er das Gesamt-Optimum NIE
-        verändert (nur Auswahl unter optimalen Lösungen).
+    katalog: optionale Liste (cs, cl)-Tupel bekannter Maße — Tie-Breaker.
+    tol_kurz_pct: optionale ZUSAETZLICHE prozentuale Toleranz auf der
+        KURZ-Achse. Wenn gesetzt: Cand-Kurz darf hoechstens Last-Kurz
+        * (1 + tol_kurz_pct/100) sein. Wird ZUSAMMEN mit tol_kurz_mm
+        geprueft — beide muessen erfuellt sein (strenger).
+        Reiner Prozent-Modus: tol_kurz_mm=99999, tol_kurz_pct=10.
+    tol_lang_pct: analog fuer die LANG-Achse.
     """
     if not orders:
         return {'standards': [], 'sonder': [], 'gesamt': 0,
@@ -83,6 +109,8 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
                 'verletzungen': [], 'status': 'leer',
                 'parameter': {'tol_kurz_mm': tol_kurz_mm,
                               'tol_lang_mm': tol_lang_mm or tol_kurz_mm,
+                              'tol_kurz_pct': tol_kurz_pct,
+                              'tol_lang_pct': tol_lang_pct,
                               'max_kombi_teile': max_kombi_teile,
                               'heterogen_fallback': heterogen_fallback,
                               'sonder_deckel': sonder_deckel}}
@@ -95,6 +123,8 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
           int(o['menge']), o.get('auftrag'), o.get('name'))
          for o in orders]
     K = max_kombi_teile
+    Pk = tol_kurz_pct if (tol_kurz_pct is not None and tol_kurz_pct > 0) else None
+    Pl = tol_lang_pct if (tol_lang_pct is not None and tol_lang_pct > 0) else None
 
     S = sorted({min(a, b) for a, b, *_ in O})
     Lv = sorted({max(a, b) for a, b, *_ in O})
@@ -115,7 +145,7 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
     keep, cov = [], []
     for c in cands:
         s = {i for i, (a, b, *_) in enumerate(O)
-             if _kann_decken(c, (a, b), Tk, Tl, K) is not None}
+             if _kann_decken(c, (a, b), Tk, Tl, K, Pk, Pl) is not None}
         if s:
             keep.append(c)
             cov.append(s)
@@ -161,7 +191,7 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
     zuordnung, sonder_grp = [], set()
     for i, (a, b, m, au, nm) in enumerate(O):
         einz = next((s for s in standards
-                     if _passt_einzeln(s, (a, b), Tk, Tl)), None)
+                     if _passt_einzeln(s, (a, b), Tk, Tl, Pk, Pl)), None)
         if einz:
             zuordnung.append({'auftrag': au, 'name': nm, 'L': a, 'B': b,
                               'menge': m, 'typ': 'Standard',
@@ -169,7 +199,7 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
             continue
         kstapel = None
         for s in standards:
-            kr = _passt_kstapel(s, (a, b), Tk, Tl, K)
+            kr = _passt_kstapel(s, (a, b), Tk, Tl, K, Pk, Pl)
             if kr is not None:
                 kstapel = (s, kr[0])
                 break
@@ -183,7 +213,7 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
         if heterogen_fallback and standards:
             for r in range(2, K + 1):
                 for combo in combinations(standards, r):
-                    if _passt_heterogen(combo, (a, b), Tk, Tl):
+                    if _passt_heterogen(combo, (a, b), Tk, Tl, Pk, Pl):
                         heterogen = combo
                         break
                 if heterogen:
@@ -223,7 +253,7 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
         else:
             teile = [tuple(map(int, t.split('x')))
                      for t in zg['ziel'].split(" + ")]
-            if not _passt_heterogen(teile, (zg['L'], zg['B']), Tk, Tl):
+            if not _passt_heterogen(teile, (zg['L'], zg['B']), Tk, Tl, Pk, Pl):
                 verletzungen.append(zg)
 
     return {'standards': standards,
@@ -234,6 +264,7 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
             'verletzungen': verletzungen,
             'status': pulp.LpStatus[p.status],
             'parameter': {'tol_kurz_mm': Tk, 'tol_lang_mm': Tl,
+                          'tol_kurz_pct': Pk, 'tol_lang_pct': Pl,
                           'max_kombi_teile': K,
                           'heterogen_fallback': heterogen_fallback,
                           'sonder_deckel': sonder_deckel,

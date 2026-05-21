@@ -131,8 +131,13 @@ def init_state() -> None:
         "import_dat": None,        # dict aus import_excel.importiere
         "historie_id": None,       # uuid des aktuellen Verlauf-Eintrags
         "params": {                # Kern-v4-Parameter (FINAL LOCK Defaults)
+            "tol_modus": "absolut",   # "absolut" (mm) ODER "prozent" (%)
+            # Modus A — Absolut (mm):
             "tol_kurz_mm": 200,
             "tol_lang_mm": 400,
+            # Modus B — Prozentual (%) — Defaults laut Spec:
+            "tol_kurz_pct": 15,       # Breite +15 %
+            "tol_lang_pct": 10,       # Länge  +10 %
             "kombinieren": True,
             "sonder_deckel_aktiv": True,
             "sonder_deckel": 5,
@@ -337,16 +342,52 @@ def seite_einstellungen() -> None:
     p = st.session_state.params
     with col_l:
         card_open("Toleranz (getrennt nach Achse)")
-        p["tol_kurz_mm"] = st.number_input(
-            "max. Übermaß BREITE (mm)", min_value=0, max_value=2000,
-            value=int(p["tol_kurz_mm"]), step=10, key="tol_kurz_in",
-            help="Übermaß auf der kurzen Achse. Standard ≥ Last ist garantiert.",
+        # Umschalter: Modus A (mm) vs Modus B (%) — State bleibt fuer beide.
+        modi = ["Absolut (mm)", "Prozentual (%)"]
+        modi_keys = ["absolut", "prozent"]
+        idx = 0 if p.get("tol_modus", "absolut") == "absolut" else 1
+        sel = st.radio(
+            "Modus",
+            modi,
+            index=idx,
+            horizontal=True,
+            key="tol_modus_in",
+            help="Absolut: Übermaß in mm. Prozentual: Übermaß als "
+                 "Prozent vom Auftragsmaß. Werte beider Modi werden "
+                 "im Hintergrund unabhängig gespeichert.",
         )
-        p["tol_lang_mm"] = st.number_input(
-            "max. Übermaß LÄNGE (mm)", min_value=0, max_value=2000,
-            value=int(p["tol_lang_mm"]), step=10, key="tol_lang_in",
-            help="Übermaß auf der langen Achse. Sweet-Spot 400 (12 Standards).",
-        )
+        p["tol_modus"] = modi_keys[modi.index(sel)]
+
+        if p["tol_modus"] == "absolut":
+            p["tol_kurz_mm"] = st.number_input(
+                "max. Übermaß BREITE", min_value=0, max_value=2000,
+                value=int(p["tol_kurz_mm"]), step=10, key="tol_kurz_mm_in",
+                help="Absolutes Übermaß in Millimetern auf der kurzen Achse.",
+            )
+            p["tol_lang_mm"] = st.number_input(
+                "max. Übermaß LÄNGE", min_value=0, max_value=2000,
+                value=int(p["tol_lang_mm"]), step=10, key="tol_lang_mm_in",
+                help="Absolutes Übermaß in Millimetern auf der langen Achse.",
+            )
+            st.caption("Einheit: mm · Modus A (absolut)")
+        else:
+            p["tol_kurz_pct"] = st.number_input(
+                "max. Übermaß BREITE",
+                min_value=0.0, max_value=100.0,
+                value=float(p.get("tol_kurz_pct", 15)),
+                step=1.0, format="%.1f", key="tol_kurz_pct_in",
+                help="Prozentuales Übermaß auf der kurzen Achse. "
+                     "max_breite = palette_breite * (1 + %/100).",
+            )
+            p["tol_lang_pct"] = st.number_input(
+                "max. Übermaß LÄNGE",
+                min_value=0.0, max_value=100.0,
+                value=float(p.get("tol_lang_pct", 10)),
+                step=1.0, format="%.1f", key="tol_lang_pct_in",
+                help="Prozentuales Übermaß auf der langen Achse. "
+                     "max_länge = palette_länge * (1 + %/100).",
+            )
+            st.caption("Einheit: % · Modus B (prozentual)")
         card_close()
 
         card_open("Kombinieren")
@@ -420,15 +461,28 @@ def run_optimierung() -> None:
         for pal in mit_mass
     ]
 
-    # Toggle-Verdrahtung 1:1 nach FINAL-LOCK-Spec:
-    #   Kombi ON  -> max_kombi_teile=3, heterogen_fallback=True
-    #   Kombi OFF -> max_kombi_teile=1, heterogen_fallback=False
+    # Toggle-Verdrahtung 1:1 nach FINAL-LOCK-Spec
     kombi = bool(p.get("kombinieren", True))
     deckel = (int(p["sonder_deckel"])
               if p.get("sonder_deckel_aktiv") else None)
 
+    # Toleranz-Modus: "absolut" (mm) oder "prozent" (%).
+    # Im Prozent-Modus setzen wir die mm-Grenze auf einen sehr hohen
+    # Wert, damit nur die Prozent-Bedingung greift.
+    modus = p.get("tol_modus", "absolut")
+    if modus == "prozent":
+        Tk_eff, Tl_eff = 99999, 99999
+        Pk_eff = float(p.get("tol_kurz_pct", 15))
+        Pl_eff = float(p.get("tol_lang_pct", 10))
+        modus_text = f"Modus % (B {Pk_eff:g}% / L {Pl_eff:g}%)"
+    else:
+        Tk_eff = int(p.get("tol_kurz_mm", 200))
+        Tl_eff = int(p.get("tol_lang_mm", 400))
+        Pk_eff, Pl_eff = None, None
+        modus_text = f"Modus mm (B≤{Tk_eff}mm / L≤{Tl_eff}mm)"
+
     hinweis = (f"ILP-Solver (CBC) optimiert {len(orders)} Aufträge — "
-               f"Übermaß B≤{int(p['tol_kurz_mm'])}mm L≤{int(p['tol_lang_mm'])}mm, "
+               f"{modus_text}, "
                f"Kombi {'an' if kombi else 'aus'}, "
                f"Sonder-Deckel {deckel if deckel is not None else 'frei'}.")
     # Katalog-Maße als Tie-Breaker mitgeben (bevorzugt aber nicht erzwingend)
@@ -439,8 +493,10 @@ def run_optimierung() -> None:
     with st.spinner(hinweis):
         res = optimiere(
             orders,
-            tol_kurz_mm=int(p["tol_kurz_mm"]),
-            tol_lang_mm=int(p["tol_lang_mm"]),
+            tol_kurz_mm=Tk_eff,
+            tol_lang_mm=Tl_eff,
+            tol_kurz_pct=Pk_eff,
+            tol_lang_pct=Pl_eff,
             max_kombi_teile=3 if kombi else 1,
             heterogen_fallback=kombi,
             sonder_deckel=deckel,
@@ -463,8 +519,11 @@ def run_optimierung() -> None:
         try:
             update_optimierung(hist_id, {
                 "zeitstempel": datetime.now().isoformat(timespec="seconds"),
-                "tol_kurz_mm": int(p["tol_kurz_mm"]),
-                "tol_lang_mm": int(p["tol_lang_mm"]),
+                "tol_modus": modus,
+                "tol_kurz_mm": int(p["tol_kurz_mm"]) if modus == "absolut" else None,
+                "tol_lang_mm": int(p["tol_lang_mm"]) if modus == "absolut" else None,
+                "tol_kurz_pct": float(p["tol_kurz_pct"]) if modus == "prozent" else None,
+                "tol_lang_pct": float(p["tol_lang_pct"]) if modus == "prozent" else None,
                 "kombinieren": kombi,
                 "sonder_deckel": deckel,
                 "standards": len(res.get("standards", [])),
@@ -488,10 +547,21 @@ def seite_optimierung() -> None:
         card_open("Aktuelle Parameter")
         deckel = (int(p["sonder_deckel"]) if p.get("sonder_deckel_aktiv")
                   else "frei")
+        if p.get("tol_modus", "absolut") == "prozent":
+            tol_zeilen = (
+                f"<b>Toleranz-Modus:</b> Prozentual<br>"
+                f"<b>max. Übermaß BREITE:</b> {float(p['tol_kurz_pct']):g} %<br>"
+                f"<b>max. Übermaß LÄNGE:</b> {float(p['tol_lang_pct']):g} %<br>"
+            )
+        else:
+            tol_zeilen = (
+                f"<b>Toleranz-Modus:</b> Absolut<br>"
+                f"<b>max. Übermaß BREITE:</b> {int(p['tol_kurz_mm'])} mm<br>"
+                f"<b>max. Übermaß LÄNGE:</b> {int(p['tol_lang_mm'])} mm<br>"
+            )
         st.markdown(
             f"<div style='font-size:13px;color:#374151;line-height:1.8;'>"
-            f"<b>max. Übermaß BREITE:</b> {int(p['tol_kurz_mm'])} mm<br>"
-            f"<b>max. Übermaß LÄNGE:</b> {int(p['tol_lang_mm'])} mm<br>"
+            f"{tol_zeilen}"
             f"<b>Kombinieren:</b> {'an' if p['kombinieren'] else 'aus'}<br>"
             f"<b>Sonder-Deckel:</b> {deckel}<br>"
             f"<b>Coverage:</b> einseitig (Standard ≥ Last)"
@@ -579,12 +649,20 @@ def kpi_uebersicht() -> None:
     deckel_real = rparam.get("sonder_deckel")
     deckel_txt = "frei" if deckel_real is None else str(int(deckel_real))
     kombi_real = bool(rparam.get("heterogen_fallback")) and int(rparam.get("max_kombi_teile", 1)) > 1
+    # Modus-Anzeige aus result['parameter'] — single source of truth
+    pk_real = rparam.get("tol_kurz_pct")
+    pl_real = rparam.get("tol_lang_pct")
+    if pk_real is not None or pl_real is not None:
+        tol_anzeige = (f'Übermaß: BREITE {pk_real:g} % · '
+                       f'LÄNGE {pl_real:g} %')
+    else:
+        tol_anzeige = (f'Übermaß: BREITE {int(rparam.get("tol_kurz_mm", 0))}mm · '
+                       f'LÄNGE {int(rparam.get("tol_lang_mm", 0))}mm')
     st.markdown(
         f'<div style="background:#f8fafc;border:1px solid #e2e8f0;'
         f'border-radius:6px;padding:8px 12px;margin:8px 0 16px;'
         f'font-size:12px;color:#475569;">'
-        f'⚙️ max. Übermaß: BREITE {int(rparam.get("tol_kurz_mm", 0))}mm · '
-        f'LÄNGE {int(rparam.get("tol_lang_mm", 0))}mm · '
+        f'⚙️ {tol_anzeige} · '
         f'Kombinieren = {"an" if kombi_real else "aus"} · '
         f'Sonder-Deckel = {deckel_txt} · '
         f'Coverage = einseitig · '
@@ -603,19 +681,41 @@ def seite_ergebnisse() -> None:
 
     kpi_uebersicht()
 
-    # === Inline-Anpassung: 4 Eingaben gem. FINAL-LOCK-Spec ===
+    # === Inline-Anpassung mit Modus-Umschalter (mm / %) ===
     card_open("🔁 Parameter anpassen und neu rechnen")
     p = st.session_state.params
+    # Modus-Umschalter ueber den Eingaben
+    modi = ["Absolut (mm)", "Prozentual (%)"]
+    modi_keys = ["absolut", "prozent"]
+    idx = 0 if p.get("tol_modus", "absolut") == "absolut" else 1
+    sel = st.radio("Toleranz-Modus", modi, index=idx, horizontal=True,
+                   key="erg_tol_modus")
+    p["tol_modus"] = modi_keys[modi.index(sel)]
+
     c1, c2, c3, c4 = st.columns([1.2, 1.2, 1, 1.2])
     with c1:
-        p["tol_kurz_mm"] = st.number_input(
-            "max. Übermaß BREITE (mm)", min_value=0, max_value=2000,
-            value=int(p["tol_kurz_mm"]), step=10, key="erg_tol_kurz",
-        )
-        p["tol_lang_mm"] = st.number_input(
-            "max. Übermaß LÄNGE (mm)", min_value=0, max_value=2000,
-            value=int(p["tol_lang_mm"]), step=10, key="erg_tol_lang",
-        )
+        if p["tol_modus"] == "absolut":
+            p["tol_kurz_mm"] = st.number_input(
+                "max. Übermaß BREITE (mm)", min_value=0, max_value=2000,
+                value=int(p["tol_kurz_mm"]), step=10, key="erg_tol_kurz_mm",
+            )
+            p["tol_lang_mm"] = st.number_input(
+                "max. Übermaß LÄNGE (mm)", min_value=0, max_value=2000,
+                value=int(p["tol_lang_mm"]), step=10, key="erg_tol_lang_mm",
+            )
+        else:
+            p["tol_kurz_pct"] = st.number_input(
+                "max. Übermaß BREITE (%)",
+                min_value=0.0, max_value=100.0,
+                value=float(p.get("tol_kurz_pct", 15)), step=1.0,
+                format="%.1f", key="erg_tol_kurz_pct",
+            )
+            p["tol_lang_pct"] = st.number_input(
+                "max. Übermaß LÄNGE (%)",
+                min_value=0.0, max_value=100.0,
+                value=float(p.get("tol_lang_pct", 10)), step=1.0,
+                format="%.1f", key="erg_tol_lang_pct",
+            )
     with c2:
         p["kombinieren"] = st.toggle(
             "Kombinieren aktiv",

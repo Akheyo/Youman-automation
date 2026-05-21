@@ -112,6 +112,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_katalog.py
 
+      - name: Pflicht-Test Toleranz-Modus (mm / %)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_toleranz_modus.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |
