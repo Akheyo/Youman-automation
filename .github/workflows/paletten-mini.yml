@@ -137,6 +137,16 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_doppelschutz.py
 
+      - name: Pflicht-Test Wirtschaftlichkeit + LKW-BinPacking (Spec §11)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_wirtschaftlichkeit.py
+
+      - name: Pflicht-Test Verbrauch + Beschaffung (Spec §9 + §10)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_verbrauch_und_beschaffung.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |

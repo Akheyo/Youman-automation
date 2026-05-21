@@ -85,6 +85,7 @@ def _migriere_eintrag(e: dict[str, Any]) -> None:
     e.setdefault("quelle", "manuell")
     e.setdefault("verbrauchshaeufigkeit", 0)
     e.setdefault("bestand", 0)
+    e.setdefault("bestand_bestellt", 0)  # Spec §5 (in Anlieferung)
     e.setdefault("meldebestand", 0)
     e.setdefault("notiz", "")
     e.setdefault("aktiv", True)
@@ -125,7 +126,8 @@ def neuer_eintrag(L: int, B: int,
                    hoehe_mm: int = 0,
                    typ: str = "standard",
                    quelle: str = "manuell",
-                   verbrauchshaeufigkeit: int = 0) -> str:
+                   verbrauchshaeufigkeit: int = 0,
+                   bestand_bestellt: int = 0) -> str:
     """Fuegt einen neuen Katalog-Eintrag hinzu. Maß wird kanonisiert.
     Liefert die id."""
     L_k, B_k = _kanon(L, B)
@@ -146,6 +148,7 @@ def neuer_eintrag(L: int, B: int,
         "einkaufspreis_eur": float(einkaufspreis),
         "verkaufspreis_eur": float(verkaufspreis),
         "bestand": int(max(0, bestand)),
+        "bestand_bestellt": int(max(0, bestand_bestellt)),
         "meldebestand": int(max(0, meldebestand)),
         "typ": typ,
         "quelle": quelle,
@@ -162,7 +165,8 @@ def neuer_eintrag(L: int, B: int,
 def update_eintrag(eintrag_id: str, **felder) -> bool:
     """Aktualisiert ein paar Felder."""
     erlaubt = {"L_mm", "B_mm", "einkaufspreis_eur",
-               "verkaufspreis_eur", "bestand", "meldebestand",
+               "verkaufspreis_eur", "bestand", "bestand_bestellt",
+               "meldebestand",
                "notiz", "aktiv", "name", "hoehe_mm", "typ", "quelle",
                "verbrauchshaeufigkeit"}
     h = _read_raw()
@@ -170,7 +174,7 @@ def update_eintrag(eintrag_id: str, **felder) -> bool:
         if e.get("id") == eintrag_id:
             for k, v in felder.items():
                 if k in erlaubt:
-                    if k in ("bestand", "meldebestand",
+                    if k in ("bestand", "bestand_bestellt", "meldebestand",
                              "verbrauchshaeufigkeit", "hoehe_mm"):
                         v = int(max(0, int(v)))
                     if k == "typ" and v not in _TYP_ERLAUBT:

@@ -31,6 +31,9 @@ from import_verlauf import (  # noqa: E402
 )
 import palettenkatalog as katalog_modul  # noqa: E402
 import bestellungen as bestellungen_modul  # noqa: E402
+import wirtschaftlichkeit as wirt_modul  # noqa: E402
+import verbrauch as verbrauch_modul  # noqa: E402
+import procurement as procurement_modul  # noqa: E402
 from import_doppelschutz import pruefe_import as _pruefe_import  # noqa: E402
 from _render import render_zuord_table, ziel_label as _ziel_label  # noqa: E402
 from _ui_chrome import (  # noqa: E402
@@ -155,6 +158,8 @@ def init_state() -> None:
             "w5": 0.0,   # Marge-Bonus (negativ)
             "w6": 0.0,   # Penalty pro Sonder-Typ
             "w7": 0.0,   # Penalty pro Kombi-Zuordnung
+            "w8": 0.0,   # Logistik-Mehrkosten (Transport+Lager)
+            "w9": 0.0,   # − Handling/Varianten-Einsparung (Bonus)
             # Filter in der Ergebnis-Tabelle
             "ergebnis_filter": "alle",
             # Doppelschutz (Spec §8)
@@ -212,7 +217,9 @@ with st.sidebar:
         "Katalog",
         "Bestand & Disposition",
         "Bestellungen",
+        "Beschaffung",
         "Historie",
+        "Wirtschaftlichkeit",
         "Kostenanalyse",
         "Stammdaten",
         "Berichte",
@@ -252,8 +259,8 @@ step_indicator(aktiver_schritt())
 
 
 def _globale_banner() -> None:
-    """Globale Hinweise (Spec §5 + §13): X Paletten ohne EK/VK +
-    Y offene Bestellungen."""
+    """Globale Hinweise (Spec §5 + §13 + §14): X Paletten ohne EK/VK +
+    Y offene Bestellungen + Z offene Beschaffungen + Netto-Effekt."""
     try:
         unvoll = katalog_modul.unvollstaendige()
     except Exception:
@@ -262,19 +269,37 @@ def _globale_banner() -> None:
         offene = bestellungen_modul.offene()
     except Exception:
         offene = []
+    try:
+        offene_bes = procurement_modul.offene()
+    except Exception:
+        offene_bes = []
+    try:
+        kritisch = [k for k in verbrauch_modul.kritische_paletten(
+            katalog_modul=katalog_modul,
+            bestellungen_modul=bestellungen_modul,
+        ) if k["kritisch"]]
+    except Exception:
+        kritisch = []
     teile = []
     if unvoll:
         n = len(unvoll)
         teile.append(
-            f'⚠️ <b>{n}</b> Palette{"n" if n != 1 else ""} ohne EK/VK '
-            f'(Tab <b>Katalog</b>)'
+            f'⚠️ <b>{n}</b> Palette{"n" if n != 1 else ""} ohne EK/VK'
+        )
+    if kritisch:
+        n = len(kritisch)
+        teile.append(
+            f'🔴 <b>{n}</b> kritisch (Reichweite)'
         )
     if offene:
-        n = len(offene)
-        wert = sum(int(o.get("menge", 0)) for o in offene)
         teile.append(
-            f'📋 <b>{n}</b> offene Bestellung{"en" if n != 1 else ""} '
-            f'({wert} Stk · Tab <b>Historie</b>)'
+            f'📋 <b>{len(offene)}</b> offene Bestellung'
+            f'{"en" if len(offene) != 1 else ""}'
+        )
+    if offene_bes:
+        teile.append(
+            f'📦 <b>{len(offene_bes)}</b> offene Beschaffung'
+            f'{"en" if len(offene_bes) != 1 else ""}'
         )
     if not teile:
         return
@@ -287,6 +312,20 @@ def _globale_banner() -> None:
         unsafe_allow_html=True,
     )
 
+
+# Cron-Abtragen einmal pro Session ausfuehren (Spec §9)
+if not st.session_state.get("_cron_done", False):
+    try:
+        cron_erg = verbrauch_modul.cron_abtragen(
+            bestellungen_modul=bestellungen_modul)
+        if cron_erg["geaendert"] > 0:
+            st.toast(
+                f"Verbrauch-Cron: {cron_erg['geaendert']} überfällige "
+                f"Bestellung(en) auf 'verbraucht' gesetzt."
+            )
+    except Exception:
+        pass
+    st.session_state._cron_done = True
 
 _globale_banner()
 
@@ -698,6 +737,17 @@ def seite_einstellungen() -> None:
             help="Post-hoc — höher = Kombi-Zuordnungen schlechter "
                  "bewertet (Single-Standard bevorzugt).",
         )
+        p["w8"] = st.slider(
+            "w8 — Logistik-Mehrkosten (Transport+Lager)", 0.0, 1.0,
+            float(p.get("w8", 0.0)), step=0.01, key="w8_in",
+            help="Wirkt nur wenn Tab 'Wirtschaftlichkeit' aktiv ist "
+                 "(sonst Eintrag = 0).",
+        )
+        p["w9"] = st.slider(
+            "w9 — Handling/Varianten-Einsparung (Bonus)", 0.0, 1.0,
+            float(p.get("w9", 0.0)), step=0.01, key="w9_in",
+            help="Wirkt nur wenn Tab 'Wirtschaftlichkeit' aktiv ist.",
+        )
         card_close()
 
     with col_r:
@@ -767,7 +817,7 @@ def run_optimierung() -> None:
     sonder_erlaubt = bool(p.get("sonder_erlaubt", True))
     sonder_min = int(p.get("sonder_min_artikel", 0))
     sonder_auf = int(p.get("sonder_aufschlag_mm", 0))
-    gewichte = {f"w{i}": float(p.get(f"w{i}", 0.0)) for i in range(1, 8)}
+    gewichte = {f"w{i}": float(p.get(f"w{i}", 0.0)) for i in range(1, 10)}
     gewichte["w1"] = float(p.get("w1", 1.0))
 
     hinweis = (f"ILP-Solver (CBC) optimiert {len(orders)} Aufträge — "
@@ -808,6 +858,22 @@ def run_optimierung() -> None:
         if bestand > 0:
             katalog_bestand[(cs, cl)] = bestand
 
+    # Logistik-Maps fuer w8/w9 — nur wenn Wirtschaftlichkeit aktiv
+    log_mehr_map, log_einsp_map = None, None
+    try:
+        cp_w = wirt_modul.lade_params()
+        if cp_w.get("aktiv"):
+            # Approximative pro-Typ-Kosten: jeder Typ-Aktivierung
+            # entspricht 1 'Variante' = handling + var Kosten −
+            # und Mehrkosten pro Fahrt approx fuer dedicated Lkw.
+            handling = float(cp_w.get("handling_kosten_pro_palettentyp_eur", 0))
+            varianten = float(cp_w.get("variantenkosten_pro_typ_eur", 0))
+            kf = wirt_modul.kostenpro_fahrt(cp_w)
+            log_mehr_map = {k: kf for k in kat_masse}  # 1 Fahrt-Approx
+            log_einsp_map = {k: handling + varianten for k in kat_masse}
+    except Exception:
+        pass
+
     with st.spinner(hinweis):
         res = optimiere(
             orders,
@@ -828,6 +894,8 @@ def run_optimierung() -> None:
             katalog_marge=katalog_marge or None,
             katalog_verbrauch=katalog_verbrauch or None,
             katalog_bestand=katalog_bestand or None,
+            logistik_mehrkosten_per_typ=log_mehr_map,
+            logistik_einsparung_per_typ=log_einsp_map,
         )
     import uuid as _uuid
     st.session_state.ergebnis_id = _uuid.uuid4().hex
@@ -1448,6 +1516,9 @@ def seite_ergebnisse() -> None:
             ("w5 · Marge-Bonus", bd.get("w5_marge_bonus", 0.0)),
             ("w6 · Sonder-Penalty", bd.get("w6_sonder_penalty", 0.0)),
             ("w7 · Kombi-Penalty", bd.get("w7_kombi_penalty", 0.0)),
+            ("w8 · Logistik-Mehrkosten", bd.get("w8_logistik_mehrkosten", 0.0)),
+            ("w9 · Logistik-Einsparung",
+             bd.get("w9_logistik_einsparung_bonus", 0.0)),
             ("BIG · # nicht zuordenbar", bd.get("slack_nicht_zuordenbar", 0.0)),
         ]
         df_score = pd.DataFrame(
@@ -2143,13 +2214,45 @@ def seite_dashboard() -> None:
                      hide_index=True)
         card_close()
 
-    # Kritische Bestände
+    # Kritische Paletten (Reichweite + Ampel, Spec §9)
+    try:
+        krit_v = verbrauch_modul.kritische_paletten(
+            katalog_modul=katalog_modul,
+            bestellungen_modul=bestellungen_modul,
+        )
+    except Exception:
+        krit_v = []
+    if krit_v:
+        kritisch_nur = [k for k in krit_v if k["kritisch"]]
+        card_open(f"🚦 Verbrauchs-Ampel ({len(kritisch_nur)} kritisch von "
+                  f"{len(krit_v)} aktiv)")
+        rows = [{
+            "Ampel": k["ampel"],
+            "Name": k.get("name", "") or "—",
+            "Palette": f"{k['L_mm']} × {k['B_mm']} mm",
+            "Bestand": k["bestand"],
+            "in Anlief.": k["bestand_bestellt"],
+            "Ø Verbr./Tag": k["avg_pro_tag"],
+            "Reichweite (T)": (round(k["reichweite_tage"], 1)
+                                if k["reichweite_tage"] is not None
+                                else "—"),
+            "+ Anlief. (T)": (round(k["reichweite_inkl_anlieferung_tage"], 1)
+                               if k["reichweite_inkl_anlieferung_tage"]
+                                  is not None else "—"),
+        } for k in krit_v]
+        st.dataframe(pd.DataFrame(rows), use_container_width=True,
+                     hide_index=True, height=min(360, 60 + 35 * len(rows)))
+        st.caption("🟢 > 30 Tage · 🟡 14-30 · 🔴 < 14 oder leer · "
+                    "⚫ kein Verbrauch erfasst")
+        card_close()
+
+    # Klassische Meldebestand-Warnung (Spec §5)
     try:
         krit = katalog_modul.kritische_bestaende()
     except Exception:
         krit = []
     if krit:
-        card_open(f"⚠️ Kritische Bestände ({len(krit)})")
+        card_open(f"⚠️ Meldebestand erreicht ({len(krit)})")
         rows = [{
             "Palette": f"{e['L_mm']} × {e['B_mm']} mm",
             "Bestand": int(e.get("bestand", 0)),
@@ -2491,6 +2594,482 @@ def seite_historie() -> None:
     card_close()
 
 
+def seite_beschaffung() -> None:
+    """Beschaffungs-Auftraege (Spec §10): PDF-Wizard, Wareneingang."""
+    auftraege = procurement_modul.alle()
+    card_open(f"📦 Beschaffungs-Aufträge ({len(auftraege)} gesamt)")
+    st.markdown(
+        '<div style="font-size:13px;color:#475569;margin-bottom:8px;">'
+        'Bestellungen beim Lieferanten zum Auffüllen des Bestands. '
+        'Beim Wareneingang wird der Bestand automatisch erhöht. '
+        'Solange offen: Menge erscheint als "in Anlieferung".'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Wizard: neuer Auftrag
+    with st.expander("➕ Neuer Beschaffungs-Auftrag (Wizard)",
+                      expanded=not auftraege):
+        wiz_paletten = katalog_modul.alle()
+        if not wiz_paletten:
+            st.info("Zuerst Paletten im Katalog anlegen.")
+        else:
+            ww1, ww2, ww3 = st.columns([2, 1, 1])
+            with ww1:
+                liefer = st.text_input("Lieferant",
+                                         placeholder="z.B. Palettenwerk Müller GmbH",
+                                         key="proc_liefer")
+            with ww2:
+                from datetime import date as _date, timedelta as _td
+                plan = st.date_input(
+                    "geplante Lieferung",
+                    value=_date.today() + _td(days=14),
+                    key="proc_plan",
+                )
+            with ww3:
+                modus = st.selectbox(
+                    "Buchungsmodus",
+                    ["wareneingang", "sofort"],
+                    help="wareneingang = Bestand erst bei Eingang erhöht. "
+                         "sofort = direkt.",
+                    key="proc_modus",
+                )
+            # Position-Form
+            positionen_state = st.session_state.setdefault(
+                "proc_pos_draft", [])
+            with st.form("proc_neue_pos", clear_on_submit=True):
+                pc1, pc2, pc3 = st.columns([3, 1, 1])
+                with pc1:
+                    pal_idx = st.selectbox(
+                        "Palette",
+                        options=range(len(wiz_paletten)),
+                        format_func=lambda i: (
+                            f"{wiz_paletten[i].get('name', '') or '—'} · "
+                            f"{wiz_paletten[i]['L_mm']}×{wiz_paletten[i]['B_mm']}"
+                        ),
+                        key="proc_pal",
+                    )
+                with pc2:
+                    pos_menge = st.number_input(
+                        "Menge", min_value=1, max_value=100000,
+                        value=10, step=1, key="proc_pos_menge",
+                    )
+                with pc3:
+                    default_ek = float(wiz_paletten[pal_idx].get(
+                        "einkaufspreis_eur", 0))
+                    pos_ek = st.number_input(
+                        "EK/Stk (€)", min_value=0.0, max_value=10000.0,
+                        value=default_ek, step=0.50, format="%.2f",
+                        key="proc_pos_ek",
+                    )
+                if st.form_submit_button("➕ Position hinzufügen",
+                                             use_container_width=True):
+                    positionen_state.append({
+                        "palette_id": wiz_paletten[pal_idx]["id"],
+                        "menge": int(pos_menge),
+                        "ek_pro_stk_eur": float(pos_ek),
+                        "label": (
+                            f"{wiz_paletten[pal_idx]['L_mm']}×"
+                            f"{wiz_paletten[pal_idx]['B_mm']}"
+                        ),
+                    })
+            # Liste der aktuellen Positionen
+            if positionen_state:
+                st.markdown("**Aktuelle Positionen:**")
+                dfp = pd.DataFrame([
+                    {"Palette": p["label"], "Menge": p["menge"],
+                     "EK/Stk (€)": p["ek_pro_stk_eur"],
+                     "Σ (€)": p["menge"] * p["ek_pro_stk_eur"]}
+                    for p in positionen_state
+                ])
+                st.dataframe(dfp, use_container_width=True, hide_index=True,
+                             column_config={
+                                 "Menge": st.column_config.NumberColumn(format="%d"),
+                                 "EK/Stk (€)": st.column_config.NumberColumn(format="%.2f €"),
+                                 "Σ (€)": st.column_config.NumberColumn(format="%.2f €"),
+                             })
+                bc1, bc2 = st.columns(2)
+                if bc1.button("✓ Auftrag anlegen", type="primary",
+                                use_container_width=True, key="proc_anlegen"):
+                    erg = procurement_modul.neuer_auftrag(
+                        katalog_modul=katalog_modul,
+                        lieferant=liefer or "—",
+                        positionen=positionen_state,
+                        datum_geplant=plan.isoformat(),
+                        buchungsmodus=modus,
+                    )
+                    if erg["ok"]:
+                        st.success(
+                            f"Auftrag angelegt: {erg['positionen']} Positionen, "
+                            f"Σ {erg['summe_eur']:.2f} €."
+                        )
+                        st.session_state.proc_pos_draft = []
+                        st.rerun()
+                    else:
+                        st.error("Auftrag konnte nicht angelegt werden.")
+                if bc2.button("🗑️ Positionen leeren",
+                                use_container_width=True, key="proc_clear"):
+                    st.session_state.proc_pos_draft = []
+                    st.rerun()
+    card_close()
+
+    if not auftraege:
+        st.caption(f"Speicherort: {procurement_modul.pfad_str()}")
+        return
+
+    # Liste aller Auftraege
+    card_open(f"Übersicht ({len(auftraege)})")
+    rows = []
+    for a in auftraege:
+        rows.append({
+            "id": a["id"],
+            "Datum erstellt": a.get("datum_erstellt", "")[:10],
+            "Lieferant": a.get("lieferant", ""),
+            "Status": a.get("status", ""),
+            "Positionen": len(a.get("positionen", [])),
+            "Summe (€)": a.get("summe_eur", 0),
+            "Modus": a.get("buchungsmodus", ""),
+            "Geplant": a.get("datum_geplant", ""),
+            "Wareneingang": a.get("datum_wareneingang", "—"),
+        })
+    df = pd.DataFrame(rows)
+    st.dataframe(df.drop(columns=["id"]),
+                  use_container_width=True, hide_index=True,
+                  column_config={
+                      "Summe (€)": st.column_config.NumberColumn(format="%.2f €"),
+                  })
+    # Aktionen
+    sel = st.selectbox(
+        "Auftrag wählen",
+        options=range(len(auftraege)),
+        format_func=lambda i: (
+            f"{auftraege[i]['datum_erstellt'][:10]} · "
+            f"{auftraege[i].get('lieferant', '—')} · "
+            f"{auftraege[i]['status']} · "
+            f"{auftraege[i].get('summe_eur', 0):.2f} €"
+        ),
+        key="proc_sel",
+    )
+    aktiv = auftraege[sel]
+    ac1, ac2, ac3, ac4 = st.columns(4)
+    if aktiv["status"] == "offen":
+        if ac1.button("✓ Auf 'bestellt' setzen", use_container_width=True,
+                       key="proc_bestellt"):
+            procurement_modul.update_status(aktiv["id"], "bestellt",
+                                              katalog_modul=katalog_modul)
+            st.rerun()
+    if aktiv["status"] in ("offen", "bestellt"):
+        if ac2.button("📥 Wareneingang buchen", use_container_width=True,
+                       type="primary", key="proc_eingang"):
+            procurement_modul.update_status(aktiv["id"], "wareneingang",
+                                              katalog_modul=katalog_modul)
+            st.success("Wareneingang gebucht — Bestand erhöht.")
+            st.rerun()
+        if ac3.button("✗ Stornieren", use_container_width=True,
+                       key="proc_storno"):
+            procurement_modul.update_status(aktiv["id"], "storniert",
+                                              katalog_modul=katalog_modul)
+            st.warning("Storniert.")
+            st.rerun()
+    if ac4.button("🗑️ Löschen", use_container_width=True,
+                    key="proc_del"):
+        procurement_modul.loesche_eintrag(aktiv["id"])
+        st.rerun()
+
+    # PDF/Text-Export
+    text = procurement_modul.als_text(aktiv)
+    with st.expander("📄 Druckansicht (PDF-Vorlage als Text)"):
+        st.code(text, language=None)
+    st.download_button(
+        "📥 Auftrag als Text-Datei",
+        data=text.encode("utf-8"),
+        file_name=f"beschaffung-{aktiv['id'][:8]}.txt",
+        mime="text/plain",
+        use_container_width=True,
+    )
+    st.caption(f"Speicherort: {procurement_modul.pfad_str()}")
+    card_close()
+
+
+def seite_wirtschaftlichkeit() -> None:
+    """Wirtschaftlichkeits-Dashboard (Spec §11)."""
+    cp = wirt_modul.lade_params()
+    card_open("⚖️ Wirtschaftlichkeit + Logistikkosten (Spec §11)")
+    st.caption(
+        "Rechnet Einsparung durch Variantenreduktion gegen Mehrkosten "
+        "von Transport + Lager. Kein Einfluss auf den Optimierer, "
+        "wenn Toggle 'aktiv' OFF (Default) oder w8/w9 = 0."
+    )
+
+    # Toggle aktiv
+    cp["aktiv"] = st.toggle(
+        "Modul aktiv (in Score einbeziehen via w8/w9)",
+        value=bool(cp.get("aktiv", False)),
+        key="wirt_aktiv",
+    )
+    card_close()
+
+    # Eingabe-Parameter (Spec §11.1)
+    card_open("Transport (LKW)")
+    tc1, tc2, tc3 = st.columns(3)
+    with tc1:
+        cp["lkw_laenge_mm"] = st.number_input(
+            "LKW Länge (mm)", min_value=1000, max_value=30000,
+            value=int(cp.get("lkw_laenge_mm", 13620)), step=10,
+        )
+        cp["max_palettenstapel"] = st.number_input(
+            "Max. Palettenstapel", min_value=1, max_value=5,
+            value=int(cp.get("max_palettenstapel", 2)), step=1,
+        )
+    with tc2:
+        cp["lkw_breite_mm"] = st.number_input(
+            "LKW Breite (mm)", min_value=1000, max_value=5000,
+            value=int(cp.get("lkw_breite_mm", 2480)), step=10,
+        )
+        cp["max_gewicht_kg"] = st.number_input(
+            "Max. Gewicht (kg)", min_value=0, max_value=100000,
+            value=int(cp.get("max_gewicht_kg", 24000)), step=100,
+        )
+    with tc3:
+        cp["lkw_hoehe_mm"] = st.number_input(
+            "LKW Höhe (mm)", min_value=1000, max_value=5000,
+            value=int(cp.get("lkw_hoehe_mm", 2700)), step=10,
+        )
+        cp["kosten_pro_fahrt_eur"] = st.number_input(
+            "Kosten/Fahrt (€)", min_value=0.0, max_value=10000.0,
+            value=float(cp.get("kosten_pro_fahrt_eur", 350.0)),
+            step=10.0, format="%.2f",
+        )
+    card_close()
+
+    card_open("Lager + Handling")
+    lc1, lc2, lc3, lc4 = st.columns(4)
+    with lc1:
+        cp["lagerkosten_pro_stellplatz_pro_tag_eur"] = st.number_input(
+            "Lager €/Stellplatz/Tag", min_value=0.0, max_value=100.0,
+            value=float(cp.get(
+                "lagerkosten_pro_stellplatz_pro_tag_eur", 0.5)),
+            step=0.05, format="%.2f",
+        )
+    with lc2:
+        cp["avg_lagerdauer_tage"] = st.number_input(
+            "Ø Lagerdauer (Tage)", min_value=0, max_value=365,
+            value=int(cp.get("avg_lagerdauer_tage", 14)), step=1,
+        )
+    with lc3:
+        cp["handling_kosten_pro_palettentyp_eur"] = st.number_input(
+            "Handling €/Typ", min_value=0.0, max_value=10000.0,
+            value=float(cp.get("handling_kosten_pro_palettentyp_eur", 50)),
+            step=10.0, format="%.2f",
+        )
+    with lc4:
+        cp["variantenkosten_pro_typ_eur"] = st.number_input(
+            "Varianten €/Typ", min_value=0.0, max_value=10000.0,
+            value=float(cp.get("variantenkosten_pro_typ_eur", 200)),
+            step=10.0, format="%.2f",
+        )
+    cp["periode_tage"] = st.number_input(
+        "Standard-Periode (Tage) — Hochrechnung Jahr automatisch",
+        min_value=1, max_value=365,
+        value=int(cp.get("periode_tage", 30)), step=1,
+    )
+    if st.button("💾 Parameter speichern", type="primary",
+                  use_container_width=True, key="wirt_save"):
+        wirt_modul.speichere_params(cp)
+        st.success("Cost-Parameter gespeichert.")
+    card_close()
+
+    # Vergleich rechnen — wenn ein Ergebnis vorliegt
+    res = st.session_state.get("ergebnis")
+    if res is None:
+        st.info(
+            "Nach einer Optimierung sehen Sie hier den Wirtschaftlichkeits-"
+            "Vergleich (Status Quo vs. Standardisiert) mit Wasserfall-"
+            "Effekt und Sensitivitäts-Analyse."
+        )
+        return
+
+    # Status Quo = jede Last hat eigene Palette
+    # Standardisiert = die optimierten Standards aus res
+    dat = st.session_state.import_dat
+    if not dat or not dat.get("mit_mass"):
+        return
+
+    # Mengen pro Typ (alt): jede Original-Palette als eigener Typ
+    from collections import defaultdict
+    alt_typen: dict[tuple, int] = defaultdict(int)
+    for pal in dat["mit_mass"]:
+        L, B = int(pal["laenge"]), int(pal["breite"])
+        kand = (min(L, B), max(L, B))
+        alt_typen[kand] += int(pal["anzahl"])
+
+    # Mengen pro Typ (neu): aus zuordnung (Standard-Maße)
+    neu_typen: dict[tuple, int] = defaultdict(int)
+    for z in res.get("zuordnung", []):
+        if z.get("typ") == "Standard":
+            try:
+                a, b = z["ziel"].split("x")
+                neu_typen[(min(int(a), int(b)),
+                            max(int(a), int(b)))] += int(z.get("menge", 0))
+            except Exception:
+                pass
+
+    if not neu_typen:
+        st.info("Standardisiertes Szenario hat keine Standards — nichts zu vergleichen.")
+        return
+
+    # EK-Lookup
+    ek_lookup = {}
+    for e in katalog_modul.alle():
+        if e.get("aktiv", True) and float(e.get("einkaufspreis_eur", 0)) > 0:
+            ek_lookup[(min(e["L_mm"], e["B_mm"]),
+                       max(e["L_mm"], e["B_mm"]))] = float(
+                e["einkaufspreis_eur"])
+
+    alt_zustand = wirt_modul.baue_zustand(
+        paletten_count_per_typ=alt_typen,
+        zuordnungen=[
+            {"typ": "Standard",
+             "ziel": f"{max(p['laenge'], p['breite'])}x"
+                      f"{min(p['laenge'], p['breite'])}",
+             "L": int(p["laenge"]), "B": int(p["breite"]),
+             "menge": int(p["anzahl"])}
+            for p in dat["mit_mass"]
+        ],
+        ek_lookup=ek_lookup,
+    )
+    neu_zustand = wirt_modul.baue_zustand(
+        paletten_count_per_typ=neu_typen,
+        zuordnungen=res.get("zuordnung", []),
+        ek_lookup=ek_lookup,
+    )
+    v = wirt_modul.vergleich(zustand_alt=alt_zustand, zustand_neu=neu_zustand,
+                                cost_params=cp)
+
+    # Vergleichstabelle (Spec §11.4)
+    card_open("📊 Vergleichstabelle: Vorher vs. Nachher")
+    zeilen = [
+        ("Anzahl Palettentypen", v["typen_alt"], v["typen_neu"]),
+        ("Gesamt Paletten", v["paletten_alt"], v["paletten_neu"]),
+        ("Ø Leerflächen-Anteil",
+         f"{v['leer_alt_anteil']*100:.1f} %",
+         f"{v['leer_neu_anteil']*100:.1f} %"),
+        ("LKW-Fahrten", v["fahrten_alt"], v["fahrten_neu"]),
+        ("Transportkosten (€)", f"{v['transport_alt']:.0f}",
+         f"{v['transport_neu']:.0f}"),
+        ("Lagerkosten (€)", f"{v['lager_alt']:.0f}",
+         f"{v['lager_neu']:.0f}"),
+        ("Handling-Kosten (€)", f"{v['handling_alt']:.0f}",
+         f"{v['handling_neu']:.0f}"),
+        ("Variantenkosten (€)", f"{v['var_alt']:.0f}",
+         f"{v['var_neu']:.0f}"),
+    ]
+    df_v = pd.DataFrame(zeilen, columns=["Kennzahl", "Vorher", "Nachher"])
+    st.dataframe(df_v, use_container_width=True, hide_index=True)
+
+    # KPIs Netto-Effekt
+    nc1, nc2, nc3 = st.columns(3)
+    nc1.metric("Netto pro Periode",
+                f"{v['netto_periode']:,.0f} €".replace(",", "."))
+    nc2.metric("Hochrechnung Jahr",
+                f"{v['netto_jahr']:,.0f} €".replace(",", "."))
+    nc3.metric("Periode (Tage)", v["periode_tage"])
+
+    # Empfehlungstext
+    text = wirt_modul.empfehlungstext(v)
+    if v["netto_periode"] > 0:
+        st.success(text)
+    elif v["netto_periode"] < 0:
+        st.warning(text)
+    else:
+        st.info(text)
+
+    # Wasserfall-naher Effekt: Einsparungen vs Mehrkosten als Balken
+    card_open("💧 Effekt-Aufschluesselung (Wasserfall)")
+    wf = pd.DataFrame([
+        {"Komponente": "Handling-Einsparung",
+         "Effekt (€)": v["handling_einsparung"], "Art": "Einsparung"},
+        {"Komponente": "Varianten-Einsparung",
+         "Effekt (€)": v["var_einsparung"], "Art": "Einsparung"},
+        {"Komponente": "Paletten-Kauf-Diff",
+         "Effekt (€)": -v["palettenkauf_diff"], "Art": "Saldo"},
+        {"Komponente": "Transport-Mehrkosten",
+         "Effekt (€)": -v["transport_mehrkosten"], "Art": "Mehrkosten"},
+        {"Komponente": "Lager-Mehrkosten",
+         "Effekt (€)": -v["lager_mehrkosten"], "Art": "Mehrkosten"},
+        {"Komponente": "Netto-Effekt",
+         "Effekt (€)": v["netto_periode"], "Art": "Total"},
+    ])
+    st.bar_chart(wf.set_index("Komponente")["Effekt (€)"],
+                  use_container_width=True)
+    card_close()
+
+    # Sensitivitaets-Analyse (Spec §11.5)
+    card_open("🎚️ Sensitivitäts-Analyse")
+    st.caption(
+        "Slider verändern die wichtigsten Cost-Parameter live, ohne "
+        "die Vergleichsdaten zu speichern. Break-Even wird unten "
+        "angezeigt."
+    )
+    sc1, sc2 = st.columns(2)
+    with sc1:
+        sens_kf = st.slider("Kosten pro Fahrt (€)", 0.0, 2000.0,
+                              float(cp.get("kosten_pro_fahrt_eur", 350)),
+                              step=10.0, key="sens_kf")
+    with sc2:
+        sens_dauer = st.slider("Lagerdauer (Tage)", 0, 365,
+                                int(cp.get("avg_lagerdauer_tage", 14)),
+                                step=1, key="sens_dauer")
+    cp_sens = dict(cp)
+    cp_sens["kosten_pro_fahrt_eur"] = sens_kf
+    cp_sens["avg_lagerdauer_tage"] = sens_dauer
+    v_sens = wirt_modul.vergleich(zustand_alt=alt_zustand,
+                                       zustand_neu=neu_zustand,
+                                       cost_params=cp_sens)
+    sk1, sk2 = st.columns(2)
+    sk1.metric("Netto live",
+                f"{v_sens['netto_periode']:,.0f} €".replace(",", "."))
+    be = wirt_modul.break_even_kosten_pro_fahrt(alt_zustand, neu_zustand, cp)
+    if be is not None:
+        sk2.metric("Break-Even Kosten/Fahrt", f"{be:,.0f} €".replace(",", "."))
+        st.info(
+            f"💡 Ab Transportkosten > {be:,.0f} €/Fahrt kippt das Ergebnis "
+            f"in Mehrkosten.".replace(",", ".")
+        )
+    else:
+        sk2.metric("Break-Even", "—")
+        st.info("💡 Fahrten alt = neu — Kosten/Fahrt haben keinen Einfluss.")
+
+    # Szenario speichern
+    ssc1, ssc2 = st.columns([2, 1])
+    sz_name = ssc1.text_input("Szenario-Name", key="sens_name",
+                                placeholder="z.B. 'Niedrige Frachtraten'")
+    if ssc2.button("💾 Szenario speichern", use_container_width=True,
+                    key="sens_save"):
+        if sz_name.strip():
+            wirt_modul.speichere_szenario(sz_name.strip(), cp_sens, v_sens)
+            st.success(f"Szenario '{sz_name.strip()}' gespeichert.")
+        else:
+            st.warning("Name fehlt.")
+    sz = wirt_modul.alle_szenarien()
+    if sz:
+        st.markdown("**Gespeicherte Szenarien:**")
+        sz_rows = [
+            {"Name": k, "Datum": v_["datum"][:16],
+             "Netto (€)": v_["ergebnis"].get("netto_periode", 0),
+             "Kosten/Fahrt": v_["params"].get("kosten_pro_fahrt_eur", 0),
+             "Lagerdauer": v_["params"].get("avg_lagerdauer_tage", 0)}
+            for k, v_ in sz.items()
+        ]
+        st.dataframe(pd.DataFrame(sz_rows), use_container_width=True,
+                      hide_index=True,
+                      column_config={
+                          "Netto (€)": st.column_config.NumberColumn(format="%.0f €"),
+                          "Kosten/Fahrt": st.column_config.NumberColumn(format="%.0f €"),
+                      })
+    card_close()
+
+
 def seite_kostenanalyse() -> None:
     """Marge pro Standard nach Optimierung — schon teilweise im Ergebnisse-Tab,
     hier separate Übersicht über alle Verlauf-Läufe."""
@@ -2630,7 +3209,9 @@ SEITEN = {
     "Katalog":               seite_katalog,
     "Bestand & Disposition": seite_bestand_dispo,
     "Bestellungen":          seite_bestellungen,
+    "Beschaffung":           seite_beschaffung,
     "Historie":              seite_historie,
+    "Wirtschaftlichkeit":    seite_wirtschaftlichkeit,
     "Kostenanalyse":         seite_kostenanalyse,
     "Stammdaten":            seite_stammdaten,
     "Berichte":              seite_berichte,

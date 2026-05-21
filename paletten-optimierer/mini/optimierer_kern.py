@@ -94,6 +94,8 @@ DEFAULT_GEWICHTE = {
     "w5": 0.0,    # − Σ Marge (VK − EK) · Σ menge — Bonus
     "w6": 0.0,    # extra Penalty pro Sonder-Typ (zusätzlich zu w1)
     "w7": 0.0,    # pro Kombi-Zuordnung (Stapel oder heterogen)
+    "w8": 0.0,    # Logistik-Mehrkosten (Transport + Lager) — post-hoc
+    "w9": 0.0,    # − Handling/Varianten-Einsparung — Bonus, post-hoc
 }
 
 
@@ -104,7 +106,9 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
               sonder_erlaubt=True, sonder_min_artikel=0,
               sonder_aufschlag_mm=0,
               gewichte=None, katalog_kosten=None, katalog_verbrauch=None,
-              katalog_marge=None, katalog_bestand=None):
+              katalog_marge=None, katalog_bestand=None,
+              logistik_mehrkosten_per_typ=None,
+              logistik_einsparung_per_typ=None):
     """
     orders: Liste dicts mit 'L','B','menge','auftrag','name'.
     tol_kurz_mm: max Übermaß auf der KURZ-Achse (Breite).
@@ -247,6 +251,10 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
     verbrauch_map = {tuple(sorted(k)): float(v) for k, v in (katalog_verbrauch or {}).items()}
     marge_map = {tuple(sorted(k)): float(v) for k, v in (katalog_marge or {}).items()}
     bestand_map = {tuple(sorted(k)): int(v) for k, v in (katalog_bestand or {}).items()}
+    log_mehr_map = {tuple(sorted(k)): float(v)
+                     for k, v in (logistik_mehrkosten_per_typ or {}).items()}
+    log_einsp_map = {tuple(sorted(k)): float(v)
+                      for k, v in (logistik_einsparung_per_typ or {}).items()}
 
     # menge_kand[j] = Σ menge der Auftraege die kand j theoretisch deckt.
     # Pragma: pro x[j]=1 ein Approximations-Term für w4/w5.
@@ -279,6 +287,12 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
         else:
             # Sonder: extra Penalty w6
             koeff += W["w6"]
+        # w8: Logistik-Mehrkosten (Transport + Lager) — pro Typ-Aktiv
+        # w9: − Einsparung (Handling + Varianten)
+        if log_mehr_map:
+            koeff += W["w8"] * log_mehr_map.get(kand, 0.0)
+        if log_einsp_map:
+            koeff -= W["w9"] * log_einsp_map.get(kand, 0.0)
         obj_terms.append(koeff * x[j])
 
     # z (Sonder = Auftragsmaß als eigene Palette) zaehlt als Sonder-Typ
@@ -455,6 +469,8 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
     sum_verbrauch = sum(verbrauch_map.get(s, 0.0)
                          for s in standards if s in katalog_set)
 
+    sum_log_mehr = sum(log_mehr_map.get(s, 0.0) for s in standards)
+    sum_log_einsp = sum(log_einsp_map.get(s, 0.0) for s in standards)
     score_breakdown = {
         "w1_palettentypen": W["w1"] * n_typen_gesamt,
         "w2_gesamt_paletten": W["w2"] * sum_paletten,
@@ -463,6 +479,8 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
         "w5_marge_bonus": -W["w5"] * sum_marge,
         "w6_sonder_penalty": W["w6"] * n_son_total,
         "w7_kombi_penalty": W["w7"] * n_kombi,
+        "w8_logistik_mehrkosten": W["w8"] * sum_log_mehr,
+        "w9_logistik_einsparung_bonus": -W["w9"] * sum_log_einsp,
         "slack_nicht_zuordenbar": BIG * len(nicht_zuordenbar_liste),
     }
     score = sum(score_breakdown.values())
