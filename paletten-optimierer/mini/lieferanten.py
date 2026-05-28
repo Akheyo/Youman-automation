@@ -50,7 +50,12 @@ def _read_raw() -> list[dict[str, Any]]:
         return []
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
-        return data if isinstance(data, list) else []
+        if not isinstance(data, list):
+            return []
+        # Migration: lieferzeit_tage default
+        for e in data:
+            e.setdefault("lieferzeit_tage", 14)
+        return data
     except (OSError, json.JSONDecodeError):
         return []
 
@@ -70,7 +75,8 @@ def _now() -> str:
 
 def neuer_lieferant(*, name: str, kontakt: str = "",
                      default_palette_ids: list[str] | None = None,
-                     notiz: str = "", aktiv: bool = True) -> str:
+                     notiz: str = "", aktiv: bool = True,
+                     lieferzeit_tage: int = 14) -> str:
     """Liefert neue id. name muss nicht-leer sein."""
     if not name.strip():
         raise ValueError("Name darf nicht leer sein.")
@@ -83,6 +89,7 @@ def neuer_lieferant(*, name: str, kontakt: str = "",
         "default_palette_ids": list(default_palette_ids or []),
         "notiz": str(notiz or ""),
         "aktiv": bool(aktiv),
+        "lieferzeit_tage": int(max(0, lieferzeit_tage)),
         "datum_erstellt": jetzt,
         "datum_geaendert": jetzt,
     }
@@ -93,10 +100,13 @@ def neuer_lieferant(*, name: str, kontakt: str = "",
 
 
 def update_lieferant(eid: str, **felder) -> bool:
-    erlaubt = {"name", "kontakt", "default_palette_ids", "notiz", "aktiv"}
+    erlaubt = {"name", "kontakt", "default_palette_ids", "notiz", "aktiv",
+               "lieferzeit_tage"}
     h = _read_raw()
     for e in h:
         if e.get("id") == eid:
+            # Migration: lieferzeit_tage default 14 wenn fehlt
+            e.setdefault("lieferzeit_tage", 14)
             for k, v in felder.items():
                 if k in erlaubt:
                     e[k] = v

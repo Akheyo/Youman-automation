@@ -39,6 +39,9 @@ import procurement as procurement_modul  # noqa: E402
 import lieferanten as lieferanten_modul  # noqa: E402
 import kostenanalyse_szenarien as kosten_sz_modul  # noqa: E402
 import berichte as berichte_modul  # noqa: E402
+import audit_log as audit_modul  # noqa: E402
+import preis_historie as preis_modul  # noqa: E402
+import wiederbeschaffung as wbsch_modul  # noqa: E402
 from import_doppelschutz import pruefe_import as _pruefe_import  # noqa: E402
 from _render import render_zuord_table, ziel_label as _ziel_label  # noqa: E402
 from _ui_chrome import (  # noqa: E402
@@ -193,6 +196,10 @@ def init_state() -> None:
             "schwellwert_eur": 0.0,
             "min_auslastung_pct": 65.0,
             "manuelle_override": {},
+            # §1 Auto-Standard-Schwelle (3/4/5)
+            "auto_standard_schwelle": 4,
+            # §5 Wiederbeschaffungs-Sicherheitspuffer
+            "wbsch_puffer_tage": 7,
         },
         "ergebnis": None,
         "ergebnis_id": None,           # UUID pro Optimierungslauf
@@ -439,12 +446,27 @@ def seite_datenimport() -> None:
                 st.session_state.params.get("doppelschutz_aktiv", True)):
             try:
                 aktive = bestellungen_modul.aktive()
+                # §6: AWs deren Paletten bereits angekommen sind
+                try:
+                    aws_da = procurement_modul.aws_mit_wareneingang()
+                except Exception:
+                    aws_da = set()
                 preview = _pruefe_import(
                     dat["mit_mass"], aktive,
                     zeitfenster_tage=int(
                         st.session_state.params.get(
                             "doppelschutz_zeitfenster", 30)),
+                    aws_mit_wareneingang=aws_da,
                 )
+                # §8: Preisvergleich mit Vorgänger-Importen
+                try:
+                    aktuelle_ek = preis_modul.baue_ek_snapshot(
+                        katalog_modul.alle())
+                    preview["preisvergleich"] = preis_modul.vergleiche_ek(
+                        aktuelle_ek, verlauf_alle())
+                    preview["ek_snapshot"] = aktuelle_ek
+                except Exception:
+                    preview["preisvergleich"] = {}
                 st.session_state.doppelschutz_preview = preview
             except Exception as exc:
                 st.warning(f"Doppelschutz uebersprungen: {exc}")
@@ -521,24 +543,29 @@ def seite_datenimport() -> None:
 
 
 def _doppelschutz_preview_ui(preview: dict) -> None:
-    """Spec §8: 3-Kategorien-Vorschau mit Bulk-Aktionen."""
+    """Spec §6 + §8: 4-Kategorien-Vorschau mit Bulk-Aktionen + Preisvergleich."""
     n_neu = len(preview.get("neu", []))
     n_schon = len(preview.get("schon_bestellt", []))
     n_teil = len(preview.get("teilbedarf", []))
-    if n_neu + n_schon + n_teil == 0:
+    n_ang = len(preview.get("angekommen", []))
+    if n_neu + n_schon + n_teil + n_ang == 0:
         return
 
     card_open(f"🛡️ Doppelschutz-Vorschau "
-              f"({n_neu} neu · {n_schon} schon · {n_teil} Teilbedarf)")
+              f"({n_neu} neu · {n_schon} schon · {n_teil} Teil · "
+              f"{n_ang} angekommen)")
 
+    if n_ang > 0:
+        st.warning(
+            f"📦 {n_ang} Auftrag/Aufträge sind bereits angekommen "
+            f"(Beschaffung mit Status 'eingegangen') — übersprungen."
+        )
     if n_schon > 0 or n_teil > 0:
         st.warning(
-            f"{n_schon} Auftrag/Aufträge sind bereits in der Historie "
-            f"bestellt — diese werden NICHT erneut geplant. "
-            f"{n_teil} sind teilweise gedeckt — nur das Delta geht in "
-            f"die Optimierung."
+            f"{n_schon} bereits in Historie bestellt + {n_teil} Teilbedarf "
+            f"(nur Delta geht in die Optimierung)."
         )
-    else:
+    if n_neu == n_neu + n_schon + n_teil + n_ang:
         st.success("Alle Aufträge sind neue Bedarfe.")
 
     rows = []
@@ -572,10 +599,55 @@ def _doppelschutz_preview_ui(preview: dict) -> None:
             "Delta": 0,
             "Match": info.get("match_typ", "—"),
         })
+    for z, info in preview.get("angekommen", []):
+        rows.append({
+            "Status": "📦 Paletten angekommen",
+            "AW": z.get("auftrag", ""),
+            "Artikel": z.get("artikelnummer", ""),
+            "Kunde": z.get("name", ""),
+            "Menge": int(z.get("anzahl", 0)),
+            "Delta": 0,
+            "Match": "wareneingang",
+        })
     if rows:
         df = pd.DataFrame(rows)
         st.dataframe(df, use_container_width=True, hide_index=True,
                      height=min(400, 40 + 35 * len(rows)))
+
+    # §8: Preisvergleich
+    pv = preview.get("preisvergleich") or {}
+    if pv:
+        from preis_historie import auffaellige_aenderungen
+        auf = auffaellige_aenderungen(pv, schwelle_pct=10.0)
+        if auf:
+            st.warning(
+                f"⚠️ Preisänderung > 10 % bei **{len(auf)}** "
+                f"Palette{'n' if len(auf) != 1 else ''} ({', '.join(auf[:5])}"
+                f"{'...' if len(auf) > 5 else ''}) — bitte prüfen."
+            )
+        pv_rows = []
+        for k, v in sorted(pv.items()):
+            pv_rows.append({
+                "Palette": k,
+                "EK aktuell (€)": v["aktuell"],
+                f"EK alt {v['datum_alt'] or '?'}": v["letzter"],
+                "Δ (€)": v["delta_eur"],
+                "Δ %": v["delta_pct"],
+                "Trend": ("↗" if v["trend"] == "+" else
+                          "↘" if v["trend"] == "-" else "→"),
+            })
+        if pv_rows:
+            with st.expander(f"💶 Preisvergleich ({len(pv_rows)} Maße)"):
+                st.dataframe(pd.DataFrame(pv_rows),
+                              use_container_width=True, hide_index=True,
+                              column_config={
+                                  "EK aktuell (€)":
+                                      st.column_config.NumberColumn(format="%.2f €"),
+                                  "Δ (€)":
+                                      st.column_config.NumberColumn(format="%+.2f €"),
+                                  "Δ %":
+                                      st.column_config.NumberColumn(format="%+.1f %%"),
+                              })
 
     fuer_opt = preview.get("fuer_optimierung", [])
     cc1, cc2 = st.columns([1, 1])
@@ -1051,9 +1123,31 @@ def run_optimierung() -> None:
                     "score_breakdown": res.get("score_breakdown", {}),
                     "nicht_zuordenbar_n": len(res.get("nicht_zuordenbar", [])),
                 },
+                # §8 EK-Snapshot fuer Preisvergleich beim naechsten Import
+                "ek_snapshot": preis_modul.baue_ek_snapshot(
+                    katalog_modul.alle()),
             })
         except Exception:
             pass  # Verlauf ist Bonus, nie kritisch
+
+    # §1 Auto-Standard-Erkennung — laeuft nach jeder Optimierung im
+    # Hintergrund. Schwelle aus session_state.params, Default 4.
+    try:
+        schwelle = int(p.get("auto_standard_schwelle", 4))
+        letzte = verlauf_alle()[:schwelle]
+        erkannt = katalog_modul.auto_standard_pruefen(letzte, schwelle)
+        if erkannt:
+            namen = ", ".join(
+                f"{e.get('L_mm', 0)}x{e.get('B_mm', 0)}" for e in erkannt[:3]
+            )
+            st.toast(
+                f"🟢 Auto-Standard erkannt: {len(erkannt)} "
+                f"Palette{'n' if len(erkannt) != 1 else ''} ({namen}"
+                f"{'...' if len(erkannt) > 3 else ''}) — "
+                f"in {schwelle} aufeinanderfolgenden Läufen genutzt."
+            )
+    except Exception:
+        pass
 
 
 def seite_optimierung() -> None:
@@ -2060,20 +2154,48 @@ def seite_katalog() -> None:
         # Validierung VK >= EK (Warnung, nicht hart)
         if n_vk > 0 and n_ek > 0 and n_vk < n_ek:
             st.warning("VK < EK — negative Marge. Wirklich speichern?")
+
+        # §3 Duplikat-Check (Live, vor dem Klick)
+        dup = (katalog_modul.finde_duplikat(int(n_L), int(n_B), int(n_hoehe))
+                if n_L > 0 and n_B > 0 else None)
+        if dup:
+            st.warning(
+                f"⚠️ Diese Palette existiert bereits als "
+                f"**'{dup.get('name', '—') or '—'}'** "
+                f"({dup['L_mm']}×{dup['B_mm']}"
+                f"{'×' + str(dup.get('hoehe_mm', 0)) if dup.get('hoehe_mm') else ''})."
+            )
+            dup_force = st.toggle(
+                "Trotzdem anlegen (Variante)",
+                value=False, key="kat_dup_force",
+                help="Pflicht-Bemerkung im Notiz-Feld notwendig.",
+            )
+        else:
+            dup_force = False
+
         if st.button("Palette hinzufügen", type="primary",
-                      use_container_width=True, key="kat_add_btn"):
+                      use_container_width=True, key="kat_add_btn",
+                      disabled=(dup is not None) and not dup_force):
             if n_L > 0 and n_B > 0:
-                katalog_modul.neuer_eintrag(int(n_L), int(n_B),
-                                            float(n_ek), float(n_vk),
-                                            int(n_best), int(n_meld),
-                                            n_notiz, aktiv=True,
-                                            name=n_name,
-                                            hoehe_mm=int(n_hoehe),
-                                            typ=n_typ,
-                                            quelle="manuell")
-                st.success(f"Eintrag {int(max(n_L,n_B))}×{int(min(n_L,n_B))} "
-                           f"hinzugefügt.")
-                st.rerun()
+                if dup and dup_force and not n_notiz.strip():
+                    st.error("Bei 'Trotzdem anlegen' bitte Notiz "
+                              "ausfüllen (z.B. 'Variante B').")
+                else:
+                    katalog_modul.neuer_eintrag(
+                        int(n_L), int(n_B),
+                        float(n_ek), float(n_vk),
+                        int(n_best), int(n_meld),
+                        n_notiz, aktiv=True,
+                        name=n_name,
+                        hoehe_mm=int(n_hoehe),
+                        typ=n_typ,
+                        quelle="manuell",
+                        ek_lieferant_eur=float(n_ek),
+                    )
+                    st.success(f"Eintrag "
+                                f"{int(max(n_L,n_B))}×{int(min(n_L,n_B))} "
+                                f"hinzugefügt.")
+                    st.rerun()
             else:
                 st.error("Länge und Breite müssen > 0 sein.")
     card_close()
@@ -2129,19 +2251,24 @@ def seite_katalog() -> None:
     df = pd.DataFrame([
         {
             "id": e["id"],
-            "Name": e.get("name", ""),
+            "Name": ((("🟢 " if e.get("auto_standard") else "")
+                       + (e.get("name", "") or "")).strip()),
             "Typ": e.get("typ", "standard"),
             "Länge": e["L_mm"],
             "Breite": e["B_mm"],
             "Höhe": int(e.get("hoehe_mm", 0)) or "—",
-            "Einkauf (€)": e.get("einkaufspreis_eur", 0.0),
+            "EK Lief. (€)": e.get("ek_lieferant_eur",
+                                     e.get("einkaufspreis_eur", 0.0)),
+            "Eigenfert. (€)": e.get("selbstfertigung_gesamt_eur", 0.0),
+            "Bezug": e.get("bezug_modus", "lieferant"),
+            "Empfehlung": katalog_modul.empfohlene_bezugskosten(e).get(
+                "empfehlung", "—")[:30],
             "Verkauf (€)": e.get("verkaufspreis_eur", 0.0),
-            "Marge (€)": (e.get("verkaufspreis_eur", 0.0)
-                          - e.get("einkaufspreis_eur", 0.0)),
             "Bestand": int(e.get("bestand", 0)),
             "in Anlief.": int(e.get("bestand_bestellt", 0)),
             "Meldebestand": int(e.get("meldebestand", 0)),
             "Verbrauch": int(e.get("verbrauchshaeufigkeit", 0)),
+            "Auto-Std": ("🟢" if e.get("auto_standard") else "—"),
             "Vollständig": "✓" if katalog_modul.vollstaendig(e) else "⚠️ EK/VK",
             "Status": ("⚠️ niedrig" if (int(e.get("meldebestand", 0)) > 0
                        and int(e.get("bestand", 0))
@@ -2155,9 +2282,9 @@ def seite_katalog() -> None:
     st.dataframe(df.drop(columns=["id"]),
                  use_container_width=True, hide_index=True, height=300,
                  column_config={
-                     "Einkauf (€)":   st.column_config.NumberColumn(format="%.2f €"),
+                     "EK Lief. (€)":  st.column_config.NumberColumn(format="%.2f €"),
+                     "Eigenfert. (€)": st.column_config.NumberColumn(format="%.2f €"),
                      "Verkauf (€)":   st.column_config.NumberColumn(format="%.2f €"),
-                     "Marge (€)":     st.column_config.NumberColumn(format="%.2f €"),
                      "Bestand":       st.column_config.NumberColumn(format="%d"),
                      "in Anlief.":    st.column_config.NumberColumn(
                          format="%d",
@@ -2243,20 +2370,112 @@ def seite_katalog() -> None:
         e_aktiv = st.toggle("Aktiv (wird vom Optimierer berücksichtigt)",
                              value=bool(eintrag.get("aktiv", True)),
                              key=f"kat_edit_aktiv_{eintrag['id']}")
+
+        # §4 Selbstfertigung + Bezug-Modus
+        st.markdown("**§4 Bezugs-Vergleich Lieferant vs. Selbstfertigung**")
+        sc1, sc2, sc3, sc4 = st.columns(4)
+        with sc1:
+            e_ek_lief = st.number_input(
+                "EK Lieferant (€)", min_value=0.0, max_value=10000.0,
+                value=float(eintrag.get("ek_lieferant_eur",
+                                          eintrag.get("einkaufspreis_eur", 0)) or 0),
+                step=0.50, format="%.2f",
+                key=f"kat_eklief_{eintrag['id']}",
+            )
+        with sc2:
+            e_mat = st.number_input(
+                "Eigenfert. Material (€)", min_value=0.0,
+                value=float(eintrag.get("selbstfertigung_material_eur", 0) or 0),
+                step=0.50, format="%.2f",
+                key=f"kat_mat_{eintrag['id']}",
+            )
+        with sc3:
+            e_lohn = st.number_input(
+                "Eigenfert. Lohn (€)", min_value=0.0,
+                value=float(eintrag.get("selbstfertigung_lohn_eur", 0) or 0),
+                step=0.50, format="%.2f",
+                key=f"kat_lohn_{eintrag['id']}",
+            )
+        with sc4:
+            modi = ["lieferant", "selbstfertigung", "auto_guenstiger"]
+            e_modus = st.selectbox(
+                "Bezug-Modus", modi,
+                index=modi.index(eintrag.get("bezug_modus", "lieferant"))
+                       if eintrag.get("bezug_modus") in modi else 0,
+                key=f"kat_modus_{eintrag['id']}",
+            )
+        # Live-Empfehlung
+        _preview = dict(eintrag)
+        _preview["ek_lieferant_eur"] = e_ek_lief
+        _preview["selbstfertigung_material_eur"] = e_mat
+        _preview["selbstfertigung_lohn_eur"] = e_lohn
+        _preview["bezug_modus"] = e_modus
+        empf = katalog_modul.empfohlene_bezugskosten(_preview)
+        st.caption(f"📐 {empf['empfehlung']} → EK = {empf['ek']:.2f} EUR")
+
+        # §5 Lieferzeit-Override + Default-Lieferant
+        st.markdown("**§5 Lieferzeit + Default-Lieferant**")
+        try:
+            lieferanten_liste = lieferanten_modul.alle()
+        except Exception:
+            lieferanten_liste = []
+        lz1, lz2 = st.columns([2, 1])
+        with lz1:
+            opts = ["— (keiner)"] + [l["name"] for l in lieferanten_liste]
+            akt_id = eintrag.get("default_lieferant_id", "")
+            akt_name = next((l["name"] for l in lieferanten_liste
+                              if l["id"] == akt_id), None)
+            idx = (opts.index(akt_name)
+                    if akt_name in opts else 0)
+            e_def_lief = st.selectbox(
+                "Default-Lieferant", range(len(opts)),
+                index=idx,
+                format_func=lambda i: opts[i],
+                key=f"kat_deflief_{eintrag['id']}",
+            )
+        with lz2:
+            e_lz_over = st.number_input(
+                "Lieferzeit-Override (T, 0 = Lieferant-Default)",
+                min_value=0, max_value=365,
+                value=int(eintrag.get("lieferzeit_tage_override", 0) or 0),
+                step=1, key=f"kat_lzov_{eintrag['id']}",
+            )
+
+        # §1 Auto-Standard-Status + Aufheben
+        if eintrag.get("auto_standard"):
+            st.success(
+                f"🟢 Auto-Standard seit {eintrag.get('auto_standard_seit', '?')} "
+                f"({len(eintrag.get('verwendet_in_laeufen', []))}× verwendet)."
+            )
+            if st.button("Auto-Standard aufheben",
+                           key=f"kat_aufheben_{eintrag['id']}"):
+                katalog_modul.auto_standard_aufheben(eintrag["id"])
+                st.rerun()
+
         cs, cd = st.columns(2)
         if cs.button("💾 Speichern", type="primary",
                       use_container_width=True,
                       key=f"kat_save_{eintrag['id']}"):
-            katalog_modul.update_eintrag(eintrag["id"],
-                                          name=e_name,
-                                          typ=e_typ,
-                                          L_mm=int(e_L), B_mm=int(e_B),
-                                          hoehe_mm=int(e_hoehe),
-                                          einkaufspreis_eur=float(e_ek),
-                                          verkaufspreis_eur=float(e_vk),
-                                          bestand=int(max(0, e_best)),
-                                          meldebestand=int(e_meld),
-                                          notiz=e_notiz, aktiv=bool(e_aktiv))
+            lief_id_neu = (lieferanten_liste[e_def_lief - 1]["id"]
+                            if e_def_lief > 0 else "")
+            katalog_modul.update_eintrag(
+                eintrag["id"],
+                name=e_name, typ=e_typ,
+                L_mm=int(e_L), B_mm=int(e_B),
+                hoehe_mm=int(e_hoehe),
+                einkaufspreis_eur=float(e_ek),
+                verkaufspreis_eur=float(e_vk),
+                bestand=int(max(0, e_best)),
+                meldebestand=int(e_meld),
+                notiz=e_notiz, aktiv=bool(e_aktiv),
+                ek_lieferant_eur=float(e_ek_lief),
+                selbstfertigung_material_eur=float(e_mat),
+                selbstfertigung_lohn_eur=float(e_lohn),
+                selbstfertigung_gesamt_eur=float(e_mat + e_lohn),
+                bezug_modus=e_modus,
+                default_lieferant_id=lief_id_neu,
+                lieferzeit_tage_override=int(e_lz_over),
+            )
             st.success("Gespeichert.")
             st.rerun()
         if cd.button("🗑️ Löschen", use_container_width=True,
@@ -2561,20 +2780,45 @@ def seite_bestellungen() -> None:
         _wareneingang_modal()
 
     # === Tabelle ===
+    # §9: erweiterte Live-Suche ueber procurement.suche() (AW + Lieferant
+    # + BST-Nr + Artikelnummer + Bemerkung + verlinkte_aws).
+    if suche.strip():
+        durchsuchte = procurement_modul.suche(suche)
+    else:
+        durchsuchte = auftraege
+
     gefiltert = []
-    suche_l = suche.lower()
-    for a in auftraege:
+    for a in durchsuchte:
         if filter_status != "alle" and a.get("status") != filter_status:
-            # 'wareneingang' und 'eingegangen' zusammenfassen
             if not (filter_status == "eingegangen"
                     and a.get("status") == "wareneingang"):
                 continue
-        if suche_l:
-            text_zur_suche = (a.get("bst_nummer", "")
-                                + " " + a.get("lieferant", "")).lower()
-            if suche_l not in text_zur_suche:
-                continue
         gefiltert.append(a)
+
+    # §9: bei aktiver AW-Suche zusaetzlich Treffer-Detail mit
+    # AW-Position prominent anzeigen
+    if suche.strip().startswith("AW") or "AW-" in suche.upper():
+        match = procurement_modul.aw_ist_in_beschaffung(suche.strip())
+        if match:
+            a = match["auftrag"]
+            pos = match["position"]
+            snap = pos.get("snapshot", {})
+            bst = a.get("bst_nummer", a["id"][:8])
+            ein = a.get("datum_wareneingang", "")
+            with st.container(border=True):
+                st.markdown(
+                    f"🔎 **Treffer für '{suche}':** Bestellung "
+                    f"**{bst}** · "
+                    f"{a.get('datum_erstellt', '')[:10]} · "
+                    f"{a.get('lieferant', '—')}\n\n"
+                    f"Position: {snap.get('name', '') or '—'} "
+                    f"{snap.get('L_mm', 0)}×{snap.get('B_mm', 0)} · "
+                    f"{pos.get('menge_bestellt', 0)} Stk · "
+                    f"{pos.get('ek_pro_stk_eur', 0):.2f} €/Stk · "
+                    f"Σ {pos.get('ek_summe', 0):.2f} €\n\n"
+                    f"Status: **{a.get('status', '?')}**"
+                    + (f" — eingegangen am {ein}" if ein else "")
+                )
 
     if not gefiltert:
         card_open("Keine Bestellungen")
@@ -2827,12 +3071,21 @@ def _bestellung_modal() -> None:
                     "einkaufspreis_eur", 0)),
                 step=0.50, format="%.2f", key="bn_ek",
             )
+        # §9: Multi-Zuordnung zu AWs (kommagetrennt)
+        aws_text = st.text_input(
+            "Für Auftrag (AWs, kommagetrennt — optional)",
+            value="", key="bn_aws",
+            placeholder="AW-2026-005, AW-2026-006",
+        )
         if st.form_submit_button("➕ Position hinzufügen",
                                      use_container_width=True):
+            aws_list = [s.strip() for s in (aws_text or "").split(",")
+                          if s.strip()]
             positionen.append({
                 "palette_id": paletten_alle[pal_idx]["id"],
                 "menge": int(menge),
                 "ek_pro_stk_eur": float(ek),
+                "verlinkte_aws": aws_list,
                 "label": (
                     f"{paletten_alle[pal_idx]['L_mm']}×"
                     f"{paletten_alle[pal_idx]['B_mm']}"
@@ -3203,6 +3456,40 @@ def seite_historie() -> None:
 def seite_beschaffung() -> None:
     """Beschaffungs-Auftraege (Spec §10): PDF-Wizard, Wareneingang."""
     auftraege = procurement_modul.alle()
+
+    # §5: Wiederbeschaffungs-Ampel oben
+    try:
+        wb_rows = wbsch_modul.baue_zeilen(
+            katalog_modul=katalog_modul,
+            lieferanten_modul=lieferanten_modul,
+            bestellungen_modul=bestellungen_modul,
+            verbrauch_modul=verbrauch_modul,
+            sicherheitspuffer_tage=int(
+                st.session_state.params.get("wbsch_puffer_tage", 7)),
+        )
+        rot = [r for r in wb_rows if r["ampel"] == "🔴"]
+        gelb = [r for r in wb_rows if r["ampel"] == "🟡"]
+        if rot or gelb:
+            card_open(f"⏱ Wiederbeschaffungs-Ampel — "
+                       f"{len(rot)} kritisch, {len(gelb)} grenzwertig")
+            df_wb = pd.DataFrame([
+                {
+                    "Ampel": r["ampel"], "Palette": (r["name"] or "—"),
+                    "Maß": f"{r['L_mm']}×{r['B_mm']}",
+                    "Lieferant": r["lieferant"], "LZ (T)": r["lieferzeit_tage"],
+                    "Bestand": r["bestand"],
+                    "Reichw. (T)": (round(r["reichweite_tage"], 1)
+                                     if r["reichweite_tage"] is not None
+                                     else "—"),
+                } for r in (rot + gelb)[:10]
+            ])
+            st.dataframe(df_wb, use_container_width=True, hide_index=True)
+            st.caption("→ Tab Berichte → '⏱ Wiederbeschaffungszeiten' "
+                        "für volle Liste.")
+            card_close()
+    except Exception:
+        pass
+
     card_open(f"📦 Beschaffungs-Aufträge ({len(auftraege)} gesamt)")
     st.markdown(
         '<div style="font-size:13px;color:#475569;margin-bottom:8px;">'
@@ -4559,6 +4846,11 @@ def seite_stammdaten() -> None:
         with lc1:
             n_name = st.text_input("Name", key="lief_neu_name",
                                      placeholder="z.B. Palettenwerk Müller GmbH")
+            n_lz = st.number_input(
+                "Lieferzeit (Tage, Default 14)",
+                min_value=0, max_value=365, value=14, step=1,
+                key="lief_neu_lz",
+            )
             n_kontakt = st.text_input("Kontakt (Email/Tel.)",
                                          key="lief_neu_k")
         with lc2:
@@ -4571,6 +4863,7 @@ def seite_stammdaten() -> None:
                 lieferanten_modul.neuer_lieferant(
                     name=n_name.strip(), kontakt=n_kontakt,
                     notiz=n_notiz,
+                    lieferzeit_tage=int(n_lz),
                 )
                 st.success(f"Lieferant '{n_name}' angelegt.")
                 st.rerun()
@@ -4580,6 +4873,7 @@ def seite_stammdaten() -> None:
             {
                 "Name": l["name"],
                 "Kontakt": l.get("kontakt", ""),
+                "Lieferzeit (T)": int(l.get("lieferzeit_tage", 14)),
                 "Aktiv": l.get("aktiv", True),
                 "Offene Bestellungen": int(
                     procurement_modul.hat_lieferant_offene(l["id"])
@@ -4609,6 +4903,13 @@ def seite_stammdaten() -> None:
             e_kontakt = st.text_input("Kontakt",
                                           value=aktiv_l.get("kontakt", ""),
                                           key=f"lief_e_k_{aktiv_l['id']}")
+            e_lz = st.number_input(
+                "Lieferzeit (Tage)", min_value=0, max_value=365,
+                value=int(aktiv_l.get("lieferzeit_tage", 14) or 14),
+                step=1, key=f"lief_e_lz_{aktiv_l['id']}",
+                help="Spec §5: Default-Lieferzeit dieses Lieferanten. "
+                     "Pro Palette kann via Override abgewichen werden.",
+            )
             e_notiz = st.text_input("Notiz", value=aktiv_l.get("notiz", ""),
                                        key=f"lief_e_z_{aktiv_l['id']}")
             e_aktiv = st.toggle("Aktiv", value=aktiv_l.get("aktiv", True),
@@ -4620,6 +4921,7 @@ def seite_stammdaten() -> None:
                 lieferanten_modul.update_lieferant(
                     aktiv_l["id"], name=e_name, kontakt=e_kontakt,
                     notiz=e_notiz, aktiv=e_aktiv,
+                    lieferzeit_tage=int(e_lz),
                 )
                 st.success("Gespeichert.")
                 st.rerun()
@@ -4639,6 +4941,140 @@ def seite_stammdaten() -> None:
                     else:
                         st.error(erg["fehler"])
     st.caption(f"Speicherort: {lieferanten_modul.pfad_str()}")
+    card_close()
+
+    # === §7 Palette-Maße bearbeiten (mit Audit + Re-Opt-Trigger) ===
+    card_open("✎ Paletten-Maße ändern (Audit + Re-Optimierung)")
+    st.caption(
+        "Edit-Modus für Länge/Breite/Höhe/Name einer bestehenden Palette. "
+        "Pflicht-Bemerkung wird im Audit-Log gespeichert. Nach Speichern "
+        "kann eine erneute Optimierung mit denselben Toleranzen "
+        "ausgelöst werden."
+    )
+    eintraege = katalog_modul.alle()
+    if not eintraege:
+        st.info("Erst Paletten im Tab **Katalog** anlegen.")
+    else:
+        sm_idx = st.selectbox(
+            "Palette wählen",
+            options=range(len(eintraege)),
+            format_func=lambda i: (
+                f"{eintraege[i].get('name', '') or '—'} · "
+                f"{eintraege[i]['L_mm']}×{eintraege[i]['B_mm']}"
+                f"{'×' + str(eintraege[i].get('hoehe_mm', 0)) if eintraege[i].get('hoehe_mm') else ''}"
+            ),
+            key="sm_sel",
+        )
+        ziel = eintraege[sm_idx]
+        e1, e2, e3, e4 = st.columns(4)
+        with e1:
+            sm_name = st.text_input(
+                "Name", value=ziel.get("name", ""),
+                key=f"sm_name_{ziel['id']}",
+            )
+        with e2:
+            sm_L = st.number_input(
+                "Länge (mm)", min_value=0, max_value=10000,
+                value=int(ziel["L_mm"]), step=10,
+                key=f"sm_L_{ziel['id']}",
+            )
+        with e3:
+            sm_B = st.number_input(
+                "Breite (mm)", min_value=0, max_value=10000,
+                value=int(ziel["B_mm"]), step=10,
+                key=f"sm_B_{ziel['id']}",
+            )
+        with e4:
+            sm_H = st.number_input(
+                "Höhe (mm)", min_value=0, max_value=5000,
+                value=int(ziel.get("hoehe_mm", 0)), step=5,
+                key=f"sm_H_{ziel['id']}",
+            )
+        sm_bem = st.text_area(
+            "Bemerkung — Warum geändert? (Pflicht)",
+            value="", key=f"sm_bem_{ziel['id']}",
+            help="Audit-Log speichert alt/neu + Bemerkung + Datum.",
+        )
+        sc1, sc2 = st.columns(2)
+        if sc1.button("💾 Speichern (mit Audit)", type="primary",
+                        use_container_width=True,
+                        key=f"sm_save_{ziel['id']}"):
+            if not sm_bem.strip():
+                st.error("Bemerkung ist Pflichtfeld.")
+            else:
+                # Audit-Eintraege pro geaendertem Feld
+                geaendert = []
+                for feld, alt_w, neu_w in (
+                    ("name", ziel.get("name", ""), sm_name),
+                    ("L_mm", int(ziel["L_mm"]), int(sm_L)),
+                    ("B_mm", int(ziel["B_mm"]), int(sm_B)),
+                    ("hoehe_mm", int(ziel.get("hoehe_mm", 0)), int(sm_H)),
+                ):
+                    if alt_w != neu_w:
+                        audit_modul.log_edit(
+                            entitaet="palette",
+                            entitaet_id=ziel["id"],
+                            feld=feld, alt=alt_w, neu=neu_w,
+                            bemerkung=sm_bem.strip(),
+                        )
+                        geaendert.append(feld)
+                if not geaendert:
+                    st.info("Keine Änderung erkannt.")
+                else:
+                    katalog_modul.update_eintrag(
+                        ziel["id"], name=sm_name,
+                        L_mm=int(sm_L), B_mm=int(sm_B),
+                        hoehe_mm=int(sm_H),
+                    )
+                    st.session_state.sm_zuletzt_geaendert = ziel["id"]
+                    st.success(
+                        f"✓ {len(geaendert)} Feld(er) geändert + im "
+                        f"Audit-Log dokumentiert."
+                    )
+                    st.rerun()
+        if sc2.button("📜 Audit-Log dieser Palette",
+                        use_container_width=True,
+                        key=f"sm_audit_{ziel['id']}"):
+            st.session_state.sm_show_audit = ziel["id"]
+            st.rerun()
+
+        # Audit-Log anzeigen
+        if st.session_state.get("sm_show_audit") == ziel["id"]:
+            log = audit_modul.fuer_entitaet("palette", ziel["id"])
+            with st.expander(f"📜 Audit ({len(log)} Einträge)",
+                                expanded=True):
+                if not log:
+                    st.caption("Noch keine Änderungen.")
+                else:
+                    for e in log:
+                        st.caption(
+                            f"{e.get('datum', '')[:16]} · "
+                            f"**{e.get('user', '?')}** · "
+                            f"{e['feld']}: {e['alt']} → {e['neu']} · "
+                            f"_{e.get('bemerkung', '')}_"
+                        )
+
+        # Re-Opt-Trigger nach Maß-Aenderung
+        if st.session_state.get("sm_zuletzt_geaendert") == ziel["id"]:
+            st.warning(
+                "Maße geändert. Möchten Sie eine Neu-Optimierung "
+                "durchführen?"
+            )
+            rc1, rc2 = st.columns(2)
+            if rc1.button("▶ Jetzt neu optimieren",
+                            type="primary", use_container_width=True,
+                            key=f"sm_reopt_{ziel['id']}"):
+                if st.session_state.get("import_dat"):
+                    run_optimierung()
+                    st.session_state.sm_zuletzt_geaendert = None
+                    st.session_state.seite = "Ergebnisse"
+                    st.rerun()
+                else:
+                    st.info("Erst eine Datei importieren.")
+            if rc2.button("Später", use_container_width=True,
+                            key=f"sm_reopt_skip_{ziel['id']}"):
+                st.session_state.sm_zuletzt_geaendert = None
+                st.rerun()
     card_close()
 
 
@@ -4881,8 +5317,74 @@ def seite_berichte() -> None:
                     st.error(f"Fehler: {exc}")
         card_close()
 
-    # Placeholder für 6. Card (responsiv konsistent halten)
+    # 6. Card: §5 Wiederbeschaffungs-Report (war Placeholder)
     with row3c2:
+        card_open("⏱ Wiederbeschaffungszeiten (§5)")
+        st.caption("Pro Palette: Reichweite vs. Lieferzeit + "
+                    "Sicherheitspuffer (Ampel 🟢/🟡/🔴).")
+        wb_format = st.radio("Format", ["PDF", "Excel"], horizontal=True,
+                              key="ber_wb_format")
+        wb_puffer = st.number_input(
+            "Sicherheitspuffer (Tage)", min_value=0, max_value=60,
+            value=int(st.session_state.params.get("wbsch_puffer_tage", 7)),
+            step=1, key="ber_wb_puffer",
+        )
+        st.session_state.params["wbsch_puffer_tage"] = int(wb_puffer)
+        if st.button("⏱ Erzeugen", type="primary",
+                       use_container_width=True, key="ber_wb_gen"):
+            try:
+                rows = wbsch_modul.baue_zeilen(
+                    katalog_modul=katalog_modul,
+                    lieferanten_modul=lieferanten_modul,
+                    bestellungen_modul=bestellungen_modul,
+                    verbrauch_modul=verbrauch_modul,
+                    sicherheitspuffer_tage=int(wb_puffer),
+                )
+                if wb_format == "PDF":
+                    daten = berichte_modul.wiederbeschaffungs_pdf(
+                        rows, sicherheitspuffer_tage=int(wb_puffer))
+                    ext, mime = "pdf", "application/pdf"
+                else:
+                    daten = berichte_modul.wiederbeschaffungs_excel(rows)
+                    ext = "xlsx"
+                    mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                name = berichte_modul._dateiname("wiederbeschaffung", ext)
+                arch = berichte_modul.archiv_speichern(
+                    "wiederbeschaffung", name, daten)
+                st.success(f"✓ {name} ({arch['size_kb']} KB).")
+                st.download_button("📥 Herunterladen", data=daten,
+                                      file_name=name, mime=mime,
+                                      use_container_width=True,
+                                      key=f"ber_wb_dl_{arch['id']}")
+            except Exception as exc:
+                st.error(f"Fehler: {exc}")
+        card_close()
+
+    # §8 Preisentwicklungs-Bericht (zusätzliche Reihe)
+    row4c1, row4c2 = st.columns(2)
+    with row4c1:
+        card_open("📈 Preisentwicklung (§8)")
+        st.caption("Verlauf der EK-Preise über alle Importe — "
+                    "Tabelle + Trend pro Maß.")
+        if st.button("📈 PDF erzeugen", type="primary",
+                       use_container_width=True, key="ber_preis_gen"):
+            try:
+                reihe = preis_modul.preis_zeitreihe(verlauf_alle())
+                daten = berichte_modul.preisentwicklung_pdf(reihe)
+                name = berichte_modul._dateiname("preisentwicklung", "pdf")
+                arch = berichte_modul.archiv_speichern(
+                    "preisentwicklung", name, daten)
+                st.success(f"✓ {name} ({arch['size_kb']} KB).")
+                st.download_button("📥 Herunterladen", data=daten,
+                                      file_name=name,
+                                      mime="application/pdf",
+                                      use_container_width=True,
+                                      key=f"ber_preis_dl_{arch['id']}")
+            except Exception as exc:
+                st.error(f"Fehler: {exc}")
+        card_close()
+
+    with row4c2:
         card_open("📂 Archiv & Speicherort")
         st.caption("Alle erzeugten Berichte werden lokal archiviert.")
         st.markdown(

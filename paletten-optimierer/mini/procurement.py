@@ -158,6 +158,8 @@ def neuer_auftrag(*, katalog_modul,
             "ek_pro_stk_eur": ek,
             "ek_summe": round(ek * menge, 2),
             "kommentar": str(pos.get("kommentar", "")),
+            # §9: Mehrfach-AW-Zuordnung pro Position
+            "verlinkte_aws": list(pos.get("verlinkte_aws", []) or []),
         })
         summe += ek * menge
         # Effekt auf Bestand
@@ -391,6 +393,61 @@ def ausstehende_eingaenge() -> int:
     return summe
 
 
+def suche(query: str) -> list[dict]:
+    """Spec §9: Live-Suche über BST-Nr, Lieferant, Positions-AWs und
+    Artikelnummern (auf Positionen). Case-insensitive."""
+    q = (query or "").strip().lower()
+    if not q:
+        return alle()
+    treffer = []
+    for a in alle():
+        text_blocks = [
+            a.get("bst_nummer", "") or "",
+            a.get("lieferant", "") or "",
+            a.get("bemerkung", "") or "",
+            a.get("tracking_nr", "") or "",
+        ]
+        for p in a.get("positionen", []):
+            snap = p.get("snapshot", {}) or {}
+            text_blocks.append(snap.get("name", "") or "")
+            text_blocks.append(p.get("kommentar", "") or "")
+            for aw in (p.get("verlinkte_aws") or []):
+                text_blocks.append(str(aw))
+        if any(q in t.lower() for t in text_blocks):
+            treffer.append(a)
+    return treffer
+
+
+def aw_ist_in_beschaffung(aw: str, *, nur_offen: bool = False) -> dict | None:
+    """Findet den ERSTEN Beschaffungs-Auftrag, in dessen Positionen der
+    AW verlinkt ist. Liefert {auftrag, position, status} oder None."""
+    if not aw:
+        return None
+    aw_norm = aw.strip().lower()
+    quelle = offene() if nur_offen else alle()
+    for a in quelle:
+        for p in a.get("positionen", []):
+            for x in (p.get("verlinkte_aws") or []):
+                if str(x).strip().lower() == aw_norm:
+                    return {"auftrag": a, "position": p,
+                             "status": a.get("status", "?")}
+    return None
+
+
+def aws_mit_wareneingang() -> set[str]:
+    """Spec §6: Liefert alle AWs aus Beschaffungs-Positionen, deren
+    Auftrag bereits den Status 'eingegangen' hat (= Paletten sind da)."""
+    out: set[str] = set()
+    for a in _read_raw():
+        if a.get("status") not in ("eingegangen", "wareneingang"):
+            continue
+        for p in a.get("positionen", []):
+            for aw in (p.get("verlinkte_aws") or []):
+                if aw:
+                    out.add(str(aw).strip())
+    return out
+
+
 def hat_lieferant_offene(lieferant_id: str) -> bool:
     """Spec §5: Lieferant löschen mit offener Bestellung → blockt."""
     for a in offene():
@@ -403,24 +460,31 @@ def aus_disposition_vorschlag(katalog_modul, *,
                                  ergebnis: dict | None = None,
                                  default_lieferant_per_palette: dict | None = None,
                                  ) -> list[dict]:
-    """Spec §1.4: Generiert vorausgefüllte Positionen aus dem letzten
-    Optimierungs-Ergebnis. Pro Standard-Maß: Differenz
+    """Spec §1.4 + §9: Generiert vorausgefüllte Positionen aus dem
+    letzten Optimierungs-Ergebnis. Pro Standard-Maß: Differenz
     benötigt − (bestand + bestand_bestellt). Nur > 0.
 
+    Sammelt zusätzlich die AWs (auftrag-Feld) aller Zuordnungen, die
+    diesen Standard nutzen — werden als verlinkte_aws vorbefüllt.
+
     Liefert Liste von [{palette_id, menge, ek_pro_stk_eur, lieferant_id,
-    label}] — bereit zur Übernahme als Positionen.
+    label, verlinkte_aws}] — bereit zur Übernahme als Positionen.
     """
     if not ergebnis:
         return []
     default_lieferant_per_palette = default_lieferant_per_palette or {}
     from collections import defaultdict
     benoetigt: dict[tuple, int] = defaultdict(int)
+    aws_pro_kand: dict[tuple, set] = defaultdict(set)
     for z in ergebnis.get("zuordnung", []):
         if z.get("typ") == "Standard":
             try:
                 a, b = z["ziel"].split("x")
                 kand = (min(int(a), int(b)), max(int(a), int(b)))
                 benoetigt[kand] += int(z.get("menge", 0))
+                aw = (z.get("auftrag") or "").strip()
+                if aw:
+                    aws_pro_kand[kand].add(aw)
             except (ValueError, KeyError):
                 continue
     vorschlaege = []
@@ -449,6 +513,7 @@ def aus_disposition_vorschlag(katalog_modul, *,
                                                       0) or 0),
             "lieferant_id": default_lieferant_per_palette.get(
                 kat_eintrag["id"], ""),
+            "verlinkte_aws": sorted(aws_pro_kand.get(kand, set())),
             "label": (
                 f"{kat_eintrag.get('name', '') or '—'} "
                 f"{kand[1]}×{kand[0]}"

@@ -173,6 +173,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_berichte.py
 
+      - name: Pflicht-Test 9-Feature-Erweiterungen (Auto-Std, Dup, EK-Vgl, etc.)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_erweiterungen.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |

@@ -827,3 +827,134 @@ def lieferanten_bestelldokument_pdf(
         "Zahlungsziel 14 Tage netto, soweit nicht anders vereinbart."
     ))
     return bytes(pdf.output())
+
+
+# ---------------------------------------------------------------------------
+# Bericht 6: Wiederbeschaffungszeiten (Spec §5)
+# ---------------------------------------------------------------------------
+def wiederbeschaffungs_pdf(rows: list[dict],
+                             sicherheitspuffer_tage: int = 7) -> bytes:
+    """rows = aus wiederbeschaffung.baue_zeilen()."""
+    pdf = YoumanPDF("Wiederbeschaffungszeiten")
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 5,
+              _latin1(f"Stichtag: {datetime.now().strftime('%d.%m.%Y %H:%M')} "
+                       f"| Sicherheitspuffer: {sicherheitspuffer_tage} Tage"),
+              ln=True)
+    krit = [r for r in rows if r["kritisch"]]
+    pdf.cell(0, 5,
+              _latin1(f"Paletten gesamt: {len(rows)} "
+                       f"| davon kritisch: {len(krit)}"),
+              ln=True)
+    pdf.ln(2)
+    pdf.set_font("Helvetica", "", 9)
+    pdf.multi_cell(0, 5, _latin1(
+        "Ampel: [OK] Reichweite > Lieferzeit + Puffer | "
+        "[!] Reichweite ~ Lieferzeit | "
+        "[X] Reichweite < Lieferzeit (Engpass) | "
+        "[?] ohne Verbrauchsdaten"
+    ))
+    pdf.ln(2)
+
+    table_rows = []
+    for r in rows:
+        rw = (f"{r['reichweite_tage']:.0f}"
+              if r['reichweite_tage'] is not None else "—")
+        table_rows.append([
+            (r["name"] or "—")[:18],
+            f"{r['L_mm']}x{r['B_mm']}",
+            (r["lieferant"] or "—")[:18],
+            str(r["lieferzeit_tage"]),
+            str(r["bestand"]),
+            str(r["bestand_bestellt"]),
+            rw,
+            r["ampel"],
+        ])
+    _table(pdf,
+            ["Palette", "Masse (mm)", "Lieferant", "LZ (T)",
+              "Bestand", "in Anl.", "Reichw. (T)", "Status"],
+            table_rows, [30, 22, 30, 16, 20, 18, 22, 22])
+    return bytes(pdf.output())
+
+
+def wiederbeschaffungs_excel(rows: list[dict]) -> bytes:
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Wiederbeschaffung"
+    ws.append(["Palette", "L", "B", "Lieferant", "Lieferzeit (T)",
+                "Bestand", "in Anlieferung", "Reichweite (T)", "Ampel"])
+    bold = Font(bold=True)
+    fill = PatternFill("solid", fgColor="E0E0E0")
+    for c_ in ws[1]:
+        c_.font = bold; c_.fill = fill
+    for r in rows:
+        ws.append([
+            r["name"] or "—", r["L_mm"], r["B_mm"],
+            r["lieferant"] or "—", r["lieferzeit_tage"],
+            r["bestand"], r["bestand_bestellt"],
+            r["reichweite_tage"] if r["reichweite_tage"] is not None else "—",
+            r["ampel"],
+        ])
+    ws.auto_filter.ref = ws.dimensions
+    for col_idx, w in enumerate([22, 8, 8, 22, 12, 10, 14, 14, 8], 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = w
+    for row in ws.iter_rows(min_row=2, min_col=2, max_col=8):
+        for c_ in row:
+            c_.alignment = Alignment(horizontal="right")
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# Bericht 7: Preisentwicklung (Spec §8)
+# ---------------------------------------------------------------------------
+def preisentwicklung_pdf(zeitreihe: dict[str, list[dict]]) -> bytes:
+    """zeitreihe = aus preis_historie.preis_zeitreihe()."""
+    pdf = YoumanPDF("Preisentwicklung")
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 5,
+              _latin1(f"Stichtag: {datetime.now().strftime('%d.%m.%Y %H:%M')}"),
+              ln=True)
+    pdf.cell(0, 5, _latin1(f"Maße mit Preis-Historie: {len(zeitreihe)}"),
+              ln=True)
+    pdf.ln(3)
+
+    if not zeitreihe:
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(0, 6, _latin1(
+            "Keine Preis-Snapshots im Verlauf gespeichert. Erst nach "
+            "mehreren Importen entsteht eine Historie."
+        ), ln=True)
+        return bytes(pdf.output())
+
+    # Pro Maß: Tabelle + kleines Trend-Linien-Mini-Chart
+    for mass, punkte in sorted(zeitreihe.items()):
+        if len(punkte) < 1:
+            continue
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.set_text_color(15, 31, 61)
+        pdf.cell(0, 6, _latin1(f"Palette {mass}"), ln=True)
+        pdf.set_text_color(0, 0, 0)
+        rows = []
+        for p in punkte:
+            rows.append([p["datum"], f"{p['ek']:.2f}"])
+        if len(punkte) >= 2:
+            erst = punkte[0]["ek"]; letzt = punkte[-1]["ek"]
+            diff = letzt - erst
+            pct = (diff / erst * 100) if erst > 0 else 0
+            pfeil = "->" if abs(pct) < 0.5 else ("/" if diff > 0 else "\\")
+            pdf.set_font("Helvetica", "", 9)
+            pdf.cell(0, 5, _latin1(
+                f"Trend: {erst:.2f} EUR -> {letzt:.2f} EUR  "
+                f"({pfeil} {pct:+.1f} %)"), ln=True)
+        _table(pdf, ["Datum", "EK (EUR)"], rows, [40, 30])
+        pdf.ln(3)
+    return bytes(pdf.output())
+

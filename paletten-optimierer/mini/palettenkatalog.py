@@ -85,13 +85,27 @@ def _migriere_eintrag(e: dict[str, Any]) -> None:
     e.setdefault("quelle", "manuell")
     e.setdefault("verbrauchshaeufigkeit", 0)
     e.setdefault("bestand", 0)
-    e.setdefault("bestand_bestellt", 0)  # Spec §5 (in Anlieferung)
+    e.setdefault("bestand_bestellt", 0)
     e.setdefault("meldebestand", 0)
     e.setdefault("notiz", "")
     e.setdefault("aktiv", True)
     e.setdefault("einkaufspreis_eur", 0.0)
     e.setdefault("verkaufspreis_eur", 0.0)
     e.setdefault("datum_geaendert", e.get("datum_erstellt", ""))
+    # §1 Auto-Standard
+    e.setdefault("auto_standard", False)
+    e.setdefault("auto_standard_seit", "")
+    e.setdefault("verwendet_in_laeufen", [])
+    # §4 EK-Vergleich Lieferant vs. Selbstfertigung
+    e.setdefault("ek_lieferant_eur",
+                  float(e.get("einkaufspreis_eur", 0) or 0))
+    e.setdefault("selbstfertigung_material_eur", 0.0)
+    e.setdefault("selbstfertigung_lohn_eur", 0.0)
+    e.setdefault("selbstfertigung_gesamt_eur", 0.0)
+    e.setdefault("bezug_modus", "lieferant")  # lieferant|selbstfertigung|auto_guenstiger
+    # §5 Lieferzeit pro Palette (Override gegenueber Lieferant-Default)
+    e.setdefault("lieferzeit_tage_override", 0)
+    e.setdefault("default_lieferant_id", "")
 
 
 def _write_raw(eintraege: list[dict[str, Any]]) -> None:
@@ -127,7 +141,15 @@ def neuer_eintrag(L: int, B: int,
                    typ: str = "standard",
                    quelle: str = "manuell",
                    verbrauchshaeufigkeit: int = 0,
-                   bestand_bestellt: int = 0) -> str:
+                   bestand_bestellt: int = 0,
+                   auto_standard: bool = False,
+                   auto_standard_seit: str = "",
+                   ek_lieferant_eur: float | None = None,
+                   selbstfertigung_material_eur: float = 0.0,
+                   selbstfertigung_lohn_eur: float = 0.0,
+                   bezug_modus: str = "lieferant",
+                   lieferzeit_tage_override: int = 0,
+                   default_lieferant_id: str = "") -> str:
     """Fuegt einen neuen Katalog-Eintrag hinzu. Maß wird kanonisiert.
     Liefert die id."""
     L_k, B_k = _kanon(L, B)
@@ -155,6 +177,27 @@ def neuer_eintrag(L: int, B: int,
         "verbrauchshaeufigkeit": int(max(0, verbrauchshaeufigkeit)),
         "notiz": str(notiz),
         "aktiv": bool(aktiv),
+        # §1
+        "auto_standard": bool(auto_standard),
+        "auto_standard_seit": str(auto_standard_seit or ""),
+        "verwendet_in_laeufen": [],
+        # §4
+        "ek_lieferant_eur": (float(ek_lieferant_eur)
+                              if ek_lieferant_eur is not None
+                              else float(einkaufspreis)),
+        "selbstfertigung_material_eur": float(
+            max(0, selbstfertigung_material_eur)),
+        "selbstfertigung_lohn_eur": float(max(0, selbstfertigung_lohn_eur)),
+        "selbstfertigung_gesamt_eur": float(
+            max(0, selbstfertigung_material_eur)
+            + max(0, selbstfertigung_lohn_eur)),
+        "bezug_modus": (bezug_modus
+                         if bezug_modus in {"lieferant", "selbstfertigung",
+                                               "auto_guenstiger"}
+                         else "lieferant"),
+        # §5
+        "lieferzeit_tage_override": int(max(0, lieferzeit_tage_override)),
+        "default_lieferant_id": str(default_lieferant_id or ""),
     }
     h = _read_raw()
     h.append(eintrag)
@@ -168,7 +211,16 @@ def update_eintrag(eintrag_id: str, **felder) -> bool:
                "verkaufspreis_eur", "bestand", "bestand_bestellt",
                "meldebestand",
                "notiz", "aktiv", "name", "hoehe_mm", "typ", "quelle",
-               "verbrauchshaeufigkeit"}
+               "verbrauchshaeufigkeit",
+               # §1
+               "auto_standard", "auto_standard_seit",
+               "verwendet_in_laeufen",
+               # §4
+               "ek_lieferant_eur", "selbstfertigung_material_eur",
+               "selbstfertigung_lohn_eur", "selbstfertigung_gesamt_eur",
+               "bezug_modus",
+               # §5
+               "lieferzeit_tage_override", "default_lieferant_id"}
     h = _read_raw()
     for e in h:
         if e.get("id") == eintrag_id:
@@ -386,6 +438,137 @@ def aus_csv(text: str, ersetze_alles: bool = False) -> dict[str, Any]:
             fehler.append(f"Zeile {i}: {exc}")
     return {"importiert": importiert, "fehler": fehler,
             "gesamt": importiert + len(fehler)}
+
+
+# ---------------------------------------------------------------------------
+# §3 Duplikat-Check
+# ---------------------------------------------------------------------------
+def finde_duplikat(L: int, B: int, hoehe_mm: int = 0) -> dict | None:
+    """Liefert den ersten Eintrag mit gleichem (L, B, hoehe_mm) ODER None.
+    Match-Kriterium kanonisch + Höhe exakt (Toleranz 0)."""
+    cs_q, cl_q = min(int(L), int(B)), max(int(L), int(B))
+    h_q = int(hoehe_mm or 0)
+    for e in _read_raw():
+        cs, cl = (min(e.get("L_mm", 0), e.get("B_mm", 0)),
+                   max(e.get("L_mm", 0), e.get("B_mm", 0)))
+        if cs == cs_q and cl == cl_q and int(e.get("hoehe_mm", 0)) == h_q:
+            return e
+    return None
+
+
+# ---------------------------------------------------------------------------
+# §1 Auto-Standard-Erkennung
+# ---------------------------------------------------------------------------
+def auto_standard_pruefen(letzte_laeufe: list[dict],
+                            schwelle: int = 4) -> list[dict]:
+    """Prüft die letzten N Optimierungen — falls dasselbe Maß in ≥ schwelle
+    aufeinanderfolgenden Läufen als Standard genutzt wurde, markiert die
+    zugehörige Palette automatisch als 'auto_standard=True'.
+
+    letzte_laeufe = Liste von Verlauf-Einträgen mit
+    optimierung.ergebnis_snapshot.standards. Reihenfolge: neueste zuerst.
+
+    Liefert Liste der frisch erkannten/aktualisierten Paletten."""
+    if schwelle < 2 or len(letzte_laeufe) < schwelle:
+        return []
+    # Aus den letzten N Läufen die Standards-Maße ziehen (kanonisch)
+    masse_pro_lauf: list[set[tuple[int, int]]] = []
+    lauf_ids: list[str] = []
+    for e in letzte_laeufe[:schwelle]:
+        opt = (e.get("optimierung") or {})
+        snap = (opt.get("ergebnis_snapshot") or {})
+        std_list = snap.get("standards") or []
+        masse = set()
+        for s in std_list:
+            try:
+                a, b = int(s[0]), int(s[1])
+                masse.add((min(a, b), max(a, b)))
+            except (TypeError, IndexError, ValueError):
+                continue
+        if not masse:
+            return []  # luecke
+        masse_pro_lauf.append(masse)
+        lauf_ids.append(e.get("id", ""))
+    # Schnittmenge — Maße, die in ALLEN N Läufen vorkommen
+    konstant = set.intersection(*masse_pro_lauf) if masse_pro_lauf else set()
+    if not konstant:
+        return []
+    aktualisiert = []
+    from datetime import date as _date
+    heute_str = _date.today().isoformat()
+    h = _read_raw()
+    for e in h:
+        cs, cl = (min(e.get("L_mm", 0), e.get("B_mm", 0)),
+                   max(e.get("L_mm", 0), e.get("B_mm", 0)))
+        if (cs, cl) in konstant:
+            war_schon = bool(e.get("auto_standard"))
+            e["auto_standard"] = True
+            if not war_schon:
+                e["auto_standard_seit"] = heute_str
+            # verwendet_in_laeufen-Liste pflegen (letzte N IDs)
+            vorhanden = list(e.get("verwendet_in_laeufen") or [])
+            for lid in lauf_ids:
+                if lid and lid not in vorhanden:
+                    vorhanden.append(lid)
+            e["verwendet_in_laeufen"] = vorhanden[-20:]  # cap
+            e["datum_geaendert"] = _now()
+            aktualisiert.append(e)
+    if aktualisiert:
+        _write_raw(h)
+    return aktualisiert
+
+
+def auto_standards() -> list[dict]:
+    """Liefert alle Katalog-Einträge mit auto_standard==True (aktiv)."""
+    return [e for e in _read_raw()
+            if e.get("aktiv", True) and e.get("auto_standard")]
+
+
+def auto_standard_aufheben(eintrag_id: str) -> bool:
+    """Manuelles Entfernen des Auto-Standard-Flags."""
+    return update_eintrag(eintrag_id, auto_standard=False,
+                           auto_standard_seit="",
+                           verwendet_in_laeufen=[])
+
+
+# ---------------------------------------------------------------------------
+# §4 Bezugs-Empfehlung (Lieferant vs. Selbstfertigung)
+# ---------------------------------------------------------------------------
+def empfohlene_bezugskosten(e: dict) -> dict:
+    """Liefert dict mit ek, bezug ('lieferant' | 'selbstfertigung'),
+    diff, empfehlung-Text basierend auf bezug_modus."""
+    ek_lief = float(e.get("ek_lieferant_eur",
+                            e.get("einkaufspreis_eur", 0)) or 0)
+    eigen = (float(e.get("selbstfertigung_material_eur", 0) or 0)
+              + float(e.get("selbstfertigung_lohn_eur", 0) or 0))
+    # cached field aktualisieren
+    e["selbstfertigung_gesamt_eur"] = eigen
+    modus = e.get("bezug_modus", "lieferant")
+    if modus == "lieferant":
+        return {"ek": ek_lief, "bezug": "lieferant",
+                 "diff": eigen - ek_lief if eigen > 0 else 0.0,
+                 "empfehlung": "Lieferant (fix)"}
+    if modus == "selbstfertigung":
+        return {"ek": eigen, "bezug": "selbstfertigung",
+                 "diff": eigen - ek_lief if ek_lief > 0 else 0.0,
+                 "empfehlung": "Selbstfertigung (fix)"}
+    # auto_guenstiger
+    if ek_lief <= 0 and eigen > 0:
+        return {"ek": eigen, "bezug": "selbstfertigung",
+                 "diff": 0.0,
+                 "empfehlung": "Selbstfertigung (nur diese gepflegt)"}
+    if eigen <= 0 and ek_lief > 0:
+        return {"ek": ek_lief, "bezug": "lieferant",
+                 "diff": 0.0,
+                 "empfehlung": "Lieferant (Selbstfertigung nicht gepflegt)"}
+    if eigen < ek_lief:
+        return {"ek": eigen, "bezug": "selbstfertigung",
+                 "diff": eigen - ek_lief,
+                 "empfehlung": f"Selbstfertigung ({ek_lief - eigen:.2f} EUR billiger)"}
+    return {"ek": ek_lief, "bezug": "lieferant",
+             "diff": eigen - ek_lief,
+             "empfehlung": f"Lieferant ({eigen - ek_lief:.2f} EUR billiger)"
+                          if eigen > ek_lief else "Lieferant (gleichauf)"}
 
 
 def als_sonder_uebernehmen(L: int, B: int, hoehe_mm: int = 0,
