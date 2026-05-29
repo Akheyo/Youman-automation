@@ -42,6 +42,7 @@ import berichte as berichte_modul  # noqa: E402
 import audit_log as audit_modul  # noqa: E402
 import preis_historie as preis_modul  # noqa: E402
 import wiederbeschaffung as wbsch_modul  # noqa: E402
+import auftraege as auftraege_modul  # noqa: E402
 from import_doppelschutz import pruefe_import as _pruefe_import  # noqa: E402
 from _render import render_zuord_table, ziel_label as _ziel_label  # noqa: E402
 from _ui_chrome import (  # noqa: E402
@@ -200,6 +201,13 @@ def init_state() -> None:
             "auto_standard_schwelle": 4,
             # §5 Wiederbeschaffungs-Sicherheitspuffer
             "wbsch_puffer_tage": 7,
+            # Stammdaten 2 — Auftragsverwaltung
+            "auf_filter_suche": "",
+            "auf_filter_status": ["offen", "in_arbeit", "abgeschlossen"],
+            "auf_filter_kunde": "",
+            "auf_drawer_eid": None,    # offener Edit-Drawer
+            "auf_neu_drawer": False,   # Neuanlage-Drawer
+            "auf_bulk_sel": [],         # ausgewählte ids
         },
         "ergebnis": None,
         "ergebnis_id": None,           # UUID pro Optimierungslauf
@@ -270,6 +278,7 @@ with st.sidebar:
         "Wirtschaftlichkeit",
         "Kostenanalyse",
         "Stammdaten",
+        "Stammdaten 2",
         "Berichte",
         "App-Einstellungen",
     ]
@@ -380,6 +389,17 @@ if not st.session_state.get("_cron_done", False):
             )
     except Exception:
         pass
+    # Stammdaten 2: Auftrags-Status gegen Beschaffung syncen
+    try:
+        sync_erg = auftraege_modul.sync_status_aus_beschaffung(
+            procurement_modul)
+        if sync_erg["wechsel"] > 0:
+            st.toast(
+                f"📋 {sync_erg['wechsel']} Auftrag-Status automatisch "
+                f"aktualisiert (offen → in_arbeit / abgeschlossen)."
+            )
+    except Exception:
+        pass
     st.session_state._cron_done = True
 
 _globale_banner()
@@ -432,6 +452,17 @@ def seite_datenimport() -> None:
         st.session_state.ergebnis = None
         st.session_state.doppelschutz_preview = None
         st.session_state.doppelschutz_skip_ids = set()
+        # Stammdaten 2: AWs aus Excel ins Auftrags-Register upserten
+        try:
+            erg_up = auftraege_modul.upsert_aus_excel(
+                dat.get("mit_mass", []))
+            if erg_up["neu"] > 0:
+                st.toast(
+                    f"📋 {erg_up['neu']} neue AW(s) in Stammdaten 2 angelegt"
+                    f" ({erg_up['vorhanden']} schon vorhanden)."
+                )
+        except Exception:
+            pass
         try:
             st.session_state.historie_id = neuer_eintrag(
                 datei_pfad=up.name,
@@ -5078,6 +5109,502 @@ def seite_stammdaten() -> None:
     card_close()
 
 
+def seite_stammdaten_2() -> None:
+    """Auftragsverwaltung (Spec Stammdaten 2): zentrale Übersicht aller
+    AWs mit Status-Lifecycle + Edit/Anlage + Bulk-Aktionen."""
+    p_state = st.session_state.params
+
+    card_open("STAMMDATEN 2 – AUFTRÄGE")
+    st.caption(
+        "Zentrale Übersicht aller importierten und manuell angelegten "
+        "Aufträge. Status-Wechsel laufen automatisch (offen → in Arbeit "
+        "→ abgeschlossen) sobald Beschaffungs-Bestellungen verlinkt sind."
+    )
+
+    # §9 KPI-Karten
+    s = auftraege_modul.stats()
+    kc1, kc2, kc3, kc4 = st.columns(4)
+    if kc1.button(f"🟢  Offen\n\n**{s['offen']}**",
+                    use_container_width=True, key="auf_kpi_offen"):
+        p_state["auf_filter_status"] = ["offen"]
+        st.rerun()
+    if kc2.button(f"🟡  In Arbeit\n\n**{s['in_arbeit']}**",
+                    use_container_width=True, key="auf_kpi_arbeit"):
+        p_state["auf_filter_status"] = ["in_arbeit"]
+        st.rerun()
+    if kc3.button(f"✅  Abgeschlossen (30T)\n\n**{s['abgeschlossen_30T']}**",
+                    use_container_width=True, key="auf_kpi_abg"):
+        p_state["auf_filter_status"] = ["abgeschlossen"]
+        st.rerun()
+    if kc4.button(f"⚫  Storniert (30T)\n\n**{s['storniert_30T']}**",
+                    use_container_width=True, key="auf_kpi_storno"):
+        p_state["auf_filter_status"] = ["storniert"]
+        st.rerun()
+    card_close()
+
+    # === Toolbar ===
+    card_open("Toolbar")
+    tc1, tc2, tc3, tc4 = st.columns([1.5, 1.5, 1.5, 1.5])
+    if tc1.button("➕ Auftrag manuell anlegen", type="primary",
+                    use_container_width=True, key="auf_neu_btn"):
+        p_state["auf_neu_drawer"] = True
+        st.rerun()
+    if tc2.button("↻ AWs aus Excel synchronisieren",
+                    use_container_width=True, key="auf_sync_excel",
+                    help="Liest aktuell importierte Daten und legt fehlende AWs an."):
+        if st.session_state.get("import_dat"):
+            erg = auftraege_modul.upsert_aus_excel(
+                st.session_state.import_dat.get("mit_mass", []))
+            st.success(
+                f"✓ {erg['neu']} neu, {erg['vorhanden']} bereits vorhanden."
+            )
+            st.rerun()
+        else:
+            st.warning("Erst eine Excel-Datei importieren.")
+    if tc3.button("↻ Status-Sync (Beschaffung)",
+                    use_container_width=True, key="auf_sync_st"):
+        erg = auftraege_modul.sync_status_aus_beschaffung(procurement_modul)
+        if erg["wechsel"] > 0:
+            st.success(f"✓ {erg['wechsel']} Status-Wechsel.")
+        else:
+            st.info("Keine Wechsel — alles aktuell.")
+        st.rerun()
+    if tc4.button("🗑️ Alle löschen", use_container_width=True,
+                    key="auf_clear",
+                    help="Komplette Auftragsliste leeren (mit Bestätigung)."):
+        st.session_state.auf_clear_confirm = True
+        st.rerun()
+    if st.session_state.get("auf_clear_confirm"):
+        cc1, cc2 = st.columns(2)
+        if cc1.button("✗ Wirklich ALLE Aufträge löschen?",
+                        type="primary", key="auf_clear_yes",
+                        use_container_width=True):
+            n = auftraege_modul.leere_alle()
+            st.session_state.auf_clear_confirm = False
+            st.warning(f"{n} Aufträge gelöscht.")
+            st.rerun()
+        if cc2.button("Abbrechen", key="auf_clear_no",
+                        use_container_width=True):
+            st.session_state.auf_clear_confirm = False
+            st.rerun()
+    card_close()
+
+    # === Filter ===
+    card_open("🔍 Filter / Suche")
+    fc1, fc2, fc3, fc4 = st.columns([2, 1.5, 1.5, 1.5])
+    with fc1:
+        suche = st.text_input(
+            "Suche (AW / Kunde / Artikel / Bemerkung)",
+            value=p_state.get("auf_filter_suche", ""),
+            key="auf_in_suche",
+            label_visibility="collapsed",
+            placeholder="🔍 Suche…",
+        )
+        p_state["auf_filter_suche"] = suche
+    with fc2:
+        opt_status = ["offen", "in_arbeit", "abgeschlossen", "storniert"]
+        akt_status = p_state.get("auf_filter_status",
+                                   ["offen", "in_arbeit", "abgeschlossen"])
+        akt_status = [s for s in akt_status if s in opt_status]
+        sel_status = st.multiselect(
+            "Status", opt_status, default=akt_status,
+            key="auf_in_status", label_visibility="collapsed",
+        )
+        p_state["auf_filter_status"] = sel_status
+    with fc3:
+        kunden_alle = ["(alle)"] + auftraege_modul.alle_kunden()
+        akt_k = p_state.get("auf_filter_kunde", "")
+        idx_k = (kunden_alle.index(akt_k) if akt_k in kunden_alle else 0)
+        kunde_sel = st.selectbox(
+            "Kunde", kunden_alle, index=idx_k,
+            key="auf_in_kunde", label_visibility="collapsed",
+        )
+        p_state["auf_filter_kunde"] = (kunde_sel
+                                          if kunde_sel != "(alle)" else "")
+    with fc4:
+        nur_offen = st.toggle("nur offene", value=False,
+                                key="auf_nur_offen")
+        if nur_offen:
+            p_state["auf_filter_status"] = ["offen"]
+    card_close()
+
+    # === Tabelle ===
+    eintraege = auftraege_modul.filter_aufträge(
+        suche=p_state.get("auf_filter_suche", ""),
+        status_in=set(p_state.get("auf_filter_status") or []),
+        kunde=p_state.get("auf_filter_kunde", ""),
+    )
+    card_open(f"Aufträge ({len(eintraege)} angezeigt von "
+              f"{len(auftraege_modul.alle())})")
+    if not eintraege:
+        st.info("Keine Aufträge entsprechen den Filtern.")
+    else:
+        # Palette-Lookup fuer 'Palette'-Spalte
+        kat_map = {k["id"]: k for k in katalog_modul.alle()}
+        proc_map = {a["id"]: a for a in procurement_modul.alle()}
+        rows = []
+        for e in eintraege:
+            ang = e.get("angeforderte_palette", {}) or {}
+            pal_zug = ""
+            pal_id = e.get("zugewiesene_palette_id")
+            if pal_id and pal_id in kat_map:
+                pkat = kat_map[pal_id]
+                pal_zug = f"{pkat['L_mm']}×{pkat['B_mm']}"
+            bestellung_lbl = ""
+            bid = e.get("verlinkte_bestellung_id")
+            if bid and bid in proc_map:
+                bestellung_lbl = proc_map[bid].get("bst_nummer", bid[:8])
+            icon, label = auftraege_modul.STATUS_BADGE.get(
+                e.get("status", "offen"), ("?", "?"))
+            rows.append({
+                "id": e["id"],
+                "AW": e.get("aw_nummer", ""),
+                "Kunde": e.get("kunde", ""),
+                "ArtikelNr": e.get("artikel_nummer", ""),
+                "Menge": int(e.get("menge", 0)),
+                "Angef. Maß": (f"{ang.get('l', 0)}×{ang.get('b', 0)}"
+                                if ang.get("l") else "—"),
+                "Zugew. Palette": pal_zug or "—",
+                "Bestelldatum": e.get("bestelldatum", "") or "—",
+                "Verbrauchsdatum": e.get("verbrauchsdatum", "") or "—",
+                "Bestellung": bestellung_lbl or "—",
+                "Status": f"{icon} {label}",
+                "Manuell": ("✎" if e.get("status_manuell_gesetzt")
+                             else ""),
+                "Quelle": e.get("quelle", "manuell"),
+            })
+        df = pd.DataFrame(rows)
+        st.dataframe(df.drop(columns=["id"]),
+                      use_container_width=True, hide_index=True,
+                      column_config={
+                          "Menge": st.column_config.NumberColumn(format="%d"),
+                      })
+        # Aktionen pro Eintrag
+        sel_idx = st.selectbox(
+            "Auftrag wählen", options=range(len(eintraege)),
+            format_func=lambda i: (
+                f"{eintraege[i]['aw_nummer']} · "
+                f"{eintraege[i].get('kunde', '—')} · "
+                f"{eintraege[i].get('status', '?')}"
+            ),
+            key="auf_sel",
+        )
+        aktiv = eintraege[sel_idx]
+        ac1, ac2, ac3 = st.columns(3)
+        if ac1.button("👁 Details", use_container_width=True,
+                        key="auf_btn_view"):
+            p_state["auf_drawer_eid"] = aktiv["id"]
+            st.rerun()
+        if ac2.button("✎ Bearbeiten", type="primary",
+                        use_container_width=True, key="auf_btn_edit"):
+            p_state["auf_drawer_eid"] = aktiv["id"]
+            st.rerun()
+        if ac3.button("🗑 Löschen", use_container_width=True,
+                        key="auf_btn_del"):
+            auftraege_modul.loesche_auftrag(aktiv["id"])
+            st.warning(f"{aktiv['aw_nummer']} gelöscht.")
+            st.rerun()
+
+        # Bulk-Aktionen
+        with st.expander("📦 Bulk-Aktionen"):
+            ids_alle = [e["id"] for e in eintraege]
+            bulk_sel = st.multiselect(
+                "Aufträge wählen (Multi-Select)",
+                options=ids_alle,
+                format_func=lambda i: next(
+                    e["aw_nummer"] for e in eintraege if e["id"] == i),
+                key="auf_bulk_sel",
+            )
+            bb1, bb2, bb3 = st.columns(3)
+            bulk_status = bb1.selectbox(
+                "Neuer Status für Auswahl",
+                ["offen", "in_arbeit", "abgeschlossen", "storniert"],
+                key="auf_bulk_status",
+            )
+            bulk_grund = bb2.text_input("Grund (Pflicht)",
+                                           key="auf_bulk_grund")
+            if bb3.button("▶ Status setzen", type="primary",
+                            use_container_width=True,
+                            key="auf_bulk_apply",
+                            disabled=not bulk_sel or not bulk_grund.strip()):
+                count_ok, count_fail = 0, 0
+                for eid in bulk_sel:
+                    r = auftraege_modul.setze_status(
+                        eid, bulk_status, grund=bulk_grund,
+                        manuell=True)
+                    if r["ok"]:
+                        count_ok += 1
+                    else:
+                        count_fail += 1
+                st.success(f"✓ {count_ok} Status-Wechsel "
+                            f"(❌ {count_fail} Fehler).")
+                st.rerun()
+            if st.button("🗑 Markierte löschen",
+                            disabled=not bulk_sel,
+                            key="auf_bulk_del",
+                            use_container_width=True):
+                count = 0
+                for eid in bulk_sel:
+                    if auftraege_modul.loesche_auftrag(eid):
+                        count += 1
+                st.warning(f"{count} Aufträge gelöscht.")
+                st.rerun()
+            # Export
+            if bulk_sel:
+                import io as _io
+                buf = _io.StringIO()
+                buf.write("AW;Kunde;Artikel;Menge;Bestelldatum;"
+                            "Verbrauchsdatum;Status\n")
+                for eid in bulk_sel:
+                    e = auftraege_modul.finde(eid)
+                    if not e:
+                        continue
+                    buf.write(
+                        f"{e['aw_nummer']};{e.get('kunde', '')};"
+                        f"{e.get('artikel_nummer', '')};"
+                        f"{e.get('menge', 0)};"
+                        f"{e.get('bestelldatum', '')};"
+                        f"{e.get('verbrauchsdatum', '')};"
+                        f"{e.get('status', '')}\n"
+                    )
+                st.download_button(
+                    "📥 Auswahl als CSV",
+                    data=buf.getvalue().encode("utf-8-sig"),
+                    file_name="auftraege_auswahl.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                )
+    card_close()
+
+    # === Edit-Drawer ===
+    if p_state.get("auf_drawer_eid") or p_state.get("auf_neu_drawer"):
+        _auftrag_drawer()
+
+    st.caption(f"Speicherort: {auftraege_modul.pfad_str()}")
+
+
+def _auftrag_drawer() -> None:
+    """Drawer-Replacement (Streamlit hat keinen echten Drawer, also Card
+    unten am Seitenende)."""
+    p_state = st.session_state.params
+    eid = p_state.get("auf_drawer_eid")
+    neu_modus = bool(p_state.get("auf_neu_drawer"))
+    if eid:
+        eintrag = auftraege_modul.finde(eid)
+        if not eintrag:
+            p_state["auf_drawer_eid"] = None
+            return
+        titel = f"✎ Auftrag bearbeiten: {eintrag['aw_nummer']}"
+    elif neu_modus:
+        eintrag = {
+            "aw_nummer": auftraege_modul.naechste_aw_nummer(),
+            "kunde": "", "artikel_nummer": "", "menge": 0,
+            "angeforderte_palette": {"l": 0, "b": 0, "h": 0},
+            "bestelldatum": "", "verbrauchsdatum": "",
+            "status": "offen", "bemerkung": "",
+            "zugewiesene_palette_id": None,
+            "verlinkte_bestellung_id": None,
+        }
+        titel = "➕ Neuen Auftrag manuell anlegen"
+    else:
+        return
+
+    st.markdown("---")
+    card_open(titel)
+    dc1, dc2 = st.columns(2)
+    with dc1:
+        d_aw = st.text_input("AW-Nummer", value=eintrag.get("aw_nummer", ""),
+                                key="drw_aw")
+        # Kunde mit Dropdown + Freitext
+        kunden_alle = auftraege_modul.alle_kunden()
+        kunden_opt = ["(neu eingeben)"] + kunden_alle
+        akt_k = eintrag.get("kunde", "")
+        sel_k = st.selectbox(
+            "Kunde (Dropdown)",
+            range(len(kunden_opt)),
+            index=(kunden_opt.index(akt_k)
+                    if akt_k in kunden_opt else 0),
+            format_func=lambda i: kunden_opt[i],
+            key="drw_k_sel",
+        )
+        if sel_k == 0:
+            d_kunde = st.text_input("Kunde (neu)",
+                                       value=akt_k,
+                                       key="drw_k_neu")
+        else:
+            d_kunde = kunden_opt[sel_k]
+        d_art = st.text_input("Artikelnummer",
+                                 value=eintrag.get("artikel_nummer", ""),
+                                 key="drw_art")
+        d_menge = st.number_input("Menge", min_value=0, max_value=1000000,
+                                     value=int(eintrag.get("menge", 0)),
+                                     step=1, key="drw_menge")
+    with dc2:
+        ang = eintrag.get("angeforderte_palette", {}) or {}
+        pp1, pp2, pp3 = st.columns(3)
+        with pp1:
+            d_l = st.number_input("Länge (mm)", min_value=0,
+                                     max_value=10000,
+                                     value=int(ang.get("l", 0)),
+                                     step=10, key="drw_l")
+        with pp2:
+            d_b = st.number_input("Breite (mm)", min_value=0,
+                                     max_value=10000,
+                                     value=int(ang.get("b", 0)),
+                                     step=10, key="drw_b")
+        with pp3:
+            d_h = st.number_input("Höhe (mm)", min_value=0,
+                                     max_value=5000,
+                                     value=int(ang.get("h", 0)),
+                                     step=5, key="drw_h")
+        # Katalog-Palette zuweisen
+        kat_alle = katalog_modul.alle()
+        pal_opts = ["— (keine)"] + [
+            f"{k.get('name', '') or '—'} · {k['L_mm']}×{k['B_mm']}"
+            for k in kat_alle
+        ]
+        akt_pid = eintrag.get("zugewiesene_palette_id")
+        idx_pal = 0
+        for i, k in enumerate(kat_alle, 1):
+            if k["id"] == akt_pid:
+                idx_pal = i
+                break
+        sel_pal = st.selectbox("Zugewiesene Standardpalette",
+                                  range(len(pal_opts)), index=idx_pal,
+                                  format_func=lambda i: pal_opts[i],
+                                  key="drw_pal")
+        d_pal_id = (kat_alle[sel_pal - 1]["id"] if sel_pal > 0 else None)
+        d_bd = st.text_input("Bestelldatum (YYYY-MM-DD)",
+                                value=eintrag.get("bestelldatum", ""),
+                                key="drw_bd")
+        d_vbd = st.text_input("Verbrauchsdatum (YYYY-MM-DD)",
+                                 value=eintrag.get("verbrauchsdatum", ""),
+                                 key="drw_vbd")
+
+    # Verknüpfung Beschaffung
+    proc_alle = procurement_modul.alle()
+    proc_opts = ["— (keine)"] + [
+        f"{a.get('bst_nummer', a['id'][:8])} · "
+        f"{a.get('lieferant', '—')} · {a.get('status', '?')}"
+        for a in proc_alle
+    ]
+    akt_bid = eintrag.get("verlinkte_bestellung_id")
+    idx_bp = 0
+    for i, a in enumerate(proc_alle, 1):
+        if a["id"] == akt_bid:
+            idx_bp = i
+            break
+    sel_bp = st.selectbox("Verlinkte Beschaffungs-Bestellung",
+                            range(len(proc_opts)), index=idx_bp,
+                            format_func=lambda i: proc_opts[i],
+                            key="drw_bp")
+    d_bp_id = (proc_alle[sel_bp - 1]["id"] if sel_bp > 0 else None)
+
+    # Status + Grund
+    status_opt = ["offen", "in_arbeit", "abgeschlossen", "storniert"]
+    sc1, sc2 = st.columns([1, 2])
+    with sc1:
+        d_status = st.selectbox(
+            "Status", status_opt,
+            index=status_opt.index(eintrag.get("status", "offen"))
+                   if eintrag.get("status") in status_opt else 0,
+            key="drw_status",
+        )
+    with sc2:
+        d_grund = st.text_input(
+            "Grund bei manueller Status-Änderung",
+            value=eintrag.get("status_grund", ""),
+            key="drw_grund",
+            help="Pflicht wenn du den Status manuell überschreibst.",
+        )
+
+    d_bem = st.text_area("Bemerkung",
+                            value=eintrag.get("bemerkung", ""),
+                            key="drw_bem", height=70)
+
+    # Validierungs-Warnung
+    if d_bd and d_vbd and d_vbd < d_bd:
+        st.warning("⚠️ Verbrauchsdatum liegt vor Bestelldatum.")
+
+    bc1, bc2, bc3 = st.columns([2, 1, 1])
+    if bc1.button("💾 Speichern", type="primary",
+                    use_container_width=True, key="drw_save"):
+        if neu_modus:
+            erg = auftraege_modul.neuer_auftrag(
+                aw_nummer=d_aw, kunde=d_kunde,
+                artikel_nummer=d_art, menge=int(d_menge),
+                angeforderte_l=int(d_l),
+                angeforderte_b=int(d_b),
+                angeforderte_h=int(d_h),
+                zugewiesene_palette_id=d_pal_id,
+                bestelldatum=d_bd, verbrauchsdatum=d_vbd,
+                verlinkte_bestellung_id=d_bp_id,
+                status=d_status,
+                bemerkung=d_bem,
+                quelle="manuell",
+            )
+            if not erg["ok"]:
+                st.error(erg["fehler"])
+            else:
+                # ggf. manueller Status
+                if d_status != "offen":
+                    if not d_grund.strip():
+                        st.warning(
+                            "Auftrag angelegt, aber Status-Grund fehlt — "
+                            "manueller Status erfordert Pflicht-Grund."
+                        )
+                    else:
+                        auftraege_modul.setze_status(
+                            erg["id"], d_status,
+                            grund=d_grund, manuell=True)
+                st.success(f"✓ {erg['aw_nummer']} angelegt.")
+                p_state["auf_neu_drawer"] = False
+                p_state["auf_drawer_eid"] = None
+                st.rerun()
+        else:
+            r_upd = auftraege_modul.update_auftrag(
+                eid,
+                aw_nummer=d_aw, kunde=d_kunde,
+                artikel_nummer=d_art, menge=int(d_menge),
+                angeforderte_palette={"l": int(d_l), "b": int(d_b),
+                                         "h": int(d_h)},
+                zugewiesene_palette_id=d_pal_id,
+                bestelldatum=d_bd, verbrauchsdatum=d_vbd,
+                verlinkte_bestellung_id=d_bp_id,
+                bemerkung=d_bem,
+            )
+            if not r_upd["ok"]:
+                st.error(r_upd["fehler"])
+            else:
+                # Status-Wechsel?
+                if d_status != eintrag.get("status"):
+                    r_st = auftraege_modul.setze_status(
+                        eid, d_status, grund=d_grund, manuell=True)
+                    if not r_st["ok"]:
+                        st.error(r_st["fehler"])
+                    else:
+                        st.success("✓ Gespeichert + Status aktualisiert.")
+                        p_state["auf_drawer_eid"] = None
+                        st.rerun()
+                else:
+                    st.success("✓ Gespeichert.")
+                    p_state["auf_drawer_eid"] = None
+                    st.rerun()
+    if bc2.button("✗ Abbrechen", use_container_width=True,
+                    key="drw_cancel"):
+        p_state["auf_drawer_eid"] = None
+        p_state["auf_neu_drawer"] = False
+        st.rerun()
+    if not neu_modus and bc3.button("🗑 Löschen",
+                                         use_container_width=True,
+                                         key="drw_del"):
+        auftraege_modul.loesche_auftrag(eid)
+        p_state["auf_drawer_eid"] = None
+        st.warning("Gelöscht.")
+        st.rerun()
+    card_close()
+
+
 def seite_berichte() -> None:
     """Berichte-Tab: 5 Export-Karten in 2×3 Grid + Archiv (Spec §1-§9)."""
     card_open("BERICHTE")
@@ -5503,6 +6030,7 @@ SEITEN = {
     "Wirtschaftlichkeit":    seite_wirtschaftlichkeit,
     "Kostenanalyse":         seite_kostenanalyse,
     "Stammdaten":            seite_stammdaten,
+    "Stammdaten 2":          seite_stammdaten_2,
     "Berichte":              seite_berichte,
     "App-Einstellungen":     seite_app_einstellungen,
 }

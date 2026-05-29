@@ -178,6 +178,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_erweiterungen.py
 
+      - name: Pflicht-Test Auftragsverwaltung (Stammdaten 2)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_auftraege.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |

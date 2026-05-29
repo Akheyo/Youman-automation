@@ -67,6 +67,7 @@ app_datas = [
     ("../audit_log.py", "."),
     ("../preis_historie.py", "."),
     ("../wiederbeschaffung.py", "."),
+    ("../auftraege.py", "."),
     ("../_render.py", "."),
     ("../_ui_chrome.py", "."),
     ("../_build_info.py", "."),
