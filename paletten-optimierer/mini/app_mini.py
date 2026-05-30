@@ -43,6 +43,7 @@ import audit_log as audit_modul  # noqa: E402
 import preis_historie as preis_modul  # noqa: E402
 import wiederbeschaffung as wbsch_modul  # noqa: E402
 import auftraege as auftraege_modul  # noqa: E402
+import edition as edition_modul  # noqa: E402
 from import_doppelschutz import pruefe_import as _pruefe_import  # noqa: E402
 from _render import render_zuord_table, ziel_label as _ziel_label  # noqa: E402
 from _ui_chrome import (  # noqa: E402
@@ -263,27 +264,22 @@ with st.sidebar:
     sidebar_brand()
 
     sidebar_section("Workflow")
-    SEITEN_LISTE = [
-        "Dashboard",
-        "Datenimport",
-        "Einstellungen",
-        "Optimierung",
-        "Ergebnisse",
-        "Verlauf",
-        "Katalog",
-        "Bestand & Disposition",
-        "Bestellungen",
-        "Beschaffung",
-        "Historie",
-        "Wirtschaftlichkeit",
-        "Kostenanalyse",
-        "Stammdaten",
-        "Stammdaten 2",
-        "Berichte",
+    # Edition-Filter (Spec §1): nur Tabs aus enabled_tabs anzeigen.
+    # ALLE Definitionen (SEITEN-Router unten) bleiben — wir filtern nur
+    # die Sichtbarkeit in der Sidebar.
+    _ALLE_TABS = [
+        "Dashboard", "Datenimport", "Einstellungen", "Optimierung",
+        "Ergebnisse", "Verlauf", "Katalog", "Bestand & Disposition",
+        "Bestellungen", "Beschaffung", "Historie", "Wirtschaftlichkeit",
+        "Kostenanalyse", "Stammdaten", "Stammdaten 2", "Berichte",
         "App-Einstellungen",
     ]
+    _enabled = set(edition_modul.enabled_tabs())
+    SEITEN_LISTE = [t for t in _ALLE_TABS if t in _enabled]
+    if not SEITEN_LISTE:
+        SEITEN_LISTE = _ALLE_TABS  # safety-net: fallback voll
     if st.session_state.seite not in SEITEN_LISTE:
-        st.session_state.seite = "Datenimport"
+        st.session_state.seite = SEITEN_LISTE[0]
     seite_neu = st.radio(
         "Seite",
         SEITEN_LISTE,
@@ -293,6 +289,14 @@ with st.sidebar:
     if seite_neu != st.session_state.seite:
         st.session_state.seite = seite_neu
         st.rerun()
+    # Edition-Caption
+    st.markdown(
+        f'<div style="font-size:10px;color:#94a3b8;padding:4px 18px;">'
+        f'Edition: <b>{edition_modul.edition_label()}</b> · '
+        f'{len(SEITEN_LISTE)} Tabs'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
     sidebar_section("Info")
     st.markdown(
@@ -2621,34 +2625,94 @@ def _stub(name: str, beschreibung: str, geplant: list[str]) -> None:
 
 
 def seite_dashboard() -> None:
-    """Zentrale Uebersicht: aktuelle Daten + Verlauf-Stats + kritische Bestände."""
+    """Spec §4: 4 KPI-Karten + Schnellzugriff + Top-5 Optimierungen."""
     card_open("Dashboard — Übersicht")
 
-    # KPIs aus aktueller Session
-    dat = st.session_state.get("import_dat")
+    # §4 KPIs
     erg = st.session_state.get("ergebnis")
-    c1, c2, c3, c4 = st.columns(4)
-    if dat:
-        c1.metric("Aufträge mit Maß", len(dat.get("mit_mass", [])))
-        c2.metric("Paletten gesamt",
-                   dat.get("paletten_gesamt", 0) or
-                   sum(p["anzahl"] for p in dat.get("mit_mass", [])))
-    else:
-        c1.metric("Aufträge mit Maß", "—")
-        c2.metric("Paletten gesamt", "—")
-    if erg:
-        c3.metric("Letzte Optimierung",
-                   f"{erg['gesamt']} Maße",
-                   f"{len(erg['standards'])} Std + {len(erg['sonder'])} Sonder",
-                   delta_color="off")
-    else:
-        c3.metric("Letzte Optimierung", "—")
     try:
-        kat_n = len(katalog_modul.alle())
+        auf_stats = auftraege_modul.stats()
+        offene = auf_stats.get("offen", 0)
     except Exception:
-        kat_n = 0
-    c4.metric("Paletten im Katalog", kat_n)
+        offene = 0
+    try:
+        kat_alle_eintraege = katalog_modul.alle()
+        kat_n = len(kat_alle_eintraege)
+        gesamt_bestand = sum(int(e.get("bestand", 0) or 0)
+                               for e in kat_alle_eintraege)
+    except Exception:
+        kat_n = 0; gesamt_bestand = 0
+
+    letzte_dat = "—"
+    letzte_std = "—"
+    try:
+        v = verlauf_alle()
+        opt_v = [e for e in v if e.get("optimierung")]
+        if opt_v:
+            letzte = opt_v[0]
+            letzte_dat = (letzte.get("datum", "") or "")[:10]
+            letzte_std = str(letzte["optimierung"].get("standards", "—"))
+    except Exception:
+        pass
+
+    k1, k2, k3, k4 = st.columns(4)
+    k1.metric("Offene Aufträge", offene)
+    k2.metric("Paletten im Katalog", kat_n)
+    k3.metric("Letzte Optimierung",
+                f"{letzte_std} Standards",
+                f"{letzte_dat}", delta_color="off")
+    k4.metric("Gesamtbestand", f"{gesamt_bestand} Stk")
     card_close()
+
+    # §4 Schnellzugriffs-Buttons
+    card_open("⚡ Schnellzugriff")
+    sc1, sc2, sc3 = st.columns(3)
+    if sc1.button("📥 Import", use_container_width=True, type="primary",
+                    key="dash_q_import"):
+        st.session_state.seite = "Datenimport"
+        st.rerun()
+    if sc2.button("↻ Optimierung starten", use_container_width=True,
+                    key="dash_q_opt",
+                    disabled=st.session_state.get("import_dat") is None):
+        run_optimierung()
+        st.session_state.seite = "Ergebnisse"
+        st.rerun()
+    if sc3.button("➕ Auftrag manuell anlegen",
+                    use_container_width=True, key="dash_q_neu"):
+        st.session_state.params["auf_neu_drawer"] = True
+        st.session_state.seite = "Stammdaten 2"
+        st.rerun()
+    card_close()
+
+    # Top-5 letzte Optimierungen (Spec §4)
+    try:
+        v = verlauf_alle()
+        opt_v = [e for e in v if e.get("optimierung")]
+    except Exception:
+        opt_v = []
+    if opt_v:
+        card_open(f"📊 Letzte Optimierungen ({len(opt_v)} insgesamt)")
+        rows = []
+        for e in opt_v[:5]:
+            opt = e["optimierung"]
+            rows.append({
+                "id": e.get("id", ""),
+                "Datum": (e.get("datum", "") or "")[:16].replace("T", " "),
+                "Datei": (e.get("datei_name", "") or "—")[:25],
+                "Standards": opt.get("standards", 0),
+                "Sonder": opt.get("sonder", 0),
+                "Gesamt": opt.get("gesamt", 0),
+            })
+        st.dataframe(pd.DataFrame(rows).drop(columns=["id"]),
+                      use_container_width=True, hide_index=True,
+                      column_config={
+                          "Standards": st.column_config.NumberColumn(format="%d"),
+                          "Sonder": st.column_config.NumberColumn(format="%d"),
+                          "Gesamt": st.column_config.NumberColumn(format="%d"),
+                      })
+        st.caption("Klick auf 'Ergebnisse' in der Sidebar springt zum "
+                    "aktuellen Lauf.")
+        card_close()
 
     # Verlauf-Mini-Tabelle
     try:
@@ -5328,46 +5392,268 @@ def seite_stammdaten_2() -> None:
     if not eintraege:
         st.info("Keine Aufträge entsprechen den Filtern.")
     else:
-        # Palette-Lookup fuer 'Palette'-Spalte
+        # Lookups
         kat_map = {k["id"]: k for k in katalog_modul.alle()}
         proc_map = {a["id"]: a for a in procurement_modul.alle()}
+
+        # === §3 Inline-Editing via st.data_editor (Excel-Style) ===
+        st.caption(
+            "💡 **Inline-Edit**: Doppelklick auf eine Zelle, ändern, Enter "
+            "→ Tab speichert + nächste Zelle. Esc verwirft. Änderungen "
+            "werden auf 'Übernehmen'-Klick persistiert + im Audit-Log."
+        )
+
+        # Palette-Dropdown-Werte
+        pal_options = ["—"] + sorted({
+            f"{k.get('name', '') or '—'} · {k['L_mm']}×{k['B_mm']}"
+            for k in kat_map.values()
+        })
+
+        def _pal_label(eid: str) -> str:
+            if eid and eid in kat_map:
+                k = kat_map[eid]
+                return (f"{k.get('name', '') or '—'} · "
+                         f"{k['L_mm']}×{k['B_mm']}")
+            return "—"
+
         rows = []
         for e in eintraege:
             ang = e.get("angeforderte_palette", {}) or {}
-            pal_zug = ""
-            pal_id = e.get("zugewiesene_palette_id")
-            if pal_id and pal_id in kat_map:
-                pkat = kat_map[pal_id]
-                pal_zug = f"{pkat['L_mm']}×{pkat['B_mm']}"
             bestellung_lbl = ""
             bid = e.get("verlinkte_bestellung_id")
             if bid and bid in proc_map:
                 bestellung_lbl = proc_map[bid].get("bst_nummer", bid[:8])
-            icon, label = auftraege_modul.STATUS_BADGE.get(
-                e.get("status", "offen"), ("?", "?"))
             rows.append({
-                "id": e["id"],
+                "_id": e["id"],
                 "AW": e.get("aw_nummer", ""),
                 "Kunde": e.get("kunde", ""),
                 "ArtikelNr": e.get("artikel_nummer", ""),
                 "Menge": int(e.get("menge", 0)),
-                "Angef. Maß": (f"{ang.get('l', 0)}×{ang.get('b', 0)}"
-                                if ang.get("l") else "—"),
-                "Zugew. Palette": pal_zug or "—",
-                "Bestelldatum": e.get("bestelldatum", "") or "—",
-                "Verbrauchsdatum": e.get("verbrauchsdatum", "") or "—",
+                "Angef. L": int(ang.get("l", 0)),
+                "Angef. B": int(ang.get("b", 0)),
+                "Palette": _pal_label(e.get("zugewiesene_palette_id")),
+                "Bestelldatum": e.get("bestelldatum", ""),
+                "Verbrauchsdatum": e.get("verbrauchsdatum", ""),
+                "Status": e.get("status", "offen"),
+                "Bemerkung": e.get("bemerkung", ""),
                 "Bestellung": bestellung_lbl or "—",
-                "Status": f"{icon} {label}",
-                "Manuell": ("✎" if e.get("status_manuell_gesetzt")
-                             else ""),
                 "Quelle": e.get("quelle", "manuell"),
             })
-        df = pd.DataFrame(rows)
-        st.dataframe(df.drop(columns=["id"]),
-                      use_container_width=True, hide_index=True,
-                      column_config={
-                          "Menge": st.column_config.NumberColumn(format="%d"),
-                      })
+        df_orig = pd.DataFrame(rows)
+
+        df_edited = st.data_editor(
+            df_orig,
+            use_container_width=True,
+            hide_index=True,
+            num_rows="fixed",
+            disabled=["_id", "Bestellung", "Quelle"],
+            column_config={
+                "_id": None,  # versteckt
+                "AW": st.column_config.TextColumn(
+                    "AW", help="Auftragsnummer — Duplikate werden geblockt.",
+                    required=True),
+                "Kunde": st.column_config.TextColumn(
+                    "Kunde", help="Kundenname (Freitext)."),
+                "ArtikelNr": st.column_config.TextColumn(
+                    "ArtikelNr", required=True),
+                "Menge": st.column_config.NumberColumn(
+                    "Menge", min_value=1, format="%d",
+                    help="Muss > 0 sein."),
+                "Angef. L": st.column_config.NumberColumn(
+                    "L (mm)", min_value=0, format="%d"),
+                "Angef. B": st.column_config.NumberColumn(
+                    "B (mm)", min_value=0, format="%d"),
+                "Palette": st.column_config.SelectboxColumn(
+                    "Palette", options=pal_options,
+                    help="Zugewiesene Standardpalette aus Katalog."),
+                "Bestelldatum": st.column_config.TextColumn(
+                    "Bestelldatum", help="YYYY-MM-DD"),
+                "Verbrauchsdatum": st.column_config.TextColumn(
+                    "Verbrauchsdatum", help="YYYY-MM-DD"),
+                "Status": st.column_config.SelectboxColumn(
+                    "Status",
+                    options=["offen", "in_arbeit", "abgeschlossen",
+                              "storniert"],
+                    required=True),
+                "Bemerkung": st.column_config.TextColumn("Bemerkung"),
+                "Bestellung": st.column_config.TextColumn(
+                    "Bestellung", help="Read-only (Drawer für Verlinkung)."),
+                "Quelle": st.column_config.TextColumn(
+                    "Quelle", help="Read-only."),
+            },
+            key="auf_inline_grid",
+        )
+
+        # Diff erkennen
+        if "auf_inline_orig" not in st.session_state or \
+                st.session_state.get("auf_inline_orig_count") != len(rows):
+            st.session_state.auf_inline_orig = df_orig.copy()
+            st.session_state.auf_inline_orig_count = len(rows)
+
+        diffs = []
+        try:
+            for idx in range(len(df_edited)):
+                row_orig = df_orig.iloc[idx]
+                row_new = df_edited.iloc[idx]
+                eid = row_orig["_id"]
+                aenderungen = {}
+                for col in df_edited.columns:
+                    if col == "_id" or col in ("Bestellung", "Quelle"):
+                        continue
+                    alt, neu = row_orig[col], row_new[col]
+                    # Normalisierung
+                    if pd.isna(alt) and pd.isna(neu):
+                        continue
+                    if str(alt) != str(neu):
+                        aenderungen[col] = (alt, neu)
+                if aenderungen:
+                    diffs.append((eid, aenderungen))
+        except Exception:
+            diffs = []
+
+        # Visualisierung der ausstehenden Aenderungen
+        if diffs:
+            st.warning(
+                f"🟡 **{len(diffs)} Zeile(n) mit ungespeicherten "
+                f"Änderungen.** Status-Wechsel benötigt einen Grund unten.",
+                icon="✎",
+            )
+            with st.expander(f"📋 Geplante Änderungen ({len(diffs)})"):
+                for eid, aend in diffs:
+                    e_orig = next(e for e in eintraege if e["id"] == eid)
+                    st.markdown(
+                        f"**{e_orig['aw_nummer']}** ({e_orig.get('kunde', '—')})"
+                    )
+                    for col, (alt, neu) in aend.items():
+                        st.caption(f"  · {col}: `{alt}` → `{neu}`")
+
+            sg1, sg2 = st.columns([3, 1])
+            with sg1:
+                status_grund = st.text_input(
+                    "Status-Grund (nur falls Status geändert wurde)",
+                    value="", key="auf_inline_grund",
+                    help="Bei Status-Wechsel Pflicht.",
+                )
+            with sg2:
+                if st.button("✓ Übernehmen", type="primary",
+                                use_container_width=True,
+                                key="auf_inline_save"):
+                    count_ok, count_err = 0, 0
+                    err_msgs = []
+                    pal_label_to_id = {
+                        _pal_label(k["id"]): k["id"] for k in kat_map.values()
+                    }
+                    for eid, aend in diffs:
+                        e_orig = next(e for e in eintraege if e["id"] == eid)
+                        # AW-Duplikat-Check zuerst
+                        if "AW" in aend:
+                            _, neu_aw = aend["AW"]
+                            neu_aw = str(neu_aw or "").strip()
+                            anderer = auftraege_modul.finde_per_aw(neu_aw)
+                            if anderer and anderer["id"] != eid:
+                                err_msgs.append(
+                                    f"AW '{neu_aw}': bereits vergeben."
+                                )
+                                count_err += 1
+                                continue
+                        # Validierung Menge > 0
+                        if "Menge" in aend:
+                            _, neu_m = aend["Menge"]
+                            if int(neu_m or 0) <= 0:
+                                err_msgs.append(
+                                    f"{e_orig['aw_nummer']}: Menge muss > 0 sein."
+                                )
+                                count_err += 1
+                                continue
+                        # Validierung Bestell-/Verbrauchsdatum
+                        bd_neu = (aend.get("Bestelldatum") or
+                                   (e_orig.get("bestelldatum"),))[1] \
+                                  if "Bestelldatum" in aend \
+                                  else e_orig.get("bestelldatum", "")
+                        vbd_neu = (aend.get("Verbrauchsdatum") or
+                                    (e_orig.get("verbrauchsdatum"),))[1] \
+                                   if "Verbrauchsdatum" in aend \
+                                   else e_orig.get("verbrauchsdatum", "")
+                        if bd_neu and vbd_neu and vbd_neu < bd_neu:
+                            # Warnung, nicht blocken
+                            err_msgs.append(
+                                f"{e_orig['aw_nummer']}: Verbrauchsdatum "
+                                f"< Bestelldatum (gespeichert, aber prüfen)."
+                            )
+                        # Status separat (Grund-Pflicht)
+                        if "Status" in aend:
+                            _, neu_status = aend["Status"]
+                            if not status_grund.strip():
+                                err_msgs.append(
+                                    f"{e_orig['aw_nummer']}: Status-Wechsel "
+                                    f"benötigt Grund."
+                                )
+                                count_err += 1
+                                continue
+                            r_st = auftraege_modul.setze_status(
+                                eid, neu_status, grund=status_grund,
+                                manuell=True)
+                            if not r_st["ok"]:
+                                err_msgs.append(
+                                    f"{e_orig['aw_nummer']}: {r_st['fehler']}"
+                                )
+                                count_err += 1
+                                continue
+                        # Andere Felder via update_auftrag
+                        felder_map = {}
+                        if "AW" in aend:
+                            felder_map["aw_nummer"] = str(aend["AW"][1] or "").strip()
+                        if "Kunde" in aend:
+                            felder_map["kunde"] = str(aend["Kunde"][1] or "")
+                        if "ArtikelNr" in aend:
+                            felder_map["artikel_nummer"] = str(aend["ArtikelNr"][1] or "")
+                        if "Menge" in aend:
+                            felder_map["menge"] = int(aend["Menge"][1] or 0)
+                        if "Angef. L" in aend or "Angef. B" in aend:
+                            ang_orig = e_orig.get("angeforderte_palette", {}) or {}
+                            felder_map["angeforderte_palette"] = {
+                                "l": int(aend["Angef. L"][1]
+                                          if "Angef. L" in aend
+                                          else ang_orig.get("l", 0) or 0),
+                                "b": int(aend["Angef. B"][1]
+                                          if "Angef. B" in aend
+                                          else ang_orig.get("b", 0) or 0),
+                                "h": int(ang_orig.get("h", 0) or 0),
+                            }
+                        if "Palette" in aend:
+                            felder_map["zugewiesene_palette_id"] = \
+                                pal_label_to_id.get(aend["Palette"][1])
+                        if "Bestelldatum" in aend:
+                            felder_map["bestelldatum"] = str(aend["Bestelldatum"][1] or "")
+                        if "Verbrauchsdatum" in aend:
+                            felder_map["verbrauchsdatum"] = str(aend["Verbrauchsdatum"][1] or "")
+                        if "Bemerkung" in aend:
+                            felder_map["bemerkung"] = str(aend["Bemerkung"][1] or "")
+                        if felder_map:
+                            r = auftraege_modul.update_auftrag(eid, **felder_map)
+                            if not r["ok"]:
+                                err_msgs.append(
+                                    f"{e_orig['aw_nummer']}: {r['fehler']}"
+                                )
+                                count_err += 1
+                                continue
+                            # Audit-Log pro Feld
+                            for col, (alt, neu) in aend.items():
+                                if col == "Status":
+                                    continue
+                                audit_modul.log_edit(
+                                    entitaet="auftrag",
+                                    entitaet_id=eid,
+                                    feld=col, alt=alt, neu=neu,
+                                    bemerkung="Inline-Edit",
+                                )
+                            count_ok += 1
+                    if count_ok:
+                        st.success(f"✓ {count_ok} Zeile(n) gespeichert.")
+                    if err_msgs:
+                        for m in err_msgs:
+                            st.error(m)
+                    st.rerun()
         # Aktionen pro Eintrag
         sel_idx = st.selectbox(
             "Auftrag wählen", options=range(len(eintraege)),

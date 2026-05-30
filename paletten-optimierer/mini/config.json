@@ -1,0 +1,11 @@
+{
+  "edition": "basic",
+  "enabled_tabs": [
+    "Dashboard",
+    "Datenimport",
+    "Optimierung",
+    "Ergebnisse",
+    "Katalog",
+    "Stammdaten 2"
+  ]
+}

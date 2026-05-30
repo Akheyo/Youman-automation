@@ -183,6 +183,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_auftraege.py
 
+      - name: Pflicht-Test Edition-Feature-Flag (Basic/Full)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_edition.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |
