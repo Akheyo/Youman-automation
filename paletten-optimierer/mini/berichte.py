@@ -966,3 +966,156 @@ def preisentwicklung_pdf(zeitreihe: dict[str, list[dict]]) -> bytes:
         pdf.ln(3)
     return bytes(pdf.output())
 
+
+
+# ---------------------------------------------------------------------------
+# Bericht 8: Palette → Artikel (welche Artikel auf welcher Palette)
+# ---------------------------------------------------------------------------
+def pdf_palette_artikel(ergebnis: dict, datei_name: str = "") -> bytes:
+    """Pro Standard-/Sonder-Palette eine Sektion mit der Artikel-Liste,
+    die ihr zugeordnet ist. Kombi-Zuordnungen + Sonder werden separat
+    gruppiert."""
+    pdf = YoumanPDF("Palette → Artikel Zuordnung")
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.set_font("Helvetica", "", 10)
+    if datei_name:
+        pdf.cell(0, 5, _latin1(f"Quelldatei: {datei_name}"), ln=True)
+    pdf.cell(0, 5,
+              _latin1(f"Erzeugt: {datetime.now().strftime('%d.%m.%Y %H:%M')}"),
+              ln=True)
+    n_zg = len(ergebnis.get("zuordnung", []))
+    pdf.cell(0, 5, _latin1(f"Zuordnungen gesamt: {n_zg}"), ln=True)
+    pdf.ln(3)
+
+    # Gruppen nach (typ, ziel) bauen — analog _render_zuord_table
+    from collections import defaultdict
+    gruppen: dict[tuple, list[dict]] = defaultdict(list)
+    for z in ergebnis.get("zuordnung", []):
+        typ = z.get("typ", "—")
+        ziel = z.get("ziel", "—")
+        gruppen[(typ, ziel)].append(z)
+
+    # Sortierung: Standard zuerst, dann Kombi, dann Sonder, dann Rest
+    typ_rang = {"Standard": 0, "Kombi-Stapel": 1, "Kombi-Heterogen": 2,
+                 "Sonder": 3, "Nicht zuordenbar": 9}
+    gruppen_sortiert = sorted(
+        gruppen.items(),
+        key=lambda kv: (typ_rang.get(kv[0][0], 5), kv[0][1]),
+    )
+
+    for (typ, ziel), zeilen in gruppen_sortiert:
+        if pdf.get_y() > 240:
+            pdf.add_page()
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.set_text_color(15, 31, 61)
+        sum_menge = sum(int(z.get("menge", 0)) for z in zeilen)
+        pdf.cell(0, 7,
+                  _latin1(f"{typ} · {ziel}  "
+                           f"({len(zeilen)} Artikel · {sum_menge} Paletten)"),
+                  ln=True)
+        pdf.set_text_color(0, 0, 0)
+
+        rows = []
+        for z in zeilen:
+            rows.append([
+                (z.get("auftrag", "") or "—")[:18],
+                (z.get("name", "") or "—")[:25],
+                (z.get("artikelnummer", "") or "—")[:15],
+                f"{int(z.get('L', 0))}x{int(z.get('B', 0))}",
+                str(int(z.get("menge", 0))),
+                (z.get("verbrauchsdatum", "") or "—")[:12],
+            ])
+        _table(pdf,
+                ["AW", "Kunde", "Artikel", "Artikelmaß", "Menge", "VBD"],
+                rows, [27, 38, 25, 26, 18, 28])
+        pdf.ln(4)
+
+    return bytes(pdf.output())
+
+
+# ---------------------------------------------------------------------------
+# Bericht 9: Auftragsnummer → Palette (pro AW Menge + Größe)
+# ---------------------------------------------------------------------------
+def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
+    """Pro Auftragsnummer (AW) Aufstellung der zugeordneten Paletten:
+    Größe, Menge, Bezeichnung."""
+    pdf = YoumanPDF("Auftrag → Paletten Aufstellung")
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.set_font("Helvetica", "", 10)
+    if datei_name:
+        pdf.cell(0, 5, _latin1(f"Quelldatei: {datei_name}"), ln=True)
+    pdf.cell(0, 5,
+              _latin1(f"Erzeugt: {datetime.now().strftime('%d.%m.%Y %H:%M')}"),
+              ln=True)
+    pdf.ln(2)
+
+    # Gruppieren nach AW
+    from collections import defaultdict
+    pro_aw: dict[str, list[dict]] = defaultdict(list)
+    for z in ergebnis.get("zuordnung", []):
+        aw = (z.get("auftrag", "") or "—").strip()
+        pro_aw[aw].append(z)
+
+    # Sortiert
+    pro_aw_sorted = sorted(pro_aw.items(), key=lambda kv: kv[0])
+    pdf.cell(0, 5,
+              _latin1(f"Auftragsnummern (AWs) gesamt: {len(pro_aw_sorted)}"),
+              ln=True)
+    pdf.ln(3)
+
+    # Summary-Tabelle: AW | Kunde | #Zuord | Σ Paletten
+    summary_rows = []
+    for aw, zeilen in pro_aw_sorted:
+        kunde = (zeilen[0].get("name", "") or "—")[:25]
+        sum_menge = sum(int(z.get("menge", 0)) for z in zeilen)
+        summary_rows.append([
+            aw[:18],
+            kunde,
+            str(len(zeilen)),
+            str(sum_menge),
+        ])
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_text_color(15, 31, 61)
+    pdf.cell(0, 6, _latin1("Übersicht"), ln=True)
+    pdf.set_text_color(0, 0, 0)
+    _table(pdf, ["AW", "Kunde", "Zuord.", "Σ Paletten"],
+            summary_rows, [40, 70, 25, 30])
+    pdf.ln(5)
+
+    # Detail pro AW
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_text_color(15, 31, 61)
+    pdf.cell(0, 6, _latin1("Detail pro Auftrag"), ln=True)
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(2)
+
+    for aw, zeilen in pro_aw_sorted:
+        if pdf.get_y() > 245:
+            pdf.add_page()
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.set_text_color(15, 31, 61)
+        kunde = zeilen[0].get("name", "") or "—"
+        sum_menge = sum(int(z.get("menge", 0)) for z in zeilen)
+        pdf.cell(0, 6,
+                  _latin1(f"AW {aw}  ·  {kunde}  ·  Σ {sum_menge} Paletten"),
+                  ln=True)
+        pdf.set_text_color(0, 0, 0)
+        rows = []
+        for z in zeilen:
+            rows.append([
+                (z.get("artikelnummer", "") or "—")[:15],
+                f"{int(z.get('L', 0))}x{int(z.get('B', 0))}",
+                z.get("ziel", "—")[:22],
+                z.get("typ", "")[:18],
+                str(int(z.get("menge", 0))),
+                (z.get("verbrauchsdatum", "") or "—")[:12],
+            ])
+        _table(pdf,
+                ["Artikel", "Artikelmaß", "Ziel-Palette", "Typ",
+                  "Menge", "Verbrauchsdat."],
+                rows, [25, 24, 36, 30, 18, 30])
+        pdf.ln(4)
+
+    return bytes(pdf.output())

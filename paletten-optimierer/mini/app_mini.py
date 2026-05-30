@@ -1954,6 +1954,60 @@ def seite_ergebnisse() -> None:
         use_container_width=True,
     )
 
+    # === Zwei zusätzliche PDF-Exports (Spec: Palette→Artikel + AW→Palette) ===
+    st.markdown("**PDF-Exports**")
+    pc1, pc2 = st.columns(2)
+    with pc1:
+        if st.button("📄 PDF: Palette → Artikel",
+                       use_container_width=True, key="erg_pdf_pa",
+                       help="Pro Standard-/Sonder-Palette eine Sektion mit "
+                            "allen zugeordneten Artikeln."):
+            try:
+                daten = berichte_modul.pdf_palette_artikel(
+                    res, datei_name=st.session_state.get("datei_name", ""),
+                )
+                name = berichte_modul._dateiname("palette_artikel", "pdf")
+                arch = berichte_modul.archiv_speichern(
+                    "palette_artikel", name, daten,
+                    quell_lauf_id=st.session_state.get("ergebnis_id"),
+                )
+                st.session_state.erg_pdf_pa_daten = (name, daten,
+                                                       arch["size_kb"])
+            except Exception as exc:
+                st.error(f"Fehler: {exc}")
+        if "erg_pdf_pa_daten" in st.session_state:
+            name, daten, size_kb = st.session_state.erg_pdf_pa_daten
+            st.download_button(
+                f"📥 {name} ({size_kb} KB)",
+                data=daten, file_name=name, mime="application/pdf",
+                use_container_width=True, key="erg_pdf_pa_dl",
+            )
+    with pc2:
+        if st.button("📄 PDF: Auftrag → Paletten",
+                       use_container_width=True, key="erg_pdf_ap",
+                       help="Pro Auftragsnummer (AW): wie viele Paletten "
+                            "welcher Größe + Detail."):
+            try:
+                daten = berichte_modul.pdf_auftrag_palette(
+                    res, datei_name=st.session_state.get("datei_name", ""),
+                )
+                name = berichte_modul._dateiname("auftrag_paletten", "pdf")
+                arch = berichte_modul.archiv_speichern(
+                    "auftrag_paletten", name, daten,
+                    quell_lauf_id=st.session_state.get("ergebnis_id"),
+                )
+                st.session_state.erg_pdf_ap_daten = (name, daten,
+                                                       arch["size_kb"])
+            except Exception as exc:
+                st.error(f"Fehler: {exc}")
+        if "erg_pdf_ap_daten" in st.session_state:
+            name, daten, size_kb = st.session_state.erg_pdf_ap_daten
+            st.download_button(
+                f"📥 {name} ({size_kb} KB)",
+                data=daten, file_name=name, mime="application/pdf",
+                use_container_width=True, key="erg_pdf_ap_dl",
+            )
+
 
 def _run_vergleich() -> None:
     """Rechnet zwei Szenarien (mit/ohne Sonder) mit aktuellen Params."""

@@ -194,6 +194,36 @@ def test_g_latin1_umlaute():
     print(f"  Latin-1 + Replacements OK.")
 
 
+def test_i_pdf_palette_artikel():
+    """PDF gruppiert Zuordnungen nach (Typ, Ziel) und listet Artikel."""
+    erg = _ergebnis(n_zuord=5)
+    # 2 Sonder + 1 Kombi hinzufuegen
+    erg["zuordnung"].extend([
+        {"auftrag": "S-1", "name": "X", "artikelnummer": "S1",
+         "L": 1700, "B": 900, "menge": 4, "ziel": "950x1750",
+         "typ": "Sonder", "verbrauchsdatum": ""},
+        {"auftrag": "K-1", "name": "Y", "artikelnummer": "K1",
+         "L": 1500, "B": 700, "menge": 2, "ziel": "3x (800x500)",
+         "typ": "Kombi-Stapel", "verbrauchsdatum": ""},
+    ])
+    pdf = ber.pdf_palette_artikel(erg, datei_name="test.xlsx")
+    assert pdf.startswith(b"%PDF-")
+    print(f"  pdf_palette_artikel: {len(pdf)} bytes (3 Gruppen)")
+
+
+def test_j_pdf_auftrag_palette():
+    """PDF gruppiert Zuordnungen nach AW + Summary-Tabelle."""
+    erg = _ergebnis(n_zuord=4)
+    # Mehrere Zuordnungen mit gleicher AW
+    erg["zuordnung"][0]["auftrag"] = "AW-2026-001"
+    erg["zuordnung"][1]["auftrag"] = "AW-2026-001"
+    erg["zuordnung"][2]["auftrag"] = "AW-2026-002"
+    erg["zuordnung"][3]["auftrag"] = "AW-2026-003"
+    pdf = ber.pdf_auftrag_palette(erg, datei_name="test.xlsx")
+    assert pdf.startswith(b"%PDF-")
+    print(f"  pdf_auftrag_palette: {len(pdf)} bytes (3 AWs)")
+
+
 def test_h_dateinamen_konvention():
     """Spec §7: youman_mini_<typ>_<YYYYMMDD_HHMM>.<ext>"""
     name = ber._dateiname("optimierung", "pdf")
@@ -228,6 +258,8 @@ if __name__ == "__main__":
         test_d_bestandsbericht_filter,
         test_e_wirtschaftlichkeitsbericht_mit_chart,
         test_f_lieferanten_bestelldokument,
+        test_i_pdf_palette_artikel,
+        test_j_pdf_auftrag_palette,
         test_g_latin1_umlaute,
         test_h_dateinamen_konvention,
     ]
