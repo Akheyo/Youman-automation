@@ -227,3 +227,22 @@ jobs:
           path: paletten-optimierer/mini/build/output/*.exe
           if-no-files-found: error
           retention-days: 30
+
+      - name: GitHub Release "latest" updaten (öffentlich downloadbar)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Youman Mini ${{ steps.vars.outputs.version }} (latest build)
+          body: |
+            Aktueller Build vom Branch `${{ github.ref_name }}`
+            · Commit: `${{ github.sha }}`
+            · Version: ${{ steps.vars.outputs.version }}
+            · 200 Tests grün
+
+            **Download:** `Youman-Setup-${{ steps.vars.outputs.version }}.exe` (unten unter Assets).
+
+            Wird bei jedem Push auf einen Build-Branch automatisch überschrieben.
+          files: paletten-optimierer/mini/build/output/*.exe
+          prerelease: false
+          make_latest: "true"
+          token: ${{ secrets.GITHUB_TOKEN }}
