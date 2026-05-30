@@ -113,36 +113,44 @@ def test_c_excel_zuordnung_4_sheets():
 
 
 def test_d_bestandsbericht_filter():
+    # 'vollstaendig' bedeutet jetzt: EK Lieferant > 0 UND Selbstfertigung > 0
     eintraege = [
         {"name": "Euro", "L_mm": 1200, "B_mm": 800, "bestand": 50,
-         "einkaufspreis_eur": 14.0, "verkaufspreis_eur": 22.0,
+         "ek_lieferant_eur": 14.0,
+         "selbstfertigung_material_eur": 6.0,
+         "selbstfertigung_lohn_eur": 5.0,
          "typ": "standard"},
         {"name": "Leer", "L_mm": 1500, "B_mm": 1000, "bestand": 0,
-         "einkaufspreis_eur": 18.0, "verkaufspreis_eur": 28.0,
+         "ek_lieferant_eur": 18.0,
+         "selbstfertigung_material_eur": 8.0,
+         "selbstfertigung_lohn_eur": 6.0,
          "typ": "standard"},
         {"name": "EkFehlt", "L_mm": 2000, "B_mm": 600, "bestand": 10,
-         "einkaufspreis_eur": 0, "verkaufspreis_eur": 25.0,
+         "ek_lieferant_eur": 0,
+         "selbstfertigung_material_eur": 12.0,
+         "selbstfertigung_lohn_eur": 0,
          "typ": "sonder"},
     ]
     # Ohne Filter: 3 Eintraege
     pdf_a = ber.bestandsbericht_pdf(eintraege)
     assert pdf_a.startswith(b"%PDF-")
-    # Mit Bestand>0: nur 2
+    # Mit Bestand>0: nur 2 (Leer hat bestand=0)
     excel_b = ber.bestandsbericht_excel(eintraege, nur_bestand_positiv=True)
     import openpyxl
     wb = openpyxl.load_workbook(io.BytesIO(excel_b))
-    # Header + 2 Datenzeilen + 1 leere + SUMME-Zeile
     data_rows = [r for r in wb.active.iter_rows(min_row=2, values_only=True)
                   if r[0] and r[0] != "SUMME"]
     print(f"  nur_bestand_positiv: {len(data_rows)} Eintraege (von 3)")
     assert len(data_rows) == 2
-    # Mit nur_vollstaendig: nur 1 (EkFehlt raus, Leer auch bei Wert 0 ok)
+    # Mit nur_vollstaendig: Euro+Leer (beide EK Lief + Eigenfert > 0)
+    # EkFehlt hat ek_lieferant=0 → raus
     excel_c = ber.bestandsbericht_excel(eintraege, nur_vollstaendig=True)
     wb2 = openpyxl.load_workbook(io.BytesIO(excel_c))
     data_rows2 = [r for r in wb2.active.iter_rows(min_row=2, values_only=True)
                    if r[0] and r[0] != "SUMME"]
-    print(f"  nur_vollstaendig: {len(data_rows2)} Eintraege (Euro+Leer haben EK+VK)")
-    assert len(data_rows2) == 2  # Euro + Leer (beide EK+VK > 0)
+    print(f"  nur_vollstaendig: {len(data_rows2)} Eintraege "
+          f"(Euro+Leer haben EK Lief + Eigenfert > 0)")
+    assert len(data_rows2) == 2
 
 
 def test_e_wirtschaftlichkeitsbericht_mit_chart():

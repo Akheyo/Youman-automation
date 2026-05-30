@@ -476,23 +476,25 @@ def bestandsbericht_pdf(eintraege: list[dict],
     sum_wert = 0.0
     for e in eintraege:
         bestand = int(e.get("bestand", 0) or 0)
-        ek = float(e.get("einkaufspreis_eur", 0) or 0)
-        vk = float(e.get("verkaufspreis_eur", 0) or 0)
+        ek_lief = float(e.get("ek_lieferant_eur",
+                                  e.get("einkaufspreis_eur", 0)) or 0)
+        eigen = (float(e.get("selbstfertigung_material_eur", 0) or 0)
+                  + float(e.get("selbstfertigung_lohn_eur", 0) or 0))
         if nur_bestand_positiv and bestand <= 0:
             continue
-        if nur_vollstaendig and (ek <= 0 or vk <= 0):
+        if nur_vollstaendig and (ek_lief <= 0 or eigen <= 0):
             continue
-        marge = vk - ek
-        wert = bestand * ek
+        diff = ek_lief - eigen  # positiv = Eigenfertigung billiger
+        wert = bestand * ek_lief
         sum_bestand += bestand
         sum_wert += wert
         rows.append([
             e.get("name", "")[:18] or "-",
             f"{e.get('L_mm', 0)} x {e.get('B_mm', 0)}",
             str(bestand),
-            f"{ek:.2f}",
-            f"{vk:.2f}",
-            f"{marge:.2f}",
+            f"{ek_lief:.2f}",
+            f"{eigen:.2f}",
+            f"{diff:+.2f}",
             f"{wert:.2f}",
         ])
 
@@ -505,19 +507,21 @@ def bestandsbericht_pdf(eintraege: list[dict],
               ln=True)
     pdf.cell(0, 5, _latin1(f"Anzahl Typen: {len(rows)}"), ln=True)
     pdf.cell(0, 5, _latin1(f"Summe Bestand: {sum_bestand} Stk"), ln=True)
-    pdf.cell(0, 5, _latin1(f"Inventarwert (EK): {sum_wert:.2f} EUR"),
+    pdf.cell(0, 5,
+              _latin1(f"Inventarwert (EK Lieferant): {sum_wert:.2f} EUR"),
               ln=True)
     if nur_bestand_positiv or nur_vollstaendig:
         filter_text = []
         if nur_bestand_positiv:
             filter_text.append("Bestand > 0")
         if nur_vollstaendig:
-            filter_text.append("EK/VK vollstaendig")
+            filter_text.append("Bezugskosten vollstaendig")
         pdf.cell(0, 5, _latin1(f"Filter: {' & '.join(filter_text)}"), ln=True)
     pdf.ln(3)
     _table(pdf,
-            ["Name", "Masse", "Bestand", "EK", "VK", "Marge", "S-Wert"],
-            rows, [40, 28, 18, 18, 18, 18, 25])
+            ["Name", "Masse", "Bestand", "EK Lief.", "Eigenfert.",
+              "Delta", "S-Wert"],
+            rows, [40, 28, 18, 18, 22, 18, 22])
     return bytes(pdf.output())
 
 
@@ -531,7 +535,8 @@ def bestandsbericht_excel(eintraege: list[dict],
     ws.title = "Bestand"
     ws.append([
         "Name", "L (mm)", "B (mm)", "Bestand", "in Anlief.",
-        "EK", "VK", "Marge/Stk", "Inventarwert", "Typ",
+        "EK Lieferant", "Eigenfertigung", "Δ Lief-Eig",
+        "Inventarwert", "Typ",
     ])
     bold = Font(bold=True)
     fill = PatternFill("solid", fgColor="E0E0E0")
@@ -540,18 +545,21 @@ def bestandsbericht_excel(eintraege: list[dict],
     sum_b = 0; sum_w = 0.0
     for e in eintraege:
         bestand = int(e.get("bestand", 0) or 0)
-        ek = float(e.get("einkaufspreis_eur", 0) or 0)
-        vk = float(e.get("verkaufspreis_eur", 0) or 0)
+        ek_lief = float(e.get("ek_lieferant_eur",
+                                  e.get("einkaufspreis_eur", 0)) or 0)
+        eigen = (float(e.get("selbstfertigung_material_eur", 0) or 0)
+                  + float(e.get("selbstfertigung_lohn_eur", 0) or 0))
         if nur_bestand_positiv and bestand <= 0:
             continue
-        if nur_vollstaendig and (ek <= 0 or vk <= 0):
+        if nur_vollstaendig and (ek_lief <= 0 or eigen <= 0):
             continue
-        wert = bestand * ek
+        wert = bestand * ek_lief
         sum_b += bestand; sum_w += wert
         ws.append([
             e.get("name", ""), e.get("L_mm", 0), e.get("B_mm", 0),
             bestand, int(e.get("bestand_bestellt", 0) or 0),
-            ek, vk, vk - ek, wert, e.get("typ", "standard"),
+            ek_lief, eigen, ek_lief - eigen, wert,
+            e.get("typ", "standard"),
         ])
     # Aggregat
     n_last = ws.max_row + 2

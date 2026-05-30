@@ -59,20 +59,28 @@ def test_a_schema_erweitert():
 
 
 def test_b_vollstaendig_und_unvollstaendige():
-    """vollstaendig() braucht EK > 0 UND VK > 0."""
+    """vollstaendig() braucht EK Lieferant > 0 UND Selbstfertigung > 0."""
     _reset()
-    e_voll = kat.neuer_eintrag(1200, 800, 10.0, 20.0, name="V")
-    e_nur_ek = kat.neuer_eintrag(1500, 1000, 15.0, 0.0, name="EK")
-    e_nur_vk = kat.neuer_eintrag(2000, 600, 0.0, 25.0, name="VK")
+    e_voll = kat.neuer_eintrag(
+        1200, 800, 10.0, 0.0, name="V",
+        ek_lieferant_eur=10.0,
+        selbstfertigung_material_eur=4.0,
+        selbstfertigung_lohn_eur=3.0)
+    e_nur_ek = kat.neuer_eintrag(1500, 1000, 15.0, 0.0, name="nurEK",
+                                    ek_lieferant_eur=15.0)
+    e_nur_eigen = kat.neuer_eintrag(
+        2000, 600, 0.0, 0.0, name="nurEigen",
+        selbstfertigung_material_eur=8.0,
+        selbstfertigung_lohn_eur=4.0)
     e_leer = kat.neuer_eintrag(900, 700, 0.0, 0.0, name="leer")
     unvoll = kat.unvollstaendige()
     ids_unvoll = {e["id"] for e in unvoll}
     assert e_voll not in ids_unvoll
     assert e_nur_ek in ids_unvoll
-    assert e_nur_vk in ids_unvoll
+    assert e_nur_eigen in ids_unvoll
     assert e_leer in ids_unvoll
-    print(f"  vollstaendig: 1/4 vollstaendig, 3/4 unvollstaendig "
-          f"(EK-only, VK-only, leer)")
+    print(f"  vollstaendig: 1/4 vollstaendig (V), 3/4 unvollstaendig "
+          f"(nur-EK, nur-Eigen, leer)")
 
 
 def test_c_als_sonder_uebernehmen():
@@ -202,15 +210,19 @@ def test_j_bestand_nutzung_im_ergebnis():
 
 
 def test_k_csv_komma_trenner_und_komma_dezimal():
-    """CSV mit Komma-Trenner und/oder Komma-Dezimalkomma."""
+    """CSV mit Komma-Trenner. EK Lieferant + Selbstfertigung-Spalten."""
     _reset()
-    csv_de = ("name,laenge,breite,bestand,ek,vk\n"
-              "DE,1200,800,10,14.50,22.00\n")
+    csv_de = ("name,laenge,breite,bestand,ek_lieferant,"
+               "selbstfert_material,selbstfert_lohn\n"
+               "DE,1200,800,10,14.50,5.00,3.00\n")
     erg = kat.aus_csv(csv_de)
     assert erg["importiert"] == 1
     e = kat.alle()[0]
+    assert e["ek_lieferant_eur"] == 14.5
+    assert e["selbstfertigung_material_eur"] == 5.0
+    assert e["selbstfertigung_lohn_eur"] == 3.0
+    # Legacy-Spiegel: einkaufspreis_eur = ek_lieferant_eur
     assert e["einkaufspreis_eur"] == 14.5
-    assert e["verkaufspreis_eur"] == 22.0
     print(f"  CSV (Komma-Trenner): importiert={erg['importiert']}")
 
 

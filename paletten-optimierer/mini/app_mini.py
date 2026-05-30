@@ -316,8 +316,9 @@ step_indicator(aktiver_schritt())
 
 
 def _globale_banner() -> None:
-    """Globale Hinweise (Spec §5 + §13 + §14): X Paletten ohne EK/VK +
-    Y offene Bestellungen + Z offene Beschaffungen + Netto-Effekt."""
+    """Globale Hinweise: X Paletten ohne komplette Bezugskosten (EK Lief.
+    + Selbstfertigung) + Y offene Bestellungen + Z offene Beschaffungen
+    + Netto-Effekt."""
     try:
         unvoll = katalog_modul.unvollstaendige()
     except Exception:
@@ -341,7 +342,7 @@ def _globale_banner() -> None:
     if unvoll:
         n = len(unvoll)
         teile.append(
-            f'⚠️ <b>{n}</b> Palette{"n" if n != 1 else ""} ohne EK/VK'
+            f'⚠️ <b>{n}</b> Palette{"n" if n != 1 else ""} ohne komplette Bezugskosten'
         )
     if kritisch:
         n = len(kritisch)
@@ -873,7 +874,7 @@ def seite_einstellungen() -> None:
                  "(EK · Σ Menge der gedeckten Aufträge).",
         )
         p["w5"] = st.slider(
-            "w5 — Σ Marge-Bonus (VK − EK)", 0.0, 1.0,
+            "w5 — Σ Eigenfertigungs-Spar-Bonus (EK_Lief − Selbstfertigung)", 0.0, 1.0,
             float(p.get("w5", 0.0)), step=0.05, key="w5_in",
             help="Höher = Katalog-Maße mit hoher Marge werden bevorzugt.",
         )
@@ -995,12 +996,18 @@ def run_optimierung() -> None:
         except Exception:
             continue
         kat_masse.append((cs, cl))
-        ek = float(e.get("einkaufspreis_eur", 0) or 0)
-        vk = float(e.get("verkaufspreis_eur", 0) or 0)
+        # EK = EK Lieferant (Default-Beschaffungspreis)
+        ek = float(e.get("ek_lieferant_eur",
+                            e.get("einkaufspreis_eur", 0)) or 0)
+        eigen = (float(e.get("selbstfertigung_material_eur", 0) or 0)
+                  + float(e.get("selbstfertigung_lohn_eur", 0) or 0))
         if ek > 0:
             katalog_kosten[(cs, cl)] = ek
-        if vk > 0 and ek > 0:
-            katalog_marge[(cs, cl)] = vk - ek
+        # "Marge" semantisch: Sparpotenzial = EK_Lief − Eigenfertigung
+        # (positiv = Eigenfertigung billiger). Wird vom Kernel als w5-Bonus
+        # behandelt — höhere Einsparung = höherer Bonus.
+        if eigen > 0 and ek > 0:
+            katalog_marge[(cs, cl)] = ek - eigen
         # w3-Bonus = tatsaechliche Verbrauchshaufigkeit (Spec §7)
         vh = int(e.get("verbrauchshaeufigkeit", 0) or 0)
         if vh > 0:
@@ -1373,8 +1380,9 @@ def _dashboard_workflow(res: dict, katalog_set: set) -> None:
     for kand, menge in sorted(std_menge.items()):
         preise = katalog_modul.lookup_preise(kand[1], kand[0])
         bestand_aktuell = int(preise["bestand"]) if preise else 0
-        ek = float(preise["einkaufspreis_eur"]) if preise else 0.0
-        vk = float(preise["verkaufspreis_eur"]) if preise else 0.0
+        ek_lief = float(preise.get("ek_lieferant_eur",
+                                       preise.get("einkaufspreis_eur", 0))) if preise else 0.0
+        eigen = float(preise.get("selbstfertigung_gesamt_eur", 0)) if preise else 0.0
         diff = max(0, menge - bestand_aktuell)
         rows.append({
             "kand": kand,
@@ -1383,10 +1391,10 @@ def _dashboard_workflow(res: dict, katalog_set: set) -> None:
             "benoetigt": menge,
             "bestand": bestand_aktuell,
             "differenz": diff,
-            "ek_gesamt": diff * ek,
-            "vk_gesamt": menge * vk if vk > 0 else 0.0,
+            "ek_gesamt": diff * ek_lief,
+            "eigen_gesamt": menge * eigen if eigen > 0 else 0.0,
             "kat_id": preise["id"] if preise else None,
-            "vollstaendig": (preise is not None and ek > 0 and vk > 0),
+            "vollstaendig": (preise is not None and ek_lief > 0 and eigen > 0),
         })
     for kand, menge in sorted(sonder_menge.items()):
         preise = katalog_modul.lookup_preise(kand[1], kand[0])
@@ -1398,7 +1406,7 @@ def _dashboard_workflow(res: dict, katalog_set: set) -> None:
             "bestand": int(preise["bestand"]) if preise else 0,
             "differenz": menge - (int(preise["bestand"]) if preise else 0),
             "ek_gesamt": 0.0,
-            "vk_gesamt": 0.0,
+            "eigen_gesamt": 0.0,
             "kat_id": preise["id"] if preise else None,
             "vollstaendig": False,
         })
@@ -1424,7 +1432,7 @@ def _dashboard_workflow(res: dict, katalog_set: set) -> None:
             "Status": (
                 "✓ bestellt" if r["bestellt"]
                 else ("➕ übernommen" if r["uebernommen"]
-                      else ("⚠ EK/VK fehlt" if not r["vollstaendig"]
+                      else ("⚠ Bezugskosten fehlen" if not r["vollstaendig"]
                             else "offen"))
             ),
         }
@@ -1501,18 +1509,21 @@ def _dashboard_workflow(res: dict, katalog_set: set) -> None:
                     st.session_state.neue_sonder_uebernommen = uebernommen_set
                     st.success(
                         f"Neue Palettengröße {r['kand'][1]}×{r['kand'][0]} "
-                        f"angelegt. Bitte EK und VK im Bestand nachtragen."
+                        f"angelegt. Bitte EK Lieferant + Selbstfertigung im Katalog nachtragen."
                     )
                     st.rerun()
         elif r["typ"] == "Sonder" and r["kat_id"]:
             c3.caption("bereits im Katalog")
 
-        # Marge anzeigen wenn vorhanden
+        # Sparpotenzial bei Eigenfertigung anzeigen wenn vorhanden
         if r["vollstaendig"]:
-            marge = (r["vk_gesamt"] - r["benoetigt"]
-                      * float(katalog_modul.lookup_preise(r['kand'][1],
-                              r['kand'][0])['einkaufspreis_eur']))
-            c4.metric("Marge gesamt", f"{marge:.2f} €",
+            preise = katalog_modul.lookup_preise(r['kand'][1], r['kand'][0])
+            ek_lief = float(preise.get("ek_lieferant_eur",
+                                          preise.get("einkaufspreis_eur", 0)))
+            eigen = float(preise.get("selbstfertigung_gesamt_eur", 0))
+            sparpot = r["benoetigt"] * (ek_lief - eigen)
+            c4.metric("Δ Eigenfertigung", f"{sparpot:+.2f} €",
+                       help="Positiv = Eigenfertigung billiger als Lieferant.",
                        label_visibility="visible")
 
     # === Bestellung-Modal (Spec §7 — Pflichtfelder vor Bestand-Aenderung) ===
@@ -1720,34 +1731,37 @@ def seite_ergebnisse() -> None:
         for s, menge in std_mengen.items():
             preise = katalog_modul.lookup_preise(s[1], s[0])  # L=max, B=min
             if preise:
-                ek = preise["einkaufspreis_eur"] * menge
-                vk = preise["verkaufspreis_eur"] * menge
+                ek_lief = preise.get("ek_lieferant_eur",
+                                        preise["einkaufspreis_eur"]) * menge
+                eigen = preise.get("selbstfertigung_gesamt_eur", 0) * menge
                 wirt_zeilen.append({
                     "Standard (mm)": f"{s[1]} × {s[0]}",
                     "Paletten": menge,
-                    "Einkauf gesamt (€)": ek,
-                    "Verkauf gesamt (€)": vk,
-                    "Marge (€)": vk - ek,
+                    "Σ Lieferant (€)": ek_lief,
+                    "Σ Eigenfertigung (€)": eigen,
+                    "Δ (Spar/Mehr) (€)": ek_lief - eigen,
                 })
 
     if wirt_zeilen:
-        card_open(f"💰 Wirtschaftlichkeit (Katalog-Treffer)")
+        card_open(f"💰 Bezugskosten-Vergleich (Katalog-Treffer)")
         df_wirt = pd.DataFrame(wirt_zeilen)
-        summe_ek = df_wirt["Einkauf gesamt (€)"].sum()
-        summe_vk = df_wirt["Verkauf gesamt (€)"].sum()
-        summe_marge = summe_vk - summe_ek
+        summe_lief = df_wirt["Σ Lieferant (€)"].sum()
+        summe_eigen = df_wirt["Σ Eigenfertigung (€)"].sum()
+        summe_diff = summe_lief - summe_eigen
         c1, c2, c3 = st.columns(3)
-        c1.metric("Σ Einkauf", f"{summe_ek:,.2f} €".replace(",", "."))
-        c2.metric("Σ Verkauf", f"{summe_vk:,.2f} €".replace(",", "."))
-        c3.metric("Marge gesamt", f"{summe_marge:,.2f} €".replace(",", "."))
+        c1.metric("Σ Lieferant", f"{summe_lief:,.2f} €".replace(",", "."))
+        c2.metric("Σ Eigenfertigung", f"{summe_eigen:,.2f} €".replace(",", "."))
+        c3.metric("Δ Sparpotenzial",
+                   f"{summe_diff:,.2f} €".replace(",", "."),
+                   help="Positiv = Eigenfertigung wäre billiger.")
         st.dataframe(df_wirt, use_container_width=True, hide_index=True,
                      column_config={
                          "Paletten": st.column_config.NumberColumn(format="%d"),
-                         "Einkauf gesamt (€)": st.column_config.NumberColumn(format="%.2f €"),
-                         "Verkauf gesamt (€)": st.column_config.NumberColumn(format="%.2f €"),
-                         "Marge (€)": st.column_config.NumberColumn(format="%.2f €"),
+                         "Σ Lieferant (€)": st.column_config.NumberColumn(format="%.2f €"),
+                         "Σ Eigenfertigung (€)": st.column_config.NumberColumn(format="%.2f €"),
+                         "Δ (Spar/Mehr) (€)": st.column_config.NumberColumn(format="%+.2f €"),
                      })
-        st.caption("Nur Einzel-Standards mit Preisen im Katalog. "
+        st.caption("Nur Einzel-Standards mit Bezugskosten im Katalog. "
                    "Kombi und Sonder fehlen — Preise dort unbekannt.")
         card_close()
 
@@ -2112,7 +2126,7 @@ def seite_katalog() -> None:
     card_open(f"Palettenkatalog ({len(eintraege)} Eintr&auml;ge)")
     st.markdown(
         '<div style="font-size:13px;color:#475569;margin-bottom:8px;">'
-        'Bekannte Paletten-Maße mit Einkaufs- und Verkaufspreis. '
+        'Bekannte Paletten-Maße mit EK Lieferant + Selbstfertigungskosten. '
         'Der Optimierer <b>bevorzugt</b> diese Maße bei der Auswahl der '
         'Standards — er wählt sie aber NUR wenn es das Gesamt-Optimum '
         'nicht verschlechtert. Andere Maße bleiben weiterhin möglich.'
@@ -2161,30 +2175,48 @@ def seite_katalog() -> None:
                                        key="kat_new_hoehe",
                                        help="0 = nicht angegeben.")
         with c4:
-            n_ek = st.number_input("Einkaufspreis (€)", min_value=0.0,
+            n_ek = st.number_input("EK Lieferant (€)", min_value=0.0,
                                     value=0.0, step=0.50, format="%.2f",
-                                    key="kat_new_ek")
-        c5, c6, c7, c8 = st.columns([1, 1, 1, 2])
+                                    key="kat_new_ek",
+                                    help="Preis pro Stk beim externen Lieferanten.")
+        # Selbstfertigung statt Verkaufspreis (Spec §4)
+        c5, c6 = st.columns(2)
         with c5:
-            n_vk = st.number_input("Verkaufspreis (€)", min_value=0.0,
-                                    value=0.0, step=0.50, format="%.2f",
-                                    key="kat_new_vk")
+            n_sf_mat = st.number_input(
+                "Selbstfertigung Material (€)", min_value=0.0,
+                value=0.0, step=0.50, format="%.2f",
+                key="kat_new_sf_mat",
+                help="Materialkosten pro Stk bei Eigenfertigung.",
+            )
         with c6:
+            n_sf_lohn = st.number_input(
+                "Selbstfertigung Lohn (€)", min_value=0.0,
+                value=0.0, step=0.50, format="%.2f",
+                key="kat_new_sf_lohn",
+                help="Lohn + Maschinenkosten pro Stk bei Eigenfertigung.",
+            )
+        n_sf_gesamt = float(n_sf_mat + n_sf_lohn)
+        st.caption(
+            f"📐 Eigenfertigung gesamt: **{n_sf_gesamt:.2f} €/Stk** | "
+            f"EK Lieferant: **{n_ek:.2f} €/Stk** | "
+            f"Δ: **{(n_ek - n_sf_gesamt):+.2f} €/Stk** "
+            f"({'Eigenfertigung billiger' if n_sf_gesamt > 0 and n_sf_gesamt < n_ek else ('Lieferant billiger' if n_sf_gesamt > n_ek else '—')})"
+        )
+        c7, c8, c9 = st.columns([1, 1, 2])
+        with c7:
             n_best = st.number_input("Bestand (Stk)", min_value=0,
                                       max_value=100000, value=0, step=1,
                                       key="kat_new_best",
                                       help="Aktuelle Lagermenge in Stück.")
-        with c7:
+        with c8:
             n_meld = st.number_input("Meldebestand (Stk)", min_value=0,
                                       max_value=100000, value=0, step=1,
                                       key="kat_new_meld",
                                       help="Warnung wenn Bestand ≤ Wert.")
-        with c8:
+        with c9:
             n_notiz = st.text_input("Notiz (optional)", value="",
                                      key="kat_new_notiz")
-        # Validierung VK >= EK (Warnung, nicht hart)
-        if n_vk > 0 and n_ek > 0 and n_vk < n_ek:
-            st.warning("VK < EK — negative Marge. Wirklich speichern?")
+        # VK gibts nicht mehr — keine VK<EK-Warnung
 
         # §3 Duplikat-Check (Live, vor dem Klick)
         dup = (katalog_modul.finde_duplikat(int(n_L), int(n_B), int(n_hoehe))
@@ -2214,7 +2246,7 @@ def seite_katalog() -> None:
                 else:
                     katalog_modul.neuer_eintrag(
                         int(n_L), int(n_B),
-                        float(n_ek), float(n_vk),
+                        float(n_ek), 0.0,  # VK = 0 (durch Selbstfertigung ersetzt)
                         int(n_best), int(n_meld),
                         n_notiz, aktiv=True,
                         name=n_name,
@@ -2222,6 +2254,8 @@ def seite_katalog() -> None:
                         typ=n_typ,
                         quelle="manuell",
                         ek_lieferant_eur=float(n_ek),
+                        selbstfertigung_material_eur=float(n_sf_mat),
+                        selbstfertigung_lohn_eur=float(n_sf_lohn),
                     )
                     st.success(f"Eintrag "
                                 f"{int(max(n_L,n_B))}×{int(min(n_L,n_B))} "
@@ -2294,7 +2328,11 @@ def seite_katalog() -> None:
             "Bezug": e.get("bezug_modus", "lieferant"),
             "Empfehlung": katalog_modul.empfohlene_bezugskosten(e).get(
                 "empfehlung", "—")[:30],
-            "Verkauf (€)": e.get("verkaufspreis_eur", 0.0),
+            "Δ Lief-Eig (€)": (
+                float(e.get("ek_lieferant_eur",
+                              e.get("einkaufspreis_eur", 0)) or 0)
+                - float(e.get("selbstfertigung_gesamt_eur", 0) or 0)
+            ),
             "Bestand": int(e.get("bestand", 0)),
             "in Anlief.": int(e.get("bestand_bestellt", 0)),
             "Meldebestand": int(e.get("meldebestand", 0)),
@@ -2315,7 +2353,7 @@ def seite_katalog() -> None:
                  column_config={
                      "EK Lief. (€)":  st.column_config.NumberColumn(format="%.2f €"),
                      "Eigenfert. (€)": st.column_config.NumberColumn(format="%.2f €"),
-                     "Verkauf (€)":   st.column_config.NumberColumn(format="%.2f €"),
+                     "Δ Lief-Eig (€)": st.column_config.NumberColumn(format="%+.2f €"),
                      "Bestand":       st.column_config.NumberColumn(format="%d"),
                      "in Anlief.":    st.column_config.NumberColumn(
                          format="%d",
@@ -2333,8 +2371,8 @@ def seite_katalog() -> None:
         "Eintrag bearbeiten / löschen",
         options=range(len(eintraege)),
         format_func=lambda i: (f"{eintraege[i]['L_mm']}×{eintraege[i]['B_mm']} "
-                                f"({_fmt_eur(eintraege[i].get('einkaufspreis_eur', 0))} "
-                                f"→ {_fmt_eur(eintraege[i].get('verkaufspreis_eur', 0))})"),
+                                f"(Lief {_fmt_eur(eintraege[i].get('ek_lieferant_eur', eintraege[i].get('einkaufspreis_eur', 0)))} "
+                                f"/ Eigenfert {_fmt_eur(eintraege[i].get('selbstfertigung_gesamt_eur', 0))})"),
         key="kat_sel",
     )
     eintrag = eintraege[auswahl_idx]
@@ -2370,16 +2408,15 @@ def seite_katalog() -> None:
                                        step=5,
                                        key=f"kat_edit_hoehe_{eintrag['id']}")
         with c4:
-            e_ek = st.number_input("Einkaufspreis (€)", min_value=0.0,
-                                    value=float(eintrag.get("einkaufspreis_eur", 0.0)),
+            e_ek = st.number_input("EK Lieferant (€)", min_value=0.0,
+                                    value=float(eintrag.get(
+                                        "ek_lieferant_eur",
+                                        eintrag.get("einkaufspreis_eur", 0.0)
+                                    )),
                                     step=0.50, format="%.2f",
-                                    key=f"kat_edit_ek_{eintrag['id']}")
-        c5, c6, c7 = st.columns([1.2, 1, 1])
-        with c5:
-            e_vk = st.number_input("Verkaufspreis (€)", min_value=0.0,
-                                    value=float(eintrag.get("verkaufspreis_eur", 0.0)),
-                                    step=0.50, format="%.2f",
-                                    key=f"kat_edit_vk_{eintrag['id']}")
+                                    key=f"kat_edit_ek_{eintrag['id']}",
+                                    help="Preis pro Stk beim externen Lieferanten.")
+        c6, c7 = st.columns(2)
         with c6:
             e_best = st.number_input("Bestand (Stk)", min_value=-100000,
                                       max_value=100000,
@@ -2394,8 +2431,6 @@ def seite_katalog() -> None:
                                       step=1,
                                       key=f"kat_edit_meld_{eintrag['id']}",
                                       help="Warnung wenn Bestand ≤ diesem Wert.")
-        if e_vk > 0 and e_ek > 0 and e_vk < e_ek:
-            st.warning("VK < EK — negative Marge.")
         e_notiz = st.text_input("Notiz", value=eintrag.get("notiz", ""),
                                  key=f"kat_edit_notiz_{eintrag['id']}")
         e_aktiv = st.toggle("Aktiv (wird vom Optimierer berücksichtigt)",
@@ -2403,24 +2438,16 @@ def seite_katalog() -> None:
                              key=f"kat_edit_aktiv_{eintrag['id']}")
 
         # §4 Selbstfertigung + Bezug-Modus
-        st.markdown("**§4 Bezugs-Vergleich Lieferant vs. Selbstfertigung**")
-        sc1, sc2, sc3, sc4 = st.columns(4)
+        st.markdown("**Bezugs-Vergleich Lieferant vs. Selbstfertigung**")
+        sc1, sc2, sc4 = st.columns(3)
         with sc1:
-            e_ek_lief = st.number_input(
-                "EK Lieferant (€)", min_value=0.0, max_value=10000.0,
-                value=float(eintrag.get("ek_lieferant_eur",
-                                          eintrag.get("einkaufspreis_eur", 0)) or 0),
-                step=0.50, format="%.2f",
-                key=f"kat_eklief_{eintrag['id']}",
-            )
-        with sc2:
             e_mat = st.number_input(
                 "Eigenfert. Material (€)", min_value=0.0,
                 value=float(eintrag.get("selbstfertigung_material_eur", 0) or 0),
                 step=0.50, format="%.2f",
                 key=f"kat_mat_{eintrag['id']}",
             )
-        with sc3:
+        with sc2:
             e_lohn = st.number_input(
                 "Eigenfert. Lohn (€)", min_value=0.0,
                 value=float(eintrag.get("selbstfertigung_lohn_eur", 0) or 0),
@@ -2435,9 +2462,9 @@ def seite_katalog() -> None:
                        if eintrag.get("bezug_modus") in modi else 0,
                 key=f"kat_modus_{eintrag['id']}",
             )
-        # Live-Empfehlung
+        # Live-Empfehlung — nutzt das EK Lieferant-Feld vom oberen Block
         _preview = dict(eintrag)
-        _preview["ek_lieferant_eur"] = e_ek_lief
+        _preview["ek_lieferant_eur"] = e_ek
         _preview["selbstfertigung_material_eur"] = e_mat
         _preview["selbstfertigung_lohn_eur"] = e_lohn
         _preview["bezug_modus"] = e_modus
@@ -2495,11 +2522,11 @@ def seite_katalog() -> None:
                 L_mm=int(e_L), B_mm=int(e_B),
                 hoehe_mm=int(e_hoehe),
                 einkaufspreis_eur=float(e_ek),
-                verkaufspreis_eur=float(e_vk),
+                verkaufspreis_eur=0.0,  # ersetzt durch Selbstfertigung
                 bestand=int(max(0, e_best)),
                 meldebestand=int(e_meld),
                 notiz=e_notiz, aktiv=bool(e_aktiv),
-                ek_lieferant_eur=float(e_ek_lief),
+                ek_lieferant_eur=float(e_ek),
                 selbstfertigung_material_eur=float(e_mat),
                 selbstfertigung_lohn_eur=float(e_lohn),
                 selbstfertigung_gesamt_eur=float(e_mat + e_lohn),
@@ -4648,8 +4675,9 @@ def seite_kostenanalyse() -> None:
                         st.rerun()
     card_close()
 
-    # === §5: Marge-Auswertung (nur wenn EK/VK im Katalog) ===
-    card_open("💰 MARGE-AUSWERTUNG (letzte Optimierung)")
+    # === §5: Bezugskosten-Vergleich Lieferant vs. Selbstfertigung ===
+    card_open("💰 BEZUGSKOSTEN-VERGLEICH Lieferant vs. Eigenfertigung "
+              "(letzte Optimierung)")
     res_live = st.session_state.get("ergebnis")
     if not res_live:
         st.info(
@@ -4667,54 +4695,61 @@ def seite_kostenanalyse() -> None:
                                   max(int(a), int(b)))] += int(z.get("menge", 0))
                 except (ValueError, KeyError):
                     continue
-        marge_rows, fehlend = [], []
-        sum_ek = sum_vk = 0.0
+        diff_rows, fehlend = [], []
+        sum_lief = sum_eigen = 0.0
         for kand, menge in sorted(std_mengen.items()):
             preise = katalog_modul.lookup_preise(kand[1], kand[0])
-            if preise and preise["einkaufspreis_eur"] > 0 and preise["verkaufspreis_eur"] > 0:
-                ek = float(preise["einkaufspreis_eur"])
-                vk = float(preise["verkaufspreis_eur"])
-                marge_rows.append({
+            if preise and preise.get("ek_lieferant_eur", 0) > 0 \
+                    and preise.get("selbstfertigung_gesamt_eur", 0) > 0:
+                ek_l = float(preise["ek_lieferant_eur"])
+                eig = float(preise["selbstfertigung_gesamt_eur"])
+                diff = ek_l - eig  # positiv = Eigenfert. billiger
+                diff_rows.append({
                     "Standard": f"{kand[1]} × {kand[0]} mm",
                     "Stückzahl": menge,
-                    "Ø EK (€)": ek,
-                    "Ø VK (€)": vk,
-                    "Marge/Stk (€)": vk - ek,
-                    "Marge gesamt (€)": (vk - ek) * menge,
+                    "Ø EK Lieferant (€)": ek_l,
+                    "Ø Eigenfertigung (€)": eig,
+                    "Δ/Stk (€)": diff,
+                    "Δ gesamt (€)": diff * menge,
+                    "Empfehlung": ("Eigenfertigung" if diff > 0
+                                    else "Lieferant" if diff < 0
+                                    else "gleichauf"),
                 })
-                sum_ek += ek * menge
-                sum_vk += vk * menge
+                sum_lief += ek_l * menge
+                sum_eigen += eig * menge
             else:
                 fehlend.append(f"{kand[1]}×{kand[0]}")
         if fehlend:
             st.warning(
-                f"⚠️ Für {len(fehlend)} Standards fehlen Preise im Katalog "
+                f"⚠️ Für {len(fehlend)} Standards fehlen Bezugskosten "
+                f"(EK Lieferant ODER Selbstfertigung) im Katalog "
                 f"({', '.join(fehlend[:5])}{'…' if len(fehlend) > 5 else ''}) "
-                f"– Marge unvollständig. → **Im Katalog ergänzen**."
+                f"– Vergleich unvollständig. → **Im Katalog ergänzen**."
             )
-        if marge_rows:
-            df_m = pd.DataFrame(marge_rows)
-            sum_marge = sum_vk - sum_ek
-            avg_marge_stk = (sum_marge / sum(r["Stückzahl"] for r in marge_rows)
-                              if marge_rows else 0)
-            best = max(marge_rows, key=lambda r: r["Marge gesamt (€)"])
-            schlechtest = min(marge_rows, key=lambda r: r["Marge gesamt (€)"])
+        if diff_rows:
+            df_d = pd.DataFrame(diff_rows)
+            sum_diff = sum_lief - sum_eigen
+            avg_diff_stk = (sum_diff / sum(r["Stückzahl"] for r in diff_rows)
+                              if diff_rows else 0)
+            best = max(diff_rows, key=lambda r: r["Δ gesamt (€)"])
+            schlechtest = min(diff_rows, key=lambda r: r["Δ gesamt (€)"])
             mc1, mc2, mc3, mc4 = st.columns(4)
-            mc1.metric("Σ Marge", f"{sum_marge:,.2f} €".replace(",", "."))
-            mc2.metric("Ø Marge / Stk", f"{avg_marge_stk:.2f} €")
-            mc3.metric("Bester", best["Standard"],
-                         f"+{best['Marge gesamt (€)']:.0f} €",
-                         delta_color="normal")
-            mc4.metric("Schlechtester", schlechtest["Standard"],
-                         f"+{schlechtest['Marge gesamt (€)']:.0f} €",
-                         delta_color="normal")
-            st.dataframe(df_m, use_container_width=True, hide_index=True,
+            mc1.metric("Σ Sparpotenzial",
+                         f"{sum_diff:,.2f} €".replace(",", "."),
+                         help="Σ (EK Lieferant − Eigenfertigung) × Menge. "
+                              "Positiv = Eigenfertigung würde billiger sein.")
+            mc2.metric("Ø Δ / Stk", f"{avg_diff_stk:.2f} €")
+            mc3.metric("Höchste Einsparung", best["Standard"],
+                         f"{best['Δ gesamt (€)']:+.0f} €")
+            mc4.metric("Niedrigste / negativste", schlechtest["Standard"],
+                         f"{schlechtest['Δ gesamt (€)']:+.0f} €")
+            st.dataframe(df_d, use_container_width=True, hide_index=True,
                           column_config={
                               "Stückzahl": st.column_config.NumberColumn(format="%d"),
-                              "Ø EK (€)": st.column_config.NumberColumn(format="%.2f €"),
-                              "Ø VK (€)": st.column_config.NumberColumn(format="%.2f €"),
-                              "Marge/Stk (€)": st.column_config.NumberColumn(format="%.2f €"),
-                              "Marge gesamt (€)": st.column_config.NumberColumn(format="%.2f €"),
+                              "Ø EK Lieferant (€)": st.column_config.NumberColumn(format="%.2f €"),
+                              "Ø Eigenfertigung (€)": st.column_config.NumberColumn(format="%.2f €"),
+                              "Δ/Stk (€)": st.column_config.NumberColumn(format="%+.2f €"),
+                              "Δ gesamt (€)": st.column_config.NumberColumn(format="%+.2f €"),
                           })
         elif not fehlend:
             st.caption("Keine Standards mit Mengen im aktuellen Ergebnis.")
@@ -5703,7 +5738,8 @@ def seite_berichte() -> None:
     # === Bericht 3: Bestandsbericht ===
     with row2c1:
         card_open("📦 Bestandsbericht")
-        st.caption("Paletten + Bestand + EK/VK + Inventarwert. "
+        st.caption("Paletten + Bestand + EK Lieferant + Eigenfertigung "
+                    "+ Inventarwert. "
                     "Format umschaltbar.")
         b_format = st.radio("Format", ["PDF", "Excel"], horizontal=True,
                               key="ber_best_format")
@@ -5712,7 +5748,7 @@ def seite_berichte() -> None:
             nur_bestand = st.checkbox("nur Bestand > 0",
                                          key="ber_best_pos")
         with f2:
-            nur_voll = st.checkbox("nur EK/VK vollständig",
+            nur_voll = st.checkbox("nur Bezugskosten vollständig",
                                       key="ber_best_voll")
         if st.button("📦 Erzeugen", type="primary",
                         use_container_width=True, key="ber_best_gen"):

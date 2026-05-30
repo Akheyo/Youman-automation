@@ -1,5 +1,5 @@
 """Palettenkatalog — vom Nutzer gepflegte Paletten-Maße mit Bestand,
-EK/VK, Verbrauchshäufigkeit. Persistent im User-Profil.
+Bezugskosten, Verbrauchshäufigkeit. Persistent im User-Profil.
 
 Pfad:
   Windows:    %APPDATA%/PalettenMini/palettenkatalog.json
@@ -265,28 +265,41 @@ def aktive_masse() -> list[tuple[int, int]]:
 
 
 def vollstaendig(e: dict[str, Any]) -> bool:
-    """Spec §5: 'vollständig' = EK > 0 UND VK > 0."""
-    return (float(e.get("einkaufspreis_eur", 0) or 0) > 0
-            and float(e.get("verkaufspreis_eur", 0) or 0) > 0)
+    """'vollständig' = EK Lieferant > 0 UND Selbstfertigung (Material+Lohn)
+    > 0 — d.h. beide Bezugswege sind gepflegt und können verglichen werden."""
+    ek_lief = float(e.get("ek_lieferant_eur",
+                              e.get("einkaufspreis_eur", 0)) or 0)
+    eigen = (float(e.get("selbstfertigung_material_eur", 0) or 0)
+              + float(e.get("selbstfertigung_lohn_eur", 0) or 0))
+    return ek_lief > 0 and eigen > 0
 
 
 def unvollstaendige() -> list[dict[str, Any]]:
-    """Aktive Eintraege ohne EK oder VK — fuer Banner '§5'."""
+    """Aktive Eintraege ohne komplette Bezugskosten — fuer Banner."""
     return [e for e in _read_raw()
             if e.get("aktiv", True) and not vollstaendig(e)]
 
 
 def lookup_preise(L: int, B: int) -> dict | None:
-    """Liefert Preise + Bestand + ID fuer ein Maß (kanonisch matchend)."""
+    """Liefert Preise + Bestand + ID fuer ein Maß (kanonisch matchend).
+    'verkaufspreis_eur' enthält jetzt die Selbstfertigungs-Gesamtkosten
+    (Material+Lohn) — VK wurde durch Selbstfertigung ersetzt."""
     cs_q, cl_q = min(L, B), max(L, B)
     for e in _read_raw():
         if not e.get("aktiv", True):
             continue
         cs, cl = min(e["L_mm"], e["B_mm"]), max(e["L_mm"], e["B_mm"])
         if cs == cs_q and cl == cl_q:
+            ek_lief = float(e.get("ek_lieferant_eur",
+                                      e.get("einkaufspreis_eur", 0)) or 0)
+            eigen = (float(e.get("selbstfertigung_material_eur", 0) or 0)
+                      + float(e.get("selbstfertigung_lohn_eur", 0) or 0))
             return {
-                "einkaufspreis_eur": float(e.get("einkaufspreis_eur", 0.0)),
-                "verkaufspreis_eur": float(e.get("verkaufspreis_eur", 0.0)),
+                "einkaufspreis_eur": ek_lief,
+                "ek_lieferant_eur": ek_lief,
+                "selbstfertigung_gesamt_eur": eigen,
+                # Legacy: verkaufspreis_eur enthält jetzt Selbstfertigung
+                "verkaufspreis_eur": eigen,
                 "bestand": int(e.get("bestand", 0)),
                 "verbrauchshaeufigkeit": int(e.get("verbrauchshaeufigkeit", 0)),
                 "name": e.get("name", ""),
@@ -360,17 +373,22 @@ def leere_katalog() -> int:
 # CSV-Import/Export (Spec §5)
 # ---------------------------------------------------------------------------
 CSV_SPALTEN = ("name", "laenge", "breite", "hoehe",
-               "bestand", "meldebestand", "ek", "vk",
+               "bestand", "meldebestand", "ek_lieferant",
+               "selbstfert_material", "selbstfert_lohn",
                "typ", "notiz")
 
 
 def nach_csv() -> str:
     """Exportiert alle Eintraege als CSV-String (UTF-8, Semikolon).
-    Spalten: name;laenge;breite;hoehe;bestand;meldebestand;ek;vk;typ;notiz"""
+    Spalten: name;laenge;breite;hoehe;bestand;meldebestand;
+             ek_lieferant;selbstfert_material;selbstfert_lohn;typ;notiz
+    (VK wurde durch Selbstfertigungskosten ersetzt.)"""
     buf = io.StringIO()
     w = csv.writer(buf, delimiter=";", lineterminator="\n")
     w.writerow(CSV_SPALTEN)
     for e in _read_raw():
+        ek_lief = float(e.get("ek_lieferant_eur",
+                                 e.get("einkaufspreis_eur", 0)) or 0)
         w.writerow([
             e.get("name", ""),
             int(e.get("L_mm", 0)),
@@ -378,8 +396,9 @@ def nach_csv() -> str:
             int(e.get("hoehe_mm", 0)),
             int(e.get("bestand", 0)),
             int(e.get("meldebestand", 0)),
-            f"{float(e.get('einkaufspreis_eur', 0)):.2f}",
-            f"{float(e.get('verkaufspreis_eur', 0)):.2f}",
+            f"{ek_lief:.2f}",
+            f"{float(e.get('selbstfertigung_material_eur', 0)):.2f}",
+            f"{float(e.get('selbstfertigung_lohn_eur', 0)):.2f}",
             e.get("typ", "standard"),
             e.get("notiz", ""),
         ])
@@ -422,14 +441,22 @@ def aus_csv(text: str, ersetze_alles: bool = False) -> dict[str, Any]:
                 raise ValueError(f"Zeile {i}: L/B muss > 0 sein ({L}/{B})")
             hoehe = int(float((row.get("hoehe") or "0").replace(",", ".")))
             meld = int(float((row.get("meldebestand") or "0").replace(",", ".")))
-            ek = float((row.get("ek") or "0").replace(",", "."))
-            vk = float((row.get("vk") or "0").replace(",", "."))
+            # EK Lieferant: neuer Name 'ek_lieferant', Fallback 'ek'
+            ek_lief = float((row.get("ek_lieferant")
+                                or row.get("ek") or "0").replace(",", "."))
+            sf_mat = float((row.get("selbstfert_material")
+                                 or "0").replace(",", "."))
+            sf_lohn = float((row.get("selbstfert_lohn")
+                                 or "0").replace(",", "."))
             typ = (row.get("typ") or "standard").strip().lower()
             if typ not in _TYP_ERLAUBT:
                 typ = "standard"
             notiz = (row.get("notiz") or "").strip()
             neuer_eintrag(L, B,
-                          einkaufspreis=ek, verkaufspreis=vk,
+                          einkaufspreis=ek_lief, verkaufspreis=0.0,
+                          ek_lieferant_eur=ek_lief,
+                          selbstfertigung_material_eur=sf_mat,
+                          selbstfertigung_lohn_eur=sf_lohn,
                           bestand=bestand, meldebestand=meld,
                           notiz=notiz, name=name, hoehe_mm=hoehe,
                           typ=typ, quelle="manuell")
@@ -575,7 +602,7 @@ def als_sonder_uebernehmen(L: int, B: int, hoehe_mm: int = 0,
                             name: str = "") -> str:
     """Spec §6b: legt einen neuen Eintrag fuer eine Sonder-/Kombi-Größe
     aus der Optimierung an — typ='sonder', quelle='auto_aus_optimierung',
-    bestand=0, EK/VK leer (unvollstaendig). Liefert die id."""
+    bestand=0, Bezugskosten leer (unvollstaendig). Liefert die id."""
     L_k, B_k = _kanon(L, B)
     if not name:
         name = f"Sonder {L_k}×{B_k}"
@@ -583,7 +610,7 @@ def als_sonder_uebernehmen(L: int, B: int, hoehe_mm: int = 0,
         L_k, B_k,
         einkaufspreis=0.0, verkaufspreis=0.0,
         bestand=0, meldebestand=0,
-        notiz="Auto aus Optimierung — EK/VK nachtragen",
+        notiz="Auto aus Optimierung — EK Lieferant + Selbstfertigung nachtragen",
         name=name, hoehe_mm=hoehe_mm,
         typ="sonder", quelle="auto_aus_optimierung",
     )
