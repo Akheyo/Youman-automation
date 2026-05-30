@@ -24,6 +24,11 @@ try:
 except Exception:
     fpdf_datas, fpdf_binaries, fpdf_hidden = [], [], []
 
+try:
+    webview_datas, webview_binaries, webview_hidden = collect_all("webview")
+except Exception:
+    webview_datas, webview_binaries, webview_hidden = [], [], []
+
 streamlit_static = collect_data_files("streamlit", include_py_files=False)
 streamlit_runtime_static = collect_data_files("streamlit.runtime", include_py_files=False)
 
@@ -36,6 +41,10 @@ metadata = (
 )
 try:
     metadata += copy_metadata("fpdf2")
+except Exception:
+    pass
+try:
+    metadata += copy_metadata("pywebview")
 except Exception:
     pass
 
@@ -92,6 +101,9 @@ extra_hidden = [
     "streamlit.runtime.caching",
     "openpyxl.cell._writer",
     "pulp", "pulp.apis", "pulp.apis.coin_api",
+    # pywebview + Windows-EdgeChromium-Backend
+    "webview", "webview.platforms.winforms", "webview.platforms.edgechromium",
+    "clr_loader", "pythonnet",
 ]
 
 
@@ -100,14 +112,14 @@ a = Analysis(
     pathex=["..", "."],
     binaries=streamlit_binaries + pandas_binaries + openpyxl_binaries
              + pulp_binaries + pyarrow_binaries + numpy_binaries
-             + fpdf_binaries,
+             + fpdf_binaries + webview_binaries,
     datas=app_datas + metadata + streamlit_datas
           + streamlit_static + streamlit_runtime_static
           + pandas_datas + openpyxl_datas + pulp_datas
-          + pyarrow_datas + numpy_datas + fpdf_datas,
+          + pyarrow_datas + numpy_datas + fpdf_datas + webview_datas,
     hiddenimports=streamlit_hidden + pandas_hidden + openpyxl_hidden
                   + pulp_hidden + pyarrow_hidden + numpy_hidden
-                  + fpdf_hidden + extra_hidden,
+                  + fpdf_hidden + webview_hidden + extra_hidden,
     hookspath=[], hooksconfig={}, runtime_hooks=[],
     excludes=["matplotlib", "tkinter", "PyQt5", "PyQt6", "PySide2",
               "PySide6", "IPython", "jupyter", "notebook", "pytest", "sphinx"],

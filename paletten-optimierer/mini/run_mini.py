@@ -1,14 +1,27 @@
-"""Launcher für die gepackte Mini-EXE."""
+"""Launcher für die gepackte Mini-EXE.
+
+Startet Streamlit im Hintergrund-Thread und öffnet ein natives Desktop-
+Fenster via pywebview (WebView2 auf Windows). Kein Browser-Tab.
+
+Fallback: falls pywebview-Backend nicht verfügbar → öffnet System-
+Standard-Browser (Verhalten wie vorher), damit die App in jedem Fall
+nutzbar bleibt.
+"""
 from __future__ import annotations
 
 import os
 import socket
-import subprocess
 import sys
 import threading
 import time
-import webbrowser
 from pathlib import Path
+
+
+APP_TITEL = "Youman – Industriepaletten"
+FENSTER_BREITE = 1400
+FENSTER_HOEHE = 900
+FENSTER_MIN_BREITE = 1024
+FENSTER_MIN_HOEHE = 700
 
 
 def get_base_path() -> Path:
@@ -41,16 +54,75 @@ def warte_auf_port(port: int, timeout: float = 60.0) -> bool:
     return False
 
 
-def oeffne_browser_async(port: int) -> None:
-    def _run():
-        if not warte_auf_port(port, timeout=60.0):
-            return
-        url = f"http://localhost:{port}/"
-        try:
-            webbrowser.open(url)
-        except Exception:
-            pass
-    threading.Thread(target=_run, daemon=True).start()
+def _streamlit_starten(app_py: Path, port: int) -> None:
+    """Startet Streamlit headless. Blockiert (wird im Thread aufgerufen)."""
+    from streamlit.web import bootstrap
+    flag_options = {
+        "server.port": port,
+        "server.headless": True,
+        "server.address": "127.0.0.1",
+        "server.fileWatcherType": "none",
+        "browser.gatherUsageStats": False,
+        "global.developmentMode": False,
+    }
+    bootstrap.load_config_options(flag_options=flag_options)
+    bootstrap.run(str(app_py), is_hello=False, args=[], flag_options=flag_options)
+
+
+def _icon_pfad(base: Path) -> str | None:
+    """Sucht das Youman-Logo für das Fenster-Icon."""
+    kandidaten = [
+        base / "assets" / "youman_logo.png",
+        base.parent / "assets" / "youman_logo.png",
+        Path(__file__).resolve().parent / "assets" / "youman_logo.png",
+        Path(__file__).resolve().parent.parent / "assets" / "youman_logo.png",
+    ]
+    for p in kandidaten:
+        if p.exists():
+            return str(p)
+    return None
+
+
+def _starte_native_fenster(url: str, base: Path) -> bool:
+    """Öffnet ein natives Desktop-Fenster mit pywebview.
+    Liefert True bei Erfolg, False wenn pywebview/Backend fehlt."""
+    try:
+        import webview  # pywebview
+    except ImportError:
+        return False
+    try:
+        icon = _icon_pfad(base)
+        kwargs = {}
+        if icon:
+            # pywebview unterstützt 'icon' (Windows), fallback ignoriert es
+            kwargs["icon"] = icon
+        win = webview.create_window(
+            title=APP_TITEL,
+            url=url,
+            width=FENSTER_BREITE,
+            height=FENSTER_HOEHE,
+            min_size=(FENSTER_MIN_BREITE, FENSTER_MIN_HOEHE),
+            resizable=True,
+            confirm_close=False,
+            **kwargs,
+        )
+        # Auf Windows: native EdgeChromium (WebView2). Auf Linux: GTK/QT.
+        # Auf macOS: cocoa.
+        webview.start(gui=None, debug=False)
+        return True
+    except Exception as exc:
+        sys.stderr.write(f"pywebview-Fenster konnte nicht geöffnet werden: "
+                          f"{exc}\n")
+        return False
+
+
+def _fallback_browser(url: str) -> None:
+    """Öffnet System-Standard-Browser (Notfall-Fallback)."""
+    import webbrowser
+    try:
+        webbrowser.open(url)
+    except Exception:
+        sys.stderr.write(f"Bitte manuell öffnen: {url}\n")
 
 
 def main() -> int:
@@ -65,19 +137,29 @@ def main() -> int:
         return 2
 
     port = freier_port()
-    oeffne_browser_async(port)
+    url = f"http://127.0.0.1:{port}/"
 
-    from streamlit.web import bootstrap
-    flag_options = {
-        "server.port": port,
-        "server.headless": True,
-        "server.address": "127.0.0.1",
-        "server.fileWatcherType": "none",
-        "browser.gatherUsageStats": False,
-        "global.developmentMode": False,
-    }
-    bootstrap.load_config_options(flag_options=flag_options)
-    bootstrap.run(str(app_py), is_hello=False, args=[], flag_options=flag_options)
+    # Streamlit im Hintergrund-Thread starten
+    streamlit_thread = threading.Thread(
+        target=_streamlit_starten, args=(app_py, port), daemon=True,
+    )
+    streamlit_thread.start()
+
+    # Auf Server-Bereitschaft warten (max 60 s)
+    if not warte_auf_port(port, timeout=60.0):
+        sys.stderr.write("Streamlit ist nicht in 60 s gestartet.\n")
+        return 3
+
+    # Natives Fenster — wenn pywebview nicht klappt, Browser als Fallback
+    if not _starte_native_fenster(url, base):
+        sys.stderr.write("pywebview nicht verfügbar — Browser-Fallback.\n")
+        _fallback_browser(url)
+        # Hauptthread am Leben halten damit Streamlit weiter laufen kann
+        try:
+            streamlit_thread.join()
+        except KeyboardInterrupt:
+            pass
+
     return 0
 
 
