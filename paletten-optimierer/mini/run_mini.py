@@ -125,6 +125,16 @@ def _streamlit_inline(app_py: Path, port: int, base: Path) -> None:
         sys.path.insert(0, str(base))
         os.chdir(str(base))
         from streamlit.web import bootstrap
+        # Streamlit registriert beim Start via signal.signal() einen
+        # SIGTERM-Handler — das funktioniert NUR im Haupt-Thread. Da der
+        # Bootstrap hier im Hintergrund-Thread laeuft, wuerde das mit
+        # "signal only works in main thread of the main interpreter"
+        # abstuerzen. Der Handler dient nur dem sauberen Herunterfahren
+        # und ist im eingebetteten Betrieb verzichtbar -> neutralisieren.
+        try:
+            bootstrap._set_up_signal_handler = lambda *a, **k: None  # type: ignore[attr-defined]
+        except Exception:
+            pass
         flag_options = {
             "server.port": port,
             "server.headless": True,
@@ -193,22 +203,21 @@ def _starte_native_fenster(url: str | None, base: Path,
         log(f"pywebview-Import fehlgeschlagen: {exc}")
         return False
     try:
-        icon = _icon_pfad(base)
-        kwargs = {}
-        if icon:
-            kwargs["icon"] = icon
+        # Hinweis: 'icon=' wird erst von neueren pywebview-Versionen
+        # unterstuetzt; die gebundelte Version kennt es nicht -> weglassen.
+        # Das Fenster-/Taskbar-Icon liefert ohnehin die EXE selbst.
         if url:
             webview.create_window(
                 title=APP_TITEL, url=url,
                 width=FENSTER_BREITE, height=FENSTER_HOEHE,
                 min_size=(FENSTER_MIN_BREITE, FENSTER_MIN_HOEHE),
-                resizable=True, confirm_close=False, **kwargs,
+                resizable=True, confirm_close=False,
             )
         else:
             webview.create_window(
                 title=APP_TITEL, html=html_inhalt or "Kein Inhalt.",
                 width=900, height=600,
-                resizable=True, **kwargs,
+                resizable=True,
             )
         webview.start(gui=None, debug=False)
         return True
