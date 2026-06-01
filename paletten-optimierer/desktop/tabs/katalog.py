@@ -5,9 +5,9 @@ from tkinter import ttk, messagebox
 
 import customtkinter as ctk
 
-from .. import theme as t
-from ..widgets import Card
-from ..state import get_state
+import theme as t
+from widgets import Card
+from state import get_state
 
 
 class KatalogTab(ctk.CTkFrame):
@@ -118,7 +118,7 @@ class KatalogTab(ctk.CTkFrame):
 
     def _refresh(self) -> None:
         try:
-            from .. import engines
+            import engines
             for i in self._tree.get_children():
                 self._tree.delete(i)
             for e in engines.katalog.alle():
@@ -146,7 +146,7 @@ class KatalogTab(ctk.CTkFrame):
 
     def _anlegen(self) -> None:
         try:
-            from .. import engines
+            import engines
             L = int(self._n_L.get() or 0)
             B = int(self._n_B.get() or 0)
             H = int(self._n_H.get() or 0) if self._n_H.get() else 0
@@ -191,7 +191,7 @@ class KatalogTab(ctk.CTkFrame):
                 f"{len(sel)} Eintrag/Einträge wirklich löschen?"):
             return
         try:
-            from .. import engines
+            import engines
             for eid in sel:
                 engines.katalog.loesche_eintrag(eid)
             self._refresh()

@@ -5,9 +5,9 @@ from tkinter import ttk, messagebox
 
 import customtkinter as ctk
 
-from .. import theme as t
-from ..widgets import Card, KpiCard
-from ..state import get_state
+import theme as t
+from widgets import Card, KpiCard
+from state import get_state
 
 
 class AuftraegeTab(ctk.CTkFrame):
@@ -121,7 +121,7 @@ class AuftraegeTab(ctk.CTkFrame):
 
     def _refresh(self) -> None:
         try:
-            from .. import engines
+            import engines
             # KPIs
             s = engines.auftraege.stats()
             self.k_offen.set_wert(str(s.get("offen", 0)))
@@ -151,7 +151,7 @@ class AuftraegeTab(ctk.CTkFrame):
 
     def _anlegen(self) -> None:
         try:
-            from .. import engines
+            import engines
             erg = engines.auftraege.neuer_auftrag(
                 aw_nummer=self._n_aw.get(),
                 kunde=self._n_kunde.get(),
@@ -179,7 +179,7 @@ class AuftraegeTab(ctk.CTkFrame):
                 f"{len(sel)} Auftrag/Aufträge wirklich löschen?"):
             return
         try:
-            from .. import engines
+            import engines
             for eid in sel:
                 engines.auftraege.loesche_auftrag(eid)
             self._refresh()

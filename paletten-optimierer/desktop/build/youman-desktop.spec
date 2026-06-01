@@ -43,15 +43,15 @@ import os as _os
 _status_quelle = "../../mini/selbsttest_status.json"
 _has_status = _os.path.exists(_status_quelle)
 
-# Eigene Module flach im Bundle ablegen
+# Eigene Module flach im Bundle ablegen — alle Imports sind absolut,
+# also kein Package-Layout noetig.
 desktop_datas = [
     # Desktop-App
-    ("../main.py", "."),
     ("../app_window.py", "."),
     ("../engines.py", "."),
     ("../state.py", "."),
     ("../theme.py", "."),
-    ("../__init__.py", "desktop"),
+    # tabs/ + widgets/ bleiben Packages mit __init__.py
     ("../tabs/__init__.py", "tabs"),
     ("../tabs/dashboard.py", "tabs"),
     ("../tabs/import_tab.py", "tabs"),

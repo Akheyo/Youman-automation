@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import customtkinter as ctk
 
-from .. import theme as t
-from ..widgets import KpiCard, Card
-from ..state import get_state
+import theme as t
+from widgets import KpiCard, Card
+from state import get_state
 
 
 class DashboardTab(ctk.CTkFrame):
@@ -94,7 +94,7 @@ class DashboardTab(ctk.CTkFrame):
     def on_show(self) -> None:
         """Live-Refresh KPIs + Liste."""
         try:
-            from .. import engines
+            import engines
             # Offene Auftraege
             auf_stats = engines.auftraege.stats()
             self.kpi_offen.set_wert(str(auf_stats.get("offen", 0)))

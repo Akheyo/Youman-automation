@@ -6,9 +6,9 @@ from tkinter import ttk
 
 import customtkinter as ctk
 
-from .. import theme as t
-from ..widgets import Card, KpiCard
-from ..state import get_state
+import theme as t
+from widgets import Card, KpiCard
+from state import get_state
 
 
 class ErgebnisseTab(ctk.CTkFrame):

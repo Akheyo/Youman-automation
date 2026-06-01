@@ -7,9 +7,9 @@ from tkinter import filedialog
 
 import customtkinter as ctk
 
-from .. import theme as t
-from ..widgets import Card
-from ..state import get_state
+import theme as t
+from widgets import Card
+from state import get_state
 
 
 class ImportTab(ctk.CTkFrame):
@@ -97,7 +97,7 @@ class ImportTab(ctk.CTkFrame):
         if not self._datei_pfad:
             return
         try:
-            from .. import engines
+            import engines
             with open(self._datei_pfad, "rb") as f:
                 roh = f.read()
             dat = engines.import_excel.importiere(io.BytesIO(roh))
@@ -113,7 +113,7 @@ class ImportTab(ctk.CTkFrame):
 
         # Verlauf-Eintrag
         try:
-            from .. import engines
+            import engines
             engines.import_verlauf.neuer_eintrag(
                 datei_pfad=str(self._datei_pfad), ergebnis=dat,
                 datei_bytes=roh,

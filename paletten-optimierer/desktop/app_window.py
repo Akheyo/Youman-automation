@@ -1,14 +1,4 @@
-"""Hauptfenster der Youman Desktop-App.
-
-Layout:
-  ┌──────────┬───────────────────────────────┐
-  │ Sidebar  │  Topbar (Logo + Build-Stempel)│
-  │ (Tabs)   ├───────────────────────────────┤
-  │          │                               │
-  │          │  Aktuelles Tab                │
-  │          │                               │
-  └──────────┴───────────────────────────────┘
-"""
+"""Hauptfenster der Youman Desktop-App."""
 from __future__ import annotations
 
 import base64
@@ -16,7 +6,7 @@ from pathlib import Path
 
 import customtkinter as ctk
 
-from . import theme as t
+import theme as t
 
 
 # Edition / Tab-Reihenfolge (gleiche Reihenfolge wie in Streamlit-App)
@@ -285,12 +275,12 @@ class YoumanApp(ctk.CTk):
     # ------------------------------------------------------------------
     def _build_tabs(self) -> None:
         # Lazy-Imports (Tabs ziehen ggf. ihre Engines mit)
-        from .tabs.dashboard import DashboardTab
-        from .tabs.import_tab import ImportTab
-        from .tabs.optimierung import OptimierungTab
-        from .tabs.ergebnisse import ErgebnisseTab
-        from .tabs.katalog import KatalogTab
-        from .tabs.auftraege import AuftraegeTab
+        from tabs.dashboard import DashboardTab
+        from tabs.import_tab import ImportTab
+        from tabs.optimierung import OptimierungTab
+        from tabs.ergebnisse import ErgebnisseTab
+        from tabs.katalog import KatalogTab
+        from tabs.auftraege import AuftraegeTab
 
         klassen = {
             "Dashboard":   DashboardTab,

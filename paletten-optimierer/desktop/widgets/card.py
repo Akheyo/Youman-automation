@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import customtkinter as ctk
 
-from .. import theme as t
+import theme as t
 
 
 class Card(ctk.CTkFrame):

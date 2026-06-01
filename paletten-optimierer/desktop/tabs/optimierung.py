@@ -5,9 +5,9 @@ import threading
 
 import customtkinter as ctk
 
-from .. import theme as t
-from ..widgets import Card
-from ..state import get_state
+import theme as t
+from widgets import Card
+from state import get_state
 
 
 class OptimierungTab(ctk.CTkFrame):
@@ -124,7 +124,7 @@ class OptimierungTab(ctk.CTkFrame):
             self.state.kombinieren = bool(self._sw_kombi.get())
             self.state.sonder_erlaubt = bool(self._sw_sonder.get())
 
-            from .. import engines
+            import engines
             orders = [
                 {"L": p["laenge"], "B": p["breite"], "menge": p["anzahl"],
                   "auftrag": p["auftrag"], "name": p["name"]}
