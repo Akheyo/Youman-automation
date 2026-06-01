@@ -132,6 +132,12 @@ def _streamlit_inline(app_py: Path, port: int, base: Path) -> None:
             "server.fileWatcherType": "none",
             "browser.gatherUsageStats": False,
             "global.developmentMode": False,
+            # Festes helles Theme — nicht dem OS-Dark-Mode folgen
+            "theme.base": "light",
+            "theme.primaryColor": "#2563eb",
+            "theme.backgroundColor": "#f5f6f8",
+            "theme.secondaryBackgroundColor": "#ffffff",
+            "theme.textColor": "#1f2937",
         }
         bootstrap.load_config_options(flag_options=flag_options)
         bootstrap.run(str(app_py), is_hello=False, args=[],

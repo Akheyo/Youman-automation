@@ -79,6 +79,7 @@ app_datas = [
     ("../auftraege.py", "."),
     ("../edition.py", "."),
     ("../config.json", "."),
+    ("../.streamlit/config.toml", ".streamlit"),
     ("../_render.py", "."),
     ("../_ui_chrome.py", "."),
     ("../_build_info.py", "."),

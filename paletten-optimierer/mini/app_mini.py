@@ -2644,24 +2644,30 @@ def seite_dashboard() -> None:
         kat_n = 0; gesamt_bestand = 0
 
     letzte_dat = "—"
-    letzte_std = "—"
+    letzte_std: object = "—"
+    letzte_son: object = "—"
     try:
         v = verlauf_alle()
         opt_v = [e for e in v if e.get("optimierung")]
         if opt_v:
             letzte = opt_v[0]
+            opt = letzte["optimierung"]
             letzte_dat = (letzte.get("datum", "") or "")[:10]
-            letzte_std = str(letzte["optimierung"].get("standards", "—"))
+            letzte_std = opt.get("standards", "—")
+            letzte_son = opt.get("sonder", "—")
     except Exception:
         pass
 
-    k1, k2, k3, k4 = st.columns(4)
+    k1, k2, k3, k4, k5 = st.columns(5)
     k1.metric("Offene Aufträge", offene)
-    k2.metric("Paletten im Katalog", kat_n)
-    k3.metric("Letzte Optimierung",
-                f"{letzte_std} Standards",
-                f"{letzte_dat}", delta_color="off")
-    k4.metric("Gesamtbestand", f"{gesamt_bestand} Stk")
+    k2.metric("Standardpaletten", letzte_std,
+              help="Anzahl Standardpaletten aus der letzten Optimierung.")
+    k3.metric("Sonderpaletten", letzte_son,
+              help="Anzahl Sonderpaletten aus der letzten Optimierung.")
+    k4.metric("Paletten im Katalog", kat_n)
+    k5.metric("Gesamtbestand", f"{gesamt_bestand} Stk")
+    if letzte_dat != "—":
+        st.caption(f"Letzte Optimierung: {letzte_dat}")
     card_close()
 
     # §4 Schnellzugriffs-Buttons

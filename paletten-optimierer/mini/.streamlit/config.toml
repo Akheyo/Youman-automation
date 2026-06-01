@@ -1,0 +1,12 @@
+[theme]
+# Festes helles Theme — folgt NICHT dem OS-/Browser-Dark-Mode.
+# Verhindert weiße, unsichtbare Schrift auf hellem App-Hintergrund.
+base = "light"
+primaryColor = "#2563eb"
+backgroundColor = "#f5f6f8"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#1f2937"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false

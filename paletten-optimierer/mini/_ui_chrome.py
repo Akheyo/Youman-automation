@@ -240,6 +240,38 @@ CSS = f"""
         color: #64748b; font-size: 13px;
     }}
     .disabled-feature .lock {{ font-size: 18px; margin-right: 6px; }}
+
+    /* --- Lesbarkeit erzwingen (gegen OS-/Browser-Dark-Mode) ----------
+       Alles im Hauptbereich bekommt dunkle Schrift auf hellem Grund.
+       Die Sidebar (dunkler Verlauf, helle Schrift) bleibt unberührt,
+       da deren Regeln spezifischer sind. */
+    .stApp, .block-container {{ color: #1f2937; }}
+
+    /* KPI-Karten (st.metric) — Wert dunkelblau, Label grau, gut sichtbar */
+    [data-testid="stMetricValue"] {{ color: {PRIMARY} !important; font-weight: 700; }}
+    [data-testid="stMetricLabel"],
+    [data-testid="stMetricLabel"] p {{ color: #475569 !important; font-weight: 600; }}
+    [data-testid="stMetricDelta"] {{ color: #64748b !important; }}
+
+    /* Widget-Labels im Hauptbereich (Radio, Toggle, Number-Input, Select) */
+    .block-container [data-testid="stWidgetLabel"] p,
+    .block-container .stRadio label p,
+    .block-container .stCheckbox label p,
+    .block-container [data-testid="stMarkdownContainer"] p,
+    .block-container [data-testid="stMarkdownContainer"] li,
+    .block-container label {{ color: #374151 !important; }}
+
+    /* Eingabefelder hell statt dunkel — Werte lesbar */
+    .block-container [data-baseweb="input"],
+    .block-container [data-baseweb="base-input"],
+    .block-container [data-baseweb="textarea"],
+    .block-container [data-baseweb="select"] > div {{
+        background: #ffffff !important;
+        border-color: #d1d5db !important;
+    }}
+    .block-container [data-baseweb="input"] input,
+    .block-container [data-baseweb="textarea"] textarea,
+    .block-container [data-baseweb="select"] div {{ color: #1f2937 !important; }}
 </style>
 """
 
