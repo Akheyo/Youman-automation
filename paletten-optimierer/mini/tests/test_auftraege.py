@@ -100,30 +100,30 @@ def test_c_status_wechsel_pflicht_grund():
     print(f"  Status-Wechsel: Grund-Pflicht enforced, valid Status enforced.")
 
 
-def test_d_upsert_excel_keine_ueberschreibung():
+def test_d_upsert_excel_pro_position_idempotent():
+    """Bug-Fix: eine Position pro Excel-Zeile (auch bei mehrfacher AW),
+    Re-Import idempotent."""
     _reset()
-    # Erste Anlage manuell mit Notiz
-    auf.neuer_auftrag(aw_nummer="AW-X1", kunde="Müller",
-                       bemerkung="Wichtig!")
-    # Zweiter Upsert aus Excel mit anderen Daten
-    erg = auf.upsert_aus_excel_zeile({
-        "auftrag": "AW-X1", "name": "Schmitt", "anzahl": 999,
-    })
-    assert erg["neu"] is False
-    e = auf.finde_per_aw("AW-X1")
-    # Original-Werte bleiben
-    assert e["kunde"] == "Müller"
-    assert e["bemerkung"] == "Wichtig!"
-    assert e["menge"] == 0  # nicht 999
-    # Bulk
-    bulk_erg = auf.upsert_aus_excel([
-        {"auftrag": "AW-NEU-1", "name": "K", "anzahl": 5,
-         "laenge": 1200, "breite": 800},
-        {"auftrag": "AW-X1", "name": "K2"},  # vorhanden
-    ])
-    assert bulk_erg["neu"] == 1
-    assert bulk_erg["vorhanden"] == 1
-    print(f"  Upsert: 1 neu, 1 existierte bereits, keine Überschreibung.")
+    zeilen = [
+        {"auftrag": "AW-X1", "name": "Müller", "artikelnummer": "A1",
+         "anzahl": 5, "laenge": 1200, "breite": 800, "hoehe": 144},
+        {"auftrag": "AW-X1", "name": "Müller", "artikelnummer": "A2",
+         "anzahl": 3, "laenge": 1000, "breite": 600, "hoehe": 144},
+        {"auftrag": "AW-X2", "name": "Schmitt", "artikelnummer": "B1",
+         "anzahl": 1, "laenge": 800, "breite": 600, "hoehe": 0},
+    ]
+    erg = auf.upsert_aus_excel(zeilen)
+    assert erg["neu"] == 3, erg            # AW-X1 zweimal erlaubt
+    assert len(auf.alle()) == 3
+    # Re-Import derselben Datei -> keine Duplikate
+    erg2 = auf.upsert_aus_excel(zeilen)
+    assert erg2["neu"] == 0 and erg2["vorhanden"] == 3, erg2
+    assert len(auf.alle()) == 3
+    # Identische Zeile doppelt -> Occurrence #1 wird neue Position
+    erg3 = auf.upsert_aus_excel([zeilen[2], zeilen[2]])
+    assert erg3["neu"] == 1 and erg3["vorhanden"] == 1, erg3
+    assert len(auf.alle()) == 4
+    print("  Upsert per Position: dup-AW erlaubt + Re-Import idempotent.")
 
 
 def test_e_auto_sync_offen_zu_in_arbeit():
@@ -317,7 +317,7 @@ if __name__ == "__main__":
         test_a_crud_und_auto_aw_nummer,
         test_b_duplikat_check_aw,
         test_c_status_wechsel_pflicht_grund,
-        test_d_upsert_excel_keine_ueberschreibung,
+        test_d_upsert_excel_pro_position_idempotent,
         test_e_auto_sync_offen_zu_in_arbeit,
         test_f_auto_sync_zu_abgeschlossen,
         test_g_manuell_gesetzt_bleibt,

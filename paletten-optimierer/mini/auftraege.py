@@ -93,6 +93,7 @@ def _migriere(e: dict[str, Any]) -> None:
     e.setdefault("status_manuell_gesetzt", False)
     e.setdefault("status_grund", "")
     e.setdefault("bemerkung", "")
+    e.setdefault("import_key", "")
     e.setdefault("quelle", "manuell")
     e.setdefault("geaendert_am", e.get("erstellt_am", ""))
 
@@ -174,11 +175,15 @@ def neuer_auftrag(*, aw_nummer: str = "", kunde: str = "",
                    verlinkte_bestellung_id: str | None = None,
                    status: str = "offen",
                    bemerkung: str = "",
-                   quelle: str = "manuell") -> dict[str, Any]:
-    """Legt einen neuen Auftrag an. Wenn aw_nummer leer → auto-Nummer."""
+                   quelle: str = "manuell",
+                   erlaube_aw_duplikat: bool = False,
+                   import_key: str = "") -> dict[str, Any]:
+    """Legt einen neuen Auftrag an. Wenn aw_nummer leer → auto-Nummer.
+    erlaube_aw_duplikat=True (Excel-Import, Positions-Ebene): mehrere
+    Positionen duerfen dieselbe AW tragen."""
     aw = (aw_nummer or "").strip() or _next_aw_nummer()
-    # Spec §5 + §6: AW-Duplikat-Check
-    if finde_per_aw(aw):
+    # Spec §5 + §6: AW-Duplikat-Check (nur bei manueller Anlage)
+    if not erlaube_aw_duplikat and finde_per_aw(aw):
         return {"ok": False, "fehler": f"AW '{aw}' existiert bereits",
                  "id": None}
     if status not in STATUS_ERLAUBT:
@@ -203,6 +208,7 @@ def neuer_auftrag(*, aw_nummer: str = "", kunde: str = "",
         "status_manuell_gesetzt": False,
         "status_grund": "",
         "bemerkung": str(bemerkung or ""),
+        "import_key": str(import_key or ""),
         "quelle": quelle if quelle in ("excel_import", "manuell")
                   else "manuell",
         "erstellt_am": _now(),
@@ -286,49 +292,76 @@ def leere_alle() -> int:
 # ---------------------------------------------------------------------------
 # Excel-Import: AW upserten (Spec §8 Verknüpfung mit Tab Import)
 # ---------------------------------------------------------------------------
-def upsert_aus_excel_zeile(zeile: dict) -> dict[str, Any]:
-    """Wenn AW noch nicht existiert → neu anlegen (quelle=excel_import).
-    Wenn schon da → NICHT überschreiben, nur id zurueckgeben."""
+def _zeile_basiskey(zeile: dict) -> str:
+    """Stabiler natuerlicher Schluessel einer Excel-Zeile (ohne Occurrence)
+    fuer idempotenten Re-Import auf Positions-Ebene."""
     aw = (zeile.get("auftrag") or zeile.get("aw_nummer") or "").strip()
-    if not aw:
-        return {"ok": False, "fehler": "keine-aw", "id": None}
-    vorhanden = finde_per_aw(aw)
-    if vorhanden:
-        return {"ok": True, "fehler": "existiert", "id": vorhanden["id"],
-                 "aw_nummer": aw, "neu": False}
-    erg = neuer_auftrag(
-        aw_nummer=aw,
-        kunde=str(zeile.get("name") or zeile.get("kunde") or ""),
-        artikel_nummer=str(zeile.get("artikelnummer")
-                              or zeile.get("artikel_nummer") or ""),
-        menge=int(zeile.get("anzahl") or zeile.get("menge") or 0),
-        angeforderte_l=int(zeile.get("laenge") or zeile.get("L") or 0),
-        angeforderte_b=int(zeile.get("breite") or zeile.get("B") or 0),
-        angeforderte_h=int(zeile.get("hoehe") or 0),
-        bestelldatum=str(zeile.get("bestelldatum", "") or ""),
-        verbrauchsdatum=str(zeile.get("verbrauchsdatum") or ""),
-        quelle="excel_import",
-    )
-    erg["neu"] = True
-    return erg
+    art = str(zeile.get("artikelnummer") or zeile.get("artikel_nummer") or "")
+    l = int(zeile.get("laenge") or zeile.get("L") or 0)
+    b = int(zeile.get("breite") or zeile.get("B") or 0)
+    hh = int(zeile.get("hoehe") or 0)
+    vbd = str(zeile.get("verbrauchsdatum") or "")
+    bd = str(zeile.get("bestelldatum", "") or "")
+    return f"{aw}|{art}|{l}x{b}x{hh}|{vbd}|{bd}"
 
 
 def upsert_aus_excel(zeilen: list[dict]) -> dict[str, Any]:
-    """Bulk-Upsert. Liefert {neu_count, existiert_count, fehler_count}."""
-    neu = 0; vorhanden = 0; fehler = 0
-    ids = []
+    """Positions-Import (eine Position pro Excel-Zeile, auch bei
+    mehrfacher AW). Idempotent: identische Zeilen werden ueber einen
+    natuerlichen Schluessel (+Occurrence) erkannt und beim Re-Import NICHT
+    dupliziert. Ein einziger Schreibvorgang. Liefert
+    {neu, vorhanden, fehler, ids}."""
+    h = _read_raw()
+    vorhandene_keys = {e.get("import_key") for e in h if e.get("import_key")}
+    occ: dict[str, int] = {}
+    jetzt = _now()
+    neu_eintraege: list[dict] = []
+    ids: list[str] = []
+    neu = vorhanden = fehler = 0
     for z in zeilen:
-        erg = upsert_aus_excel_zeile(z)
-        if not erg["ok"]:
-            fehler += 1
-            continue
-        ids.append(erg["id"])
-        if erg.get("neu"):
-            neu += 1
-        else:
+        base = _zeile_basiskey(z)
+        i = occ.get(base, 0)
+        occ[base] = i + 1
+        key = f"{base}#{i}"
+        if key in vorhandene_keys:
             vorhanden += 1
-    return {"neu": neu, "vorhanden": vorhanden, "fehler": fehler,
-             "ids": ids}
+            continue
+        aw = (z.get("auftrag") or z.get("aw_nummer") or "").strip()
+        if not aw:
+            aw = f"AUTO-{_zeile_basiskey(z)}#{i}"[:40]
+        eid = uuid.uuid4().hex
+        neu_eintraege.append({
+            "id": eid,
+            "aw_nummer": aw,
+            "kunde": str(z.get("name") or z.get("kunde") or ""),
+            "artikel_nummer": str(z.get("artikelnummer")
+                                   or z.get("artikel_nummer") or ""),
+            "menge": int(max(0, int(z.get("anzahl") or z.get("menge") or 0))),
+            "angeforderte_palette": {
+                "l": int(max(0, int(z.get("laenge") or z.get("L") or 0))),
+                "b": int(max(0, int(z.get("breite") or z.get("B") or 0))),
+                "h": int(max(0, int(z.get("hoehe") or 0))),
+            },
+            "zugewiesene_palette_id": None,
+            "bestelldatum": str(z.get("bestelldatum", "") or ""),
+            "verbrauchsdatum": str(z.get("verbrauchsdatum") or ""),
+            "verlinkte_bestellung_id": None,
+            "status": "offen",
+            "status_manuell_gesetzt": False,
+            "status_grund": "",
+            "bemerkung": "",
+            "import_key": key,
+            "quelle": "excel_import",
+            "erstellt_am": jetzt,
+            "geaendert_am": jetzt,
+        })
+        vorhandene_keys.add(key)
+        ids.append(eid)
+        neu += 1
+    if neu_eintraege:
+        h.extend(neu_eintraege)
+        _write_raw(h)
+    return {"neu": neu, "vorhanden": vorhanden, "fehler": fehler, "ids": ids}
 
 
 # ---------------------------------------------------------------------------

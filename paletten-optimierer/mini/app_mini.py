@@ -473,13 +473,13 @@ def seite_datenimport() -> None:
         st.session_state.ergebnis = None
         st.session_state.doppelschutz_preview = None
         st.session_state.doppelschutz_skip_ids = set()
-        # Stammdaten 2: AWs aus Excel ins Auftrags-Register upserten
+        # Stammdaten 2: eine Position pro Excel-Zeile anlegen (idempotent)
         try:
             erg_up = auftraege_modul.upsert_aus_excel(
                 dat.get("mit_mass", []))
             if erg_up["neu"] > 0:
                 st.toast(
-                    f"📋 {erg_up['neu']} neue AW(s) in Stammdaten 2 angelegt"
+                    f"📋 {erg_up['neu']} Positionen in Stammdaten 2 angelegt"
                     f" ({erg_up['vorhanden']} schon vorhanden)."
                 )
         except Exception:
@@ -5437,8 +5437,12 @@ def seite_stammdaten_2() -> None:
         status_in=set(p_state.get("auf_filter_status") or []),
         kunde=p_state.get("auf_filter_kunde", ""),
     )
-    card_open(f"Aufträge ({len(eintraege)} angezeigt von "
-              f"{len(auftraege_modul.alle())})")
+    _alle_auf = auftraege_modul.alle()
+    _sigma_angezeigt = sum(int(e.get("menge", 0) or 0) for e in eintraege)
+    _sigma_gesamt = sum(int(e.get("menge", 0) or 0) for e in _alle_auf)
+    card_open(f"Positionen ({len(eintraege)} angezeigt von "
+              f"{len(_alle_auf)}) · Σ Paletten {_sigma_angezeigt} "
+              f"von {_sigma_gesamt}")
     if not eintraege:
         st.info("Keine Aufträge entsprechen den Filtern.")
     else:
