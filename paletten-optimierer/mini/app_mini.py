@@ -43,6 +43,7 @@ import audit_log as audit_modul  # noqa: E402
 import preis_historie as preis_modul  # noqa: E402
 import wiederbeschaffung as wbsch_modul  # noqa: E402
 import auftraege as auftraege_modul  # noqa: E402
+import artikel_stammdaten as artikel_stamm_modul  # noqa: E402
 import edition as edition_modul  # noqa: E402
 from import_doppelschutz import pruefe_import as _pruefe_import  # noqa: E402
 from _render import render_zuord_table, ziel_label as _ziel_label  # noqa: E402
@@ -452,6 +453,20 @@ def seite_datenimport() -> None:
 
         with st.spinner(f"Lese {up.name} ({len(roh) / 1024:.0f} KB) ..."):
             dat = importiere(io.BytesIO(roh))
+        # Zentrale Artikel-Stammdaten anwenden: manuell gepinnte Masse
+        # ersetzen die Excel-Werte, neue/ungepinnte werden upgesertet.
+        # Mutiert dat['mit_mass'] -> Optimierer UND auftraege.json nutzen
+        # automatisch die korrigierten Masse (keine Optimierer-Aenderung).
+        try:
+            st.session_state.artikel_stamm_stats = (
+                artikel_stamm_modul.anwenden_auf_zeilen(
+                    dat.get("mit_mass", [])))
+            _ass = st.session_state.artikel_stamm_stats
+            if _ass and _ass.get("manuell"):
+                st.toast(f"🔒 {_ass['manuell']} Artikel mit manuell "
+                          f"gepflegten Maßen (Excel-Werte ignoriert).")
+        except Exception:
+            st.session_state.artikel_stamm_stats = None
         st.session_state.datei_name = up.name
         st.session_state.import_dat = dat
         st.session_state.ergebnis = None
@@ -5779,6 +5794,45 @@ def seite_stammdaten_2() -> None:
     st.caption(f"Speicherort: {auftraege_modul.pfad_str()}")
 
 
+def _artikel_masse_zentral_speichern(artikel_nr: str, l: int, b: int, h: int,
+                                       *, grund: str = "",
+                                       bezeichnung: str = "") -> int:
+    """Schreibt die Masse in die zentralen Artikel-Stammdaten (manueller
+    Pin) UND propagiert sie auf ALLE Auftraege gleicher ArtikelNr. Schreibt
+    einen Audit-Eintrag. Liefert die Anzahl betroffener Auftraege."""
+    nr = (artikel_nr or "").strip()
+    if not nr:
+        return 0
+    artikel_stamm_modul.upsert(
+        nr, int(l), int(b), int(h),
+        manuell=True, bezeichnung=bezeichnung,
+        quelle="stammdaten_2", geaendert_von="manuell")
+    betroffen = 0
+    vorher = None
+    for a in auftraege_modul.alle():
+        if (a.get("artikel_nummer", "") or "").strip() != nr:
+            continue
+        betroffen += 1
+        ang = a.get("angeforderte_palette", {}) or {}
+        if vorher is None:
+            vorher = f"{int(ang.get('l', 0))}x{int(ang.get('b', 0))}" \
+                     f"x{int(ang.get('h', 0))}"
+        if (int(ang.get("l", 0)) != int(l) or int(ang.get("b", 0)) != int(b)
+                or int(ang.get("h", 0)) != int(h)):
+            auftraege_modul.update_auftrag(
+                a["id"],
+                angeforderte_palette={"l": int(l), "b": int(b), "h": int(h)})
+    try:
+        audit_modul.log_edit(
+            entitaet="artikel_stammdaten", entitaet_id=nr, feld="masse",
+            alt=vorher or "—", neu=f"{int(l)}x{int(b)}x{int(h)}",
+            bemerkung=(f"{grund or 'manuelle Korrektur'} · "
+                        f"{betroffen} Auftrag/Auftraege betroffen"))
+    except Exception:
+        pass
+    return betroffen
+
+
 def _auftrag_drawer() -> None:
     """Drawer-Replacement (Streamlit hat keinen echten Drawer, also Card
     unten am Seitenende)."""
@@ -5877,6 +5931,37 @@ def _auftrag_drawer() -> None:
                                  value=eintrag.get("verbrauchsdatum", ""),
                                  key="drw_vbd")
 
+    # --- Zentrale Artikel-Stammdaten: Status-Anzeige + Pin-Option ---
+    d_art_pin = False
+    _art_nr = (d_art or "").strip()
+    if _art_nr and not neu_modus:
+        _st_art = artikel_stamm_modul.lookup(_art_nr)
+        _betroffen = artikel_stamm_modul.betroffene_auftraege(
+            _art_nr, auftraege_modul)
+        if _st_art and _st_art.get("manuell_ueberschrieben"):
+            st.caption(
+                f"🔒 Maße für **{_art_nr}** sind manuell gepflegt "
+                f"({_st_art['laenge_mm']}×{_st_art['breite_mm']}×"
+                f"{_st_art.get('hoehe_mm', 0)} mm) — werden bei Import "
+                f"NICHT überschrieben. Betrifft {_betroffen} "
+                f"Auftrag/Aufträge.")
+            if st.button("🔄 Zurück auf Excel-Werte", key="drw_art_reset",
+                          help="Pin entfernen — beim nächsten Import werden "
+                               "wieder die Excel-Maße übernommen."):
+                artikel_stamm_modul.setze_manuell(_art_nr, False)
+                st.toast(f"'{_art_nr}': Pin entfernt — Excel-Maße werden "
+                          f"künftig wieder übernommen.")
+                st.rerun()
+        else:
+            st.caption(
+                f"📥 Maße für **{_art_nr}** stammen aus dem Import "
+                f"(werden bei Re-Import aktualisiert). "
+                f"Betrifft {_betroffen} Auftrag/Aufträge.")
+        d_art_pin = st.checkbox(
+            "Maß-Änderung als Artikel-Standard übernehmen "
+            "(für ALLE Aufträge gleicher ArtikelNr + künftige Importe)",
+            value=True, key="drw_art_pin")
+
     # Verknüpfung Beschaffung
     proc_alle = procurement_modul.alle()
     proc_opts = ["— (keine)"] + [
@@ -5972,6 +6057,23 @@ def _auftrag_drawer() -> None:
             if not r_upd["ok"]:
                 st.error(r_upd["fehler"])
             else:
+                # Zentrale Artikel-Stammdaten pinnen + auf ALLE Auftraege
+                # gleicher ArtikelNr propagieren (wenn gewuenscht).
+                betroffen_n = 0
+                if d_art_pin and (d_art or "").strip():
+                    _cur = artikel_stamm_modul.lookup(d_art.strip())
+                    _schon_gleich = bool(
+                        _cur and _cur.get("manuell_ueberschrieben")
+                        and int(_cur.get("laenge_mm", -1)) == int(d_l)
+                        and int(_cur.get("breite_mm", -1)) == int(d_b)
+                        and int(_cur.get("hoehe_mm", -1)) == int(d_h))
+                    if not _schon_gleich:
+                        betroffen_n = _artikel_masse_zentral_speichern(
+                            d_art, int(d_l), int(d_b), int(d_h),
+                            grund=d_grund)
+                _extra = (f" · Maße auf {betroffen_n} Auftrag/Aufträge "
+                           f"gleicher ArtikelNr übernommen"
+                           if betroffen_n else "")
                 # Status-Wechsel?
                 if d_status != eintrag.get("status"):
                     r_st = auftraege_modul.setze_status(
@@ -5979,11 +6081,12 @@ def _auftrag_drawer() -> None:
                     if not r_st["ok"]:
                         st.error(r_st["fehler"])
                     else:
-                        st.success("✓ Gespeichert + Status aktualisiert.")
+                        st.success(f"✓ Gespeichert + Status aktualisiert"
+                                    f"{_extra}.")
                         p_state["auf_drawer_eid"] = None
                         st.rerun()
                 else:
-                    st.success("✓ Gespeichert.")
+                    st.success(f"✓ Gespeichert{_extra}.")
                     p_state["auf_drawer_eid"] = None
                     st.rerun()
     if bc2.button("✗ Abbrechen", use_container_width=True,
@@ -6524,4 +6627,22 @@ SEITEN = {
     "Berichte":              seite_berichte,
     "App-Einstellungen":     seite_app_einstellungen,
 }
+# Einmalige Migration der Artikel-Stammdaten aus auftraege.json
+# (self-guarded: laeuft real nur, wenn die Stammdaten-Datei noch fehlt).
+if not st.session_state.get("_artikel_migriert"):
+    try:
+        _mig = artikel_stamm_modul.migration_aus_auftraege(auftraege_modul)
+        if _mig.get("migriert"):
+            try:
+                audit_modul.log_edit(
+                    entitaet="artikel_stammdaten", entitaet_id="*",
+                    feld="migration", alt="",
+                    neu=f"{_mig['angelegt']} Artikel",
+                    bemerkung="Einmalige Migration aus auftraege.json")
+            except Exception:
+                pass
+    except Exception:
+        pass
+    st.session_state["_artikel_migriert"] = True
+
 SEITEN[st.session_state.seite]()

@@ -77,6 +77,7 @@ app_datas = [
     ("../preis_historie.py", "."),
     ("../wiederbeschaffung.py", "."),
     ("../auftraege.py", "."),
+    ("../artikel_stammdaten.py", "."),
     ("../edition.py", "."),
     ("../config.json", "."),
     ("../.streamlit/config.toml", ".streamlit"),

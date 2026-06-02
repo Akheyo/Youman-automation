@@ -188,6 +188,11 @@ jobs:
         env: { PYTHONIOENCODING: utf-8 }
         run: python tests/test_edition.py
 
+      - name: Pflicht-Test Artikel-Stammdaten (zentrale Maße)
+        shell: pwsh
+        env: { PYTHONIOENCODING: utf-8 }
+        run: python tests/test_artikel_stammdaten.py
+
       - name: Selbsttest-Status anzeigen
         shell: pwsh
         run: |
