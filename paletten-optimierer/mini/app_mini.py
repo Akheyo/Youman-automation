@@ -170,12 +170,10 @@ def init_state() -> None:
             "tol_kurz_pct": 15,       # Breite +15 %
             "tol_lang_pct": 10,       # Länge  +10 %
             "kombinieren": True,
-            "sonder_deckel_aktiv": True,
-            "sonder_deckel": 5,
-            # Sonderpaletten-Option (Spec §3)
-            "sonder_erlaubt": True,
-            "sonder_min_artikel": 5,
-            "sonder_aufschlag_mm": 0,
+            # Sonderpaletten-Feature entfernt: Optimierer nutzt nur
+            # Katalog-Maße als Standards; nicht passende Artikel werden
+            # 'nicht zuordenbar'. sonder_erlaubt bleibt fest False.
+            "sonder_erlaubt": False,
             # Score-Gewichte (Spec §3)
             "w1": 1.0,   # Anzahl unterschiedlicher Palettentypen
             "w2": 0.0,   # Σ Paletten (info-only, post-hoc)
@@ -797,50 +795,9 @@ def seite_einstellungen() -> None:
         )
         card_close()
 
-        card_open("Sonderpaletten")
-        p["sonder_erlaubt"] = st.toggle(
-            "Sonderpaletten zulassen",
-            value=bool(p.get("sonder_erlaubt", True)),
-            key="son_e",
-            help="ON = neue Maße dürfen erzeugt werden (auch außerhalb "
-                 "Katalog). OFF = nur Katalog-Maße — nicht zuordenbare "
-                 "Aufträge werden separat ausgewiesen.",
-        )
-        p["sonder_deckel_aktiv"] = st.toggle(
-            "Sonder-Deckel aktiv",
-            value=bool(p.get("sonder_deckel_aktiv", True)),
-            key="sd_a",
-            disabled=not p["sonder_erlaubt"],
-            help="ON = max. Anzahl verschiedener Sonder-Maße ist begrenzt. "
-                 "OFF = unbegrenzt (Optimierer entscheidet).",
-        )
-        p["sonder_deckel"] = st.number_input(
-            "Max. Sonderpaletten erlaubt",
-            min_value=0, max_value=500,
-            value=int(p.get("sonder_deckel", 5)),
-            step=1, key="sd_n",
-            disabled=(not p["sonder_deckel_aktiv"]) or (not p["sonder_erlaubt"]),
-            help="Greift nur wenn der Toggle 'Sonder-Deckel aktiv' an ist.",
-        )
-        p["sonder_min_artikel"] = st.number_input(
-            "Mindest-Bündel pro Sonder (N Artikel)",
-            min_value=0, max_value=10000,
-            value=int(p.get("sonder_min_artikel", 5)),
-            step=1, key="son_n",
-            disabled=not p["sonder_erlaubt"],
-            help="Ein Sonder wird nur eingeführt, wenn er ≥ N Artikel "
-                 "bündelt. 0 = kein Mindest-Bündel.",
-        )
-        p["sonder_aufschlag_mm"] = st.number_input(
-            "Sicherheits-Aufschlag pro Sonder (mm)",
-            min_value=0, max_value=500,
-            value=int(p.get("sonder_aufschlag_mm", 0)),
-            step=5, key="son_a",
-            disabled=not p["sonder_erlaubt"],
-            help="Wird auf jede Achse des Sonder-Maßes addiert "
-                 "(Standard-Maße bleiben unverändert).",
-        )
-        card_close()
+        # Sonderpaletten-Feature entfernt: keine Toggles/Deckel mehr.
+        # Es werden ausschließlich Katalog-Maße als Standards genutzt.
+        p["sonder_erlaubt"] = False
 
         card_open("Doppelschutz (Spec §8)")
         p["doppelschutz_aktiv"] = st.toggle(
@@ -967,8 +924,8 @@ def run_optimierung() -> None:
 
     # Toggle-Verdrahtung 1:1 nach FINAL-LOCK-Spec
     kombi = bool(p.get("kombinieren", True))
-    deckel = (int(p["sonder_deckel"])
-              if p.get("sonder_deckel_aktiv") else None)
+    # Sonderpaletten-Feature entfernt: fest aus.
+    deckel = None
 
     # Toleranz-Modus: "absolut" (mm) oder "prozent" (%).
     # Im Prozent-Modus setzen wir die mm-Grenze auf einen sehr hohen
@@ -985,17 +942,18 @@ def run_optimierung() -> None:
         Pk_eff, Pl_eff = None, None
         modus_text = f"Modus mm (B≤{Tk_eff}mm / L≤{Tl_eff}mm)"
 
-    sonder_erlaubt = bool(p.get("sonder_erlaubt", True))
-    sonder_min = int(p.get("sonder_min_artikel", 0))
-    sonder_auf = int(p.get("sonder_aufschlag_mm", 0))
+    # Sonderpaletten-Feature entfernt: immer aus.
+    sonder_erlaubt = False
+    sonder_min = 0
+    sonder_auf = 0
     gewichte = {f"w{i}": float(p.get(f"w{i}", 0.0)) for i in range(1, 10)}
     gewichte["w1"] = float(p.get("w1", 1.0))
 
     hinweis = (f"ILP-Solver (CBC) optimiert {len(orders)} Aufträge — "
                f"{modus_text}, "
-               f"Kombi {'an' if kombi else 'aus'}, "
-               f"Sonder-Deckel {deckel if deckel is not None else 'frei'}, "
-               f"Sonder {'erlaubt' if sonder_erlaubt else 'verboten'}.")
+               f"Kombi {'an' if kombi else 'aus'}. "
+               f"Nur Katalog-Standards; nicht passende Artikel werden "
+               f"als 'nicht zuordenbar' ausgewiesen.")
     # Katalog-Maße + Kosten/Marge/Verbrauch/Bestand fuer Score-Gewichte
     try:
         kat_eintraege = katalog_modul.alle()
@@ -1216,8 +1174,6 @@ def seite_optimierung() -> None:
     col_l, col_r = st.columns([1, 2])
     with col_l:
         card_open("Aktuelle Parameter")
-        deckel = (int(p["sonder_deckel"]) if p.get("sonder_deckel_aktiv")
-                  else "frei")
         if p.get("tol_modus", "absolut") == "prozent":
             tol_zeilen = (
                 f"<b>Toleranz-Modus:</b> Prozentual<br>"
@@ -1234,7 +1190,6 @@ def seite_optimierung() -> None:
             f"<div style='font-size:13px;color:#374151;line-height:1.8;'>"
             f"{tol_zeilen}"
             f"<b>Kombinieren:</b> {'an' if p['kombinieren'] else 'aus'}<br>"
-            f"<b>Sonder-Deckel:</b> {deckel}<br>"
             f"<b>Coverage:</b> einseitig (Standard ≥ Last)"
             f"</div>",
             unsafe_allow_html=True,
@@ -1295,19 +1250,20 @@ def kpi_uebersicht() -> None:
 
     paletten_summe = sum(p["anzahl"] for p in dat["mit_mass"])
     n_std = len(res["standards"])
-    n_son = len(res["sonder"])
+    n_nz = sum(1 for z in res.get("zuordnung", [])
+               if z.get("typ") == "Nicht zuordenbar")
     gesamt = res["gesamt"]
 
     c1, c2, c3, c4 = st.columns([1.4, 1, 1, 1.2])
     c1.metric(
-        "GESAMT (Standards + Sonder)",
+        "Standard-Typen gesamt",
         _fmt_int(gesamt),
-        help="Standards + verschiedene Sonder-Maße. Das ist die Zielgröße.",
+        help="Anzahl gewählter Standardpaletten-Maße. Das ist die Zielgröße.",
     )
     c2.metric("Standards", _fmt_int(n_std),
               help="Anzahl gewählter Standardpaletten-Maße.")
-    c3.metric("Sonder", _fmt_int(n_son),
-              help="Anzahl verschiedener Sonder-Maße (Aufträge ohne passenden Standard).")
+    c3.metric("Nicht zuordenbar", _fmt_int(n_nz),
+              help="Artikel ohne passenden Katalog-Standard.")
     c4.metric("Paletten gesamt", _fmt_int(paletten_summe),
               help="Σ der Mengen aller Aufträge mit Maß.")
 
@@ -1470,7 +1426,8 @@ def _dashboard_workflow(res: dict, katalog_set: set) -> None:
     if nz_menge > 0:
         st.warning(
             f"⚠️ {nz_menge} Paletten in 'Nicht zuordenbar' — Toleranz "
-            f"erweitern oder Sonderpaletten zulassen."
+            f"erweitern oder passende Standardpalette in den Katalog "
+            f"aufnehmen."
         )
 
     # Aktions-Buttons pro Zeile
@@ -1656,7 +1613,7 @@ def seite_ergebnisse() -> None:
                    key="erg_tol_modus")
     p["tol_modus"] = modi_keys[modi.index(sel)]
 
-    c1, c2, c3, c4 = st.columns([1.2, 1.2, 1, 1.2])
+    c1, c2 = st.columns([1.4, 1])
     with c1:
         if p["tol_modus"] == "absolut":
             p["tol_kurz_mm"] = st.number_input(
@@ -1686,20 +1643,6 @@ def seite_ergebnisse() -> None:
             value=bool(p.get("kombinieren", True)),
             key="erg_kombi",
             help="ON = Stapel + heterogene Kombi erlaubt. OFF = nur Einzel.",
-        )
-    with c3:
-        p["sonder_deckel_aktiv"] = st.toggle(
-            "Sonder-Deckel aktiv",
-            value=bool(p.get("sonder_deckel_aktiv", True)),
-            key="erg_sd_a",
-        )
-    with c4:
-        p["sonder_deckel"] = st.number_input(
-            "Max. Sonderpaletten erlaubt",
-            min_value=0, max_value=500,
-            value=int(p.get("sonder_deckel", 5)),
-            step=1, key="erg_sd_n",
-            disabled=not p["sonder_deckel_aktiv"],
         )
     if st.button("🔄 Neu optimieren mit diesen Werten",
                  type="primary", use_container_width=True, key="erg_rerun"):
@@ -1813,14 +1756,14 @@ def seite_ergebnisse() -> None:
         n_nz = len(res.get("nicht_zuordenbar", []))
         if n_nz > 0:
             st.warning(
-                f"⚠️ {n_nz} Auftrag/Aufträge konnten weder durch Standard "
-                f"noch Sonder gedeckt werden (Sonderpaletten verboten oder "
-                f"Toleranz zu eng). Siehe Filter 'Nicht zuordenbar'."
+                f"⚠️ {n_nz} Auftrag/Aufträge konnten keinem Katalog-Standard "
+                f"zugeordnet werden (Toleranz zu eng oder kein passender "
+                f"Standard im Katalog). Siehe Filter 'Nicht zuordenbar'."
             )
         card_close()
 
     # --- Filter ---
-    filter_opt = ["alle", "Standard", "Kombi", "Sonder", "Nicht zuordenbar"]
+    filter_opt = ["alle", "Standard", "Kombi", "Nicht zuordenbar"]
     aktiver_filter = p.get("ergebnis_filter", "alle")
     if aktiver_filter not in filter_opt:
         aktiver_filter = "alle"
@@ -1862,8 +1805,7 @@ def seite_ergebnisse() -> None:
 
     cl, cr = st.columns([2, 1])
     with cl:
-        card_open(f"Detail-Zuordnung — {res['gesamt']} Maße "
-                  f"({len(res['standards'])} Std + {len(res['sonder'])} Sonder)"
+        card_open(f"Detail-Zuordnung — {res['gesamt']} Standard-Maße"
                   + (f" · Filter: {sel} ({len(res_gefiltert['zuordnung'])})"
                      if sel != "alle" else ""))
         st.markdown(
@@ -1880,48 +1822,6 @@ def seite_ergebnisse() -> None:
             )
             st.dataframe(df, use_container_width=True, hide_index=True, height=240)
         card_close()
-
-        card_open("Sonder-Maße")
-        if res["sonder"]:
-            df = pd.DataFrame(
-                [{"L": int(round(s[0])), "B": int(round(s[1]))} for s in res["sonder"]]
-            )
-            st.dataframe(df, use_container_width=True, hide_index=True, height=200)
-        else:
-            st.caption("Keine Sonder.")
-        card_close()
-
-    # --- Compare-Modus: mit vs ohne Sonderpaletten ---
-    card_open("🔬 Vergleich: mit / ohne Sonderpaletten")
-    st.caption(
-        "Rechnet zwei Szenarien mit den aktuellen Parametern: "
-        "einmal mit Sonderpaletten erlaubt, einmal verboten. "
-        "Zeigt Trade-off zwischen # Palettentypen und # nicht zuordenbaren "
-        "Aufträgen."
-    )
-    if st.button("⚖️ Vergleich rechnen", key="cmp_run"):
-        _run_vergleich()
-    cmp = st.session_state.get("vergleich")
-    if cmp:
-        c1, c2 = st.columns(2)
-        for col, key, titel in (
-            (c1, "mit", "Mit Sonderpaletten"),
-            (c2, "ohne", "Ohne Sonderpaletten (nur Katalog)"),
-        ):
-            r = cmp.get(key, {})
-            with col:
-                st.markdown(
-                    f"<div style='font-size:14px;font-weight:700;color:#1e293b;'>"
-                    f"{titel}</div>",
-                    unsafe_allow_html=True,
-                )
-                st.metric("GESAMT", _fmt_int(r.get("gesamt", 0)))
-                st.metric("Standards", _fmt_int(len(r.get("standards", []))))
-                st.metric("Sonder", _fmt_int(len(r.get("sonder", []))))
-                st.metric("Nicht zuordenbar",
-                          _fmt_int(len(r.get("nicht_zuordenbar", []))))
-                st.metric("Score", f"{r.get('score', 0.0):.2f}")
-    card_close()
 
     # --- Export-Zeile: CSV + JSON ---
     rows = []
@@ -2026,53 +1926,6 @@ def seite_ergebnisse() -> None:
                 data=daten, file_name=name, mime="application/pdf",
                 use_container_width=True, key="erg_pdf_ap_dl",
             )
-
-
-def _run_vergleich() -> None:
-    """Rechnet zwei Szenarien (mit/ohne Sonder) mit aktuellen Params."""
-    if st.session_state.import_dat is None:
-        return
-    p = st.session_state.params
-    mit_mass = st.session_state.import_dat["mit_mass"]
-    orders = [
-        {"L": pal["laenge"], "B": pal["breite"], "menge": pal["anzahl"],
-         "auftrag": pal["auftrag"], "name": pal["name"]}
-        for pal in mit_mass
-    ]
-    kombi = bool(p.get("kombinieren", True))
-    deckel = (int(p["sonder_deckel"])
-              if p.get("sonder_deckel_aktiv") else None)
-    modus = p.get("tol_modus", "absolut")
-    if modus == "prozent":
-        Tk_eff, Tl_eff = 99999, 99999
-        Pk_eff = float(p.get("tol_kurz_pct", 15))
-        Pl_eff = float(p.get("tol_lang_pct", 10))
-    else:
-        Tk_eff = int(p.get("tol_kurz_mm", 200))
-        Tl_eff = int(p.get("tol_lang_mm", 400))
-        Pk_eff, Pl_eff = None, None
-    try:
-        kat_masse = katalog_modul.aktive_masse()
-    except Exception:
-        kat_masse = []
-    gewichte = {f"w{i}": float(p.get(f"w{i}", 0.0)) for i in range(1, 6)}
-    gewichte["w1"] = float(p.get("w1", 1.0))
-    gemeinsam = dict(
-        tol_kurz_mm=Tk_eff, tol_lang_mm=Tl_eff,
-        tol_kurz_pct=Pk_eff, tol_lang_pct=Pl_eff,
-        max_kombi_teile=3 if kombi else 1,
-        heterogen_fallback=kombi,
-        sonder_deckel=deckel,
-        zeitlimit_s=60,
-        katalog=kat_masse,
-        sonder_min_artikel=int(p.get("sonder_min_artikel", 0)),
-        sonder_aufschlag_mm=int(p.get("sonder_aufschlag_mm", 0)),
-        gewichte=gewichte,
-    )
-    with st.spinner("Vergleich rechnet …"):
-        r_mit = optimiere(orders, sonder_erlaubt=True, **gemeinsam)
-        r_ohne = optimiere(orders, sonder_erlaubt=False, **gemeinsam)
-    st.session_state.vergleich = {"mit": r_mit, "ohne": r_ohne}
 
 
 # ---------------------------------------------------------------------------
@@ -2675,7 +2528,6 @@ def seite_dashboard() -> None:
 
     letzte_dat = "—"
     letzte_std: object = "—"
-    letzte_son: object = "—"
     try:
         v = verlauf_alle()
         opt_v = [e for e in v if e.get("optimierung")]
@@ -2684,18 +2536,15 @@ def seite_dashboard() -> None:
             opt = letzte["optimierung"]
             letzte_dat = (letzte.get("datum", "") or "")[:10]
             letzte_std = opt.get("standards", "—")
-            letzte_son = opt.get("sonder", "—")
     except Exception:
         pass
 
-    k1, k2, k3, k4, k5 = st.columns(5)
+    k1, k2, k3, k4 = st.columns(4)
     k1.metric("Offene Aufträge", offene)
     k2.metric("Standardpaletten", letzte_std,
               help="Anzahl Standardpaletten aus der letzten Optimierung.")
-    k3.metric("Sonderpaletten", letzte_son,
-              help="Anzahl Sonderpaletten aus der letzten Optimierung.")
-    k4.metric("Paletten im Katalog", kat_n)
-    k5.metric("Gesamtbestand", f"{gesamt_bestand} Stk")
+    k3.metric("Paletten im Katalog", kat_n)
+    k4.metric("Gesamtbestand", f"{gesamt_bestand} Stk")
     if letzte_dat != "—":
         st.caption(f"Letzte Optimierung: {letzte_dat}")
     card_close()
@@ -2736,14 +2585,12 @@ def seite_dashboard() -> None:
                 "Datum": (e.get("datum", "") or "")[:16].replace("T", " "),
                 "Datei": (e.get("datei_name", "") or "—")[:25],
                 "Standards": opt.get("standards", 0),
-                "Sonder": opt.get("sonder", 0),
                 "Gesamt": opt.get("gesamt", 0),
             })
         st.dataframe(pd.DataFrame(rows).drop(columns=["id"]),
                       use_container_width=True, hide_index=True,
                       column_config={
                           "Standards": st.column_config.NumberColumn(format="%d"),
-                          "Sonder": st.column_config.NumberColumn(format="%d"),
                           "Gesamt": st.column_config.NumberColumn(format="%d"),
                       })
         st.caption("Klick auf 'Ergebnisse' in der Sidebar springt zum "
@@ -4928,14 +4775,12 @@ def seite_kostenanalyse() -> None:
             st.caption(
                 f"Toleranz: {basis.get('tol_kurz_mm')}/"
                 f"{basis.get('tol_lang_mm')} mm · "
-                f"Kombi: {'an' if basis.get('kombinieren') else 'aus'} · "
-                f"Sonder: {'an' if basis.get('sonder_erlaubt') else 'aus'}"
+                f"Kombi: {'an' if basis.get('kombinieren') else 'aus'}"
             )
             if st.session_state.get("ergebnis"):
                 rb = st.session_state.ergebnis
-                bm1, bm2, bm3 = st.columns(3)
+                bm1, bm3 = st.columns(2)
                 bm1.metric("Standards", len(rb.get("standards", [])))
-                bm2.metric("Sonder", len(rb.get("sonder", [])))
                 bm3.metric("Gesamt", rb.get("gesamt", 0))
             else:
                 st.caption("Noch nicht optimiert.")
@@ -4956,17 +4801,7 @@ def seite_kostenanalyse() -> None:
                 value=bool(sim.get("kombinieren", True)),
                 key="sim_kombi",
             )
-            sim["sonder_erlaubt"] = st.toggle(
-                "Sonderpaletten erlauben",
-                value=bool(sim.get("sonder_erlaubt", True)),
-                key="sim_son",
-            )
-            sim["sonder_min_artikel"] = st.number_input(
-                "Min. Bündelung N",
-                min_value=0, max_value=10000,
-                value=int(sim.get("sonder_min_artikel", 5)), step=1,
-                key="sim_min",
-            )
+            sim["sonder_erlaubt"] = False
 
         rc1, rc2, rc3 = st.columns([1, 1, 2])
         if rc1.button("▶ Simulation rechnen", type="primary",
@@ -5007,22 +4842,15 @@ def seite_kostenanalyse() -> None:
         if sim_res and st.session_state.get("ergebnis"):
             basis_res = st.session_state.ergebnis
             st.markdown("**Ergebnis-Differenz (Basis → Simulation):**")
-            dc1, dc2, dc3 = st.columns(3)
+            dc1, dc3 = st.columns(2)
             d_std = (len(sim_res.get("standards", []))
                       - len(basis_res.get("standards", [])))
-            d_son = (len(sim_res.get("sonder", []))
-                      - len(basis_res.get("sonder", [])))
             d_ges = sim_res.get("gesamt", 0) - basis_res.get("gesamt", 0)
             dc1.metric("Standards",
                          f"{len(basis_res.get('standards', []))} → "
                          f"{len(sim_res.get('standards', []))}",
                          f"{d_std:+d}",
                          delta_color="inverse" if d_std > 0 else "normal")
-            dc2.metric("Sonder",
-                         f"{len(basis_res.get('sonder', []))} → "
-                         f"{len(sim_res.get('sonder', []))}",
-                         f"{d_son:+d}",
-                         delta_color="inverse" if d_son > 0 else "normal")
             dc3.metric("Gesamt",
                          f"{basis_res.get('gesamt', 0)} → "
                          f"{sim_res.get('gesamt', 0)}",
@@ -6117,7 +5945,7 @@ def seite_berichte() -> None:
     nrow_c1, nrow_c2 = st.columns(2)
     with nrow_c1:
         card_open("📄 PDF Zuordnung: Artikel → Palette")
-        st.caption("Pro Standard-/Sonderpalette alle zugeordneten Artikel "
+        st.caption("Pro Standardpalette alle zugeordneten Artikel "
                     "(aus dem aktuellen Optimierungslauf).")
         if not res_live or not res_live.get("zuordnung"):
             st.info("Erst eine Optimierung ausführen (Tab **Optimierung**) — "
