@@ -6010,6 +6010,99 @@ def seite_berichte() -> None:
     optimierungen = [e for e in verlauf_alle() if e.get("optimierung")]
     res_live = st.session_state.get("ergebnis")
 
+    # === NEU: Zwei PDF-Karten oben — Artikel-Zuordnung + Auftragsuebersicht ===
+    nrow_c1, nrow_c2 = st.columns(2)
+    with nrow_c1:
+        card_open("📄 PDF Zuordnung: Artikel → Palette")
+        st.caption("Pro Standard-/Sonderpalette alle zugeordneten Artikel "
+                    "(aus dem aktuellen Optimierungslauf).")
+        if not res_live or not res_live.get("zuordnung"):
+            st.info("Erst eine Optimierung ausführen (Tab **Optimierung**) — "
+                     "dann steht die Artikel-Zuordnung hier bereit.")
+        else:
+            if st.button("📄 PDF erzeugen", type="primary",
+                          use_container_width=True, key="ber_pa_gen"):
+                try:
+                    daten = berichte_modul.pdf_palette_artikel(
+                        res_live,
+                        datei_name=st.session_state.get("datei_name", ""))
+                    name = berichte_modul._dateiname("palette_artikel", "pdf")
+                    arch = berichte_modul.archiv_speichern(
+                        "palette_artikel", name, daten,
+                        quell_lauf_id=st.session_state.get("ergebnis_id"))
+                    st.success(f"✓ {name} ({arch['size_kb']} KB).")
+                    st.download_button("📥 Herunterladen", data=daten,
+                                          file_name=name, mime="application/pdf",
+                                          use_container_width=True,
+                                          key=f"ber_pa_dl_{arch['id']}")
+                except Exception as exc:
+                    st.error(f"Fehler: {exc}")
+        card_close()
+
+    with nrow_c2:
+        card_open("📄 PDF Auftragsübersicht")
+        st.caption("Aufträge aus der Auftragsverwaltung — mit Filter, "
+                    "Palette/Menge/Status, Aggregat pro Palette + "
+                    "Status-Verteilung.")
+        alle_auf = auftraege_modul.alle()
+        if not alle_auf:
+            st.info("Keine Aufträge — erst im Tab **Stammdaten 2** anlegen.")
+        else:
+            fc1, fc2 = st.columns(2)
+            with fc1:
+                auf_von = st.text_input(
+                    "Bestelldatum von", value="", key="ber_auf_von",
+                    placeholder="YYYY-MM-DD (optional)")
+            with fc2:
+                auf_bis = st.text_input(
+                    "Bestelldatum bis", value="", key="ber_auf_bis",
+                    placeholder="YYYY-MM-DD (optional)")
+            _status_lbl = {"offen": "offen", "in_arbeit": "in Arbeit",
+                            "abgeschlossen": "abgeschlossen",
+                            "storniert": "storniert"}
+            auf_status = st.multiselect(
+                "Status (leer = alle)",
+                options=["offen", "in_arbeit", "abgeschlossen", "storniert"],
+                default=[], key="ber_auf_status",
+                format_func=lambda s: _status_lbl.get(s, s))
+            auf_kunden = [""] + auftraege_modul.alle_kunden()
+            auf_kunde = st.selectbox(
+                "Kunde", options=auf_kunden, key="ber_auf_kunde",
+                format_func=lambda k: k or "(alle Kunden)")
+            if st.button("📄 PDF erzeugen", type="primary",
+                          use_container_width=True, key="ber_auf_gen"):
+                try:
+                    gefiltert = auftraege_modul.filter_aufträge(
+                        status_in=set(auf_status) or None,
+                        kunde=auf_kunde or "",
+                        bestelldatum_von=auf_von.strip(),
+                        bestelldatum_bis=auf_bis.strip())
+                    if not gefiltert:
+                        st.warning("Keine Aufträge im gewählten Filter.")
+                    else:
+                        lookup = {e["id"]: f"{e['L_mm']}x{e['B_mm']}"
+                                   for e in katalog_modul.alle()}
+                        zeitraum = ""
+                        if auf_von.strip() or auf_bis.strip():
+                            zeitraum = (f"Zeitraum: {auf_von.strip() or '...'} "
+                                         f"bis {auf_bis.strip() or '...'}")
+                        daten = berichte_modul.pdf_auftragsuebersicht(
+                            gefiltert, lookup, zeitraum=zeitraum)
+                        name = berichte_modul._dateiname(
+                            "auftragsuebersicht", "pdf")
+                        arch = berichte_modul.archiv_speichern(
+                            "auftragsuebersicht", name, daten)
+                        st.success(f"✓ {name} ({arch['size_kb']} KB) · "
+                                    f"{len(gefiltert)} Aufträge.")
+                        st.download_button("📥 Herunterladen", data=daten,
+                                              file_name=name,
+                                              mime="application/pdf",
+                                              use_container_width=True,
+                                              key=f"ber_auf_dl_{arch['id']}")
+                except Exception as exc:
+                    st.error(f"Fehler: {exc}")
+        card_close()
+
     # Grid 2 Spalten × 3 Zeilen
     row1c1, row1c2 = st.columns(2)
     row2c1, row2c2 = st.columns(2)

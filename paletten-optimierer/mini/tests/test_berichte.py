@@ -224,6 +224,40 @@ def test_j_pdf_auftrag_palette():
     print(f"  pdf_auftrag_palette: {len(pdf)} bytes (3 AWs)")
 
 
+def test_k_pdf_auftragsuebersicht():
+    """Auftragsbasierte Uebersicht: Haupttabelle + Aggregat + Status,
+    fehlende Palette -> '-', viele Auftraege -> mehrseitig."""
+    lookup = {"P1": "1600x800", "P2": "1800x1000"}
+    auftraege = [
+        {"aw_nummer": "AW-2026-001", "kunde": "Müller GmbH",
+         "artikel_nummer": "12345", "menge": 50, "status": "abgeschlossen",
+         "zugewiesene_palette_id": "P1", "bestelldatum": "2026-04-10"},
+        {"aw_nummer": "AW-2026-002", "kunde": "Schmitt KG",
+         "artikel_nummer": "12346", "menge": 20, "status": "in_arbeit",
+         "zugewiesene_palette_id": "P2", "bestelldatum": "2026-05-01"},
+        {"aw_nummer": "AW-2026-003", "kunde": "Lang & Co",
+         "artikel_nummer": "12347", "menge": 30, "status": "offen",
+         "zugewiesene_palette_id": None, "bestelldatum": "2026-05-20"},
+    ]
+    pdf = ber.pdf_auftragsuebersicht(
+        auftraege, lookup, zeitraum="Zeitraum: 2026-04-01 bis 2026-05-31")
+    assert pdf.startswith(b"%PDF-")
+    print(f"  pdf_auftragsuebersicht (3 Auftr., 1 ohne Palette): "
+          f"{len(pdf)} bytes")
+
+    # Mehrseitigkeit: 250 Auftraege duerfen nicht crashen
+    viele = [{"aw_nummer": f"AW-{i:04d}", "kunde": f"Kunde {i}",
+              "artikel_nummer": f"ART{i}", "menge": i % 7,
+              "status": ["offen", "in_arbeit", "abgeschlossen",
+                          "storniert"][i % 4],
+              "zugewiesene_palette_id": "P1" if i % 2 else None,
+              "bestelldatum": "2026-05-10"} for i in range(250)]
+    pdf2 = ber.pdf_auftragsuebersicht(viele, lookup)
+    assert pdf2.startswith(b"%PDF-")
+    assert len(pdf2) > len(pdf), "250 Auftraege sollten groesseres PDF ergeben"
+    print(f"  pdf_auftragsuebersicht (250 Auftr.): {len(pdf2)} bytes OK")
+
+
 def test_h_dateinamen_konvention():
     """Spec §7: youman_mini_<typ>_<YYYYMMDD_HHMM>.<ext>"""
     name = ber._dateiname("optimierung", "pdf")
@@ -260,6 +294,7 @@ if __name__ == "__main__":
         test_f_lieferanten_bestelldokument,
         test_i_pdf_palette_artikel,
         test_j_pdf_auftrag_palette,
+        test_k_pdf_auftragsuebersicht,
         test_g_latin1_umlaute,
         test_h_dateinamen_konvention,
     ]

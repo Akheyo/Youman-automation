@@ -1119,3 +1119,102 @@ def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
         pdf.ln(4)
 
     return bytes(pdf.output())
+
+
+# ---------------------------------------------------------------------------
+# Bericht 10: Auftragsuebersicht (auftragsbasiert, mit Filter + Aggregat)
+# ---------------------------------------------------------------------------
+_STATUS_LABEL = {
+    "offen": "offen",
+    "in_arbeit": "in Arbeit",
+    "abgeschlossen": "abgeschlossen",
+    "storniert": "storniert",
+}
+
+
+def pdf_auftragsuebersicht(auftraege: list[dict],
+                            palette_lookup: dict[str, str] | None = None,
+                            *, zeitraum: str = "") -> bytes:
+    """Auftragsbasierte Uebersicht aus auftraege.json (bereits gefiltert).
+
+    Aufbau:
+      - Haupttabelle: AW | Kunde | ArtNr | Palette | Menge | Status
+      - Aggregat pro Palette: Palette | Auftraege | Summe Menge (+ Gesamt)
+      - Status-Verteilung als Textzeile
+
+    auftraege:        bereits gefilterte Auftragsliste.
+    palette_lookup:   id der zugewiesenen Palette -> 'LxB'-Label;
+                      fehlt die Zuordnung, erscheint '-'.
+    zeitraum:         Kopfzeile (z.B. 'Zeitraum: 01.04.2026 - 24.05.2026').
+    """
+    from collections import defaultdict
+
+    palette_lookup = palette_lookup or {}
+    pdf = YoumanPDF("Auftragsuebersicht")
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 5,
+              _latin1(f"{zeitraum or 'Alle Auftraege'}  *  "
+                       f"{len(auftraege)} Auftraege"),
+              ln=True)
+    pdf.ln(3)
+
+    def _pal_label(o: dict) -> str:
+        pid = o.get("zugewiesene_palette_id")
+        if pid and pid in palette_lookup:
+            return palette_lookup[pid]
+        return "-"
+
+    # --- Haupttabelle (paginiert sich selbst via _table) ---
+    rows = []
+    for o in auftraege:
+        rows.append([
+            (o.get("aw_nummer", "") or "-")[:16],
+            (o.get("kunde", "") or "-")[:22],
+            (o.get("artikel_nummer", "") or "-")[:14],
+            _pal_label(o),
+            str(int(o.get("menge", 0) or 0)),
+            _STATUS_LABEL.get(o.get("status", ""), o.get("status", "") or "-"),
+        ])
+    _table(pdf, ["AW", "Kunde", "ArtNr", "Palette", "Menge", "Status"],
+            rows, [32, 42, 26, 26, 18, 36])
+    pdf.ln(6)
+
+    # --- Aggregat pro Palette ---
+    if pdf.get_y() > 235:
+        pdf.add_page()
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_text_color(15, 31, 61)
+    pdf.cell(0, 6, _latin1("Aggregat pro Palette"), ln=True)
+    pdf.set_text_color(0, 0, 0)
+
+    agg: dict[str, dict[str, int]] = defaultdict(lambda: {"n": 0, "menge": 0})
+    for o in auftraege:
+        key = _pal_label(o)
+        agg[key]["n"] += 1
+        agg[key]["menge"] += int(o.get("menge", 0) or 0)
+    agg_rows = [[k, str(v["n"]), str(v["menge"])]
+                for k, v in sorted(agg.items())]
+    gesamt_menge = sum(int(o.get("menge", 0) or 0) for o in auftraege)
+    agg_rows.append(["Gesamt", str(len(auftraege)), str(gesamt_menge)])
+    _table(pdf, ["Palette", "Auftraege", "Summe Menge"],
+            agg_rows, [90, 45, 45])
+    pdf.ln(6)
+
+    # --- Status-Verteilung ---
+    if pdf.get_y() > 255:
+        pdf.add_page()
+    status_count: dict[str, int] = defaultdict(int)
+    for o in auftraege:
+        status_count[o.get("status", "")] += 1
+    teile = [f"{n} {_STATUS_LABEL.get(s, s or '-')}"
+             for s, n in sorted(status_count.items())]
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.set_text_color(15, 31, 61)
+    pdf.cell(0, 6, _latin1("Status-Verteilung"), ln=True)
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 6, _latin1("  *  ".join(teile) or "keine"), ln=True)
+
+    return bytes(pdf.output())
