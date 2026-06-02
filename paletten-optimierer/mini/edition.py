@@ -29,14 +29,15 @@ EDITIONS = {
     "basic": {
         "label": "Basic",
         "tabs": [
-            "Dashboard", "Datenimport", "Optimierung",
+            "Dashboard", "Datenimport", "Maße prüfen", "Optimierung",
             "Ergebnisse", "Katalog", "Stammdaten 2",
         ],
     },
     "full": {
         "label": "Full",
         "tabs": [
-            "Dashboard", "Datenimport", "Einstellungen", "Optimierung",
+            "Dashboard", "Datenimport", "Maße prüfen", "Einstellungen",
+            "Optimierung",
             "Ergebnisse", "Verlauf", "Katalog", "Bestand & Disposition",
             "Bestellungen", "Beschaffung", "Historie",
             "Wirtschaftlichkeit", "Kostenanalyse", "Stammdaten",

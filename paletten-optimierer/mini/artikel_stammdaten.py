@@ -163,78 +163,69 @@ def betroffene_auftraege(artikel_nr: Any, auftraege_modul) -> int:
                if _norm_nr(a.get("artikel_nummer")) == nr)
 
 
-def anwenden_auf_zeilen(zeilen: list[dict[str, Any]]) -> dict[str, int]:
-    """Wendet die zentralen Stammdaten auf importierte 'mit_mass'-Zeilen an
-    (mutiert in-place):
-      - manuell gepinnter Artikel -> Excel-Masse werden durch Stammdaten
-        ERSETZT (laenge/breite/hoehe).
-      - sonst -> Stammdaten aus Excel upserten (nicht-manuell).
-    Setzt pro Zeile 'mass_quelle'. Liefert Statistik fuer den UI-Hinweis.
+# Pruef-Status fuer das Maße-Gate vor der Optimierung
+STATUS_MANUELL = "manuell"        # 🔒 manuell gepflegt (Excel ignoriert)
+STATUS_OK = "ok"                  # ✅ bekannt & identisch zu Stammdaten
+STATUS_NEU = "neu"                # ⚠️ Artikelnummer noch nie gesehen
+STATUS_ABWEICHEND = "abweichend"  # ⚠️ bekannt, aber Excel-Maß != Stammdaten
+
+
+def analysiere_import(zeilen: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Ermittelt pro Artikelnummer den Pruef-Status der importierten
+    'mit_mass'-Zeilen GEGEN die Stammdaten — OHNE neue/abweichende Maße zu
+    speichern (das passiert erst nach Bestaetigung im Maße-Gate).
+
+    Mutiert die Zeilen nur fuer manuell gepinnte Artikel: deren Stammdaten-
+    Maße ueberschreiben die Excel-Werte (🔒 gilt als bestaetigt). Setzt pro
+    Zeile 'mass_status'.
+
+    Liefert: artnr -> {status, excel:(l,b,h), stamm:(l,b,h)|None,
+                       bezeichnung, anzahl}.
     """
-    stats = {"manuell": 0, "excel": 0, "neu": 0, "abweichung": 0,
-             "ohne_nr": 0}
-    # Ein einziges Read + Write (statt pro Zeile) — O(n) statt O(n*m).
-    h = _read_raw()
-    idx: dict[str, dict[str, Any]] = {}
-    for e in h:
-        nr0 = _norm_nr(e.get("artikel_nummer"))
-        if nr0:
-            idx[nr0] = e
-    jetzt = _now()
-    geaendert = False
+    idx = _index()
+    info: dict[str, dict[str, Any]] = {}
     for z in zeilen:
         nr = _norm_nr(z.get("artikelnummer") or z.get("artikel_nummer"))
         if not nr:
-            z["mass_quelle"] = "ohne_artikelnr"
-            stats["ohne_nr"] += 1
+            z["mass_status"] = STATUS_OK  # ohne ArtNr nicht gate-pflichtig
             continue
+        try:
+            el, eb = int(z.get("laenge")), int(z.get("breite"))
+            eh = int(z.get("hoehe") or 0)
+        except (TypeError, ValueError):
+            el = eb = eh = 0
         st = idx.get(nr)
         if st and st.get("manuell_ueberschrieben"):
-            try:
-                if (z.get("laenge") is not None and z.get("breite") is not None
-                        and (int(z["laenge"]) != int(st["laenge_mm"])
-                             or int(z["breite"]) != int(st["breite_mm"]))):
-                    stats["abweichung"] += 1
-            except (TypeError, ValueError):
-                pass
             z["laenge"] = int(st["laenge_mm"])
             z["breite"] = int(st["breite_mm"])
             z["hoehe"] = int(st.get("hoehe_mm", 0))
-            z["mass_quelle"] = "manuell_gepflegt"
-            stats["manuell"] += 1
+            z["mass_status"] = STATUS_MANUELL
+            status = STATUS_MANUELL
+            stamm = (int(st["laenge_mm"]), int(st["breite_mm"]),
+                     int(st.get("hoehe_mm", 0)))
+        elif st:
+            sl, sb = int(st["laenge_mm"]), int(st["breite_mm"])
+            sh = int(st.get("hoehe_mm", 0))
+            status = STATUS_OK if (el, eb) == (sl, sb) else STATUS_ABWEICHEND
+            z["mass_status"] = status
+            stamm = (sl, sb, sh)
         else:
-            try:
-                l = int(z.get("laenge"))
-                b = int(z.get("breite"))
-                hh = int(z.get("hoehe") or 0)
-            except (TypeError, ValueError):
-                z["mass_quelle"] = "ungueltig"
-                continue
-            if st:
-                st["laenge_mm"] = l
-                st["breite_mm"] = b
-                st["hoehe_mm"] = int(max(0, hh))
-                st["letzte_aenderung"] = jetzt
-                st["quelle"] = "excel_import"
-                z["mass_quelle"] = "excel_import"
-                stats["excel"] += 1
-            else:
-                neu = {
-                    "artikel_nummer": nr,
-                    "laenge_mm": l, "breite_mm": b,
-                    "hoehe_mm": int(max(0, hh)),
-                    "bezeichnung": "", "manuell_ueberschrieben": False,
-                    "letzte_aenderung": jetzt, "geaendert_von": "Import",
-                    "quelle": "excel_import",
-                }
-                h.append(neu)
-                idx[nr] = neu
-                z["mass_quelle"] = "neu"
-                stats["neu"] += 1
-            geaendert = True
-    if geaendert:
-        _write_raw(h)
-    return stats
+            status = STATUS_NEU
+            z["mass_status"] = STATUS_NEU
+            stamm = None
+        eintrag = info.setdefault(nr, {
+            "status": status, "excel": (el, eb, eh), "stamm": stamm,
+            "bezeichnung": (st.get("bezeichnung", "") if st else ""),
+            "anzahl": 0,
+        })
+        eintrag["anzahl"] += 1
+    return info
+
+
+def offene_pruefungen(info: dict[str, dict[str, Any]]) -> list[str]:
+    """Artikelnummern, die noch bestaetigt werden muessen (neu/abweichend)."""
+    return [nr for nr, e in info.items()
+            if e.get("status") in (STATUS_NEU, STATUS_ABWEICHEND)]
 
 
 def migration_aus_auftraege(auftraege_modul) -> dict[str, Any]:

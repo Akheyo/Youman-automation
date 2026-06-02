@@ -160,6 +160,7 @@ def init_state() -> None:
     defaults = {
         "datei_name": "",
         "import_dat": None,        # dict aus import_excel.importiere
+        "masse_gate": {},          # artnr -> Pruef-Status (Maße-Gate)
         "historie_id": None,       # uuid des aktuellen Verlauf-Eintrags
         "params": {                # Kern-v4-Parameter (FINAL LOCK Defaults)
             "tol_modus": "absolut",   # "absolut" (mm) ODER "prozent" (%)
@@ -267,7 +268,8 @@ with st.sidebar:
     # ALLE Definitionen (SEITEN-Router unten) bleiben — wir filtern nur
     # die Sichtbarkeit in der Sidebar.
     _ALLE_TABS = [
-        "Dashboard", "Datenimport", "Einstellungen", "Optimierung",
+        "Dashboard", "Datenimport", "Maße prüfen", "Einstellungen",
+        "Optimierung",
         "Ergebnisse", "Verlauf", "Katalog", "Bestand & Disposition",
         "Bestellungen", "Beschaffung", "Historie", "Wirtschaftlichkeit",
         "Kostenanalyse", "Stammdaten", "Stammdaten 2", "Berichte",
@@ -451,20 +453,21 @@ def seite_datenimport() -> None:
 
         with st.spinner(f"Lese {up.name} ({len(roh) / 1024:.0f} KB) ..."):
             dat = importiere(io.BytesIO(roh))
-        # Zentrale Artikel-Stammdaten anwenden: manuell gepinnte Masse
-        # ersetzen die Excel-Werte, neue/ungepinnte werden upgesertet.
-        # Mutiert dat['mit_mass'] -> Optimierer UND auftraege.json nutzen
-        # automatisch die korrigierten Masse (keine Optimierer-Aenderung).
+        # Maße-Gate: Status pro Artikel gegen die Stammdaten ermitteln.
+        # Manuell gepinnte Artikel ueberschreiben die Excel-Werte (🔒);
+        # neue/abweichende Artikel werden NICHT automatisch gespeichert —
+        # sie muessen im Tab 'Maße prüfen' bestaetigt werden, bevor die
+        # Optimierung startet.
         try:
-            st.session_state.artikel_stamm_stats = (
-                artikel_stamm_modul.anwenden_auf_zeilen(
-                    dat.get("mit_mass", [])))
-            _ass = st.session_state.artikel_stamm_stats
-            if _ass and _ass.get("manuell"):
-                st.toast(f"🔒 {_ass['manuell']} Artikel mit manuell "
-                          f"gepflegten Maßen (Excel-Werte ignoriert).")
+            gate = artikel_stamm_modul.analysiere_import(
+                dat.get("mit_mass", []))
+            st.session_state.masse_gate = gate
+            _offen = artikel_stamm_modul.offene_pruefungen(gate)
+            if _offen:
+                st.toast(f"⚠️ {len(_offen)} Artikel-Maße bitte im Tab "
+                          f"'Maße prüfen' bestätigen.")
         except Exception:
-            st.session_state.artikel_stamm_stats = None
+            st.session_state.masse_gate = {}
         st.session_state.datei_name = up.name
         st.session_state.import_dat = dat
         st.session_state.ergebnis = None
@@ -527,8 +530,15 @@ def seite_datenimport() -> None:
             # auf der Import-Seite bleiben, Preview anzeigen
             st.rerun()
         elif dat.get("mit_mass"):
-            run_optimierung()
-            st.session_state.seite = "Ergebnisse"
+            # Maße-Gate: gibt es unbestaetigte/abweichende Artikel-Maße,
+            # zuerst zum Pflicht-Step 'Maße prüfen', sonst direkt rechnen.
+            _offen = artikel_stamm_modul.offene_pruefungen(
+                st.session_state.get("masse_gate", {}))
+            if _offen:
+                st.session_state.seite = "Maße prüfen"
+            else:
+                run_optimierung()
+                st.session_state.seite = "Ergebnisse"
             st.rerun()
         else:
             st.session_state.seite = "Einstellungen"
@@ -902,9 +912,171 @@ def seite_einstellungen() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Seite 2b: Maße prüfen (Pflicht-Gate zwischen Import und Optimierung)
+# ---------------------------------------------------------------------------
+def _masse_bestaetigen(artikel_nr: str, l: int, b: int, h: int, *,
+                        manuell: bool = False,
+                        aktion: str = "bestätigt") -> None:
+    """Schreibt bestätigte Maße in die Stammdaten, aktualisiert die Import-
+    Zeilen + den Gate-Status und schreibt einen Audit-Eintrag."""
+    nr = (artikel_nr or "").strip()
+    if not nr:
+        return
+    gate = st.session_state.get("masse_gate", {})
+    vorher = gate.get(nr, {}).get("stamm")
+    artikel_stamm_modul.upsert(nr, int(l), int(b), int(h),
+                                manuell=bool(manuell), quelle="masse_gate",
+                                geaendert_von="manuell")
+    neuer_status = (artikel_stamm_modul.STATUS_MANUELL if manuell
+                    else artikel_stamm_modul.STATUS_OK)
+    # Import-Zeilen dieser ArtikelNr auf die finalen Maße setzen
+    dat = st.session_state.get("import_dat") or {}
+    for z in dat.get("mit_mass", []):
+        if (z.get("artikelnummer", "") or "").strip() == nr:
+            z["laenge"] = int(l)
+            z["breite"] = int(b)
+            z["hoehe"] = int(h)
+            z["mass_status"] = neuer_status
+    if nr in gate:
+        gate[nr]["status"] = neuer_status
+        gate[nr]["stamm"] = (int(l), int(b), int(h))
+    try:
+        audit_modul.log_edit(
+            entitaet="artikel_stammdaten", entitaet_id=nr, feld="masse",
+            alt=(f"{vorher[0]}x{vorher[1]}" if vorher else "—"),
+            neu=f"{int(l)}x{int(b)}x{int(h)}",
+            bemerkung=(f"Maße-Gate: {aktion} · Import "
+                        f"{st.session_state.get('datei_name', '')}"))
+    except Exception:
+        pass
+
+
+def seite_masse_pruefen() -> None:
+    """Pflicht-Step: Artikel-Maße prüfen/bestätigen, bevor optimiert wird."""
+    S = artikel_stamm_modul
+    gate = st.session_state.get("masse_gate", {}) or {}
+    card_open("Maße prüfen")
+    if st.session_state.import_dat is None or not gate:
+        st.info("Noch kein Import. Bitte zuerst im Tab **Datenimport** eine "
+                "Excel-Datei laden.")
+        card_close()
+        return
+    offen = S.offene_pruefungen(gate)
+    n_neu = sum(1 for e in gate.values() if e["status"] == S.STATUS_NEU)
+    n_abw = sum(1 for e in gate.values() if e["status"] == S.STATUS_ABWEICHEND)
+    n_man = sum(1 for e in gate.values() if e["status"] == S.STATUS_MANUELL)
+    st.markdown(
+        f"<div style='font-size:13px;color:#374151;'>"
+        f"<b>{len(gate)}</b> Artikel im Import · "
+        f"<b>{len(offen)}</b> benötigen Bestätigung "
+        f"(⚠️ {n_neu} neu · ⚠️ {n_abw} abweichend) · "
+        f"🔒 {n_man} manuell gepflegt.</div>",
+        unsafe_allow_html=True)
+    card_close()
+
+    fcol, bcol = st.columns([2, 1])
+    with fcol:
+        filt = st.radio("Anzeigen",
+                        ["Nur unbestätigte", "Nur abweichende", "Alle"],
+                        horizontal=True, key="mp_filter")
+    with bcol:
+        if st.button("✅ Alle Excel-Werte übernehmen", type="primary",
+                      use_container_width=True, disabled=not offen,
+                      key="mp_bulk"):
+            for nr in list(offen):
+                ex = gate[nr]["excel"]
+                _masse_bestaetigen(nr, ex[0], ex[1], ex[2], manuell=False,
+                                    aktion="excel_übernommen")
+            st.success(f"{len(offen)} Artikel mit Excel-Maßen bestätigt.")
+            st.rerun()
+
+    def _sichtbar(e: dict) -> bool:
+        if filt == "Nur unbestätigte":
+            return e["status"] in (S.STATUS_NEU, S.STATUS_ABWEICHEND)
+        if filt == "Nur abweichende":
+            return e["status"] == S.STATUS_ABWEICHEND
+        return True
+
+    rang = {S.STATUS_NEU: 0, S.STATUS_ABWEICHEND: 1, S.STATUS_OK: 2,
+            S.STATUS_MANUELL: 3}
+    items = sorted(((nr, e) for nr, e in gate.items() if _sichtbar(e)),
+                   key=lambda kv: (rang.get(kv[1]["status"], 9), kv[0]))
+    badge = {
+        S.STATUS_OK: ("✅ bestätigt", "#dcfce7", "#166534"),
+        S.STATUS_NEU: ("⚠️ neu, bitte prüfen", "#fef3c7", "#92400e"),
+        S.STATUS_ABWEICHEND: ("⚠️ Maße abweichend", "#fef3c7", "#92400e"),
+        S.STATUS_MANUELL: ("🔒 manuell", "#dbeafe", "#1e40af"),
+    }
+    if not items:
+        st.caption("Keine Einträge für diesen Filter.")
+    for nr, e in items:
+        titel = nr + (f" · {e['bezeichnung']}" if e.get("bezeichnung") else "")
+        card_open(titel)
+        el, eb, eh = e["excel"]
+        defl, defb, defh = (e["stamm"] if e["status"] == S.STATUS_MANUELL
+                            and e["stamm"] else (el, eb, eh))
+        lab, bg, fg = badge.get(e["status"], ("?", "#eee", "#333"))
+        cols = st.columns([1, 1, 1, 1.3, 1.4])
+        nl = cols[0].number_input("Länge (mm)", min_value=0, max_value=10000,
+                                   value=int(defl), step=10, key=f"mp_l_{nr}")
+        nb = cols[1].number_input("Breite (mm)", min_value=0, max_value=10000,
+                                   value=int(defb), step=10, key=f"mp_b_{nr}")
+        nh = cols[2].number_input("Höhe (mm)", min_value=0, max_value=5000,
+                                   value=int(defh), step=5, key=f"mp_h_{nr}")
+        with cols[3]:
+            st.markdown(
+                f"<div style='margin-top:26px;'><span style='background:{bg};"
+                f"color:{fg};padding:3px 10px;border-radius:999px;"
+                f"font-size:12px;font-weight:600;'>{lab}</span></div>",
+                unsafe_allow_html=True)
+            if e["status"] == S.STATUS_ABWEICHEND and e["stamm"]:
+                st.caption(f"bisher: {e['stamm'][0]}×{e['stamm'][1]} mm")
+        with cols[4]:
+            if e["status"] in (S.STATUS_NEU, S.STATUS_ABWEICHEND):
+                if st.button("✓ Excel übernehmen", key=f"mp_ok_{nr}",
+                              use_container_width=True):
+                    _masse_bestaetigen(nr, el, eb, eh, manuell=False,
+                                        aktion="excel_übernommen")
+                    st.rerun()
+                if st.button("✎ Eigenes Maß speichern", key=f"mp_edit_{nr}",
+                              use_container_width=True):
+                    _masse_bestaetigen(nr, int(nl), int(nb), int(nh),
+                                        manuell=True, aktion="edit_maße")
+                    st.rerun()
+            else:
+                st.caption("✓ erledigt")
+        card_close()
+
+    st.divider()
+    if offen:
+        st.info(f"Noch {len(offen)} Maß(e) offen — die Optimierung ist "
+                f"gesperrt, bis alle bestätigt sind.")
+    else:
+        st.success("Alle Maße bestätigt.")
+        if st.button("➡️ Weiter zur Optimierung", type="primary",
+                      use_container_width=True, key="mp_weiter"):
+            st.session_state.seite = "Optimierung"
+            st.rerun()
+
+
+# ---------------------------------------------------------------------------
 # Seite 3: Optimierung
 # ---------------------------------------------------------------------------
+def _offene_masse() -> list[str]:
+    """Artikelnummern, die im aktuellen Import noch Maß-Bestätigung
+    brauchen — blockiert die Optimierung (Pflicht-Gate)."""
+    return artikel_stamm_modul.offene_pruefungen(
+        st.session_state.get("masse_gate", {}))
+
+
 def run_optimierung() -> None:
+    # Pflicht-Gate: keine Optimierung solange unbestätigte Maße offen sind.
+    _offen = _offene_masse()
+    if _offen:
+        st.session_state.seite = "Maße prüfen"
+        st.session_state._masse_block_hinweis = len(_offen)
+        st.rerun()
+        return
     p = st.session_state.params
     mit_mass = st.session_state.import_dat["mit_mass"]
 
@@ -1171,6 +1343,17 @@ def seite_optimierung() -> None:
         return
     p = st.session_state.params
 
+    # Pflicht-Gate: unbestätigte Artikel-Maße blockieren die Optimierung.
+    _offen = _offene_masse()
+    if _offen:
+        st.warning(f"⚠️ {len(_offen)} unbestätigte Artikel-Maße — die "
+                   f"Optimierung ist gesperrt, bis alle Maße im Tab "
+                   f"'Maße prüfen' bestätigt sind.")
+        if st.button("➡️ Jetzt Maße prüfen", type="primary",
+                      use_container_width=True, key="opt_goto_gate"):
+            st.session_state.seite = "Maße prüfen"
+            st.rerun()
+
     col_l, col_r = st.columns([1, 2])
     with col_l:
         card_open("Aktuelle Parameter")
@@ -1195,7 +1378,10 @@ def seite_optimierung() -> None:
             unsafe_allow_html=True,
         )
         card_close()
-        if st.button("🔄 Optimieren", type="primary", use_container_width=True):
+        if st.button("🔄 Optimieren", type="primary",
+                      use_container_width=True, disabled=bool(_offen),
+                      help=("Erst alle Artikel-Maße im Tab 'Maße prüfen' "
+                            "bestätigen." if _offen else None)):
             run_optimierung()
             st.session_state.seite = "Ergebnisse"
             st.rerun()
@@ -6439,6 +6625,7 @@ def seite_app_einstellungen() -> None:
 SEITEN = {
     "Dashboard":             seite_dashboard,
     "Datenimport":           seite_datenimport,
+    "Maße prüfen":           seite_masse_pruefen,
     "Einstellungen":         seite_einstellungen,
     "Optimierung":           seite_optimierung,
     "Ergebnisse":            seite_ergebnisse,
