@@ -2181,6 +2181,12 @@ def _fmt_eur(x: float) -> str:
 
 def seite_katalog() -> None:
     eintraege = katalog_modul.alle()
+    # Erfolgs-/Hinweis-Meldung nach dem Anlegen — ueberlebt st.rerun(),
+    # da sie in session_state zwischengeparkt und erst nach dem Rerun
+    # angezeigt wird (sonst von st.rerun() sofort verschluckt).
+    _kat_flash = st.session_state.pop("kat_flash", None)
+    if _kat_flash:
+        st.success(_kat_flash)
     card_open(f"Palettenkatalog ({len(eintraege)} Eintr&auml;ge)")
     st.markdown(
         '<div style="font-size:13px;color:#475569;margin-bottom:8px;">'
@@ -2294,33 +2300,42 @@ def seite_katalog() -> None:
         else:
             dup_force = False
 
+        # Button ist IMMER klickbar — statt ihn bei Duplikaten auszugrauen
+        # (wirkt wie "reagiert nicht"), geben wir bei jedem Fehlerfall
+        # eine klare Meldung. Kein stilles Fehlschlagen.
         if st.button("Palette hinzufügen", type="primary",
-                      use_container_width=True, key="kat_add_btn",
-                      disabled=(dup is not None) and not dup_force):
-            if n_L > 0 and n_B > 0:
-                if dup and dup_force and not n_notiz.strip():
-                    st.error("Bei 'Trotzdem anlegen' bitte Notiz "
-                              "ausfüllen (z.B. 'Variante B').")
-                else:
-                    katalog_modul.neuer_eintrag(
-                        int(n_L), int(n_B),
-                        float(n_ek), 0.0,  # VK = 0 (durch Selbstfertigung ersetzt)
-                        int(n_best), int(n_meld),
-                        n_notiz, aktiv=True,
-                        name=n_name,
-                        hoehe_mm=int(n_hoehe),
-                        typ=n_typ,
-                        quelle="manuell",
-                        ek_lieferant_eur=float(n_ek),
-                        selbstfertigung_material_eur=float(n_sf_mat),
-                        selbstfertigung_lohn_eur=float(n_sf_lohn),
-                    )
-                    st.success(f"Eintrag "
-                                f"{int(max(n_L,n_B))}×{int(min(n_L,n_B))} "
-                                f"hinzugefügt.")
-                    st.rerun()
+                      use_container_width=True, key="kat_add_btn"):
+            if not (n_L > 0 and n_B > 0):
+                st.error("Länge und Breite müssen größer als 0 sein.")
+            elif dup is not None and not dup_force:
+                st.error(
+                    f"Eine Palette mit diesen Maßen existiert bereits "
+                    f"('{dup.get('name', '—') or '—'}'). Wenn du sie "
+                    f"trotzdem als Variante anlegen willst, aktiviere oben "
+                    f"den Schalter 'Trotzdem anlegen (Variante)'."
+                )
+            elif dup is not None and dup_force and not n_notiz.strip():
+                st.error("Bei 'Trotzdem anlegen' bitte das Notiz-Feld "
+                          "ausfüllen (z.B. 'Variante B').")
             else:
-                st.error("Länge und Breite müssen > 0 sein.")
+                katalog_modul.neuer_eintrag(
+                    int(n_L), int(n_B),
+                    float(n_ek), 0.0,  # VK = 0 (durch Selbstfertigung ersetzt)
+                    int(n_best), int(n_meld),
+                    n_notiz, aktiv=True,
+                    name=n_name,
+                    hoehe_mm=int(n_hoehe),
+                    typ=n_typ,
+                    quelle="manuell",
+                    ek_lieferant_eur=float(n_ek),
+                    selbstfertigung_material_eur=float(n_sf_mat),
+                    selbstfertigung_lohn_eur=float(n_sf_lohn),
+                )
+                st.session_state["kat_flash"] = (
+                    f"Palette {int(max(n_L, n_B))}×{int(min(n_L, n_B))} mm "
+                    f"('{n_name or '—'}') wurde dem Katalog hinzugefügt."
+                )
+                st.rerun()
     card_close()
 
     # === CSV-Import/Export (Spec §5) ===
