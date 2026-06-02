@@ -232,6 +232,30 @@ def test_i_filter():
     print(f"  Filter: kunde=2, suche=1, datum=1.")
 
 
+def test_i2_aw_suche_exakt_und_robust():
+    """Bug-Fix: AW-Suche exakt + ohne Cross-Field-Rauschen + Whitespace."""
+    _reset()
+    auf.neuer_auftrag(aw_nummer="AW-2026-005", kunde="Müller",
+                       artikel_nummer="X1", menge=1)
+    auf.neuer_auftrag(aw_nummer="AW-2026-0050", kunde="Meyer",
+                       artikel_nummer="AW-2026-005-T", menge=1)
+    auf.neuer_auftrag(aw_nummer="AW-2026-099", kunde="Schmidt",
+                       artikel_nummer="12345", menge=1)
+    # Exakte volle AW -> genau eine, NICHT AW-2026-0050
+    r = auf.filter_aufträge(suche="AW-2026-005")
+    assert [e["aw_nummer"] for e in r] == ["AW-2026-005"], r
+    # Whitespace/Case robust
+    assert len(auf.filter_aufträge(suche="  aw-2026-099 ")) == 1
+    # Teil-AW -> Praefix/Teilstring (beide 005 + 0050)
+    assert len(auf.filter_aufträge(suche="AW-2026-00")) == 2
+    # Leer -> alle
+    assert len(auf.filter_aufträge(suche="")) == 3
+    # Nicht-AW-Begriff sucht Multi-Field (artikel_nummer)
+    assert [e["aw_nummer"] for e in auf.filter_aufträge(suche="12345")] \
+        == ["AW-2026-099"]
+    print("  AW-Suche: exakt, robust, kein Cross-Field-Rauschen OK")
+
+
 def test_j_stats():
     _reset()
     auf.neuer_auftrag(aw_nummer="AW-J-1")  # offen
@@ -299,6 +323,7 @@ if __name__ == "__main__":
         test_g_manuell_gesetzt_bleibt,
         test_h_storniert_bleibt_storniert,
         test_i_filter,
+        test_i2_aw_suche_exakt_und_robust,
         test_j_stats,
         test_k_loesche_auftrag,
         test_l_aw_auto_nummer_kein_konflikt,

@@ -405,9 +405,10 @@ def filter_aufträge(*, suche: str = "",
                       kunde: str = "",
                       bestelldatum_von: str = "",
                       bestelldatum_bis: str = "") -> list[dict]:
-    """Spec §4 Filter."""
+    """Spec §4 Filter + AW-priorisierte Suche (Bug-Fix)."""
     q = (suche or "").strip().lower()
-    out = []
+    # 1) Basis-Filter (Status / Kunde / Datum)
+    basis = []
     for e in alle():
         if status_in and e.get("status") not in status_in:
             continue
@@ -418,16 +419,33 @@ def filter_aufträge(*, suche: str = "",
             continue
         if bestelldatum_bis and bd and bd > bestelldatum_bis:
             continue
-        if q:
-            hay = " ".join([
-                e.get("aw_nummer", ""),
-                e.get("kunde", ""),
-                e.get("artikel_nummer", ""),
-                e.get("bemerkung", ""),
-            ]).lower()
-            if q not in hay:
-                continue
-        out.append(e)
+        basis.append(e)
+    if not q:
+        return basis
+
+    def _aw(e):
+        return (e.get("aw_nummer", "") or "").strip().lower()
+
+    # 2) Sieht der Begriff wie eine AW-Nummer aus -> NUR aw_nummer matchen,
+    #    und ein EXAKTER Treffer gewinnt (kein Rauschen aus 'AW-...-0050' o.
+    #    aus artikel_nummer/kunde). Sonst Praefix-/Teilstring auf aw_nummer.
+    if q.startswith("aw"):
+        exakt = [e for e in basis if _aw(e) == q]
+        if exakt:
+            return exakt
+        return [e for e in basis if q in _aw(e)]
+
+    # 3) Allgemeine Multi-Field-Teilstringsuche (Kunde/ArtNr/Bemerkung/AW)
+    out = []
+    for e in basis:
+        hay = " ".join([
+            _aw(e),
+            (e.get("kunde", "") or "").lower(),
+            (e.get("artikel_nummer", "") or "").lower(),
+            (e.get("bemerkung", "") or "").lower(),
+        ])
+        if q in hay:
+            out.append(e)
     return out
 
 
