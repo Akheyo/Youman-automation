@@ -537,6 +537,7 @@ def seite_datenimport() -> None:
             if _offen:
                 st.session_state.seite = "Maße prüfen"
             else:
+                st.toast("✅ Alle Artikel bekannt – direkt zur Optimierung.")
                 run_optimierung()
                 st.session_state.seite = "Ergebnisse"
             st.rerun()
@@ -926,7 +927,7 @@ def _masse_bestaetigen(artikel_nr: str, l: int, b: int, h: int, *,
     vorher = gate.get(nr, {}).get("stamm")
     artikel_stamm_modul.upsert(nr, int(l), int(b), int(h),
                                 manuell=bool(manuell), quelle="masse_gate",
-                                geaendert_von="manuell")
+                                geaendert_von="manuell", bestaetigt=True)
     neuer_status = (artikel_stamm_modul.STATUS_MANUELL if manuell
                     else artikel_stamm_modul.STATUS_OK)
     # Import-Zeilen dieser ArtikelNr auf die finalen Maße setzen
@@ -964,15 +965,41 @@ def seite_masse_pruefen() -> None:
     offen = S.offene_pruefungen(gate)
     n_neu = sum(1 for e in gate.values() if e["status"] == S.STATUS_NEU)
     n_abw = sum(1 for e in gate.values() if e["status"] == S.STATUS_ABWEICHEND)
+    n_unb = sum(1 for e in gate.values()
+                if e["status"] == S.STATUS_UNBESTAETIGT)
     n_man = sum(1 for e in gate.values() if e["status"] == S.STATUS_MANUELL)
+    n_ok = sum(1 for e in gate.values() if e["status"] == S.STATUS_OK)
+    n_bekannt = n_ok + n_man  # aus Stammdaten übernommen (bereits bestätigt)
     st.markdown(
         f"<div style='font-size:13px;color:#374151;'>"
         f"<b>{len(gate)}</b> Artikel im Import · "
         f"<b>{len(offen)}</b> benötigen Bestätigung "
-        f"(⚠️ {n_neu} neu · ⚠️ {n_abw} abweichend) · "
-        f"🔒 {n_man} manuell gepflegt.</div>",
+        f"(⚠️ {n_neu} neu · ⚠️ {n_abw} abweichend · "
+        f"⚠️ {n_unb} unbestätigt) · "
+        f"✅ {n_bekannt} aus Stammdaten übernommen.</div>",
         unsafe_allow_html=True)
     card_close()
+
+    # Phase B: bereits bestätigte Artikel sind in der Optimierung dabei
+    # (Maße aus Stammdaten), werden aber NICHT zur Bestätigung gezeigt.
+    if n_bekannt:
+        with st.expander(
+                f"✅ {n_bekannt} Artikel aus Stammdaten übernommen "
+                f"(bereits bestätigt) – anzeigen"):
+            for nr, e in sorted(gate.items()):
+                if e["status"] not in (S.STATUS_OK, S.STATUS_MANUELL):
+                    continue
+                quelle = "🔒 manuell" if e["status"] == S.STATUS_MANUELL \
+                    else "Stammdaten"
+                m = e.get("stamm") or e.get("excel")
+                bez = f" · {e['bezeichnung']}" if e.get("bezeichnung") else ""
+                st.markdown(
+                    f"<div style='font-size:13px;color:#374151;"
+                    f"padding:2px 0;'>{nr}{bez} — "
+                    f"<b>{m[0]}×{m[1]}×{m[2]} mm</b> "
+                    f"<span style='color:#6b7280;'>({quelle}, "
+                    f"{e.get('anzahl', 0)} Pos.)</span></div>",
+                    unsafe_allow_html=True)
 
     fcol, bcol = st.columns([2, 1])
     with fcol:
@@ -990,21 +1017,24 @@ def seite_masse_pruefen() -> None:
             st.success(f"{len(offen)} Artikel mit Excel-Maßen bestätigt.")
             st.rerun()
 
+    offene_status = (S.STATUS_NEU, S.STATUS_ABWEICHEND, S.STATUS_UNBESTAETIGT)
+
     def _sichtbar(e: dict) -> bool:
         if filt == "Nur unbestätigte":
-            return e["status"] in (S.STATUS_NEU, S.STATUS_ABWEICHEND)
+            return e["status"] in offene_status
         if filt == "Nur abweichende":
             return e["status"] == S.STATUS_ABWEICHEND
         return True
 
-    rang = {S.STATUS_NEU: 0, S.STATUS_ABWEICHEND: 1, S.STATUS_OK: 2,
-            S.STATUS_MANUELL: 3}
+    rang = {S.STATUS_NEU: 0, S.STATUS_ABWEICHEND: 1, S.STATUS_UNBESTAETIGT: 2,
+            S.STATUS_OK: 3, S.STATUS_MANUELL: 4}
     items = sorted(((nr, e) for nr, e in gate.items() if _sichtbar(e)),
                    key=lambda kv: (rang.get(kv[1]["status"], 9), kv[0]))
     badge = {
         S.STATUS_OK: ("✅ bestätigt", "#dcfce7", "#166534"),
         S.STATUS_NEU: ("⚠️ neu, bitte prüfen", "#fef3c7", "#92400e"),
         S.STATUS_ABWEICHEND: ("⚠️ Maße abweichend", "#fef3c7", "#92400e"),
+        S.STATUS_UNBESTAETIGT: ("⚠️ noch nicht bestätigt", "#fef3c7", "#92400e"),
         S.STATUS_MANUELL: ("🔒 manuell", "#dbeafe", "#1e40af"),
     }
     if not items:
@@ -1013,7 +1043,8 @@ def seite_masse_pruefen() -> None:
         titel = nr + (f" · {e['bezeichnung']}" if e.get("bezeichnung") else "")
         card_open(titel)
         el, eb, eh = e["excel"]
-        defl, defb, defh = (e["stamm"] if e["status"] == S.STATUS_MANUELL
+        defl, defb, defh = (e["stamm"] if e["status"] in
+                            (S.STATUS_MANUELL, S.STATUS_UNBESTAETIGT)
                             and e["stamm"] else (el, eb, eh))
         lab, bg, fg = badge.get(e["status"], ("?", "#eee", "#333"))
         cols = st.columns([1, 1, 1, 1.3, 1.4])
@@ -1032,8 +1063,10 @@ def seite_masse_pruefen() -> None:
             if e["status"] == S.STATUS_ABWEICHEND and e["stamm"]:
                 st.caption(f"bisher: {e['stamm'][0]}×{e['stamm'][1]} mm")
         with cols[4]:
-            if e["status"] in (S.STATUS_NEU, S.STATUS_ABWEICHEND):
-                if st.button("✓ Excel übernehmen", key=f"mp_ok_{nr}",
+            if e["status"] in offene_status:
+                _lbl = ("✓ Bestätigen" if e["status"] == S.STATUS_UNBESTAETIGT
+                        else "✓ Excel übernehmen")
+                if st.button(_lbl, key=f"mp_ok_{nr}",
                               use_container_width=True):
                     _masse_bestaetigen(nr, el, eb, eh, manuell=False,
                                         aktion="excel_übernommen")

@@ -138,6 +138,42 @@ def test_g_identisch_ok():
     print("  g) Bekannt & identisch -> ok, keine Pruefung OK")
 
 
+def test_h_unbestaetigt_zeigt_gate():
+    _reset()
+    # bekannt + identische Maße, aber bestaetigt=False -> muss ins Gate
+    ar.upsert("ART3", 1000, 600, 0, manuell=False, quelle="excel_import",
+              bestaetigt=False)
+    info = ar.analysiere_import([{"artikelnummer": "ART3", "laenge": 1000,
+                                   "breite": 600, "hoehe": 0}])
+    assert info["ART3"]["status"] == ar.STATUS_UNBESTAETIGT
+    assert ar.offene_pruefungen(info) == ["ART3"]
+    # Nach Bestaetigung -> ok, kein Gate mehr
+    ar.upsert("ART3", 1000, 600, 0, manuell=False, quelle="masse_gate",
+              bestaetigt=True)
+    info2 = ar.analysiere_import([{"artikelnummer": "ART3", "laenge": 1000,
+                                    "breite": 600, "hoehe": 0}])
+    assert info2["ART3"]["status"] == ar.STATUS_OK
+    assert ar.offene_pruefungen(info2) == []
+    print("  h) bestaetigt=false -> Gate, nach Bestaetigung ok OK")
+
+
+def test_i_grandfather_alt_eintrag_bestaetigt():
+    _reset()
+    # Alt-Datei OHNE 'bestaetigt' -> gilt als bestaetigt (kein Re-Gate)
+    import json as _json
+    p = Path(_TMP) / "artikel.json"
+    p.write_text(_json.dumps([{
+        "artikel_nummer": "OLD1", "laenge_mm": 800, "breite_mm": 600,
+        "hoehe_mm": 0, "manuell_ueberschrieben": False,
+    }]), encoding="utf-8")
+    assert ar.lookup("OLD1")["bestaetigt"] is True
+    info = ar.analysiere_import([{"artikelnummer": "OLD1", "laenge": 800,
+                                   "breite": 600, "hoehe": 0}])
+    assert info["OLD1"]["status"] == ar.STATUS_OK
+    assert ar.offene_pruefungen(info) == []
+    print("  i) Alt-Eintrag ohne Flag gilt als bestaetigt OK")
+
+
 def _run(fn):
     try:
         fn()
@@ -162,6 +198,8 @@ if __name__ == "__main__":
         test_e_migration_einmalig,
         test_f_status_neu_und_ohne_nr,
         test_g_identisch_ok,
+        test_h_unbestaetigt_zeigt_gate,
+        test_i_grandfather_alt_eintrag_bestaetigt,
     ]
     erfolge = sum(1 for t in tests if _run(t))
     print()

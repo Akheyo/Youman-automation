@@ -19,10 +19,16 @@ Eintrag-Schema:
       "laenge_mm": 900, "breite_mm": 900, "hoehe_mm": 144,
       "bezeichnung": "",
       "manuell_ueberschrieben": true,
+      "bestaetigt": true,
       "letzte_aenderung": "2026-05-24T14:33:00",
       "geaendert_von": "manuell",
       "quelle": "stammdaten_2" | "excel_import" | "migration"
     }
+
+'bestaetigt' (Phase B / Maße-Gate): true = vom Anwender bestaetigt, wird beim
+Import NICHT erneut zur Pruefung gezeigt. false = bekannt, aber noch nicht
+bestaetigt -> erscheint im Gate. Alt-Eintraege ohne das Feld gelten als
+bestaetigt (grandfathered).
 """
 from __future__ import annotations
 
@@ -68,7 +74,14 @@ def _read_raw() -> list[dict[str, Any]]:
         return []
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
-        return data if isinstance(data, list) else []
+        if not isinstance(data, list):
+            return []
+        # Grandfathering: Eintraege ohne 'bestaetigt' (vor diesem Feature
+        # angelegt) gelten als bestaetigt -> kein erzwungenes Re-Pruefen.
+        for e in data:
+            if isinstance(e, dict):
+                e.setdefault("bestaetigt", True)
+        return data
     except (OSError, json.JSONDecodeError):
         return []
 
@@ -100,8 +113,12 @@ def lookup(artikel_nr: Any) -> dict[str, Any] | None:
 def upsert(artikel_nr: Any, laenge_mm: int, breite_mm: int, hoehe_mm: int = 0,
            *, manuell: bool = False, bezeichnung: str = "",
            quelle: str = "excel_import",
-           geaendert_von: str = "manuell") -> tuple[dict[str, Any], bool]:
+           geaendert_von: str = "manuell",
+           bestaetigt: bool = True) -> tuple[dict[str, Any], bool]:
     """Legt an oder aktualisiert die Masse eines Artikels.
+    bestaetigt=True (Default): jede bewusste Pflege (Gate, Stammdaten 2,
+    Pin) gilt als bestaetigt -> kein erneutes Gate. bestaetigt=False nur fuer
+    automatisch befuellte, noch ungeprüfte Eintraege.
     Liefert (eintrag, neu_angelegt)."""
     nr = _norm_nr(artikel_nr)
     if not nr:
@@ -116,6 +133,7 @@ def upsert(artikel_nr: Any, laenge_mm: int, breite_mm: int, hoehe_mm: int = 0,
             if bezeichnung:
                 e["bezeichnung"] = str(bezeichnung)
             e["manuell_ueberschrieben"] = bool(manuell)
+            e["bestaetigt"] = bool(bestaetigt)
             e["letzte_aenderung"] = jetzt
             e["geaendert_von"] = str(geaendert_von)
             e["quelle"] = str(quelle)
@@ -128,6 +146,7 @@ def upsert(artikel_nr: Any, laenge_mm: int, breite_mm: int, hoehe_mm: int = 0,
         "hoehe_mm": int(max(0, hoehe_mm)),
         "bezeichnung": str(bezeichnung),
         "manuell_ueberschrieben": bool(manuell),
+        "bestaetigt": bool(bestaetigt),
         "letzte_aenderung": jetzt,
         "geaendert_von": str(geaendert_von),
         "quelle": str(quelle),
@@ -135,6 +154,23 @@ def upsert(artikel_nr: Any, laenge_mm: int, breite_mm: int, hoehe_mm: int = 0,
     h.append(neu)
     _write_raw(h)
     return neu, True
+
+
+def setze_bestaetigt(artikel_nr: Any, flag: bool) -> bool:
+    """Setzt/entfernt das Bestaetigt-Flag (Phase B). False -> Artikel
+    erscheint beim naechsten Import wieder im Maße-Gate."""
+    nr = _norm_nr(artikel_nr)
+    h = _read_raw()
+    geaendert = False
+    for e in h:
+        if _norm_nr(e.get("artikel_nummer")) == nr:
+            e["bestaetigt"] = bool(flag)
+            e["letzte_aenderung"] = _now()
+            geaendert = True
+            break
+    if geaendert:
+        _write_raw(h)
+    return geaendert
 
 
 def setze_manuell(artikel_nr: Any, flag: bool) -> bool:
@@ -168,6 +204,7 @@ STATUS_MANUELL = "manuell"        # 🔒 manuell gepflegt (Excel ignoriert)
 STATUS_OK = "ok"                  # ✅ bekannt & identisch zu Stammdaten
 STATUS_NEU = "neu"                # ⚠️ Artikelnummer noch nie gesehen
 STATUS_ABWEICHEND = "abweichend"  # ⚠️ bekannt, aber Excel-Maß != Stammdaten
+STATUS_UNBESTAETIGT = "unbestaetigt"  # ⚠️ bekannt & identisch, aber bestaetigt=false
 
 
 def analysiere_import(zeilen: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -206,7 +243,12 @@ def analysiere_import(zeilen: list[dict[str, Any]]) -> dict[str, dict[str, Any]]
         elif st:
             sl, sb = int(st["laenge_mm"]), int(st["breite_mm"])
             sh = int(st.get("hoehe_mm", 0))
-            status = STATUS_OK if (el, eb) == (sl, sb) else STATUS_ABWEICHEND
+            if (el, eb) != (sl, sb):
+                status = STATUS_ABWEICHEND          # Import widerspricht Stammdaten
+            elif st.get("bestaetigt", True):
+                status = STATUS_OK                  # bekannt + bestaetigt
+            else:
+                status = STATUS_UNBESTAETIGT        # bekannt, aber nicht bestaetigt
             z["mass_status"] = status
             stamm = (sl, sb, sh)
         else:
@@ -223,9 +265,11 @@ def analysiere_import(zeilen: list[dict[str, Any]]) -> dict[str, dict[str, Any]]
 
 
 def offene_pruefungen(info: dict[str, dict[str, Any]]) -> list[str]:
-    """Artikelnummern, die noch bestaetigt werden muessen (neu/abweichend)."""
+    """Artikelnummern, die noch bestaetigt werden muessen
+    (neu / abweichend / bekannt-aber-unbestaetigt)."""
     return [nr for nr, e in info.items()
-            if e.get("status") in (STATUS_NEU, STATUS_ABWEICHEND)]
+            if e.get("status") in (STATUS_NEU, STATUS_ABWEICHEND,
+                                    STATUS_UNBESTAETIGT)]
 
 
 def migration_aus_auftraege(auftraege_modul) -> dict[str, Any]:
@@ -250,6 +294,7 @@ def migration_aus_auftraege(auftraege_modul) -> dict[str, Any]:
             "laenge_mm": l, "breite_mm": b, "hoehe_mm": hh,
             "bezeichnung": "",
             "manuell_ueberschrieben": False,
+            "bestaetigt": True,
             "letzte_aenderung": _now(),
             "geaendert_von": "Migration",
             "quelle": "migration",
