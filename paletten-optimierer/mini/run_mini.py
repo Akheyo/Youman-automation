@@ -66,6 +66,42 @@ def get_base_path() -> Path:
     return Path(__file__).resolve().parent
 
 
+def _marker_pfad() -> Path:
+    """Absturz-Marker: wird vor dem nativen Fenster gesetzt und danach
+    geloescht. Bleibt er liegen, ist der Prozess IM Fenster abgestuerzt
+    (nativer WebView2-Crash, von Python nicht abfangbar)."""
+    return _log_pfad().parent / "webview_pending.flag"
+
+
+def _webview2_verfuegbar() -> bool:
+    """True, wenn die Edge-WebView2-Runtime installiert ist (Registry-Check
+    nach Microsoft-Doku, HKLM 32/64-bit + HKCU). Auf Nicht-Windows True."""
+    if sys.platform != "win32":
+        return True
+    try:
+        import winreg
+    except Exception:
+        return False
+    client = "{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
+    kandidaten = [
+        (winreg.HKEY_LOCAL_MACHINE,
+         "SOFTWARE\\WOW6432Node\\Microsoft\\EdgeUpdate\\Clients\\" + client),
+        (winreg.HKEY_LOCAL_MACHINE,
+         "SOFTWARE\\Microsoft\\EdgeUpdate\\Clients\\" + client),
+        (winreg.HKEY_CURRENT_USER,
+         "SOFTWARE\\Microsoft\\EdgeUpdate\\Clients\\" + client),
+    ]
+    for hive, pfad in kandidaten:
+        try:
+            with winreg.OpenKey(hive, pfad) as k:
+                pv, _ = winreg.QueryValueEx(k, "pv")
+                if pv and str(pv) not in ("", "0.0.0.0"):
+                    return True
+        except OSError:
+            continue
+    return False
+
+
 def freier_port(start: int = 8601, ende: int = 8620) -> int:
     for p in range(start, ende + 1):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -316,18 +352,37 @@ def main() -> int:
     force_browser = os.environ.get("YOUMAN_BROWSER", "").strip().lower() in (
         "1", "true", "yes", "ja")
 
+    # 1) WebView2-Runtime gar nicht installiert? -> erst gar nicht riskieren.
+    if not force_browser and not _webview2_verfuegbar():
+        log("Edge-WebView2-Runtime nicht gefunden — direkt Browser-Modus.")
+        force_browser = True
+    # 2) Letzter Start ist IM Fenster abgestuerzt (Marker blieb liegen)? ->
+    #    WebView2 vorhanden, aber defekt/blockiert. Diesmal Browser-Modus.
+    if not force_browser and _marker_pfad().exists():
+        log("Absturz-Marker vom letzten Start gefunden — Browser-Modus. "
+            f"(Zum erneuten Versuch Datei loeschen: {_marker_pfad()})")
+        force_browser = True
+
     fenster_ok = False
     if not force_browser:
         log("Port offen — öffne natives Fenster.")
+        try:
+            _marker_pfad().write_text("pending", encoding="utf-8")
+        except OSError:
+            pass
         t0 = time.monotonic()
         fenster_ok = _starte_native_fenster(url, base)
         offen_dauer = time.monotonic() - t0
-        # WebView2-Runtime fehlt/blockiert (Firmen-PC): das Fenster wird zwar
-        # erzeugt, schliesst sich aber sofort OHNE Python-Exception. Erkennbar
-        # an einer extrem kurzen Anzeigedauer -> auf Browser ausweichen.
+        # Sauber zurueckgekehrt -> kein Absturz -> Marker entfernen.
+        try:
+            _marker_pfad().unlink()
+        except OSError:
+            pass
+        # WebView2 zwar da, aber Fenster sofort weg (ohne Exception):
+        # extrem kurze Anzeigedauer -> auf Browser ausweichen.
         if fenster_ok and offen_dauer < 5.0:
             log(f"Fenster nach {offen_dauer:.1f}s geschlossen — vermutlich "
-                f"WebView2-Runtime nicht verfügbar. Weiche auf Browser aus.")
+                f"WebView2-Runtime defekt. Weiche auf Browser aus.")
             fenster_ok = False
 
     if not fenster_ok:
