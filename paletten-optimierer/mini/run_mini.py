@@ -273,6 +273,8 @@ def main() -> int:
     # Im PyInstaller-Bundle ist sys.executable die EXE selbst → Subprocess
     # wuerde rekursiv die EXE starten. Daher inline im Thread.
     is_frozen = getattr(sys, "frozen", False)
+    proc = None
+    streamlit_thread = None
     if is_frozen:
         log("frozen=True → Streamlit im Thread (inline bootstrap)")
         streamlit_thread = threading.Thread(
@@ -280,7 +282,6 @@ def main() -> int:
             daemon=True,
         )
         streamlit_thread.start()
-        proc = None
     else:
         log("frozen=False → Streamlit als Subprocess")
         try:
@@ -311,21 +312,39 @@ def main() -> int:
                                       + (server_log or "(keine Log-Datei)")))
         return 3
 
-    log("Port offen — öffne natives Fenster.")
-    if not _starte_native_fenster(url, base):
-        log("pywebview nicht verfügbar — Browser-Fallback.")
-        _fallback_browser(url)
-        # Thread/Subprocess am Leben halten
-        if proc is not None:
-            try:
-                proc.wait()
-            except KeyboardInterrupt:
-                proc.terminate()
+    # Browser-Modus erzwingbar (Support / WebView2 fehlt dauerhaft)
+    force_browser = os.environ.get("YOUMAN_BROWSER", "").strip().lower() in (
+        "1", "true", "yes", "ja")
+
+    fenster_ok = False
+    if not force_browser:
+        log("Port offen — öffne natives Fenster.")
+        t0 = time.monotonic()
+        fenster_ok = _starte_native_fenster(url, base)
+        offen_dauer = time.monotonic() - t0
+        # WebView2-Runtime fehlt/blockiert (Firmen-PC): das Fenster wird zwar
+        # erzeugt, schliesst sich aber sofort OHNE Python-Exception. Erkennbar
+        # an einer extrem kurzen Anzeigedauer -> auf Browser ausweichen.
+        if fenster_ok and offen_dauer < 5.0:
+            log(f"Fenster nach {offen_dauer:.1f}s geschlossen — vermutlich "
+                f"WebView2-Runtime nicht verfügbar. Weiche auf Browser aus.")
+            fenster_ok = False
+
+    if not fenster_ok:
+        if force_browser:
+            log("YOUMAN_BROWSER gesetzt — öffne direkt den Standardbrowser.")
         else:
-            try:
+            log("Kein natives Fenster — Browser-Fallback.")
+        _fallback_browser(url)
+        # Server am Leben halten, bis der Nutzer den Prozess beendet
+        try:
+            if proc is not None:
+                proc.wait()
+            elif streamlit_thread is not None:
                 streamlit_thread.join()
-            except KeyboardInterrupt:
-                pass
+        except KeyboardInterrupt:
+            if proc is not None:
+                proc.terminate()
 
     log("Fenster geschlossen — Beende.")
     if proc is not None:
