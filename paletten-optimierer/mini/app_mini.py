@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import sys
 from datetime import datetime
 from html import escape
@@ -1813,6 +1814,42 @@ def _dashboard_workflow(res: dict, katalog_set: set) -> None:
     card_close()
 
 
+def _datei_im_os_oeffnen(pfad: str) -> None:
+    """Oeffnet Datei ODER Ordner mit dem Standardprogramm des Betriebssystems.
+    Wichtig fuer die Desktop-App: im eingebetteten WebView2-Fenster loesen
+    Browser-Downloads (st.download_button) KEINEN Speichern-Dialog aus —
+    serverseitiges Oeffnen (Streamlit laeuft lokal auf demselben PC) klappt
+    dagegen immer."""
+    import subprocess
+    try:
+        if sys.platform == "win32":
+            os.startfile(pfad)  # type: ignore[attr-defined]  # noqa
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", pfad])
+        else:
+            subprocess.Popen(["xdg-open", pfad])
+    except Exception as exc:  # noqa: BLE001
+        st.warning(f"Konnte nicht öffnen: {exc}")
+
+
+def _export_aktionen(name: str, daten: bytes, pfad: str, key: str,
+                     mime: str = "application/pdf") -> None:
+    """Einheitliche Export-Aktionen: Datei direkt öffnen / Ordner öffnen
+    (funktioniert im App-Fenster) + Download (für den Browser-Modus)."""
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if st.button("📄 Öffnen", use_container_width=True, key=f"{key}_open"):
+            _datei_im_os_oeffnen(pfad)
+    with c2:
+        if st.button("📂 Ordner", use_container_width=True, key=f"{key}_dir"):
+            _datei_im_os_oeffnen(os.path.dirname(pfad))
+    with c3:
+        st.download_button("📥 Download", data=daten, file_name=name,
+                            mime=mime, use_container_width=True,
+                            key=f"{key}_dl")
+    st.caption(f"Gespeichert: {pfad}")
+
+
 def seite_ergebnisse() -> None:
     if st.session_state.ergebnis is None:
         st.info("Erst optimieren.")
@@ -2110,16 +2147,13 @@ def seite_ergebnisse() -> None:
                     quell_lauf_id=st.session_state.get("ergebnis_id"),
                 )
                 st.session_state.erg_pdf_pa_daten = (name, daten,
-                                                       arch["size_kb"])
+                                                       arch["pfad"])
             except Exception as exc:
                 st.error(f"Fehler: {exc}")
         if "erg_pdf_pa_daten" in st.session_state:
-            name, daten, size_kb = st.session_state.erg_pdf_pa_daten
-            st.download_button(
-                f"📥 {name} ({size_kb} KB)",
-                data=daten, file_name=name, mime="application/pdf",
-                use_container_width=True, key="erg_pdf_pa_dl",
-            )
+            name, daten, pfad = st.session_state.erg_pdf_pa_daten
+            st.success(f"✓ {name} erstellt.")
+            _export_aktionen(name, daten, pfad, "erg_pdf_pa")
     with pc2:
         if st.button("📄 PDF: Auftrag → Paletten",
                        use_container_width=True, key="erg_pdf_ap",
@@ -2135,16 +2169,13 @@ def seite_ergebnisse() -> None:
                     quell_lauf_id=st.session_state.get("ergebnis_id"),
                 )
                 st.session_state.erg_pdf_ap_daten = (name, daten,
-                                                       arch["size_kb"])
+                                                       arch["pfad"])
             except Exception as exc:
                 st.error(f"Fehler: {exc}")
         if "erg_pdf_ap_daten" in st.session_state:
-            name, daten, size_kb = st.session_state.erg_pdf_ap_daten
-            st.download_button(
-                f"📥 {name} ({size_kb} KB)",
-                data=daten, file_name=name, mime="application/pdf",
-                use_container_width=True, key="erg_pdf_ap_dl",
-            )
+            name, daten, pfad = st.session_state.erg_pdf_ap_daten
+            st.success(f"✓ {name} erstellt.")
+            _export_aktionen(name, daten, pfad, "erg_pdf_ap")
 
 
 # ---------------------------------------------------------------------------
@@ -6184,13 +6215,13 @@ def seite_berichte() -> None:
                     arch = berichte_modul.archiv_speichern(
                         "palette_artikel", name, daten,
                         quell_lauf_id=st.session_state.get("ergebnis_id"))
-                    st.success(f"✓ {name} ({arch['size_kb']} KB).")
-                    st.download_button("📥 Herunterladen", data=daten,
-                                          file_name=name, mime="application/pdf",
-                                          use_container_width=True,
-                                          key=f"ber_pa_dl_{arch['id']}")
+                    st.session_state.ber_pa_daten = (name, daten, arch["pfad"])
                 except Exception as exc:
                     st.error(f"Fehler: {exc}")
+            if "ber_pa_daten" in st.session_state:
+                name, daten, pfad = st.session_state.ber_pa_daten
+                st.success(f"✓ {name} erstellt.")
+                _export_aktionen(name, daten, pfad, "ber_pa")
         card_close()
 
     with nrow_c2:
@@ -6246,15 +6277,14 @@ def seite_berichte() -> None:
                             "auftragsuebersicht", "pdf")
                         arch = berichte_modul.archiv_speichern(
                             "auftragsuebersicht", name, daten)
-                        st.success(f"✓ {name} ({arch['size_kb']} KB) · "
-                                    f"{len(gefiltert)} Aufträge.")
-                        st.download_button("📥 Herunterladen", data=daten,
-                                              file_name=name,
-                                              mime="application/pdf",
-                                              use_container_width=True,
-                                              key=f"ber_auf_dl_{arch['id']}")
+                        st.session_state.ber_auf_daten = (
+                            name, daten, arch["pfad"], len(gefiltert))
                 except Exception as exc:
                     st.error(f"Fehler: {exc}")
+            if "ber_auf_daten" in st.session_state:
+                name, daten, pfad, n_auf = st.session_state.ber_auf_daten
+                st.success(f"✓ {name} erstellt · {n_auf} Aufträge.")
+                _export_aktionen(name, daten, pfad, "ber_auf")
         card_close()
 
     # Grid 2 Spalten × 3 Zeilen
