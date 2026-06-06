@@ -478,10 +478,11 @@ def seite_datenimport() -> None:
         try:
             erg_up = auftraege_modul.upsert_aus_excel(
                 dat.get("mit_mass", []))
-            if erg_up["neu"] > 0:
+            if erg_up["neu"] or erg_up.get("ersetzt"):
                 st.toast(
-                    f"📋 {erg_up['neu']} Positionen in Stammdaten 2 angelegt"
-                    f" ({erg_up['vorhanden']} schon vorhanden)."
+                    f"📋 Stammdaten 2: {erg_up['neu']} neue · "
+                    f"{erg_up.get('ersetzt', 0)} geänderte (ersetzt) · "
+                    f"{erg_up.get('unveraendert', 0)} unveränderte Aufträge."
                 )
         except Exception:
             pass

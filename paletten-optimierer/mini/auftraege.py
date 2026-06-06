@@ -292,76 +292,147 @@ def leere_alle() -> int:
 # ---------------------------------------------------------------------------
 # Excel-Import: AW upserten (Spec §8 Verknüpfung mit Tab Import)
 # ---------------------------------------------------------------------------
-def _zeile_basiskey(zeile: dict) -> str:
-    """Stabiler natuerlicher Schluessel einer Excel-Zeile (ohne Occurrence)
-    fuer idempotenten Re-Import auf Positions-Ebene."""
+def _aw_key(zeile: dict) -> str:
+    """Auftragsnummer (AW) einer Excel-Zeile. Fehlt sie, wird ein stabiler
+    Inhalts-Schluessel verwendet (damit auch AW-lose Zeilen idempotent sind)."""
     aw = (zeile.get("auftrag") or zeile.get("aw_nummer") or "").strip()
-    art = str(zeile.get("artikelnummer") or zeile.get("artikel_nummer") or "")
-    l = int(zeile.get("laenge") or zeile.get("L") or 0)
-    b = int(zeile.get("breite") or zeile.get("B") or 0)
-    hh = int(zeile.get("hoehe") or 0)
-    vbd = str(zeile.get("verbrauchsdatum") or "")
-    bd = str(zeile.get("bestelldatum", "") or "")
-    return f"{aw}|{art}|{l}x{b}x{hh}|{vbd}|{bd}"
+    if aw:
+        return aw
+    import hashlib
+    sig = hashlib.md5(repr(_zeile_fingerprint(zeile)).encode()).hexdigest()[:10]
+    return "AUTO:" + sig
+
+
+def _zeile_fingerprint(zeile: dict) -> tuple:
+    """Inhalts-Fingerabdruck EINER Position (alle fachlich relevanten Felder).
+    Aenderung an irgendeinem Feld => anderer Fingerabdruck => Auftrag gilt als
+    geaendert."""
+    return (
+        str(zeile.get("artikelnummer") or zeile.get("artikel_nummer") or ""),
+        str(zeile.get("name") or zeile.get("kunde") or ""),
+        int(zeile.get("anzahl") or zeile.get("menge") or 0),
+        int(zeile.get("laenge") or zeile.get("L") or 0),
+        int(zeile.get("breite") or zeile.get("B") or 0),
+        int(zeile.get("hoehe") or 0),
+        str(zeile.get("verbrauchsdatum") or ""),
+        str(zeile.get("bestelldatum", "") or ""),
+    )
+
+
+def _eintrag_fingerprint(e: dict) -> tuple:
+    """Wie _zeile_fingerprint, aber fuer einen gespeicherten Auftrag — exakt
+    gleiche Feldreihenfolge, damit Alt/Neu vergleichbar sind."""
+    ang = e.get("angeforderte_palette", {}) or {}
+    return (
+        str(e.get("artikel_nummer") or ""),
+        str(e.get("kunde") or ""),
+        int(e.get("menge") or 0),
+        int(ang.get("l") or 0),
+        int(ang.get("b") or 0),
+        int(ang.get("h") or 0),
+        str(e.get("verbrauchsdatum") or ""),
+        str(e.get("bestelldatum", "") or ""),
+    )
 
 
 def upsert_aus_excel(zeilen: list[dict]) -> dict[str, Any]:
-    """Positions-Import (eine Position pro Excel-Zeile, auch bei
-    mehrfacher AW). Idempotent: identische Zeilen werden ueber einen
-    natuerlichen Schluessel (+Occurrence) erkannt und beim Re-Import NICHT
-    dupliziert. Ein einziger Schreibvorgang. Liefert
-    {neu, vorhanden, fehler, ids}."""
+    """Import auf Auftragsnummer-Ebene (AW). Eine AW kann mehrere Positionen
+    haben (mehrere Excel-Zeilen). Regeln:
+      - AW neu                       -> anlegen
+      - AW vorhanden, NICHTS geaendert -> ueberspringen (kein Duplikat)
+      - AW vorhanden, etwas geaendert  -> alten Auftrag (alle Positionen
+                                          dieser AW) ersetzen
+    Exakte Dubletten innerhalb derselben AW im selben Import werden kollabiert.
+    Ein einziger Schreibvorgang. Liefert
+    {neu, ersetzt, unveraendert, vorhanden, fehler, ids}."""
+    from collections import Counter, defaultdict
+
     h = _read_raw()
-    vorhandene_keys = {e.get("import_key") for e in h if e.get("import_key")}
-    occ: dict[str, int] = {}
     jetzt = _now()
-    neu_eintraege: list[dict] = []
-    ids: list[str] = []
-    neu = vorhanden = fehler = 0
+
+    # Bestehende nach AW gruppieren + Signatur (Multiset der Fingerprints)
+    best_nach_aw: dict[str, list[dict]] = defaultdict(list)
+    for e in h:
+        best_nach_aw[str(e.get("aw_nummer") or "")].append(e)
+    best_sig: dict[str, Counter] = {
+        aw: Counter(_eintrag_fingerprint(e) for e in lst)
+        for aw, lst in best_nach_aw.items()
+    }
+
+    # Eingehende nach AW gruppieren, exakte Dubletten je AW kollabieren
+    eingehend: dict[str, list[dict]] = defaultdict(list)
+    eingehend_sig: dict[str, Counter] = defaultdict(Counter)
+    reihenfolge: list[str] = []
     for z in zeilen:
-        base = _zeile_basiskey(z)
-        i = occ.get(base, 0)
-        occ[base] = i + 1
-        key = f"{base}#{i}"
-        if key in vorhandene_keys:
-            vorhanden += 1
+        awk = _aw_key(z)
+        fp = _zeile_fingerprint(z)
+        if awk not in eingehend:
+            reihenfolge.append(awk)
+        if eingehend_sig[awk][fp] >= 1:
+            continue  # exakte Dublette derselben AW -> verwerfen
+        eingehend_sig[awk][fp] += 1
+        eingehend[awk].append(z)
+
+    # Entscheidung je AW: neu / unveraendert / ersetzen
+    aws_unveraendert = {awk for awk in eingehend
+                        if awk in best_sig
+                        and best_sig[awk] == eingehend_sig[awk]}
+    aws_ersetzen = {awk for awk in eingehend
+                    if awk in best_sig and awk not in aws_unveraendert}
+
+    # Neue Liste: alle Bestehenden ausser denen ersetzter AWs
+    neue_liste = [e for e in h
+                  if str(e.get("aw_nummer") or "") not in aws_ersetzen]
+
+    neu = ersetzt = unveraendert = fehler = 0
+    ids: list[str] = []
+    for awk in reihenfolge:
+        if awk in aws_unveraendert:
+            unveraendert += 1
             continue
-        aw = (z.get("auftrag") or z.get("aw_nummer") or "").strip()
-        if not aw:
-            aw = f"AUTO-{_zeile_basiskey(z)}#{i}"[:40]
-        eid = uuid.uuid4().hex
-        neu_eintraege.append({
-            "id": eid,
-            "aw_nummer": aw,
-            "kunde": str(z.get("name") or z.get("kunde") or ""),
-            "artikel_nummer": str(z.get("artikelnummer")
-                                   or z.get("artikel_nummer") or ""),
-            "menge": int(max(0, int(z.get("anzahl") or z.get("menge") or 0))),
-            "angeforderte_palette": {
-                "l": int(max(0, int(z.get("laenge") or z.get("L") or 0))),
-                "b": int(max(0, int(z.get("breite") or z.get("B") or 0))),
-                "h": int(max(0, int(z.get("hoehe") or 0))),
-            },
-            "zugewiesene_palette_id": None,
-            "bestelldatum": str(z.get("bestelldatum", "") or ""),
-            "verbrauchsdatum": str(z.get("verbrauchsdatum") or ""),
-            "verlinkte_bestellung_id": None,
-            "status": "offen",
-            "status_manuell_gesetzt": False,
-            "status_grund": "",
-            "bemerkung": "",
-            "import_key": key,
-            "quelle": "excel_import",
-            "erstellt_am": jetzt,
-            "geaendert_am": jetzt,
-        })
-        vorhandene_keys.add(key)
-        ids.append(eid)
-        neu += 1
-    if neu_eintraege:
-        h.extend(neu_eintraege)
-        _write_raw(h)
-    return {"neu": neu, "vorhanden": vorhanden, "fehler": fehler, "ids": ids}
+        ist_ersatz = awk in aws_ersetzen
+        aw_anzeige = (eingehend[awk][0].get("auftrag")
+                      or eingehend[awk][0].get("aw_nummer") or "").strip()
+        if not aw_anzeige:
+            aw_anzeige = awk  # AUTO:... als Anzeige
+        for z in eingehend[awk]:
+            eid = uuid.uuid4().hex
+            neue_liste.append({
+                "id": eid,
+                "aw_nummer": aw_anzeige,
+                "kunde": str(z.get("name") or z.get("kunde") or ""),
+                "artikel_nummer": str(z.get("artikelnummer")
+                                       or z.get("artikel_nummer") or ""),
+                "menge": int(max(0, int(z.get("anzahl")
+                                        or z.get("menge") or 0))),
+                "angeforderte_palette": {
+                    "l": int(max(0, int(z.get("laenge") or z.get("L") or 0))),
+                    "b": int(max(0, int(z.get("breite") or z.get("B") or 0))),
+                    "h": int(max(0, int(z.get("hoehe") or 0))),
+                },
+                "zugewiesene_palette_id": None,
+                "bestelldatum": str(z.get("bestelldatum", "") or ""),
+                "verbrauchsdatum": str(z.get("verbrauchsdatum") or ""),
+                "verlinkte_bestellung_id": None,
+                "status": "offen",
+                "status_manuell_gesetzt": False,
+                "status_grund": "",
+                "bemerkung": "",
+                "import_key": awk,
+                "quelle": "excel_import",
+                "erstellt_am": jetzt,
+                "geaendert_am": jetzt,
+            })
+            ids.append(eid)
+        if ist_ersatz:
+            ersetzt += 1
+        else:
+            neu += 1
+
+    if neu or ersetzt:
+        _write_raw(neue_liste)
+    return {"neu": neu, "ersetzt": ersetzt, "unveraendert": unveraendert,
+            "vorhanden": unveraendert, "fehler": fehler, "ids": ids}
 
 
 # ---------------------------------------------------------------------------

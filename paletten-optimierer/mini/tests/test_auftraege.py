@@ -100,9 +100,10 @@ def test_c_status_wechsel_pflicht_grund():
     print(f"  Status-Wechsel: Grund-Pflicht enforced, valid Status enforced.")
 
 
-def test_d_upsert_excel_pro_position_idempotent():
-    """Bug-Fix: eine Position pro Excel-Zeile (auch bei mehrfacher AW),
-    Re-Import idempotent."""
+def test_d_upsert_excel_aw_dedup_und_ersetzen():
+    """Import auf AW-Ebene: unveraenderte AW ueberspringen, geaenderte AW
+    ersetzen, exakte Dubletten kollabieren. Eine AW darf mehrere Positionen
+    haben."""
     _reset()
     zeilen = [
         {"auftrag": "AW-X1", "name": "Müller", "artikelnummer": "A1",
@@ -113,17 +114,28 @@ def test_d_upsert_excel_pro_position_idempotent():
          "anzahl": 1, "laenge": 800, "breite": 600, "hoehe": 0},
     ]
     erg = auf.upsert_aus_excel(zeilen)
-    assert erg["neu"] == 3, erg            # AW-X1 zweimal erlaubt
-    assert len(auf.alle()) == 3
-    # Re-Import derselben Datei -> keine Duplikate
+    assert erg["neu"] == 2, erg              # 2 Auftraege (AW-X1 mit 2 Pos, AW-X2)
+    assert len(auf.alle()) == 3              # 3 Positionen
+    # Re-Import unveraendert -> nichts passiert
     erg2 = auf.upsert_aus_excel(zeilen)
-    assert erg2["neu"] == 0 and erg2["vorhanden"] == 3, erg2
+    assert (erg2["neu"], erg2["ersetzt"], erg2["unveraendert"]) == (0, 0, 2), erg2
     assert len(auf.alle()) == 3
-    # Identische Zeile doppelt -> Occurrence #1 wird neue Position
+    # Exakte Dublette im selben Import wird kollabiert
     erg3 = auf.upsert_aus_excel([zeilen[2], zeilen[2]])
-    assert erg3["neu"] == 1 and erg3["vorhanden"] == 1, erg3
-    assert len(auf.alle()) == 4
-    print("  Upsert per Position: dup-AW erlaubt + Re-Import idempotent.")
+    assert erg3["unveraendert"] == 1 and len(auf.alle()) == 3, erg3
+    # AW-X1 aendert sich (Menge 5->99) -> alter Auftrag wird ersetzt
+    geaendert = [
+        {"auftrag": "AW-X1", "name": "Müller", "artikelnummer": "A1",
+         "anzahl": 99, "laenge": 1200, "breite": 800, "hoehe": 144},
+        {"auftrag": "AW-X1", "name": "Müller", "artikelnummer": "A2",
+         "anzahl": 3, "laenge": 1000, "breite": 600, "hoehe": 144},
+    ]
+    erg4 = auf.upsert_aus_excel(geaendert)
+    assert erg4["ersetzt"] == 1, erg4
+    x1 = [a for a in auf.alle() if a["aw_nummer"] == "AW-X1"]
+    assert len(x1) == 2 and sorted(a["menge"] for a in x1) == [3, 99], x1
+    assert len(auf.alle()) == 3              # AW-X2 unberuehrt
+    print("  Upsert AW-Ebene: dedup + unveraendert skip + ersetzen OK")
 
 
 def test_e_auto_sync_offen_zu_in_arbeit():
@@ -317,7 +329,7 @@ if __name__ == "__main__":
         test_a_crud_und_auto_aw_nummer,
         test_b_duplikat_check_aw,
         test_c_status_wechsel_pflicht_grund,
-        test_d_upsert_excel_pro_position_idempotent,
+        test_d_upsert_excel_aw_dedup_und_ersetzen,
         test_e_auto_sync_offen_zu_in_arbeit,
         test_f_auto_sync_zu_abgeschlossen,
         test_g_manuell_gesetzt_bleibt,
