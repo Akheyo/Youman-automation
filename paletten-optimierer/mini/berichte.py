@@ -1010,10 +1010,12 @@ def pdf_palette_artikel(ergebnis: dict, datei_name: str = "") -> bytes:
         pdf.set_font("Helvetica", "B", 12)
         pdf.set_text_color(15, 31, 61)
         sum_menge = sum(int(z.get("menge", 0)) for z in zeilen)
-        pdf.cell(0, 7,
-                  _latin1(f"{typ} · {ziel}  "
-                           f"({len(zeilen)} Artikel · {sum_menge} Paletten)"),
-                  ln=True)
+        if typ == "Nicht zuordenbar":
+            kopf = f"Nicht zuordenbar  ({len(zeilen)} Artikel)"
+        else:
+            kopf = (f"Palette {ziel}  ·  {typ}  "
+                    f"({len(zeilen)} Artikel · {sum_menge} Paletten)")
+        pdf.cell(0, 7, _latin1(kopf), ln=True)
         pdf.set_text_color(0, 0, 0)
 
         rows = []
@@ -1023,7 +1025,7 @@ def pdf_palette_artikel(ergebnis: dict, datei_name: str = "") -> bytes:
                 f"{int(z.get('L', 0))}x{int(z.get('B', 0))}",
             ])
         _table(pdf,
-                ["Artikel", "Artikelmaß"],
+                ["Artikelnummer", "Gittermaß"],
                 rows, [110, 50])
         pdf.ln(4)
 
@@ -1115,7 +1117,7 @@ def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
                 (z.get("verbrauchsdatum", "") or "—")[:12],
             ])
         _table(pdf,
-                ["Artikel", "Artikelmaß", "Palettenmaß",
+                ["Artikel", "Gittermaß", "Palettenmaß",
                   "Optim. Palette", "Typ", "Menge", "VBD"],
                 rows, [24, 22, 26, 34, 26, 14, 22])
         pdf.ln(4)
