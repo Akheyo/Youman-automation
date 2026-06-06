@@ -1019,16 +1019,12 @@ def pdf_palette_artikel(ergebnis: dict, datei_name: str = "") -> bytes:
         rows = []
         for z in zeilen:
             rows.append([
-                (z.get("auftrag", "") or "—")[:18],
-                (z.get("name", "") or "—")[:25],
-                (z.get("artikelnummer", "") or "—")[:15],
+                (z.get("artikelnummer", "") or "—")[:40],
                 f"{int(z.get('L', 0))}x{int(z.get('B', 0))}",
-                str(int(z.get("menge", 0))),
-                (z.get("verbrauchsdatum", "") or "—")[:12],
             ])
         _table(pdf,
-                ["AW", "Kunde", "Artikel", "Artikelmaß", "Menge", "VBD"],
-                rows, [27, 38, 25, 26, 18, 28])
+                ["Artikel", "Artikelmaß"],
+                rows, [110, 50])
         pdf.ln(4)
 
     return bytes(pdf.output())
@@ -1104,18 +1100,24 @@ def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
         pdf.set_text_color(0, 0, 0)
         rows = []
         for z in zeilen:
+            pL = z.get("palette_L_excel")
+            pB = z.get("palette_B_excel")
+            pal_mass = (f"{int(pL)}x{int(pB)}"
+                        if pL not in (None, "") and pB not in (None, "")
+                        else "—")
             rows.append([
                 (z.get("artikelnummer", "") or "—")[:15],
                 f"{int(z.get('L', 0))}x{int(z.get('B', 0))}",
+                pal_mass,
                 z.get("ziel", "—")[:22],
-                z.get("typ", "")[:18],
+                z.get("typ", "")[:16],
                 str(int(z.get("menge", 0))),
                 (z.get("verbrauchsdatum", "") or "—")[:12],
             ])
         _table(pdf,
-                ["Artikel", "Artikelmaß", "Ziel-Palette", "Typ",
-                  "Menge", "Verbrauchsdat."],
-                rows, [25, 24, 36, 30, 18, 30])
+                ["Artikel", "Artikelmaß", "Palettenmaß",
+                  "Optim. Palette", "Typ", "Menge", "VBD"],
+                rows, [24, 22, 26, 34, 26, 14, 22])
         pdf.ln(4)
 
     return bytes(pdf.output())
