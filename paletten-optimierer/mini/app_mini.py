@@ -12,6 +12,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from html import escape
@@ -1104,6 +1105,88 @@ def _offene_masse() -> list[str]:
         st.session_state.get("masse_gate", {}))
 
 
+# Klassifizierung Standard vs. Sonder nach NUTZUNG (Spec):
+#   >2 Artikel  -> Standard   |   1-2 Artikel -> Sonder
+#   Ausnahme: ein Artikel mit Menge >= 20 -> Standard
+#   (kumulative Über-die-Zeit-Regel folgt separat)
+STD_ARTIKEL_SCHWELLE = 3      # ab 3 verschiedenen Artikeln
+STD_EINZEL_MENGE = 20         # ein Artikel mit so vielen Paletten
+
+
+def _klassifiziere_paletten(res: dict) -> dict:
+    """Teilt die GENUTZTEN Palettengrößen in Standard/Sonder und setzt
+    zg['klasse'] (+ zg['typ'] fuer Einzelgrößen). Liefert JSON-sicheres
+    Summary mit Zählern + Detail je Größe."""
+    grp: dict[str, dict] = {}
+    for z in res.get("zuordnung", []):
+        if z.get("typ") == "Nicht zuordenbar":
+            z["klasse"] = "—"
+            continue
+        ziel = str(z.get("ziel") or "")
+        m = re.fullmatch(r"(\d+)x(\d+)", ziel)
+        if not m:
+            z["klasse"] = "Kombi"      # Kombi-Stapel/Heterogen: keine Einzelgröße
+            continue
+        g = grp.setdefault(ziel, {
+            "cs": int(m.group(1)), "cl": int(m.group(2)),
+            "artikel": {}, "pallets": 0, "eintraege": []})
+        art = (str(z.get("artikelnummer") or "").strip() or "(ohne ArtNr)")
+        menge = int(z.get("menge") or 0)
+        g["artikel"][art] = g["artikel"].get(art, 0) + menge
+        g["pallets"] += menge
+        g["eintraege"].append(z)
+
+    standards, sonder, details = [], [], []
+    for ziel, g in sorted(grp.items()):
+        n_art = len(g["artikel"])
+        max_menge = max(g["artikel"].values()) if g["artikel"] else 0
+        ist_std = (n_art >= STD_ARTIKEL_SCHWELLE) or (max_menge >= STD_EINZEL_MENGE)
+        g["klasse"] = "Standard" if ist_std else "Sonder"
+        for z in g["eintraege"]:
+            z["klasse"] = g["klasse"]
+            z["typ"] = g["klasse"]     # Anzeige/Tabelle/PDF konsistent
+        (standards if ist_std else sonder).append((g["cs"], g["cl"]))
+        grund = ("≥3 Artikel" if n_art >= STD_ARTIKEL_SCHWELLE
+                 else (f"1 Artikel × {max_menge}≥20"
+                       if max_menge >= STD_EINZEL_MENGE
+                       else f"{n_art} Artikel"))
+        details.append({"ziel": ziel, "klasse": g["klasse"], "n_artikel": n_art,
+                        "max_menge": max_menge, "pallets": g["pallets"],
+                        "grund": grund})
+
+    return {
+        "standard_typen": len(standards), "sonder_typen": len(sonder),
+        "standard_masse": standards, "sonder_masse": sonder,
+        "standard_pallets": sum(d["pallets"] for d in details
+                                if d["klasse"] == "Standard"),
+        "sonder_pallets": sum(d["pallets"] for d in details
+                              if d["klasse"] == "Sonder"),
+        "details": details,
+    }
+
+
+def _auto_standards_in_katalog(standard_masse: list) -> int:
+    """Neue Standard-Größen automatisch in den Katalog aufnehmen
+    (quelle=auto_aus_optimierung, auto_standard=True). Duplikate werden
+    übersprungen. Liefert Anzahl neu angelegter Einträge."""
+    from datetime import date as _date
+    heute = _date.today().isoformat()
+    neu = 0
+    for cs, cl in standard_masse:
+        try:
+            if katalog_modul.finde_duplikat(int(cs), int(cl), 0):
+                continue
+            katalog_modul.neuer_eintrag(
+                L=int(cl), B=int(cs), typ="standard",
+                quelle="auto_aus_optimierung", aktiv=True,
+                auto_standard=True, auto_standard_seit=heute,
+                notiz="Automatisch aus Optimierung (Standard-Regel)")
+            neu += 1
+        except Exception:
+            continue
+    return neu
+
+
 def run_optimierung() -> None:
     # Pflicht-Gate: keine Optimierung solange unbestätigte Maße offen sind.
     _offen = _offene_masse()
@@ -1149,8 +1232,10 @@ def run_optimierung() -> None:
         Pk_eff, Pl_eff = None, None
         modus_text = f"Modus mm (B≤{Tk_eff}mm / L≤{Tl_eff}mm)"
 
-    # Sonderpaletten-Feature entfernt: immer aus.
-    sonder_erlaubt = False
+    # Palettengrößen werden aus den Aufträgen abgeleitet (der Optimierer darf
+    # neue Maße bilden). Standard/Sonder entscheidet danach die Nutzungsregel
+    # (_klassifiziere_paletten), NICHT die Katalog-Mitgliedschaft.
+    sonder_erlaubt = True
     sonder_min = 0
     sonder_auf = 0
     gewichte = {f"w{i}": float(p.get(f"w{i}", 0.0)) for i in range(1, 10)}
@@ -1159,8 +1244,8 @@ def run_optimierung() -> None:
     hinweis = (f"ILP-Solver (CBC) optimiert {len(orders)} Aufträge — "
                f"{modus_text}, "
                f"Kombi {'an' if kombi else 'aus'}. "
-               f"Nur Katalog-Standards; nicht passende Artikel werden "
-               f"als 'nicht zuordenbar' ausgewiesen.")
+               f"Standard-Größen werden aus den Aufträgen abgeleitet und "
+               f"nach Nutzung (Artikelanzahl/Menge) klassifiziert.")
     # Katalog-Maße + Kosten/Marge/Verbrauch/Bestand fuer Score-Gewichte
     try:
         kat_eintraege = katalog_modul.alle()
@@ -1315,6 +1400,21 @@ def run_optimierung() -> None:
             pL, pB = palette_excel_lookup[idx]
             zg["palette_L_excel"] = pL
             zg["palette_B_excel"] = pB
+
+    # Standard/Sonder nach Nutzung klassifizieren (Spec-Regel) + res
+    # konsistent darauf umstellen
+    klass = _klassifiziere_paletten(res)
+    res["paletten_klassen"] = klass
+    res["standards"] = [list(m) for m in klass["standard_masse"]]
+    res["sonder"] = [list(m) for m in klass["sonder_masse"]]
+    # Standard-Größen automatisch in den Katalog aufnehmen
+    try:
+        n_neu_kat = _auto_standards_in_katalog(klass["standard_masse"])
+        if n_neu_kat:
+            st.toast(f"➕ {n_neu_kat} neue Standardpalette(n) automatisch in "
+                     f"den Katalog aufgenommen.")
+    except Exception:
+        pass
     st.session_state.ergebnis = res
 
     # Verlauf ergaenzen (Kern-v4-Schema + Snapshot fuer Kostenanalyse §2/§6)
@@ -1470,23 +1570,29 @@ def kpi_uebersicht() -> None:
         )
 
     paletten_summe = sum(p["anzahl"] for p in dat["mit_mass"])
-    n_std = len(res["standards"])
+    gesamt = res["gesamt"]
+    klass = res.get("paletten_klassen", {}) or {}
+    n_std = int(klass.get("standard_typen", 0))
+    n_son = int(klass.get("sonder_typen", 0))
     n_nz = sum(1 for z in res.get("zuordnung", [])
                if z.get("typ") == "Nicht zuordenbar")
-    gesamt = res["gesamt"]
 
-    c1, c2, c3, c4 = st.columns([1.4, 1, 1, 1.2])
-    c1.metric(
-        "Standard-Typen gesamt",
-        _fmt_int(gesamt),
-        help="Anzahl gewählter Standardpaletten-Maße. Das ist die Zielgröße.",
-    )
-    c2.metric("Standards", _fmt_int(n_std),
-              help="Anzahl gewählter Standardpaletten-Maße.")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Standardpaletten", _fmt_int(n_std),
+              help="Genutzte Größen mit ≥3 Artikeln ODER einem Artikel "
+                   "mit Menge ≥20.")
+    c2.metric("Sonderpaletten", _fmt_int(n_son),
+              help="Genutzte Größen mit nur 1–2 Artikeln (und Menge <20).")
     c3.metric("Nicht zuordenbar", _fmt_int(n_nz),
-              help="Artikel ohne passenden Katalog-Standard.")
+              help="Aufträge, die keine Größe innerhalb der Toleranz deckt.")
     c4.metric("Paletten gesamt", _fmt_int(paletten_summe),
               help="Σ der Mengen aller Aufträge mit Maß.")
+    if n_std or n_son:
+        st.caption(
+            f"📦 Standard: {n_std} Größen / "
+            f"{_fmt_int(klass.get('standard_pallets', 0))} Paletten · "
+            f"🔧 Sonder: {n_son} Größen / "
+            f"{_fmt_int(klass.get('sonder_pallets', 0))} Paletten")
 
     # Trade-off-Zeile = SINGLE SOURCE OF TRUTH (aus res['parameter']!)
     # NICHT aus session_state — zeigt genau das was an optimiere() ging.
@@ -2020,7 +2126,7 @@ def seite_ergebnisse() -> None:
         card_close()
 
     # --- Filter ---
-    filter_opt = ["alle", "Standard", "Kombi", "Nicht zuordenbar"]
+    filter_opt = ["alle", "Standard", "Sonder", "Kombi", "Nicht zuordenbar"]
     aktiver_filter = p.get("ergebnis_filter", "alle")
     if aktiver_filter not in filter_opt:
         aktiver_filter = "alle"
