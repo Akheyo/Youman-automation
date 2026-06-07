@@ -48,4 +48,3 @@ scripts/lod2-pipeline/__pycache__/
 bingo-caller.zip
 
 # Generated single-file build (regenerate by embedding assets/ as base64 into bingo-caller.html)
-bingo-caller-standalone.html
