@@ -1066,13 +1066,21 @@ def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
     # Summary-Tabelle: AW | Kunde | #Zuord | Σ Paletten
     summary_rows = []
     for aw, zeilen in pro_aw_sorted:
-        kunde = (zeilen[0].get("name", "") or "—")[:22]
+        kunde = (zeilen[0].get("name", "") or "—")[:20]
         sum_menge = sum(int(z.get("menge", 0)) for z in zeilen)
         ziele = sorted({(z.get("ziel", "") or "—") for z in zeilen})
-        ziel_txt = ", ".join(ziele)[:34]
+        ziel_txt = ", ".join(ziele)[:30]
+        pal_masse = set()
+        for z in zeilen:
+            pL = z.get("palette_L_excel")
+            pB = z.get("palette_B_excel")
+            if pL not in (None, "") and pB not in (None, ""):
+                pal_masse.add(f"{int(pL)}x{int(pB)}")
+        pal_txt = (", ".join(sorted(pal_masse)) or "—")[:30]
         summary_rows.append([
             aw[:16],
             kunde,
+            pal_txt,
             ziel_txt,
             str(len(zeilen)),
             str(sum_menge),
@@ -1081,8 +1089,10 @@ def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
     pdf.set_text_color(15, 31, 61)
     pdf.cell(0, 6, _latin1("Übersicht"), ln=True)
     pdf.set_text_color(0, 0, 0)
-    _table(pdf, ["AW", "Kunde", "Optim. Palette", "Zuord.", "Σ Paletten"],
-            summary_rows, [34, 48, 50, 22, 28])
+    _table(pdf,
+            ["AW", "Kunde", "Palettenmaß", "Optim. Palette",
+              "Zuord.", "Σ Pal."],
+            summary_rows, [28, 36, 38, 40, 16, 20])
     pdf.ln(5)
 
     # Detail pro AW
