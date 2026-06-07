@@ -5,18 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ܒܝܢܓܘ · Bingo Caller</title>
 
-<!-- Logo / Favicon / App-Icon -->
-<link rel="icon" href="https://i.ibb.co/n807ZfkX/Flag-of-the-Assyrians-gold-and-blue-Assur-svg.png" />
-<link rel="apple-touch-icon" href="https://i.ibb.co/n807ZfkX/Flag-of-the-Assyrians-gold-and-blue-Assur-svg.png" />
+<!-- Logo / Favicon / App-Icon  (lokal, offline – keine externen Links) -->
+<link rel="icon" type="image/png" href="assets/shamash-emblem.png" />
+<link rel="apple-touch-icon" href="assets/shamash-emblem.png" />
 <meta name="theme-color" content="#0d2a5e" />
 
 <style>
-  /* =========================================================
-     ZAHLENRAUM – hier umstellen:  90 (klassisch) oder 75 (B-I-N-G-O)
-     ========================================================= */
-  /* (Wert wird in JS gelesen; CSS nutzt nur die Variablen unten.) */
-
-  /* === Farbschema aus dem Logo (Assyrische Flagge: Gold & Blau, Assur) === */
+  /* === Farbschema (Assyrische Flagge: Gold & Blau, Assur) ============== */
   :root {
     --blau-tief:    #0d2a5e;   /* tiefes Flaggenblau (Hintergrund)   */
     --blau-mittel:  #163a7d;   /* mittleres Blau (Panels)            */
@@ -27,16 +22,20 @@
     --weiss:        #f7f9ff;   /* Schrift hell                       */
     --weiss-dim:    #b9c6e6;   /* gedämpft                           */
 
+    /* Deckkraft des Navy-Overlays über dem Lamassu-Header */
+    --overlay-deckkraft: 0.74;
+
     --rad-gross: 28px;
     --rad-klein: 14px;
     --schatten:  0 10px 40px rgba(0,0,0,.45);
+    --gold-glow: 0 0 18px rgba(242,183,5,.45);
     --font: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
   html, body { height: 100%; }
 
+  /* full-bleed Navy-Hintergrund */
   body {
     font-family: var(--font);
     color: var(--weiss);
@@ -49,56 +48,81 @@
     overflow-x: hidden;
   }
 
-  /* ---------------- Kopfzeile ---------------- */
+  /* ====================================================================
+     HEADER  – Lamassu-Banner + Navy-Overlay + zentriertes Logo-Lockup
+     ==================================================================== */
   header {
+    position: relative;
+    min-height: clamp(124px, 19vh, 200px);
     display: flex;
     align-items: center;
-    gap: 18px;
-    padding: 16px clamp(16px, 4vw, 48px);
+    justify-content: center;
+    padding: 18px clamp(16px, 4vw, 48px);
+    background-image: url('assets/lamassu-bg.png');
+    background-size: cover;
+    background-position: center;
     border-bottom: 3px solid var(--gold);
-    background: linear-gradient(90deg, rgba(13,42,94,.9), rgba(22,58,125,.6));
-    backdrop-filter: blur(6px);
+    overflow: hidden;
   }
-  header img.logo {
-    width: clamp(48px, 7vw, 84px);
-    height: clamp(48px, 7vw, 84px);
+  /* dezenter dunkler Navy-Gradient-Overlay (Deckkraft als CSS-Variable) */
+  header .overlay {
+    position: absolute; inset: 0; z-index: 1;
+    background: radial-gradient(ellipse at center,
+        rgba(8,20,52, var(--overlay-deckkraft)) 0%,
+        rgba(8,20,52, calc(var(--overlay-deckkraft) * 0.5)) 65%,
+        rgba(8,20,52, calc(var(--overlay-deckkraft) * 0.9)) 100%);
+  }
+  /* feine goldene Zierlinie als Abschluss */
+  header::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; z-index: 2;
+    background: linear-gradient(90deg, transparent, var(--gold-hell), var(--gold), var(--gold-hell), transparent);
+    box-shadow: 0 0 10px rgba(242,183,5,.6);
+  }
+
+  .logo-lockup {
+    position: relative; z-index: 2;
+    display: flex; align-items: center;
+    gap: clamp(14px, 2.6vw, 30px);
+  }
+  .emblem {
+    width: clamp(74px, 11vw, 130px);
+    height: clamp(74px, 11vw, 130px);
     object-fit: contain;
-    filter: drop-shadow(0 4px 10px rgba(0,0,0,.5));
+    border-radius: 50%;
+    filter: drop-shadow(0 0 16px rgba(242,183,5,.55)) drop-shadow(0 6px 10px rgba(0,0,0,.55));
   }
   .titel-block { display: flex; flex-direction: column; line-height: 1.05; }
   .titel-aram {
-    font-size: clamp(1.4rem, 3.6vw, 2.6rem);
+    font-size: clamp(1.9rem, 5.2vw, 3.6rem);
     font-weight: 800;
     color: var(--gold-hell);
-    letter-spacing: .5px;
+    text-shadow: 0 2px 14px rgba(0,0,0,.65);
   }
   .titel-de {
-    font-size: clamp(.85rem, 1.6vw, 1.2rem);
-    color: var(--weiss-dim);
-    letter-spacing: 3px;
+    font-size: clamp(.68rem, 1.5vw, 1.05rem);
+    color: var(--weiss);
+    letter-spacing: clamp(3px, 0.9vw, 8px);
     text-transform: uppercase;
+    text-shadow: 0 1px 6px rgba(0,0,0,.8);
   }
-  .kopf-rechts { margin-left: auto; display: flex; align-items: center; gap: 14px; }
 
-  /* Toggle Sound/Sprache */
+  /* Toggle Sound/Sprache – oben rechts im Header */
+  .kopf-toggle { position: absolute; top: 14px; right: clamp(12px, 3vw, 28px); z-index: 3; }
   .toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    user-select: none;
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.15);
-    padding: 8px 14px;
-    border-radius: 999px;
-    font-size: clamp(.8rem, 1.4vw, 1rem);
+    display: inline-flex; align-items: center; gap: 10px;
+    cursor: pointer; user-select: none;
+    background: rgba(8,20,52,.55);
+    border: 1px solid rgba(255,255,255,.2);
+    padding: 8px 14px; border-radius: 999px;
+    font-size: clamp(.75rem, 1.3vw, .95rem);
+    backdrop-filter: blur(4px);
     transition: background .2s, border-color .2s;
   }
-  .toggle:hover { background: rgba(255,255,255,.12); }
+  .toggle:hover { background: rgba(8,20,52,.75); }
   .toggle input { display: none; }
   .switch {
     width: 44px; height: 24px; border-radius: 999px;
-    background: rgba(255,255,255,.2);
+    background: rgba(255,255,255,.25);
     position: relative; transition: background .2s; flex: none;
   }
   .switch::after {
@@ -118,42 +142,34 @@
     padding: clamp(16px, 3vw, 40px);
     align-items: start;
   }
+  .buehne { display: flex; flex-direction: column; align-items: center; gap: clamp(16px, 2.5vw, 30px); }
 
-  /* Linke Spalte: aktuelle Zahl + Steuerung + Historie */
-  .buehne {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: clamp(16px, 2.5vw, 30px);
-  }
-
-  /* Riesige aktuelle Zahl */
   .aktuell-wrap {
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
     min-height: clamp(260px, 40vh, 460px);
-    position: relative;
   }
   .aktuell-spalte {
     font-size: clamp(1.2rem, 3vw, 2rem);
-    font-weight: 800;
-    letter-spacing: 6px;
-    color: var(--gold);
-    text-transform: uppercase;
-    min-height: 1.2em;
+    font-weight: 800; letter-spacing: 6px;
+    color: var(--gold); text-transform: uppercase; min-height: 1.2em;
   }
+
+  /* Bühne der Kugel: enthält Ergebnis-Kugel + Zieh-Trommel übereinander */
+  .kugel-stage {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    width: clamp(220px, 34vw, 400px);
+    height: clamp(220px, 34vw, 400px);
+  }
+
+  /* Ergebnis-Kugel (riesige aktuelle Zahl) */
   .aktuell-kugel {
-    width: clamp(200px, 30vw, 360px);
-    height: clamp(200px, 30vw, 360px);
+    position: relative; z-index: 3;
+    width: 100%; height: 100%;
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background:
-      radial-gradient(circle at 35% 30%, var(--gold-hell), var(--gold) 55%, #b27f00 100%);
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 35% 30%, var(--gold-hell), var(--gold) 55%, #b27f00 100%);
     color: var(--blau-tief);
     box-shadow:
       0 0 0 10px rgba(242,183,5,.15),
@@ -166,220 +182,234 @@
     line-height: 1;
     text-shadow: 0 3px 0 rgba(255,255,255,.4);
     user-select: none;
+    transition: opacity .3s ease, transform .3s ease;
   }
   .aktuell-kugel.leer {
     background: radial-gradient(circle at 35% 30%, var(--blau-hell), var(--blau-mittel) 60%, var(--blau-tief) 100%);
     color: var(--weiss-dim);
     font-size: clamp(1rem, 3vw, 1.8rem);
-    font-weight: 700;
-    text-align: center;
-    padding: 0 24px;
+    font-weight: 700; text-align: center; padding: 0 24px;
     text-shadow: none;
     box-shadow: 0 0 0 8px rgba(255,255,255,.05), var(--schatten);
   }
-  /* Animation beim Erscheinen */
+  .aktuell-kugel.verdeckt { opacity: 0; transform: scale(.5); pointer-events: none; }
+
+  /* Reveal-Pop mit Goldglanz */
   @keyframes kugel-pop {
     0%   { transform: scale(.2) rotate(-12deg); opacity: 0; }
-    60%  { transform: scale(1.12) rotate(4deg); opacity: 1; }
+    55%  { transform: scale(1.14) rotate(4deg); opacity: 1; }
     100% { transform: scale(1) rotate(0); }
   }
-  .pop { animation: kugel-pop .55s cubic-bezier(.2,.9,.3,1.2); }
+  @keyframes glanz {
+    0%   { box-shadow: 0 0 0 0 rgba(255,217,90,.0), var(--schatten); }
+    40%  { box-shadow: 0 0 60px 24px rgba(255,217,90,.65), var(--schatten); }
+    100% { box-shadow: 0 0 0 0 rgba(255,217,90,.0), var(--schatten); }
+  }
+  .aktuell-kugel.pop { animation: kugel-pop .6s cubic-bezier(.2,.9,.3,1.2), glanz 1.1s ease-out; }
 
-  /* Ziehen-Button */
+  /* ====================================================================
+     ZIEH-TROMMEL  (Glas-Trommel + wirbelnde Kugeln + Shamash-Spinner)
+     ==================================================================== */
+  .draw-stage {
+    position: absolute; inset: 0; z-index: 4;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity .3s ease;
+  }
+  .draw-stage.aktiv { opacity: 1; }
+
+  /* Shamash-Emblem rotiert subtil hinter/auf der Trommel */
+  .emblem-spinner {
+    position: absolute; left: 9%; top: 9%; width: 82%; height: 82%; z-index: 1;
+    background: url('assets/shamash-emblem.png') center / contain no-repeat;
+    opacity: 0;
+    filter: drop-shadow(0 0 16px rgba(242,183,5,.5));
+    transition: opacity .3s ease;
+    will-change: transform, opacity;
+  }
+  .draw-stage.swirl .emblem-spinner { opacity: .5; animation: dreh 3s linear infinite; }
+  .draw-stage.emblem-aus .emblem-spinner { opacity: 0; }
+
+  /* Glas-Trommel */
+  .trommel {
+    position: absolute; inset: 0; z-index: 2;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 28%,
+        rgba(255,255,255,.22), rgba(42,86,181,.18) 55%, rgba(8,22,60,.42) 100%);
+    border: 3px solid rgba(255,255,255,.35);
+    box-shadow:
+      0 0 0 6px rgba(242,183,5,.14),
+      var(--gold-glow),
+      inset 0 12px 40px rgba(255,255,255,.22),
+      inset 0 -22px 55px rgba(0,0,0,.45),
+      0 20px 60px rgba(0,0,0,.5);
+    backdrop-filter: blur(3px);
+    overflow: hidden;
+  }
+  .trommel::after { /* Glas-Highlight */
+    content: ""; position: absolute; top: 8%; left: 14%;
+    width: 42%; height: 26%; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.55), transparent 70%);
+    filter: blur(4px);
+  }
+
+  /* wirbelnde Mini-Kugeln (rotierende Ringe, nur transform → 60fps) */
+  .mini-balls { position: absolute; inset: 0; z-index: 3; }
+  .ring { position: absolute; inset: 0; animation: dreh var(--dur) linear infinite; will-change: transform; }
+  .draw-stage.swirl .ring { animation-duration: var(--durFast); }
+  /* beim Reveal verschwinden die Mini-Kugeln, damit die Zahl frei steht */
+  .draw-stage.aktiv:not(.swirl) .mini-balls { opacity: 0; transition: opacity .3s ease; }
+  .mini {
+    position: absolute;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at 35% 30%, #fff, var(--c) 78%);
+    box-shadow: 0 2px 5px rgba(0,0,0,.45),
+                inset 0 -3px 6px rgba(0,0,0,.3),
+                inset 0 3px 6px rgba(255,255,255,.5);
+  }
+  @keyframes dreh { to { transform: rotate(360deg); } }
+
+  /* ---------------- Steuerung ---------------- */
   .controls { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
   button.action {
-    border: none;
-    cursor: pointer;
-    font-family: var(--font);
-    font-weight: 800;
+    border: none; cursor: pointer; font-family: var(--font); font-weight: 800;
     border-radius: var(--rad-gross);
     transition: transform .12s ease, box-shadow .2s, filter .2s, background .2s;
     box-shadow: var(--schatten);
   }
   button.action:active { transform: translateY(2px) scale(.99); }
-  button.action:disabled { cursor: not-allowed; filter: grayscale(.6) brightness(.7); box-shadow: none; }
-
+  button.action:disabled { cursor: not-allowed; filter: grayscale(.55) brightness(.72); box-shadow: none; }
   .btn-ziehen {
     background: linear-gradient(180deg, var(--gold-hell), var(--gold));
     color: var(--blau-tief);
     font-size: clamp(1.4rem, 3.5vw, 2.4rem);
     padding: clamp(18px, 2.4vw, 28px) clamp(40px, 6vw, 80px);
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    letter-spacing: 1px; text-transform: uppercase;
   }
   .btn-ziehen:not(:disabled):hover { filter: brightness(1.06); transform: translateY(-2px); }
-
   .btn-neu {
     background: linear-gradient(180deg, #e2415b, var(--rot));
-    color: var(--weiss);
-    font-size: clamp(.9rem, 1.6vw, 1.1rem);
-    padding: 14px 26px;
+    color: var(--weiss); font-size: clamp(.9rem, 1.6vw, 1.1rem); padding: 14px 26px;
   }
   .btn-neu:hover { filter: brightness(1.08); }
+  .hinweis { color: var(--weiss-dim); font-size: .8rem; text-align: center; }
 
-  /* Historie */
-  .historie {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
+  /* ---------------- Historie ---------------- */
+  .historie { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .historie h3 {
-    font-size: clamp(.75rem, 1.3vw, .95rem);
-    color: var(--weiss-dim);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    font-weight: 600;
+    font-size: clamp(.75rem, 1.3vw, .95rem); color: var(--weiss-dim);
+    letter-spacing: 3px; text-transform: uppercase; font-weight: 600;
   }
   .historie-leiste {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-    min-height: 56px;
-    align-items: center;
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    min-height: 56px; align-items: center;
   }
   .hist-kugel {
-    width: clamp(40px, 5vw, 56px);
-    height: clamp(40px, 5vw, 56px);
+    width: clamp(40px, 5vw, 56px); height: clamp(40px, 5vw, 56px);
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 800;
-    font-size: clamp(1rem, 2vw, 1.4rem);
+    font-weight: 800; font-size: clamp(1rem, 2vw, 1.4rem);
     background: linear-gradient(180deg, var(--blau-hell), var(--blau-mittel));
-    color: var(--weiss);
-    border: 2px solid rgba(255,255,255,.25);
+    color: var(--weiss); border: 2px solid rgba(255,255,255,.25);
     box-shadow: 0 4px 12px rgba(0,0,0,.35);
   }
   .hist-kugel.neueste {
     background: linear-gradient(180deg, var(--gold-hell), var(--gold));
-    color: var(--blau-tief);
-    border-color: var(--gold-hell);
-    transform: scale(1.12);
+    color: var(--blau-tief); border-color: var(--gold-hell); transform: scale(1.12);
   }
-  .hist-kugel small { display:block; font-size:.55em; opacity:.8; font-weight:700; }
+  .hist-kugel small { display: block; font-size: .55em; opacity: .8; font-weight: 700; }
 
-  /* Rechte Spalte: Counter + Board */
+  /* ---------------- Seitenleiste: Counter + Board ---------------- */
   .seitenleiste {
-    display: flex;
-    flex-direction: column;
-    gap: clamp(14px, 2vw, 22px);
-    position: sticky;
-    top: 16px;
+    display: flex; flex-direction: column; gap: clamp(14px, 2vw, 22px);
+    position: sticky; top: 16px;
   }
-  .counter {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
+  .counter { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .counter .karte {
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: var(--rad-klein);
-    padding: 14px;
-    text-align: center;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+    border-radius: var(--rad-klein); padding: 14px; text-align: center;
   }
   .counter .zahl { font-size: clamp(1.6rem, 4vw, 2.6rem); font-weight: 900; color: var(--gold); }
   .counter .label { font-size: .75rem; letter-spacing: 2px; text-transform: uppercase; color: var(--weiss-dim); }
 
-  /* Board */
   .board-wrap {
-    background: rgba(0,0,0,.18);
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: var(--rad-klein);
-    padding: 14px;
+    background: rgba(0,0,0,.18); border: 1px solid rgba(255,255,255,.1);
+    border-radius: var(--rad-klein); padding: 14px;
   }
   .board-wrap h3 {
     font-size: .8rem; letter-spacing: 3px; text-transform: uppercase;
     color: var(--weiss-dim); margin-bottom: 12px; text-align: center; font-weight: 600;
   }
-  .board {
-    display: grid;
-    gap: 6px;
-  }
+  .board { display: grid; gap: 6px; }
   .board.modus-90 { grid-template-columns: repeat(10, 1fr); }
-  .board.modus-75 { grid-template-columns: repeat(15, 1fr); }
+  .board.spalten-75 {
+    grid-template-columns: repeat(5, 1fr);
+    grid-auto-flow: column; grid-template-rows: repeat(15, 1fr);
+  }
   .board-zelle {
     aspect-ratio: 1 / 1;
     display: flex; align-items: center; justify-content: center;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: clamp(.6rem, 1vw, .95rem);
-    background: rgba(255,255,255,.05);
-    color: var(--weiss-dim);
+    border-radius: 8px; font-weight: 700; font-size: clamp(.6rem, 1vw, .95rem);
+    background: rgba(255,255,255,.05); color: var(--weiss-dim);
     border: 1px solid rgba(255,255,255,.06);
     transition: background .25s, color .25s, transform .25s, box-shadow .25s;
   }
   .board-zelle.gezogen {
     background: linear-gradient(180deg, var(--gold-hell), var(--gold));
-    color: var(--blau-tief);
-    border-color: var(--gold);
+    color: var(--blau-tief); border-color: var(--gold);
     box-shadow: 0 0 10px rgba(242,183,5,.5);
   }
-  .board-zelle.aktuell {
-    outline: 3px solid var(--rot);
-    outline-offset: 1px;
-    transform: scale(1.1);
-    z-index: 2;
-  }
-  /* BINGO-Spaltenkopf (nur 75er) */
+  .board-zelle.aktuell { outline: 3px solid var(--rot); outline-offset: 1px; transform: scale(1.1); z-index: 2; }
+
   .bingo-kopf { display: none; gap: 6px; margin-bottom: 6px; }
   .bingo-kopf.modus-75 { display: grid; grid-template-columns: repeat(5, 1fr); }
   .bingo-kopf span {
     text-align: center; font-weight: 900; color: var(--gold-hell);
     font-size: clamp(.9rem, 1.6vw, 1.2rem); letter-spacing: 2px;
   }
-  .board.spalten-75 {
-    grid-template-columns: repeat(5, 1fr);
-    grid-auto-flow: column;
-    grid-template-rows: repeat(15, 1fr);
-  }
 
-  /* Banner: alle gezogen */
+  /* ---------------- Banner: alle gezogen ---------------- */
   .banner-fertig {
     display: none;
     background: linear-gradient(90deg, var(--rot), #e2415b);
-    color: var(--weiss);
-    text-align: center;
-    padding: 16px;
+    color: var(--weiss); text-align: center; padding: 16px;
     border-radius: var(--rad-klein);
-    font-size: clamp(1.1rem, 2.5vw, 1.6rem);
-    font-weight: 800;
-    letter-spacing: 1px;
+    font-size: clamp(1.1rem, 2.5vw, 1.6rem); font-weight: 800; letter-spacing: 1px;
     box-shadow: var(--schatten);
     animation: kugel-pop .5s ease;
   }
   .banner-fertig.aktiv { display: block; }
 
   footer {
-    text-align: center;
-    padding: 14px;
-    color: var(--weiss-dim);
-    font-size: .75rem;
-    letter-spacing: 1px;
-    border-top: 1px solid rgba(255,255,255,.08);
+    text-align: center; padding: 14px; color: var(--weiss-dim);
+    font-size: .75rem; letter-spacing: 1px; border-top: 1px solid rgba(255,255,255,.08);
   }
-
-  /* Tastatur-Hinweis */
-  .hinweis { color: var(--weiss-dim); font-size: .8rem; text-align: center; }
 
   /* ---------------- Responsiv ---------------- */
   @media (max-width: 900px) {
     main { grid-template-columns: 1fr; }
     .seitenleiste { position: static; }
   }
+  /* Bewegungsreduktion respektieren */
+  @media (prefers-reduced-motion: reduce) {
+    .draw-stage.swirl .ring,
+    .draw-stage.swirl .emblem-spinner { animation: none; }
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <img class="logo" src="https://i.ibb.co/n807ZfkX/Flag-of-the-Assyrians-gold-and-blue-Assur-svg.png" alt="Assyrisches Logo" />
-  <div class="titel-block">
-    <span class="titel-aram">ܒܝܢܓܘ</span>
-    <span class="titel-de">Bingo · Zahlengenerator</span>
+  <div class="overlay"></div>
+  <div class="logo-lockup">
+    <img class="emblem" src="assets/shamash-emblem.png" alt="Shamash-Emblem" />
+    <div class="titel-block">
+      <span class="titel-aram">ܒܝܢܓܘ</span>
+      <span class="titel-de">Bingo · Zahlengenerator</span>
+    </div>
   </div>
-  <div class="kopf-rechts">
+  <div class="kopf-toggle">
     <label class="toggle" title="Sound &amp; Sprachausgabe (Deutsch)">
       <input type="checkbox" id="soundToggle" />
       <span class="switch" aria-hidden="true"></span>
@@ -393,7 +423,19 @@
   <section class="buehne">
     <div class="aktuell-wrap">
       <div class="aktuell-spalte" id="aktuellSpalte"></div>
-      <div class="aktuell-kugel leer" id="aktuellKugel">Bereit zum Ziehen</div>
+
+      <div class="kugel-stage">
+        <!-- Ergebnis-Kugel -->
+        <div class="aktuell-kugel leer" id="aktuellKugel">Bereit zum Ziehen</div>
+
+        <!-- Zieh-Trommel (Glas + Mini-Kugeln + Shamash-Spinner) -->
+        <div class="draw-stage" id="drawStage" aria-hidden="true">
+          <div class="emblem-spinner"></div>
+          <div class="trommel">
+            <div class="mini-balls" id="miniBalls"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="controls">
@@ -450,15 +492,26 @@ const MAX_ZAHL = 90;
 const HISTORIE_ANZ = 6;
 const SPALTEN_75 = ["B", "I", "N", "G", "O"]; // 1-15, 16-30, 31-45, 46-60, 61-75
 
+/* Dauer der Zieh-Animation (gesamt 2s) */
+const T_EMBLEM_AUS = 1400;   // Emblem beginnt auszublenden
+const T_REVEAL     = 1700;   // Kugel poppt nach vorn
+const T_ENDE       = 2000;   // Sequenz fertig, Button wieder frei
+
+const MINI_FARBEN = ["#ffd95a", "#2a56b5", "#c8102e", "#f2b705", "#f7f9ff"];
+
 /* ---------------- State (nur im Speicher) ---------------- */
-let pool = [];        // noch verfügbare Zahlen
-let gezogen = [];     // bereits gezogene Zahlen (chronologisch)
+let pool = [];
+let gezogen = [];
 let aktuelleZahl = null;
+let animierend = false;
+let timer = [];   // laufende Timeouts (für sauberen Reset)
 
 /* ---------------- DOM ---------------- */
 const el = {
   kugel:      document.getElementById("aktuellKugel"),
   spalte:     document.getElementById("aktuellSpalte"),
+  drawStage:  document.getElementById("drawStage"),
+  miniBalls:  document.getElementById("miniBalls"),
   btnZiehen:  document.getElementById("btnZiehen"),
   btnNeu:     document.getElementById("btnNeu"),
   histLeiste: document.getElementById("historieLeiste"),
@@ -472,6 +525,8 @@ const el = {
 };
 
 const ist75 = MAX_ZAHL === 75;
+const reduzierteBewegung =
+  window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ---------------- Hilfsfunktionen ---------------- */
 function spalteFuer(zahl) {
@@ -479,7 +534,38 @@ function spalteFuer(zahl) {
   return SPALTEN_75[Math.floor((zahl - 1) / 15)];
 }
 
-/* Web Audio: kurzer "Pling" beim Ziehen (kein externer Sound nötig) */
+/* Glas-Trommel mit wirbelnden Kugeln aufbauen (rotierende Ringe) */
+function trommelAufbauen() {
+  const ringe = [
+    { r: 42, n: 7, dir:  1, dur: 7.0 },
+    { r: 31, n: 6, dir: -1, dur: 5.5 },
+    { r: 20, n: 4, dir:  1, dur: 4.0 },
+  ];
+  el.miniBalls.innerHTML = "";
+  ringe.forEach((ring, ri) => {
+    const w = document.createElement("div");
+    w.className = "ring";
+    w.style.setProperty("--dur", ring.dur + "s");
+    w.style.setProperty("--durFast", (ring.dur / 5).toFixed(2) + "s");
+    if (ring.dir < 0) w.style.animationDirection = "reverse";
+
+    for (let i = 0; i < ring.n; i++) {
+      const ang = (i / ring.n) * Math.PI * 2 + ri;          // Startwinkel
+      const b = document.createElement("div");
+      b.className = "mini";
+      b.style.left = (50 + ring.r * Math.cos(ang)) + "%";
+      b.style.top  = (50 + ring.r * Math.sin(ang)) + "%";
+      const sz = 9 + Math.random() * 11;
+      b.style.width = sz + "px";
+      b.style.height = sz + "px";
+      b.style.setProperty("--c", MINI_FARBEN[(i + ri) % MINI_FARBEN.length]);
+      w.appendChild(b);
+    }
+    el.miniBalls.appendChild(w);
+  });
+}
+
+/* Web Audio: kurzer "Pling" beim Reveal */
 let audioCtx = null;
 function plingSpielen() {
   try {
@@ -497,28 +583,26 @@ function plingSpielen() {
       osc.start(t + i * 0.08);
       osc.stop(t + i * 0.08 + 0.4);
     });
-  } catch (e) { /* Audio nicht verfügbar – ignorieren */ }
+  } catch (e) { /* Audio nicht verfügbar */ }
 }
 
 /* Sprachausgabe (Deutsch) – Aramäisch wird von Browser-TTS nicht unterstützt */
 function zahlSprechen(zahl) {
   if (!("speechSynthesis" in window)) return;
-  const spalte = spalteFuer(zahl);
-  const text = ist75 ? `${spalte}, ${zahl}` : `${zahl}`;
+  const sp = spalteFuer(zahl);
+  const text = ist75 ? `${sp}, ${zahl}` : `${zahl}`;
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = "de-DE";
-  u.rate = 0.9;
-  u.pitch = 1.0;
+  u.lang = "de-DE"; u.rate = 0.9; u.pitch = 1.0;
   const deStimme = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith("de"));
   if (deStimme) u.voice = deStimme;
   speechSynthesis.cancel();
   speechSynthesis.speak(u);
 }
 
-/* ---------------- Board aufbauen ---------------- */
+/* ---------------- Board ---------------- */
 function boardAufbauen() {
   el.board.innerHTML = "";
-  el.board.className = "board " + (ist75 ? "modus-75 spalten-75" : "modus-90");
+  el.board.className = "board " + (ist75 ? "spalten-75" : "modus-90");
   el.boardTitel.textContent = `Übersicht 1–${MAX_ZAHL}`;
   el.bingoKopf.className = "bingo-kopf" + (ist75 ? " modus-75" : "");
 
@@ -536,10 +620,8 @@ function uiAktualisieren() {
   el.cGezogen.textContent = gezogen.length;
   el.cUebrig.textContent = pool.length;
 
-  // Historie (neueste zuerst)
   el.histLeiste.innerHTML = "";
-  const letzte = gezogen.slice(-HISTORIE_ANZ).reverse();
-  letzte.forEach((z, i) => {
+  gezogen.slice(-HISTORIE_ANZ).reverse().forEach((z, i) => {
     const k = document.createElement("div");
     k.className = "hist-kugel" + (i === 0 ? " neueste" : "");
     const sp = spalteFuer(z);
@@ -547,50 +629,79 @@ function uiAktualisieren() {
     el.histLeiste.appendChild(k);
   });
 
-  // Fertig?
   const fertig = pool.length === 0 && gezogen.length > 0;
   el.banner.classList.toggle("aktiv", fertig);
-  el.btnZiehen.disabled = pool.length === 0;
-  el.btnZiehen.textContent = fertig ? "✓ Fertig" : "🎲 Zahl ziehen";
+  el.btnZiehen.disabled = pool.length === 0 || animierend;
+  el.btnZiehen.textContent = fertig ? "✓ Fertig" : (animierend ? "Zieht …" : "🎲 Zahl ziehen");
 }
 
-/* ---------------- Zahl ziehen ---------------- */
-function zahlZiehen() {
-  if (pool.length === 0) return;
+/* Ergebnis-Kugel mit der gezogenen Zahl anzeigen + Pop */
+function kugelReveal(zahl) {
+  el.kugel.classList.remove("leer", "pop", "verdeckt");
+  el.kugel.textContent = zahl;
+  el.spalte.textContent = ist75 ? spalteFuer(zahl) : "";
+  void el.kugel.offsetWidth;          // Reflow → Animation neu starten
+  el.kugel.classList.add("pop");
 
-  const idx = Math.floor(Math.random() * pool.length);
-  const zahl = pool.splice(idx, 1)[0];
-  gezogen.push(zahl);
-
-  // vorige "aktuell"-Markierung entfernen
+  // Board markieren
   if (aktuelleZahl !== null) {
     const alt = document.getElementById("zelle-" + aktuelleZahl);
     if (alt) alt.classList.remove("aktuell");
   }
   aktuelleZahl = zahl;
-
-  // Kugel animiert
-  el.kugel.classList.remove("leer", "pop");
-  el.kugel.textContent = zahl;
-  el.spalte.textContent = ist75 ? spalteFuer(zahl) : "";
-  void el.kugel.offsetWidth; // Reflow für Re-Trigger der Animation
-  el.kugel.classList.add("pop");
-
-  // Board markieren
   const zelle = document.getElementById("zelle-" + zahl);
-  if (zelle) { zelle.classList.add("gezogen", "aktuell"); }
+  if (zelle) zelle.classList.add("gezogen", "aktuell");
 
   // Ton & Sprache
-  if (el.soundToggle.checked) {
-    plingSpielen();
-    zahlSprechen(zahl);
-  }
+  if (el.soundToggle.checked) { plingSpielen(); zahlSprechen(zahl); }
 
   uiAktualisieren();
 }
 
+/* ---------------- Zahl ziehen (mit Trommel-Animation) ---------------- */
+function zahlZiehen() {
+  if (animierend || pool.length === 0) return;
+
+  // Zahl sofort ermitteln, optisch erst am Ende der Sequenz zeigen
+  const idx = Math.floor(Math.random() * pool.length);
+  const zahl = pool.splice(idx, 1)[0];
+  gezogen.push(zahl);
+
+  // Schneller Pfad bei Bewegungsreduktion
+  if (reduzierteBewegung) {
+    kugelReveal(zahl);
+    return;
+  }
+
+  animierend = true;
+  uiAktualisieren();                  // Button sperren ("Zieht …")
+
+  // Trommel zeigen, Kugel verdecken, Wirbeln + Emblem-Spinner starten
+  el.kugel.classList.add("verdeckt");
+  el.drawStage.classList.add("aktiv", "swirl");
+
+  timer.push(setTimeout(() => {
+    el.drawStage.classList.add("emblem-aus");   // 1.4s: Emblem blendet aus
+  }, T_EMBLEM_AUS));
+
+  timer.push(setTimeout(() => {
+    el.drawStage.classList.remove("swirl");     // 1.7s: Mini-Kugeln raus
+    kugelReveal(zahl);                          //        Kugel poppt nach vorn
+  }, T_REVEAL));
+
+  timer.push(setTimeout(() => {
+    el.drawStage.classList.remove("aktiv", "emblem-aus");  // 2.0s: Trommel weg
+    animierend = false;
+    timer = [];
+    uiAktualisieren();
+  }, T_ENDE));
+}
+
 /* ---------------- Neues Spiel ---------------- */
 function neuesSpiel() {
+  timer.forEach(clearTimeout); timer = [];
+  animierend = false;
+
   pool = Array.from({ length: MAX_ZAHL }, (_, i) => i + 1);
   gezogen = [];
   aktuelleZahl = null;
@@ -598,13 +709,13 @@ function neuesSpiel() {
   document.querySelectorAll(".board-zelle.gezogen, .board-zelle.aktuell")
     .forEach(z => z.classList.remove("gezogen", "aktuell"));
 
+  el.drawStage.classList.remove("aktiv", "swirl", "emblem-aus");
+  el.kugel.classList.remove("pop", "verdeckt");
   el.kugel.classList.add("leer");
-  el.kugel.classList.remove("pop");
   el.kugel.textContent = "Bereit zum Ziehen";
   el.spalte.textContent = "";
 
   if (window.speechSynthesis) speechSynthesis.cancel();
-
   uiAktualisieren();
 }
 
@@ -618,13 +729,13 @@ el.btnNeu.addEventListener("click", () => {
 });
 
 document.addEventListener("keydown", (e) => {
-  if (e.code === "Space" && !el.btnZiehen.disabled) {
+  // Leertaste = ziehen (während Animation gesperrt)
+  if (e.code === "Space" && !animierend && pool.length > 0) {
     e.preventDefault();
     zahlZiehen();
   }
 });
 
-// Stimmen vorab laden (manche Browser laden asynchron)
 if ("speechSynthesis" in window) {
   speechSynthesis.onvoiceschanged = () => {};
   speechSynthesis.getVoices();
@@ -632,6 +743,7 @@ if ("speechSynthesis" in window) {
 
 /* ---------------- Start ---------------- */
 boardAufbauen();
+trommelAufbauen();
 neuesSpiel();
 </script>
 </body>
