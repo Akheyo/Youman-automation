@@ -231,16 +231,16 @@
   }
   .draw-stage.aktiv { opacity: 1; }
 
-  /* Shamash-Emblem rotiert subtil hinter/auf der Trommel */
+  /* Assyrische Flagge rotiert subtil hinter/auf der Trommel, während die Kugel dreht */
   .emblem-spinner {
-    position: absolute; left: 9%; top: 9%; width: 82%; height: 82%; z-index: 1;
-    background: url('assets/emblem-user.png') center / contain no-repeat;
+    position: absolute; left: 6%; top: 6%; width: 88%; height: 88%; z-index: 1;
+    background: url('assets/flag-user.png') center / contain no-repeat;
     opacity: 0;
     filter: drop-shadow(0 0 16px rgba(242,183,5,.5));
     transition: opacity .3s ease;
     will-change: transform, opacity;
   }
-  .draw-stage.swirl .emblem-spinner { opacity: .5; animation: dreh 3s linear infinite; }
+  .draw-stage.swirl .emblem-spinner { opacity: .62; animation: dreh 3s linear infinite; }
   .draw-stage.emblem-aus .emblem-spinner { opacity: 0; }
 
   /* Glas-Trommel */
