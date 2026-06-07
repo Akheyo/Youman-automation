@@ -6,8 +6,8 @@
 <title>ܒܝܢܓܘ · Bingo Caller</title>
 
 <!-- Logo / Favicon / App-Icon  (lokal, offline – keine externen Links) -->
-<link rel="icon" type="image/png" href="assets/shamash-emblem.png" />
-<link rel="apple-touch-icon" href="assets/shamash-emblem.png" />
+<link rel="icon" type="image/png" href="assets/flag-user.png" />
+<link rel="apple-touch-icon" href="assets/flag-user.png" />
 <meta name="theme-color" content="#0d2a5e" />
 
 <style>
@@ -23,7 +23,7 @@
     --weiss-dim:    #b9c6e6;   /* gedämpft                           */
 
     /* Deckkraft des Navy-Overlays über dem Lamassu-Header */
-    --overlay-deckkraft: 0.5;
+    --overlay-deckkraft: 0.42;
 
     --rad-gross: 28px;
     --rad-klein: 14px;
@@ -53,24 +53,24 @@
      ==================================================================== */
   header {
     position: relative;
-    min-height: clamp(124px, 19vh, 200px);
+    min-height: clamp(140px, 22vh, 230px);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 18px clamp(16px, 4vw, 48px);
-    background-image: url('assets/lamassu-bg.png');
+    /* Navy-Feld + Lamassu-Banner (transparent) → beide Statuen links & rechts */
+    background-color: var(--blau-tief);
+    background-image: url('assets/lamassu-banner.png');
     background-size: cover;
+    background-repeat: no-repeat;
     background-position: center;
     border-bottom: 3px solid var(--gold);
     overflow: hidden;
   }
-  /* dezenter dunkler Navy-Gradient-Overlay (Deckkraft als CSS-Variable) */
+  /* dezenter dunkler Navy-Overlay (Deckkraft als CSS-Variable) */
   header .overlay {
     position: absolute; inset: 0; z-index: 1;
-    background: radial-gradient(ellipse at center,
-        rgba(8,20,52, var(--overlay-deckkraft)) 0%,
-        rgba(8,20,52, calc(var(--overlay-deckkraft) * 0.5)) 65%,
-        rgba(8,20,52, calc(var(--overlay-deckkraft) * 0.9)) 100%);
+    background: rgba(8,20,52, var(--overlay-deckkraft));
   }
   /* feine goldene Zierlinie als Abschluss */
   header::after {
@@ -83,6 +83,13 @@
     position: relative; z-index: 2;
     display: flex; align-items: center;
     gap: clamp(14px, 2.6vw, 30px);
+    /* lesbare Platte hinter dem Logo, damit es vor den Lamassu klar bleibt */
+    background: rgba(6,16,44,.6);
+    padding: clamp(8px, 1.4vh, 16px) clamp(18px, 3vw, 42px);
+    border-radius: 999px;
+    border: 1px solid rgba(242,183,5,.28);
+    box-shadow: 0 10px 34px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter: blur(3px);
   }
   .emblem {
     width: clamp(70px, 10vw, 120px);
@@ -227,7 +234,7 @@
   /* Shamash-Emblem rotiert subtil hinter/auf der Trommel */
   .emblem-spinner {
     position: absolute; left: 9%; top: 9%; width: 82%; height: 82%; z-index: 1;
-    background: url('assets/shamash-emblem.png') center / contain no-repeat;
+    background: url('assets/emblem-user.png') center / contain no-repeat;
     opacity: 0;
     filter: drop-shadow(0 0 16px rgba(242,183,5,.5));
     transition: opacity .3s ease;
@@ -409,12 +416,12 @@
 <header>
   <div class="overlay"></div>
   <div class="logo-lockup">
-    <img class="flagge" src="assets/assyrian-flag.png" alt="Assyrische Flagge" />
+    <img class="flagge" src="assets/flag-user.png" alt="Assyrische Flagge" />
     <div class="titel-block">
       <span class="titel-aram">ܒܝܢܓܘ</span>
       <span class="titel-de">Bingo · Zahlengenerator</span>
     </div>
-    <img class="emblem" src="assets/shamash-emblem.png" alt="Shamash-Emblem" />
+    <img class="emblem" src="assets/emblem-user.png" alt="Shamash-Emblem" />
   </div>
   <div class="kopf-toggle">
     <label class="toggle" title="Sound &amp; Sprachausgabe (Deutsch)">
