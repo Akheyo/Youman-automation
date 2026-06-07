@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ܒܝܢܓܘ · Bingo Caller</title>
+
+<!-- Logo / Favicon / App-Icon -->
+<link rel="icon" href="https://i.ibb.co/n807ZfkX/Flag-of-the-Assyrians-gold-and-blue-Assur-svg.png" />
+<link rel="apple-touch-icon" href="https://i.ibb.co/n807ZfkX/Flag-of-the-Assyrians-gold-and-blue-Assur-svg.png" />
+<meta name="theme-color" content="#0d2a5e" />
+
+<style>
+  /* =========================================================
+     ZAHLENRAUM – hier umstellen:  90 (klassisch) oder 75 (B-I-N-G-O)
+     ========================================================= */
+  /* (Wert wird in JS gelesen; CSS nutzt nur die Variablen unten.) */
+
+  /* === Farbschema aus dem Logo (Assyrische Flagge: Gold & Blau, Assur) === */
+  :root {
+    --blau-tief:    #0d2a5e;   /* tiefes Flaggenblau (Hintergrund)   */
+    --blau-mittel:  #163a7d;   /* mittleres Blau (Panels)            */
+    --blau-hell:    #2a56b5;   /* helleres Blau (Akzente)            */
+    --gold:         #f2b705;   /* Assur-Gold (Hauptakzent)           */
+    --gold-hell:    #ffd95a;   /* helles Gold                        */
+    --rot:          #c8102e;   /* Flaggenrot                         */
+    --weiss:        #f7f9ff;   /* Schrift hell                       */
+    --weiss-dim:    #b9c6e6;   /* gedämpft                           */
+
+    --rad-gross: 28px;
+    --rad-klein: 14px;
+    --schatten:  0 10px 40px rgba(0,0,0,.45);
+    --font: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: var(--font);
+    color: var(--weiss);
+    background:
+      radial-gradient(1200px 700px at 50% -10%, var(--blau-mittel) 0%, var(--blau-tief) 55%, #081a3f 100%),
+      var(--blau-tief);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* ---------------- Kopfzeile ---------------- */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 16px clamp(16px, 4vw, 48px);
+    border-bottom: 3px solid var(--gold);
+    background: linear-gradient(90deg, rgba(13,42,94,.9), rgba(22,58,125,.6));
+    backdrop-filter: blur(6px);
+  }
+  header img.logo {
+    width: clamp(48px, 7vw, 84px);
+    height: clamp(48px, 7vw, 84px);
+    object-fit: contain;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,.5));
+  }
+  .titel-block { display: flex; flex-direction: column; line-height: 1.05; }
+  .titel-aram {
+    font-size: clamp(1.4rem, 3.6vw, 2.6rem);
+    font-weight: 800;
+    color: var(--gold-hell);
+    letter-spacing: .5px;
+  }
+  .titel-de {
+    font-size: clamp(.85rem, 1.6vw, 1.2rem);
+    color: var(--weiss-dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .kopf-rechts { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+
+  /* Toggle Sound/Sprache */
+  .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.15);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: clamp(.8rem, 1.4vw, 1rem);
+    transition: background .2s, border-color .2s;
+  }
+  .toggle:hover { background: rgba(255,255,255,.12); }
+  .toggle input { display: none; }
+  .switch {
+    width: 44px; height: 24px; border-radius: 999px;
+    background: rgba(255,255,255,.2);
+    position: relative; transition: background .2s; flex: none;
+  }
+  .switch::after {
+    content: ""; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--weiss); transition: transform .2s;
+  }
+  .toggle input:checked + .switch { background: var(--gold); }
+  .toggle input:checked + .switch::after { transform: translateX(20px); }
+
+  /* ---------------- Haupt-Layout ---------------- */
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr minmax(280px, 380px);
+    gap: clamp(16px, 2.5vw, 32px);
+    padding: clamp(16px, 3vw, 40px);
+    align-items: start;
+  }
+
+  /* Linke Spalte: aktuelle Zahl + Steuerung + Historie */
+  .buehne {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(16px, 2.5vw, 30px);
+  }
+
+  /* Riesige aktuelle Zahl */
+  .aktuell-wrap {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: clamp(260px, 40vh, 460px);
+    position: relative;
+  }
+  .aktuell-spalte {
+    font-size: clamp(1.2rem, 3vw, 2rem);
+    font-weight: 800;
+    letter-spacing: 6px;
+    color: var(--gold);
+    text-transform: uppercase;
+    min-height: 1.2em;
+  }
+  .aktuell-kugel {
+    width: clamp(200px, 30vw, 360px);
+    height: clamp(200px, 30vw, 360px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(circle at 35% 30%, var(--gold-hell), var(--gold) 55%, #b27f00 100%);
+    color: var(--blau-tief);
+    box-shadow:
+      0 0 0 10px rgba(242,183,5,.15),
+      0 0 0 22px rgba(242,183,5,.07),
+      var(--schatten),
+      inset 0 -14px 30px rgba(0,0,0,.25),
+      inset 0 14px 30px rgba(255,255,255,.45);
+    font-weight: 900;
+    font-size: clamp(5rem, 16vw, 13rem);
+    line-height: 1;
+    text-shadow: 0 3px 0 rgba(255,255,255,.4);
+    user-select: none;
+  }
+  .aktuell-kugel.leer {
+    background: radial-gradient(circle at 35% 30%, var(--blau-hell), var(--blau-mittel) 60%, var(--blau-tief) 100%);
+    color: var(--weiss-dim);
+    font-size: clamp(1rem, 3vw, 1.8rem);
+    font-weight: 700;
+    text-align: center;
+    padding: 0 24px;
+    text-shadow: none;
+    box-shadow: 0 0 0 8px rgba(255,255,255,.05), var(--schatten);
+  }
+  /* Animation beim Erscheinen */
+  @keyframes kugel-pop {
+    0%   { transform: scale(.2) rotate(-12deg); opacity: 0; }
+    60%  { transform: scale(1.12) rotate(4deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); }
+  }
+  .pop { animation: kugel-pop .55s cubic-bezier(.2,.9,.3,1.2); }
+
+  /* Ziehen-Button */
+  .controls { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+  button.action {
+    border: none;
+    cursor: pointer;
+    font-family: var(--font);
+    font-weight: 800;
+    border-radius: var(--rad-gross);
+    transition: transform .12s ease, box-shadow .2s, filter .2s, background .2s;
+    box-shadow: var(--schatten);
+  }
+  button.action:active { transform: translateY(2px) scale(.99); }
+  button.action:disabled { cursor: not-allowed; filter: grayscale(.6) brightness(.7); box-shadow: none; }
+
+  .btn-ziehen {
+    background: linear-gradient(180deg, var(--gold-hell), var(--gold));
+    color: var(--blau-tief);
+    font-size: clamp(1.4rem, 3.5vw, 2.4rem);
+    padding: clamp(18px, 2.4vw, 28px) clamp(40px, 6vw, 80px);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .btn-ziehen:not(:disabled):hover { filter: brightness(1.06); transform: translateY(-2px); }
+
+  .btn-neu {
+    background: linear-gradient(180deg, #e2415b, var(--rot));
+    color: var(--weiss);
+    font-size: clamp(.9rem, 1.6vw, 1.1rem);
+    padding: 14px 26px;
+  }
+  .btn-neu:hover { filter: brightness(1.08); }
+
+  /* Historie */
+  .historie {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .historie h3 {
+    font-size: clamp(.75rem, 1.3vw, .95rem);
+    color: var(--weiss-dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .historie-leiste {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    min-height: 56px;
+    align-items: center;
+  }
+  .hist-kugel {
+    width: clamp(40px, 5vw, 56px);
+    height: clamp(40px, 5vw, 56px);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: clamp(1rem, 2vw, 1.4rem);
+    background: linear-gradient(180deg, var(--blau-hell), var(--blau-mittel));
+    color: var(--weiss);
+    border: 2px solid rgba(255,255,255,.25);
+    box-shadow: 0 4px 12px rgba(0,0,0,.35);
+  }
+  .hist-kugel.neueste {
+    background: linear-gradient(180deg, var(--gold-hell), var(--gold));
+    color: var(--blau-tief);
+    border-color: var(--gold-hell);
+    transform: scale(1.12);
+  }
+  .hist-kugel small { display:block; font-size:.55em; opacity:.8; font-weight:700; }
+
+  /* Rechte Spalte: Counter + Board */
+  .seitenleiste {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(14px, 2vw, 22px);
+    position: sticky;
+    top: 16px;
+  }
+  .counter {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .counter .karte {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: var(--rad-klein);
+    padding: 14px;
+    text-align: center;
+  }
+  .counter .zahl { font-size: clamp(1.6rem, 4vw, 2.6rem); font-weight: 900; color: var(--gold); }
+  .counter .label { font-size: .75rem; letter-spacing: 2px; text-transform: uppercase; color: var(--weiss-dim); }
+
+  /* Board */
+  .board-wrap {
+    background: rgba(0,0,0,.18);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: var(--rad-klein);
+    padding: 14px;
+  }
+  .board-wrap h3 {
+    font-size: .8rem; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--weiss-dim); margin-bottom: 12px; text-align: center; font-weight: 600;
+  }
+  .board {
+    display: grid;
+    gap: 6px;
+  }
+  .board.modus-90 { grid-template-columns: repeat(10, 1fr); }
+  .board.modus-75 { grid-template-columns: repeat(15, 1fr); }
+  .board-zelle {
+    aspect-ratio: 1 / 1;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: clamp(.6rem, 1vw, .95rem);
+    background: rgba(255,255,255,.05);
+    color: var(--weiss-dim);
+    border: 1px solid rgba(255,255,255,.06);
+    transition: background .25s, color .25s, transform .25s, box-shadow .25s;
+  }
+  .board-zelle.gezogen {
+    background: linear-gradient(180deg, var(--gold-hell), var(--gold));
+    color: var(--blau-tief);
+    border-color: var(--gold);
+    box-shadow: 0 0 10px rgba(242,183,5,.5);
+  }
+  .board-zelle.aktuell {
+    outline: 3px solid var(--rot);
+    outline-offset: 1px;
+    transform: scale(1.1);
+    z-index: 2;
+  }
+  /* BINGO-Spaltenkopf (nur 75er) */
+  .bingo-kopf { display: none; gap: 6px; margin-bottom: 6px; }
+  .bingo-kopf.modus-75 { display: grid; grid-template-columns: repeat(5, 1fr); }
+  .bingo-kopf span {
+    text-align: center; font-weight: 900; color: var(--gold-hell);
+    font-size: clamp(.9rem, 1.6vw, 1.2rem); letter-spacing: 2px;
+  }
+  .board.spalten-75 {
+    grid-template-columns: repeat(5, 1fr);
+    grid-auto-flow: column;
+    grid-template-rows: repeat(15, 1fr);
+  }
+
+  /* Banner: alle gezogen */
+  .banner-fertig {
+    display: none;
+    background: linear-gradient(90deg, var(--rot), #e2415b);
+    color: var(--weiss);
+    text-align: center;
+    padding: 16px;
+    border-radius: var(--rad-klein);
+    font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+    font-weight: 800;
+    letter-spacing: 1px;
+    box-shadow: var(--schatten);
+    animation: kugel-pop .5s ease;
+  }
+  .banner-fertig.aktiv { display: block; }
+
+  footer {
+    text-align: center;
+    padding: 14px;
+    color: var(--weiss-dim);
+    font-size: .75rem;
+    letter-spacing: 1px;
+    border-top: 1px solid rgba(255,255,255,.08);
+  }
+
+  /* Tastatur-Hinweis */
+  .hinweis { color: var(--weiss-dim); font-size: .8rem; text-align: center; }
+
+  /* ---------------- Responsiv ---------------- */
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    .seitenleiste { position: static; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img class="logo" src="https://i.ibb.co/n807ZfkX/Flag-of-the-Assyrians-gold-and-blue-Assur-svg.png" alt="Assyrisches Logo" />
+  <div class="titel-block">
+    <span class="titel-aram">ܒܝܢܓܘ</span>
+    <span class="titel-de">Bingo · Zahlengenerator</span>
+  </div>
+  <div class="kopf-rechts">
+    <label class="toggle" title="Sound &amp; Sprachausgabe (Deutsch)">
+      <input type="checkbox" id="soundToggle" />
+      <span class="switch" aria-hidden="true"></span>
+      <span>🔊 Ton &amp; Sprache</span>
+    </label>
+  </div>
+</header>
+
+<main>
+  <!-- Bühne -->
+  <section class="buehne">
+    <div class="aktuell-wrap">
+      <div class="aktuell-spalte" id="aktuellSpalte"></div>
+      <div class="aktuell-kugel leer" id="aktuellKugel">Bereit zum Ziehen</div>
+    </div>
+
+    <div class="controls">
+      <button class="action btn-ziehen" id="btnZiehen">🎲 Zahl ziehen</button>
+      <button class="action btn-neu" id="btnNeu">↻ Neues Spiel</button>
+    </div>
+    <div class="hinweis">Tipp: <b>Leertaste</b> = ziehen</div>
+
+    <div class="banner-fertig" id="bannerFertig">
+      ✓ Alle Zahlen gezogen — ܟܠܗܘܢ ܡܢܝܢܐ ܐܬܡܫܚܠܘܢ
+    </div>
+
+    <div class="historie">
+      <h3>Letzte Zahlen</h3>
+      <div class="historie-leiste" id="historieLeiste"></div>
+    </div>
+  </section>
+
+  <!-- Seitenleiste -->
+  <aside class="seitenleiste">
+    <div class="counter">
+      <div class="karte">
+        <div class="zahl" id="cGezogen">0</div>
+        <div class="label">gezogen</div>
+      </div>
+      <div class="karte">
+        <div class="zahl" id="cUebrig">90</div>
+        <div class="label">übrig</div>
+      </div>
+    </div>
+
+    <div class="board-wrap">
+      <h3 id="boardTitel">Übersicht 1–90</h3>
+      <div class="bingo-kopf" id="bingoKopf">
+        <span>B</span><span>I</span><span>N</span><span>G</span><span>O</span>
+      </div>
+      <div class="board modus-90" id="board"></div>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  Assyrische Community-Veranstaltung · Bingo Caller — Karten bleiben physisch.
+</footer>
+
+<script>
+/* =========================================================
+   KONFIGURATION
+   MAX_ZAHL = 90  → klassisches Bingo, Board 10×9
+   MAX_ZAHL = 75  → B-I-N-G-O Bingo, Board 5 Spalten × 15 (Spaltenlogik)
+   ========================================================= */
+const MAX_ZAHL = 90;
+
+const HISTORIE_ANZ = 6;
+const SPALTEN_75 = ["B", "I", "N", "G", "O"]; // 1-15, 16-30, 31-45, 46-60, 61-75
+
+/* ---------------- State (nur im Speicher) ---------------- */
+let pool = [];        // noch verfügbare Zahlen
+let gezogen = [];     // bereits gezogene Zahlen (chronologisch)
+let aktuelleZahl = null;
+
+/* ---------------- DOM ---------------- */
+const el = {
+  kugel:      document.getElementById("aktuellKugel"),
+  spalte:     document.getElementById("aktuellSpalte"),
+  btnZiehen:  document.getElementById("btnZiehen"),
+  btnNeu:     document.getElementById("btnNeu"),
+  histLeiste: document.getElementById("historieLeiste"),
+  cGezogen:   document.getElementById("cGezogen"),
+  cUebrig:    document.getElementById("cUebrig"),
+  board:      document.getElementById("board"),
+  boardTitel: document.getElementById("boardTitel"),
+  bingoKopf:  document.getElementById("bingoKopf"),
+  banner:     document.getElementById("bannerFertig"),
+  soundToggle:document.getElementById("soundToggle"),
+};
+
+const ist75 = MAX_ZAHL === 75;
+
+/* ---------------- Hilfsfunktionen ---------------- */
+function spalteFuer(zahl) {
+  if (!ist75) return "";
+  return SPALTEN_75[Math.floor((zahl - 1) / 15)];
+}
+
+/* Web Audio: kurzer "Pling" beim Ziehen (kein externer Sound nötig) */
+let audioCtx = null;
+function plingSpielen() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = audioCtx.currentTime;
+    [880, 1320].forEach((f, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = f;
+      gain.gain.setValueAtTime(0.0001, t + i * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.25, t + i * 0.08 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.08 + 0.35);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t + i * 0.08);
+      osc.stop(t + i * 0.08 + 0.4);
+    });
+  } catch (e) { /* Audio nicht verfügbar – ignorieren */ }
+}
+
+/* Sprachausgabe (Deutsch) – Aramäisch wird von Browser-TTS nicht unterstützt */
+function zahlSprechen(zahl) {
+  if (!("speechSynthesis" in window)) return;
+  const spalte = spalteFuer(zahl);
+  const text = ist75 ? `${spalte}, ${zahl}` : `${zahl}`;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "de-DE";
+  u.rate = 0.9;
+  u.pitch = 1.0;
+  const deStimme = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith("de"));
+  if (deStimme) u.voice = deStimme;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+/* ---------------- Board aufbauen ---------------- */
+function boardAufbauen() {
+  el.board.innerHTML = "";
+  el.board.className = "board " + (ist75 ? "modus-75 spalten-75" : "modus-90");
+  el.boardTitel.textContent = `Übersicht 1–${MAX_ZAHL}`;
+  el.bingoKopf.className = "bingo-kopf" + (ist75 ? " modus-75" : "");
+
+  for (let n = 1; n <= MAX_ZAHL; n++) {
+    const z = document.createElement("div");
+    z.className = "board-zelle";
+    z.id = "zelle-" + n;
+    z.textContent = n;
+    el.board.appendChild(z);
+  }
+}
+
+/* ---------------- Anzeige aktualisieren ---------------- */
+function uiAktualisieren() {
+  el.cGezogen.textContent = gezogen.length;
+  el.cUebrig.textContent = pool.length;
+
+  // Historie (neueste zuerst)
+  el.histLeiste.innerHTML = "";
+  const letzte = gezogen.slice(-HISTORIE_ANZ).reverse();
+  letzte.forEach((z, i) => {
+    const k = document.createElement("div");
+    k.className = "hist-kugel" + (i === 0 ? " neueste" : "");
+    const sp = spalteFuer(z);
+    k.innerHTML = sp ? `<span>${z}<small>${sp}</small></span>` : `${z}`;
+    el.histLeiste.appendChild(k);
+  });
+
+  // Fertig?
+  const fertig = pool.length === 0 && gezogen.length > 0;
+  el.banner.classList.toggle("aktiv", fertig);
+  el.btnZiehen.disabled = pool.length === 0;
+  el.btnZiehen.textContent = fertig ? "✓ Fertig" : "🎲 Zahl ziehen";
+}
+
+/* ---------------- Zahl ziehen ---------------- */
+function zahlZiehen() {
+  if (pool.length === 0) return;
+
+  const idx = Math.floor(Math.random() * pool.length);
+  const zahl = pool.splice(idx, 1)[0];
+  gezogen.push(zahl);
+
+  // vorige "aktuell"-Markierung entfernen
+  if (aktuelleZahl !== null) {
+    const alt = document.getElementById("zelle-" + aktuelleZahl);
+    if (alt) alt.classList.remove("aktuell");
+  }
+  aktuelleZahl = zahl;
+
+  // Kugel animiert
+  el.kugel.classList.remove("leer", "pop");
+  el.kugel.textContent = zahl;
+  el.spalte.textContent = ist75 ? spalteFuer(zahl) : "";
+  void el.kugel.offsetWidth; // Reflow für Re-Trigger der Animation
+  el.kugel.classList.add("pop");
+
+  // Board markieren
+  const zelle = document.getElementById("zelle-" + zahl);
+  if (zelle) { zelle.classList.add("gezogen", "aktuell"); }
+
+  // Ton & Sprache
+  if (el.soundToggle.checked) {
+    plingSpielen();
+    zahlSprechen(zahl);
+  }
+
+  uiAktualisieren();
+}
+
+/* ---------------- Neues Spiel ---------------- */
+function neuesSpiel() {
+  pool = Array.from({ length: MAX_ZAHL }, (_, i) => i + 1);
+  gezogen = [];
+  aktuelleZahl = null;
+
+  document.querySelectorAll(".board-zelle.gezogen, .board-zelle.aktuell")
+    .forEach(z => z.classList.remove("gezogen", "aktuell"));
+
+  el.kugel.classList.add("leer");
+  el.kugel.classList.remove("pop");
+  el.kugel.textContent = "Bereit zum Ziehen";
+  el.spalte.textContent = "";
+
+  if (window.speechSynthesis) speechSynthesis.cancel();
+
+  uiAktualisieren();
+}
+
+/* ---------------- Events ---------------- */
+el.btnZiehen.addEventListener("click", zahlZiehen);
+
+el.btnNeu.addEventListener("click", () => {
+  if (gezogen.length === 0 || confirm("Neues Spiel starten? Alle gezogenen Zahlen werden zurückgesetzt.")) {
+    neuesSpiel();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space" && !el.btnZiehen.disabled) {
+    e.preventDefault();
+    zahlZiehen();
+  }
+});
+
+// Stimmen vorab laden (manche Browser laden asynchron)
+if ("speechSynthesis" in window) {
+  speechSynthesis.onvoiceschanged = () => {};
+  speechSynthesis.getVoices();
+}
+
+/* ---------------- Start ---------------- */
+boardAufbauen();
+neuesSpiel();
+</script>
+</body>
+</html>
