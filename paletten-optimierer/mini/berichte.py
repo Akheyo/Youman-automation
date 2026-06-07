@@ -1066,11 +1066,14 @@ def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
     # Summary-Tabelle: AW | Kunde | #Zuord | Σ Paletten
     summary_rows = []
     for aw, zeilen in pro_aw_sorted:
-        kunde = (zeilen[0].get("name", "") or "—")[:25]
+        kunde = (zeilen[0].get("name", "") or "—")[:22]
         sum_menge = sum(int(z.get("menge", 0)) for z in zeilen)
+        ziele = sorted({(z.get("ziel", "") or "—") for z in zeilen})
+        ziel_txt = ", ".join(ziele)[:34]
         summary_rows.append([
-            aw[:18],
+            aw[:16],
             kunde,
+            ziel_txt,
             str(len(zeilen)),
             str(sum_menge),
         ])
@@ -1078,8 +1081,8 @@ def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
     pdf.set_text_color(15, 31, 61)
     pdf.cell(0, 6, _latin1("Übersicht"), ln=True)
     pdf.set_text_color(0, 0, 0)
-    _table(pdf, ["AW", "Kunde", "Zuord.", "Σ Paletten"],
-            summary_rows, [40, 70, 25, 30])
+    _table(pdf, ["AW", "Kunde", "Optim. Palette", "Zuord.", "Σ Paletten"],
+            summary_rows, [34, 48, 50, 22, 28])
     pdf.ln(5)
 
     # Detail pro AW
@@ -1123,6 +1126,33 @@ def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
         pdf.ln(4)
 
     return bytes(pdf.output())
+
+
+def csv_auftrag_palette(ergebnis: dict) -> bytes:
+    """CSV der Auftrag→Paletten-Zuordnung: pro Auftrag/Artikel inkl.
+    Gittermaß, Palettenmaß (Excel) und optimiertem Palettenmaß (Zielmaß)."""
+    import csv as _csv
+    buf = io.StringIO()
+    w = _csv.writer(buf, delimiter=";")
+    w.writerow([
+        "Auftrag", "Kunde", "Artikelnummer", "Verbrauchsdatum",
+        "Gittermaß", "Palettenmaß (Excel)", "Optimierte Palette (Zielmaß)",
+        "Typ", "Menge (Paletten)",
+    ])
+    for z in sorted(ergebnis.get("zuordnung", []),
+                    key=lambda z: (z.get("auftrag", "") or "")):
+        pL = z.get("palette_L_excel")
+        pB = z.get("palette_B_excel")
+        pal_mass = (f"{int(pL)}x{int(pB)}"
+                    if pL not in (None, "") and pB not in (None, "") else "")
+        w.writerow([
+            z.get("auftrag", ""), z.get("name", ""),
+            z.get("artikelnummer", ""), z.get("verbrauchsdatum", ""),
+            f"{int(z.get('L', 0))}x{int(z.get('B', 0))}",
+            pal_mass, z.get("ziel", ""),
+            z.get("typ", ""), int(z.get("menge", 0)),
+        ])
+    return buf.getvalue().encode("utf-8-sig")
 
 
 # ---------------------------------------------------------------------------

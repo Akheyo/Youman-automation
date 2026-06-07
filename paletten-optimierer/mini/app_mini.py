@@ -1118,20 +1118,28 @@ def _klassifiziere_paletten(res: dict) -> dict:
     zg['klasse'] (+ zg['typ'] fuer Einzelgrößen). Liefert JSON-sicheres
     Summary mit Zählern + Detail je Größe."""
     grp: dict[str, dict] = {}
+    kombi_pallets = 0
+    kombi_zuord = 0
+    nz_pallets = 0
+    nz_zuord = 0
     for z in res.get("zuordnung", []):
+        menge = int(z.get("menge") or 0)
         if z.get("typ") == "Nicht zuordenbar":
             z["klasse"] = "—"
+            nz_pallets += menge
+            nz_zuord += 1
             continue
         ziel = str(z.get("ziel") or "")
         m = re.fullmatch(r"(\d+)x(\d+)", ziel)
         if not m:
             z["klasse"] = "Kombi"      # Kombi-Stapel/Heterogen: keine Einzelgröße
+            kombi_pallets += menge
+            kombi_zuord += 1
             continue
         g = grp.setdefault(ziel, {
             "cs": int(m.group(1)), "cl": int(m.group(2)),
             "artikel": {}, "pallets": 0, "eintraege": []})
         art = (str(z.get("artikelnummer") or "").strip() or "(ohne ArtNr)")
-        menge = int(z.get("menge") or 0)
         g["artikel"][art] = g["artikel"].get(art, 0) + menge
         g["pallets"] += menge
         g["eintraege"].append(z)
@@ -1161,6 +1169,8 @@ def _klassifiziere_paletten(res: dict) -> dict:
                                 if d["klasse"] == "Standard"),
         "sonder_pallets": sum(d["pallets"] for d in details
                               if d["klasse"] == "Sonder"),
+        "kombi_pallets": kombi_pallets, "kombi_zuord": kombi_zuord,
+        "nz_pallets": nz_pallets, "nz_zuord": nz_zuord,
         "details": details,
     }
 
@@ -1574,25 +1584,36 @@ def kpi_uebersicht() -> None:
     klass = res.get("paletten_klassen", {}) or {}
     n_std = int(klass.get("standard_typen", 0))
     n_son = int(klass.get("sonder_typen", 0))
-    n_nz = sum(1 for z in res.get("zuordnung", [])
-               if z.get("typ") == "Nicht zuordenbar")
+    std_pal = int(klass.get("standard_pallets", 0))
+    son_pal = int(klass.get("sonder_pallets", 0))
+    kombi_pal = int(klass.get("kombi_pallets", 0))
+    nz_pal = int(klass.get("nz_pallets", 0))
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Standardpaletten", _fmt_int(n_std),
-              help="Genutzte Größen mit ≥3 Artikeln ODER einem Artikel "
-                   "mit Menge ≥20.")
-    c2.metric("Sonderpaletten", _fmt_int(n_son),
-              help="Genutzte Größen mit nur 1–2 Artikeln (und Menge <20).")
-    c3.metric("Nicht zuordenbar", _fmt_int(n_nz),
-              help="Aufträge, die keine Größe innerhalb der Toleranz deckt.")
-    c4.metric("Paletten gesamt", _fmt_int(paletten_summe),
-              help="Σ der Mengen aller Aufträge mit Maß.")
-    if n_std or n_son:
-        st.caption(
-            f"📦 Standard: {n_std} Größen / "
-            f"{_fmt_int(klass.get('standard_pallets', 0))} Paletten · "
-            f"🔧 Sonder: {n_son} Größen / "
-            f"{_fmt_int(klass.get('sonder_pallets', 0))} Paletten")
+    # 5 Kacheln: Standard + Sonder + Kombi + Nicht zuordenbar = Gesamt
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Standardpaletten", _fmt_int(std_pal),
+              help=f"{n_std} Größen mit ≥3 Artikeln ODER einem Artikel "
+                   f"mit Menge ≥20.")
+    c2.metric("Sonderpaletten", _fmt_int(son_pal),
+              help=f"{n_son} Größen mit nur 1–2 Artikeln (und Menge <20).")
+    c3.metric("Kombipaletten", _fmt_int(kombi_pal),
+              help="Paletten aus Kombi-Zuordnungen (gestapelt/heterogen). "
+                   "Nur bei 'Kombinieren = an'.")
+    c4.metric("Nicht zuordenbar", _fmt_int(nz_pal),
+              help="Paletten, die keine Größe innerhalb der Toleranz deckt.")
+    c5.metric("Paletten gesamt", _fmt_int(paletten_summe),
+              help="Σ der Mengen aller Aufträge mit Maß "
+                   "(= Standard + Sonder + Kombi + Nicht zuordenbar).")
+    st.caption(
+        f"📦 Standard: {n_std} Größen / {_fmt_int(std_pal)} Paletten · "
+        f"🔧 Sonder: {n_son} Größen / {_fmt_int(son_pal)} Paletten · "
+        f"🧩 Kombi: {_fmt_int(int(klass.get('kombi_zuord', 0)))} "
+        f"Zuordnungen / {_fmt_int(kombi_pal)} Paletten · "
+        f"⛔ Nicht zuordenbar: {_fmt_int(nz_pal)} Paletten")
+    if std_pal + son_pal + kombi_pal + nz_pal != paletten_summe:
+        st.caption(f"⚠️ Hinweis: Summenkontrolle weicht ab "
+                   f"({_fmt_int(std_pal + son_pal + kombi_pal + nz_pal)} "
+                   f"≠ {_fmt_int(paletten_summe)}).")
 
     # Trade-off-Zeile = SINGLE SOURCE OF TRUTH (aus res['parameter']!)
     # NICHT aus session_state — zeigt genau das was an optimiere() ging.
@@ -2283,6 +2304,14 @@ def seite_ergebnisse() -> None:
             name, daten, pfad = st.session_state.erg_pdf_ap_daten
             st.success(f"✓ {name} erstellt.")
             _export_aktionen(name, daten, pfad, "erg_pdf_ap")
+        st.download_button(
+            "📥 CSV: Auftrag → Paletten (inkl. optim. Palettenmaß)",
+            data=berichte_modul.csv_auftrag_palette(res),
+            file_name="auftrag-paletten.csv",
+            mime="text/csv",
+            use_container_width=True,
+            key="erg_csv_ap",
+        )
 
 
 # ---------------------------------------------------------------------------
