@@ -46,3 +46,6 @@ scripts/lod2-pipeline/__pycache__/
 
 # Generated bundle for the Bingo caller (regenerate with: zip -r bingo-caller.zip bingo-caller.html assets/)
 bingo-caller.zip
+
+# Generated single-file build (regenerate by embedding assets/ as base64 into bingo-caller.html)
+bingo-caller-standalone.html
