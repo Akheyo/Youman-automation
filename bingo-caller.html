@@ -23,7 +23,7 @@
     --weiss-dim:    #b9c6e6;   /* gedämpft                           */
 
     /* Deckkraft des Navy-Overlays über dem Lamassu-Header */
-    --overlay-deckkraft: 0.74;
+    --overlay-deckkraft: 0.5;
 
     --rad-gross: 28px;
     --rad-klein: 14px;
@@ -85,11 +85,17 @@
     gap: clamp(14px, 2.6vw, 30px);
   }
   .emblem {
-    width: clamp(74px, 11vw, 130px);
-    height: clamp(74px, 11vw, 130px);
+    width: clamp(70px, 10vw, 120px);
+    height: clamp(70px, 10vw, 120px);
     object-fit: contain;
     border-radius: 50%;
     filter: drop-shadow(0 0 16px rgba(242,183,5,.55)) drop-shadow(0 6px 10px rgba(0,0,0,.55));
+  }
+  .flagge {
+    width: clamp(64px, 9vw, 120px);
+    height: auto;
+    border-radius: 6px;
+    box-shadow: 0 6px 16px rgba(0,0,0,.6), 0 0 0 2px rgba(242,183,5,.55);
   }
   .titel-block { display: flex; flex-direction: column; line-height: 1.05; }
   .titel-aram {
@@ -403,11 +409,12 @@
 <header>
   <div class="overlay"></div>
   <div class="logo-lockup">
-    <img class="emblem" src="assets/shamash-emblem.png" alt="Shamash-Emblem" />
+    <img class="flagge" src="assets/assyrian-flag.png" alt="Assyrische Flagge" />
     <div class="titel-block">
       <span class="titel-aram">ܒܝܢܓܘ</span>
       <span class="titel-de">Bingo · Zahlengenerator</span>
     </div>
+    <img class="emblem" src="assets/shamash-emblem.png" alt="Shamash-Emblem" />
   </div>
   <div class="kopf-toggle">
     <label class="toggle" title="Sound &amp; Sprachausgabe (Deutsch)">
