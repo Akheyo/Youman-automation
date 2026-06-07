@@ -1066,21 +1066,13 @@ def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
     # Summary-Tabelle: AW | Kunde | #Zuord | Σ Paletten
     summary_rows = []
     for aw, zeilen in pro_aw_sorted:
-        kunde = (zeilen[0].get("name", "") or "—")[:20]
+        kunde = (zeilen[0].get("name", "") or "—")[:24]
         sum_menge = sum(int(z.get("menge", 0)) for z in zeilen)
         ziele = sorted({(z.get("ziel", "") or "—") for z in zeilen})
-        ziel_txt = ", ".join(ziele)[:30]
-        pal_masse = set()
-        for z in zeilen:
-            pL = z.get("palette_L_excel")
-            pB = z.get("palette_B_excel")
-            if pL not in (None, "") and pB not in (None, ""):
-                pal_masse.add(f"{int(pL)}x{int(pB)}")
-        pal_txt = (", ".join(sorted(pal_masse)) or "—")[:30]
+        ziel_txt = ", ".join(ziele)[:38]
         summary_rows.append([
-            aw[:16],
+            aw[:18],
             kunde,
-            pal_txt,
             ziel_txt,
             str(len(zeilen)),
             str(sum_menge),
@@ -1090,9 +1082,8 @@ def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
     pdf.cell(0, 6, _latin1("Übersicht"), ln=True)
     pdf.set_text_color(0, 0, 0)
     _table(pdf,
-            ["AW", "Kunde", "Palettenmaß", "Optim. Palette",
-              "Zuord.", "Σ Pal."],
-            summary_rows, [28, 36, 38, 40, 16, 20])
+            ["AW", "Kunde", "Optim. Palette", "Zuord.", "Σ Paletten"],
+            summary_rows, [38, 52, 52, 22, 26])
     pdf.ln(5)
 
     # Detail pro AW
@@ -1115,24 +1106,18 @@ def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
         pdf.set_text_color(0, 0, 0)
         rows = []
         for z in zeilen:
-            pL = z.get("palette_L_excel")
-            pB = z.get("palette_B_excel")
-            pal_mass = (f"{int(pL)}x{int(pB)}"
-                        if pL not in (None, "") and pB not in (None, "")
-                        else "—")
             rows.append([
-                (z.get("artikelnummer", "") or "—")[:15],
+                (z.get("artikelnummer", "") or "—")[:18],
                 f"{int(z.get('L', 0))}x{int(z.get('B', 0))}",
-                pal_mass,
-                z.get("ziel", "—")[:22],
+                z.get("ziel", "—")[:24],
                 z.get("typ", "")[:16],
                 str(int(z.get("menge", 0))),
                 (z.get("verbrauchsdatum", "") or "—")[:12],
             ])
         _table(pdf,
-                ["Artikel", "Gittermaß", "Palettenmaß",
-                  "Optim. Palette", "Typ", "Menge", "VBD"],
-                rows, [24, 22, 26, 34, 26, 14, 22])
+                ["Artikel", "Gittermaß", "Optim. Palette",
+                  "Typ", "Menge", "VBD"],
+                rows, [30, 26, 38, 28, 16, 24])
         pdf.ln(4)
 
     return bytes(pdf.output())
