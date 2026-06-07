@@ -1589,19 +1589,18 @@ def kpi_uebersicht() -> None:
     kombi_pal = int(klass.get("kombi_pallets", 0))
     nz_pal = int(klass.get("nz_pallets", 0))
 
-    # 5 Kacheln: Standard + Sonder + Kombi + Nicht zuordenbar = Gesamt
-    c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Standardpaletten", _fmt_int(std_pal),
-              help=f"{n_std} Größen mit ≥3 Artikeln ODER einem Artikel "
-                   f"mit Menge ≥20.")
-    c2.metric("Sonderpaletten", _fmt_int(son_pal),
-              help=f"{n_son} Größen mit nur 1–2 Artikeln (und Menge <20).")
-    c3.metric("Kombipaletten", _fmt_int(kombi_pal),
-              help="Paletten aus Kombi-Zuordnungen (gestapelt/heterogen). "
-                   "Nur bei 'Kombinieren = an'.")
-    c4.metric("Nicht zuordenbar", _fmt_int(nz_pal),
+    # 4 Kacheln: Standard/Sonder = Anzahl verschiedener Größen,
+    # Nicht zuordenbar + Gesamt = Paletten. Kombi steht in der Caption.
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Standardpaletten", _fmt_int(n_std),
+              help=f"Anzahl verschiedener Standard-Größen (≥3 Artikel ODER "
+                   f"1 Artikel mit Menge ≥20). = {_fmt_int(std_pal)} Paletten.")
+    c2.metric("Sonderpaletten", _fmt_int(n_son),
+              help=f"Anzahl verschiedener Sonder-Größen (1–2 Artikel, "
+                   f"Menge <20). = {_fmt_int(son_pal)} Paletten.")
+    c3.metric("Nicht zuordenbar", _fmt_int(nz_pal),
               help="Paletten, die keine Größe innerhalb der Toleranz deckt.")
-    c5.metric("Paletten gesamt", _fmt_int(paletten_summe),
+    c4.metric("Paletten gesamt", _fmt_int(paletten_summe),
               help="Σ der Mengen aller Aufträge mit Maß "
                    "(= Standard + Sonder + Kombi + Nicht zuordenbar).")
     st.caption(
