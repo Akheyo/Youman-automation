@@ -47,6 +47,7 @@ import wiederbeschaffung as wbsch_modul  # noqa: E402
 import auftraege as auftraege_modul  # noqa: E402
 import artikel_stammdaten as artikel_stamm_modul  # noqa: E402
 import edition as edition_modul  # noqa: E402
+import groessen_historie as groessen_hist_modul  # noqa: E402
 from import_doppelschutz import pruefe_import as _pruefe_import  # noqa: E402
 from _render import render_zuord_table, ziel_label as _ziel_label  # noqa: E402
 from _ui_chrome import (  # noqa: E402
@@ -455,19 +456,18 @@ def seite_datenimport() -> None:
 
         with st.spinner(f"Lese {up.name} ({len(roh) / 1024:.0f} KB) ..."):
             dat = importiere(io.BytesIO(roh))
-        # Maße-Gate: Status pro Artikel gegen die Stammdaten ermitteln.
+        # Maße-Status pro Artikel gegen die Stammdaten ermitteln (nur Info).
         # Manuell gepinnte Artikel ueberschreiben die Excel-Werte (🔒);
-        # neue/abweichende Artikel werden NICHT automatisch gespeichert —
-        # sie muessen im Tab 'Maße prüfen' bestaetigt werden, bevor die
-        # Optimierung startet.
+        # neue/abweichende Maße werden direkt aus der Excel genutzt — das
+        # Pflegen im Tab 'Maße prüfen' ist optional (KEINE Blockade).
         try:
             gate = artikel_stamm_modul.analysiere_import(
                 dat.get("mit_mass", []))
             st.session_state.masse_gate = gate
             _offen = artikel_stamm_modul.offene_pruefungen(gate)
             if _offen:
-                st.toast(f"⚠️ {len(_offen)} Artikel-Maße bitte im Tab "
-                          f"'Maße prüfen' bestätigen.")
+                st.toast(f"ℹ️ {len(_offen)} neue/abweichende Artikel-Maße — "
+                          f"optional im Tab 'Maße prüfen' pflegbar.")
         except Exception:
             st.session_state.masse_gate = {}
         st.session_state.datei_name = up.name
@@ -533,16 +533,10 @@ def seite_datenimport() -> None:
             # auf der Import-Seite bleiben, Preview anzeigen
             st.rerun()
         elif dat.get("mit_mass"):
-            # Maße-Gate: gibt es unbestaetigte/abweichende Artikel-Maße,
-            # zuerst zum Pflicht-Step 'Maße prüfen', sonst direkt rechnen.
-            _offen = artikel_stamm_modul.offene_pruefungen(
-                st.session_state.get("masse_gate", {}))
-            if _offen:
-                st.session_state.seite = "Maße prüfen"
-            else:
-                st.toast("✅ Alle Artikel bekannt – direkt zur Optimierung.")
-                run_optimierung()
-                st.session_state.seite = "Ergebnisse"
+            # Kein erzwungener Maße-Prüf-Step mehr: direkt zu den
+            # Einstellungen. Die Excel-Maße werden unverändert für die
+            # Optimierung genutzt ('Maße prüfen' bleibt optional verfügbar).
+            st.session_state.seite = "Einstellungen"
             st.rerun()
         else:
             st.session_state.seite = "Einstellungen"
@@ -1111,6 +1105,7 @@ def _offene_masse() -> list[str]:
 #   (kumulative Über-die-Zeit-Regel folgt separat)
 STD_ARTIKEL_SCHWELLE = 3      # ab 3 verschiedenen Artikeln
 STD_EINZEL_MENGE = 20         # ein Artikel mit so vielen Paletten
+STD_KUMULATIV_ARTIKEL = 5     # Größe über die Zeit von so vielen Artikeln genutzt
 
 
 def _klassifiziere_paletten(res: dict) -> dict:
@@ -1144,23 +1139,38 @@ def _klassifiziere_paletten(res: dict) -> dict:
         g["pallets"] += menge
         g["eintraege"].append(z)
 
+    # Kumulative Größen-Historie aktualisieren (über alle bisherigen Läufe)
+    # und einlesen — für die "über die Zeit"-Standard-Regel (Ausnahme B).
+    try:
+        hist = groessen_hist_modul.aktualisiere(res.get("zuordnung", []))
+    except Exception:
+        hist = {}
+
     standards, sonder, details = [], [], []
     for ziel, g in sorted(grp.items()):
         n_art = len(g["artikel"])
         max_menge = max(g["artikel"].values()) if g["artikel"] else 0
-        ist_std = (n_art >= STD_ARTIKEL_SCHWELLE) or (max_menge >= STD_EINZEL_MENGE)
+        kum_art = len(set(hist.get(ziel, [])))   # verschiedene Artikel je Größe, kumulativ
+        regel_artikel = n_art >= STD_ARTIKEL_SCHWELLE
+        regel_menge = max_menge >= STD_EINZEL_MENGE
+        regel_kumulativ = kum_art >= STD_KUMULATIV_ARTIKEL
+        ist_std = regel_artikel or regel_menge or regel_kumulativ
         g["klasse"] = "Standard" if ist_std else "Sonder"
         for z in g["eintraege"]:
             z["klasse"] = g["klasse"]
             z["typ"] = g["klasse"]     # Anzeige/Tabelle/PDF konsistent
         (standards if ist_std else sonder).append((g["cs"], g["cl"]))
-        grund = ("≥3 Artikel" if n_art >= STD_ARTIKEL_SCHWELLE
-                 else (f"1 Artikel × {max_menge}≥20"
-                       if max_menge >= STD_EINZEL_MENGE
-                       else f"{n_art} Artikel"))
+        if regel_artikel:
+            grund = f"≥{STD_ARTIKEL_SCHWELLE} Artikel"
+        elif regel_menge:
+            grund = f"1 Artikel × {max_menge}≥{STD_EINZEL_MENGE}"
+        elif regel_kumulativ:
+            grund = f"kumulativ {kum_art}≥{STD_KUMULATIV_ARTIKEL} Artikel"
+        else:
+            grund = f"{n_art} Artikel"
         details.append({"ziel": ziel, "klasse": g["klasse"], "n_artikel": n_art,
-                        "max_menge": max_menge, "pallets": g["pallets"],
-                        "grund": grund})
+                        "max_menge": max_menge, "kum_artikel": kum_art,
+                        "pallets": g["pallets"], "grund": grund})
 
     return {
         "standard_typen": len(standards), "sonder_typen": len(sonder),
@@ -1198,13 +1208,8 @@ def _auto_standards_in_katalog(standard_masse: list) -> int:
 
 
 def run_optimierung() -> None:
-    # Pflicht-Gate: keine Optimierung solange unbestätigte Maße offen sind.
-    _offen = _offene_masse()
-    if _offen:
-        st.session_state.seite = "Maße prüfen"
-        st.session_state._masse_block_hinweis = len(_offen)
-        st.rerun()
-        return
+    # Kein Pflicht-Gate mehr: neue/abweichende Maße werden direkt aus der
+    # Excel übernommen ('Maße prüfen' ist optional).
     p = st.session_state.params
     mit_mass = st.session_state.import_dat["mit_mass"]
 
@@ -1488,16 +1493,13 @@ def seite_optimierung() -> None:
         return
     p = st.session_state.params
 
-    # Pflicht-Gate: unbestätigte Artikel-Maße blockieren die Optimierung.
+    # 'Maße prüfen' ist optional — KEINE Blockade. Nur ein Hinweis, dass
+    # neue/abweichende Maße direkt aus der Excel übernommen werden.
     _offen = _offene_masse()
     if _offen:
-        st.warning(f"⚠️ {len(_offen)} unbestätigte Artikel-Maße — die "
-                   f"Optimierung ist gesperrt, bis alle Maße im Tab "
-                   f"'Maße prüfen' bestätigt sind.")
-        if st.button("➡️ Jetzt Maße prüfen", type="primary",
-                      use_container_width=True, key="opt_goto_gate"):
-            st.session_state.seite = "Maße prüfen"
-            st.rerun()
+        st.caption(f"ℹ️ {len(_offen)} neue/abweichende Artikel-Maße werden "
+                   f"direkt aus der Excel übernommen. Optional pflegbar im "
+                   f"Tab 'Maße prüfen'.")
 
     col_l, col_r = st.columns([1, 2])
     with col_l:
@@ -1524,9 +1526,7 @@ def seite_optimierung() -> None:
         )
         card_close()
         if st.button("🔄 Optimieren", type="primary",
-                      use_container_width=True, disabled=bool(_offen),
-                      help=("Erst alle Artikel-Maße im Tab 'Maße prüfen' "
-                            "bestätigen." if _offen else None)):
+                      use_container_width=True):
             run_optimierung()
             st.session_state.seite = "Ergebnisse"
             st.rerun()

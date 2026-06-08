@@ -79,6 +79,7 @@ app_datas = [
     ("../auftraege.py", "."),
     ("../artikel_stammdaten.py", "."),
     ("../edition.py", "."),
+    ("../groessen_historie.py", "."),
     ("../config.json", "."),
     ("../.streamlit/config.toml", ".streamlit"),
     ("../_render.py", "."),
