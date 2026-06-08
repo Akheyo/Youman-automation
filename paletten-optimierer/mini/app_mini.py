@@ -82,6 +82,49 @@ inject_css()
 
 
 # ---------------------------------------------------------------------------
+# Login-Gate (Benutzername + Passwort, mit Ablaufdatum je Zugang).
+# Läuft vor jeglichem App-Inhalt; bei fehlender/abgelaufener Anmeldung
+# wird die Seite hier per st.stop() beendet.
+# ---------------------------------------------------------------------------
+import auth as auth_modul  # noqa: E402
+
+
+def _login_gate() -> None:
+    user = st.session_state.get("auth_user")
+    if st.session_state.get("auth_ok") and user:
+        # Laufende Sitzung: Ablaufdatum bei jedem Rerun erneut prüfen.
+        ok, msg = auth_modul.ist_gueltig(user)
+        if ok:
+            return
+        st.session_state["auth_ok"] = False
+        st.session_state.pop("auth_user", None)
+        st.warning(msg)
+
+    _, mitte, _ = st.columns([1, 1.2, 1])
+    with mitte:
+        card_open("🔐 Anmeldung")
+        st.caption("Bitte mit Benutzername und Passwort anmelden.")
+        with st.form("login_form", clear_on_submit=False):
+            u = st.text_input("Benutzername", key="login_user")
+            p = st.text_input("Passwort", type="password", key="login_pw")
+            ok_btn = st.form_submit_button("Anmelden", type="primary",
+                                           use_container_width=True)
+        if ok_btn:
+            ok, msg = auth_modul.pruefe(u, p)
+            if ok:
+                st.session_state["auth_ok"] = True
+                st.session_state["auth_user"] = u.strip()
+                st.rerun()
+            else:
+                st.error(msg)
+        card_close()
+    st.stop()
+
+
+_login_gate()
+
+
+# ---------------------------------------------------------------------------
 # Selbsttest-Status laden (vom CI-Lauf geschrieben).
 # ---------------------------------------------------------------------------
 def _lade_selbsttest_status() -> dict | None:
@@ -301,6 +344,21 @@ with st.sidebar:
         f'</div>',
         unsafe_allow_html=True,
     )
+
+    sidebar_section("Konto")
+    _akt_user = st.session_state.get("auth_user", "")
+    _akt_abl = auth_modul.ablauf(_akt_user)
+    st.markdown(
+        f'<div style="font-size:11px;color:#475569;padding:4px 18px;'
+        f'line-height:1.5;">👤 <b>{escape(str(_akt_user))}</b><br>'
+        f'Zugang gültig bis '
+        f'<b>{_akt_abl.strftime("%d.%m.%Y") if _akt_abl else "—"}</b></div>',
+        unsafe_allow_html=True,
+    )
+    if st.button("Abmelden", key="logout_btn", use_container_width=True):
+        st.session_state["auth_ok"] = False
+        st.session_state.pop("auth_user", None)
+        st.rerun()
 
     sidebar_section("Info")
     st.markdown(
