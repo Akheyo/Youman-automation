@@ -112,7 +112,7 @@ async function callOpenRouter(
   const headers: Record<string, string> = {
     Authorization: `Bearer ${apiKey}`,
     'Content-Type': 'application/json',
-    'X-Title': 'Felix — Youman Automation',
+    'X-Title': 'Felix Lead-Scout (Youman Automation)',
   };
   if (process.env.OPENROUTER_SITE_URL) headers['HTTP-Referer'] = process.env.OPENROUTER_SITE_URL;
 
