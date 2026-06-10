@@ -62,7 +62,8 @@ export default function FelixChat() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || `Fehler (HTTP ${res.status}).`);
+        const detail = [data.error, data.detail, data.action].filter(Boolean).join(' — ');
+        setError(detail || `Fehler (HTTP ${res.status}).`);
         return;
       }
       setMessages((prev) => [
