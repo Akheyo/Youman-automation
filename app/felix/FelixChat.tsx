@@ -222,6 +222,23 @@ export default function FelixChat() {
 }
 
 function CompanyCard({ c }: { c: Company }) {
+  const [handoff, setHandoff] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
+
+  async function toLina() {
+    if (!c.phone) return;
+    setHandoff('sending');
+    try {
+      const r = await fetch('/api/sales/leads/from-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: c.name, phone: c.phone, website: c.website, address: c.address, descriptors: c.descriptors }),
+      });
+      setHandoff(r.ok ? 'done' : 'error');
+    } catch {
+      setHandoff('error');
+    }
+  }
+
   return (
     <div className={styles.card}>
       <div className={styles.cardHead}>
@@ -249,6 +266,16 @@ function CompanyCard({ c }: { c: Company }) {
         )}
       </div>
       {c.descriptors.length > 0 && <div className={styles.tags}>{c.descriptors.join(' · ')}</div>}
+      {c.phone && (
+        <button
+          className={styles.linaBtn}
+          onClick={toLina}
+          disabled={handoff === 'sending' || handoff === 'done'}
+          title="An Lina (Telefon-Agent) übergeben"
+        >
+          {handoff === 'done' ? '✓ An Lina übergeben' : handoff === 'sending' ? 'Übergebe…' : handoff === 'error' ? 'Fehler – nochmal' : '📞 An Lina übergeben'}
+        </button>
+      )}
     </div>
   );
 }
