@@ -59,12 +59,40 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.card}>
-        <div className={styles.brand}>
+      <aside className={styles.panel}>
+        <div className={styles.panelTop}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Youman Automation" className={styles.logoImg} />
+          <img src="/logo.png" alt="Youman Automation" className={styles.panelLogo} />
         </div>
-        <h1 className={styles.title}>{isSignup ? 'Konto erstellen' : 'Willkommen zurück'}</h1>
+        <div className={styles.panelBody}>
+          <h2 className={styles.panelTitle}>
+            Dein KI-Vertriebsteam,<br />das anruft &amp; Termine bucht.
+          </h2>
+          <ul className={styles.panelList}>
+            <li>Felix findet passende Firmen</li>
+            <li>Anna analysiert &amp; findet die E-Mail</li>
+            <li>Paul schreibt den Pitch</li>
+            <li>Lina ruft an &amp; bucht den Termin</li>
+          </ul>
+          <div className={styles.panelTeam}>
+            {['felix', 'anna', 'paul'].map((n) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={n} src={`/team/${n}.png`} alt="" className={styles.panelAvatar} />
+            ))}
+            <span className={styles.panelLina}>📞</span>
+            <span className={styles.panelTeamLabel}>Felix · Anna · Paul · Lina</span>
+          </div>
+        </div>
+        <div className={styles.panelFoot}>DSGVO-konform · Server in Deutschland · auf Deutsch</div>
+      </aside>
+
+      <div className={styles.formCol}>
+        <div className={styles.card}>
+          <div className={styles.brand}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Youman Automation" className={styles.logoImg} />
+          </div>
+          <h1 className={styles.title}>{isSignup ? 'Konto erstellen' : 'Willkommen zurück'}</h1>
         <p className={styles.sub}>
           {isSignup ? 'Starte mit Felix, Anna & Paul – deinem KI-Vertriebsteam.' : 'Melde dich an, um fortzufahren.'}
         </p>
@@ -118,6 +146,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
               Noch kein Konto? <Link href="/signup">Jetzt registrieren</Link>
             </>
           )}
+        </div>
         </div>
       </div>
     </div>
