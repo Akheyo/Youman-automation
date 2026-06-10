@@ -21,6 +21,11 @@
   color: #16223a;
   text-decoration: none;
 }
+.logoImg {
+  height: 32px;
+  width: auto;
+  display: block;
+}
 .brandMark {
   width: 30px;
   height: 30px;

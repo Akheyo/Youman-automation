@@ -61,8 +61,8 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     <div className={styles.wrap}>
       <div className={styles.card}>
         <div className={styles.brand}>
-          <span className={styles.brandMark}>Y</span>
-          <span>Youman Automation</span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Youman Automation" className={styles.logoImg} />
         </div>
         <h1 className={styles.title}>{isSignup ? 'Konto erstellen' : 'Willkommen zurück'}</h1>
         <p className={styles.sub}>

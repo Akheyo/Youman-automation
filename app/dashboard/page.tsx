@@ -30,7 +30,8 @@ export default async function DashboardPage() {
     <div className={styles.page}>
       <header className={styles.head}>
         <Link href="/felix" className={styles.brand}>
-          <span className={styles.brandMark}>Y</span> Youman Automation
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Youman Automation" className={styles.logoImg} />
         </Link>
         <form action="/auth/signout" method="post">
           <button type="submit" className={styles.signout}>

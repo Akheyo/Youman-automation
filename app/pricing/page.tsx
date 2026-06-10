@@ -42,8 +42,9 @@ export default function PricingPage() {
   return (
     <div className={styles.page}>
       <header className={styles.head}>
-        <Link href="/" className={styles.brand}>
-          <span className={styles.brandMark}>Y</span> Youman Automation
+        <Link href="/start" className={styles.brand}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Youman Automation" className={styles.logoImg} />
         </Link>
         <Link href="/login" className={styles.loginLink}>
           Anmelden

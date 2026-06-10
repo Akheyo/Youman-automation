@@ -59,9 +59,8 @@ export default function StartPage() {
     <div className={styles.page}>
       {/* Nav */}
       <nav className={styles.nav}>
-        <div className={styles.brand}>
-          <span className={styles.brandMark}>Y</span> Youman Automation
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="Youman Automation" className={styles.logoImg} />
         <div className={styles.navLinks}>
           <Link href="/pricing">Preise</Link>
           <Link href="/login">Anmelden</Link>

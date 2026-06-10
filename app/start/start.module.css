@@ -20,6 +20,11 @@
   gap: 9px;
   font-weight: 800;
 }
+.logoImg {
+  height: 34px;
+  width: auto;
+  display: block;
+}
 .brandMark {
   width: 30px;
   height: 30px;
