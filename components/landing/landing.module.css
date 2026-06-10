@@ -756,3 +756,52 @@
     animation: none;
   }
 }
+
+/* ---- Image placeholder (descriptive) ---- */
+.phBox {
+  width: 100%;
+  aspect-ratio: 4 / 3.4;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 2px dashed #c4b1f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 26px;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.22);
+}
+.phCamera {
+  font-size: 34px;
+  margin-bottom: 8px;
+}
+.phTitle {
+  font-weight: 800;
+  font-size: 16px;
+  color: #5b21b6;
+  margin-bottom: 8px;
+}
+.phNeed {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #4a4264;
+  max-width: 360px;
+  margin-bottom: 10px;
+}
+.phPath {
+  font-size: 12px;
+  color: #6b6385;
+}
+.phPath code {
+  background: #f0e9fb;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 11.5px;
+  color: #5b21b6;
+}
+.phHint {
+  font-size: 11.5px;
+  color: #9b93b3;
+  margin-top: 6px;
+}

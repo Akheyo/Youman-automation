@@ -1,31 +1,50 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './landing.module.css';
 
 /**
- * Hero photo with a graceful, on-brand fallback. If the external photo fails to
- * load, we show a glassy "Lina ruft an"-Karte über einem Verlauf — so the hero
- * never renders an empty/broken box.
+ * Image slot with a descriptive placeholder. Shows the photo at `src` if it
+ * loads; otherwise a branded placeholder explains exactly which photo belongs
+ * here and under which path to save it. Uses a mount check so a missing image
+ * that 404s before hydration still shows the placeholder reliably.
  */
-export default function HeroImage({ src, alt }: { src: string; alt: string }) {
-  const [failed, setFailed] = useState(false);
+export default function HeroImage({ src, alt, need }: { src: string; alt: string; need?: string }) {
+  const ref = useRef<HTMLImageElement>(null);
+  const [status, setStatus] = useState<'loading' | 'ok' | 'fail'>('loading');
+  const local = src.startsWith('/');
 
-  if (failed) {
-    return (
-      <div className={styles.heroFallback} aria-hidden>
-        <div className={styles.fbCall}>
-          <div className={styles.fbAvatar}>📞</div>
-          <div className={styles.fbName}>Lina ruft an…</div>
-          <div className={styles.fbSub}>+49 · KI-Telefonassistent</div>
-          <div className={styles.fbBooked}>✓ Termin gebucht – Di, 14:30 Uhr</div>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const img = ref.current;
+    if (img && img.complete) setStatus(img.naturalWidth > 0 ? 'ok' : 'fail');
+  }, []);
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} className={styles.heroPhoto} loading="eager" onError={() => setFailed(true)} />
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        ref={ref}
+        src={src}
+        alt={alt}
+        className={styles.heroPhoto}
+        loading="eager"
+        onLoad={() => setStatus('ok')}
+        onError={() => setStatus('fail')}
+        style={{ display: status === 'ok' ? 'block' : 'none' }}
+      />
+      {status !== 'ok' && (
+        <div className={styles.phBox} role="img" aria-label={alt}>
+          <div className={styles.phCamera}>📷</div>
+          <div className={styles.phTitle}>Bild hier einsetzen</div>
+          {need && <div className={styles.phNeed}>{need}</div>}
+          {local && (
+            <div className={styles.phPath}>
+              Datei ablegen unter: <code>public{src}</code>
+            </div>
+          )}
+          <div className={styles.phHint}>Querformat, ca. 1100×900 px, JPG/PNG</div>
+        </div>
+      )}
+    </>
   );
 }

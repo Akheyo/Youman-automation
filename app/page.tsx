@@ -33,8 +33,9 @@ export default function HomePage() {
         titleHighlight="vollautomatisch"
         sub="Felix findet passende Firmen, Anna analysiert sie, Paul schreibt den Pitch – und Lina ruft an, qualifiziert und bucht den Termin direkt in deinen Kalender. Du gibst nur noch frei."
         bullets={['Leads finden, anschreiben & anrufen', 'Termine automatisch im Kalender', 'DSGVO-konform & auf Deutsch', 'Kostenlos starten – keine Karte nötig']}
-        photo="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1100&q=80"
+        photo="/hero/home.jpg"
         photoAlt="Vertriebsteam im Gespräch"
+        photoNeed="Sympathisches Vertriebs-/Business-Team (2–3 Personen) im Gespräch am Laptop, modernes helles Büro, lächelnd. Hochwertig und einladend — der erste Eindruck deiner Startseite."
         primary={{ href: '/signup', label: 'Kostenlos starten' }}
         secondary={{ href: '/pricing', label: 'Preise ansehen' }}
       />
