@@ -1,0 +1,128 @@
+/**
+ * Lina — the AI phone agent. This module turns the user-editable "Soul"
+ * (agent_config row) into a Vapi assistant definition, including the two live
+ * tools Lina uses during a call: checking calendar availability and booking.
+ */
+
+export interface AgentConfig {
+  agent_name: string;
+  language: string;
+  voice: string;
+  goal: string;
+  opening_line: string;
+  persona: string;
+  guidelines: string;
+  dos: string;
+  donts: string;
+  booking_link: string | null;
+  max_duration: number;
+}
+
+export const DEFAULT_AGENT: AgentConfig = {
+  agent_name: 'Lina',
+  language: 'de',
+  voice: 'sarah',
+  goal: 'Ein unverbindliches Kennenlern-Telefonat mit dem Geschäftsinhaber vereinbaren.',
+  opening_line: 'Hallo, hier ist Lina von Youman Automation. Habe ich Sie gerade kurz erwischt?',
+  persona:
+    'Freundlich, professionell und respektvoll. Du klingst menschlich, nicht wie ein Verkäufer. Du hörst zu und gehst auf Antworten ein.',
+  guidelines:
+    'Stelle dich kurz vor. Erkläre in einem Satz den Nutzen. Frage nach Interesse an einem kurzen Termin. Sei nie aufdringlich.',
+  dos: 'Höflich bleiben, Gesprächspartner ausreden lassen, Termin anbieten, Verfügbarkeit prüfen und Termin direkt buchen.',
+  donts: 'Nicht drängen, nicht lügen, bei klarem Nein höflich verabschieden, keine Preise erfinden.',
+  booking_link: null,
+  max_duration: 240,
+};
+
+export interface LeadContext {
+  name?: string | null;
+  company?: string | null;
+  notes?: string | null;
+  website?: string | null;
+}
+
+/** The system prompt Lina runs on, woven from the Soul config + this lead. */
+export function buildSystemPrompt(cfg: AgentConfig, lead: LeadContext, ownerName: string): string {
+  const who = [lead.name && `Ansprechpartner: ${lead.name}`, lead.company && `Firma: ${lead.company}`, lead.website && `Website: ${lead.website}`]
+    .filter(Boolean)
+    .join('\n');
+
+  return [
+    `Du bist ${cfg.agent_name}, eine KI-Telefonassistentin für ${ownerName}.`,
+    `Du sprichst Deutsch, natürlich und in ganzen Sätzen (keine Aufzählungen, keine Emojis — das wird vorgelesen).`,
+    ``,
+    `## Deine Persönlichkeit`,
+    cfg.persona,
+    ``,
+    `## Dein Ziel`,
+    cfg.goal,
+    ``,
+    `## Gesprächsleitfaden`,
+    cfg.guidelines,
+    ``,
+    `## Das solltest du tun`,
+    cfg.dos,
+    ``,
+    `## Das solltest du NICHT tun`,
+    cfg.donts,
+    ``,
+    who && `## Dieser Kontakt`,
+    who,
+    lead.notes ? `Notizen: ${lead.notes}` : '',
+    ``,
+    `## Termin vereinbaren`,
+    `Wenn Interesse besteht, frage nach einem passenden Zeitraum. Nutze dann das Werkzeug "verfuegbarkeit_pruefen", um echte freie Slots aus dem Kalender zu holen, und schlage 2–3 davon vor.`,
+    `Sobald sich der Kontakt auf einen Slot festlegt, buche ihn sofort mit dem Werkzeug "termin_buchen" und bestätige den Termin mündlich.`,
+    `Frage nach einer E-Mail-Adresse für die Einladung, wenn möglich.`,
+    ``,
+    `## Wichtig`,
+    `Beginne das Gespräch mit: "${cfg.opening_line}"`,
+    `Halte dich kurz. Wenn die Person kein Interesse hat oder keine Zeit, verabschiede dich höflich und beende das Gespräch.`,
+  ]
+    .filter((l) => l !== undefined)
+    .join('\n');
+}
+
+/** Tool/function definitions exposed to Vapi during the call. */
+export function callTools() {
+  return [
+    {
+      type: 'function',
+      function: {
+        name: 'verfuegbarkeit_pruefen',
+        description:
+          'Holt echte freie Termin-Slots aus dem Google-Kalender des Inhabers. Nutze dies, bevor du einen Termin vorschlägst.',
+        parameters: {
+          type: 'object',
+          properties: {
+            zeitraum: {
+              type: 'string',
+              description: 'Optionaler Wunschzeitraum des Kontakts, z. B. "nächste Woche" oder "Donnerstagnachmittag".',
+            },
+          },
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'termin_buchen',
+        description: 'Bucht einen konkreten Termin im Kalender des Inhabers. Nur aufrufen, wenn sich der Kontakt festgelegt hat.',
+        parameters: {
+          type: 'object',
+          properties: {
+            start_iso: { type: 'string', description: 'Startzeit des Termins im ISO-8601-Format (mit Zeitzone).' },
+            name: { type: 'string', description: 'Name des Kontakts.' },
+            email: { type: 'string', description: 'E-Mail-Adresse des Kontakts für die Kalendereinladung (falls genannt).' },
+          },
+          required: ['start_iso'],
+        },
+      },
+    },
+  ];
+}
+
+/** Map a short voice key to a Vapi voice config (11labs German-capable voices). */
+export function voiceConfig(voice: string) {
+  return { provider: '11labs', voiceId: voice || 'sarah', model: 'eleven_turbo_v2_5' };
+}

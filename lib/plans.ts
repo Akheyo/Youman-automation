@@ -13,6 +13,7 @@ export interface Plan {
   priceLabel: string;
   searches: number;
   emails: number;
+  calls: number;
   stripePriceId?: string;
   features: string[];
 }
@@ -24,7 +25,8 @@ export const PLANS: Record<PlanId, Plan> = {
     priceLabel: '0 €',
     searches: 10,
     emails: 5,
-    features: ['10 Firmensuchen / Monat', '5 Pitch-Mails / Monat', 'Felix, Anna & Paul'],
+    calls: 5,
+    features: ['10 Firmensuchen / Monat', '5 Pitch-Mails / Monat', '5 KI-Anrufe / Monat', 'Felix, Anna, Paul & Lina'],
   },
   starter: {
     id: 'starter',
@@ -32,8 +34,9 @@ export const PLANS: Record<PlanId, Plan> = {
     priceLabel: '29 €/Monat',
     searches: 300,
     emails: 150,
+    calls: 100,
     stripePriceId: process.env.STRIPE_PRICE_STARTER,
-    features: ['300 Firmensuchen / Monat', '150 Pitch-Mails / Monat', 'Lead-Historie', 'E-Mail-Support'],
+    features: ['300 Firmensuchen / Monat', '150 Pitch-Mails / Monat', '100 KI-Anrufe / Monat', 'Lead-Historie', 'E-Mail-Support'],
   },
   pro: {
     id: 'pro',
@@ -41,8 +44,9 @@ export const PLANS: Record<PlanId, Plan> = {
     priceLabel: '79 €/Monat',
     searches: 2000,
     emails: 1000,
+    calls: 500,
     stripePriceId: process.env.STRIPE_PRICE_PRO,
-    features: ['2.000 Firmensuchen / Monat', '1.000 Pitch-Mails / Monat', 'Lead-Historie', 'Priorisierter Support'],
+    features: ['2.000 Firmensuchen / Monat', '1.000 Pitch-Mails / Monat', '500 KI-Anrufe / Monat', 'Lead-Historie', 'Priorisierter Support'],
   },
 };
 

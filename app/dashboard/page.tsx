@@ -23,6 +23,7 @@ export default async function DashboardPage() {
   const plan = planFor(profile?.plan);
   const searchUsed = profile?.search_count ?? 0;
   const emailUsed = profile?.email_count ?? 0;
+  const callUsed = profile?.call_count ?? 0;
   const hasSub = Boolean(profile?.stripe_subscription_id);
   const status = profile?.subscription_status as string | null;
 
@@ -52,13 +53,19 @@ export default async function DashboardPage() {
                 {plan.name} {status && status !== 'active' && <span className={styles.status}>({status})</span>}
               </div>
             </div>
-            <Link href="/felix" className={styles.appLink}>
-              Zu Felix →
-            </Link>
+            <div className={styles.appLinks}>
+              <Link href="/felix" className={styles.appLink}>
+                Zu Felix →
+              </Link>
+              <Link href="/sales" className={styles.appLink}>
+                Zu Lina (Telefon) →
+              </Link>
+            </div>
           </div>
 
           <Usage label="Firmensuchen" used={searchUsed} limit={plan.searches} />
           <Usage label="Pitch-Mails" used={emailUsed} limit={plan.emails} />
+          <Usage label="KI-Anrufe" used={callUsed} limit={plan.calls} />
           <div className={styles.reset}>Zähler werden zu Monatsbeginn zurückgesetzt.</div>
         </section>
 
