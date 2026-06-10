@@ -1,5 +1,5 @@
 .page {
-  min-height: 100dvh;
+  min-height: 100%;
   background: linear-gradient(180deg, #faf8ff 0%, #f3eefc 100%);
   font-family: 'Heebo', system-ui, -apple-system, sans-serif;
   color: #1b1733;

@@ -48,26 +48,16 @@ export default async function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.head}>
-        <Link href="/" className={styles.brand}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Youman Automation" className={styles.logoImg} />
-        </Link>
-        <nav className={styles.headNav}>
-          <Link href="/felix">Felix-Chat</Link>
-          <Link href="/sales">Lina · Telefon</Link>
-          <Link href="/pv">PV-Konfigurator</Link>
-          <form action="/auth/signout" method="post">
-            <button type="submit" className={styles.signout}>
-              Abmelden
-            </button>
-          </form>
-        </nav>
-      </header>
-
       <main className={styles.main}>
-        <h1 className={styles.title}>Dashboard</h1>
-        <p className={styles.hello}>Angemeldet als {user.email}</p>
+        <div className={styles.pageHead}>
+          <div>
+            <h1 className={styles.title}>Übersicht</h1>
+            <p className={styles.hello}>Willkommen zurück — {user.email}</p>
+          </div>
+          <Link href="/felix" className={styles.primaryAction}>
+            + Neue Suche
+          </Link>
+        </div>
 
         {/* Stat row */}
         <div className={styles.statRow}>
@@ -113,7 +103,7 @@ export default async function DashboardPage() {
         </section>
 
         {/* All leads */}
-        <section className={styles.card}>
+        <section id="leads" className={styles.card}>
           <div className={styles.sectionTitle}>
             Alle Leads
             <Link href="/sales" className={styles.sectionLink}>
@@ -155,7 +145,7 @@ export default async function DashboardPage() {
         </section>
 
         {/* Verläufe */}
-        <section className={styles.card}>
+        <section id="verlaeufe" className={styles.card}>
           <div className={styles.sectionTitle}>
             Verläufe
             <Link href="/sales" className={styles.sectionLink}>
@@ -198,7 +188,7 @@ export default async function DashboardPage() {
         </section>
 
         {/* Einstellungen */}
-        <section className={styles.card}>
+        <section id="einstellungen" className={styles.card}>
           <div className={styles.sectionTitle}>Einstellungen</div>
 
           <div className={styles.settingRow}>

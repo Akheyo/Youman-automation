@@ -1,8 +1,32 @@
 .page {
-  min-height: 100dvh;
-  background: linear-gradient(180deg, #f7f9fd 0%, #eef2f9 100%);
+  min-height: 100%;
   font-family: 'Heebo', system-ui, -apple-system, sans-serif;
   color: #16223a;
+}
+.pageHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.primaryAction {
+  background: linear-gradient(120deg, #7c3aed, #a855f7);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 11px 20px;
+  border-radius: 11px;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.28);
+  white-space: nowrap;
+}
+.primaryAction:hover {
+  filter: brightness(1.05);
+}
+.card {
+  scroll-margin-top: 74px;
 }
 
 .head {
