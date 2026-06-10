@@ -1,12 +1,16 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import './globals.css';
+import PwaRegister from './pwa-register';
 
 export const metadata: Metadata = {
   title: 'A&B Solarenergy — PV-Konfigurator',
   description:
     'Photovoltaik-Konfigurator für NRW — in 5 Sekunden zur optimalen Solaranlage. Mit echten Dachformen aus dem NRW-Solarkataster.',
   authors: [{ name: 'A&B Solarenergy', url: 'https://www.ab-solarenergy.de' }],
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Felix' },
+  icons: { icon: '/icons/icon-192.png', apple: '/icons/apple-touch-icon.png' },
   openGraph: {
     title: 'A&B Solarenergy — PV-Konfigurator',
     description:
@@ -51,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {"window.CESIUM_BASE_URL = '/cesium';"}
         </Script>
         {children}
+        <PwaRegister />
       </body>
     </html>
   );
