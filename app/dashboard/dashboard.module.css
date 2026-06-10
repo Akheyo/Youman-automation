@@ -97,11 +97,20 @@
   font-weight: 600;
   color: #b4530a;
 }
+.appLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
 .appLink {
   color: #7c3aed;
   font-weight: 700;
   text-decoration: none;
   font-size: 14px;
+}
+.appLink:hover {
+  text-decoration: underline;
 }
 
 .usage {
