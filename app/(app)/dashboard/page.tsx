@@ -45,6 +45,9 @@ export default async function DashboardPage() {
   const googleEmail = googleRes.data?.email ?? null;
 
   const meetingsBooked = meetings.filter((m) => m.status === 'gebucht').length;
+  const followUps = callLeads
+    .filter((l) => l.follow_up_at)
+    .sort((a, b) => String(a.follow_up_at).localeCompare(String(b.follow_up_at)));
 
   return (
     <div className={styles.page}>
@@ -138,6 +141,29 @@ export default async function DashboardPage() {
                   <span className={styles.leadName}>{l.name}</span>
                   <span className={styles.leadSub}>{l.email || l.phone || l.website || l.address || '—'}</span>
                   <span className={styles.tag}>{l.status ?? 'neu'}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Follow-ups */}
+        <section id="followups" className={styles.card}>
+          <div className={styles.sectionTitle}>
+            Anstehende Follow-ups
+            <Link href="/sales" className={styles.sectionLink}>
+              In Lina planen →
+            </Link>
+          </div>
+          {followUps.length === 0 ? (
+            <p className={styles.empty}>Keine Follow-ups geplant. Lina legt bei nicht erreichten Leads automatisch einen Rückruf an.</p>
+          ) : (
+            <div className={styles.leadTable}>
+              {followUps.slice(0, 10).map((l) => (
+                <div key={l.id} className={styles.leadRow}>
+                  <span className={styles.leadName}>{l.name || l.company || l.phone}</span>
+                  <span className={styles.leadSub}>{l.follow_up_note || l.phone}</span>
+                  <span className={styles.leadDate}>{l.follow_up_at ? new Date(l.follow_up_at).toLocaleDateString('de-DE') : ''}</span>
                 </div>
               ))}
             </div>

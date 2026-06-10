@@ -21,6 +21,7 @@ export default function PremiumHero(props: {
   bullets: string[];
   photo: string;
   photoAlt: string;
+  photoNeed?: string;
   primary: Cta;
   secondary: Cta;
 }) {
@@ -62,7 +63,7 @@ export default function PremiumHero(props: {
         </div>
 
         <div className={styles.heroRight}>
-          <HeroImage src={props.photo} alt={props.photoAlt} />
+          <HeroImage src={props.photo} alt={props.photoAlt} need={props.photoNeed} />
         </div>
       </div>
     </header>

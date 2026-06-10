@@ -40,6 +40,7 @@ export default function BranchePage({ params }: { params: { slug: string } }) {
         bullets={i.bullets}
         photo={i.photo}
         photoAlt={`KI-Telefonassistent ${i.label}`}
+        photoNeed={i.photoNeed}
         primary={{ href: '/signup', label: 'Demo buchen' }}
         secondary={{ href: '/signup', label: 'Testanruf machen' }}
       />
