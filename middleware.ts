@@ -1,27 +1,22 @@
 /**
- * Basic-Auth gate for the internal sales dashboard.
+ * Edge middleware. Two responsibilities:
  *
- * Protects `/vertrieb` and its server proxy routes `/api/vertrieb/*` — these
- * expose personal lead data (DSGVO), so they must not be public.
+ *  1. `/vertrieb` + `/api/vertrieb/*` — HTTP Basic-Auth gate for the internal
+ *     sales dashboard (exposes personal lead data / DSGVO).
+ *  2. Everything else — refresh the Supabase auth session and protect the SaaS
+ *     area (`/felix`, `/dashboard`, `/account`) behind a login.
  *
- * Credentials come from env vars:
- *   VERTRIEB_BASIC_AUTH_USER
- *   VERTRIEB_BASIC_AUTH_PASSWORD
- *
- * Behaviour:
- *   - Both vars set    → require matching HTTP Basic Auth (401 otherwise).
- *   - Vars unset, prod → fail closed (503) so PII is never served unprotected.
- *   - Vars unset, dev  → allowed, for local convenience.
- *
- * The browser caches Basic-Auth credentials per origin, so after one prompt on
- * `/vertrieb` the same header is sent automatically to `/api/vertrieb/*`.
+ * Basic-Auth credentials:  VERTRIEB_BASIC_AUTH_USER / VERTRIEB_BASIC_AUTH_PASSWORD
+ * Supabase:                NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY
  */
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { updateSession } from '@/lib/supabase/middleware';
 
 export const config = {
-  matcher: ['/vertrieb', '/vertrieb/:path*', '/api/vertrieb/:path*'],
+  // Run on all routes except static assets and image files.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|svg|gif|webp|ico)$).*)'],
 };
 
 /** Length-independent constant-time string compare (Edge runtime: no node crypto). */
@@ -41,11 +36,11 @@ function unauthorized(): NextResponse {
   });
 }
 
-export function middleware(request: NextRequest): NextResponse {
+/** Returns a response when the request should be blocked, or null when allowed. */
+function vertriebGate(request: NextRequest): NextResponse | null {
   const user = process.env.VERTRIEB_BASIC_AUTH_USER;
   const pass = process.env.VERTRIEB_BASIC_AUTH_PASSWORD;
 
-  // Not configured: protect in production (fail closed), allow in development.
   if (!user || !pass) {
     if (process.env.NODE_ENV === 'production') {
       return NextResponse.json(
@@ -56,13 +51,11 @@ export function middleware(request: NextRequest): NextResponse {
         { status: 503 },
       );
     }
-    return NextResponse.next();
+    return null;
   }
 
   const header = request.headers.get('authorization');
-  if (!header || !header.startsWith('Basic ')) {
-    return unauthorized();
-  }
+  if (!header || !header.startsWith('Basic ')) return unauthorized();
 
   let decoded: string;
   try {
@@ -72,19 +65,22 @@ export function middleware(request: NextRequest): NextResponse {
   }
 
   const sep = decoded.indexOf(':');
-  if (sep === -1) {
-    return unauthorized();
-  }
-  const givenUser = decoded.slice(0, sep);
-  const givenPass = decoded.slice(sep + 1);
+  if (sep === -1) return unauthorized();
 
-  // Evaluate both comparisons regardless of the first result to avoid leaking
-  // which field was wrong via timing.
-  const okUser = safeEqual(givenUser, user);
-  const okPass = safeEqual(givenPass, pass);
-  if (!okUser || !okPass) {
-    return unauthorized();
+  const okUser = safeEqual(decoded.slice(0, sep), user);
+  const okPass = safeEqual(decoded.slice(sep + 1), pass);
+  if (!okUser || !okPass) return unauthorized();
+
+  return null;
+}
+
+export async function middleware(request: NextRequest): Promise<NextResponse> {
+  const path = request.nextUrl.pathname;
+
+  if (path === '/vertrieb' || path.startsWith('/vertrieb/') || path.startsWith('/api/vertrieb')) {
+    const blocked = vertriebGate(request);
+    return blocked ?? NextResponse.next();
   }
 
-  return NextResponse.next();
+  return updateSession(request);
 }

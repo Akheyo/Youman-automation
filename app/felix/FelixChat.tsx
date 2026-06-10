@@ -130,10 +130,17 @@ export default function FelixChat() {
           <div className={styles.title}>Felix &amp; Team</div>
           <div className={styles.subtitle}>KI-Vertriebsteam · Youman Automation</div>
         </div>
-        <div className={styles.team}>
-          {(['felix', 'anna', 'paul'] as const).map((k) => (
-            <Avatar key={k} persona={PERSONAS[k]} className={styles.teamAv} />
-          ))}
+        <div className={styles.headerRight}>
+          <div className={styles.team}>
+            {(['felix', 'anna', 'paul'] as const).map((k) => (
+              <Avatar key={k} persona={PERSONAS[k]} className={styles.teamAv} />
+            ))}
+          </div>
+          <form action="/auth/signout" method="post">
+            <button type="submit" className={styles.logout}>
+              Abmelden
+            </button>
+          </form>
         </div>
       </header>
 

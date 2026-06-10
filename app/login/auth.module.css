@@ -1,0 +1,133 @@
+.wrap {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #0d73fc 0%, #2f8bff 45%, #6aa9ff 100%);
+  font-family: 'Heebo', system-ui, -apple-system, sans-serif;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 34px 30px;
+  box-shadow: 0 20px 60px rgba(8, 30, 70, 0.28);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 800;
+  font-size: 15px;
+  color: #16223a;
+  margin-bottom: 22px;
+}
+.brandMark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #0d73fc, #2f8bff);
+  color: #fff;
+  font-weight: 900;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0 0 6px;
+  color: #0c1830;
+}
+.sub {
+  margin: 0 0 22px;
+  color: #5b6982;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a4a66;
+}
+.field input {
+  border: 1px solid #d4dbe8;
+  border-radius: 11px;
+  padding: 12px 13px;
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.field input:focus {
+  border-color: #0d73fc;
+  box-shadow: 0 0 0 3px rgba(13, 115, 252, 0.13);
+}
+
+.submit {
+  margin-top: 4px;
+  border: none;
+  border-radius: 11px;
+  padding: 13px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(120deg, #0d73fc, #2f8bff);
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+.submit:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+.submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  background: #fdecec;
+  border: 1px solid #f5b5b5;
+  color: #a12121;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+.info {
+  background: #e8f4ff;
+  border: 1px solid #b6d8fb;
+  color: #0a4ea0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.switch {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #5b6982;
+}
+.switch a {
+  color: #0d73fc;
+  font-weight: 700;
+  text-decoration: none;
+}
+.switch a:hover {
+  text-decoration: underline;
+}

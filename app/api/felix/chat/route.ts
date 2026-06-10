@@ -15,9 +15,12 @@
  */
 
 import { NextResponse } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { findCompaniesByIndustry, type CompanyResult } from '@/lib/felix/overpass-companies';
 import { findCompaniesGoogle } from '@/lib/felix/places-companies';
 import { researchCompany } from '@/lib/felix/research';
+import { createClient } from '@/lib/supabase/server';
+import { planFor, PLANS } from '@/lib/plans';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -208,6 +211,17 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/**
+ * Atomically check + charge one monthly credit. Returns true when allowed.
+ * Fails open if the RPC errors (e.g. schema not yet applied) so paying users
+ * are never hard-blocked by an infra hiccup.
+ */
+async function consumeQuota(sb: SupabaseClient, kind: 'search' | 'email', limit: number): Promise<boolean> {
+  const { data, error } = await sb.rpc('consume_quota', { p_kind: kind, p_limit: limit });
+  if (error) return true;
+  return data === true;
+}
+
 /** Paul's sender: POSTs the approved pitch to the n8n SMTP webhook. */
 async function sendPitchEmail(args: {
   to: string;
@@ -281,6 +295,23 @@ export async function POST(request: Request) {
     ...history.map((m) => ({ role: m.role, content: m.content })),
   ];
 
+  // SaaS gate: when Supabase is configured, require a login and load the plan.
+  // When it is not configured, the app runs open (legacy mode) so nothing breaks.
+  const sb = createClient();
+  let userId: string | null = null;
+  let plan = PLANS.free;
+  if (sb) {
+    const {
+      data: { user },
+    } = await sb.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Bitte melde dich an, um Felix zu nutzen.', action: 'login' }, { status: 401 });
+    }
+    userId = user.id;
+    const { data: prof } = await sb.from('profiles').select('plan').eq('id', user.id).single();
+    plan = planFor(prof?.plan);
+  }
+
   const collected: CompanyResult[] = [];
   let reply = '';
 
@@ -312,18 +343,22 @@ export async function POST(request: Request) {
         let resultText: string;
 
         if (fnName === 'find_companies') {
-          const area = String(args.area || '');
-          const industry = String(args.industry || '');
-          const withoutWebsite = Boolean(args.without_website);
-          const max = typeof args.limit === 'number' ? args.limit : undefined;
-          const googleKey = process.env.GOOGLE_MAPS_API_KEY;
-          const result = googleKey
-            ? await findCompaniesGoogle({ area, industry, without_website: withoutWebsite, limit: max }, googleKey)
-            : await findCompaniesByIndustry(area, industry, withoutWebsite, max);
-          collected.push(...result.companies);
-          resultText = result.error
-            ? `Fehler: ${result.error}`
-            : `${result.companies.length} Treffer:\n${result.companies.map(describe).join('\n') || '(keine)'}`;
+          if (sb && userId && !(await consumeQuota(sb, 'search', plan.searches))) {
+            resultText = `LIMIT_ERREICHT: Der ${plan.name}-Tarif erlaubt ${plan.searches} Firmensuchen pro Monat, das ist aufgebraucht. Sag dem Nutzer freundlich, dass das Monatslimit erreicht ist und er auf der Preis-Seite (/pricing) upgraden kann. Führe KEINE Suche aus.`;
+          } else {
+            const area = String(args.area || '');
+            const industry = String(args.industry || '');
+            const withoutWebsite = Boolean(args.without_website);
+            const max = typeof args.limit === 'number' ? args.limit : undefined;
+            const googleKey = process.env.GOOGLE_MAPS_API_KEY;
+            const result = googleKey
+              ? await findCompaniesGoogle({ area, industry, without_website: withoutWebsite, limit: max }, googleKey)
+              : await findCompaniesByIndustry(area, industry, withoutWebsite, max);
+            collected.push(...result.companies);
+            resultText = result.error
+              ? `Fehler: ${result.error}`
+              : `${result.companies.length} Treffer:\n${result.companies.map(describe).join('\n') || '(keine)'}`;
+          }
         } else if (fnName === 'research_company') {
           const r = await researchCompany(String(args.website || ''), String(args.name || ''));
           resultText = r.ok
@@ -332,13 +367,25 @@ export async function POST(request: Request) {
               }\n\nWebsite-Text (Auszug):\n${r.text}`
             : `Fehler: ${r.error}`;
         } else if (fnName === 'send_pitch_email') {
-          const sent = await sendPitchEmail({
-            to: String(args.to || ''),
-            subject: String(args.subject || ''),
-            body: String(args.body || ''),
-            company: String(args.company || ''),
-          });
-          resultText = sent.ok ? `E-Mail erfolgreich an ${String(args.to || '')} gesendet.` : `Fehler: ${sent.error}`;
+          if (sb && userId && !(await consumeQuota(sb, 'email', plan.emails))) {
+            resultText = `LIMIT_ERREICHT: Der ${plan.name}-Tarif erlaubt ${plan.emails} Pitch-Mails pro Monat, das ist aufgebraucht. Sag dem Nutzer freundlich, dass das Limit erreicht ist und er auf /pricing upgraden kann. Sende KEINE Mail.`;
+          } else {
+            const sent = await sendPitchEmail({
+              to: String(args.to || ''),
+              subject: String(args.subject || ''),
+              body: String(args.body || ''),
+              company: String(args.company || ''),
+            });
+            resultText = sent.ok ? `E-Mail erfolgreich an ${String(args.to || '')} gesendet.` : `Fehler: ${sent.error}`;
+            if (sent.ok && sb && userId) {
+              await sb.from('sent_emails').insert({
+                user_id: userId,
+                to_email: String(args.to || ''),
+                subject: String(args.subject || ''),
+                company: String(args.company || ''),
+              });
+            }
+          }
         } else {
           resultText = `Unbekanntes Werkzeug: ${fnName}`;
         }

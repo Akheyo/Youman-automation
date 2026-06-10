@@ -41,10 +41,30 @@
   font-size: 12px;
   opacity: 0.85;
 }
-.team {
+.headerRight {
   margin-left: auto;
   display: flex;
   align-items: center;
+  gap: 14px;
+}
+.team {
+  display: flex;
+  align-items: center;
+}
+.logout {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.logout:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 .teamAv {
   width: 32px;
