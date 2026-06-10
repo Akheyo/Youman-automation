@@ -16,13 +16,13 @@ export function Announce() {
 export function LandingNav() {
   return (
     <nav className={styles.nav}>
-      <Link href="/start" className={styles.navBrand}>
+      <Link href="/" className={styles.navBrand}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo.png" alt="Youman Automation" className={styles.logoImg} />
       </Link>
       <div className={styles.navLinks}>
-        <Link href="/start#branchen">Branchen</Link>
-        <Link href="/start#how">So geht’s</Link>
+        <Link href="/#branchen">Branchen</Link>
+        <Link href="/#how">So geht’s</Link>
         <Link href="/pricing">Preise</Link>
         <Link href="/login">Anmelden</Link>
         <Link href="/signup" className={styles.navCta}>
@@ -262,8 +262,8 @@ export function LandingFooter() {
         <div className={styles.footerCols}>
           <div>
             <h4>Produkt</h4>
-            <Link href="/start#team">Das Team</Link>
-            <Link href="/start#how">So geht’s</Link>
+            <Link href="/#team">Das Team</Link>
+            <Link href="/#how">So geht’s</Link>
             <Link href="/pricing">Preise</Link>
             <Link href="/signup">Kostenlos starten</Link>
           </div>

@@ -184,3 +184,232 @@
   padding: 10px 12px;
   font-size: 13px;
 }
+
+/* ---- Hub: top nav ---- */
+.headNav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.headNav a {
+  color: #5b6982;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+.headNav a:hover {
+  color: #7c3aed;
+}
+@media (max-width: 640px) {
+  .headNav a {
+    display: none;
+  }
+}
+
+/* widen the hub */
+.main {
+  max-width: 920px;
+}
+
+/* ---- Stat row ---- */
+.statRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.stat,
+.statAccent {
+  background: #fff;
+  border: 1px solid #e6ebf4;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.06);
+}
+.statAccent {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  border-color: transparent;
+}
+.statValue {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.statAccent .statValue {
+  color: #fff;
+}
+.statLabel {
+  font-size: 13px;
+  color: #7a7194;
+  margin-top: 2px;
+}
+.statAccent .statLabel {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ---- Shortcuts ---- */
+.shortcuts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.shortcut {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: #fff;
+  border: 1px solid #e6ebf4;
+  border-radius: 16px;
+  padding: 20px;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(124, 58, 237, 0.05);
+  transition: transform 0.14s, box-shadow 0.16s, border-color 0.15s;
+}
+.shortcut:hover {
+  transform: translateY(-3px);
+  border-color: #d6c4f7;
+  box-shadow: 0 14px 32px rgba(124, 58, 237, 0.14);
+}
+.scEmoji {
+  font-size: 26px;
+}
+.scTitle {
+  font-weight: 800;
+  font-size: 16px;
+  color: #16223a;
+  margin-top: 4px;
+}
+.scDesc {
+  font-size: 13px;
+  color: #7a7194;
+}
+
+/* ---- Section header inside cards ---- */
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #16223a;
+  margin-bottom: 14px;
+}
+.sectionLink {
+  font-size: 13px;
+  font-weight: 700;
+  color: #7c3aed;
+  text-decoration: none;
+}
+.subhead {
+  font-size: 14px;
+  font-weight: 700;
+  color: #41506b;
+  margin: 18px 0 8px;
+}
+.empty {
+  color: #9aa6bd;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* ---- Lead / history tables ---- */
+.leadTable {
+  display: flex;
+  flex-direction: column;
+}
+.leadRow {
+  display: grid;
+  grid-template-columns: 1.2fr 1.6fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid #eef2f9;
+  font-size: 14px;
+}
+.leadRow:last-child {
+  border-bottom: none;
+}
+.leadName {
+  font-weight: 700;
+  color: #16223a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.leadSub {
+  color: #6b7689;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.leadDate {
+  color: #9aa6bd;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #f0e9fb;
+  color: #6d28d9;
+  white-space: nowrap;
+}
+.tag[data-s='erledigt'] {
+  background: #ecfdf3;
+  color: #1f7a45;
+}
+.tag[data-s='kein_interesse'],
+.tag[data-s='nicht_erreicht'] {
+  background: #fdecec;
+  color: #a12121;
+}
+
+/* ---- Settings ---- */
+.settingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid #eef2f9;
+  flex-wrap: wrap;
+}
+.settingRow:last-child {
+  border-bottom: none;
+}
+.settingName {
+  font-weight: 700;
+  font-size: 15px;
+  color: #16223a;
+}
+.settingDesc {
+  font-size: 13px;
+  color: #7a7194;
+  margin-top: 2px;
+  max-width: 460px;
+}
+.settingBtn {
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(120deg, #7c3aed, #a855f7);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 18px;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.okPill {
+  background: #ecfdf3;
+  color: #1f7a45;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}

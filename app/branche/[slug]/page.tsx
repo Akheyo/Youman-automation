@@ -33,7 +33,7 @@ export default function BranchePage({ params }: { params: { slug: string } }) {
       <LandingNav />
 
       <PremiumHero
-        back={{ href: '/start#branchen', label: 'Branchen' }}
+        back={{ href: '/#branchen', label: 'Branchen' }}
         titleLead={`${i.eyebrow} ${i.title}`}
         titleHighlight={i.highlight}
         sub={i.sub}

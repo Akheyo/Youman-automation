@@ -19,7 +19,17 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/login?redirect=/dashboard');
 
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+  // Load everything for the central hub in parallel.
+  const [{ data: profile }, leadsRes, callLeadsRes, callsRes, meetingsRes, emailsRes, googleRes] = await Promise.all([
+    supabase.from('profiles').select('*').eq('id', user.id).single(),
+    supabase.from('leads').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
+    supabase.from('call_leads').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(50),
+    supabase.from('calls').select('*, call_leads(name, company, phone)').eq('user_id', user.id).order('created_at', { ascending: false }).limit(15),
+    supabase.from('meetings').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(15),
+    supabase.from('sent_emails').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(15),
+    supabase.from('google_tokens').select('email').eq('user_id', user.id).single(),
+  ]);
+
   const plan = planFor(profile?.plan);
   const searchUsed = profile?.search_count ?? 0;
   const emailUsed = profile?.email_count ?? 0;
@@ -27,24 +37,66 @@ export default async function DashboardPage() {
   const hasSub = Boolean(profile?.stripe_subscription_id);
   const status = profile?.subscription_status as string | null;
 
+  const leads = leadsRes.data ?? [];
+  const callLeads = callLeadsRes.data ?? [];
+  const calls = callsRes.data ?? [];
+  const meetings = meetingsRes.data ?? [];
+  const emails = emailsRes.data ?? [];
+  const googleEmail = googleRes.data?.email ?? null;
+
+  const meetingsBooked = meetings.filter((m) => m.status === 'gebucht').length;
+
   return (
     <div className={styles.page}>
       <header className={styles.head}>
-        <Link href="/felix" className={styles.brand}>
+        <Link href="/" className={styles.brand}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="Youman Automation" className={styles.logoImg} />
         </Link>
-        <form action="/auth/signout" method="post">
-          <button type="submit" className={styles.signout}>
-            Abmelden
-          </button>
-        </form>
+        <nav className={styles.headNav}>
+          <Link href="/felix">Felix-Chat</Link>
+          <Link href="/sales">Lina · Telefon</Link>
+          <Link href="/pv">PV-Konfigurator</Link>
+          <form action="/auth/signout" method="post">
+            <button type="submit" className={styles.signout}>
+              Abmelden
+            </button>
+          </form>
+        </nav>
       </header>
 
       <main className={styles.main}>
         <h1 className={styles.title}>Dashboard</h1>
         <p className={styles.hello}>Angemeldet als {user.email}</p>
 
+        {/* Stat row */}
+        <div className={styles.statRow}>
+          <Stat value={leads.length} label="Felix-Leads" />
+          <Stat value={callLeads.length} label="Telefon-Leads" />
+          <Stat value={calls.length} label="Anrufe" />
+          <Stat value={meetingsBooked} label="Termine gebucht" accent />
+        </div>
+
+        {/* Jump-in shortcuts */}
+        <div className={styles.shortcuts}>
+          <Link href="/felix" className={styles.shortcut}>
+            <span className={styles.scEmoji}>🕵️</span>
+            <span className={styles.scTitle}>Felix &amp; Team</span>
+            <span className={styles.scDesc}>Firmen finden, analysieren, anschreiben</span>
+          </Link>
+          <Link href="/sales" className={styles.shortcut}>
+            <span className={styles.scEmoji}>📞</span>
+            <span className={styles.scTitle}>Lina · Telefon</span>
+            <span className={styles.scDesc}>Leads anrufen &amp; Termine buchen</span>
+          </Link>
+          <Link href="/pricing" className={styles.shortcut}>
+            <span className={styles.scEmoji}>⭐</span>
+            <span className={styles.scTitle}>Tarif &amp; Limits</span>
+            <span className={styles.scDesc}>Mehr Suchen, Mails &amp; Anrufe</span>
+          </Link>
+        </div>
+
+        {/* Plan & usage */}
         <section className={styles.card}>
           <div className={styles.cardTop}>
             <div>
@@ -53,24 +105,146 @@ export default async function DashboardPage() {
                 {plan.name} {status && status !== 'active' && <span className={styles.status}>({status})</span>}
               </div>
             </div>
-            <div className={styles.appLinks}>
-              <Link href="/felix" className={styles.appLink}>
-                Zu Felix →
-              </Link>
-              <Link href="/sales" className={styles.appLink}>
-                Zu Lina (Telefon) →
-              </Link>
-            </div>
           </div>
-
           <Usage label="Firmensuchen" used={searchUsed} limit={plan.searches} />
           <Usage label="Pitch-Mails" used={emailUsed} limit={plan.emails} />
           <Usage label="KI-Anrufe" used={callUsed} limit={plan.calls} />
           <div className={styles.reset}>Zähler werden zu Monatsbeginn zurückgesetzt.</div>
         </section>
 
-        <BillingButtons hasSubscription={hasSub} planId={plan.id} />
+        {/* All leads */}
+        <section className={styles.card}>
+          <div className={styles.sectionTitle}>
+            Alle Leads
+            <Link href="/sales" className={styles.sectionLink}>
+              Telefon-Leads verwalten →
+            </Link>
+          </div>
+
+          <h3 className={styles.subhead}>📞 Telefon-Leads ({callLeads.length})</h3>
+          {callLeads.length === 0 ? (
+            <p className={styles.empty}>Noch keine Telefon-Leads. Füge sie bei Lina hinzu oder übergib sie aus Felix.</p>
+          ) : (
+            <div className={styles.leadTable}>
+              {callLeads.slice(0, 10).map((l) => (
+                <div key={l.id} className={styles.leadRow}>
+                  <span className={styles.leadName}>{l.name || l.company || l.phone}</span>
+                  <span className={styles.leadSub}>{l.phone}</span>
+                  <span className={styles.tag} data-s={l.status}>
+                    {l.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <h3 className={styles.subhead}>🕵️ Felix-Leads ({leads.length})</h3>
+          {leads.length === 0 ? (
+            <p className={styles.empty}>Noch keine gespeicherten Firmen. Such mit Felix nach Unternehmen.</p>
+          ) : (
+            <div className={styles.leadTable}>
+              {leads.slice(0, 10).map((l) => (
+                <div key={l.id} className={styles.leadRow}>
+                  <span className={styles.leadName}>{l.name}</span>
+                  <span className={styles.leadSub}>{l.email || l.phone || l.website || l.address || '—'}</span>
+                  <span className={styles.tag}>{l.status ?? 'neu'}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Verläufe */}
+        <section className={styles.card}>
+          <div className={styles.sectionTitle}>
+            Verläufe
+            <Link href="/sales" className={styles.sectionLink}>
+              Anrufe &amp; Transkripte →
+            </Link>
+          </div>
+
+          <h3 className={styles.subhead}>Letzte Anrufe</h3>
+          {calls.length === 0 ? (
+            <p className={styles.empty}>Noch keine Anrufe geführt.</p>
+          ) : (
+            <div className={styles.leadTable}>
+              {calls.map((c) => (
+                <div key={c.id} className={styles.leadRow}>
+                  <span className={styles.leadName}>{c.call_leads?.name || c.call_leads?.company || c.call_leads?.phone || 'Unbekannt'}</span>
+                  <span className={styles.leadSub}>
+                    {c.outcome ? c.outcome : c.status}
+                    {c.duration_sec != null && ` · ${Math.floor(c.duration_sec / 60)}:${String(c.duration_sec % 60).padStart(2, '0')} min`}
+                  </span>
+                  <span className={styles.leadDate}>{new Date(c.created_at).toLocaleDateString('de-DE')}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <h3 className={styles.subhead}>Gesendete Pitch-Mails</h3>
+          {emails.length === 0 ? (
+            <p className={styles.empty}>Noch keine Mails versendet.</p>
+          ) : (
+            <div className={styles.leadTable}>
+              {emails.map((e) => (
+                <div key={e.id} className={styles.leadRow}>
+                  <span className={styles.leadName}>{e.company || e.to_email}</span>
+                  <span className={styles.leadSub}>{e.subject || e.to_email}</span>
+                  <span className={styles.leadDate}>{new Date(e.created_at).toLocaleDateString('de-DE')}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Einstellungen */}
+        <section className={styles.card}>
+          <div className={styles.sectionTitle}>Einstellungen</div>
+
+          <div className={styles.settingRow}>
+            <div>
+              <div className={styles.settingName}>Google-Kalender</div>
+              <div className={styles.settingDesc}>
+                {googleEmail ? `Verbunden: ${googleEmail}` : 'Noch nicht verbunden — Lina kann ohne ihn keine Termine buchen.'}
+              </div>
+            </div>
+            {googleEmail ? (
+              <span className={styles.okPill}>✓ Verbunden</span>
+            ) : (
+              <a href="/api/google/connect" className={styles.settingBtn}>
+                Verbinden
+              </a>
+            )}
+          </div>
+
+          <div className={styles.settingRow}>
+            <div>
+              <div className={styles.settingName}>Lina-Charakter</div>
+              <div className={styles.settingDesc}>Tonfall, Ziel &amp; Gesprächsleitfaden des Telefon-Agenten anpassen.</div>
+            </div>
+            <Link href="/sales" className={styles.settingBtn}>
+              Bearbeiten
+            </Link>
+          </div>
+
+          <div className={styles.settingRow}>
+            <div>
+              <div className={styles.settingName}>Abrechnung</div>
+              <div className={styles.settingDesc}>Tarif wechseln, Zahlungsdaten &amp; Rechnungen verwalten.</div>
+            </div>
+            <BillingButtons hasSubscription={hasSub} planId={plan.id} />
+          </div>
+        </section>
       </main>
+    </div>
+  );
+}
+
+function Stat({ value, label, accent }: { value: number | string; label: string; accent?: boolean }) {
+  return (
+    <div className={accent ? styles.statAccent : styles.stat}>
+      <div className={styles.statValue}>{value}</div>
+      <div className={styles.statLabel}>{label}</div>
     </div>
   );
 }
