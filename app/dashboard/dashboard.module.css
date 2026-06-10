@@ -1,0 +1,177 @@
+.page {
+  min-height: 100dvh;
+  background: linear-gradient(180deg, #f7f9fd 0%, #eef2f9 100%);
+  font-family: 'Heebo', system-ui, -apple-system, sans-serif;
+  color: #16223a;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: #fff;
+  border-bottom: 1px solid #e6ebf4;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 800;
+  color: #16223a;
+  text-decoration: none;
+}
+.logoImg {
+  height: 32px;
+  width: auto;
+  display: block;
+}
+.brandMark {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #0d73fc, #2f8bff);
+  color: #fff;
+  font-weight: 900;
+}
+.signout {
+  border: 1px solid #d4dbe8;
+  background: #fff;
+  color: #3a4a66;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.signout:hover {
+  background: #f3f6fb;
+}
+
+.main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 34px 24px;
+}
+.title {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+.hello {
+  color: #5b6982;
+  margin: 0 0 24px;
+  font-size: 14px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e6ebf4;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 6px 24px rgba(16, 34, 58, 0.06);
+}
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #97a3ba;
+  font-weight: 700;
+}
+.planName {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0c1830;
+}
+.status {
+  font-size: 14px;
+  font-weight: 600;
+  color: #b4530a;
+}
+.appLink {
+  color: #0d73fc;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.usage {
+  margin-top: 16px;
+}
+.usageHead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+  color: #3a4a66;
+  margin-bottom: 6px;
+}
+.over {
+  color: #e0533c;
+}
+.bar {
+  height: 9px;
+  background: #eef2f9;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0d73fc, #2f8bff);
+  border-radius: 999px;
+  transition: width 0.3s;
+}
+.reset {
+  margin-top: 14px;
+  font-size: 12px;
+  color: #97a3ba;
+}
+
+.billing {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+.manageBtn,
+.upgradeBtn {
+  border: none;
+  border-radius: 11px;
+  padding: 12px 20px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(120deg, #0d73fc, #2f8bff);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+.manageBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.plansLink {
+  color: #0d73fc;
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 14px;
+}
+.error {
+  background: #fdecec;
+  border: 1px solid #f5b5b5;
+  color: #a12121;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+}

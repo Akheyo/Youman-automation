@@ -1,0 +1,126 @@
+/* A&B Vertrieb — Dashboard styles. Reuses the global CSS variables. */
+
+.shell {
+  min-height: 100dvh;
+  background: var(--bg-softer);
+  padding: 1.25rem;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin: 0;
+  color: var(--text);
+}
+.subtitle { color: var(--muted); font-size: 0.85rem; margin-top: 0.15rem; }
+
+.actions { display: flex; gap: 0.5rem; align-items: center; }
+
+.btn {
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.9rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}
+.btn:hover { background: var(--bg-soft); }
+.btnPrimary { background: var(--blue); border-color: var(--blue); color: #fff; }
+.btnPrimary:hover { background: var(--blue-h); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* KPI cards */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+.kpi {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  box-shadow: var(--shadow-sm);
+}
+.kpiLabel { color: var(--muted); font-size: 0.8rem; font-weight: 500; }
+.kpiValue { font-size: 1.9rem; font-weight: 900; line-height: 1.1; margin-top: 0.25rem; }
+.kpiSub { color: var(--muted); font-size: 0.75rem; margin-top: 0.2rem; }
+
+/* Team breakdown */
+.panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.2rem;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.25rem;
+}
+.panelTitle { font-weight: 700; margin: 0 0 0.75rem; }
+.team { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.teamCard {
+  flex: 1 1 160px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 0.9rem;
+  background: var(--bg-softer);
+}
+.teamName { font-weight: 700; }
+.teamCount { font-size: 1.4rem; font-weight: 900; }
+
+/* Filters */
+.filters { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.85rem; align-items: center; }
+.input, .select {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.6rem;
+  background: var(--bg);
+  color: var(--text);
+}
+.search { min-width: 220px; flex: 1 1 220px; }
+
+/* Table */
+.tableWrap { overflow-x: auto; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.table th, .table td { padding: 0.6rem 0.7rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+.table th { background: var(--bg-soft); color: var(--muted); font-weight: 600; position: sticky; top: 0; }
+.table tr:last-child td { border-bottom: none; }
+.notesInput { min-width: 160px; }
+.contact { line-height: 1.35; white-space: normal; }
+.contact small { color: var(--muted); }
+
+/* Status badge / select */
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.st_Neu { background: var(--blue-soft); color: var(--blue-h); }
+.st_Kontaktiert { background: var(--yellow-soft); color: #92600b; }
+.st_Termin { background: #ede9fe; color: #6d28d9; }
+.st_Angebot { background: #cffafe; color: #0e7490; }
+.st_Gewonnen { background: var(--green-soft); color: #15803d; }
+.st_Verloren { background: var(--red-soft); color: #b91c1c; }
+
+.empty { padding: 2.5rem 1rem; text-align: center; color: var(--muted); }
+.error {
+  background: var(--red-soft); color: #b91c1c;
+  border: 1px solid #fca5a5; border-radius: var(--radius);
+  padding: 0.8rem 1rem; margin-bottom: 1rem; font-size: 0.9rem;
+}
+.dirtyRow { background: #fffbeb; }
+.saving { color: var(--muted); font-size: 0.75rem; }
