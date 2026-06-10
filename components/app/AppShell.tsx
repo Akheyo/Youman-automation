@@ -58,6 +58,7 @@ const PRIMARY: NavItem[] = [
 ];
 const SECONDARY: NavItem[] = [
   { href: '/dashboard#leads', label: 'Leads', icon: 'users' },
+  { href: '/dashboard#followups', label: 'Follow-ups', icon: 'history' },
   { href: '/dashboard#verlaeufe', label: 'Verläufe', icon: 'history' },
   { href: '/dashboard#einstellungen', label: 'Einstellungen', icon: 'settings' },
 ];

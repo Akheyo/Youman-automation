@@ -138,10 +138,17 @@ export async function POST(request: Request) {
       })
       .eq('id', meta.callId);
 
-    // Update lead status if the call ended without a booking.
+    // Update lead status if the call ended without a booking. If the contact
+    // wasn't reached, schedule an automatic follow-up in 2 days so the lead
+    // resurfaces in the Follow-ups list (the "keep trying until answered" loop).
     if (meta.leadId && !existing?.outcome) {
       const leadStatus = outcome === 'nicht_erreicht' ? 'nicht_erreicht' : outcome === 'kein_interesse' ? 'kein_interesse' : 'erledigt';
-      await admin.from('call_leads').update({ status: leadStatus }).eq('id', meta.leadId);
+      const patch: Record<string, unknown> = { status: leadStatus };
+      if (leadStatus === 'nicht_erreicht') {
+        patch.follow_up_at = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+        patch.follow_up_note = 'Automatischer Rückruf — beim ersten Versuch nicht erreicht.';
+      }
+      await admin.from('call_leads').update(patch).eq('id', meta.leadId);
     }
 
     return NextResponse.json({ ok: true });
