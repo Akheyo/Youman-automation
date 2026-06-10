@@ -15,9 +15,9 @@
   align-items: center;
   gap: 12px;
   padding: 15px 20px;
-  background: linear-gradient(120deg, #0d73fc 0%, #2f8bff 60%, #5aa6ff 100%);
+  background: linear-gradient(120deg, #7c3aed 0%, #a855f7 60%, #c084fc 100%);
   color: #fff;
-  box-shadow: 0 4px 18px rgba(13, 115, 252, 0.28);
+  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.28);
   position: sticky;
   top: 0;
   z-index: 5;
@@ -163,10 +163,10 @@
   animation: pop 0.18s ease-out;
 }
 .bubbleUser {
-  background: linear-gradient(120deg, #0d73fc, #2f8bff);
+  background: linear-gradient(120deg, #7c3aed, #a855f7);
   color: #fff;
   border-bottom-right-radius: 6px;
-  box-shadow: 0 4px 14px rgba(13, 115, 252, 0.25);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);
 }
 .bubbleBot {
   background: #fff;
@@ -218,7 +218,7 @@
   margin-top: 2px;
 }
 .cardLine a {
-  color: #0d73fc;
+  color: #7c3aed;
   text-decoration: none;
 }
 .tags {
@@ -310,13 +310,13 @@
   outline: none;
 }
 .input:focus {
-  border-color: #0d73fc;
-  box-shadow: 0 0 0 3px rgba(13, 115, 252, 0.12);
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
 }
 .sendBtn {
   align-self: flex-end;
   border: none;
-  background: #0d73fc;
+  background: #7c3aed;
   color: #fff;
   font-weight: 700;
   font-size: 15px;
@@ -329,7 +329,7 @@
   cursor: not-allowed;
 }
 .sendBtn:not(:disabled):hover {
-  background: #0a63dd;
+  background: #6d28d9;
 }
 
 /* ---- Markdown rendering inside bot bubbles ---- */
@@ -369,22 +369,22 @@
   padding-left: 2px;
 }
 .mdList li::marker {
-  color: #0d73fc;
+  color: #7c3aed;
 }
 .md strong {
   font-weight: 700;
   color: #0c1830;
 }
 .md a {
-  color: #0d73fc;
+  color: #7c3aed;
   text-decoration: none;
-  border-bottom: 1px solid rgba(13, 115, 252, 0.3);
+  border-bottom: 1px solid rgba(124, 58, 237, 0.3);
 }
 .md a:hover {
-  border-bottom-color: #0d73fc;
+  border-bottom-color: #7c3aed;
 }
 .md code {
-  background: #eef2fb;
+  background: #f4eefe;
   border: 1px solid #e0e7f5;
   border-radius: 6px;
   padding: 1px 5px;
@@ -405,9 +405,9 @@
   margin-top: 14px;
 }
 .chip {
-  border: 1px solid #cfe0fb;
-  background: #f3f8ff;
-  color: #0d5fd0;
+  border: 1px solid #e0d2fb;
+  background: #faf8ff;
+  color: #6d28d9;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -417,8 +417,8 @@
   transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
 }
 .chip:hover:not(:disabled) {
-  background: #e6f0ff;
-  box-shadow: 0 2px 8px rgba(13, 115, 252, 0.15);
+  background: #efe4ff;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
   transform: translateY(-1px);
 }
 .chip:disabled {

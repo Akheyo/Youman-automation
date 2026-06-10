@@ -31,12 +31,12 @@
   border-radius: 8px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #0d73fc, #2f8bff);
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
   color: #fff;
   font-weight: 900;
 }
 .loginLink {
-  color: #0d73fc;
+  color: #7c3aed;
   font-weight: 700;
   text-decoration: none;
 }
@@ -90,8 +90,8 @@
   flex-direction: column;
 }
 .highlight {
-  border-color: #0d73fc;
-  box-shadow: 0 14px 40px rgba(13, 115, 252, 0.18);
+  border-color: #7c3aed;
+  box-shadow: 0 14px 40px rgba(124, 58, 237, 0.18);
   transform: translateY(-4px);
 }
 .badge {
@@ -99,7 +99,7 @@
   top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  background: #0d73fc;
+  background: #7c3aed;
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -115,7 +115,7 @@
   font-size: 28px;
   font-weight: 800;
   margin: 6px 0 16px;
-  color: #0d73fc;
+  color: #7c3aed;
 }
 .features {
   list-style: none;
@@ -147,7 +147,7 @@
   font-size: 15px;
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(120deg, #0d73fc, #2f8bff);
+  background: linear-gradient(120deg, #7c3aed, #a855f7);
   cursor: pointer;
   text-align: center;
   text-decoration: none;
@@ -162,8 +162,8 @@
 }
 .ctaOutline {
   background: #fff;
-  color: #0d73fc;
-  border: 1.5px solid #0d73fc;
+  color: #7c3aed;
+  border: 1.5px solid #7c3aed;
 }
 
 .foot {
@@ -173,7 +173,7 @@
   margin-top: 30px;
 }
 .foot a {
-  color: #0d73fc;
+  color: #7c3aed;
   font-weight: 700;
   text-decoration: none;
 }
