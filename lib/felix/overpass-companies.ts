@@ -86,7 +86,7 @@ export async function findCompanies(p: FindCompaniesParams): Promise<FindCompani
     `[out:json][timeout:25];\n` +
     `area["name"="${area}"]["boundary"="administrative"]->.a;\n` +
     `nwr["${k}"="${v}"](area.a);\n` +
-    `out center tags ${limit * 5};`;
+    `out center ${limit * 5};`;
 
   let lastErr = '';
   for (const endpoint of OVERPASS_ENDPOINTS) {

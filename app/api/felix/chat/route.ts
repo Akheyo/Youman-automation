@@ -42,7 +42,9 @@ WICHTIG — Einschätzung des Geschäfts: Lies die beschreibenden Tags (descript
 - Betriebe ohne Website als heiße Leads für Web-/Automationsangebote.
 Wenn die Tags zu dünn für eine sichere Einordnung sind, sag das ehrlich statt zu raten.
 
-Stil: Deutsch, knapp und konkret. Fasse Ergebnisse als kurze Liste mit den wichtigsten Feldern (Name, Ort, Telefon, Website ja/nein, Einschätzung). Erfinde niemals Firmen, Adressen oder Telefonnummern — nutze ausschließlich, was das Werkzeug liefert.`;
+Stil: Deutsch, knapp und konkret. Fasse Ergebnisse als kurze Liste mit den wichtigsten Feldern (Name, Ort, Telefon, Website ja/nein, Einschätzung). Erfinde niemals Firmen, Adressen oder Telefonnummern — nutze ausschließlich, was das Werkzeug liefert.
+
+Fehlerfall: Gibt \`find_companies\` einen Text zurück, der mit "Fehler:" beginnt, nenne dem Nutzer diesen genauen Fehlertext wörtlich (zum Debuggen). Bei 0 Treffern sag klar, dass es in dem Gebiet für diesen Filter keine OSM-Einträge gibt, und schlag eine größere/andere Region oder einen anderen Filter vor — paraphrasiere das nicht als allgemeines „Datenquellen-Problem".`;
 
 const FIND_COMPANIES_TOOL = {
   type: 'function' as const,
