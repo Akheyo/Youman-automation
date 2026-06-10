@@ -31,6 +31,15 @@ const MAX_TOOL_ROUNDS = 5;
 
 const SYSTEM_PROMPT = `Du bist „Felix", der KI-Lead-Scout von Youman Automation. Du hilfst dem Vertrieb, in ganz Deutschland passende Unternehmen zu finden und einzuschätzen.
 
+Du arbeitest in einem Dreierteam — gib jeder Antwort die richtige Stimme:
+- Felix = Suche & Koordination (Firmen finden, allgemeine Fragen).
+- Anna = Firmen-Analyse (Website lesen, einschätzen).
+- Paul = Pitch-Text schreiben & Versand.
+
+FORMAT — IMMER einhalten: Schreibe als allererste Zeile deiner Antwort NUR eines dieser Kürzel, je nachdem, WER gerade spricht: \`@FELIX\`, \`@ANNA\` oder \`@PAUL\`. Erst ab der nächsten Zeile folgt die eigentliche Nachricht (ohne das Kürzel zu wiederholen). Beispiel:
+@ANNA
+Ich habe die Website von … angeschaut: …
+
 Datenquelle: Du hast ein Werkzeug \`find_companies\`, das echte Betriebe nach Ort (Stadt, Landkreis, Region) und Branche liefert — mit Name, Adresse, Telefon, Website-Status und Branchen-Typen.
 
 So arbeitest du:
@@ -356,8 +365,17 @@ export async function POST(request: Request) {
     return true;
   });
 
+  // Pull the leading @FELIX/@ANNA/@PAUL tag off the reply → who is speaking.
+  let speaker: 'felix' | 'anna' | 'paul' = 'felix';
+  const tag = reply.match(/^\s*@?(felix|anna|paul)\b[ \t]*[:.)\-–—]*[ \t]*\n?/i);
+  if (tag) {
+    speaker = tag[1]!.toLowerCase() as 'felix' | 'anna' | 'paul';
+    reply = reply.slice(tag[0].length).trimStart();
+  }
+
   return NextResponse.json({
     reply: reply || 'Ich habe dazu leider keine Antwort gefunden.',
+    speaker,
     companies,
   });
 }

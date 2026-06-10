@@ -19,16 +19,26 @@ interface Company {
   descriptors: string[];
 }
 
+type Speaker = keyof typeof PERSONAS;
+
+const PERSONAS = {
+  felix: { name: 'Felix', role: 'Lead-Scout', emoji: '🕵️', bg: 'linear-gradient(135deg,#d6e8ff,#9cc6ff)', accent: '#0d63d8' },
+  anna: { name: 'Anna', role: 'Analystin', emoji: '👩‍🔬', bg: 'linear-gradient(135deg,#ecdcff,#c9a6ff)', accent: '#7b3fe4' },
+  paul: { name: 'Paul', role: 'Pitch & Versand', emoji: '👨‍💼', bg: 'linear-gradient(135deg,#d7f5e3,#9be0b8)', accent: '#1f9d57' },
+} as const;
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  speaker?: Speaker;
   companies?: Company[];
 }
 
 const GREETING: Message = {
   role: 'assistant',
+  speaker: 'felix',
   content:
-    'Hi, ich bin Felix — dein Lead-Scout. Sag mir Region und Branche, dann finde ich passende Unternehmen in Deutschland. Beispiel: „Friseure in Dortmund ohne Website" oder „Werbeagenturen in Münster".',
+    'Hi, ich bin Felix — dein Lead-Scout. Sag mir Region und Branche, dann finde ich passende Unternehmen in Deutschland. Meine Kollegen Anna (Analyse) und Paul (Pitch & Versand) helfen danach weiter. Beispiel: „Friseure in Dortmund ohne Website" oder „Werbeagenturen in Münster".',
 };
 
 export default function FelixChat() {
@@ -76,7 +86,12 @@ export default function FelixChat() {
       }
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: data.reply, companies: data.companies },
+        {
+          role: 'assistant',
+          content: data.reply,
+          speaker: (data.speaker as Speaker) in PERSONAS ? (data.speaker as Speaker) : 'felix',
+          companies: data.companies,
+        },
       ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Netzwerkfehler.');
@@ -97,45 +112,81 @@ export default function FelixChat() {
       <header className={styles.header}>
         <div className={styles.logo}>F</div>
         <div>
-          <div className={styles.title}>Felix</div>
-          <div className={styles.subtitle}>KI-Lead-Scout · Youman Automation</div>
+          <div className={styles.title}>Felix &amp; Team</div>
+          <div className={styles.subtitle}>KI-Vertriebsteam · Youman Automation</div>
+        </div>
+        <div className={styles.team}>
+          {(['felix', 'anna', 'paul'] as const).map((k) => (
+            <div
+              key={k}
+              className={styles.teamAv}
+              style={{ background: PERSONAS[k].bg }}
+              title={`${PERSONAS[k].name} — ${PERSONAS[k].role}`}
+              aria-hidden
+            >
+              {PERSONAS[k].emoji}
+            </div>
+          ))}
         </div>
       </header>
 
       <div className={styles.thread} ref={scrollRef}>
-        {messages.map((m, i) => (
-          <div key={i} className={m.role === 'user' ? styles.rowUser : styles.rowBot}>
-            <div className={m.role === 'user' ? styles.bubbleUser : styles.bubbleBot}>
-              {m.role === 'user' ? (
-                <div className={styles.text}>{m.content}</div>
-              ) : (
-                <Markdown text={m.content} />
-              )}
-              {i === 0 && m.role === 'assistant' && messages.length === 1 && (
-                <div className={styles.chips}>
-                  {STARTERS.map((s) => (
-                    <button key={s} className={styles.chip} onClick={() => void send(s)} disabled={loading}>
-                      {s}
-                    </button>
-                  ))}
+        {messages.map((m, i) => {
+          const persona = m.role === 'assistant' ? PERSONAS[m.speaker ?? 'felix'] : null;
+          return (
+            <div key={i} className={m.role === 'user' ? styles.rowUser : styles.rowBot}>
+              {persona && (
+                <div className={styles.avatar} style={{ background: persona.bg }} aria-hidden>
+                  {persona.emoji}
                 </div>
               )}
-              {m.companies && m.companies.length > 0 && (
-                <div className={styles.cards}>
-                  {m.companies.map((c) => (
-                    <CompanyCard key={c.id} c={c} />
-                  ))}
+              <div className={m.role === 'user' ? styles.colUser : styles.colBot}>
+                {persona && (
+                  <div className={styles.who}>
+                    <span className={styles.whoName} style={{ color: persona.accent }}>
+                      {persona.name}
+                    </span>
+                    <span className={styles.whoRole}>{persona.role}</span>
+                  </div>
+                )}
+                <div className={m.role === 'user' ? styles.bubbleUser : styles.bubbleBot}>
+                  {m.role === 'user' ? (
+                    <div className={styles.text}>{m.content}</div>
+                  ) : (
+                    <Markdown text={m.content} />
+                  )}
+                  {i === 0 && m.role === 'assistant' && messages.length === 1 && (
+                    <div className={styles.chips}>
+                      {STARTERS.map((s) => (
+                        <button key={s} className={styles.chip} onClick={() => void send(s)} disabled={loading}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {m.companies && m.companies.length > 0 && (
+                    <div className={styles.cards}>
+                      {m.companies.map((c) => (
+                        <CompanyCard key={c.id} c={c} />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         {loading && (
           <div className={styles.rowBot}>
-            <div className={styles.bubbleBot}>
-              <span className={styles.typing}>
-                <i /> <i /> <i />
-              </span>
+            <div className={styles.avatar} style={{ background: '#e6ebf4' }} aria-hidden>
+              💬
+            </div>
+            <div className={styles.colBot}>
+              <div className={styles.bubbleBot}>
+                <span className={styles.typing}>
+                  <i /> <i /> <i />
+                </span>
+              </div>
             </div>
           </div>
         )}
