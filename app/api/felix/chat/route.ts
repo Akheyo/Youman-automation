@@ -14,7 +14,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { findCompanies, type CompanyResult } from '@/lib/felix/overpass-companies';
+import { findCompaniesByIndustry, type CompanyResult } from '@/lib/felix/overpass-companies';
+import { findCompaniesGoogle } from '@/lib/felix/places-companies';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -28,42 +29,38 @@ const MAX_TOOL_ROUNDS = 5;
 
 const SYSTEM_PROMPT = `Du bist „Felix", der KI-Lead-Scout von Youman Automation. Du hilfst dem Vertrieb, in ganz Deutschland passende Unternehmen zu finden und einzuschätzen.
 
-Datenquelle: Du hast ein Werkzeug \`find_companies\`, das Betriebe aus OpenStreetMap nach Verwaltungsgebiet (Stadt, Landkreis, Regierungsbezirk) und Branche liefert — inklusive Adresse, Telefon, Website-Status und beschreibenden OSM-Tags.
+Datenquelle: Du hast ein Werkzeug \`find_companies\`, das echte Betriebe nach Ort (Stadt, Landkreis, Region) und Branche liefert — mit Name, Adresse, Telefon, Website-Status und Branchen-Typen.
 
 So arbeitest du:
-- Wenn die Person eine Region und/oder Branche nennt, rufe \`find_companies\` auf. Übersetze die Branche selbst in einen passenden OSM-Filter (osm_selector), z. B.:
-  Friseur → shop=hairdresser · Restaurant → amenity=restaurant · Bäckerei → shop=bakery · Versicherung → office=insurance · Immobilien → office=estate_agent · Steuerberater → office=tax_advisor · Anwalt → office=lawyer · Werbe-/Marketingagentur → office=advertising_agency · Vertrieb/Agentur/Unternehmen allgemein → office=company · Handwerk (z. B. Tischler) → craft=carpenter · Autohaus → shop=car · Fitnessstudio → leisure=fitness_centre.
-  Wenn unklar, wähle den naheliegendsten Filter und sag dazu, welchen du genommen hast.
-- Fehlt Region ODER Branche, frage kurz nach (eine Frage, nicht mehrere).
+- Wenn die Person eine Region und/oder Branche nennt, rufe \`find_companies\` mit \`area\` (Ort) und \`industry\` (Branche in normalen Worten, z. B. „Dachdecker", „Friseure", „Werbeagenturen") auf.
+- Fehlt Ort ODER Branche, frage kurz nach (eine Frage, nicht mehrere).
 - Für Kaltakquise ist \`without_website: true\` oft wertvoll (Betriebe ohne Website = klarer Mehrwert für Web/Automation-Angebote).
 
-WICHTIG — Einschätzung des Geschäfts: Lies die beschreibenden Tags (descriptors) jedes Treffers und ordne ein, WAS die Firma macht. Sag pro relevantem Treffer in einem Halbsatz, worum es sich handelt. Erkenne und kennzeichne dabei besonders:
+WICHTIG — Einschätzung des Geschäfts: Lies die Branchen-Typen/Tags (descriptors) jedes Treffers und ordne ein, WAS die Firma macht. Sag pro relevantem Treffer in einem Halbsatz, worum es sich handelt. Erkenne und kennzeichne dabei besonders:
 - Vertriebs-/Verkaufsagenturen, Call-Center, Marketing-/Werbeagenturen, Makler — also Firmen, die selbst Akquise/Vertrieb betreiben. Markiere sie klar (z. B. „⚑ betreibt selbst Vertrieb/Akquise"), weil das für unsere Ansprache relevant ist (Partner oder Wettbewerber statt klassischer Kunde).
 - Betriebe ohne Website als heiße Leads für Web-/Automationsangebote.
 Wenn die Tags zu dünn für eine sichere Einordnung sind, sag das ehrlich statt zu raten.
 
 Stil: Deutsch, knapp und konkret. Fasse Ergebnisse als kurze Liste mit den wichtigsten Feldern (Name, Ort, Telefon, Website ja/nein, Einschätzung). Erfinde niemals Firmen, Adressen oder Telefonnummern — nutze ausschließlich, was das Werkzeug liefert.
 
-Fehlerfall: Gibt \`find_companies\` einen Text zurück, der mit "Fehler:" beginnt, nenne dem Nutzer diesen genauen Fehlertext wörtlich (zum Debuggen). Bei 0 Treffern sag klar, dass es in dem Gebiet für diesen Filter keine OSM-Einträge gibt, und schlag eine größere/andere Region oder einen anderen Filter vor — paraphrasiere das nicht als allgemeines „Datenquellen-Problem".`;
+Fehlerfall: Gibt \`find_companies\` einen Text zurück, der mit "Fehler:" beginnt, nenne dem Nutzer diesen genauen Fehlertext wörtlich (zum Debuggen). Bei 0 Treffern sag klar, dass es in dem Gebiet für diese Branche keine Einträge gibt, und schlag eine größere/andere Region oder eine andere Branche vor — paraphrasiere das nicht als allgemeines „Datenquellen-Problem".`;
 
 const FIND_COMPANIES_TOOL = {
   type: 'function' as const,
   function: {
     name: 'find_companies',
     description:
-      'Findet reale Unternehmen/Betriebe in Deutschland aus OpenStreetMap nach Verwaltungsgebiet und Branche. Gibt Name, Adresse, Telefon, Website-Status und beschreibende OSM-Tags zurück. Nutze es immer, wenn der Nutzer Firmen in einer Region/Branche sucht — rate Firmendaten niemals selbst.',
+      'Findet reale Unternehmen/Betriebe in Deutschland nach Ort und Branche. Gibt Name, Adresse, Telefon, Website-Status und Branchen-Typen zurück. Nutze es immer, wenn der Nutzer Firmen in einer Region/Branche sucht — rate Firmendaten niemals selbst.',
     parameters: {
       type: 'object',
       properties: {
         area: {
           type: 'string',
-          description:
-            'Verwaltungsgebiet, exakt wie in OSM benannt: Stadt ("Dortmund"), Landkreis ("Kreis Borken") oder Regierungsbezirk ("Münster").',
+          description: 'Ort: Stadt ("Dortmund"), Landkreis ("Kreis Borken") oder Region ("Münsterland").',
         },
-        osm_selector: {
+        industry: {
           type: 'string',
-          description:
-            'OSM-Tag-Filter "key=value", z. B. shop=hairdresser, amenity=restaurant, office=insurance, office=company, craft=carpenter.',
+          description: 'Branche in normalen Worten, z. B. "Dachdecker", "Friseure", "Restaurants", "Werbeagenturen".',
         },
         without_website: {
           type: 'boolean',
@@ -74,7 +71,7 @@ const FIND_COMPANIES_TOOL = {
           description: 'Maximale Trefferzahl (1–60, Standard 30).',
         },
       },
-      required: ['area', 'osm_selector'],
+      required: ['area', 'industry'],
     },
   },
 };
@@ -218,18 +215,20 @@ export async function POST(request: Request) {
           });
           continue;
         }
-        let input: Partial<{ area: string; osm_selector: string; without_website: boolean; limit: number }> = {};
+        let input: Partial<{ area: string; industry: string; without_website: boolean; limit: number }> = {};
         try {
           input = JSON.parse(call.function.arguments || '{}');
         } catch {
-          /* leave input empty → findCompanies returns a validation error */
+          /* leave input empty → find returns a validation error */
         }
-        const result = await findCompanies({
-          area: String(input.area || ''),
-          osm_selector: String(input.osm_selector || ''),
-          without_website: Boolean(input.without_website),
-          limit: typeof input.limit === 'number' ? input.limit : undefined,
-        });
+        const area = String(input.area || '');
+        const industry = String(input.industry || '');
+        const withoutWebsite = Boolean(input.without_website);
+        const max = typeof input.limit === 'number' ? input.limit : undefined;
+        const googleKey = process.env.GOOGLE_MAPS_API_KEY;
+        const result = googleKey
+          ? await findCompaniesGoogle({ area, industry, without_website: withoutWebsite, limit: max }, googleKey)
+          : await findCompaniesByIndustry(area, industry, withoutWebsite, max);
         collected.push(...result.companies);
         const summary = result.error
           ? `Fehler: ${result.error}`

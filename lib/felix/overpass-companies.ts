@@ -175,3 +175,56 @@ function toCompany(e: OverpassElement, selectorKey: string): CompanyResult | nul
     lng,
   };
 }
+
+// --- Industry → OSM selector mapping (free Overpass fallback) ---------------
+
+const INDUSTRY_SELECTORS: { match: string[]; selector: string }[] = [
+  { match: ['friseur', 'frisör', 'frisoer'], selector: 'shop=hairdresser' },
+  { match: ['restaurant', 'gastronomie', 'gaststätte', 'gaststaette'], selector: 'amenity=restaurant' },
+  { match: ['bäckerei', 'baeckerei', 'bäcker', 'baecker'], selector: 'shop=bakery' },
+  { match: ['metzger', 'fleischer', 'metzgerei'], selector: 'shop=butcher' },
+  { match: ['cafe', 'café'], selector: 'amenity=cafe' },
+  { match: ['hotel', 'pension'], selector: 'tourism=hotel' },
+  { match: ['versicherung'], selector: 'office=insurance' },
+  { match: ['immobilien', 'makler'], selector: 'office=estate_agent' },
+  { match: ['steuerberater'], selector: 'office=tax_advisor' },
+  { match: ['anwalt', 'rechtsanwalt', 'kanzlei'], selector: 'office=lawyer' },
+  { match: ['zahnarzt', 'zahnärzte', 'zahnaerzte'], selector: 'amenity=dentist' },
+  { match: ['arzt', 'ärzte', 'aerzte', 'praxis'], selector: 'amenity=doctors' },
+  { match: ['apotheke'], selector: 'amenity=pharmacy' },
+  { match: ['autohaus', 'autohändler', 'autohaendler'], selector: 'shop=car' },
+  { match: ['werkstatt', 'kfz'], selector: 'shop=car_repair' },
+  { match: ['fitness', 'fitnessstudio'], selector: 'leisure=fitness_centre' },
+  { match: ['dachdecker'], selector: 'craft=roofer' },
+  { match: ['tischler', 'schreiner'], selector: 'craft=carpenter' },
+  { match: ['elektriker', 'elektro'], selector: 'craft=electrician' },
+  { match: ['maler', 'lackierer'], selector: 'craft=painter' },
+  { match: ['klempner', 'sanitär', 'sanitaer', 'installateur', 'heizung'], selector: 'craft=plumber' },
+  { match: ['werbeagentur', 'werbung', 'marketing', 'marketingagentur', 'agentur'], selector: 'office=advertising_agency' },
+];
+
+export function industryToSelector(industry: string): string | null {
+  const q = industry.toLowerCase();
+  for (const entry of INDUSTRY_SELECTORS) {
+    if (entry.match.some((m) => q.includes(m))) return entry.selector;
+  }
+  return null;
+}
+
+/** Free fallback: map a plain-language industry to an OSM selector, then query. */
+export async function findCompaniesByIndustry(
+  area: string,
+  industry: string,
+  withoutWebsite?: boolean,
+  limit?: number,
+): Promise<FindCompaniesResult> {
+  const selector = industryToSelector(industry);
+  if (!selector) {
+    return {
+      companies: [],
+      query: '',
+      error: `Branche "${industry}" ist in der kostenlosen OSM-Quelle nicht zuordenbar. Für volle Abdeckung GOOGLE_MAPS_API_KEY einrichten.`,
+    };
+  }
+  return findCompanies({ area, osm_selector: selector, without_website: withoutWebsite, limit });
+}
