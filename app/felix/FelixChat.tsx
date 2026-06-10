@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import styles from './felix.module.css';
+import Markdown from './Markdown';
 
 interface Company {
   id: string;
@@ -41,8 +42,15 @@ export default function FelixChat() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, loading]);
 
-  async function send() {
-    const text = input.trim();
+  const STARTERS = [
+    'Restaurants in Borken ohne Website',
+    'Dachdecker in Münster',
+    'Friseure in Dortmund',
+    'Werbeagenturen in Köln',
+  ];
+
+  async function send(preset?: string) {
+    const text = (preset ?? input).trim();
     if (!text || loading) return;
     setError(null);
     const nextMessages: Message[] = [...messages, { role: 'user', content: text }];
@@ -98,7 +106,20 @@ export default function FelixChat() {
         {messages.map((m, i) => (
           <div key={i} className={m.role === 'user' ? styles.rowUser : styles.rowBot}>
             <div className={m.role === 'user' ? styles.bubbleUser : styles.bubbleBot}>
-              <div className={styles.text}>{m.content}</div>
+              {m.role === 'user' ? (
+                <div className={styles.text}>{m.content}</div>
+              ) : (
+                <Markdown text={m.content} />
+              )}
+              {i === 0 && m.role === 'assistant' && messages.length === 1 && (
+                <div className={styles.chips}>
+                  {STARTERS.map((s) => (
+                    <button key={s} className={styles.chip} onClick={() => void send(s)} disabled={loading}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
               {m.companies && m.companies.length > 0 && (
                 <div className={styles.cards}>
                   {m.companies.map((c) => (
