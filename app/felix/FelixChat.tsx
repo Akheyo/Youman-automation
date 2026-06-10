@@ -22,10 +22,25 @@ interface Company {
 type Speaker = keyof typeof PERSONAS;
 
 const PERSONAS = {
-  felix: { name: 'Felix', role: 'Lead-Scout', emoji: '🕵️', bg: 'linear-gradient(135deg,#d6e8ff,#9cc6ff)', accent: '#0d63d8' },
-  anna: { name: 'Anna', role: 'Analystin', emoji: '👩‍🔬', bg: 'linear-gradient(135deg,#ecdcff,#c9a6ff)', accent: '#7b3fe4' },
-  paul: { name: 'Paul', role: 'Pitch & Versand', emoji: '👨‍💼', bg: 'linear-gradient(135deg,#d7f5e3,#9be0b8)', accent: '#1f9d57' },
+  felix: { name: 'Felix', role: 'Lead-Scout', emoji: '🕵️', img: '/team/felix.png', bg: 'linear-gradient(135deg,#d6e8ff,#9cc6ff)', accent: '#0d63d8' },
+  anna: { name: 'Anna', role: 'Analystin', emoji: '👩‍🔬', img: '/team/anna.png', bg: 'linear-gradient(135deg,#ecdcff,#c9a6ff)', accent: '#7b3fe4' },
+  paul: { name: 'Paul', role: 'Pitch & Versand', emoji: '👨‍💼', img: '/team/paul.png', bg: 'linear-gradient(135deg,#d7f5e3,#9be0b8)', accent: '#1f9d57' },
 } as const;
+
+/** Round avatar: shows the persona's image, falls back to the emoji if missing. */
+function Avatar({ persona, className }: { persona: (typeof PERSONAS)[Speaker]; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className={className} style={{ background: persona.bg }} aria-hidden>
+      {persona.img && !failed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={persona.img} alt="" className={styles.avatarImg} onError={() => setFailed(true)} />
+      ) : (
+        persona.emoji
+      )}
+    </div>
+  );
+}
 
 interface Message {
   role: 'user' | 'assistant';
@@ -117,15 +132,7 @@ export default function FelixChat() {
         </div>
         <div className={styles.team}>
           {(['felix', 'anna', 'paul'] as const).map((k) => (
-            <div
-              key={k}
-              className={styles.teamAv}
-              style={{ background: PERSONAS[k].bg }}
-              title={`${PERSONAS[k].name} — ${PERSONAS[k].role}`}
-              aria-hidden
-            >
-              {PERSONAS[k].emoji}
-            </div>
+            <Avatar key={k} persona={PERSONAS[k]} className={styles.teamAv} />
           ))}
         </div>
       </header>
@@ -135,11 +142,7 @@ export default function FelixChat() {
           const persona = m.role === 'assistant' ? PERSONAS[m.speaker ?? 'felix'] : null;
           return (
             <div key={i} className={m.role === 'user' ? styles.rowUser : styles.rowBot}>
-              {persona && (
-                <div className={styles.avatar} style={{ background: persona.bg }} aria-hidden>
-                  {persona.emoji}
-                </div>
-              )}
+              {persona && <Avatar persona={persona} className={styles.avatar} />}
               <div className={m.role === 'user' ? styles.colUser : styles.colBot}>
                 {persona && (
                   <div className={styles.who}>
