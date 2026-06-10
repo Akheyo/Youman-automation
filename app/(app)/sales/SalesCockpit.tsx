@@ -118,21 +118,6 @@ export default function SalesCockpit(props: {
 
   return (
     <div className={styles.page}>
-      <header className={styles.head}>
-        <Link href="/dashboard" className={styles.brand}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Youman Automation" className={styles.logoImg} />
-        </Link>
-        <div className={styles.headRight}>
-          <Link href="/felix" className={styles.headLink}>
-            Felix-Chat
-          </Link>
-          <Link href="/dashboard" className={styles.headLink}>
-            Dashboard
-          </Link>
-        </div>
-      </header>
-
       <div className={styles.hero}>
         <div className={styles.heroAv}>📞</div>
         <div>

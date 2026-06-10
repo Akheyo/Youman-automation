@@ -1,0 +1,246 @@
+.shell {
+  --bg: #f6f5fb;
+  --side: #160f2e;
+  --side2: #221645;
+  display: flex;
+  height: 100dvh;
+  width: 100%;
+  background: var(--bg);
+  font-family: 'Heebo', system-ui, -apple-system, sans-serif;
+  color: #1b1733;
+}
+
+/* ---------------- Sidebar ---------------- */
+.sidebar {
+  flex: 0 0 252px;
+  width: 252px;
+  height: 100dvh;
+  background: linear-gradient(180deg, var(--side) 0%, var(--side2) 100%);
+  color: #e7e2f5;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 14px;
+  position: sticky;
+  top: 0;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px 18px;
+}
+.logo {
+  height: 40px;
+  width: auto;
+  filter: brightness(0) invert(1);
+}
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.navDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 14px 8px;
+}
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #cfc7e6;
+  transition: background 0.15s, color 0.15s;
+  position: relative;
+}
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+.navActive {
+  background: linear-gradient(120deg, #7c3aed, #a855f7);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.35);
+}
+.navActive:hover {
+  background: linear-gradient(120deg, #7c3aed, #a855f7);
+}
+.navIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 20px;
+  opacity: 0.95;
+}
+.navText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.navLabel {
+  font-weight: 700;
+  font-size: 14.5px;
+}
+.navSub {
+  font-size: 11px;
+  opacity: 0.7;
+}
+.navItemSm {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #b7aed3;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+.navItemSm:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.userBox {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+  margin-top: 8px;
+}
+.userMail {
+  font-size: 12px;
+  color: #9b91c0;
+  padding: 0 8px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.logout {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e7e2f5;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.logout:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ---------------- Content ---------------- */
+.content {
+  flex: 1;
+  min-width: 0;
+  height: 100dvh;
+}
+.contentScroll {
+  overflow-y: auto;
+}
+.contentFill {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------------- Mobile ---------------- */
+.topbar {
+  display: none;
+}
+.drawer,
+.scrim {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    flex-direction: column;
+  }
+  .sidebar {
+    display: none;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 58px;
+    flex: 0 0 58px;
+    padding: 0 16px;
+    background: linear-gradient(120deg, var(--side), var(--side2));
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+  .burger {
+    width: 38px;
+    height: 38px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    display: grid;
+    place-content: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+  .burger span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: #fff;
+    border-radius: 2px;
+  }
+  .brandMobile {
+    display: flex;
+    align-items: center;
+  }
+  .logoMobile {
+    height: 30px;
+    filter: brightness(0) invert(1);
+  }
+  .topSpacer {
+    flex: 1;
+  }
+  .content {
+    height: calc(100dvh - 58px);
+  }
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 58px 0 0;
+    background: rgba(8, 4, 20, 0.5);
+    z-index: 40;
+  }
+  .drawer {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 58px;
+    left: 0;
+    bottom: 0;
+    width: 270px;
+    max-width: 82vw;
+    background: linear-gradient(180deg, var(--side) 0%, var(--side2) 100%);
+    z-index: 41;
+    padding: 16px 14px;
+    box-shadow: 8px 0 30px rgba(0, 0, 0, 0.4);
+    animation: slideIn 0.2s ease;
+  }
+}
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
