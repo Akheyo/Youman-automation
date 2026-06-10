@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const FIELDS = ['name', 'company', 'phone', 'website', 'email', 'notes', 'interest', 'status'] as const;
+const FIELDS = ['name', 'company', 'phone', 'website', 'email', 'notes', 'interest', 'status', 'follow_up_at', 'follow_up_note'] as const;
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const supabase = createClient();

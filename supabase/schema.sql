@@ -186,6 +186,10 @@ drop policy if exists "call_leads own" on public.call_leads;
 create policy "call_leads own" on public.call_leads for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- Follow-up scheduling (next action) per lead. Backfill-safe for existing installs.
+alter table public.call_leads add column if not exists follow_up_at   timestamptz;
+alter table public.call_leads add column if not exists follow_up_note text;
+
 -- ---------------------------------------------------------------------------
 -- calls: one row per placed call + the full transcript / summary / recording
 -- ---------------------------------------------------------------------------

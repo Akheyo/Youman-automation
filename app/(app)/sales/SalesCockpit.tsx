@@ -17,6 +17,8 @@ interface Lead {
   approved: boolean;
   needs_approval: boolean;
   status: string;
+  follow_up_at: string | null;
+  follow_up_note: string | null;
 }
 interface Call {
   id: string;
@@ -48,7 +50,9 @@ interface Config {
   max_duration: number;
 }
 
-type Tab = 'overview' | 'leads' | 'calls' | 'config';
+type Tab = 'overview' | 'leads' | 'followups' | 'calls' | 'config';
+
+const INTEREST_LABEL: Record<string, string> = { high: '🔥 Hohes Interesse', warm: '🌤️ Warm', unknown: 'Unbekannt' };
 
 const STATUS_LABEL: Record<string, string> = {
   neu: 'Neu',
@@ -110,8 +114,19 @@ export default function SalesCockpit(props: {
     }
   }
 
+  function save(id: string, patch: Record<string, unknown>) {
+    return call(
+      id,
+      () => fetch(`/api/sales/leads/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }),
+      loadLeads,
+    );
+  }
+
   const approved = leads.filter((l) => l.approved || !l.needs_approval);
   const waiting = leads.filter((l) => l.needs_approval && !l.approved);
+  const followUps = leads
+    .filter((l) => l.follow_up_at)
+    .sort((a, b) => (a.follow_up_at ?? '').localeCompare(b.follow_up_at ?? ''));
   const meetingsBooked = meetings.filter((m) => m.status === 'gebucht').length;
   const doneCalls = calls.filter((c) => c.status === 'beendet').length;
   const successRate = doneCalls ? Math.round((meetingsBooked / doneCalls) * 100) : 0;
@@ -154,8 +169,9 @@ export default function SalesCockpit(props: {
           [
             ['overview', 'Übersicht'],
             ['leads', `Leads (${leads.length})`],
+            ['followups', `Follow-ups (${followUps.length})`],
             ['calls', `Anrufe (${calls.length})`],
-            ['config', 'Lina-Konfig'],
+            ['config', 'Lina-Persönlichkeit'],
           ] as [Tab, string][]
         ).map(([t, label]) => (
           <button key={t} className={tab === t ? styles.tabActive : styles.tab} onClick={() => setTab(t)}>
@@ -190,7 +206,17 @@ export default function SalesCockpit(props: {
             onCall={(id) => call(id, () => fetch('/api/sales/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadId: id }) }), async () => { await loadLeads(); await loadCalls(); })}
             onApprove={(id, v) => call(id, () => fetch(`/api/sales/leads/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approved: v }) }), loadLeads)}
             onDelete={(id) => call(id, () => fetch(`/api/sales/leads/${id}`, { method: 'DELETE' }), loadLeads)}
+            onSave={save}
             setErr={setErr}
+          />
+        )}
+
+        {tab === 'followups' && (
+          <FollowUps
+            items={followUps}
+            busy={busy}
+            onCall={(id) => call(id, () => fetch('/api/sales/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadId: id }) }), async () => { await loadLeads(); await loadCalls(); })}
+            onClear={(id) => save(id, { follow_up_at: null, follow_up_note: null })}
           />
         )}
 
@@ -277,6 +303,7 @@ function Leads(p: {
   onCall: (id: string) => void;
   onApprove: (id: string, v: boolean) => void;
   onDelete: (id: string) => void;
+  onSave: (id: string, patch: Record<string, unknown>) => Promise<void> | void;
   setErr: (s: string) => void;
 }) {
   const [form, setForm] = useState({ name: '', company: '', phone: '', email: '', notes: '' });
@@ -346,42 +373,191 @@ function Leads(p: {
         ) : (
           <div className={styles.leadList}>
             {p.leads.map((l) => (
-              <div key={l.id} className={styles.leadRow}>
-                <div className={styles.leadMain}>
-                  <div className={styles.leadName}>
-                    {l.name || l.company || l.phone}
-                    {l.company && l.name && <span className={styles.leadCo}> · {l.company}</span>}
-                    <span className={styles.statusPill} data-s={l.status}>
-                      {STATUS_LABEL[l.status] ?? l.status}
-                    </span>
-                  </div>
-                  <div className={styles.leadMeta}>
-                    {l.phone}
-                    {l.notes && ` · ${l.notes}`}
-                    {l.source === 'csv' && <span className={styles.srcPill}>CSV</span>}
-                    {l.source === 'felix' && <span className={styles.srcPill}>Felix</span>}
-                  </div>
-                </div>
-                <div className={styles.leadActions}>
-                  {l.needs_approval && !l.approved ? (
-                    <button className={styles.approveBtn} onClick={() => p.onApprove(l.id, true)} disabled={p.busy === l.id}>
-                      Freigeben
-                    </button>
-                  ) : (
-                    <button className={styles.callBtn} onClick={() => p.onCall(l.id)} disabled={p.busy === l.id || l.status === 'anruf'}>
-                      {p.busy === l.id ? '…' : '📞 Anrufen'}
-                    </button>
-                  )}
-                  <button className={styles.delBtn} onClick={() => p.onDelete(l.id)} disabled={p.busy === l.id} title="Löschen">
-                    ✕
-                  </button>
-                </div>
-              </div>
+              <LeadItem key={l.id} l={l} busy={p.busy} onCall={p.onCall} onApprove={p.onApprove} onDelete={p.onDelete} onSave={p.onSave} />
             ))}
           </div>
         )}
       </div>
     </>
+  );
+}
+
+function LeadItem({
+  l,
+  busy,
+  onCall,
+  onApprove,
+  onDelete,
+  onSave,
+}: {
+  l: Lead;
+  busy: string | null;
+  onCall: (id: string) => void;
+  onApprove: (id: string, v: boolean) => void;
+  onDelete: (id: string) => void;
+  onSave: (id: string, patch: Record<string, unknown>) => Promise<void> | void;
+}) {
+  const [edit, setEdit] = useState(false);
+  const [f, setF] = useState({
+    name: l.name ?? '',
+    company: l.company ?? '',
+    interest: l.interest ?? 'unknown',
+    notes: l.notes ?? '',
+    follow_up_at: l.follow_up_at ? l.follow_up_at.slice(0, 10) : '',
+    follow_up_note: l.follow_up_note ?? '',
+  });
+
+  async function submit() {
+    await onSave(l.id, {
+      name: f.name || null,
+      company: f.company || null,
+      interest: f.interest,
+      notes: f.notes || null,
+      follow_up_at: f.follow_up_at || null,
+      follow_up_note: f.follow_up_note || null,
+    });
+    setEdit(false);
+  }
+
+  if (edit) {
+    return (
+      <div className={styles.leadEdit}>
+        <div className={styles.editGrid}>
+          <label>
+            <span>Name</span>
+            <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+          </label>
+          <label>
+            <span>Firma</span>
+            <input value={f.company} onChange={(e) => setF({ ...f, company: e.target.value })} />
+          </label>
+          <label>
+            <span>Interesse</span>
+            <select value={f.interest} onChange={(e) => setF({ ...f, interest: e.target.value })}>
+              <option value="high">🔥 Hohes Interesse</option>
+              <option value="warm">🌤️ Warm</option>
+              <option value="unknown">Unbekannt</option>
+            </select>
+          </label>
+          <label>
+            <span>Follow-up am</span>
+            <input type="date" value={f.follow_up_at} onChange={(e) => setF({ ...f, follow_up_at: e.target.value })} />
+          </label>
+        </div>
+        <label className={styles.editFull}>
+          <span>Analyse / Notizen (manuell bearbeitbar)</span>
+          <textarea rows={3} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} />
+        </label>
+        <label className={styles.editFull}>
+          <span>Follow-up Notiz</span>
+          <input value={f.follow_up_note} onChange={(e) => setF({ ...f, follow_up_note: e.target.value })} placeholder="z. B. nächste Woche erneut anrufen" />
+        </label>
+        <div className={styles.editActions}>
+          <button className={styles.saveBtn} onClick={submit} disabled={busy === l.id}>
+            Speichern
+          </button>
+          <button className={styles.cancelBtn} onClick={() => setEdit(false)}>
+            Abbrechen
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.leadRow}>
+      <div className={styles.leadMain}>
+        <div className={styles.leadName}>
+          {l.name || l.company || l.phone}
+          {l.company && l.name && <span className={styles.leadCo}> · {l.company}</span>}
+          <span className={styles.statusPill} data-s={l.status}>
+            {STATUS_LABEL[l.status] ?? l.status}
+          </span>
+          {l.interest !== 'unknown' && <span className={styles.interestPill}>{INTEREST_LABEL[l.interest]}</span>}
+        </div>
+        <div className={styles.leadMeta}>
+          {l.phone}
+          {l.notes && ` · ${l.notes}`}
+          {l.source === 'csv' && <span className={styles.srcPill}>CSV</span>}
+          {l.source === 'felix' && <span className={styles.srcPill}>Felix</span>}
+          {l.follow_up_at && <span className={styles.fuPill}>↻ {new Date(l.follow_up_at).toLocaleDateString('de-DE')}</span>}
+        </div>
+      </div>
+      <div className={styles.leadActions}>
+        {l.needs_approval && !l.approved ? (
+          <button className={styles.approveBtn} onClick={() => onApprove(l.id, true)} disabled={busy === l.id}>
+            Freigeben
+          </button>
+        ) : (
+          <button className={styles.callBtn} onClick={() => onCall(l.id)} disabled={busy === l.id || l.status === 'anruf'}>
+            {busy === l.id ? '…' : '📞 Anrufen'}
+          </button>
+        )}
+        <button className={styles.editBtn} onClick={() => setEdit(true)} title="Bearbeiten">
+          ✎
+        </button>
+        <button className={styles.delBtn} onClick={() => onDelete(l.id)} disabled={busy === l.id} title="Löschen">
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FollowUps({
+  items,
+  busy,
+  onCall,
+  onClear,
+}: {
+  items: Lead[];
+  busy: string | null;
+  onCall: (id: string) => void;
+  onClear: (id: string) => void;
+}) {
+  if (items.length === 0)
+    return (
+      <div className={styles.card}>
+        <p className={styles.muted}>
+          Keine Follow-ups geplant. Öffne bei einem Lead „Bearbeiten&ldquo; und setze ein Follow-up-Datum — fällige Follow-ups erscheinen dann hier.
+        </p>
+      </div>
+    );
+  const now = Date.now();
+  return (
+    <div className={styles.card}>
+      <div className={styles.cardHead}>Geplante Follow-ups</div>
+      <div className={styles.leadList}>
+        {items.map((l) => {
+          const due = l.follow_up_at ? new Date(l.follow_up_at).getTime() <= now : false;
+          return (
+            <div key={l.id} className={styles.leadRow}>
+              <div className={styles.leadMain}>
+                <div className={styles.leadName}>
+                  {l.name || l.company || l.phone}
+                  <span className={styles.statusPill} data-s={due ? 'anruf' : 'bereit'}>
+                    {l.follow_up_at ? new Date(l.follow_up_at).toLocaleDateString('de-DE') : ''}
+                    {due ? ' · fällig' : ''}
+                  </span>
+                </div>
+                <div className={styles.leadMeta}>
+                  {l.phone}
+                  {l.follow_up_note && ` · ${l.follow_up_note}`}
+                </div>
+              </div>
+              <div className={styles.leadActions}>
+                <button className={styles.callBtn} onClick={() => onCall(l.id)} disabled={busy === l.id}>
+                  📞 Anrufen
+                </button>
+                <button className={styles.delBtn} onClick={() => onClear(l.id)} title="Follow-up erledigt">
+                  ✓
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -470,6 +646,17 @@ function ConfigForm({ config, onSaved, setErr }: { config: Config; onSaved: () =
       <div className={styles.cardHead}>Lina-Konfiguration (ihr „Charakter&ldquo;)</div>
       <p className={styles.hint}>Hier bestimmst du, wie Lina am Telefon auftritt — wie bei einem Persona-Profil.</p>
       {field('agent_name', 'Name des Agenten')}
+      <label className={styles.cfgField}>
+        <span>Stimme</span>
+        <select value={c.voice} onChange={(e) => setC({ ...c, voice: e.target.value })}>
+          <option value="sarah">Sarah — weiblich, warm (Standard)</option>
+          <option value="charlotte">Charlotte — weiblich, freundlich</option>
+          <option value="alice">Alice — weiblich, klar</option>
+          <option value="lily">Lily — weiblich, jung</option>
+          <option value="george">George — männlich, ruhig</option>
+          <option value="liam">Liam — männlich, sympathisch</option>
+        </select>
+      </label>
       {field('opening_line', 'Eröffnungssatz', true)}
       {field('goal', 'Ziel des Anrufs', true)}
       {field('persona', 'Persönlichkeit / Tonfall', true)}
