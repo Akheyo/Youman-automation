@@ -8,31 +8,22 @@ export const metadata: Metadata = {
     'Felix findet passende Firmen, Anna analysiert sie, Paul schreibt & sendet den Pitch. Automatisierte B2B-Neukundengewinnung – auf Deutsch, DSGVO-konform, mit Freigabe vor jedem Versand.',
 };
 
-/* ---- kleine Inline-Icons (sauberer als Emojis) ---- */
-const Icon = {
-  search: <path d="M11 4a7 7 0 1 0 4.2 12.6l4.1 4.1 1.4-1.4-4.1-4.1A7 7 0 0 0 11 4zm0 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" />,
-  doc: <path d="M6 2h8l4 4v16H6V2zm7 1.5V7h3.5L13 3.5zM8 11h8v2H8v-2zm0 4h8v2H8v-2z" />,
-  mail: <path d="M3 5h18v14H3V5zm2 2v.4l7 4.3 7-4.3V7H5zm14 2.7-7 4.3-7-4.3V17h14V9.7z" />,
-  shield: <path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3zm0 2.2 6 2.2V11c0 3.9-2.5 7.6-6 8.8-3.5-1.2-6-4.9-6-8.8V6.4l6-2.2z" />,
-  bolt: <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z" />,
-  globe: <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.9 9h-3a15 15 0 0 0-1-4.6A8 8 0 0 1 18.9 11zM12 4c.8 1 1.6 2.8 1.9 5h-3.8C10.4 6.8 11.2 5 12 5zm-3.9.4A15 15 0 0 0 7.1 11h-3a8 8 0 0 1 4-6.6zM4.1 13h3a15 15 0 0 0 1 4.6A8 8 0 0 1 4.1 13zM12 20c-.8-1-1.6-2.8-1.9-5h3.8c-.3 2.2-1.1 4-1.9 5zm1.9-.4a15 15 0 0 0 1-4.6h3a8 8 0 0 1-4 4.6z" />,
-  check: <path d="m9.5 17-5-5 1.4-1.4 3.6 3.6 8.1-8.1L19 7.5 9.5 17z" />,
-  clock: <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm-1 3v6l5 3 .9-1.6-4-2.4V7h-1.9z" />,
-};
-
-function Svg({ d, className }: { d: React.ReactNode; className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-      {d}
-    </svg>
-  );
-}
-
 const STATS = [
   { v: '∞', l: 'Firmen aus echten Quellen' },
   { v: '3', l: 'KI-Spezialisten im Team' },
   { v: '100%', l: 'DSGVO-konform & auf Deutsch' },
   { v: '0 €', l: 'zum Starten – keine Karte' },
+];
+
+const SEARCH_CHIPS = [
+  'Dachdecker in Münster',
+  'Restaurants in Köln ohne Website',
+  'Friseure in Dortmund',
+  'Werbeagenturen in Hamburg',
+  'Zahnärzte in Stuttgart',
+  'Fitnessstudios in Berlin',
+  'Steuerberater in Bremen',
+  'Cafés in Leipzig',
 ];
 
 const FEATURES = [
@@ -60,12 +51,12 @@ const FEATURES = [
 ];
 
 const BENEFITS = [
-  { i: Icon.globe, t: 'Auf Deutsch', d: 'Du chattest ganz normal auf Deutsch – keine Vorlagen, keine Technik.' },
-  { i: Icon.shield, t: 'DSGVO-konform', d: 'Freigabe vor jedem Versand, Daten bleiben unter deiner Kontrolle.' },
-  { i: Icon.bolt, t: 'Blitzschnell', d: 'Recherche, die früher Stunden dauerte, in wenigen Sekunden.' },
-  { i: Icon.check, t: 'Echte Firmendaten', d: 'Aus Google Places & OpenStreetMap – nie erfundene Adressen.' },
-  { i: Icon.clock, t: 'Rund um die Uhr', d: 'Dein Team arbeitet, wann du willst – auch nachts und am Wochenende.' },
-  { i: Icon.mail, t: 'Eigener Absender', d: 'Mails gehen über deine Domain – professionell und vertrauenswürdig.' },
+  { t: 'Auf Deutsch', d: 'Du chattest ganz normal auf Deutsch – keine Vorlagen, keine Technik.' },
+  { t: 'DSGVO-konform', d: 'Freigabe vor jedem Versand, Daten bleiben unter deiner Kontrolle.' },
+  { t: 'Blitzschnell', d: 'Recherche, die früher Stunden dauerte, in wenigen Sekunden.' },
+  { t: 'Echte Firmendaten', d: 'Aus Google Places & OpenStreetMap – nie erfundene Adressen.' },
+  { t: 'Rund um die Uhr', d: 'Dein Team arbeitet, wann du willst – auch nachts und am Wochenende.' },
+  { t: 'Eigener Absender', d: 'Mails gehen über deine Domain – professionell und vertrauenswürdig.' },
 ];
 
 const STEPS = [
@@ -86,7 +77,7 @@ export default function StartPage() {
   return (
     <div className={styles.page}>
       <div className={styles.announce}>
-        🚀 Neu: Dein KI-Vertriebsteam Felix, Anna &amp; Paul –{' '}
+        ✨ Neu: Dein KI-Vertriebsteam Felix, Anna &amp; Paul –{' '}
         <Link href="/signup">jetzt kostenlos starten →</Link>
       </div>
 
@@ -125,29 +116,59 @@ export default function StartPage() {
               Preise ansehen
             </Link>
           </div>
-          <div className={styles.trust}>
-            <span>✓ Keine Kreditkarte</span>
-            <span>✓ In 2 Minuten startklar</span>
-            <span>✓ Jederzeit kündbar</span>
+
+          {/* Team-Strip (Bilder) */}
+          <div className={styles.teamStrip}>
+            <div className={styles.teamAvatars}>
+              {['/team/felix.png', '/team/anna.png', '/team/paul.png'].map((src) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={src} src={src} alt="" className={styles.teamAvatar} />
+              ))}
+            </div>
+            <div className={styles.teamStripLabel}>
+              <strong>Felix · Anna · Paul</strong>
+              <span>dein dreiköpfiges KI-Team</span>
+            </div>
           </div>
         </div>
 
         {/* Produkt-Vorschau */}
-        <div className={styles.mock}>
-          <div className={styles.mockBar}>
-            <span /> <span /> <span />
-          </div>
-          <div className={styles.mockBody}>
-            <ChatLine img="/team/felix.png" name="Felix" accent="#0d63d8" text="3 Restaurants in Borken ohne Website gefunden – Top-Lead: „La Fontanina“." />
-            <ChatLine img="/team/anna.png" name="Anna" accent="#7b3fe4" text="Website analysiert. Kontakt: info@la-fontanina.de · Online-Reservierung fehlt." />
-            <ChatLine img="/team/paul.png" name="Paul" accent="#1f9d57" text="Entwurf fertig: „Mehr Gäste durch Online-Reservierung“. Soll ich senden?" />
-            <div className={styles.mockApprove}>
-              <button>Senden ✓</button>
-              <span>Freigabe durch dich</span>
+        <div className={styles.mockWrap}>
+          <div className={styles.mock}>
+            <div className={styles.mockBar}>
+              <span /> <span /> <span />
             </div>
+            <div className={styles.mockBody}>
+              <ChatLine img="/team/felix.png" name="Felix" text="3 Restaurants in Borken ohne Website gefunden – Top-Lead: „La Fontanina“." />
+              <ChatLine img="/team/anna.png" name="Anna" text="Website analysiert. Kontakt: info@la-fontanina.de · Online-Reservierung fehlt." />
+              <ChatLine img="/team/paul.png" name="Paul" text="Entwurf fertig: „Mehr Gäste durch Online-Reservierung“. Soll ich senden?" />
+              <div className={styles.mockApprove}>
+                <button>Senden ✓</button>
+                <span>Freigabe durch dich</span>
+              </div>
+            </div>
+          </div>
+          <div className={`${styles.floatCard} ${styles.floatCard1}`}>
+            <strong>+12 Leads</strong>
+            <span>diese Woche</span>
+          </div>
+          <div className={`${styles.floatCard} ${styles.floatCard2}`}>
+            <strong>E-Mail gefunden</strong>
+            <span>info@…de</span>
           </div>
         </div>
       </header>
+
+      {/* Laufende Such-Chips */}
+      <section className={styles.marquee}>
+        <div className={styles.marqueeTrack}>
+          {[...SEARCH_CHIPS, ...SEARCH_CHIPS].map((c, i) => (
+            <span key={i} className={styles.searchChip}>
+              {c}
+            </span>
+          ))}
+        </div>
+      </section>
 
       {/* Stat strip */}
       <section className={styles.stats}>
@@ -189,7 +210,7 @@ export default function StartPage() {
               <ul>
                 {f.points.map((p) => (
                   <li key={p}>
-                    <Svg d={Icon.check} className={styles.liIcon} />
+                    <span className={styles.tick} />
                     {p}
                   </li>
                 ))}
@@ -221,7 +242,7 @@ export default function StartPage() {
         </div>
       </section>
 
-      {/* Benefits grid */}
+      {/* Benefits grid (ohne Icons) */}
       <section className={styles.benefits}>
         <div className={styles.sectionHead}>
           <div className={styles.kicker}>Warum Youman</div>
@@ -230,9 +251,6 @@ export default function StartPage() {
         <div className={styles.benefitGrid}>
           {BENEFITS.map((b) => (
             <div key={b.t} className={styles.benefit}>
-              <div className={styles.benefitIcon}>
-                <Svg d={b.i} />
-              </div>
               <div className={styles.benefitTitle}>{b.t}</div>
               <p>{b.d}</p>
             </div>
@@ -288,11 +306,13 @@ export default function StartPage() {
 
       {/* Final CTA */}
       <section className={styles.final}>
-        <h2>Bereit für planbaren Neukunden-Nachschub?</h2>
-        <p>Starte kostenlos – dein KI-Vertriebsteam wartet schon.</p>
-        <Link href="/signup" className={styles.ctaPrimaryLg}>
-          Jetzt loslegen
-        </Link>
+        <div className={styles.finalInner}>
+          <h2>Bereit für planbaren Neukunden-Nachschub?</h2>
+          <p>Starte kostenlos – dein KI-Vertriebsteam wartet schon.</p>
+          <Link href="/signup" className={styles.ctaPrimaryLg}>
+            Jetzt loslegen
+          </Link>
+        </div>
       </section>
 
       {/* Footer */}
@@ -301,41 +321,54 @@ export default function StartPage() {
           <div className={styles.footerBrand}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="Youman Automation" className={styles.footerLogo} />
-            <p>Dein KI-Vertriebsteam für automatisierte B2B-Neukundengewinnung.</p>
+            <p>Dein KI-Vertriebsteam für automatisierte B2B-Neukundengewinnung – Firmen finden, analysieren und persönlich anschreiben, ganz auf Deutsch.</p>
+            <a href="mailto:infoall4youstore@gmail.com" className={styles.footerMail}>
+              infoall4youstore@gmail.com
+            </a>
           </div>
           <div className={styles.footerCols}>
             <div>
               <h4>Produkt</h4>
               <a href="#features">Funktionen</a>
+              <a href="#how">So geht’s</a>
               <Link href="/pricing">Preise</Link>
               <Link href="/signup">Kostenlos starten</Link>
             </div>
             <div>
+              <h4>Das Team</h4>
+              <a href="#features">Felix – Lead-Scout</a>
+              <a href="#features">Anna – Analystin</a>
+              <a href="#features">Paul – Pitch &amp; Versand</a>
+            </div>
+            <div>
               <h4>Konto</h4>
               <Link href="/login">Anmelden</Link>
+              <Link href="/signup">Registrieren</Link>
               <Link href="/dashboard">Dashboard</Link>
             </div>
             <div>
               <h4>Rechtliches</h4>
               <Link href="/privacy">Datenschutz</Link>
+              <a href="mailto:infoall4youstore@gmail.com">Kontakt</a>
             </div>
           </div>
         </div>
-        <div className={styles.footerBottom}>© {new Date().getFullYear()} Youman Automation. Alle Rechte vorbehalten.</div>
+        <div className={styles.footerBottom}>
+          <span>© {new Date().getFullYear()} Youman Automation. Alle Rechte vorbehalten.</span>
+          <span className={styles.footerMade}>Mit ❤️ für den Vertrieb gebaut.</span>
+        </div>
       </footer>
     </div>
   );
 }
 
-function ChatLine({ img, name, accent, text }: { img: string; name: string; accent: string; text: string }) {
+function ChatLine({ img, name, text }: { img: string; name: string; text: string }) {
   return (
     <div className={styles.chatLine}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={img} alt={name} className={styles.chatAvatar} />
       <div className={styles.chatBubble}>
-        <div className={styles.chatName} style={{ color: accent }}>
-          {name}
-        </div>
+        <div className={styles.chatName}>{name}</div>
         <div className={styles.chatText}>{text}</div>
       </div>
     </div>

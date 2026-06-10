@@ -32,7 +32,7 @@
   border-radius: 8px;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #0d73fc, #2f8bff);
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
   color: #fff;
   font-weight: 900;
 }
@@ -98,7 +98,7 @@
   color: #b4530a;
 }
 .appLink {
-  color: #0d73fc;
+  color: #7c3aed;
   font-weight: 700;
   text-decoration: none;
   font-size: 14px;
@@ -126,7 +126,7 @@
 }
 .fill {
   height: 100%;
-  background: linear-gradient(90deg, #0d73fc, #2f8bff);
+  background: linear-gradient(90deg, #7c3aed, #a855f7);
   border-radius: 999px;
   transition: width 0.3s;
 }
@@ -152,7 +152,7 @@
   font-size: 15px;
   font-weight: 700;
   color: #fff;
-  background: linear-gradient(120deg, #0d73fc, #2f8bff);
+  background: linear-gradient(120deg, #7c3aed, #a855f7);
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
@@ -162,7 +162,7 @@
   cursor: not-allowed;
 }
 .plansLink {
-  color: #0d73fc;
+  color: #7c3aed;
   font-weight: 700;
   text-decoration: none;
   font-size: 14px;
