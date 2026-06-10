@@ -32,14 +32,35 @@ serverseitig mit n8n. So braucht der Browser nie Google-Credentials.
 | Dashboard `app/vertrieb/` | ✅ fertig (Typecheck + Lint grün) |
 | Proxy-Routen `app/api/vertrieb/leads`, `…/update` | ✅ fertig |
 | Env-Variable `N8N_WEBHOOK_BASE_URL` | ✅ in `.env.example` dokumentiert |
-| n8n-Workflows | ⏳ **müssen in der eigenen n8n-Instanz neu angelegt werden** (Code unten) |
-| Verdrahtung (Env setzen + LEAD_WEBHOOK_URL) | ⏳ offen |
+| n8n-Workflows | ✅ **angelegt, aktiv & getestet** in Instanz `youmanautomation.app.n8n.cloud` |
+| Verdrahtung (Env setzen + LEAD_WEBHOOK_URL) | ⏳ offen (Werte siehe Schritt 6) |
 
 > Hinweis: Es wurden testweise zwei Workflows in einer Fremd-Instanz
 > (`dankha.app.n8n.cloud`) gebaut — die scheiterten am Google-Zugriff (403), weil
 > deren Google-Konto nicht Eigentümer des Sheets ist. Deshalb der Wechsel auf die
 > eigene n8n-Instanz, die mit `infoall4youstore@gmail.com` verbunden ist und damit
 > Zugriff auf das Sheet hat.
+
+### Live-Stand (Instanz `youmanautomation.app.n8n.cloud`)
+
+| Element | Wert |
+|---------|------|
+| Workflow A — Lead-Eingang | ID `VEnnNKkN0yxtR4l0` |
+| Workflow B — API | ID `qsPNEsO5PIlOGLOQ` |
+| Google-Sheets-Credential | `rlgHesIYyplAOJpD` („Google Sheets account") |
+| SMTP-Credential | `m4Dr1SCZKnMTgyLH` („SMTP account") |
+| Sheet-Tab | **`Leads`** (neu angelegt, siehe Hinweis unten) |
+
+> **4 Korrekturen gegenüber dem ursprünglichen Code** (bereits oben eingearbeitet):
+> 1. **Tab-Name:** `gid 0` existierte im Sheet nicht (der erste Tab/Index 0 trägt
+>    einen unbekannten Eigennamen). Daher wurde ein sauberer Tab **`Leads`**
+>    angelegt; beide Workflows referenzieren ihn per `mode: 'name'`.
+> 2. **Absender:** `fromEmail` = `info@youman-automation.com` (das SMTP-Konto
+>    lehnt andere Absender mit „550 Sender not found" ab).
+> 3. **`cellFormat: 'RAW'`** auf den Schreib-Nodes — sonst interpretiert Google die
+>    Telefonnummer `+49…` als Formel (`#ERROR!`).
+> 4. **`appendOrUpdate`** braucht ein leeres `schema: []` im `columns`-Objekt,
+>    sonst Laufzeitfehler „Could not get parameter columns.schema".
 
 ---
 
@@ -77,13 +98,13 @@ Code-Nodes geben Objekte mit exakt diesen Schlüsseln aus.
    (Format: `credentials: { googleSheetsOAuth2Api: { id: '<ID>', name: '<NAME>' } }`).
 5. Mit `execute_workflow` (Mode `production`) einen Test-Lead durch Workflow A
    schicken und per `get_execution` prüfen, dass die Zeile im Sheet landet.
-   (Tab-Referenz: `sheetName` ist auf gid `0` gesetzt — falls das einen Fehler
-   gibt, den echten Tab-Namen im Sheet nachsehen und `mode: 'name'` nutzen.)
-6. Webhook-Basis-URL der eigenen Instanz holen
-   (`https://DEINE-instanz.app.n8n.cloud/webhook`) und in den Env-Variablen
-   setzen:
-   - `N8N_WEBHOOK_BASE_URL=https://DEINE-instanz.app.n8n.cloud/webhook`
-   - `LEAD_WEBHOOK_URL=https://DEINE-instanz.app.n8n.cloud/webhook/lead-intake`
+   (Tab-Referenz: `sheetName` ist auf `mode: 'name'`, Wert `Leads` gesetzt. Der
+   Tab `Leads` wurde eigens angelegt — falls er fehlt, einmalig über die
+   Google-Sheets-Node-Operation `sheet → create` mit Titel `Leads` erzeugen; die
+   Kopfzeile entsteht beim ersten `append` automatisch.)
+6. Webhook-Basis-URL der eigenen Instanz und in den Env-Variablen setzen:
+   - `N8N_WEBHOOK_BASE_URL=https://youmanautomation.app.n8n.cloud/webhook`
+   - `LEAD_WEBHOOK_URL=https://youmanautomation.app.n8n.cloud/webhook/lead-intake`
 7. Next.js neu starten / deployen → `/vertrieb` zeigt die Leads.
 
 ---
@@ -118,10 +139,10 @@ const readExisting = node({
       resource: 'sheet',
       operation: 'read',
       documentId: { __rl: true, mode: 'id', value: '1097W_Nn0v-bZZhcCthNui7HVUKwOSAArdgDaXjakKeI' },
-      sheetName: { __rl: true, mode: 'id', value: '0' },
+      sheetName: { __rl: true, mode: 'name', value: 'Leads' },
       options: {}
     },
-    credentials: { googleSheetsOAuth2Api: { id: '<DEINE_GS_CRED_ID>', name: '<NAME>' } },
+    credentials: { googleSheetsOAuth2Api: { id: 'rlgHesIYyplAOJpD', name: 'Google Sheets account' } },
     position: [460, 300]
   },
   output: [{ ID: 'L-0001', Name: 'Erika Beispiel' }]
@@ -185,11 +206,11 @@ const appendRow = node({
       resource: 'sheet',
       operation: 'append',
       documentId: { __rl: true, mode: 'id', value: '1097W_Nn0v-bZZhcCthNui7HVUKwOSAArdgDaXjakKeI' },
-      sheetName: { __rl: true, mode: 'id', value: '0' },
+      sheetName: { __rl: true, mode: 'name', value: 'Leads' },
       columns: { mappingMode: 'autoMapInputData', value: null },
-      options: {}
+      options: { cellFormat: 'RAW' }
     },
-    credentials: { googleSheetsOAuth2Api: { id: '<DEINE_GS_CRED_ID>', name: '<NAME>' } },
+    credentials: { googleSheetsOAuth2Api: { id: 'rlgHesIYyplAOJpD', name: 'Google Sheets account' } },
     position: [900, 300]
   },
   output: [{ ID: 'L-0001', Status: 'Neu' }]
@@ -202,7 +223,7 @@ const notify = node({
     name: 'Vertrieb benachrichtigen',
     onError: 'continueRegularOutput',
     parameters: {
-      fromEmail: 'infoall4youstore@gmail.com',
+      fromEmail: 'info@youman-automation.com',
       toEmail: 'infoall4youstore@gmail.com',
       subject: expr('Neuer PV-Lead {{ $(\"Lead aufbereiten\").first().json.ID }}: {{ $(\"Lead aufbereiten\").first().json.Name }} → {{ $(\"Lead aufbereiten\").first().json[\"Zugewiesen an\"] }}'),
       emailFormat: 'html',
@@ -215,7 +236,7 @@ const notify = node({
         '<p><b>Nachricht:</b> {{ $(\"Lead aufbereiten\").first().json.Nachricht }}</p>'),
       options: { appendAttribution: false }
     },
-    credentials: { smtp: { id: '<DEINE_SMTP_CRED_ID>', name: '<NAME>' } },
+    credentials: { smtp: { id: 'm4Dr1SCZKnMTgyLH', name: 'SMTP account' } },
     position: [1120, 300]
   },
   output: [{ success: true }]
@@ -256,10 +277,10 @@ const readAll = node({
       resource: 'sheet',
       operation: 'read',
       documentId: { __rl: true, mode: 'id', value: '1097W_Nn0v-bZZhcCthNui7HVUKwOSAArdgDaXjakKeI' },
-      sheetName: { __rl: true, mode: 'id', value: '0' },
+      sheetName: { __rl: true, mode: 'name', value: 'Leads' },
       options: {}
     },
-    credentials: { googleSheetsOAuth2Api: { id: '<DEINE_GS_CRED_ID>', name: '<NAME>' } },
+    credentials: { googleSheetsOAuth2Api: { id: 'rlgHesIYyplAOJpD', name: 'Google Sheets account' } },
     position: [460, 200]
   },
   output: [{ ID: 'L-0001', Status: 'Neu', Name: 'Max Mustermann' }]
@@ -349,11 +370,11 @@ const updateSheet = node({
       resource: 'sheet',
       operation: 'appendOrUpdate',
       documentId: { __rl: true, mode: 'id', value: '1097W_Nn0v-bZZhcCthNui7HVUKwOSAArdgDaXjakKeI' },
-      sheetName: { __rl: true, mode: 'id', value: '0' },
-      columns: { mappingMode: 'autoMapInputData', matchingColumns: ['ID'], value: null },
-      options: {}
+      sheetName: { __rl: true, mode: 'name', value: 'Leads' },
+      columns: { mappingMode: 'autoMapInputData', matchingColumns: ['ID'], value: null, schema: [] },
+      options: { cellFormat: 'RAW' }
     },
-    credentials: { googleSheetsOAuth2Api: { id: '<DEINE_GS_CRED_ID>', name: '<NAME>' } },
+    credentials: { googleSheetsOAuth2Api: { id: 'rlgHesIYyplAOJpD', name: 'Google Sheets account' } },
     position: [680, 500]
   },
   output: [{ ID: 'L-0001', Status: 'Kontaktiert' }]
