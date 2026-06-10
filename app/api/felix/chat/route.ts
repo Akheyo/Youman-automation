@@ -20,8 +20,10 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-// Any OpenRouter model slug, e.g. "anthropic/claude-sonnet-4.5", "openai/gpt-4o".
-const MODEL = process.env.FELIX_MODEL || 'anthropic/claude-3.5-sonnet';
+// Any OpenRouter model slug (must support tool calling), override via FELIX_MODEL.
+// Default kept on a widely-available model; e.g. "openai/gpt-4o",
+// "anthropic/claude-3.7-sonnet", "google/gemini-2.0-flash-001".
+const MODEL = process.env.FELIX_MODEL || 'openai/gpt-4o-mini';
 const MAX_TOOL_ROUNDS = 5;
 
 const SYSTEM_PROMPT = `Du bist „Felix", der KI-Lead-Scout von Youman Automation. Du hilfst dem Vertrieb, in ganz Deutschland passende Unternehmen zu finden und einzuschätzen.
