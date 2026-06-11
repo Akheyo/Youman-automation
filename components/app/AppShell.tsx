@@ -57,10 +57,10 @@ const PRIMARY: NavItem[] = [
   { href: '/sales', label: 'Lina', icon: 'phone', sub: 'Telefon-Agent' },
 ];
 const SECONDARY: NavItem[] = [
-  { href: '/dashboard#leads', label: 'Leads', icon: 'users' },
-  { href: '/dashboard#followups', label: 'Follow-ups', icon: 'history' },
-  { href: '/dashboard#verlaeufe', label: 'Verläufe', icon: 'history' },
-  { href: '/dashboard#einstellungen', label: 'Einstellungen', icon: 'settings' },
+  { href: '/leads', label: 'Leads', icon: 'users' },
+  { href: '/follow-ups', label: 'Follow-ups', icon: 'history' },
+  { href: '/verlaeufe', label: 'Verläufe', icon: 'history' },
+  { href: '/einstellungen', label: 'Einstellungen', icon: 'settings' },
 ];
 
 export default function AppShell({ email, children }: { email: string | null; children: React.ReactNode }) {
@@ -91,7 +91,12 @@ export default function AppShell({ email, children }: { email: string | null; ch
       <div className={styles.navDivider} />
       <div className={styles.navGroup}>
         {SECONDARY.map((n) => (
-          <Link key={n.href} href={n.href} className={styles.navItemSm} onClick={() => setOpen(false)}>
+          <Link
+            key={n.href}
+            href={n.href}
+            className={`${styles.navItemSm} ${isActive(n.href) ? styles.navActiveSm : ''}`}
+            onClick={() => setOpen(false)}
+          >
             <span className={styles.navIcon}>{Icon[n.icon]}</span>
             <span className={styles.navLabel}>{n.label}</span>
           </Link>
