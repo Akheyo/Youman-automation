@@ -108,7 +108,8 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
               gewichte=None, katalog_kosten=None, katalog_verbrauch=None,
               katalog_marge=None, katalog_bestand=None,
               logistik_mehrkosten_per_typ=None,
-              logistik_einsparung_per_typ=None):
+              logistik_einsparung_per_typ=None,
+              manuelle_masse=None):
     """
     orders: Liste dicts mit 'L','B','menge','auftrag','name'.
     tol_kurz_mm: max Übermaß auf der KURZ-Achse (Breite).
@@ -145,6 +146,11 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
     katalog_marge: dict (cs,cl) → marge_pro_stueck (= VK − EK) für w5.
     katalog_bestand: dict (cs,cl) → bestand (Spec §8 — Bestand > 0
         bevorzugen). Wirkt als kleiner ε-Bonus auf der Objective.
+    manuelle_masse: Liste (cs,cl)-Tupel der manuellen Lagerpaletten
+        (quelle="manuell"). Aufträge, die von mindestens einer dieser
+        Paletten gedeckt werden können, MÜSSEN durch eine manuelle
+        Palette bedient werden — kein Sonder erlaubt. Erst Aufträge
+        ohne passende manuelle Palette laufen durch den freien Solver.
     """
     if not orders:
         return {'standards': [], 'sonder': [], 'gesamt': 0,
@@ -237,6 +243,14 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
     katalog_indizes = [j for j, k in enumerate(keep) if k in katalog_set]
     sonder_indizes = [j for j, k in enumerate(keep) if k not in katalog_set]
 
+    # Manuelle Lagerpaletten-Indizes (quelle="manuell") im keep-Set
+    manuelle_set: set[tuple[int, int]] = set()
+    if manuelle_masse:
+        for l, b in manuelle_masse:
+            manuelle_set.add((min(int(round(l)), int(round(b))),
+                              max(int(round(l)), int(round(b)))))
+    manual_indizes = [j for j, k in enumerate(keep) if k in manuelle_set]
+
     # Ziel-Funktion (Score nach §7-Spec, 7 Gewichte):
     #   Σ_x_katalog [w1 + w4·EK·meng_summe − w5·marge·meng_summe
     #                − w3·verbrauch − bestand_bonus]
@@ -314,6 +328,19 @@ def optimiere(orders, tol_kurz_mm=200, tol_lang_mm=None, max_kombi_teile=3,
     if not sonder_erlaubt:
         for zg in z.values():
             p += zg == 0
+
+    # Manuelle Lagerpaletten-Priorität: Aufträge, die von mindestens einer
+    # manuellen Palette gedeckt werden können, MÜSSEN durch eine solche
+    # bedient werden. Kein Sonder-Fallback erlaubt — manuelle Standards
+    # sind Lagerware und günstiger beim Lieferant.
+    if manual_indizes:
+        for i in range(n):
+            coverable = [j for j in manual_indizes if i in cov[j]]
+            if coverable:
+                p += pulp.lpSum(x[j] for j in coverable) >= 1
+                g = tuple(sorted((O[i][0], O[i][1])))
+                if g in z:
+                    p += z[g] == 0
 
     if sonder_deckel is not None:
         p += pulp.lpSum(z.values()) <= sonder_deckel

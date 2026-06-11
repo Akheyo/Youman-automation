@@ -538,11 +538,17 @@ def optimiere(
     toleranz_h: float | None = None,
     hoehe_aktiv: bool = False,
     sonder_budget: int = 0,
+    manuelle_standards: list[tuple[float, float]] | None = None,
 ) -> OptimierungsErgebnis:
     """Set-Cover-Optimierung der Paletten zu Standardpaletten.
 
     Spec-konformer 5-Phasen-Algorithmus:
 
+    0. **Manuelle Standards vorrangig zuordnen.** Wenn ``manuelle_standards``
+       übergeben wird, werden Artikel zuerst gegen diese Lagerpaletten
+       geprüft: exakter Treffer (∆=0) gewinnt, sonst nächste Palette mit
+       kleinstem ∆L+∆B innerhalb der Toleranz. Erst danach laufen die
+       verbleibenden Artikel durch den Greedy.
     1. **Kandidaten erzeugen.** Für jeden Artikel als Anker wird die größte
        Gruppe gebildet, die innerhalb der Toleranzfenster zusammenbleibt.
        Die Standardgröße ist (max L_i, max W_i) der Gruppe — kleiner geht
@@ -571,6 +577,9 @@ def optimiere(
         sonder_budget: max. Anzahl Aufträge, die als Sonderpalette
             ungebunden bleiben dürfen (0 = jeder Auftrag muss einem
             Standard zugeordnet werden).
+        manuelle_standards: Dimensionen (laenge, breite) aller aktiven
+            manuellen Lagerpaletten (quelle="manuell"). Diese haben
+            Vorrang vor auto-generierten Standards.
     """
     if not paletten:
         return OptimierungsErgebnis(
@@ -614,6 +623,56 @@ def optimiere(
     else:
         H_min = [0.0] * n
         H_max_tol = [float("inf")] * n
+
+    # === Pre-Pass: Manuelle Standardpaletten bevorzugen ===
+    # Manuelle Standards (quelle="manuell") sind Lagerpaletten die beim
+    # Lieferant günstiger sind. Artikel werden ihnen zugeordnet bevor der
+    # Greedy läuft: exakter Treffer (∆L+∆B = 0) gewinnt immer, sonst die
+    # engste Passform innerhalb der Toleranz. Erst Artikel ohne Treffer
+    # fließen in Phase 1–2.
+    pre_abgedeckt: set[int] = set()
+    vorgeordnet: list[tuple[float, float, float, set[int]]] = []
+
+    if manuelle_standards:
+        # Normalisiere: laenge >= breite (wie Palette.__post_init__)
+        norm_ms: list[tuple[float, float]] = list(dict.fromkeys(
+            (max(float(l), float(b)), min(float(l), float(b)))
+            for l, b in manuelle_standards
+        ))
+
+        # Für jeden manuellen Standard: welche Artikel passen hinein?
+        # Bedingung: L_m >= L_min[i], W_m >= W_min[i],
+        #            L_m <= L_max_tol[i], W_m <= W_max_tol[i]
+        ms_with_cov: list[tuple[float, float, list[int]]] = []
+        for L_m, W_m in norm_ms:
+            passt = [
+                i for i in range(n)
+                if L_m >= L_min[i] and W_m >= W_min[i]
+                and L_m <= L_max_tol[i] and W_m <= W_max_tol[i]
+            ]
+            if passt:
+                ms_with_cov.append((L_m, W_m, passt))
+
+        # Greedy über manuelle Kandidaten: kleinster max(∆L+∆B) zuerst
+        # (= exakter Treffer hat ∆=0 und gewinnt immer), Tie-Break: meiste Stückzahl
+        noch_offen_pre: set[int] = set(range(n))
+        while noch_offen_pre and ms_with_cov:
+            aktuelle: list[tuple[float, float, list[int], float, int]] = []
+            for L_m, W_m, alle_passt in ms_with_cov:
+                offen = [i for i in alle_passt if i in noch_offen_pre]
+                if not offen:
+                    continue
+                max_delta = max((L_m - L_min[i]) + (W_m - W_min[i]) for i in offen)
+                total_anz = sum(anzahl[i] for i in offen)
+                aktuelle.append((L_m, W_m, offen, max_delta, total_anz))
+            if not aktuelle:
+                break
+            aktuelle.sort(key=lambda e: (e[3], -e[4]))
+            L_m, W_m, gewaehlte, _, _ = aktuelle[0]
+            H_m = max((H_min[i] for i in gewaehlte), default=0.0)
+            vorgeordnet.append((L_m, W_m, H_m, set(gewaehlte)))
+            pre_abgedeckt |= set(gewaehlte)
+            noch_offen_pre -= set(gewaehlte)
 
     # === Phase 1: Kandidaten ===
     # Für jeden Anker einen "maximalen kompatiblen Cluster" bauen.
@@ -676,8 +735,8 @@ def optimiere(
             return (net_summe, sum(anzahl[i] for i in cov))
         return (float(sum(anzahl[i] for i in cov)), 0.0)
 
-    nicht_abgedeckt: set[int] = set(range(n))
-    auswahl: list[tuple[float, float, float, set[int]]] = []
+    nicht_abgedeckt: set[int] = set(range(n)) - pre_abgedeckt
+    auswahl: list[tuple[float, float, float, set[int]]] = list(vorgeordnet)
     while nicht_abgedeckt:
         # Sonder-Budget K: sobald nur noch K Aufträge ungebunden, abbrechen.
         # Die übrigen werden Sonderpaletten — sie zwingen keinen weiteren

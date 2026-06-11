@@ -1325,6 +1325,7 @@ def run_optimierung() -> None:
     except Exception:
         kat_eintraege = []
     kat_masse = []
+    manuell_masse: list[tuple[int, int]] = []
     katalog_kosten: dict[tuple[int, int], float] = {}
     katalog_marge: dict[tuple[int, int], float] = {}
     katalog_verbrauch: dict[tuple[int, int], float] = {}
@@ -1338,6 +1339,8 @@ def run_optimierung() -> None:
         except Exception:
             continue
         kat_masse.append((cs, cl))
+        if e.get("quelle") == "manuell":
+            manuell_masse.append((cs, cl))
         # EK = EK Lieferant (Default-Beschaffungspreis)
         ek = float(e.get("ek_lieferant_eur",
                             e.get("einkaufspreis_eur", 0)) or 0)
@@ -1455,6 +1458,7 @@ def run_optimierung() -> None:
             katalog_bestand=katalog_bestand or None,
             logistik_mehrkosten_per_typ=log_mehr_map,
             logistik_einsparung_per_typ=log_einsp_map,
+            manuelle_masse=manuell_masse or None,
         )
     # Begründungs-Texte pro Zuordnung anhaengen (Spec §11.9.6)
     if modus2_result is not None:
