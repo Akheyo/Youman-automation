@@ -135,10 +135,11 @@
   border-radius: 999px;
 }
 .heroTitle {
-  font-size: clamp(34px, 4.4vw, 60px);
-  line-height: 1.04;
-  font-weight: 800;
-  letter-spacing: -0.025em;
+  font-family: var(--font-display);
+  font-size: clamp(34px, 4.6vw, 62px);
+  line-height: 1.03;
+  font-weight: 700;
+  letter-spacing: -0.035em;
   margin: 0 0 18px;
   color: #fff;
 }
@@ -351,9 +352,10 @@
   background: rgba(255, 255, 255, 0.16);
 }
 .sectionHead h2 {
-  font-size: clamp(26px, 3vw, 38px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: clamp(27px, 3.1vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
   margin: 0 0 12px;
 }
 .sectionDark .sectionHead h2 {
@@ -648,9 +650,10 @@
   box-shadow: 0 30px 70px rgba(91, 33, 182, 0.3);
 }
 .finalInner h2 {
-  font-size: clamp(26px, 3.2vw, 40px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: clamp(27px, 3.3vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
   margin: 0 0 12px;
 }
 .finalInner p {
