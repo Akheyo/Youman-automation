@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { PlanId } from '@/lib/plans';
 import styles from './dashboard.module.css';
 
-export default function BillingButtons({ hasSubscription, planId }: { hasSubscription: boolean; planId: PlanId }) {
+export default function BillingButtons({ hasSubscription, planId }: { hasSubscription: boolean; planId: PlanId | string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

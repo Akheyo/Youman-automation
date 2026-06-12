@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { requireUser } from '@/lib/supabase/server';
-import { planFor } from '@/lib/plans';
+import { planForUser } from '@/lib/plans';
 import BillingButtons from '../dashboard/BillingButtons';
 import styles from '../dashboard/dashboard.module.css';
 
@@ -15,7 +15,7 @@ export default async function EinstellungenPage() {
     supabase.from('profiles').select('plan, subscription_status, stripe_subscription_id').eq('id', user.id).single(),
     supabase.from('google_tokens').select('email').eq('user_id', user.id).single(),
   ]);
-  const plan = planFor(profile?.plan);
+  const plan = planForUser({ plan: profile?.plan, email: user.email });
   const hasSub = Boolean(profile?.stripe_subscription_id);
   const googleEmail = gt?.email ?? null;
 

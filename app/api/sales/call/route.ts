@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { startVapiCall, vapiConfigured } from '@/lib/vapi';
 import { DEFAULT_AGENT, type AgentConfig } from '@/lib/sales/agent';
-import { planFor } from '@/lib/plans';
+import { planForUser, isOwnerEmail } from '@/lib/plans';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -35,12 +35,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Dieser Lead muss erst freigegeben werden.' }, { status: 403 });
   }
 
-  // Monthly call quota.
+  // Monthly call quota — owners are unlimited and skip the check entirely.
   const { data: profile } = await supabase.from('profiles').select('plan, full_name').eq('id', user.id).single();
-  const plan = planFor(profile?.plan);
-  const { data: allowed, error: quotaErr } = await supabase.rpc('consume_quota', { p_kind: 'call', p_limit: plan.calls });
-  if (!quotaErr && allowed === false) {
-    return NextResponse.json({ error: `Anruf-Limit für diesen Monat erreicht (${plan.calls}). Bitte Tarif upgraden.` }, { status: 402 });
+  const plan = planForUser({ plan: profile?.plan, email: user.email });
+  if (!isOwnerEmail(user.email)) {
+    const { data: allowed, error: quotaErr } = await supabase.rpc('consume_quota', { p_kind: 'call', p_limit: plan.calls });
+    if (!quotaErr && allowed === false) {
+      return NextResponse.json({ error: `Anruf-Limit für diesen Monat erreicht (${plan.calls}). Bitte Tarif upgraden.` }, { status: 402 });
+    }
   }
 
   // Load the Soul config (fall back to defaults).
