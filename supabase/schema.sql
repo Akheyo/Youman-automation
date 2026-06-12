@@ -159,6 +159,12 @@ drop policy if exists "agent_config own" on public.agent_config;
 create policy "agent_config own" on public.agent_config for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- Compliance settings (backfill-safe): call recording on/off + a forced AI
+-- disclosure ("this is a digital assistant") spoken at the start of each call.
+alter table public.agent_config add column if not exists record_calls    boolean not null default true;
+alter table public.agent_config add column if not exists ai_disclosure   boolean not null default true;
+alter table public.agent_config add column if not exists disclosure_text text;
+
 -- ---------------------------------------------------------------------------
 -- call_leads: phone leads (manual, CSV, or handed over from Felix/Anna/Paul)
 --   approved = the owner explicitly cleared this number to be called
@@ -212,6 +218,10 @@ alter table public.calls enable row level security;
 drop policy if exists "calls own" on public.calls;
 create policy "calls own" on public.calls for all
   using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Compliance audit per call: was recording enabled, was AI disclosure enabled.
+alter table public.calls add column if not exists recorded  boolean;
+alter table public.calls add column if not exists disclosed boolean;
 
 create index if not exists calls_user_created_idx on public.calls (user_id, created_at desc);
 

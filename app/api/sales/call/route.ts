@@ -50,7 +50,13 @@ export async function POST(request: Request) {
   // Pre-create the call row so the webhook can attach transcript/outcome later.
   const { data: callRow, error: callErr } = await supabase
     .from('calls')
-    .insert({ user_id: user.id, lead_id: lead.id, status: 'gestartet' })
+    .insert({
+      user_id: user.id,
+      lead_id: lead.id,
+      status: 'gestartet',
+      recorded: cfg.record_calls !== false,
+      disclosed: cfg.ai_disclosure !== false,
+    })
     .select()
     .single();
   if (callErr || !callRow) return NextResponse.json({ error: callErr?.message ?? 'Anruf konnte nicht angelegt werden.' }, { status: 400 });

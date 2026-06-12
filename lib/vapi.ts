@@ -7,7 +7,7 @@
  *   APP_URL               public base URL (for the tool/webhook callback)
  */
 
-import { buildSystemPrompt, callTools, voiceConfig, type AgentConfig, type LeadContext } from './sales/agent';
+import { buildSystemPrompt, buildFirstMessage, callTools, voiceConfig, type AgentConfig, type LeadContext } from './sales/agent';
 
 const VAPI_BASE = 'https://api.vapi.ai';
 
@@ -27,8 +27,10 @@ export async function startVapiCall(input: StartCallInput): Promise<{ id: string
   const appUrl = (process.env.APP_URL || '').replace(/\/$/, '');
   const assistant = {
     name: input.cfg.agent_name,
-    firstMessage: input.cfg.opening_line,
+    firstMessage: buildFirstMessage(input.cfg),
     maxDurationSeconds: input.cfg.max_duration,
+    // Compliance: recording can be switched off per the agent's settings.
+    artifactPlan: { recordingEnabled: input.cfg.record_calls !== false },
     model: {
       provider: 'openai',
       model: 'gpt-4o',

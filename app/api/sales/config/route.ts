@@ -10,7 +10,7 @@ import { DEFAULT_AGENT } from '@/lib/sales/agent';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const EDITABLE = ['agent_name', 'language', 'voice', 'goal', 'opening_line', 'persona', 'guidelines', 'dos', 'donts', 'booking_link', 'max_duration'] as const;
+const EDITABLE = ['agent_name', 'language', 'voice', 'goal', 'opening_line', 'persona', 'guidelines', 'dos', 'donts', 'booking_link', 'max_duration', 'record_calls', 'ai_disclosure', 'disclosure_text'] as const;
 
 export async function GET() {
   const supabase = createClient();

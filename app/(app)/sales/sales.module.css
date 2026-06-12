@@ -594,6 +594,35 @@
   gap: 5px;
   margin-bottom: 14px;
 }
+.cfgHead {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: #1b1733;
+  margin: 22px 0 4px;
+  padding-top: 18px;
+  border-top: 1px solid #eee5fb;
+}
+.cfgToggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #4a4264;
+  cursor: pointer;
+}
+.cfgToggle input {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  accent-color: #7c3aed;
+  flex: 0 0 auto;
+}
+.cfgToggle strong {
+  color: #1b1733;
+}
 .cfgField span {
   font-size: 13px;
   font-weight: 700;
