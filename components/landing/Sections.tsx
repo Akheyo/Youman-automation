@@ -283,7 +283,10 @@ export function LandingFooter() {
           </div>
           <div>
             <h4>Rechtliches</h4>
-            <Link href="/privacy">Datenschutz</Link>
+            <Link href="/impressum">Impressum</Link>
+            <Link href="/datenschutz">Datenschutz</Link>
+            <Link href="/agb">AGB</Link>
+            <Link href="/widerruf">Widerruf</Link>
             <a href="mailto:infoall4youstore@gmail.com">Kontakt</a>
           </div>
         </div>

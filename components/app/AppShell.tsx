@@ -101,10 +101,6 @@ export default function AppShell({ email, children }: { email: string | null; ch
             <span className={styles.navLabel}>{n.label}</span>
           </Link>
         ))}
-        <Link href="/pv" className={styles.navItemSm} onClick={() => setOpen(false)}>
-          <span className={styles.navIcon}>{Icon.sun}</span>
-          <span className={styles.navLabel}>PV-Konfigurator</span>
-        </Link>
       </div>
     </>
   );

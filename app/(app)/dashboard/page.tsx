@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { requireUser } from '@/lib/supabase/server';
 import { planFor } from '@/lib/plans';
+import Onboarding from './Onboarding';
 import styles from './dashboard.module.css';
 
 export const metadata: Metadata = { title: 'Übersicht · Youman Automation' };
@@ -10,18 +11,46 @@ export const dynamic = 'force-dynamic';
 export default async function DashboardPage() {
   const { supabase, user } = await requireUser();
 
-  const [{ data: profile }, leadsRes, callLeadsRes, callsRes, meetingsRes] = await Promise.all([
+  const [{ data: profile }, leadsRes, callLeadsRes, callsRes, meetingsRes, googleRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase.from('leads').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
     supabase.from('call_leads').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
     supabase.from('calls').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
     supabase.from('meetings').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
+    supabase.from('google_tokens').select('user_id', { count: 'exact', head: true }).eq('user_id', user.id),
   ]);
 
   const plan = planFor(profile?.plan);
   const status = profile?.subscription_status as string | null;
   const meetings = meetingsRes.data ?? [];
   const meetingsBooked = meetings.filter((m) => m.status === 'gebucht').length;
+
+  const onboardingSteps = [
+    {
+      id: 'search',
+      title: 'Erste Firmen finden',
+      desc: 'Lass Felix passende Unternehmen für dich recherchieren.',
+      href: '/felix',
+      cta: 'Starten',
+      done: (profile?.search_count ?? 0) > 0 || (leadsRes.count ?? 0) > 0,
+    },
+    {
+      id: 'calendar',
+      title: 'Google-Kalender verbinden',
+      desc: 'Damit Lina Termine direkt in deinen Kalender buchen kann.',
+      href: '/einstellungen',
+      cta: 'Verbinden',
+      done: (googleRes.count ?? 0) > 0,
+    },
+    {
+      id: 'call',
+      title: 'Ersten KI-Anruf starten',
+      desc: 'Lina ruft einen Lead an und vereinbart einen Termin.',
+      href: '/sales',
+      cta: 'Zu Lina',
+      done: (profile?.call_count ?? 0) > 0 || (callsRes.count ?? 0) > 0,
+    },
+  ];
 
   return (
     <div className={styles.page}>
@@ -35,6 +64,8 @@ export default async function DashboardPage() {
             + Neue Suche
           </Link>
         </div>
+
+        <Onboarding steps={onboardingSteps} />
 
         <div className={styles.statRow}>
           <Stat value={leadsRes.count ?? 0} label="Felix-Leads" />
