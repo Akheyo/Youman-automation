@@ -16,6 +16,10 @@ export interface AgentConfig {
   donts: string;
   booking_link: string | null;
   max_duration: number;
+  // Compliance
+  record_calls: boolean;
+  ai_disclosure: boolean;
+  disclosure_text: string | null;
 }
 
 export const DEFAULT_AGENT: AgentConfig = {
@@ -32,7 +36,29 @@ export const DEFAULT_AGENT: AgentConfig = {
   donts: 'Nicht drängen, nicht lügen, bei klarem Nein höflich verabschieden, keine Preise erfinden.',
   booking_link: null,
   max_duration: 240,
+  record_calls: true,
+  ai_disclosure: true,
+  disclosure_text: null,
 };
+
+/**
+ * The mandatory compliance line spoken at the very start of the call when AI
+ * disclosure is enabled (EU AI Act transparency) and/or recording is active
+ * (§ 201 StGB). Returns '' when disclosure is switched off.
+ */
+export function disclosureLine(cfg: AgentConfig): string {
+  if (!cfg.ai_disclosure) return '';
+  if (cfg.disclosure_text && cfg.disclosure_text.trim()) return cfg.disclosure_text.trim();
+  const ai = `Bevor wir starten, ein kurzer Hinweis: Ich bin ${cfg.agent_name}, eine digitale Sprach­assistentin.`;
+  const rec = cfg.record_calls ? ' Dieses Gespräch wird zu Qualitätszwecken aufgezeichnet.' : '';
+  return `${ai}${rec}`;
+}
+
+/** The first message Lina speaks — disclosure (if enabled) followed by the opening line. */
+export function buildFirstMessage(cfg: AgentConfig): string {
+  const d = disclosureLine(cfg);
+  return d ? `${d} ${cfg.opening_line}` : cfg.opening_line;
+}
 
 export interface LeadContext {
   name?: string | null;
@@ -47,10 +73,16 @@ export function buildSystemPrompt(cfg: AgentConfig, lead: LeadContext, ownerName
     .filter(Boolean)
     .join('\n');
 
+  const disclosure = disclosureLine(cfg);
+
   return [
     `Du bist ${cfg.agent_name}, eine KI-Telefonassistentin für ${ownerName}.`,
     `Du sprichst Deutsch, natürlich und in ganzen Sätzen (keine Aufzählungen, keine Emojis — das wird vorgelesen).`,
     ``,
+    disclosure && `## Pflicht-Hinweis (rechtlich, zwingend)`,
+    disclosure &&
+      `Sage GANZ AM ANFANG des Gesprächs wortgetreu: "${disclosure}" Erst danach beginnst du mit deinem Eröffnungssatz. Wenn die Person der Aufzeichnung oder dem Gespräch widerspricht, verabschiede dich höflich und beende das Gespräch.`,
+    disclosure ? `` : undefined,
     `## Deine Persönlichkeit`,
     cfg.persona,
     ``,

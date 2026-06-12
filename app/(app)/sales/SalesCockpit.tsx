@@ -48,6 +48,9 @@ interface Config {
   dos: string;
   donts: string;
   max_duration: number;
+  record_calls: boolean;
+  ai_disclosure: boolean;
+  disclosure_text?: string | null;
 }
 
 type Tab = 'overview' | 'leads' | 'followups' | 'calls' | 'config';
@@ -667,6 +670,44 @@ function ConfigForm({ config, onSaved, setErr }: { config: Config; onSaved: () =
         <span>Max. Gesprächsdauer (Sekunden)</span>
         <input type="number" value={c.max_duration} onChange={(e) => setC({ ...c, max_duration: Number(e.target.value) })} />
       </label>
+
+      <div className={styles.cfgHead}>Rechtliches &amp; Compliance</div>
+      <p className={styles.hint}>
+        Für Anrufe in Deutschland: Lina nennt sich am Anfang als KI zu erkennen (EU&nbsp;AI&nbsp;Act) und weist
+        auf eine Aufzeichnung hin (§&nbsp;201&nbsp;StGB). Empfehlung: beides aktiviert lassen.
+      </p>
+      <label className={styles.cfgToggle}>
+        <input
+          type="checkbox"
+          checked={c.ai_disclosure !== false}
+          onChange={(e) => setC({ ...c, ai_disclosure: e.target.checked })}
+        />
+        <span>
+          <strong>KI-Offenlegung</strong> — Lina sagt am Gesprächsanfang, dass sie eine digitale Assistentin ist.
+        </span>
+      </label>
+      <label className={styles.cfgToggle}>
+        <input
+          type="checkbox"
+          checked={c.record_calls !== false}
+          onChange={(e) => setC({ ...c, record_calls: e.target.checked })}
+        />
+        <span>
+          <strong>Gespräche aufzeichnen</strong> — bei aktiver Offenlegung wird der Hinweis auf die Aufnahme automatisch ergänzt. Aus = nur Transkript, keine Audioaufnahme.
+        </span>
+      </label>
+      {c.ai_disclosure !== false && (
+        <label className={styles.cfgField}>
+          <span>Eigener Offenlegungs-Text (optional — leer = Standardhinweis)</span>
+          <textarea
+            rows={2}
+            value={c.disclosure_text ?? ''}
+            onChange={(e) => setC({ ...c, disclosure_text: e.target.value })}
+            placeholder="Bevor wir starten, ein kurzer Hinweis: Ich bin Lina, eine digitale Sprachassistentin…"
+          />
+        </label>
+      )}
+
       <div className={styles.cfgActions}>
         <button type="submit" disabled={saving}>
           {saving ? 'Speichern…' : 'Speichern'}
