@@ -20,7 +20,7 @@ import { findCompaniesByIndustry, type CompanyResult } from '@/lib/felix/overpas
 import { findCompaniesGoogle } from '@/lib/felix/places-companies';
 import { researchCompany } from '@/lib/felix/research';
 import { createClient } from '@/lib/supabase/server';
-import { planFor, PLANS } from '@/lib/plans';
+import { planForUser, isOwnerEmail, PLANS } from '@/lib/plans';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -299,6 +299,7 @@ export async function POST(request: Request) {
   // When it is not configured, the app runs open (legacy mode) so nothing breaks.
   const sb = createClient();
   let userId: string | null = null;
+  let owner = false;
   let plan = PLANS.free;
   if (sb) {
     const {
@@ -308,8 +309,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Bitte melde dich an, um Felix zu nutzen.', action: 'login' }, { status: 401 });
     }
     userId = user.id;
+    owner = isOwnerEmail(user.email);
     const { data: prof } = await sb.from('profiles').select('plan').eq('id', user.id).single();
-    plan = planFor(prof?.plan);
+    plan = planForUser({ plan: prof?.plan, email: user.email });
   }
 
   const collected: CompanyResult[] = [];
@@ -343,7 +345,7 @@ export async function POST(request: Request) {
         let resultText: string;
 
         if (fnName === 'find_companies') {
-          if (sb && userId && !(await consumeQuota(sb, 'search', plan.searches))) {
+          if (sb && userId && !owner && !(await consumeQuota(sb, 'search', plan.searches))) {
             resultText = `LIMIT_ERREICHT: Der ${plan.name}-Tarif erlaubt ${plan.searches} Firmensuchen pro Monat, das ist aufgebraucht. Sag dem Nutzer freundlich, dass das Monatslimit erreicht ist und er auf der Preis-Seite (/pricing) upgraden kann. Führe KEINE Suche aus.`;
           } else {
             const area = String(args.area || '');
@@ -367,7 +369,7 @@ export async function POST(request: Request) {
               }\n\nWebsite-Text (Auszug):\n${r.text}`
             : `Fehler: ${r.error}`;
         } else if (fnName === 'send_pitch_email') {
-          if (sb && userId && !(await consumeQuota(sb, 'email', plan.emails))) {
+          if (sb && userId && !owner && !(await consumeQuota(sb, 'email', plan.emails))) {
             resultText = `LIMIT_ERREICHT: Der ${plan.name}-Tarif erlaubt ${plan.emails} Pitch-Mails pro Monat, das ist aufgebraucht. Sag dem Nutzer freundlich, dass das Limit erreicht ist und er auf /pricing upgraden kann. Sende KEINE Mail.`;
           } else {
             const sent = await sendPitchEmail({

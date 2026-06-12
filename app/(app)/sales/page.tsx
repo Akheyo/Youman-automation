@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { createClient, supabaseConfigured } from '@/lib/supabase/server';
-import { planFor } from '@/lib/plans';
+import { planForUser } from '@/lib/plans';
 import { vapiConfigured } from '@/lib/vapi';
 import { googleConfigured } from '@/lib/google';
 import SalesCockpit from './SalesCockpit';
@@ -20,7 +20,7 @@ export default async function SalesPage() {
 
   const { data: profile } = await supabase.from('profiles').select('plan, call_count').eq('id', user.id).single();
   const { data: gt } = await supabase.from('google_tokens').select('email').eq('user_id', user.id).single();
-  const plan = planFor(profile?.plan);
+  const plan = planForUser({ plan: profile?.plan, email: user.email });
 
   return (
     <SalesCockpit

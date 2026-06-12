@@ -8,7 +8,7 @@
 export type PlanId = 'free' | 'starter' | 'pro';
 
 export interface Plan {
-  id: PlanId;
+  id: string;
   name: string;
   priceLabel: string;
   searches: number;
@@ -50,8 +50,49 @@ export const PLANS: Record<PlanId, Plan> = {
   },
 };
 
+const UNLIMITED_VALUE = 1_000_000_000;
+
+/** Internal "owner" plan — effectively no limits. Not purchasable. */
+export const UNLIMITED_PLAN: Plan = {
+  id: 'unlimited',
+  name: 'Unbegrenzt',
+  priceLabel: '—',
+  searches: UNLIMITED_VALUE,
+  emails: UNLIMITED_VALUE,
+  calls: UNLIMITED_VALUE,
+  features: ['Unbegrenzte Nutzung (Owner)'],
+};
+
+/** True when a plan carries the unlimited/owner allowance. */
+export function isUnlimited(plan: Plan): boolean {
+  return plan.id === 'unlimited' || plan.searches >= UNLIMITED_VALUE;
+}
+
+// Accounts that always get the unlimited plan and skip all quota checks.
+// Built-in owner(s) plus anything in the OWNER_EMAILS env (comma-separated).
+const BUILTIN_OWNER_EMAILS = ['infoall4youstore@gmail.com'];
+
+export function ownerEmails(): string[] {
+  const fromEnv = (process.env.OWNER_EMAILS || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return [...BUILTIN_OWNER_EMAILS, ...fromEnv];
+}
+
+export function isOwnerEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return ownerEmails().includes(email.toLowerCase());
+}
+
 export function planFor(id: string | null | undefined): Plan {
   return PLANS[(id as PlanId) ?? 'free'] ?? PLANS.free;
+}
+
+/** Plan for a specific user — owners always get the unlimited plan. */
+export function planForUser(opts: { plan?: string | null; email?: string | null }): Plan {
+  if (isOwnerEmail(opts.email)) return UNLIMITED_PLAN;
+  return planFor(opts.plan);
 }
 
 /** Map a Stripe price ID back to a plan (used by the billing webhook). */

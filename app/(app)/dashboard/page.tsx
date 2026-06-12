@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { requireUser } from '@/lib/supabase/server';
-import { planFor } from '@/lib/plans';
+import { planForUser, isUnlimited } from '@/lib/plans';
 import Onboarding from './Onboarding';
 import styles from './dashboard.module.css';
 
@@ -20,7 +20,8 @@ export default async function DashboardPage() {
     supabase.from('google_tokens').select('user_id', { count: 'exact', head: true }).eq('user_id', user.id),
   ]);
 
-  const plan = planFor(profile?.plan);
+  const plan = planForUser({ plan: profile?.plan, email: user.email });
+  const unlimited = isUnlimited(plan);
   const status = profile?.subscription_status as string | null;
   const meetings = meetingsRes.data ?? [];
   const meetingsBooked = meetings.filter((m) => m.status === 'gebucht').length;
@@ -104,10 +105,12 @@ export default async function DashboardPage() {
               Verwalten →
             </Link>
           </div>
-          <Usage label="Firmensuchen" used={profile?.search_count ?? 0} limit={plan.searches} />
-          <Usage label="Pitch-Mails" used={profile?.email_count ?? 0} limit={plan.emails} />
-          <Usage label="KI-Anrufe" used={profile?.call_count ?? 0} limit={plan.calls} />
-          <div className={styles.reset}>Zähler werden zu Monatsbeginn zurückgesetzt.</div>
+          <Usage label="Firmensuchen" used={profile?.search_count ?? 0} limit={plan.searches} unlimited={unlimited} />
+          <Usage label="Pitch-Mails" used={profile?.email_count ?? 0} limit={plan.emails} unlimited={unlimited} />
+          <Usage label="KI-Anrufe" used={profile?.call_count ?? 0} limit={plan.calls} unlimited={unlimited} />
+          <div className={styles.reset}>
+            {unlimited ? 'Unbegrenzte Nutzung für diesen Account aktiv.' : 'Zähler werden zu Monatsbeginn zurückgesetzt.'}
+          </div>
         </section>
 
         <section className={styles.card}>
@@ -145,16 +148,14 @@ function Stat({ value, label, accent }: { value: number | string; label: string;
   );
 }
 
-function Usage({ label, used, limit }: { label: string; used: number; limit: number }) {
-  const pct = Math.min(100, Math.round((used / Math.max(1, limit)) * 100));
-  const over = used >= limit;
+function Usage({ label, used, limit, unlimited }: { label: string; used: number; limit: number; unlimited?: boolean }) {
+  const pct = unlimited ? 0 : Math.min(100, Math.round((used / Math.max(1, limit)) * 100));
+  const over = !unlimited && used >= limit;
   return (
     <div className={styles.usage}>
       <div className={styles.usageHead}>
         <span>{label}</span>
-        <span className={over ? styles.over : ''}>
-          {used} / {limit}
-        </span>
+        <span className={over ? styles.over : ''}>{unlimited ? `${used} / ∞` : `${used} / ${limit}`}</span>
       </div>
       <div className={styles.bar}>
         <div className={styles.fill} style={{ width: `${pct}%`, background: over ? '#e0533c' : undefined }} />
