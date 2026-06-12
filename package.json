@@ -1,11 +1,10 @@
 {
-  "name": "ab-pv-konfigurator",
+  "name": "youman-automation",
   "version": "1.0.0",
   "private": true,
-  "description": "A&B Solarenergy PV-Konfigurator — production-grade 3D PV configurator for NRW (Borken) using NRW LoD2 self-hosted 3D Tiles + LANUK Solarkataster.",
+  "description": "Youman Automation — dein KI-Vertriebsteam: Firmen finden, anschreiben und per KI-Telefonie zum Termin bringen.",
   "license": "UNLICENSED",
   "scripts": {
-    "postinstall": "node scripts/copy-cesium.js",
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
@@ -13,26 +12,17 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:install": "playwright install --with-deps chromium"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",
-    "@turf/turf": "^7.1.0",
-    "cesium": "^1.123.0",
-    "html2canvas": "^1.4.1",
-    "jspdf": "^2.5.2",
     "next": "^14.2.13",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "stripe": "^22.2.0",
-    "zustand": "^4.5.5"
+    "stripe": "^22.2.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.47.2",
-    "@types/geojson": "^7946.0.14",
     "@types/node": "^22.7.4",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",

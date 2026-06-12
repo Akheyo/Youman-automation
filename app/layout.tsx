@@ -1,20 +1,19 @@
 import type { Metadata, Viewport } from 'next';
-import Script from 'next/script';
 import './globals.css';
 import PwaRegister from './pwa-register';
 
 export const metadata: Metadata = {
-  title: 'A&B Solarenergy — PV-Konfigurator',
+  title: 'Youman Automation — dein KI-Vertriebsteam, das anruft & Termine bucht',
   description:
-    'Photovoltaik-Konfigurator für NRW — in 5 Sekunden zur optimalen Solaranlage. Mit echten Dachformen aus dem NRW-Solarkataster.',
-  authors: [{ name: 'A&B Solarenergy', url: 'https://www.ab-solarenergy.de' }],
+    'Youman Automation ist dein KI-Vertriebsteam: Firmen finden, analysieren, anschreiben – und per Telefon zum Termin bringen. Auf Deutsch, DSGVO-konform.',
+  authors: [{ name: 'Youman Automation' }],
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Felix' },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Youman' },
   icons: { icon: '/icons/icon-192.png', apple: '/icons/apple-touch-icon.png' },
   openGraph: {
-    title: 'A&B Solarenergy — PV-Konfigurator',
+    title: 'Youman Automation — dein KI-Vertriebsteam',
     description:
-      'Adresse eingeben → Solaranlage konfigurieren → Angebot erhalten. Kostenlos, unverbindlich.',
+      'Firmen finden, anschreiben und per KI-Telefonie zum Termin bringen. Auf Deutsch, DSGVO-konform.',
     type: 'website',
     locale: 'de_DE',
   },
@@ -23,7 +22,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0D73FC',
+  themeColor: '#7c3aed',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -37,23 +36,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap"
         />
-        {/* eslint-disable-next-line @next/next/no-css-tags */}
-        <link rel="stylesheet" href="/cesium/Widgets/widgets.css" />
       </head>
       <body>
-        {/*
-          Cesium is loaded as a same-origin script from /cesium (copied from
-          node_modules at install time). beforeInteractive ensures window.Cesium
-          is ready before the configurator hydrates.
-        */}
-        <Script
-          src="/cesium/Cesium.js"
-          strategy="beforeInteractive"
-          id="cesium-runtime"
-        />
-        <Script id="cesium-base-url" strategy="beforeInteractive">
-          {"window.CESIUM_BASE_URL = '/cesium';"}
-        </Script>
         {children}
         <PwaRegister />
       </body>
