@@ -286,12 +286,26 @@ def init_state() -> None:
             "datum_bis": "",
         },
         "seite": "Datenimport",
+        "update_info": None,         # dict | None — Ergebnis des Update-Checks
+        "update_geprueft": False,    # True sobald der erste Check gelaufen ist
     }
     for k, v in defaults.items():
         st.session_state.setdefault(k, v)
 
 
 init_state()
+
+# Hintergrund-Update-Check — einmalig pro Session, nicht blockierend
+if not st.session_state.update_geprueft:
+    def _update_callback(result) -> None:
+        st.session_state.update_info = result
+        st.session_state.update_geprueft = True
+
+    try:
+        from updater import pruefe_update_async
+        pruefe_update_async(on_done=_update_callback)
+    except Exception:
+        st.session_state.update_geprueft = True
 
 
 def aktiver_schritt() -> int:
@@ -371,6 +385,18 @@ with st.sidebar:
         '</div>',
         unsafe_allow_html=True,
     )
+    # Update-Badge wenn neue Version verfügbar
+    _upd = st.session_state.get("update_info")
+    if _upd:
+        st.markdown(
+            f'<div style="background:#fef3c7;border:1px solid #f59e0b;'
+            f'border-radius:6px;padding:6px 10px;margin:6px 12px;'
+            f'font-size:11px;color:#92400e;">'
+            f'🔔 <b>Update verfügbar: v{escape(str(_upd["version"]))}</b><br>'
+            f'<span style="color:#78350f;">→ App-Einstellungen</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -6872,6 +6898,61 @@ def seite_app_einstellungen() -> None:
         st.markdown(f"**Selbsttest:** {s['passed_count']}/{s['total']} "
                     f"({'bestanden' if s.get('passed') else 'FAIL'})")
         st.caption(s.get("timestamp", ""))
+    card_close()
+
+    # ------------------------------------------------------------------
+    # Update-Karte
+    # ------------------------------------------------------------------
+    card_open("Software-Update")
+    try:
+        from updater import pruefe_update, cache_leeren, _current_version
+        aktuell = _current_version()
+        st.markdown(
+            f'<div style="font-size:13px;color:#374151;">Installierte Version: '
+            f'<b>v{escape(aktuell)}</b></div>',
+            unsafe_allow_html=True,
+        )
+        col_btn, col_hint = st.columns([1, 2])
+        with col_btn:
+            if st.button("🔄 Auf Updates prüfen", key="update_check_btn",
+                         use_container_width=True):
+                cache_leeren()
+                st.session_state.update_info = None
+                st.session_state.update_geprueft = False
+                with st.spinner("Prüfe…"):
+                    info = pruefe_update(timeout=8.0)
+                st.session_state.update_info = info
+                st.session_state.update_geprueft = True
+                st.rerun()
+
+        upd = st.session_state.get("update_info")
+        geprueft = st.session_state.get("update_geprueft", False)
+
+        if upd:
+            st.success(
+                f"Neue Version verfügbar: **v{upd['version']}** "
+                f"(aktuell: v{upd.get('current_version', aktuell)})"
+            )
+            if upd.get("release_date"):
+                st.caption(f"Veröffentlicht: {upd['release_date']}")
+            if upd.get("changelog"):
+                st.info(f"**Was ist neu:** {upd['changelog']}")
+            if upd.get("download_url"):
+                st.link_button(
+                    "⬇️ Update herunterladen",
+                    upd["download_url"],
+                    use_container_width=True,
+                )
+                st.caption(
+                    "Nach dem Download: neue EXE starten. "
+                    "Deine Daten (Katalog, Verlauf) bleiben erhalten."
+                )
+        elif geprueft:
+            st.success("App ist aktuell — kein Update verfügbar.")
+        else:
+            st.caption("Update-Status wird im Hintergrund geprüft…")
+    except Exception as _upd_err:
+        st.caption(f"Update-Prüfung nicht verfügbar. ({_upd_err})")
     card_close()
 
     _stub("Geplante App-Einstellungen",

@@ -1,0 +1,6 @@
+{
+  "version": "1.1.5",
+  "release_date": "2026-06-12",
+  "download_url": "https://github.com/akheyo/youman-automation/releases/latest",
+  "changelog": "Manuelle Lagerpaletten werden jetzt bevorzugt verwendet (kein falsches Eigenmaß mehr bei vorhandenem Standard)"
+}
