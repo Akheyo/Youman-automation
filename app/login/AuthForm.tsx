@@ -128,6 +128,12 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
             />
           </label>
 
+          {!isSignup && (
+            <div className={styles.forgot}>
+              <Link href="/passwort-vergessen">Passwort vergessen?</Link>
+            </div>
+          )}
+
           {error && <div className={styles.error}>{error}</div>}
           {info && <div className={styles.info}>{info}</div>}
 
