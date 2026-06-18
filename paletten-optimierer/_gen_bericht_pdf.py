@@ -246,6 +246,9 @@ pdf.multi_cell(W, 4.5, "Hinweis: Alle Preis- und Aufwandsangaben sind "
                "Der finale Preis hängt von Zielkunde, Support-Umfang und "
                "Exklusivität ab.")
 
-out = "/home/user/Youman-automation/paletten-optimierer/mini/Projekt_und_Preisbericht.pdf"
-pdf.output(out)
-print("PDF erstellt:", out)
+if __name__ == "__main__":
+    import os as _os
+    out = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
+                        "Projekt_und_Preisbericht.pdf")
+    pdf.output(out)
+    print("PDF erstellt:", out)

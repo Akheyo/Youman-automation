@@ -5,7 +5,7 @@ Tabs aktiv; 'full' zeigt alles.
 
 Pfad:
   1. ENV-Override: PALETTENMINI_CONFIG
-  2. Neben app_mini.py: config.json
+  2. Neben app.py: config.json
   3. User-Profile: ~/.palettenmini/config.json
   4. Fallback: 'basic'-Default
 
@@ -55,7 +55,7 @@ def _config_pfad() -> Path | None:
         p = Path(env)
         if p.exists():
             return p
-    # neben app_mini.py
+    # neben app.py
     hier = Path(__file__).resolve().parent
     p_lokal = hier / "config.json"
     if p_lokal.exists():

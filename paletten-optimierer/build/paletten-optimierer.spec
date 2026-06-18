@@ -1,24 +1,21 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller-Spec für den Paletten Optimierer.
+"""PyInstaller-Spec für Youman.
 
 Streamlit hat viele dynamische Imports und liest zur Laufzeit Package-
 Metadaten — beides muss explizit eingesammelt werden, sonst startet das
 gepackte Binary nicht.
 """
 
-import os
-from pathlib import Path
+import os as _os
 
 from PyInstaller.utils.hooks import collect_all, collect_data_files, copy_metadata
 
 
 # Vollständig einsammeln (datas + binaries + hidden imports)
 streamlit_datas, streamlit_binaries, streamlit_hidden = collect_all("streamlit")
-plotly_datas, plotly_binaries, plotly_hidden = collect_all("plotly")
-altair_datas, altair_binaries, altair_hidden = collect_all("altair")
 pandas_datas, pandas_binaries, pandas_hidden = collect_all("pandas")
 openpyxl_datas, openpyxl_binaries, openpyxl_hidden = collect_all("openpyxl")
-reportlab_datas, reportlab_binaries, reportlab_hidden = collect_all("reportlab")
+pulp_datas, pulp_binaries, pulp_hidden = collect_all("pulp")
 
 try:
     pyarrow_datas, pyarrow_binaries, pyarrow_hidden = collect_all("pyarrow")
@@ -30,10 +27,18 @@ try:
 except Exception:
     numpy_datas, numpy_binaries, numpy_hidden = [], [], []
 
+try:
+    fpdf_datas, fpdf_binaries, fpdf_hidden = collect_all("fpdf")
+except Exception:
+    fpdf_datas, fpdf_binaries, fpdf_hidden = [], [], []
 
-# Streamlit's Frontend-Static-Files explizit nachziehen.
-# `collect_all` packt sie in modernen PyInstaller-Versionen meist mit ein,
-# aber wir sind robust und ergänzen sie noch einmal mit collect_data_files.
+try:
+    webview_datas, webview_binaries, webview_hidden = collect_all("webview")
+except Exception:
+    webview_datas, webview_binaries, webview_hidden = [], [], []
+
+
+# Streamlit-Frontend-Static-Files explizit nachziehen.
 streamlit_static = collect_data_files("streamlit", include_py_files=False)
 streamlit_runtime_static = collect_data_files(
     "streamlit.runtime", include_py_files=False
@@ -44,31 +49,61 @@ streamlit_runtime_static = collect_data_files(
 metadata = (
     copy_metadata("streamlit")
     + copy_metadata("pandas")
-    + copy_metadata("plotly")
-    + copy_metadata("altair")
     + copy_metadata("openpyxl")
-    + copy_metadata("reportlab")
+    + copy_metadata("pulp")
     + copy_metadata("numpy")
 )
 try:
-    metadata += copy_metadata("pyarrow")
+    metadata += copy_metadata("fpdf2")
 except Exception:
     pass
+try:
+    metadata += copy_metadata("pywebview")
+except Exception:
+    pass
+
+
+# Selbsttest-Status (optional, vom CI-Lauf erzeugt)
+_status_quelle = "../selbsttest_status.json"
+_has_status = _os.path.exists(_status_quelle)
 
 
 # Eigene App-Module + Beispieldatei + Logo als Daten mitpacken
 app_datas = [
     ("../app.py", "."),
-    ("../optimizer.py", "."),
-    ("../license_config.py", "."),
+    ("../optimierer_kern.py", "."),
+    ("../import_excel.py", "."),
+    ("../import_verlauf.py", "."),
+    ("../import_doppelschutz.py", "."),
+    ("../palettenkatalog.py", "."),
+    ("../bestellungen.py", "."),
+    ("../wirtschaftlichkeit.py", "."),
+    ("../wirt_kandidaten.py", "."),
+    ("../verbrauch.py", "."),
+    ("../procurement.py", "."),
+    ("../lieferanten.py", "."),
+    ("../kostenanalyse_szenarien.py", "."),
+    ("../berichte.py", "."),
+    ("../audit_log.py", "."),
+    ("../preis_historie.py", "."),
+    ("../wiederbeschaffung.py", "."),
+    ("../auftraege.py", "."),
+    ("../artikel_stammdaten.py", "."),
+    ("../edition.py", "."),
+    ("../groessen_historie.py", "."),
+    ("../updater.py", "."),
+    ("../auth.py", "."),
+    ("../config.json", "."),
+    ("../update_manifest.json", "."),
+    ("../.streamlit/config.toml", ".streamlit"),
+    ("../_render.py", "."),
+    ("../_ui_chrome.py", "."),
     ("../_build_info.py", "."),
-    ("../db.py", "."),
-    ("../excel_handler.py", "."),
-    ("../pdf_generator.py", "."),
-    ("../storage_handler.py", "."),
-    ("../data/beispiel_palettenliste.xlsx", "data"),
     ("../assets/youman_logo.png", "assets"),
 ]
+
+if _has_status:
+    app_datas.append((_status_quelle, "."))
 
 
 extra_hidden = [
@@ -80,46 +115,32 @@ extra_hidden = [
     "streamlit.runtime.scriptrunner",
     "streamlit.runtime.scriptrunner.magic_funcs",
     "streamlit.runtime.caching",
-    "streamlit.runtime.caching.cache_data_api",
-    "streamlit.runtime.caching.cache_resource_api",
     "openpyxl.cell._writer",
-    "pkg_resources.py2_warn",
-    "pkg_resources.markers",
+    "pulp",
+    "pulp.apis",
+    "pulp.apis.coin_api",
+    # pywebview + Windows-EdgeChromium-Backend
+    "webview",
+    "webview.platforms.winforms",
+    "webview.platforms.edgechromium",
+    "clr_loader",
+    "pythonnet",
 ]
 
 
 a = Analysis(
     ["../run_app.py"],
     pathex=["..", "."],
-    binaries=streamlit_binaries
-    + plotly_binaries
-    + altair_binaries
-    + pandas_binaries
-    + openpyxl_binaries
-    + reportlab_binaries
-    + pyarrow_binaries
-    + numpy_binaries,
-    datas=app_datas
-    + metadata
-    + streamlit_datas
-    + streamlit_static
-    + streamlit_runtime_static
-    + plotly_datas
-    + altair_datas
-    + pandas_datas
-    + openpyxl_datas
-    + reportlab_datas
-    + pyarrow_datas
-    + numpy_datas,
-    hiddenimports=streamlit_hidden
-    + plotly_hidden
-    + altair_hidden
-    + pandas_hidden
-    + openpyxl_hidden
-    + reportlab_hidden
-    + pyarrow_hidden
-    + numpy_hidden
-    + extra_hidden,
+    binaries=streamlit_binaries + pandas_binaries + openpyxl_binaries
+             + pulp_binaries + pyarrow_binaries + numpy_binaries
+             + fpdf_binaries + webview_binaries,
+    datas=app_datas + metadata + streamlit_datas
+          + streamlit_static + streamlit_runtime_static
+          + pandas_datas + openpyxl_datas + pulp_datas
+          + pyarrow_datas + numpy_datas + fpdf_datas + webview_datas,
+    hiddenimports=streamlit_hidden + pandas_hidden + openpyxl_hidden
+                  + pulp_hidden + pyarrow_hidden + numpy_hidden
+                  + fpdf_hidden + webview_hidden + extra_hidden,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
