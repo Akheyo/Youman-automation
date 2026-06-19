@@ -46,9 +46,15 @@ Ich habe die Website von … angeschaut: …
 Datenquelle: Du hast ein Werkzeug \`find_companies\`, das echte Betriebe nach Ort (Stadt, Landkreis, Region) und Branche liefert — mit Name, Adresse, Telefon, Website-Status und Branchen-Typen.
 
 So arbeitest du:
-- Wenn die Person eine Region und/oder Branche nennt, rufe \`find_companies\` mit \`area\` (Ort) und \`industry\` (Branche in normalen Worten, z. B. „Dachdecker", „Friseure", „Werbeagenturen") auf.
+- Wenn die Person eine Region und/oder Branche nennt, rufe \`find_companies\` mit \`area\` (Ort) und \`industry\` (Branche/Tätigkeit in normalen Worten, z. B. „Dachdecker", „Friseure", „Werbeagenturen") auf.
 - Fehlt Ort ODER Branche, frage kurz nach (eine Frage, nicht mehrere).
 - Für Kaltakquise ist \`without_website: true\` oft wertvoll (Betriebe ohne Website = klarer Mehrwert für Web/Automation-Angebote).
+
+ZIELGRUPPE FREI INTERPRETIEREN (sehr wichtig): Der Nutzer beschreibt seine Zielgruppe oft NICHT als saubere Branche, sondern als Tätigkeit oder als Bedarf. Übersetze JEDE solche Beschreibung selbstständig in ein oder mehrere konkrete, suchbare Stichworte und rufe damit \`find_companies\` auf — frag NICHT zurück „welche Branche meinst du", sondern leite es ab und nenne dem Nutzer kurz, was du gewählt hast.
+- Tätigkeitsbeschreibung → passendes Stichwort. Beispiele: „Agenturen, die Vertrieb machen" → \`industry: "Vertriebsagentur"\` (ggf. zusätzlich „Werbeagentur", „Leadagentur", „Callcenter"); „Firmen, die Webseiten bauen" → „Webdesign-Agentur".
+- Bedarfsbeschreibung (WER würde das Angebot des Nutzers brauchen?) → leite 2–4 passende Zielbranchen ab und such sie NACHEINANDER mit mehreren \`find_companies\`-Aufrufen. Beispiele: „Firmen, die Akquise-Mails schreiben könnten / von Kaltakquise profitieren" → z. B. „Werbeagentur", „Unternehmensberatung", „IT-Dienstleister", „Personaldienstleister"; „Betriebe, die eine Website bräuchten" → relevante Handwerks-/Dienstleistungsbranchen mit \`without_website: true\`.
+- Sag dem Nutzer in einem Satz, welche Stichworte/Branchen du gesucht hast, fasse die Treffer zusammen und biete an, weitere Branchen zu ergänzen oder eine andere Region zu nehmen.
+- \`industry\` darf also ein Branchen-Begriff ODER eine Tätigkeit sein. Halte den Begriff kurz und suchbar (kein ganzer Satz).
 
 WICHTIG — Einschätzung des Geschäfts: Lies die Branchen-Typen/Tags (descriptors) jedes Treffers und ordne ein, WAS die Firma macht. Sag pro relevantem Treffer in einem Halbsatz, worum es sich handelt. Erkenne und kennzeichne dabei besonders:
 - Vertriebs-/Verkaufsagenturen, Call-Center, Marketing-/Werbeagenturen, Makler — also Firmen, die selbst Akquise/Vertrieb betreiben. Markiere sie klar (z. B. „⚑ betreibt selbst Vertrieb/Akquise"), weil das für unsere Ansprache relevant ist (Partner oder Wettbewerber statt klassischer Kunde).
@@ -72,7 +78,7 @@ const FIND_COMPANIES_TOOL = {
   function: {
     name: 'find_companies',
     description:
-      'Findet reale Unternehmen/Betriebe in Deutschland nach Ort und Branche. Gibt Name, Adresse, Telefon, Website-Status und Branchen-Typen zurück. Nutze es immer, wenn der Nutzer Firmen in einer Region/Branche sucht — rate Firmendaten niemals selbst.',
+      'Findet reale Unternehmen/Betriebe in Deutschland nach Ort und Branche/Tätigkeit. Gibt Name, Adresse, Telefon, Website-Status und Branchen-Typen zurück. Nutze es immer, wenn der Nutzer Firmen sucht — auch wenn er die Zielgruppe als Tätigkeit ("Agenturen, die Vertrieb machen") oder als Bedarf ("Firmen, die Akquise-Mails brauchen könnten") beschreibt: übersetze das selbst in passende Stichworte und rufe das Werkzeug ggf. mehrfach für mehrere Branchen auf. Rate Firmendaten niemals selbst.',
     parameters: {
       type: 'object',
       properties: {
@@ -82,7 +88,8 @@ const FIND_COMPANIES_TOOL = {
         },
         industry: {
           type: 'string',
-          description: 'Branche in normalen Worten, z. B. "Dachdecker", "Friseure", "Restaurants", "Werbeagenturen".',
+          description:
+            'Branche ODER Tätigkeit als kurzes, suchbares Stichwort (kein ganzer Satz), z. B. "Dachdecker", "Friseure", "Werbeagentur", "Vertriebsagentur", "Unternehmensberatung", "IT-Dienstleister". Beschreibt der Nutzer eine Tätigkeit/Bedarf, wandle das vorher in ein solches Stichwort um.',
         },
         without_website: {
           type: 'boolean',
