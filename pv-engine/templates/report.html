@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>PV-Ertragsprognose — {{ project_name }}</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; @bottom-center { content: "Seite " counter(page) " / " counter(pages); font-size: 8pt; color: #888; } }
+  * { box-sizing: border-box; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #222; font-size: 10pt; line-height: 1.4; }
+  h1 { font-size: 20pt; color: #2e7d32; margin: 0 0 2mm; }
+  h2 { font-size: 13pt; color: #1565c0; border-bottom: 1.5px solid #1565c0; padding-bottom: 1mm; margin: 8mm 0 3mm; }
+  .sub { color: #666; font-size: 9pt; margin-bottom: 6mm; }
+  .kpi-grid { display: flex; flex-wrap: wrap; gap: 4mm; margin: 4mm 0; }
+  .kpi { flex: 1 1 28%; border: 1px solid #ddd; border-radius: 6px; padding: 3mm 4mm; background: #fafafa; }
+  .kpi .label { font-size: 8pt; color: #777; text-transform: uppercase; letter-spacing: .3px; }
+  .kpi .value { font-size: 16pt; font-weight: 700; color: #2e7d32; }
+  .kpi .unit { font-size: 9pt; color: #777; }
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0; font-size: 9pt; }
+  th, td { text-align: left; padding: 1.6mm 2mm; border-bottom: 1px solid #eee; }
+  th { background: #f0f4f8; color: #333; }
+  td.num, th.num { text-align: right; }
+  img.chart { width: 100%; margin: 3mm 0; }
+  .banner { background: #fff8e1; border: 1px solid #ffd54f; border-radius: 6px; padding: 3mm; font-size: 8.5pt; color: #6d4c00; margin: 3mm 0; }
+  .footer-note { font-size: 7.5pt; color: #999; margin-top: 6mm; }
+  .pagebreak { page-break-before: always; }
+  .twocol { display: flex; gap: 6mm; }
+  .twocol > div { flex: 1; }
+</style>
+</head>
+<body>
+
+  <h1>Photovoltaik-Ertragsprognose</h1>
+  <div class="sub">
+    {{ project_name }}{% if customer_name %} · {{ customer_name }}{% endif %}<br>
+    {{ address }}<br>
+    Erstellt am {{ generated_at }} · Engine v{{ engine_version }}
+  </div>
+
+  {% if climate_fallback %}
+  <div class="banner">
+    <strong>Hinweis:</strong> Diese Prognose verwendet synthetische Klimadaten
+    ({{ climate_source }}), da keine PVGIS-Messreihe verfügbar war. Für ein
+    belastbares Angebot mit echten Standortdaten erneut mit Internetzugang erzeugen.
+  </div>
+  {% endif %}
+
+  <h2>1 · Anlagenübersicht & Kennzahlen</h2>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="label">Anlagenleistung</div><div class="value">{{ kwp }}</div><div class="unit">kWp · {{ modules }} Module</div></div>
+    <div class="kpi"><div class="label">Jahresertrag</div><div class="value">{{ annual_yield }}</div><div class="unit">kWh / Jahr</div></div>
+    <div class="kpi"><div class="label">Spez. Ertrag</div><div class="value">{{ specific_yield }}</div><div class="unit">kWh/kWp</div></div>
+    <div class="kpi"><div class="label">Performance Ratio</div><div class="value">{{ pr }}</div><div class="unit">%</div></div>
+    <div class="kpi"><div class="label">Eigenverbrauch</div><div class="value">{{ self_consumption_pct }}</div><div class="unit">% · Autarkie {{ autarky }} %</div></div>
+    <div class="kpi"><div class="label">CO₂-Einsparung</div><div class="value">{{ co2 }}</div><div class="unit">t / Jahr</div></div>
+  </div>
+
+  <table>
+    <tr><th>Komponente</th><th>Wert</th></tr>
+    <tr><td>Modul</td><td>{{ module_name }} · {{ module_wp }} Wp</td></tr>
+    <tr><td>Wechselrichter</td><td>{{ inverter_name }} · {{ inverter_kw }} kW</td></tr>
+    {% if battery_kwh > 0 %}<tr><td>Batteriespeicher</td><td>{{ battery_kwh }} kWh · {{ battery_cycles }} Zyklen/Jahr</td></tr>{% endif %}
+    <tr><td>Verschaltung</td><td>{{ strings }} Strings à {{ modules_per_string }} Module · DC/AC {{ dc_ac }}</td></tr>
+    <tr><td>Verschattungsverlust</td><td>{{ shading }} %</td></tr>
+    <tr><td>Klimadatenquelle</td><td>{{ climate_source }}</td></tr>
+  </table>
+
+  <h2>2 · Monatliche Erträge</h2>
+  <img class="chart" src="{{ monthly_chart }}" alt="Monatsertrag">
+  <table>
+    <tr><th>Monat</th><th class="num">Ertrag kWh</th><th class="num">Verbrauch kWh</th><th class="num">Eigenverbr. kWh</th><th class="num">Einspeisung kWh</th><th class="num">Netzbezug kWh</th></tr>
+    {% for m in monthly %}
+    <tr>
+      <td>{{ m.name }}</td>
+      <td class="num">{{ m.yield_kwh }}</td>
+      <td class="num">{{ m.consumption_kwh }}</td>
+      <td class="num">{{ m.self_consumption_kwh }}</td>
+      <td class="num">{{ m.feed_in_kwh }}</td>
+      <td class="num">{{ m.grid_draw_kwh }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <h2>3 · Energiefluss</h2>
+  <img class="chart" src="{{ energy_flow_chart }}" alt="Energiefluss">
+
+  <div class="pagebreak"></div>
+  <h2>4 · Wirtschaftlichkeit</h2>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="label">Investition</div><div class="value">{{ capex }}</div><div class="unit">€ (brutto)</div></div>
+    <div class="kpi"><div class="label">Amortisation</div><div class="value">{{ payback }}</div><div class="unit">Jahre</div></div>
+    <div class="kpi"><div class="label">Gewinn nach {{ years }} J</div><div class="value">{{ profit }}</div><div class="unit">€</div></div>
+    <div class="kpi"><div class="label">Rendite (ROI)</div><div class="value">{{ roi }}</div><div class="unit">% · IRR {{ irr }}</div></div>
+    <div class="kpi"><div class="label">Stromgestehungskosten</div><div class="value">{{ lcoe }}</div><div class="unit">ct/kWh</div></div>
+    <div class="kpi"><div class="label">EEG-Vergütung</div><div class="value">{{ feed_in_ct }}</div><div class="unit">ct/kWh</div></div>
+  </div>
+
+  <img class="chart" src="{{ cashflow_chart }}" alt="Cashflow">
+
+  <table>
+    <tr><th>Jahr</th><th class="num">Ersparnis €</th><th class="num">Einspeisung €</th><th class="num">Betriebskosten €</th><th class="num">Cashflow €</th><th class="num">Kumuliert €</th></tr>
+    {% for c in cashflow %}
+    <tr>
+      <td>{{ c.year }}</td>
+      <td class="num">{{ "%.0f"|format(c.savings_eur) }}</td>
+      <td class="num">{{ "%.0f"|format(c.feed_in_revenue_eur) }}</td>
+      <td class="num">{{ "%.0f"|format(c.opex_eur) }}</td>
+      <td class="num">{{ "%.0f"|format(c.net_cashflow_eur) }}</td>
+      <td class="num">{{ "%.0f"|format(c.cumulative_eur) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <div class="footer-note">
+    Diese Prognose wurde mit der hauseigenen PV-Planungs-Engine (pvlib-Simulationskern,
+    Hay-&-Davies-Transposition, Faiman-Temperaturmodell) erstellt. Erträge sind
+    Prognosewerte und keine Garantie. EEG-Sätze nach Stand des Inbetriebnahmedatums.
+    Nicht für behördliche Förderanträge zertifiziert.
+  </div>
+
+</body>
+</html>

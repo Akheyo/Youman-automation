@@ -1,0 +1,20 @@
+{
+  "project_name": "Musteranlage Borken",
+  "customer_name": "Fam. Mustermann",
+  "location": {
+    "address": "Mölndalstraße 8, 46325 Borken",
+    "latitude": 51.84,
+    "longitude": 6.86,
+    "altitude_m": 50
+  },
+  "roofs": [
+    { "name": "Süddach", "tilt_deg": 35, "azimuth_deg": 180, "area_m2": 45 },
+    { "name": "Westdach", "tilt_deg": 35, "azimuth_deg": 270, "area_m2": 20 }
+  ],
+  "module": { "manufacturer": "Generic", "model": "Mono 440 Wp", "pmpp_wp": 440 },
+  "inverter": { "manufacturer": "Generic", "model": "Hybrid 8.0", "pac_nom_w": 8000 },
+  "battery": { "capacity_kwh": 10 },
+  "consumption": { "annual_kwh": 4500, "ev_annual_kwh": 2000 },
+  "economics": { "electricity_price_ct_kwh": 35, "commissioning_date": "2026-06-01" },
+  "shading_loss_pct": 2.9
+}
