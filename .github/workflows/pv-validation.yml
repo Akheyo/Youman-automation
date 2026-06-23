@@ -1,0 +1,89 @@
+name: PV-Engine Validierung (PVGIS online)
+
+# Validiert die PV-Engine gegen den realen PV*SOL-Referenzfall "Shamoun" mit
+# ECHTEN PVGIS-Klimadaten. GitHub-Runner haben freien Internetzugang → PVGIS
+# (SARAH/ERA5) ist hier erreichbar, anders als in der Sandbox.
+#
+# Gating (siehe examples/shamoun_validate.py):
+#   - Klima-abhängige KPIs (spez. Ertrag, AC-Energie, Einspeisung): ±5 %
+#   - Performance Ratio: ±2 %-Punkte
+#   - Dispatch-Energiebilanz: muss exakt schließen
+#   → außerhalb ⇒ Job ROT, mit klarer Log-Meldung (kein stilles Schlucken).
+#   PVGIS nicht erreichbar ⇒ Job ROT ("offline run not counted"), kein Fake-PASS.
+#
+# Hinweis: PVGIS ≠ PV*SOL-Datenbasis (DWD-TMY3, Coesfeld). Ein Rest-Klimaoffset
+# von ~3–5 % ist ERWARTET und kein Fehler — daher das ±5 %-Band.
+
+on:
+  push:
+    paths:
+      - "pv-engine/**"
+      - ".github/workflows/pv-validation.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: pv-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pv-engine
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pv-engine/requirements.txt
+
+      - name: System-Libs für WeasyPrint (PDF-Report)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 \
+            libcairo2 libffi8
+
+      - name: Dependencies installieren
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Unit-Tests + Dispatch-Energiebilanz (klima-unabhängig, immer grün)
+        run: python -m pytest -q -k "not kpis_vs_pvsol"
+
+      - name: Online-Validierung gegen echtes PVGIS
+        id: validate
+        run: |
+          echo "::group::Vergleichstabelle (Soll | Ist | Abw% | PASS/FAIL)"
+          python examples/shamoun_validate.py
+          echo "::endgroup::"
+
+      - name: Vergleichsreport in Job-Summary schreiben
+        if: always()
+        run: |
+          if [ -f examples/shamoun_calibration_report.md ]; then
+            cat examples/shamoun_calibration_report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Artifacts hochladen (Report + PDF)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shamoun-validation-${{ github.run_number }}
+          path: |
+            pv-engine/examples/shamoun_calibration_report.md
+            pv-engine/examples/shamoun_report.pdf
+            pv-engine/examples/shamoun_report.html
+          if-no-files-found: warn
+          retention-days: 30

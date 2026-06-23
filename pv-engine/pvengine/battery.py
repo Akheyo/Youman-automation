@@ -113,7 +113,10 @@ def dispatch(
         feed[i] = max(surplus, 0.0)
         grid[i] = max(deficit, 0.0)
 
-    cycles = throughput / usable if usable > 0 else 0.0
+    # Jahres-Vollzyklen: Definition über den LADEdurchsatz (AC-Energie in die
+    # Batterie) / nutzbare Kapazität. Konsistent mit PV*SOL "Zyklenbelastung".
+    # (Entladedurchsatz `throughput` wird nicht für die Zyklenzahl verwendet.)
+    cycles = charge_total / usable if usable > 0 else 0.0
     idx = production.index
     return DispatchResult(
         self_consumption=pd.Series(sc, index=idx),

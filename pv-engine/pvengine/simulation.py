@@ -185,6 +185,9 @@ def simulate(
         feed_in_kwh=round(feed_sum, 1),
         grid_draw_kwh=round(grid_sum, 1),
         battery_cycles=round(disp.cycles, 1),
+        battery_cycle_load_pct=round(
+            disp.cycles / project.battery.rated_cycles * 100.0, 2
+        ) if project.battery.rated_cycles > 0 else 0.0,
         battery_charge_kwh=round(disp.charge_total_kwh, 1),
         battery_to_load_kwh=round(disp.discharge_to_load_kwh, 1),
         battery_to_grid_kwh=round(disp.discharge_to_grid_kwh, 1),

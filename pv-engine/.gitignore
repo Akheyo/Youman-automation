@@ -11,5 +11,7 @@ venv/
 htmlcov/
 output/*.pdf
 output/*.html
+examples/shamoun_report.pdf
+examples/shamoun_report.html
 *.json
 !examples/*.json

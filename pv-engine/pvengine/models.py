@@ -79,6 +79,11 @@ class BatterySpec(BaseModel):
     max_discharge_kw: float = 5.0
     round_trip_efficiency: float = Field(0.92, gt=0, le=1)
     min_soc_fraction: float = 0.05
+    # Nenn-Zyklenlebensdauer für die Zyklenbelastung (PV*SOL-Definition).
+    # Default 6000: Huawei LUNA2000 lt. Datenblatt >6000 Vollzyklen @90%
+    # Restkapazität. Konservatives Garantie-Minimum je 5-kWh-Block ~2634 Zyklen
+    # — bei Bedarf hier anpassen, NICHT hartkodiert in der Logik.
+    rated_cycles: int = Field(6000, gt=0)
     # Optionale Batterie→Netz-Entladung (EMS/Arbitrage/Health). Standard: aus
     # → reine Eigenverbrauchsstrategie. Wird NICHT zur KPI-Kalibrierung benutzt.
     allow_grid_discharge: bool = False
@@ -172,7 +177,8 @@ class SimulationResult(BaseModel):
     autarky_pct: float = 0.0
     feed_in_kwh: float = 0.0
     grid_draw_kwh: float = 0.0
-    battery_cycles: float = 0.0
+    battery_cycles: float = 0.0          # absolute Vollzyklen/Jahr (Ladedurchsatz)
+    battery_cycle_load_pct: float = 0.0  # Zyklenbelastung = Vollzyklen / rated_cycles
     battery_charge_kwh: float = 0.0
     battery_to_load_kwh: float = 0.0
     battery_to_grid_kwh: float = 0.0

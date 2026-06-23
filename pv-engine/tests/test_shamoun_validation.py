@@ -83,3 +83,26 @@ def test_shamoun_kpis_vs_pvsol(network):
     # Batterie-Detail directional (±10 %)
     assert s.battery_charge_kwh == pytest.approx(2516, rel=0.10)
     assert s.battery_to_load_kwh == pytest.approx(2166, rel=0.10)
+
+    # Zyklenbelastung: Plausibilität (nicht eng) — PV*SOL-Soll 3,0 %
+    assert 1.5 <= s.battery_cycle_load_pct <= 5.0
+
+
+def test_cycle_load_uses_rated_cycles():
+    """Zyklenbelastung = Vollzyklen / rated_cycles (konfigurierbar, nicht fix)."""
+    from pvengine.models import BatterySpec
+
+    p = _load_project()
+    res = run(p, allow_network=False)
+    s = res.simulation
+    rated = p.battery.rated_cycles
+    assert s.battery_cycle_load_pct == pytest.approx(
+        s.battery_cycles / rated * 100.0, rel=1e-3
+    )
+    # Halbierte rated_cycles ⇒ doppelte Zyklenbelastung
+    p2 = _load_project()
+    p2.battery = BatterySpec(**{**p.battery.model_dump(), "rated_cycles": rated // 2})
+    res2 = run(p2, allow_network=False)
+    assert res2.simulation.battery_cycle_load_pct == pytest.approx(
+        s.battery_cycle_load_pct * 2, rel=0.02
+    )
