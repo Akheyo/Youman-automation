@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   try {
     const { id: vapiId } = await startVapiCall({
       cfg,
-      lead: { phone: lead.phone, name: lead.name, company: lead.company, website: lead.website, notes: lead.notes },
+      lead: { phone: lead.phone, name: lead.name, company: lead.company, website: lead.website, notes: lead.notes, anlass: lead.anlass },
       ownerName: profile?.full_name || 'Youman Automation',
       metadata: { userId: user.id, leadId: lead.id, callId: callRow.id },
     });

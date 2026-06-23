@@ -63,6 +63,7 @@ export interface LeadContext {
   company?: string | null;
   notes?: string | null;
   website?: string | null;
+  anlass?: string | null;
 }
 
 /** The system prompt Lina runs on, woven from the Soul config + this lead. */
@@ -99,6 +100,7 @@ export function buildSystemPrompt(cfg: AgentConfig, lead: LeadContext, ownerName
     who && `## Dieser Kontakt`,
     who,
     lead.notes ? `Notizen: ${lead.notes}` : '',
+    lead.anlass ? `Anlass des Anrufs (sachlicher Aufhänger — natürlich einbauen, nicht wörtlich vorlesen): ${lead.anlass}` : '',
     ``,
     `## Termin vereinbaren`,
     `Wenn Interesse besteht, frage nach einem passenden Zeitraum. Nutze dann das Werkzeug "verfuegbarkeit_pruefen", um echte freie Slots aus dem Kalender zu holen, und schlage 2–3 davon vor.`,

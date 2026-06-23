@@ -13,6 +13,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { findFreeSlots, bookEvent } from '@/lib/google';
+import { extractCallData, type CallOutcome } from '@/lib/sales/extract';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -118,13 +119,19 @@ export async function POST(request: Request) {
     const duration: number | null = message.durationSeconds ? Math.round(message.durationSeconds) : null;
     const endedReason: string = message.endedReason ?? '';
 
-    // Derive a coarse outcome if a meeting wasn't already booked.
-    let outcome: string | undefined;
+    // Coarse signal from the call metadata (fallback if the LLM can't run).
+    let coarse: CallOutcome | undefined;
     const low = `${summary} ${transcript}`.toLowerCase();
-    if (endedReason.includes('no-answer') || endedReason.includes('busy') || endedReason.includes('voicemail')) outcome = 'nicht_erreicht';
-    else if (low.includes('kein interesse') || low.includes('nicht interessiert')) outcome = 'kein_interesse';
+    if (endedReason.includes('voicemail')) coarse = 'mailbox';
+    else if (endedReason.includes('no-answer') || endedReason.includes('busy')) coarse = 'nicht_erreicht';
+    else if (low.includes('kein interesse') || low.includes('nicht interessiert')) coarse = 'kein_interesse';
 
     const { data: existing } = await admin.from('calls').select('outcome').eq('id', meta.callId).single();
+
+    // Phase B: structured extraction from the transcript (outcome + sales vars).
+    const extracted = await extractCallData(transcript, summary, coarse);
+    const finalOutcome: string | null = (existing?.outcome as string) || extracted?.outcome || coarse || null;
+
     await admin
       .from('calls')
       .update({
@@ -133,26 +140,36 @@ export async function POST(request: Request) {
         summary,
         recording_url: recording,
         duration_sec: duration,
-        outcome: existing?.outcome ?? outcome ?? null,
+        outcome: finalOutcome,
+        extracted: extracted ?? null,
         ended_at: new Date().toISOString(),
       })
       .eq('id', meta.callId);
 
-    // Update lead status if the call ended without a booking. If the contact
-    // wasn't reached, schedule an automatic follow-up in 2 days so the lead
-    // resurfaces in the Follow-ups list (the "keep trying until answered" loop).
+    // Update lead status / follow-up logic when the call ended without a booking.
     if (meta.leadId && !existing?.outcome) {
-      const leadStatus = outcome === 'nicht_erreicht' ? 'nicht_erreicht' : outcome === 'kein_interesse' ? 'kein_interesse' : 'erledigt';
-      const patch: Record<string, unknown> = { status: leadStatus };
-      if (leadStatus === 'nicht_erreicht') {
-        patch.follow_up_at = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-        patch.follow_up_note = 'Automatischer Rückruf — beim ersten Versuch nicht erreicht.';
-      }
-      // Kein Interesse / Widerspruch → sofort dauerhaft auf die Sperrliste (§ 7 UWG).
-      if (leadStatus === 'kein_interesse') {
-        patch.do_not_call = true;
-        patch.follow_up_at = null;
-        patch.follow_up_note = null;
+      const patch: Record<string, unknown> = {};
+      switch (finalOutcome) {
+        case 'kein_interesse':
+          // Widerspruch → sofort dauerhaft auf die Sperrliste (§ 7 UWG).
+          patch.status = 'kein_interesse';
+          patch.do_not_call = true;
+          patch.follow_up_at = null;
+          patch.follow_up_note = null;
+          break;
+        case 'nicht_erreicht':
+        case 'mailbox':
+          patch.status = 'nicht_erreicht';
+          patch.follow_up_at = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+          patch.follow_up_note = 'Automatischer Rückruf — beim ersten Versuch nicht erreicht.';
+          break;
+        case 'rueckruf':
+          patch.status = 'nicht_erreicht';
+          patch.follow_up_at = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString();
+          patch.follow_up_note = 'Rückruf gewünscht.';
+          break;
+        default:
+          patch.status = 'erledigt';
       }
       await admin.from('call_leads').update(patch).eq('id', meta.leadId);
     }
