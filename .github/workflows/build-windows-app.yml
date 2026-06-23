@@ -14,6 +14,7 @@ on:
     paths:
       - "pv-engine/pvengine/gui.py"
       - "pv-engine/run_gui.py"
+      - "installer/**"
       - ".github/workflows/build-windows-app.yml"
 
 concurrency:
@@ -49,21 +50,45 @@ jobs:
       - name: Build .exe
         run: |
           pyinstaller --noconfirm --onefile --windowed --name "PV-Planungs-Engine" `
-            --collect-data pvlib `
-            --collect-submodules pvlib `
+            --collect-all pvlib `
             --add-data "templates;templates" `
             run_gui.py
 
       - name: Selbsttest der gebauten .exe (Rechenkern + Report)
         run: |
-          & ".\dist\PV-Planungs-Engine.exe" --selftest
-          if ($LASTEXITCODE -ne 0) { Write-Error "Selbsttest fehlgeschlagen"; exit 1 }
+          Remove-Item "$env:TEMP\pvengine_selftest.txt" -ErrorAction SilentlyContinue
+          $p = Start-Process -FilePath ".\dist\PV-Planungs-Engine.exe" `
+               -ArgumentList "--selftest" -Wait -PassThru
+          if (Test-Path "$env:TEMP\pvengine_selftest.txt") {
+            Write-Host "--- Selbsttest-Marker ---"
+            Get-Content "$env:TEMP\pvengine_selftest.txt"
+          }
+          if ($p.ExitCode -ne 0) { Write-Error "Selbsttest fehlgeschlagen (Exit $($p.ExitCode))"; exit 1 }
           Write-Host "Selbsttest OK"
 
-      - name: .exe als Artifact hochladen
+      - name: Inno Setup installieren
+        working-directory: ${{ github.workspace }}
+        run: choco install innosetup -y --no-progress
+
+      - name: Setup.exe (Installer) bauen
+        working-directory: ${{ github.workspace }}
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "installer\pvengine.iss"
+          if ($LASTEXITCODE -ne 0) { Write-Error "Installer-Build fehlgeschlagen"; exit 1 }
+          Get-ChildItem "installer\Output"
+
+      - name: Setup.exe als Artifact hochladen
         uses: actions/upload-artifact@v4
         with:
-          name: PV-Planungs-Engine-windows
+          name: PV-Planungs-Engine-Setup
+          path: installer/Output/PV-Planungs-Engine-Setup.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Portable .exe als Artifact hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: PV-Planungs-Engine-portable
           path: pv-engine/dist/PV-Planungs-Engine.exe
           if-no-files-found: error
           retention-days: 30

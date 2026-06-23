@@ -281,18 +281,32 @@ def _open_file(path: Path):
 def _selftest() -> int:
     """Prüft den (ggf. gefrorenen) Bundle: rechnet offline + erzeugt Report.
 
-    Fängt fehlende pvlib-Datendateien/Templates im .exe-Build ab.
+    Fängt fehlende pvlib-Datendateien/Templates im .exe-Build ab. Schreibt das
+    Ergebnis in eine Marker-Datei (im --windowed-Bundle ist stdout/stderr None),
+    Exit-Code 0/1 signalisiert Erfolg.
     """
     import tempfile
+    import traceback
 
-    v = {"tilt": "35", "azimuth": "180", "area": "60", "battery_kwh": "10"}
-    res = compute(v, allow_network=False)
-    assert res.layout.kwp > 0, "Layout leer"
-    assert res.simulation.annual_yield_kwh > 0, "kein Ertrag"
-    out = Path(tempfile.gettempdir()) / "pvengine_selftest_report.pdf"
-    render_pdf(res, out)
-    sys.stderr.write(f"SELFTEST OK: {res.simulation.specific_yield_kwh_per_kwp} kWh/kWp\n")
-    return 0
+    marker = Path(tempfile.gettempdir()) / "pvengine_selftest.txt"
+    try:
+        v = {"tilt": "35", "azimuth": "180", "area": "60", "battery_kwh": "10"}
+        res = compute(v, allow_network=False)
+        assert res.layout.kwp > 0, "Layout leer"
+        assert res.simulation.annual_yield_kwh > 0, "kein Ertrag"
+        out = Path(tempfile.gettempdir()) / "pvengine_selftest_report.pdf"
+        render_pdf(res, out)
+        marker.write_text(
+            f"OK {res.simulation.specific_yield_kwh_per_kwp} kWh/kWp\n",
+            encoding="utf-8",
+        )
+        return 0
+    except Exception:  # noqa: BLE001
+        try:
+            marker.write_text("FAIL\n" + traceback.format_exc(), encoding="utf-8")
+        except Exception:  # noqa: BLE001
+            pass
+        return 1
 
 
 def main(argv=None) -> int:
