@@ -594,6 +594,43 @@
   gap: 5px;
   margin-bottom: 14px;
 }
+.extractGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.extractItem {
+  background: #f7f3ff;
+  border: 1px solid #eee5fb;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.extractItem span {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #a99fc4;
+  margin-bottom: 2px;
+}
+.extractItem strong {
+  font-size: 13.5px;
+  color: #1b1733;
+  font-weight: 600;
+}
+.anlassPill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #b45309;
+  cursor: help;
+  white-space: nowrap;
+}
+
 .dncPill {
   font-size: 11px;
   font-weight: 800;

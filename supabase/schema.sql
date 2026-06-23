@@ -200,6 +200,10 @@ alter table public.call_leads add column if not exists follow_up_note text;
 -- gesetzt, blockt jeden weiteren Anruf an diesen Lead dauerhaft (§ 7 UWG).
 alter table public.call_leads add column if not exists do_not_call boolean not null default false;
 
+-- Phase B — "Anlass": sachlicher Grund der Kontaktaufnahme (z. B. "veraltete
+-- Website ohne SSL", "Branche passt"). Compliance-Beleg + Pitch-Kontext.
+alter table public.call_leads add column if not exists anlass text;
+
 -- ---------------------------------------------------------------------------
 -- calls: one row per placed call + the full transcript / summary / recording
 -- ---------------------------------------------------------------------------
@@ -226,6 +230,10 @@ create policy "calls own" on public.calls for all
 -- Compliance audit per call: was recording enabled, was AI disclosure enabled.
 alter table public.calls add column if not exists recorded  boolean;
 alter table public.calls add column if not exists disclosed boolean;
+
+-- Phase B — structured AI extraction per call (JSON: outcome, budget, bedarf,
+-- entscheider, naechster_schritt) derived from the transcript after the call.
+alter table public.calls add column if not exists extracted jsonb;
 
 create index if not exists calls_user_created_idx on public.calls (user_id, created_at desc);
 

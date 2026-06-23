@@ -27,6 +27,16 @@ export async function POST(request: Request) {
   const descriptors = Array.isArray(body.descriptors) ? (body.descriptors as string[]).join(' · ') : null;
   const notes = [body.address, descriptors].filter(Boolean).join(' — ') || null;
 
+  // "Anlass": the factual reason this company is a fit (compliance basis + pitch).
+  const hasWebsite = Boolean(body.website);
+  const anlass =
+    String(body.anlass ?? '').trim() ||
+    (!hasWebsite
+      ? 'Keine Website hinterlegt — Bedarf an Web-/Automationslösung wahrscheinlich.'
+      : descriptors
+        ? `Branche passt zum Angebot: ${descriptors}.`
+        : null);
+
   // Avoid obvious duplicates (same phone for this user).
   const { data: dup } = await supabase.from('call_leads').select('id').eq('user_id', user.id).eq('phone', phone).maybeSingle();
   if (dup) return NextResponse.json({ lead: dup, duplicate: true });
@@ -40,6 +50,7 @@ export async function POST(request: Request) {
       phone,
       website: (body.website as string) || null,
       notes,
+      anlass,
       source: 'felix',
       interest: 'unknown',
       approved: false,

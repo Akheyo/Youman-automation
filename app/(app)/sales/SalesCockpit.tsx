@@ -20,6 +20,14 @@ interface Lead {
   follow_up_at: string | null;
   follow_up_note: string | null;
   do_not_call?: boolean;
+  anlass?: string | null;
+}
+interface Extracted {
+  outcome?: string;
+  budget?: string | null;
+  bedarf?: string | null;
+  entscheider?: boolean | null;
+  naechster_schritt?: string | null;
 }
 interface Call {
   id: string;
@@ -29,6 +37,7 @@ interface Call {
   recording_url: string | null;
   transcript: string | null;
   summary: string | null;
+  extracted: Extracted | null;
   created_at: string;
   call_leads: { name: string | null; company: string | null; phone: string } | null;
 }
@@ -65,6 +74,16 @@ const STATUS_LABEL: Record<string, string> = {
   erledigt: 'Erledigt',
   kein_interesse: 'Kein Interesse',
   nicht_erreicht: 'Nicht erreicht',
+};
+
+const OUTCOME_LABEL: Record<string, string> = {
+  termin: 'Termin',
+  qualifiziert: 'Qualifiziert',
+  rueckruf: 'Rückruf',
+  kein_interesse: 'Kein Interesse',
+  mailbox: 'Mailbox',
+  nicht_erreicht: 'Nicht erreicht',
+  erreicht: 'Erreicht',
 };
 
 export default function SalesCockpit(props: {
@@ -407,6 +426,7 @@ function LeadItem({
     company: l.company ?? '',
     interest: l.interest ?? 'unknown',
     notes: l.notes ?? '',
+    anlass: l.anlass ?? '',
     follow_up_at: l.follow_up_at ? l.follow_up_at.slice(0, 10) : '',
     follow_up_note: l.follow_up_note ?? '',
   });
@@ -417,6 +437,7 @@ function LeadItem({
       company: f.company || null,
       interest: f.interest,
       notes: f.notes || null,
+      anlass: f.anlass || null,
       follow_up_at: f.follow_up_at || null,
       follow_up_note: f.follow_up_note || null,
     });
@@ -448,6 +469,10 @@ function LeadItem({
             <input type="date" value={f.follow_up_at} onChange={(e) => setF({ ...f, follow_up_at: e.target.value })} />
           </label>
         </div>
+        <label className={styles.editFull}>
+          <span>Anlass des Anrufs (rechtlicher Aufhänger — z.&nbsp;B. „keine Website&ldquo;, „offene Stelle&ldquo;)</span>
+          <input value={f.anlass} onChange={(e) => setF({ ...f, anlass: e.target.value })} placeholder="Sachlicher Grund für die Kontaktaufnahme" />
+        </label>
         <label className={styles.editFull}>
           <span>Analyse / Notizen (manuell bearbeitbar)</span>
           <textarea rows={3} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} />
@@ -485,6 +510,7 @@ function LeadItem({
           {l.notes && ` · ${l.notes}`}
           {l.source === 'csv' && <span className={styles.srcPill}>CSV</span>}
           {l.source === 'felix' && <span className={styles.srcPill}>Felix</span>}
+          {l.anlass && <span className={styles.anlassPill} title={l.anlass}>⚖ Anlass</span>}
           {l.follow_up_at && <span className={styles.fuPill}>↻ {new Date(l.follow_up_at).toLocaleDateString('de-DE')}</span>}
         </div>
       </div>
@@ -588,7 +614,7 @@ function Calls({ calls }: { calls: Call[] }) {
               <button className={styles.callHead} onClick={() => setOpen(isOpen ? null : c.id)}>
                 <span className={styles.callWho}>{who}</span>
                 <span className={styles.callMeta}>
-                  {c.outcome && <span className={styles.outcomePill} data-o={c.outcome}>{c.outcome}</span>}
+                  {c.outcome && <span className={styles.outcomePill} data-o={c.outcome}>{OUTCOME_LABEL[c.outcome] ?? c.outcome}</span>}
                   <span className={styles.callStatus}>{c.status}</span>
                   {c.duration_sec != null && <span>{Math.floor(c.duration_sec / 60)}:{String(c.duration_sec % 60).padStart(2, '0')} min</span>}
                   <span className={styles.callDate}>{new Date(c.created_at).toLocaleString('de-DE')}</span>
@@ -601,6 +627,23 @@ function Calls({ calls }: { calls: Call[] }) {
                       <strong>Zusammenfassung:</strong> {c.summary}
                     </div>
                   )}
+                  {c.extracted &&
+                    (c.extracted.bedarf || c.extracted.budget || c.extracted.naechster_schritt || c.extracted.entscheider != null) && (
+                      <div className={styles.extractGrid}>
+                        {c.extracted.bedarf && (
+                          <div className={styles.extractItem}><span>Bedarf</span><strong>{c.extracted.bedarf}</strong></div>
+                        )}
+                        {c.extracted.budget && (
+                          <div className={styles.extractItem}><span>Budget</span><strong>{c.extracted.budget}</strong></div>
+                        )}
+                        {c.extracted.entscheider != null && (
+                          <div className={styles.extractItem}><span>Entscheider erreicht</span><strong>{c.extracted.entscheider ? 'Ja' : 'Nein'}</strong></div>
+                        )}
+                        {c.extracted.naechster_schritt && (
+                          <div className={styles.extractItem}><span>Nächster Schritt</span><strong>{c.extracted.naechster_schritt}</strong></div>
+                        )}
+                      </div>
+                    )}
                   {c.recording_url && (
                     <audio controls src={c.recording_url} className={styles.audio} />
                   )}
