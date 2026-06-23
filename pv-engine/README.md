@@ -13,6 +13,23 @@ Output gehört vollständig dir, beliebig viele Kunden parallel.
 
 ---
 
+## Desktop-App (zum Anklicken)
+
+Es gibt eine grafische Oberfläche — Fenster öffnen, Werte eintragen,
+**Berechnen**, Kennzahlen ablesen, **Report speichern**.
+
+- **Als Windows-Programm (ohne Python):** Im GitHub-Actions-Workflow
+  *„PV-Engine Windows-App (.exe)"* läuft ein Build, der `PV-Planungs-Engine.exe`
+  als Artifact erzeugt. Herunterladen, entpacken, **doppelklicken** — fertig.
+- **Aus Python:** `python -m pvengine.gui`  (oder `python run_gui.py`)
+
+Eingaben: Standort/Adresse, Dach (Neigung, Ausrichtung, Fläche **oder**
+Modulanzahl), Modul-/WR-/Speichergröße, Verbrauch, Strompreis, Verschattung.
+Häkchen *„PVGIS online"* nutzt echte Standort-Klimadaten (Internet); ohne Häkchen
+rechnet die App offline mit synthetischem NRW-Klima. „Report speichern" erzeugt
+den Report (HTML, öffnet im Browser; dort via Strg+P als PDF speicherbar — aus
+Python mit WeasyPrint direkt als PDF).
+
 ## Schnellstart
 
 ```bash
