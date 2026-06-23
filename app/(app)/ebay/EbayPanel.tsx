@@ -8,6 +8,11 @@ import f from './ebay.module.css';
 interface EbayConfig {
   enabled: boolean;
   sheet_csv_url: string;
+  syntrox_search_url: string;
+  require_a_ware: boolean;
+  enrich_with_llm: boolean;
+  price_markup_percent: number;
+  default_quantity: number;
   marketplace_id: string;
   currency: string;
   default_category_id: string;
@@ -43,6 +48,11 @@ interface SyncResult {
 const DEFAULTS: EbayConfig = {
   enabled: false,
   sheet_csv_url: '',
+  syntrox_search_url: 'https://syntrox.de/search?qs=',
+  require_a_ware: true,
+  enrich_with_llm: true,
+  price_markup_percent: 0,
+  default_quantity: 1,
   marketplace_id: 'EBAY_DE',
   currency: 'EUR',
   default_category_id: '',
@@ -156,7 +166,7 @@ export default function EbayPanel({
         <div className={s.pageHead}>
           <div>
             <h1 className={s.title}>eBay-Listings</h1>
-            <p className={s.hello}>Produkte aus deiner Google-Sheet automatisch bei eBay einstellen</p>
+            <p className={s.hello}>SKU-Liste → syntrox.de prüfen (A-Ware) → KI-Kategorie &amp; Merkmale → automatisch bei eBay einstellen</p>
           </div>
           <button className={s.primaryAction} onClick={runNow} disabled={running || !connected}>
             {running ? 'Läuft …' : 'Jetzt synchronisieren'}
@@ -207,7 +217,7 @@ export default function EbayPanel({
 
           <div className={f.grid}>
             <div className={`${f.field} ${f.fieldWide}`}>
-              <label className={f.lbl}>Google-Sheet / CSV-URL</label>
+              <label className={f.lbl}>SKU-Liste — Google-Sheet / CSV-URL</label>
               <input
                 className={f.input}
                 placeholder="https://docs.google.com/…/pub?output=csv"
@@ -215,9 +225,43 @@ export default function EbayPanel({
                 onChange={(e) => set('sheet_csv_url', e.target.value)}
               />
               <span className={f.hint}>
+                Eine Spalte mit den Artikelnummern (Header {'„sku" / „artikelnummer"'} wird erkannt, sonst erste Spalte).
                 In Google Sheets: Datei → Freigeben → Im Web veröffentlichen → Format CSV → Link hier einfügen.
-                Spalten (DE/EN erkannt): sku, titel, preis, menge, beschreibung, zustand, kategorie, marke, ean, bilder, merkmale.
+                Titel, Preis, Bilder &amp; Daten kommen automatisch von syntrox.de.
               </span>
+            </div>
+
+            <div className={`${f.field} ${f.fieldWide}`}>
+              <label className={f.lbl}>Syntrox-Such-URL</label>
+              <input
+                className={f.input}
+                placeholder="https://syntrox.de/search?qs="
+                value={config.syntrox_search_url}
+                onChange={(e) => set('syntrox_search_url', e.target.value)}
+              />
+              <span className={f.hint}>Die SKU wird hinten angehängt. Standard: https://syntrox.de/search?qs=</span>
+            </div>
+
+            <div className={f.field}>
+              <label className={f.lbl}>Preis-Aufschlag (%)</label>
+              <input
+                className={f.input}
+                type="number"
+                step="0.1"
+                value={config.price_markup_percent}
+                onChange={(e) => set('price_markup_percent', Number(e.target.value))}
+              />
+              <span className={f.hint}>Marge auf den Syntrox-Preis. 0 = unverändert übernehmen.</span>
+            </div>
+            <div className={f.field}>
+              <label className={f.lbl}>Menge je Listing</label>
+              <input
+                className={f.input}
+                type="number"
+                min="1"
+                value={config.default_quantity}
+                onChange={(e) => set('default_quantity', Number(e.target.value))}
+              />
             </div>
 
             <div className={f.field}>
@@ -243,7 +287,7 @@ export default function EbayPanel({
             <div className={f.field}>
               <label className={f.lbl}>Standard-Kategorie-ID</label>
               <input className={f.input} placeholder="z. B. 9355" value={config.default_category_id} onChange={(e) => set('default_category_id', e.target.value)} />
-              <span className={f.hint}>Fallback, wenn die Zeile keine Kategorie nennt.</span>
+              <span className={f.hint}>Fallback, falls die KI keine Kategorie findet (oder LLM aus ist).</span>
             </div>
 
             <div className={f.field}>
@@ -265,6 +309,20 @@ export default function EbayPanel({
             </div>
           </div>
 
+          <div className={f.toggleRow}>
+            <input type="checkbox" id="aware" checked={config.require_a_ware} onChange={(e) => set('require_a_ware', e.target.checked)} />
+            <label htmlFor="aware">
+              <span className={s.settingName}>Nur A-Ware listen</span>
+              <span className={s.settingDesc} style={{ display: 'block' }}>Artikel, die auf syntrox.de nicht als A-Ware/verfügbar gelten (B-Ware, Retoure, vergriffen), werden übersprungen.</span>
+            </label>
+          </div>
+          <div className={f.toggleRow}>
+            <input type="checkbox" id="llm" checked={config.enrich_with_llm} onChange={(e) => set('enrich_with_llm', e.target.checked)} />
+            <label htmlFor="llm">
+              <span className={s.settingName}>KI-Anreicherung (Kategorie &amp; Merkmale)</span>
+              <span className={s.settingDesc} style={{ display: 'block' }}>Ein LLM bestimmt die passende eBay-Kategorie und füllt die Artikelmerkmale (geerdet über die eBay-Taxonomy-API).</span>
+            </label>
+          </div>
           <div className={f.toggleRow}>
             <input type="checkbox" id="autopub" checked={config.auto_publish} onChange={(e) => set('auto_publish', e.target.checked)} />
             <label htmlFor="autopub">

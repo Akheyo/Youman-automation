@@ -13,6 +13,11 @@ export const dynamic = 'force-dynamic';
 const DEFAULTS = {
   enabled: false,
   sheet_csv_url: '',
+  syntrox_search_url: 'https://syntrox.de/search?qs=',
+  require_a_ware: true,
+  enrich_with_llm: true,
+  price_markup_percent: 0,
+  default_quantity: 1,
   marketplace_id: 'EBAY_DE',
   currency: 'EUR',
   default_category_id: '',
@@ -61,6 +66,9 @@ export async function PUT(request: Request) {
   for (const key of EDITABLE) {
     if (key in body) patch[key] = body[key];
   }
+  // Numeric fields may arrive as strings from the form.
+  if ('price_markup_percent' in patch) patch.price_markup_percent = Number(patch.price_markup_percent) || 0;
+  if ('default_quantity' in patch) patch.default_quantity = Math.max(1, Math.floor(Number(patch.default_quantity) || 1));
 
   const { data, error } = await supabase.from('ebay_config').upsert(patch, { onConflict: 'user_id' }).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

@@ -150,6 +150,37 @@ export function parseProductsCsv(text: string): SheetProduct[] {
   return out;
 }
 
+const SKU_HEADERS = new Set(['sku', 'artikelnummer', 'artikelnr', 'artikel-nr', 'art.nr', 'artnr', 'id', 'nummer']);
+
+/**
+ * Parse a plain SKU list (the new Syntrox flow: the sheet only holds article
+ * numbers). Accepts a single column with or without a header. Returns unique,
+ * trimmed SKUs in sheet order.
+ */
+export function parseSkuList(text: string): string[] {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return [];
+
+  const firstLine = lines[0] ?? '';
+  const delim = (firstLine.match(/;/g)?.length ?? 0) > (firstLine.match(/,/g)?.length ?? 0) ? ';' : ',';
+  const header = splitLine(firstLine, delim).map((h) => h.toLowerCase().replace(/^["']|["']$/g, ''));
+  const skuCol = header.findIndex((h) => SKU_HEADERS.has(h));
+  const hasHeader = skuCol !== -1 || header.some((h) => COLS[h] !== undefined);
+  const col = skuCol === -1 ? 0 : skuCol;
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const line of hasHeader ? lines.slice(1) : lines) {
+    const cells = splitLine(line, delim);
+    const sku = (cells[col] ?? cells[0] ?? '').replace(/^["']|["']$/g, '').trim();
+    if (sku && !seen.has(sku)) {
+      seen.add(sku);
+      out.push(sku);
+    }
+  }
+  return out;
+}
+
 /** Fetch the published CSV. Accepts the Google "publish to web" link or any CSV URL. */
 export async function fetchSheetCsv(url: string): Promise<string> {
   const res = await fetch(url, { headers: { Accept: 'text/csv,*/*' }, redirect: 'follow' });

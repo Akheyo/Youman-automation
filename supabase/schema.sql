@@ -324,6 +324,14 @@ create table if not exists public.ebay_config (
   updated_at            timestamptz not null default now()
 );
 
+-- Syntrox-Quelle: das Sheet enthaelt nur SKUs; pro SKU wird auf syntrox.de
+-- gesucht, A-Ware geprueft, gescraped und per LLM angereichert. Backfill-sicher.
+alter table public.ebay_config add column if not exists syntrox_search_url   text    not null default 'https://syntrox.de/search?qs=';
+alter table public.ebay_config add column if not exists require_a_ware       boolean not null default true;   -- nur A-Ware listen
+alter table public.ebay_config add column if not exists enrich_with_llm      boolean not null default true;   -- LLM: Kategorie + Merkmale
+alter table public.ebay_config add column if not exists price_markup_percent numeric not null default 0;      -- Aufschlag auf Syntrox-Preis
+alter table public.ebay_config add column if not exists default_quantity     integer not null default 1;      -- Menge pro Listing
+
 alter table public.ebay_config enable row level security;
 drop policy if exists "ebay_config own" on public.ebay_config;
 create policy "ebay_config own" on public.ebay_config for all
@@ -348,6 +356,11 @@ create table if not exists public.ebay_listings (
   created_at   timestamptz not null default now(),
   primary key (user_id, sku)
 );
+
+-- Syntrox-Herkunft + zugeordnete eBay-Kategorie + Verfuegbarkeits-Flag.
+alter table public.ebay_listings add column if not exists source_url  text;
+alter table public.ebay_listings add column if not exists category_id text;
+alter table public.ebay_listings add column if not exists available   boolean;
 
 alter table public.ebay_listings enable row level security;
 drop policy if exists "ebay_listings own" on public.ebay_listings;

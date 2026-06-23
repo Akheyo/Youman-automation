@@ -1,83 +1,112 @@
-# eBay-Auto-Listings — Einrichtung
+# eBay-Auto-Listings aus einer SKU-Liste (Syntrox)
 
-Stellt Produkte aus einer **Google-Sheet (CSV)** vollautomatisch bei eBay ein —
-ohne n8n. Quelle → Vercel-Cron → eBay Sell-Inventory-API. Supabase merkt sich,
-was schon eingestellt wurde (Diff-Mode), damit nichts doppelt hochgeht.
+Stellt Artikel **vollautomatisch** bei eBay ein — ohne n8n. Ablauf:
+
+```
+SKU-Liste (Google-Sheet/CSV)
+        │  pro SKU
+        ▼
+syntrox.de/search?qs=<SKU>     →  Produktseite scrapen (Titel, Preis, Bilder, Daten)
+        │
+        ▼
+A-Ware & Verfügbarkeit prüfen  →  nicht A-Ware / vergriffen ⇒ überspringen
+        │
+        ▼
+LLM-Anreicherung               →  passende eBay-Kategorie + Artikelmerkmale
+   (eBay-Taxonomy-API geerdet)      (kein Halluzinieren ungültiger Werte)
+        │
+        ▼
+eBay Sell-Inventory-API        →  inventory_item → offer → publish
+```
+
+Supabase merkt sich pro SKU den Stand (Diff-Mode): unveränderte, bereits
+gelistete Artikel werden übersprungen — ohne erneuten LLM-/eBay-Aufruf.
 
 ## 1. Datenbank
 
-Das Schema in `supabase/schema.sql` einmal im Supabase-SQL-Editor ausführen
-(legt `ebay_tokens`, `ebay_config`, `ebay_listings` an). Bestehende Installs:
-einfach erneut ausführen, die Statements sind `if not exists`-sicher.
+`supabase/schema.sql` einmal im Supabase-SQL-Editor ausführen (legt
+`ebay_tokens`, `ebay_config`, `ebay_listings` an bzw. ergänzt die neuen
+Spalten — alles `if not exists`, also auch für bestehende Installs sicher).
 
 ## 2. eBay-Developer-Zugang
 
-Im [eBay-Developer-Portal](https://developer.ebay.com) → **Application Keys**:
+[developer.ebay.com](https://developer.ebay.com) → **Application Keys**:
 
 | Env-Variable        | Wert im Portal            |
 |---------------------|---------------------------|
 | `EBAY_CLIENT_ID`    | App-ID (Client-ID)        |
 | `EBAY_CLIENT_SECRET`| Cert-ID (Client-Secret)   |
-| `EBAY_RU_NAME`      | RuName (User Tokens → „Get a Token from eBay via Your Application") |
-| `EBAY_ENV`          | `production` (oder `sandbox` zum Testen) |
+| `EBAY_RU_NAME`      | RuName (User Tokens)      |
+| `EBAY_ENV`          | `production` oder `sandbox` |
 
-Beim RuName als **„Your auth accepted URL"** eintragen:
+RuName → „Your auth accepted URL": `{APP_URL}/api/ebay/callback`
 
-```
-{APP_URL}/api/ebay/callback
-```
+## 3. LLM (KI-Anreicherung)
 
-## 3. Cron-Schutz
+Läuft über **OpenRouter** (gleicher Anbieter wie Felix):
 
 ```
-CRON_SECRET=<lange Zufallszeichenkette, z. B. openssl rand -hex 32>
+OPENROUTER_API_KEY=...        # bereits für Felix vorhanden
+EBAY_LLM_MODEL=               # optional, sonst FELIX_MODEL / openai/gpt-4o-mini
 ```
 
-Vercel schickt dieses Secret automatisch als `Authorization: Bearer …` an den
-Cron-Endpoint. Ohne `CRON_SECRET` ist `/api/ebay/sync` deaktiviert (503).
-Der Cron läuft stündlich (`vercel.json` → `crons`).
+Die Kategorie wird **nicht frei vom LLM erfunden**: Die App holt zuerst
+eBay-Kategorievorschläge (Taxonomy API), das LLM wählt den besten aus und
+füllt anschließend die Artikelmerkmale — bei „nur-Auswahl"-Merkmalen
+ausschließlich mit von eBay erlaubten Werten.
 
-## 4. Produkt-Sheet vorbereiten
+## 4. Cron-Schutz
 
-In Google Sheets: **Datei → Freigeben → Im Web veröffentlichen → Format „CSV"**.
-Den Link in der App unter **eBay → Quelle & Einstellungen** einfügen.
+```
+CRON_SECRET=<openssl rand -hex 32>
+```
 
-Erkannte Spalten (Groß-/Kleinschreibung egal, DE + EN):
+Ohne `CRON_SECRET` ist `/api/ebay/sync` deaktiviert (503). Der Cron läuft
+stündlich (`vercel.json` → `crons`).
 
-| Spalte (Beispiele)                     | Pflicht | eBay-Feld |
-|----------------------------------------|---------|-----------|
-| `sku`, `artikelnummer`, `id`           | ✓       | SKU       |
-| `titel`, `title`, `name`               | ✓       | Titel (max 80 Zeichen) |
-| `preis`, `price`, `vk`                 | ✓       | Preis     |
-| `menge`, `quantity`, `bestand`         | –       | Menge (Default 1) |
-| `beschreibung`, `description`          | –       | Beschreibung |
-| `zustand`, `condition`                 | –       | NEW / USED_… (auch „neu"/„gebraucht") |
-| `kategorie`, `category`                | –       | eBay-Kategorie-ID |
-| `marke`, `brand` / `mpn` / `ean`       | –       | Artikel-Details |
-| `bilder`, `images`, `foto`             | –       | Bild-URLs (mehrere durch Leerzeichen/Komma/`|`) |
-| `merkmale`, `aspects`                  | –       | `Farbe:Rot;Größe:M` |
+## 5. SKU-Liste vorbereiten
 
-Zeilen ohne SKU, Titel oder gültigen Preis werden übersprungen.
+Google Sheets mit **einer Spalte Artikelnummern** (Header `sku` oder
+`artikelnummer` wird erkannt, sonst wird die erste Spalte genommen).
+**Datei → Freigeben → Im Web veröffentlichen → Format „CSV"** → den Link in
+der App unter **eBay → Quelle & Einstellungen** einfügen.
 
-## 5. In der App verbinden & einstellen
+Alles andere (Titel, Preis, Bilder, Beschreibung, technische Daten) wird pro
+SKU von syntrox.de gezogen.
 
-1. **eBay → eBay-Konto verbinden** → eBay-Login & Freigabe.
-2. **Quelle & Einstellungen**: Sheet-URL, Marktplatz (`EBAY_DE`), Währung,
-   Standard-Zustand/-Kategorie und die **Business-Policy-IDs** (Versand,
-   Zahlung, Rücknahme) + **Standort-Key** eintragen. Diese IDs kommen aus
-   deinem eBay-Verkäuferkonto (Business Policies).
-3. **Auto-Sync aktiv** anhaken → der stündliche Cron stellt neue/geänderte
-   Zeilen automatisch ein. Mit **„Jetzt synchronisieren"** sofort testen.
+## 6. In der App einstellen
 
-## 6. Wie der Diff-Mode arbeitet
+1. **eBay-Konto verbinden**.
+2. **Quelle & Einstellungen**:
+   - SKU-Sheet-URL,
+   - Syntrox-Such-URL (Standard `https://syntrox.de/search?qs=`),
+   - **Preis-Aufschlag (%)** für deine Marge, **Menge je Listing**,
+   - Marktplatz/Währung, **Business-Policy-IDs** (Versand/Zahlung/Rücknahme)
+     und **Standort-Key** aus deinem eBay-Verkäuferkonto,
+   - Standard-Kategorie-ID als Fallback (falls die KI nichts findet).
+3. Schalter: **Nur A-Ware listen**, **KI-Anreicherung**, **Direkt
+   veröffentlichen**, **Auto-Sync aktiv**.
+4. **„Jetzt synchronisieren"** zum sofortigen Test; der stündliche Cron
+   übernimmt danach automatisch neue/geänderte SKUs.
 
-Pro Sheet-Zeile wird ein Hash gebildet. Unveränderte, bereits gelistete SKUs
-werden übersprungen; neue Zeilen werden eingestellt, geänderte aktualisiert
-(Preis/Menge/Beschreibung). Jede SKU bekommt in `ebay_listings` einen Status
-(`listed` / `pending` / `error`) plus Fehlertext — sichtbar in der Listings-
-Tabelle im Dashboard.
+## 7. A-Ware-Erkennung
 
-## 7. Sandbox-Test
+Standardlogik auf der Produktseite:
+- **keine A-Ware** bei Hinweisen wie *B-Ware, C-Ware, Retoure, gebraucht,
+  defekt, 2. Wahl* → Artikel wird übersprungen.
+- **A-Ware** bei *A-Ware, Neuware, fabrikneu, originalverpackt* — oder wenn
+  kein abweichender Hinweis vorhanden ist (normaler Lagerartikel).
+- **nicht verfügbar** bei *ausverkauft, vergriffen, nicht lieferbar* bzw.
+  schema.org `OutOfStock` → übersprungen.
 
-`EBAY_ENV=sandbox` setzen, mit einem eBay-**Sandbox**-Verkäuferaccount
-verbinden und eine Test-Sheet einstellen. Es entstehen keine echten Angebote.
+> Hinweis: Diese Erkennung sitzt in `lib/ebay/syntrox.ts` (`detectAWare` /
+> `detectStock`). Falls syntrox.de A-/B-Ware anders kennzeichnet, dort die
+> Regex anpassen — am besten anhand einer echten Produktseite kalibrieren.
+
+## 8. Scraping-Robustheit
+
+Der Scraper liest zuerst **strukturierte Daten** (schema.org/Product-JSON-LD,
+dann OpenGraph, dann Microdata) und fällt auf generische HTML-Tabellen zurück.
+Das funktioniert über verschiedene Shop-Systeme hinweg. Die einzigen
+shop-spezifischen Stellen sind die Suchergebnis-Verlinkung und die
+A-Ware-Erkennung (siehe `lib/ebay/syntrox.ts`).

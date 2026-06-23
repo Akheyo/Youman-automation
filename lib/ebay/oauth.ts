@@ -14,8 +14,9 @@
 
 export type EbayEnv = 'production' | 'sandbox';
 
-/** OAuth scopes needed to create and publish inventory-based listings. */
+/** OAuth scopes needed to create/publish listings + read the category taxonomy. */
 const SCOPES = [
+  'https://api.ebay.com/oauth/api_scope',
   'https://api.ebay.com/oauth/api_scope/sell.inventory',
   'https://api.ebay.com/oauth/api_scope/sell.account',
 ];
