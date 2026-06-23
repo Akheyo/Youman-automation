@@ -276,3 +276,82 @@ drop policy if exists "google_tokens own" on public.google_tokens;
 -- only ever read by the service role (webhook). Restrict select to own row.
 create policy "google_tokens own" on public.google_tokens for select
   using (auth.uid() = user_id);
+
+-- ============================================================================
+--  eBay — automatische Listing-Erstellung aus einer Google-Sheet / CSV
+--  Quelle (CSV) → Cron → eBay Sell-Inventory-API. Supabase haelt den State
+--  (Diff-Mode), damit nichts doppelt eingestellt wird.
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- ebay_tokens: gespeicherter eBay-OAuth-Refresh-Token (User-Consent), den der
+--   Cron-Job gegen kurzlebige Access-Tokens tauscht. Refresh-Token nur vom
+--   Service-Role gelesen. Eine Zeile pro Nutzer.
+-- ---------------------------------------------------------------------------
+create table if not exists public.ebay_tokens (
+  user_id        uuid primary key references auth.users (id) on delete cascade,
+  refresh_token  text not null,
+  environment    text not null default 'production',  -- production | sandbox
+  ebay_user      text,                                -- eBay-Login/Name (Anzeige)
+  expires_at     timestamptz,                         -- Ablauf des Refresh-Tokens
+  connected_at   timestamptz not null default now()
+);
+
+alter table public.ebay_tokens enable row level security;
+drop policy if exists "ebay_tokens own" on public.ebay_tokens;
+create policy "ebay_tokens own" on public.ebay_tokens for select
+  using (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
+-- ebay_config: pro Nutzer die Listing-Einstellungen — Quelle (CSV-URL),
+--   Marketplace, eBay-Business-Policies, Standort, Defaults, Auto-Publish.
+-- ---------------------------------------------------------------------------
+create table if not exists public.ebay_config (
+  user_id               uuid primary key references auth.users (id) on delete cascade,
+  enabled               boolean not null default false,  -- Auto-Sync an/aus
+  sheet_csv_url         text,                            -- "Im Web veroeffentlichen" CSV-Link
+  marketplace_id        text not null default 'EBAY_DE',
+  currency              text not null default 'EUR',
+  default_category_id   text,                            -- eBay-Kategorie-ID (Fallback)
+  default_condition     text not null default 'NEW',     -- NEW | USED_EXCELLENT | ...
+  fulfillment_policy_id text,                            -- Versand-Policy
+  payment_policy_id     text,                            -- Zahlungs-Policy
+  return_policy_id      text,                            -- Ruecknahme-Policy
+  merchant_location_key text,                            -- Lager-/Standort-Key
+  auto_publish          boolean not null default true,   -- direkt veroeffentlichen
+  last_run_at           timestamptz,
+  last_result           jsonb,                           -- Zusammenfassung des letzten Laufs
+  updated_at            timestamptz not null default now()
+);
+
+alter table public.ebay_config enable row level security;
+drop policy if exists "ebay_config own" on public.ebay_config;
+create policy "ebay_config own" on public.ebay_config for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
+-- ebay_listings: State-Store / Diff-Mode. Eine Zeile pro SKU. row_hash
+--   erkennt geaenderte Sheet-Zeilen, damit nur Neues/Geaendertes zu eBay geht.
+-- ---------------------------------------------------------------------------
+create table if not exists public.ebay_listings (
+  user_id      uuid not null references auth.users (id) on delete cascade,
+  sku          text not null,
+  title        text,
+  price        numeric,
+  row_hash     text not null,                       -- Hash der Sheet-Zeile
+  offer_id     text,                                -- eBay Offer-ID
+  listing_id   text,                                -- eBay Listing-ID (nach Publish)
+  status       text not null default 'pending',     -- pending | listed | error | skipped
+  error        text,
+  listed_at    timestamptz,
+  updated_at   timestamptz not null default now(),
+  created_at   timestamptz not null default now(),
+  primary key (user_id, sku)
+);
+
+alter table public.ebay_listings enable row level security;
+drop policy if exists "ebay_listings own" on public.ebay_listings;
+create policy "ebay_listings own" on public.ebay_listings for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create index if not exists ebay_listings_user_idx on public.ebay_listings (user_id, updated_at desc);

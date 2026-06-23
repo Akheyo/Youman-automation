@@ -42,6 +42,11 @@ const Icon = {
       <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
     </svg>
   ),
+  tag: (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" />
+    </svg>
+  ),
 };
 
 interface NavItem {
@@ -55,6 +60,7 @@ const PRIMARY: NavItem[] = [
   { href: '/dashboard', label: 'Übersicht', icon: 'grid' },
   { href: '/felix', label: 'Felix', icon: 'chat', sub: 'Lead-Scout' },
   { href: '/sales', label: 'Lina', icon: 'phone', sub: 'Telefon-Agent' },
+  { href: '/ebay', label: 'eBay', icon: 'tag', sub: 'Auto-Listings' },
 ];
 const SECONDARY: NavItem[] = [
   { href: '/leads', label: 'Leads', icon: 'users' },

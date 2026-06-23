@@ -2,5 +2,11 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "next build",
   "framework": "nextjs",
-  "regions": ["fra1"]
+  "regions": ["fra1"],
+  "crons": [
+    {
+      "path": "/api/ebay/sync",
+      "schedule": "0 * * * *"
+    }
+  ]
 }
