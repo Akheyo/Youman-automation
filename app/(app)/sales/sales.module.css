@@ -594,6 +594,25 @@
   gap: 5px;
   margin-bottom: 14px;
 }
+.dncPill {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  white-space: nowrap;
+}
+.dncNote {
+  font-size: 12px;
+  font-weight: 700;
+  color: #b91c1c;
+  background: #fee2e2;
+  padding: 7px 12px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
 .cfgHead {
   font-family: var(--font-display);
   font-size: 15px;

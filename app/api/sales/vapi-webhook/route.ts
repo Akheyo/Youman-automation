@@ -148,6 +148,12 @@ export async function POST(request: Request) {
         patch.follow_up_at = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
         patch.follow_up_note = 'Automatischer Rückruf — beim ersten Versuch nicht erreicht.';
       }
+      // Kein Interesse / Widerspruch → sofort dauerhaft auf die Sperrliste (§ 7 UWG).
+      if (leadStatus === 'kein_interesse') {
+        patch.do_not_call = true;
+        patch.follow_up_at = null;
+        patch.follow_up_note = null;
+      }
       await admin.from('call_leads').update(patch).eq('id', meta.leadId);
     }
 
