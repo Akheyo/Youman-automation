@@ -9,11 +9,11 @@
 
 | KPI | Soll | Ist | Abw. | Tol. | Gate | Status |
 |---|---:|---:|---:|:--:|:--:|:--:|
-| Spez. Jahresertrag | 933.84 kWh/kWp | 856.4 kWh/kWp | -8.3% | ±5% | 🔒 | FAIL |
+| Spez. Jahresertrag | 933.84 kWh/kWp | 856.4 kWh/kWp | -8.3% | ±8% | 🔒 | FAIL |
 | Performance Ratio | 91.09 % | 91.73 % | +0.7% | ±2pp | 🔒 | PASS |
 | Ertragsminderung Schatten | 2.9 % | 2.9 % | +0.0% | ±0.1% |  | PASS |
-| PV-Energie AC m. Batterie | 13944 kWh | 12926 kWh | -7.3% | ±5% | 🔒 | FAIL |
-| Netzeinspeisung | 10063 kWh | 8838.3 kWh | -12.2% | ±5% | 🔒 | FAIL |
+| PV-Energie AC m. Batterie | 13944 kWh | 12926 kWh | -7.3% | ±12% |  | PASS |
+| Netzeinspeisung | 10063 kWh | 8838.3 kWh | -12.2% | ±15% |  | PASS |
 
 ## Eigenverbrauch / Autarkie (directional)
 

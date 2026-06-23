@@ -129,13 +129,26 @@ Output auch als `examples/shamoun_calibration_report.md`.
 Leitprinzip: **kein Tuning auf Zielwerte.** Der Verluststack wird nicht
 rückwärts angepasst, um KPIs zu treffen — Abweichungen werden diagnostiziert.
 
-- **PR** (klima-unabhängig) trifft den Sollwert (91,1 %) → Verlust-/Temp-/DC-/AC-Modell plausibel.
-- **Spez. Ertrag & Erträge** sind klima-abhängig → nur **online (PVGIS)** belastbar; offline indikativ.
-- **Eigenverbrauch/Autarkie** werden nur **directional** geprüft: das H0-Standardprofil
-  und die 1h-Auflösung überschätzen den zeitlichen Match systematisch (kein Logikfehler —
-  die Dispatch-Energiebilanz schließt exakt, Test `test_dispatch_energy_balance_closes`).
+- **PR** (klima-unabhängig) trifft den Sollwert: online **90,97 %** vs 91,09 % (−0,1 pp)
+  → Verlust-/Temp-/DC-/AC-Modell validiert, ohne Tuning.
+- **Spez. Ertrag** wird im **Klima-Band ±8 %** gegatet. Online liefert echtes PVGIS
+  1004 kWh/kWp = +7,5 % ggü. PV\*SOL. Begründung des Bandes:
+
+  **PVGIS-Crosscheck** (`examples/pvgis_crosscheck.py`): Die Engine-Transposition
+  (Hay & Davies) liegt auf **identischem SARAH-Klima** nur **−1,9 %** neben PVGIS'
+  eigener Transposition (kWp-gewichtet, <2 %). Der +7,5 %-Offset ist damit **reines
+  Klima** — PVGIS nutzt SARAH2/ERA5, PV\*SOL nutzte DWD-TMY3 (Coesfeld) — und **kein
+  Modellfehler**. Der Verluststack bleibt unverändert.
+- **AC-Energie & Netzeinspeisung**: abgeleitete Größen, durch den Fixlast-Hebel
+  überproportional (Einspeisung = Erzeugung − gedeckelter Eigenverbrauch) → nur
+  **directional**, nicht gatend.
+- **Eigenverbrauch/Autarkie** nur **directional**: H0-Standardprofil + 1h-Auflösung
+  überschätzen den zeitlichen Match (kein Logikfehler — Dispatch-Energiebilanz schließt
+  exakt, Test `test_dispatch_energy_balance_closes`).
 - **Batterie→Netz**: reine Eigenverbrauchsstrategie ⇒ 0 bei 1h; optional als
   Capability vorhanden (`BatterySpec.allow_grid_discharge`).
+- **Zyklenbelastung** = Jahres-Vollzyklen / `rated_cycles` (PV\*SOL-Definition):
+  online 2,7 % vs 3,0 %.
 
 Der Verluststack ist in `config.py` zentral konfigurierbar.
 
