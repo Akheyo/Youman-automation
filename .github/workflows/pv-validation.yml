@@ -62,6 +62,12 @@ jobs:
       - name: Unit-Tests + Dispatch-Energiebilanz (klima-unabhängig, immer grün)
         run: python -m pytest -q -k "not kpis_vs_pvsol"
 
+      - name: PVGIS-Crosscheck — Transposition auf identischem Klima
+        run: |
+          echo "::group::Engine Hay&Davies vs PVGIS-Transposition (gleiches SARAH-Klima)"
+          python examples/pvgis_crosscheck.py
+          echo "::endgroup::"
+
       - name: Online-Validierung gegen echtes PVGIS
         id: validate
         run: |
@@ -83,6 +89,7 @@ jobs:
           name: shamoun-validation-${{ github.run_number }}
           path: |
             pv-engine/examples/shamoun_calibration_report.md
+            pv-engine/examples/pvgis_crosscheck_report.md
             pv-engine/examples/shamoun_report.pdf
             pv-engine/examples/shamoun_report.html
           if-no-files-found: warn

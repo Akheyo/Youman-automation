@@ -13,5 +13,6 @@ output/*.pdf
 output/*.html
 examples/shamoun_report.pdf
 examples/shamoun_report.html
+examples/pvgis_crosscheck_report.md
 *.json
 !examples/*.json
