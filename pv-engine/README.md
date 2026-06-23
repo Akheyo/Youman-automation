@@ -115,15 +115,29 @@ Angebote gedacht.
 
 ```bash
 pip install pytest
-python -m pytest                          # 20 Tests, deterministisch, offline
-python examples/shamoun_calibration.py --offline   # Abgleich gegen Referenz-Report
+python -m pytest                          # deterministisch, offline (Online-KPI-Test skippt)
+python examples/shamoun_calibration.py --offline   # schnelle 3-KPI-Plausibilität
+python examples/shamoun_validate.py                 # voller KPI-Abgleich (online = belastbar)
+python examples/shamoun_validate.py --offline       # gleiche Validierung, indikativ
 ```
 
-Kalibrierung gegen den Shamoun-PV\*SOL-Report (Zielwerte: spez. Ertrag
-933,84 kWh/kWp, PR 91,09 %, Verschattung 2,9 %). Offline-Synthese erreicht
-PR 91,7 % (+0,7 %) und spez. Ertrag ~973 kWh/kWp; die exakte Ertrags­kalibrierung
-läuft **online** über echte PVGIS-Daten. Der Verluststack ist in `config.py`
-zentral konfigurierbar.
+**Validierungs-Fixture (`examples/shamoun_reference.json`)** bildet den realen
+PV\*SOL-Referenzfall „Shamoun" (15,30 kWp, 3 Dächer, LUNA2000 13,8 kWh) exakt
+nach und prüft ALLE KPIs gegen die Sollwerte (Soll | Ist | Abw. | PASS/FAIL),
+Output auch als `examples/shamoun_calibration_report.md`.
+
+Leitprinzip: **kein Tuning auf Zielwerte.** Der Verluststack wird nicht
+rückwärts angepasst, um KPIs zu treffen — Abweichungen werden diagnostiziert.
+
+- **PR** (klima-unabhängig) trifft den Sollwert (91,1 %) → Verlust-/Temp-/DC-/AC-Modell plausibel.
+- **Spez. Ertrag & Erträge** sind klima-abhängig → nur **online (PVGIS)** belastbar; offline indikativ.
+- **Eigenverbrauch/Autarkie** werden nur **directional** geprüft: das H0-Standardprofil
+  und die 1h-Auflösung überschätzen den zeitlichen Match systematisch (kein Logikfehler —
+  die Dispatch-Energiebilanz schließt exakt, Test `test_dispatch_energy_balance_closes`).
+- **Batterie→Netz**: reine Eigenverbrauchsstrategie ⇒ 0 bei 1h; optional als
+  Capability vorhanden (`BatterySpec.allow_grid_discharge`).
+
+Der Verluststack ist in `config.py` zentral konfigurierbar.
 
 ---
 

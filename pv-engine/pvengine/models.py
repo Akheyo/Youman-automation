@@ -79,6 +79,11 @@ class BatterySpec(BaseModel):
     max_discharge_kw: float = 5.0
     round_trip_efficiency: float = Field(0.92, gt=0, le=1)
     min_soc_fraction: float = 0.05
+    # Optionale Batterie→Netz-Entladung (EMS/Arbitrage/Health). Standard: aus
+    # → reine Eigenverbrauchsstrategie. Wird NICHT zur KPI-Kalibrierung benutzt.
+    allow_grid_discharge: bool = False
+    grid_discharge_hours: list[int] = Field(default_factory=list)  # Stunden 0–23
+    grid_discharge_floor_soc: float = Field(0.5, ge=0, le=1)
 
 
 class ConsumptionInput(BaseModel):
@@ -168,6 +173,11 @@ class SimulationResult(BaseModel):
     feed_in_kwh: float = 0.0
     grid_draw_kwh: float = 0.0
     battery_cycles: float = 0.0
+    battery_charge_kwh: float = 0.0
+    battery_to_load_kwh: float = 0.0
+    battery_to_grid_kwh: float = 0.0
+    battery_losses_kwh: float = 0.0
+    ac_energy_with_battery_kwh: float = 0.0  # Eigenverbrauch + Einspeisung (netto)
     co2_savings_t: float = 0.0
     monthly: list[MonthlyValue] = Field(default_factory=list)
     climate_source: str = ""

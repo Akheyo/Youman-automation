@@ -1,0 +1,59 @@
+{
+  "_comment": "Validierungs-Fixture: realer PV*SOL-Referenzfall Shamoun, Report 21.04.2026. Exakte Inputs, NICHT verändern um Zielwerte zu treffen.",
+  "project_name": "Shamoun (PV*SOL-Referenzvalidierung)",
+  "customer_name": "Shamoun",
+  "location": {
+    "address": "Niemark 24, 48703 Stadtlohn",
+    "latitude": 51.9925,
+    "longitude": 6.92,
+    "altitude_m": 48,
+    "timezone": "Europe/Berlin"
+  },
+  "roofs": [
+    { "name": "Süd",  "tilt_deg": 45, "azimuth_deg": 187, "area_m2": 32.0, "module_count": 16 },
+    { "name": "Ost",  "tilt_deg": 45, "azimuth_deg": 98,  "area_m2": 18.0, "module_count": 9 },
+    { "name": "West", "tilt_deg": 45, "azimuth_deg": 278, "area_m2": 18.0, "module_count": 9 }
+  ],
+  "module": {
+    "manufacturer": "JA Solar",
+    "model": "JAM54D41-450/LB",
+    "pmpp_wp": 450,
+    "length_mm": 1722,
+    "width_mm": 1134,
+    "vmp_v": 33.18,
+    "imp_a": 13.56,
+    "voc_v": 39.49,
+    "isc_a": 14.30,
+    "temp_coeff_pmpp_pct_k": -0.29,
+    "temp_coeff_voc_pct_k": -0.25,
+    "efficiency_pct": 22.94
+  },
+  "inverter": {
+    "manufacturer": "Huawei",
+    "model": "SUN2000-15K-MB0",
+    "pac_nom_w": 15000,
+    "pdc_max_w": 22500,
+    "mppt_count": 2,
+    "mppt_v_min": 140,
+    "mppt_v_max": 980,
+    "v_max_dc": 1100,
+    "strings_per_mppt": 2,
+    "eta_max_pct": 98.4
+  },
+  "battery": {
+    "capacity_kwh": 13.8,
+    "usable_fraction": 1.0,
+    "max_charge_kw": 7.0,
+    "max_discharge_kw": 7.0,
+    "round_trip_efficiency": 0.92,
+    "min_soc_fraction": 0.05
+  },
+  "consumption": {
+    "annual_kwh": 4506,
+    "profile": "H0"
+  },
+  "economics": {
+    "commissioning_date": "2026-04-21"
+  },
+  "shading_loss_pct": 2.9
+}
