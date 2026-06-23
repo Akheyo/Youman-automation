@@ -73,11 +73,15 @@ def _try_pvgis(location: Location, *, timeout: float) -> TMY | None:
     last_err: Exception | None = None
     for url in PVGIS_API_URLS:
         try:
-            df, _, _, _ = pvlib.iotools.get_pvgis_tmy(
+            # pvlib hat die Rückgabe-Arität von get_pvgis_tmy über die Versionen
+            # geändert (früher 4er-Tupel, ab 0.15 ein 2er-Tupel (data, meta)).
+            # Daher robust nur das erste Element (DataFrame) verwenden.
+            result = pvlib.iotools.get_pvgis_tmy(
                 location.latitude, location.longitude,
                 outputformat="json", map_variables=True,
                 url=url, timeout=timeout,
             )
+            df = result[0]
             df = df.tz_convert(location.timezone)
             out = pd.DataFrame({
                 "ghi": df["ghi"],
