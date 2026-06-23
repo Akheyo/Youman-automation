@@ -8,6 +8,7 @@ gekennzeichnet (`source`), damit er nie unbemerkt in einem Report landet.
 """
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 
 import numpy as np
@@ -59,26 +60,45 @@ def get_tmy(location: Location, *, allow_network: bool = True,
     return _synthesize_tmy(location)
 
 
+# PVGIS bedient nur noch VERSIONIERTE Endpoints; der pvlib-Default
+# (https://re.jrc.ec.europa.eu/api/) trifft /api/tmy und liefert HTTP 403.
+# Wir geben daher die Version explizit vor. Reihenfolge = Fallback-Kette.
+PVGIS_API_URLS = (
+    "https://re.jrc.ec.europa.eu/api/v5_3/",
+    "https://re.jrc.ec.europa.eu/api/v5_2/",
+)
+
+
 def _try_pvgis(location: Location, *, timeout: float) -> TMY | None:
-    try:
-        df, _, _, _ = pvlib.iotools.get_pvgis_tmy(
-            location.latitude, location.longitude,
-            outputformat="json", map_variables=True, timeout=timeout,
-        )
-        df = df.tz_convert(location.timezone)
-        out = pd.DataFrame({
-            "ghi": df["ghi"],
-            "dni": df["dni"],
-            "dhi": df["dhi"],
-            "temp_air": df["temp_air"],
-            "wind_speed": df.get("wind_speed", pd.Series(2.0, index=df.index)),
-        })
-        # PVGIS-TMY hat gemischte Jahre — auf ein einheitliches Jahr normieren
-        out.index = _normalize_to_year(out.index, location.timezone)
-        out = out.sort_index()
-        return TMY(data=out, source="PVGIS-TMY (EU JRC)")
-    except Exception:
-        return None
+    last_err: Exception | None = None
+    for url in PVGIS_API_URLS:
+        try:
+            df, _, _, _ = pvlib.iotools.get_pvgis_tmy(
+                location.latitude, location.longitude,
+                outputformat="json", map_variables=True,
+                url=url, timeout=timeout,
+            )
+            df = df.tz_convert(location.timezone)
+            out = pd.DataFrame({
+                "ghi": df["ghi"],
+                "dni": df["dni"],
+                "dhi": df["dhi"],
+                "temp_air": df["temp_air"],
+                "wind_speed": df.get("wind_speed", pd.Series(2.0, index=df.index)),
+            })
+            # PVGIS-TMY hat gemischte Jahre — auf ein einheitliches Jahr normieren
+            out.index = _normalize_to_year(out.index, location.timezone)
+            out = out.sort_index()
+            version = url.rstrip("/").rsplit("/", 1)[-1]
+            return TMY(data=out, source=f"PVGIS-TMY (EU JRC, {version})")
+        except Exception as exc:  # nicht still schlucken — Grund protokollieren
+            last_err = exc
+            print(f"[pvengine] PVGIS {url} fehlgeschlagen: "
+                  f"{type(exc).__name__}: {str(exc)[:160]}", file=sys.stderr)
+    if last_err is not None:
+        print(f"[pvengine] Alle PVGIS-Endpoints fehlgeschlagen → Offline-Fallback.",
+              file=sys.stderr)
+    return None
 
 
 def _normalize_to_year(index: pd.DatetimeIndex, tz: str, year: int = 2019):
