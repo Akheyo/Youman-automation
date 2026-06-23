@@ -158,6 +158,30 @@
     radial-gradient(800px 440px at -10% 110%, rgba(124, 58, 237, 0.12), transparent 60%),
     linear-gradient(180deg, #faf8ff 0%, #f2edfb 100%);
 }
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #6b6385;
+  cursor: pointer;
+}
+.consent input {
+  margin-top: 2px;
+  width: 17px;
+  height: 17px;
+  accent-color: #7c3aed;
+  flex: 0 0 auto;
+}
+.consent a {
+  color: #7c3aed;
+  font-weight: 600;
+}
+.consent strong {
+  color: #14112b;
+}
+
 .forgot {
   text-align: right;
   margin-top: -6px;
