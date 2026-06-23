@@ -14,6 +14,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { findFreeSlots, bookEvent } from '@/lib/google';
 import { extractCallData, type CallOutcome } from '@/lib/sales/extract';
+import { nextAttemptDelayMs, callbackDelayMs } from '@/lib/sales/retry';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -148,6 +149,18 @@ export async function POST(request: Request) {
 
     // Update lead status / follow-up logic when the call ended without a booking.
     if (meta.leadId && !existing?.outcome) {
+      // Load campaign context for smart-calling retries.
+      const { data: leadRow } = await admin.from('call_leads').select('attempts, campaign_id').eq('id', meta.leadId).single();
+      const attempts: number = leadRow?.attempts ?? 1;
+      let intensity: string | null = null;
+      let maxAttempts = Infinity;
+      if (leadRow?.campaign_id) {
+        const { data: camp } = await admin.from('campaigns').select('intensity, max_attempts').eq('id', leadRow.campaign_id).single();
+        intensity = camp?.intensity ?? 'moderat';
+        maxAttempts = camp?.max_attempts ?? 3;
+      }
+      const exhausted = attempts >= maxAttempts;
+
       const patch: Record<string, unknown> = {};
       switch (finalOutcome) {
         case 'kein_interesse':
@@ -156,20 +169,33 @@ export async function POST(request: Request) {
           patch.do_not_call = true;
           patch.follow_up_at = null;
           patch.follow_up_note = null;
+          patch.next_attempt_at = null;
           break;
         case 'nicht_erreicht':
-        case 'mailbox':
-          patch.status = 'nicht_erreicht';
-          patch.follow_up_at = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-          patch.follow_up_note = 'Automatischer Rückruf — beim ersten Versuch nicht erreicht.';
+        case 'mailbox': {
+          patch.status = exhausted ? 'erledigt' : 'nicht_erreicht';
+          if (exhausted) {
+            patch.follow_up_note = `Nicht erreicht — alle ${maxAttempts} Versuche ausgeschöpft.`;
+            patch.next_attempt_at = null;
+          } else {
+            const next = new Date(Date.now() + nextAttemptDelayMs(intensity, attempts)).toISOString();
+            patch.next_attempt_at = next;
+            patch.follow_up_at = next;
+            patch.follow_up_note = `Automatischer Rückruf — Versuch ${attempts + 1}.`;
+          }
           break;
-        case 'rueckruf':
-          patch.status = 'nicht_erreicht';
-          patch.follow_up_at = new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString();
+        }
+        case 'rueckruf': {
+          patch.status = exhausted ? 'erledigt' : 'nicht_erreicht';
+          const next = new Date(Date.now() + callbackDelayMs(intensity)).toISOString();
+          patch.next_attempt_at = exhausted ? null : next;
+          patch.follow_up_at = next;
           patch.follow_up_note = 'Rückruf gewünscht.';
           break;
+        }
         default:
           patch.status = 'erledigt';
+          patch.next_attempt_at = null;
       }
       await admin.from('call_leads').update(patch).eq('id', meta.leadId);
     }
