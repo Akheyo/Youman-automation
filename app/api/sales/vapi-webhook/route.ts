@@ -171,12 +171,6 @@ export async function POST(request: Request) {
         default:
           patch.status = 'erledigt';
       }
-      // Kein Interesse / Widerspruch → sofort dauerhaft auf die Sperrliste (§ 7 UWG).
-      if (leadStatus === 'kein_interesse') {
-        patch.do_not_call = true;
-        patch.follow_up_at = null;
-        patch.follow_up_note = null;
-      }
       await admin.from('call_leads').update(patch).eq('id', meta.leadId);
     }
 
