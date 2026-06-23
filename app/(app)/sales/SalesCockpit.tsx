@@ -63,7 +63,19 @@ interface Config {
   disclosure_text?: string | null;
 }
 
-type Tab = 'overview' | 'leads' | 'followups' | 'calls' | 'config';
+type Tab = 'overview' | 'leads' | 'campaigns' | 'followups' | 'calls' | 'config';
+
+interface Campaign {
+  id: string;
+  name: string;
+  status: string;
+  intensity: string;
+  window_start: number;
+  window_end: number;
+  max_attempts: number;
+  max_per_day: number;
+  counts: { total: number; offen: number; erledigt: number; gesperrt: number };
+}
 
 const INTEREST_LABEL: Record<string, string> = { high: '🔥 Hohes Interesse', warm: '🌤️ Warm', unknown: 'Unbekannt' };
 
@@ -100,12 +112,17 @@ export default function SalesCockpit(props: {
   const [calls, setCalls] = useState<Call[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [config, setConfig] = useState<Config | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
 
   async function loadLeads() {
     const r = await fetch('/api/sales/leads');
     if (r.ok) setLeads((await r.json()).leads);
+  }
+  async function loadCampaigns() {
+    const r = await fetch('/api/sales/campaigns');
+    if (r.ok) setCampaigns((await r.json()).campaigns);
   }
   async function loadCalls() {
     const r = await fetch('/api/sales/calls');
@@ -123,6 +140,7 @@ export default function SalesCockpit(props: {
     loadLeads();
     loadCalls();
     loadConfig();
+    loadCampaigns();
   }, []);
 
   async function call(id: string, fn: () => Promise<Response>, after?: () => Promise<void>) {
@@ -192,6 +210,7 @@ export default function SalesCockpit(props: {
           [
             ['overview', 'Übersicht'],
             ['leads', `Leads (${leads.length})`],
+            ['campaigns', `Kampagnen (${campaigns.length})`],
             ['followups', `Follow-ups (${followUps.length})`],
             ['calls', `Anrufe (${calls.length})`],
             ['config', 'Lina-Persönlichkeit'],
@@ -240,6 +259,20 @@ export default function SalesCockpit(props: {
             busy={busy}
             onCall={(id) => call(id, () => fetch('/api/sales/call', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadId: id }) }), async () => { await loadLeads(); await loadCalls(); })}
             onClear={(id) => save(id, { follow_up_at: null, follow_up_note: null })}
+          />
+        )}
+
+        {tab === 'campaigns' && (
+          <Campaigns
+            campaigns={campaigns}
+            approvedCount={approved.filter((l) => !l.do_not_call).length}
+            busy={busy}
+            vapiReady={props.vapiReady}
+            onReload={async () => {
+              await loadCampaigns();
+              await loadLeads();
+            }}
+            setErr={setErr}
           />
         )}
 
@@ -759,5 +792,130 @@ function ConfigForm({ config, onSaved, setErr }: { config: Config; onSaved: () =
         {saved && <span className={styles.savedMsg}>✓ Gespeichert</span>}
       </div>
     </form>
+  );
+}
+
+const INTENSITY_LABEL: Record<string, string> = { aggressiv: 'Aggressiv', moderat: 'Moderat', konservativ: 'Konservativ' };
+const CAMP_STATUS_LABEL: Record<string, string> = { entwurf: 'Entwurf', aktiv: 'Aktiv', pausiert: 'Pausiert', fertig: 'Fertig' };
+
+function campaignPatch(id: string, body: Record<string, unknown>) {
+  return fetch(`/api/sales/campaigns/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+}
+
+function Campaigns(p: {
+  campaigns: Campaign[];
+  approvedCount: number;
+  busy: string | null;
+  vapiReady: boolean;
+  onReload: () => Promise<void>;
+  setErr: (s: string) => void;
+}) {
+  const [name, setName] = useState('');
+  const [intensity, setIntensity] = useState('moderat');
+  const [ws, setWs] = useState(9);
+  const [we, setWe] = useState(17);
+  const [working, setWorking] = useState(false);
+
+  async function act(fn: () => Promise<Response>) {
+    p.setErr('');
+    setWorking(true);
+    try {
+      const r = await fn();
+      if (!r.ok) {
+        p.setErr((await r.json().catch(() => ({}))).error ?? 'Fehler');
+        return null;
+      }
+      await p.onReload();
+      return r;
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function create(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) return;
+    const ok = await act(() =>
+      fetch('/api/sales/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, intensity, window_start: ws, window_end: we }),
+      }),
+    );
+    if (ok) setName('');
+  }
+
+  return (
+    <>
+      {!p.vapiReady && (
+        <div className={styles.warn}>Telefonie ist noch nicht eingerichtet — Kampagnen lassen sich erst starten, wenn Vapi verbunden ist.</div>
+      )}
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}>Neue Kampagne</div>
+        <form className={styles.addForm} onSubmit={create}>
+          <input placeholder="Name der Kampagne" value={name} onChange={(e) => setName(e.target.value)} />
+          <select value={intensity} onChange={(e) => setIntensity(e.target.value)}>
+            <option value="aggressiv">Aggressiv (dicht nachfassen)</option>
+            <option value="moderat">Moderat (Standard)</option>
+            <option value="konservativ">Konservativ (sparsam)</option>
+          </select>
+          <input type="number" min={0} max={23} value={ws} onChange={(e) => setWs(Number(e.target.value))} title="Anruffenster von (Stunde)" />
+          <input type="number" min={1} max={24} value={we} onChange={(e) => setWe(Number(e.target.value))} title="Anruffenster bis (Stunde)" />
+          <button type="submit" disabled={working}>Anlegen</button>
+        </form>
+        <p className={styles.hint}>
+          Intensität steuert, wie oft &amp; dicht Lina nachfasst. Anruffenster = erlaubte Uhrzeiten (lokal). Aktuell{' '}
+          <strong>{p.approvedCount}</strong> freigegebene Leads zum Hinzufügen verfügbar.
+        </p>
+      </section>
+
+      {p.campaigns.length === 0 ? (
+        <div className={styles.card}>
+          <p className={styles.muted}>
+            Noch keine Kampagne. Lege oben eine an, füge mit „+ Leads&ldquo; deine freigegebenen Leads hinzu und starte sie — Lina arbeitet die Liste dann automatisch im Anruffenster ab.
+          </p>
+        </div>
+      ) : (
+        p.campaigns.map((c) => (
+          <section key={c.id} className={styles.card}>
+            <div className={styles.campHead}>
+              <div>
+                <div className={styles.campName}>{c.name}</div>
+                <div className={styles.campMeta}>
+                  <span className={styles.campStatus} data-s={c.status}>{CAMP_STATUS_LABEL[c.status] ?? c.status}</span>
+                  <span>{INTENSITY_LABEL[c.intensity] ?? c.intensity}</span>
+                  <span>{c.window_start}–{c.window_end} Uhr</span>
+                  <span>max. {c.max_attempts} Versuche · {c.max_per_day}/Tag</span>
+                </div>
+              </div>
+              <div className={styles.campActions}>
+                {c.status !== 'aktiv' ? (
+                  <button className={styles.callBtn} disabled={working || !p.vapiReady} onClick={() => act(() => campaignPatch(c.id, { status: 'aktiv' }))}>
+                    ▶ Starten
+                  </button>
+                ) : (
+                  <button className={styles.cancelBtn} disabled={working} onClick={() => act(() => campaignPatch(c.id, { status: 'pausiert' }))}>
+                    ⏸ Pausieren
+                  </button>
+                )}
+                <button className={styles.editBtn} disabled={working} title="Freigegebene Leads hinzufügen" onClick={() => act(() => fetch(`/api/sales/campaigns/${c.id}/enqueue`, { method: 'POST' }))}>
+                  + Leads
+                </button>
+                <button className={styles.delBtn} disabled={working} title="Löschen" onClick={() => { if (confirm('Kampagne wirklich löschen?')) act(() => fetch(`/api/sales/campaigns/${c.id}`, { method: 'DELETE' })); }}>
+                  🗑
+                </button>
+              </div>
+            </div>
+            <div className={styles.campStats}>
+              <span><strong>{c.counts.total}</strong> Leads</span>
+              <span><strong>{c.counts.offen}</strong> offen</span>
+              <span><strong>{c.counts.erledigt}</strong> erledigt</span>
+              <span><strong>{c.counts.gesperrt}</strong> gesperrt</span>
+            </div>
+          </section>
+        ))
+      )}
+    </>
   );
 }
