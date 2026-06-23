@@ -7,8 +7,8 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { startVapiCall, vapiConfigured } from '@/lib/vapi';
-import { DEFAULT_AGENT, type AgentConfig } from '@/lib/sales/agent';
+import { vapiConfigured } from '@/lib/vapi';
+import { placeCall } from '@/lib/sales/dialer';
 import { planForUser, isOwnerEmail } from '@/lib/plans';
 
 export const runtime = 'nodejs';
@@ -48,36 +48,11 @@ export async function POST(request: Request) {
     }
   }
 
-  // Load the Soul config (fall back to defaults).
-  const { data: cfgRow } = await supabase.from('agent_config').select('*').eq('user_id', user.id).single();
-  const cfg: AgentConfig = { ...DEFAULT_AGENT, ...(cfgRow ?? {}) };
-
-  // Pre-create the call row so the webhook can attach transcript/outcome later.
-  const { data: callRow, error: callErr } = await supabase
-    .from('calls')
-    .insert({
-      user_id: user.id,
-      lead_id: lead.id,
-      status: 'gestartet',
-      recorded: cfg.record_calls !== false,
-      disclosed: true, // KI-Offenlegung ist pflicht und nicht abschaltbar
-    })
-    .select()
-    .single();
-  if (callErr || !callRow) return NextResponse.json({ error: callErr?.message ?? 'Anruf konnte nicht angelegt werden.' }, { status: 400 });
-
-  try {
-    const { id: vapiId } = await startVapiCall({
-      cfg,
-      lead: { phone: lead.phone, name: lead.name, company: lead.company, website: lead.website, notes: lead.notes, anlass: lead.anlass },
-      ownerName: profile?.full_name || 'Youman Automation',
-      metadata: { userId: user.id, leadId: lead.id, callId: callRow.id },
-    });
-    await supabase.from('calls').update({ vapi_call_id: vapiId, status: 'laufend' }).eq('id', callRow.id);
-    await supabase.from('call_leads').update({ status: 'anruf' }).eq('id', lead.id);
-    return NextResponse.json({ ok: true, callId: callRow.id, vapiCallId: vapiId });
-  } catch (e) {
-    await supabase.from('calls').update({ status: 'fehler', summary: String(e) }).eq('id', callRow.id);
-    return NextResponse.json({ error: 'Anruf konnte nicht gestartet werden.', detail: String(e) }, { status: 502 });
-  }
+  const result = await placeCall(supabase, {
+    userId: user.id,
+    lead,
+    ownerName: profile?.full_name || 'Youman Automation',
+  });
+  if (!result.ok) return NextResponse.json({ error: result.error }, { status: 502 });
+  return NextResponse.json({ ok: true, callId: result.callId, vapiCallId: result.vapiCallId });
 }

@@ -288,3 +288,66 @@ drop policy if exists "google_tokens own" on public.google_tokens;
 -- only ever read by the service role (webhook). Restrict select to own row.
 create policy "google_tokens own" on public.google_tokens for select
   using (auth.uid() = user_id);
+
+-- ============================================================================
+--  Phase C — Kampagnen, Anruf-Queue & Scheduler
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- campaigns: a named outbound run over a list of leads with one agent profile,
+--   call window, intensity and rate/attempt limits. One row per campaign.
+-- ---------------------------------------------------------------------------
+create table if not exists public.campaigns (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references auth.users (id) on delete cascade,
+  name          text not null,
+  status        text not null default 'entwurf',   -- entwurf | aktiv | pausiert | fertig
+  intensity     text not null default 'moderat',   -- aggressiv | moderat | konservativ
+  window_start  integer not null default 9,         -- erlaubtes Anruffenster: Start-Stunde (lokal)
+  window_end    integer not null default 17,        -- End-Stunde (lokal)
+  timezone      text not null default 'Europe/Berlin',
+  max_attempts  integer not null default 3,         -- max. Anrufversuche pro Lead
+  max_per_day   integer not null default 50,        -- Rate-Limit: Anrufe/Tag in dieser Kampagne
+  created_at    timestamptz not null default now()
+);
+
+alter table public.campaigns enable row level security;
+drop policy if exists "campaigns own" on public.campaigns;
+create policy "campaigns own" on public.campaigns for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Queue fields on each lead (backfill-safe).
+alter table public.call_leads add column if not exists campaign_id     uuid references public.campaigns (id) on delete set null;
+alter table public.call_leads add column if not exists attempts        integer not null default 0;
+alter table public.call_leads add column if not exists next_attempt_at timestamptz;
+
+-- Index to let the scheduler find due leads quickly.
+create index if not exists call_leads_queue_idx on public.call_leads (campaign_id, next_attempt_at);
+
+-- ---------------------------------------------------------------------------
+-- consume_call_quota_for: service-role variant of the call quota check, keyed
+-- by an explicit user id (the campaign scheduler/cron runs without a session).
+-- ---------------------------------------------------------------------------
+create or replace function public.consume_call_quota_for(p_user uuid, p_limit integer)
+returns boolean
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  cur_period text := to_char(now(), 'YYYY-MM');
+  used integer;
+begin
+  update public.profiles
+     set search_count = case when usage_period is distinct from cur_period then 0 else search_count end,
+         email_count  = case when usage_period is distinct from cur_period then 0 else email_count  end,
+         call_count   = case when usage_period is distinct from cur_period then 0 else call_count   end,
+         usage_period = cur_period
+   where id = p_user;
+
+  select call_count into used from public.profiles where id = p_user;
+  if used is null then return false; end if;
+  if used >= p_limit then return false; end if;
+  update public.profiles set call_count = call_count + 1 where id = p_user;
+  return true;
+end;
+$$;
