@@ -19,6 +19,7 @@ interface Lead {
   status: string;
   follow_up_at: string | null;
   follow_up_note: string | null;
+  do_not_call?: boolean;
 }
 interface Call {
   id: string;
@@ -476,6 +477,7 @@ function LeadItem({
           <span className={styles.statusPill} data-s={l.status}>
             {STATUS_LABEL[l.status] ?? l.status}
           </span>
+          {l.do_not_call && <span className={styles.dncPill}>🚫 Gesperrt</span>}
           {l.interest !== 'unknown' && <span className={styles.interestPill}>{INTEREST_LABEL[l.interest]}</span>}
         </div>
         <div className={styles.leadMeta}>
@@ -487,7 +489,9 @@ function LeadItem({
         </div>
       </div>
       <div className={styles.leadActions}>
-        {l.needs_approval && !l.approved ? (
+        {l.do_not_call ? (
+          <span className={styles.dncNote} title="Lead hat widersprochen — darf nicht angerufen werden.">Do-Not-Call</span>
+        ) : l.needs_approval && !l.approved ? (
           <button className={styles.approveBtn} onClick={() => onApprove(l.id, true)} disabled={busy === l.id}>
             Freigeben
           </button>
@@ -677,13 +681,10 @@ function ConfigForm({ config, onSaved, setErr }: { config: Config; onSaved: () =
         auf eine Aufzeichnung hin (§&nbsp;201&nbsp;StGB). Empfehlung: beides aktiviert lassen.
       </p>
       <label className={styles.cfgToggle}>
-        <input
-          type="checkbox"
-          checked={c.ai_disclosure !== false}
-          onChange={(e) => setC({ ...c, ai_disclosure: e.target.checked })}
-        />
+        <input type="checkbox" checked disabled />
         <span>
           <strong>KI-Offenlegung</strong> — Lina sagt am Gesprächsanfang, dass sie eine digitale Assistentin ist.
+          {' '}<em>Gesetzlich vorgeschrieben (§&nbsp;312a&nbsp;BGB / EU&nbsp;AI&nbsp;Act) — immer aktiv, nicht abschaltbar.</em>
         </span>
       </label>
       <label className={styles.cfgToggle}>

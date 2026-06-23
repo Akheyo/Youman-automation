@@ -16,6 +16,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [agreed, setAgreed] = useState(false);
 
   const isSignup = mode === 'signup';
 
@@ -23,6 +24,10 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     e.preventDefault();
     setError(null);
     setInfo(null);
+    if (isSignup && !agreed) {
+      setError('Bitte bestätige, dass du als Unternehmer handelst und AGB & Datenschutz akzeptierst.');
+      return;
+    }
     setLoading(true);
     const supabase = createClient();
 
@@ -32,7 +37,7 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
           email,
           password,
           options: {
-            data: { full_name: name.trim() },
+            data: { full_name: name.trim(), is_business: true },
             emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
@@ -132,6 +137,17 @@ export default function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
             <div className={styles.forgot}>
               <Link href="/passwort-vergessen">Passwort vergessen?</Link>
             </div>
+          )}
+
+          {isSignup && (
+            <label className={styles.consent}>
+              <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+              <span>
+                Ich handle als <strong>Unternehmer</strong> (§&nbsp;14&nbsp;BGB) und akzeptiere die{' '}
+                <Link href="/agb" target="_blank">AGB</Link> und{' '}
+                <Link href="/datenschutz" target="_blank">Datenschutzerklärung</Link>.
+              </span>
+            </label>
           )}
 
           {error && <div className={styles.error}>{error}</div>}

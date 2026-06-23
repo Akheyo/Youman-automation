@@ -31,6 +31,9 @@ export async function POST(request: Request) {
 
   const { data: lead } = await supabase.from('call_leads').select('*').eq('id', body.leadId).eq('user_id', user.id).single();
   if (!lead) return NextResponse.json({ error: 'Lead nicht gefunden.' }, { status: 404 });
+  if (lead.do_not_call) {
+    return NextResponse.json({ error: 'Dieser Lead steht auf der Sperrliste (Do-Not-Call) und darf nicht angerufen werden.' }, { status: 403 });
+  }
   if (lead.needs_approval && !lead.approved) {
     return NextResponse.json({ error: 'Dieser Lead muss erst freigegeben werden.' }, { status: 403 });
   }
@@ -57,7 +60,7 @@ export async function POST(request: Request) {
       lead_id: lead.id,
       status: 'gestartet',
       recorded: cfg.record_calls !== false,
-      disclosed: cfg.ai_disclosure !== false,
+      disclosed: true, // KI-Offenlegung ist pflicht und nicht abschaltbar
     })
     .select()
     .single();

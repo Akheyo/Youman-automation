@@ -42,22 +42,20 @@ export const DEFAULT_AGENT: AgentConfig = {
 };
 
 /**
- * The mandatory compliance line spoken at the very start of the call when AI
- * disclosure is enabled (EU AI Act transparency) and/or recording is active
- * (§ 201 StGB). Returns '' when disclosure is switched off.
+ * The mandatory compliance line spoken at the very start of every call. The AI
+ * disclosure (EU AI Act / § 312a BGB) is ALWAYS present and cannot be switched
+ * off; the recording notice (§ 201 StGB) is added when recording is active.
  */
 export function disclosureLine(cfg: AgentConfig): string {
-  if (!cfg.ai_disclosure) return '';
   if (cfg.disclosure_text && cfg.disclosure_text.trim()) return cfg.disclosure_text.trim();
   const ai = `Bevor wir starten, ein kurzer Hinweis: Ich bin ${cfg.agent_name}, eine digitale Sprach­assistentin.`;
   const rec = cfg.record_calls ? ' Dieses Gespräch wird zu Qualitätszwecken aufgezeichnet.' : '';
   return `${ai}${rec}`;
 }
 
-/** The first message Lina speaks — disclosure (if enabled) followed by the opening line. */
+/** The first message Lina speaks — mandatory disclosure followed by the opening line. */
 export function buildFirstMessage(cfg: AgentConfig): string {
-  const d = disclosureLine(cfg);
-  return d ? `${d} ${cfg.opening_line}` : cfg.opening_line;
+  return `${disclosureLine(cfg)} ${cfg.opening_line}`;
 }
 
 export interface LeadContext {

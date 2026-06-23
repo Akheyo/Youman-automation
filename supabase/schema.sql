@@ -196,6 +196,10 @@ create policy "call_leads own" on public.call_leads for all
 alter table public.call_leads add column if not exists follow_up_at   timestamptz;
 alter table public.call_leads add column if not exists follow_up_note text;
 
+-- Do-Not-Call sperrliste (sofort wirksam): bei "kein Interesse"/Widerspruch
+-- gesetzt, blockt jeden weiteren Anruf an diesen Lead dauerhaft (§ 7 UWG).
+alter table public.call_leads add column if not exists do_not_call boolean not null default false;
+
 -- ---------------------------------------------------------------------------
 -- calls: one row per placed call + the full transcript / summary / recording
 -- ---------------------------------------------------------------------------
