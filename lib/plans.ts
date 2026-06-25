@@ -5,12 +5,14 @@
  * Stripe price IDs are read from env so they can differ per environment.
  */
 
-export type PlanId = 'free' | 'starter' | 'pro';
+export type PlanId = 'free' | 'starter' | 'pro' | 'scale';
 
 export interface Plan {
   id: string;
   name: string;
   priceLabel: string;
+  tagline?: string;
+  popular?: boolean;
   searches: number;
   emails: number;
   calls: number;
@@ -21,32 +23,47 @@ export interface Plan {
 export const PLANS: Record<PlanId, Plan> = {
   free: {
     id: 'free',
-    name: 'Free',
+    name: 'Test',
     priceLabel: '0 €',
-    searches: 10,
-    emails: 5,
-    calls: 5,
-    features: ['10 Firmensuchen / Monat', '5 Pitch-Mails / Monat', '5 KI-Anrufe / Monat', 'Felix, Anna, Paul & Lina'],
+    tagline: 'Unverbindlich ausprobieren',
+    searches: 25,
+    emails: 15,
+    calls: 10,
+    features: ['25 Firmensuchen / Monat', '15 Pitch-Mails / Monat', '10 KI-Anrufe / Monat', 'Felix, Anna, Paul & Lina', 'Ohne Kreditkarte starten'],
   },
   starter: {
     id: 'starter',
     name: 'Starter',
-    priceLabel: '29 €/Monat',
-    searches: 300,
-    emails: 150,
-    calls: 100,
+    priceLabel: '99 €/Monat',
+    tagline: 'Für Solo & Einstieg',
+    searches: 500,
+    emails: 250,
+    calls: 150,
     stripePriceId: process.env.STRIPE_PRICE_STARTER,
-    features: ['300 Firmensuchen / Monat', '150 Pitch-Mails / Monat', '100 KI-Anrufe / Monat', 'Lead-Historie', 'E-Mail-Support'],
+    features: ['500 Firmensuchen / Monat', '250 Pitch-Mails / Monat', '150 KI-Anrufe / Monat', '1 Agenten-Profil', 'Lead-Historie', 'E-Mail-Support'],
   },
   pro: {
     id: 'pro',
     name: 'Pro',
-    priceLabel: '79 €/Monat',
-    searches: 2000,
-    emails: 1000,
-    calls: 500,
+    priceLabel: '299 €/Monat',
+    tagline: 'Für wachsende Teams',
+    popular: true,
+    searches: 2500,
+    emails: 1500,
+    calls: 600,
     stripePriceId: process.env.STRIPE_PRICE_PRO,
-    features: ['2.000 Firmensuchen / Monat', '1.000 Pitch-Mails / Monat', '500 KI-Anrufe / Monat', 'Lead-Historie', 'Priorisierter Support'],
+    features: ['2.500 Firmensuchen / Monat', '1.500 Pitch-Mails / Monat', '600 KI-Anrufe / Monat', 'Kampagnen + Follow-up-Engine', 'Reporting-Dashboard', 'Priorisierter Support'],
+  },
+  scale: {
+    id: 'scale',
+    name: 'Scale',
+    priceLabel: '799 €/Monat',
+    tagline: 'Für Agenturen & Vertriebe',
+    searches: 8000,
+    emails: 5000,
+    calls: 2000,
+    stripePriceId: process.env.STRIPE_PRICE_SCALE,
+    features: ['8.000 Firmensuchen / Monat', '5.000 Pitch-Mails / Monat', '2.000 KI-Anrufe / Monat', 'Unbegrenzte Agenten-Profile', 'Warm Transfer + Webhooks', 'Dedizierter Ansprechpartner'],
   },
 };
 
@@ -97,6 +114,7 @@ export function planForUser(opts: { plan?: string | null; email?: string | null 
 
 /** Map a Stripe price ID back to a plan (used by the billing webhook). */
 export function planByPriceId(priceId: string | null | undefined): PlanId {
+  if (priceId && priceId === process.env.STRIPE_PRICE_SCALE) return 'scale';
   if (priceId && priceId === process.env.STRIPE_PRICE_PRO) return 'pro';
   if (priceId && priceId === process.env.STRIPE_PRICE_STARTER) return 'starter';
   return 'free';
