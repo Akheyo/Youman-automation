@@ -61,6 +61,9 @@ interface Config {
   record_calls: boolean;
   ai_disclosure: boolean;
   disclosure_text?: string | null;
+  transfer_number?: string | null;
+  voicemail_detection?: boolean;
+  voicemail_message?: string | null;
 }
 
 type Tab = 'overview' | 'leads' | 'campaigns' | 'followups' | 'calls' | 'config';
@@ -781,6 +784,40 @@ function ConfigForm({ config, onSaved, setErr }: { config: Config; onSaved: () =
             value={c.disclosure_text ?? ''}
             onChange={(e) => setC({ ...c, disclosure_text: e.target.value })}
             placeholder="Bevor wir starten, ein kurzer Hinweis: Ich bin Lina, eine digitale Sprachassistentin…"
+          />
+        </label>
+      )}
+
+      <div className={styles.cfgHead}>Weiterleitung &amp; Mailbox</div>
+      <p className={styles.hint}>
+        Optional: Lina verbindet heiße Leads live mit einem Menschen und erkennt Anrufbeantworter.
+      </p>
+      <label className={styles.cfgField}>
+        <span>Weiterleitungs-Nummer (Warm Transfer, im Format +49…)</span>
+        <input
+          value={c.transfer_number ?? ''}
+          onChange={(e) => setC({ ...c, transfer_number: e.target.value })}
+          placeholder="+49 151 23456789 — leer = keine Weiterleitung"
+        />
+      </label>
+      <label className={styles.cfgToggle}>
+        <input
+          type="checkbox"
+          checked={c.voicemail_detection !== false}
+          onChange={(e) => setC({ ...c, voicemail_detection: e.target.checked })}
+        />
+        <span>
+          <strong>Anrufbeantworter erkennen</strong> — bei Mailbox hinterlässt Lina eine kurze Nachricht statt ins Leere zu reden.
+        </span>
+      </label>
+      {c.voicemail_detection !== false && (
+        <label className={styles.cfgField}>
+          <span>Mailbox-Ansage (optional — leer = Standardansage)</span>
+          <textarea
+            rows={2}
+            value={c.voicemail_message ?? ''}
+            onChange={(e) => setC({ ...c, voicemail_message: e.target.value })}
+            placeholder="Hallo, hier ist Lina. Ich habe Sie leider nicht erreicht und melde mich gern noch einmal…"
           />
         </label>
       )}

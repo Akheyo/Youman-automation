@@ -20,6 +20,10 @@ export interface AgentConfig {
   record_calls: boolean;
   ai_disclosure: boolean;
   disclosure_text: string | null;
+  // Warm transfer & voicemail
+  transfer_number: string | null;
+  voicemail_detection: boolean;
+  voicemail_message: string | null;
 }
 
 export const DEFAULT_AGENT: AgentConfig = {
@@ -39,7 +43,18 @@ export const DEFAULT_AGENT: AgentConfig = {
   record_calls: true,
   ai_disclosure: true,
   disclosure_text: null,
+  transfer_number: null,
+  voicemail_detection: true,
+  voicemail_message: null,
 };
+
+/** Standard-Mailbox-Ansage, falls keine eigene hinterlegt ist. */
+export function voicemailMessage(cfg: AgentConfig): string {
+  return (
+    (cfg.voicemail_message && cfg.voicemail_message.trim()) ||
+    `Hallo, hier ist ${cfg.agent_name}. Ich habe Sie leider nicht erreicht und melde mich gern noch einmal. Schönen Tag!`
+  );
+}
 
 /**
  * The mandatory compliance line spoken at the very start of every call. The AI
@@ -107,6 +122,11 @@ export function buildSystemPrompt(cfg: AgentConfig, lead: LeadContext, ownerName
     `Sobald sich der Kontakt auf einen Slot festlegt, buche ihn sofort mit dem Werkzeug "termin_buchen" und bestätige den Termin mündlich.`,
     `Frage nach einer E-Mail-Adresse für die Einladung, wenn möglich.`,
     ``,
+    cfg.transfer_number ? `## Weiterleitung an einen Menschen` : undefined,
+    cfg.transfer_number
+      ? `Wenn der Kontakt ausdrücklich eine echte Person sprechen möchte ODER sehr großes, konkretes Interesse zeigt, leite das Gespräch sofort live weiter — nutze dafür das Werkzeug "transferCall". Kündige es kurz an ("Einen Moment, ich verbinde Sie mit einem Kollegen.").`
+      : undefined,
+    cfg.transfer_number ? `` : undefined,
     `## Wichtig`,
     `Beginne das Gespräch mit: "${cfg.opening_line}"`,
     `Halte dich kurz. Wenn die Person kein Interesse hat oder keine Zeit, verabschiede dich höflich und beende das Gespräch.`,
