@@ -37,7 +37,7 @@ export default function PricingPage() {
     }
   }
 
-  const order: PlanId[] = ['free', 'starter', 'pro'];
+  const order: PlanId[] = ['free', 'starter', 'pro', 'scale'];
 
   return (
     <div className={styles.page}>
@@ -61,11 +61,12 @@ export default function PricingPage() {
       <div className={styles.grid}>
         {order.map((id) => {
           const plan = PLANS[id];
-          const highlight = id === 'starter';
+          const highlight = Boolean(plan.popular);
           return (
             <div key={id} className={`${styles.card} ${highlight ? styles.highlight : ''}`}>
               {highlight && <div className={styles.badge}>Beliebt</div>}
               <div className={styles.planName}>{plan.name}</div>
+              {plan.tagline && <div className={styles.tagline}>{plan.tagline}</div>}
               <div className={styles.price}>{plan.priceLabel}</div>
               <ul className={styles.features}>
                 {plan.features.map((f) => (
