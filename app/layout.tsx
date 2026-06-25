@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import PwaRegister from './pwa-register';
+import CookieConsent from '@/components/CookieConsent';
 
 export const metadata: Metadata = {
   title: 'Youman Automation — dein KI-Vertriebsteam, das anruft & Termine bucht',
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {children}
+        <CookieConsent />
         <PwaRegister />
       </body>
     </html>
