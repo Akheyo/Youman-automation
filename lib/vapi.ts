@@ -7,7 +7,7 @@
  *   APP_URL               public base URL (for the tool/webhook callback)
  */
 
-import { buildSystemPrompt, buildFirstMessage, callTools, voiceConfig, type AgentConfig, type LeadContext } from './sales/agent';
+import { buildSystemPrompt, buildFirstMessage, callTools, voiceConfig, voicemailMessage, type AgentConfig, type LeadContext } from './sales/agent';
 
 const VAPI_BASE = 'https://api.vapi.ai';
 
@@ -25,7 +25,18 @@ export interface StartCallInput {
 /** Create an outbound call. Returns the Vapi call id. */
 export async function startVapiCall(input: StartCallInput): Promise<{ id: string }> {
   const appUrl = (process.env.APP_URL || '').replace(/\/$/, '');
-  const assistant = {
+
+  // Warm transfer: add Vapi's native transferCall tool when a number is set.
+  const transfer = (input.cfg.transfer_number || '').trim();
+  const tools: unknown[] = [...callTools()];
+  if (transfer) {
+    tools.push({
+      type: 'transferCall',
+      destinations: [{ type: 'number', number: transfer, message: 'Einen Moment, ich verbinde Sie mit einem Kollegen.' }],
+    });
+  }
+
+  const assistant: Record<string, unknown> = {
     name: input.cfg.agent_name,
     firstMessage: buildFirstMessage(input.cfg),
     maxDurationSeconds: input.cfg.max_duration,
@@ -36,7 +47,7 @@ export async function startVapiCall(input: StartCallInput): Promise<{ id: string
       model: 'gpt-4o',
       temperature: 0.6,
       messages: [{ role: 'system', content: buildSystemPrompt(input.cfg, input.lead, input.ownerName) }],
-      tools: callTools(),
+      tools,
     },
     voice: voiceConfig(input.cfg.voice),
     transcriber: { provider: 'deepgram', model: 'nova-2', language: input.cfg.language || 'de' },
@@ -46,6 +57,12 @@ export async function startVapiCall(input: StartCallInput): Promise<{ id: string
       summaryPrompt: 'Fasse das Telefonat in 2–3 deutschen Sätzen zusammen: Ergebnis, Stimmung, nächste Schritte.',
     },
   };
+
+  // Voicemail detection: leave a tailored message instead of talking to a machine.
+  if (input.cfg.voicemail_detection !== false) {
+    assistant.voicemailDetection = { provider: 'vapi' };
+    assistant.voicemailMessage = voicemailMessage(input.cfg);
+  }
 
   const res = await fetch(`${VAPI_BASE}/call`, {
     method: 'POST',

@@ -351,3 +351,14 @@ begin
   return true;
 end;
 $$;
+
+-- ============================================================================
+--  Phase E — Warm Transfer & Voicemail
+-- ============================================================================
+-- transfer_number: echte Telefonnummer (E.164), an die Lina einen heißen Lead
+--   live weiterleitet. Leer = Weiterleitung deaktiviert.
+-- voicemail_detection: erkennt Anrufbeantworter; voicemail_message = Ansage,
+--   die Lina dann hinterlässt (leer = Standardansage).
+alter table public.agent_config add column if not exists transfer_number    text;
+alter table public.agent_config add column if not exists voicemail_detection boolean not null default true;
+alter table public.agent_config add column if not exists voicemail_message   text;
