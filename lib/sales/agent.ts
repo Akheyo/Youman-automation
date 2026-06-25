@@ -174,7 +174,27 @@ export function callTools() {
   ];
 }
 
-/** Map a short voice key to a Vapi voice config (11labs German-capable voices). */
+/**
+ * Map a short voice key to a Vapi voice config (11labs German-capable voices).
+ *
+ * The voice settings are tuned for natural, human-sounding outbound calls:
+ * - eleven_turbo_v2_5 = multilingual + low latency (critical on the phone — any
+ *   delay before answering instantly sounds robotic).
+ * - stability 0.45    = expressive, not monotone (higher = flatter).
+ * - similarityBoost .8 = stays close to the voice's natural timbre.
+ * - style 0.35        = a touch of liveliness without over-acting.
+ * - useSpeakerBoost   = clearer, fuller voice over a phone line.
+ * - optimizeStreamingLatency 3 = snappy turn-taking so replies feel immediate.
+ */
 export function voiceConfig(voice: string) {
-  return { provider: '11labs', voiceId: voice || 'sarah', model: 'eleven_turbo_v2_5' };
+  return {
+    provider: '11labs',
+    voiceId: voice || 'sarah',
+    model: 'eleven_turbo_v2_5',
+    stability: 0.45,
+    similarityBoost: 0.8,
+    style: 0.35,
+    useSpeakerBoost: true,
+    optimizeStreamingLatency: 3,
+  };
 }
