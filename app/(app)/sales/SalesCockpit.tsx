@@ -815,6 +815,7 @@ function Campaigns(p: {
   const [ws, setWs] = useState(9);
   const [we, setWe] = useState(17);
   const [working, setWorking] = useState(false);
+  const [openReport, setOpenReport] = useState<string | null>(null);
 
   async function act(fn: () => Promise<Response>) {
     p.setErr('');
@@ -902,6 +903,9 @@ function Campaigns(p: {
                 <button className={styles.editBtn} disabled={working} title="Freigegebene Leads hinzufügen" onClick={() => act(() => fetch(`/api/sales/campaigns/${c.id}/enqueue`, { method: 'POST' }))}>
                   + Leads
                 </button>
+                <button className={styles.editBtn} title="Auswertung" onClick={() => setOpenReport(openReport === c.id ? null : c.id)}>
+                  📊 Auswertung
+                </button>
                 <button className={styles.delBtn} disabled={working} title="Löschen" onClick={() => { if (confirm('Kampagne wirklich löschen?')) act(() => fetch(`/api/sales/campaigns/${c.id}`, { method: 'DELETE' })); }}>
                   🗑
                 </button>
@@ -913,9 +917,92 @@ function Campaigns(p: {
               <span><strong>{c.counts.erledigt}</strong> erledigt</span>
               <span><strong>{c.counts.gesperrt}</strong> gesperrt</span>
             </div>
+            {openReport === c.id && <CampaignReport id={c.id} />}
           </section>
         ))
       )}
     </>
+  );
+}
+
+interface Report {
+  leadCount: number;
+  calls: number;
+  reached: number;
+  qualified: number;
+  termine: number;
+  keinInteresse: number;
+  minutes: number;
+  avgSec: number;
+  conversion: number;
+  series: { day: string; count: number }[];
+}
+
+function CampaignReport({ id }: { id: string }) {
+  const [r, setR] = useState<Report | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      setLoading(true);
+      const res = await fetch(`/api/sales/campaigns/${id}/report`);
+      if (active && res.ok) setR((await res.json()).report);
+      if (active) setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  if (loading) return <div className={styles.reportBox}><p className={styles.muted}>Lade Auswertung…</p></div>;
+  if (!r) return <div className={styles.reportBox}><p className={styles.muted}>Auswertung nicht verfügbar.</p></div>;
+
+  const pct = (n: number) => (r.calls ? Math.round((n / r.calls) * 100) : 0);
+  const funnel = [
+    { label: 'Angerufen', n: r.calls, p: 100 },
+    { label: 'Erreicht', n: r.reached, p: pct(r.reached) },
+    { label: 'Qualifiziert', n: r.qualified, p: pct(r.qualified) },
+    { label: 'Termine', n: r.termine, p: pct(r.termine) },
+  ];
+  const maxDay = Math.max(1, ...r.series.map((s) => s.count));
+  const mmss = `${Math.floor(r.avgSec / 60)}:${String(r.avgSec % 60).padStart(2, '0')}`;
+
+  return (
+    <div className={styles.reportBox}>
+      {r.calls === 0 ? (
+        <p className={styles.muted}>Noch keine abgeschlossenen Anrufe in dieser Kampagne.</p>
+      ) : (
+        <>
+          <div className={styles.funnel}>
+            {funnel.map((f) => (
+              <div key={f.label} className={styles.funnelRow}>
+                <span className={styles.funnelLabel}>{f.label}</span>
+                <div className={styles.funnelTrack}>
+                  <div className={styles.funnelFill} style={{ width: `${Math.max(f.p, 3)}%` }} />
+                </div>
+                <span className={styles.funnelVal}>{f.n} · {f.p}%</span>
+              </div>
+            ))}
+          </div>
+
+          <div className={styles.kpiGrid}>
+            <div className={styles.kpi}><span>Conversion</span><strong>{r.conversion}%</strong></div>
+            <div className={styles.kpi}><span>Erreicht-Quote</span><strong>{pct(r.reached)}%</strong></div>
+            <div className={styles.kpi}><span>Ø-Dauer</span><strong>{mmss}</strong></div>
+            <div className={styles.kpi}><span>Minuten gesamt</span><strong>{r.minutes}</strong></div>
+            <div className={styles.kpi}><span>Kein Interesse</span><strong>{r.keinInteresse}</strong></div>
+            <div className={styles.kpi}><span>Leads</span><strong>{r.leadCount}</strong></div>
+          </div>
+
+          <div className={styles.sparkHead}>Anrufe (14 Tage)</div>
+          <div className={styles.spark}>
+            {r.series.map((s) => (
+              <div key={s.day} className={styles.sparkBar} title={`${s.day}: ${s.count}`} style={{ height: `${Math.round((s.count / maxDay) * 100)}%` }} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
