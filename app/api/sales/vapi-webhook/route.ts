@@ -200,6 +200,32 @@ export async function POST(request: Request) {
       await admin.from('call_leads').update(patch).eq('id', meta.leadId);
     }
 
+    // Outbound post-call webhook (n8n/Make/Zapier/CRM) — fire-and-forget.
+    if (meta.userId) {
+      const { data: prof } = await admin.from('profiles').select('post_call_webhook_url').eq('id', meta.userId).single();
+      const hook = prof?.post_call_webhook_url as string | null;
+      if (hook) {
+        try {
+          await fetch(hook, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'call.completed',
+              callId: meta.callId,
+              leadId: meta.leadId,
+              outcome: finalOutcome,
+              summary,
+              recording_url: recording,
+              duration_sec: duration,
+              extracted: extracted ?? null,
+            }),
+          });
+        } catch {
+          /* never block the webhook on a failing downstream */
+        }
+      }
+    }
+
     return NextResponse.json({ ok: true });
   }
 

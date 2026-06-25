@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { requireUser } from '@/lib/supabase/server';
 import { planForUser } from '@/lib/plans';
 import BillingButtons from '../dashboard/BillingButtons';
+import Webhooks from './Webhooks';
 import styles from '../dashboard/dashboard.module.css';
 
 export const metadata: Metadata = { title: 'Einstellungen · Youman Automation' };
@@ -82,6 +83,8 @@ export default async function EinstellungenPage() {
             </Link>
           </div>
         </section>
+
+        <Webhooks />
 
         <section className={styles.card}>
           <div className={styles.sectionTitle}>Abrechnung</div>

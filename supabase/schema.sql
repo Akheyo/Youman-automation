@@ -362,3 +362,13 @@ $$;
 alter table public.agent_config add column if not exists transfer_number    text;
 alter table public.agent_config add column if not exists voicemail_detection boolean not null default true;
 alter table public.agent_config add column if not exists voicemail_message   text;
+
+-- ============================================================================
+--  Phase F — Integrationen (Webhooks rein/raus)
+-- ============================================================================
+-- lead_webhook_token: geheimer Token für den Lead-Eingang-Webhook (extern POSTet
+--   Leads rein → /api/ingest/leads?token=...). post_call_webhook_url: nach jedem
+--   Anruf wird das Ergebnis als JSON dorthin geschickt (n8n/Make/Zapier/CRM).
+alter table public.profiles add column if not exists lead_webhook_token   text;
+alter table public.profiles add column if not exists post_call_webhook_url text;
+create index if not exists profiles_lead_webhook_token_idx on public.profiles (lead_webhook_token);
