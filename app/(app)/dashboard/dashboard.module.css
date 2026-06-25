@@ -578,6 +578,40 @@
   background: #f6f1ff;
 }
 
+/* ---- Webhooks / integrations ---- */
+.webhookUrl {
+  margin: 8px 0;
+  padding: 10px 12px;
+  background: #f7f3ff;
+  border: 1px solid #e9ddfb;
+  border-radius: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  color: #4a4264;
+  word-break: break-all;
+}
+.webhookActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 8px;
+}
+.webhookInput {
+  flex: 1;
+  min-width: 220px;
+  border: 1px solid #e3d9f6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+.webhookInput:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
 /* ---- Billing buttons (shared) ---- */
 .billing {
   display: flex;
