@@ -85,6 +85,25 @@ export default function PricingPage() {
             </div>
           );
         })}
+
+        <div className={styles.card}>
+          <div className={styles.planName}>Enterprise</div>
+          <div className={styles.tagline}>Für große Vertriebsorganisationen</div>
+          <div className={styles.price}>Individuell</div>
+          <ul className={styles.features}>
+            <li>Maßgeschneiderte Kontingente</li>
+            <li>Unbegrenzte Agenten-Profile</li>
+            <li>Warm Transfer, Webhooks &amp; API</li>
+            <li>Persönliches Onboarding</li>
+            <li>SLA &amp; dedizierter Ansprechpartner</li>
+          </ul>
+          <a
+            href="mailto:infoall4youstore@gmail.com?subject=Enterprise-Anfrage%20Youman%20Automation"
+            className={`${styles.cta} ${styles.ctaOutline}`}
+          >
+            Kontakt aufnehmen
+          </a>
+        </div>
       </div>
 
       <p className={styles.foot}>
