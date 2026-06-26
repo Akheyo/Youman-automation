@@ -727,7 +727,7 @@ function ConfigForm({ config, onSaved, setErr }: { config: Config; onSaved: () =
     </label>
   );
 
-  const PRESET_VOICES = ['sarah', 'charlotte', 'alice', 'lily', 'george', 'liam'];
+  const PRESET_VOICES = ['mDRP1h6KfUD1XAUJxqr0', 'sarah', 'charlotte', 'alice', 'lily', 'george', 'liam'];
   const voiceIsCustom = !PRESET_VOICES.includes(c.voice);
 
   return (
@@ -741,7 +741,8 @@ function ConfigForm({ config, onSaved, setErr }: { config: Config; onSaved: () =
           value={voiceIsCustom ? '__custom__' : c.voice}
           onChange={(e) => setC({ ...c, voice: e.target.value === '__custom__' ? '' : e.target.value })}
         >
-          <option value="sarah">Sarah — weiblich, warm (Standard)</option>
+          <option value="mDRP1h6KfUD1XAUJxqr0">Deutsch (native) — ElevenLabs (Standard)</option>
+          <option value="sarah">Sarah — weiblich, warm</option>
           <option value="charlotte">Charlotte — weiblich, freundlich</option>
           <option value="alice">Alice — weiblich, klar</option>
           <option value="lily">Lily — weiblich, jung</option>

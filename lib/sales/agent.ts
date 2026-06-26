@@ -29,7 +29,7 @@ export interface AgentConfig {
 export const DEFAULT_AGENT: AgentConfig = {
   agent_name: 'Lina',
   language: 'de',
-  voice: 'sarah',
+  voice: 'mDRP1h6KfUD1XAUJxqr0', // Native deutsche ElevenLabs-Stimme (eigener Key in Vapi nötig)
   goal: 'Ein unverbindliches Kennenlern-Telefonat mit dem Geschäftsinhaber vereinbaren.',
   opening_line: 'Hallo, hier ist Lina von Youman Automation. Habe ich Sie gerade kurz erwischt?',
   persona:
