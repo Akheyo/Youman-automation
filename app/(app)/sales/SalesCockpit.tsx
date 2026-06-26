@@ -727,6 +727,9 @@ function ConfigForm({ config, onSaved, setErr }: { config: Config; onSaved: () =
     </label>
   );
 
+  const PRESET_VOICES = ['sarah', 'charlotte', 'alice', 'lily', 'george', 'liam'];
+  const voiceIsCustom = !PRESET_VOICES.includes(c.voice);
+
   return (
     <form className={styles.card} onSubmit={save}>
       <div className={styles.cardHead}>Lina-Konfiguration (ihr „Charakter&ldquo;)</div>
@@ -734,14 +737,25 @@ function ConfigForm({ config, onSaved, setErr }: { config: Config; onSaved: () =
       {field('agent_name', 'Name des Agenten')}
       <label className={styles.cfgField}>
         <span>Stimme</span>
-        <select value={c.voice} onChange={(e) => setC({ ...c, voice: e.target.value })}>
+        <select
+          value={voiceIsCustom ? '__custom__' : c.voice}
+          onChange={(e) => setC({ ...c, voice: e.target.value === '__custom__' ? '' : e.target.value })}
+        >
           <option value="sarah">Sarah — weiblich, warm (Standard)</option>
           <option value="charlotte">Charlotte — weiblich, freundlich</option>
           <option value="alice">Alice — weiblich, klar</option>
           <option value="lily">Lily — weiblich, jung</option>
           <option value="george">George — männlich, ruhig</option>
           <option value="liam">Liam — männlich, sympathisch</option>
+          <option value="__custom__">Eigene ElevenLabs-Stimme (Voice-ID)…</option>
         </select>
+        {voiceIsCustom && (
+          <input
+            value={c.voice}
+            onChange={(e) => setC({ ...c, voice: e.target.value })}
+            placeholder="ElevenLabs Voice-ID, z. B. AZnzlk1XvdvUeBnXmlld"
+          />
+        )}
       </label>
       {field('opening_line', 'Eröffnungssatz', true)}
       {field('goal', 'Ziel des Anrufs', true)}
