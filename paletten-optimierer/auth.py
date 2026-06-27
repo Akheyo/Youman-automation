@@ -26,7 +26,7 @@ _USERS: dict[str, dict] = {
     "mohsen": {
         "pw_sha256":
             "be89732cf5bf8e682134e6247478f33f15f84912e8412106ff6c8dd43ea862c8",
-        "ablauf": date(2026, 6, 19),
+        "ablauf": date(2026, 7, 5),
     },
 }
 
