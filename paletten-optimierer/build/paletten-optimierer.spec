@@ -102,6 +102,11 @@ app_datas = [
     ("../assets/youman_logo.png", "assets"),
 ]
 
+# Kunden-Branding (Draht Müller) — nur einpacken, wenn vorhanden.
+_dm_logo = "../static/draht_mueller_logo.png"
+if _os.path.exists(_dm_logo):
+    app_datas.append((_dm_logo, "static"))
+
 if _has_status:
     app_datas.append((_status_quelle, "."))
 

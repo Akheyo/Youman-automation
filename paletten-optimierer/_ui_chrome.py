@@ -20,13 +20,23 @@ import streamlit as st
 # im PyInstaller-Bundle und auf jeder Plattform funktioniert.
 # ---------------------------------------------------------------------------
 def _logo_pfad() -> Path | None:
-    """Sucht das Logo in mehreren Standorten."""
+    """Sucht das Brand-Logo in mehreren Standorten.
+
+    Reihenfolge: Draht-Müller-Logo (static/) zuerst, danach das
+    Youman-Logo (assets/) als Fallback. So funktioniert die App auch
+    während der Inbetriebnahme, bevor das Kunden-Logo eingespielt wurde.
+    """
+    hier = Path(__file__).resolve().parent
     kandidaten = [
-        Path(__file__).resolve().parent / "assets" / "youman_logo.png",
-        Path(__file__).resolve().parent.parent / "assets" / "youman_logo.png",
+        hier / "static" / "draht_mueller_logo.png",
+        hier.parent / "static" / "draht_mueller_logo.png",
+        hier / "assets" / "youman_logo.png",
+        hier.parent / "assets" / "youman_logo.png",
     ]
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
+        kandidaten.append(Path(meipass) / "static" / "draht_mueller_logo.png")
+        kandidaten.append(Path(meipass) / "draht_mueller_logo.png")
         kandidaten.append(Path(meipass) / "assets" / "youman_logo.png")
         kandidaten.append(Path(meipass) / "youman_logo.png")
     for p in kandidaten:
@@ -48,12 +58,14 @@ def _logo_base64() -> str | None:
         return None
 
 
-# --- Design-Tokens (identisch zur Hauptapp app.py:75-80) -------------
-PRIMARY = "#0f1f3d"
-PRIMARY_LIGHT = "#1a2944"
-ACCENT = "#fbbf24"
-BLUE = "#2563eb"
-GREEN = "#16a34a"
+# --- Design-Tokens ---------------------------------------------------
+# Brand-/Akzent-Farbe = exakter Hex-Wert aus dem Draht-Müller-Logo.
+# PRIMARY_LIGHT ist der dunklere Hover-/Aktiv-Ton.
+PRIMARY = "#00236E"          # DM-Blau (Brand)
+PRIMARY_LIGHT = "#001A55"    # Hover/dunkler
+ACCENT = PRIMARY             # Akzent-Bindings nutzen Brand-Blau
+BLUE = PRIMARY               # Primary-Buttons in DM-Blau
+GREEN = "#16a34a"            # Status: Standard ✓ (bleibt)
 GRAY_BG = "#f5f6f8"
 
 
@@ -94,8 +106,8 @@ CSS = f"""
         background: rgba(255,255,255,0.06);
     }}
     section[data-testid="stSidebar"] [data-testid="stRadio"] > div > label:has(input:checked) {{
-        background: rgba(251,191,36,0.12);
-        border-left: 3px solid {ACCENT}; padding-left: 11px;
+        background: rgba(0,35,110,0.22);
+        border-left: 3px solid #ffffff; padding-left: 11px;
     }}
     section[data-testid="stSidebar"] [data-testid="stRadio"] > div > label:has(input:checked) p {{
         color: #fff !important; font-weight: 600;
@@ -105,9 +117,11 @@ CSS = f"""
         padding: 22px 14px 24px; border-bottom: 1px solid rgba(255,255,255,0.06);
         margin-bottom: 14px;
     }}
-    .sidebar-brand img {{ width: 100%; max-width: 200px; height: auto;
-        background: #fff; padding: 8px 12px; border-radius: 10px;
+    .sidebar-brand img {{ height: 48px; width: auto; max-width: 100%;
+        background: #fff; padding: 6px 10px; border-radius: 10px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.15);}}
+    .sidebar-brand .pwr {{ color: #888; font-size: 11px; font-weight: 400;
+        margin-top: 4px; text-align: center; letter-spacing: 0.2px;}}
     .sidebar-brand .sub  {{ color: #94a3b8; font-size: 10px; letter-spacing: 0.4px;
         text-transform: uppercase; text-align: center;}}
     .sidebar-section-label {{
@@ -156,7 +170,7 @@ CSS = f"""
     }}
     .step.done .num {{ background: {GREEN}; color: #fff; }}
     .step.done {{ color: {PRIMARY_LIGHT}; }}
-    .step.active .num {{ background: {BLUE}; color: #fff; box-shadow: 0 0 0 4px rgba(37,99,235,0.15);}}
+    .step.active .num {{ background: {PRIMARY}; color: #fff; box-shadow: 0 0 0 4px rgba(0,35,110,0.18);}}
     .step.active {{ color: {PRIMARY_LIGHT}; background: linear-gradient(180deg, #f0f7ff 0%, #fff 100%); border-color: #bfdbfe;}}
 
     /* Cards */
@@ -216,11 +230,12 @@ CSS = f"""
 
     /* Buttons */
     .stButton > button[kind="primary"] {{
-        background: {BLUE}; color: #fff; border: none;
+        background: {PRIMARY}; color: #fff; border: none;
         font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }}
     .stButton > button[kind="primary"]:hover {{
-        background: #1d4ed8; box-shadow: 0 4px 12px rgba(37,99,235,0.25);
+        background: {PRIMARY_LIGHT};
+        box-shadow: 0 4px 12px rgba(0,35,110,0.30);
     }}
     .stButton > button[kind="secondary"] {{
         background: #fff; color: {PRIMARY_LIGHT}; border: 1px solid #e5e7eb;
@@ -231,6 +246,15 @@ CSS = f"""
     /* Inputs */
     [data-baseweb="input"] > div, [data-baseweb="select"] > div {{
         border-radius: 8px !important;
+    }}
+
+    /* Toggle-Switches im "an"-Zustand auf DM-Blau */
+    [data-baseweb="switch"] [role="switch"][aria-checked="true"] > div,
+    [data-baseweb="checkbox"] [role="checkbox"][aria-checked="true"] {{
+        background: {PRIMARY} !important;
+    }}
+    [data-testid="stToggle"] [role="switch"][aria-checked="true"] > div {{
+        background: {PRIMARY} !important;
     }}
 
     /* Disabled-Info-Box für nicht-verfügbare Features */
@@ -366,15 +390,18 @@ def disabled_feature(name: str, grund: str = "in dieser Mini-Version nicht verf�
 
 
 def sidebar_brand() -> None:
+    """Sidebar-Brand: Draht-Müller-Logo oben, darunter dezent
+    "powered by Youman Automation", darunter der Untertitel."""
     logo = _logo_base64()
-    logo_html = (f'<img src="{logo}" alt="Youman Automation">'
+    logo_html = (f'<img src="{logo}" alt="Draht Müller">'
                   if logo else
                   '<div style="color:#fff;font-weight:800;font-size:22px;">'
-                  'Youman</div>')
+                  'Draht Müller</div>')
     st.markdown(
         f'<div class="sidebar-brand">'
         f'{logo_html}'
-        f'<div class="sub">Industriepaletten</div>'
+        f'<div class="pwr">powered by Youman Automation</div>'
+        f'<div class="sub">Industriepaletten · Standardisierung</div>'
         f'</div>',
         unsafe_allow_html=True,
     )

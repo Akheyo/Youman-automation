@@ -58,13 +58,22 @@ from _ui_chrome import (  # noqa: E402
 
 
 def _favicon_path() -> str:
-    """Sucht das Logo für das Browser-Favicon."""
+    """Sucht das Brand-Logo für das Browser-Favicon.
+
+    Bevorzugt das Draht-Müller-Logo aus static/; fällt sonst auf das
+    Youman-Logo zurück. Streamlit nimmt selbst das ganze Bild als
+    Favicon (skaliert automatisch).
+    """
     kandidaten = [
+        HIER / "static" / "draht_mueller_logo.png",
+        HIER.parent / "static" / "draht_mueller_logo.png",
         HIER / "assets" / "youman_logo.png",
         HIER.parent / "assets" / "youman_logo.png",
     ]
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
+        kandidaten.append(Path(meipass) / "static" / "draht_mueller_logo.png")
+        kandidaten.append(Path(meipass) / "draht_mueller_logo.png")
         kandidaten.append(Path(meipass) / "assets" / "youman_logo.png")
     for p in kandidaten:
         if p.exists():
@@ -73,7 +82,7 @@ def _favicon_path() -> str:
 
 
 st.set_page_config(
-    page_title="Youman",
+    page_title="Draht Müller · Paletten-Standardisierung",
     page_icon=_favicon_path(),
     layout="wide",
     initial_sidebar_state="expanded",
@@ -403,7 +412,7 @@ with st.sidebar:
 # Top-Header — identisch zur Hauptapp
 # ---------------------------------------------------------------------------
 selbsttest_banner()
-topbar("Youman", "Industriepaletten · Standardisierung")
+topbar("Draht Müller", "Industriepaletten · Standardisierung")
 step_indicator(aktiver_schritt())
 
 
@@ -6962,6 +6971,20 @@ def seite_app_einstellungen() -> None:
            "Default-Werte für Toleranzen anpassbar",
            "Backup/Restore von Verlauf und Katalog als ZIP",
            "Sprache (de/en)"])
+
+    st.markdown(
+        '<div style="margin-top:28px;text-align:center;font-size:11px;'
+        'color:#9ca3af;font-weight:400;line-height:1.5;">'
+        'Built by Youman Automation · '
+        '<a href="mailto:info@youman-automation.com" '
+        'style="color:#9ca3af;text-decoration:none;">'
+        'info@youman-automation.com</a> · '
+        '<a href="https://youman-automation.com" target="_blank" '
+        'style="color:#9ca3af;text-decoration:none;">'
+        'youman-automation.com</a>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------------------------------------------------------
