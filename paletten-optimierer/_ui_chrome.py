@@ -73,6 +73,13 @@ CSS = f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+    /* Brand-Tokens als CSS-Custom-Properties.
+       Wer eigenes Styling drauflegt, kann var(--color-primary) referenzieren. */
+    :root {{
+        --color-primary: {PRIMARY};
+        --color-primary-hover: {PRIMARY_LIGHT};
+    }}
+
     html, body, [class*="css"] {{
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         -webkit-font-smoothing: antialiased;
