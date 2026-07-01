@@ -979,7 +979,7 @@ def seite_einstellungen() -> None:
         )
         card_close()
 
-        card_open("Score-Gewichte (w1 – w7, Spec §7)")
+        card_open("Optimierungs-Gewichte (w1 – w7, Spec §7)")
         st.caption(
             "Score = w1·#Typen + w2·ΣPaletten − w3·Verbrauch "
             "+ w4·ΣEK − w5·ΣMarge + w6·#Sonder + w7·#Kombi.  "
@@ -2256,63 +2256,77 @@ def seite_ergebnisse() -> None:
                     "Δ (Spar/Mehr) (€)": ek_lief - eigen,
                 })
 
-    if wirt_zeilen:
-        card_open(f"💰 Bezugskosten-Vergleich (Katalog-Treffer)")
-        df_wirt = pd.DataFrame(wirt_zeilen)
-        summe_lief = df_wirt["Σ Lieferant (€)"].sum()
-        summe_eigen = df_wirt["Σ Eigenfertigung (€)"].sum()
-        summe_diff = summe_lief - summe_eigen
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Σ Lieferant", f"{summe_lief:,.2f} €".replace(",", "."))
-        c2.metric("Σ Eigenfertigung", f"{summe_eigen:,.2f} €".replace(",", "."))
-        c3.metric("Δ Sparpotenzial",
-                   f"{summe_diff:,.2f} €".replace(",", "."),
-                   help="Positiv = Eigenfertigung wäre billiger.")
-        st.dataframe(df_wirt, use_container_width=True, hide_index=True,
-                     column_config={
-                         "Paletten": st.column_config.NumberColumn(format="%d"),
-                         "Σ Lieferant (€)": st.column_config.NumberColumn(format="%.2f €"),
-                         "Σ Eigenfertigung (€)": st.column_config.NumberColumn(format="%.2f €"),
-                         "Δ (Spar/Mehr) (€)": st.column_config.NumberColumn(format="%+.2f €"),
-                     })
-        st.caption("Nur Einzel-Standards mit Bezugskosten im Katalog. "
-                   "Kombi und Sonder fehlen — Preise dort unbekannt.")
+    # === B1 + B3: Aktionen pro Paletten-Typ (ersetzt alte Bezugskosten-
+    # Vergleich-Tabelle). Pro Standard-Maß eine Card mit Σ Bedarfsmenge
+    # und "Komplette Bestellung"-Button (mailto-Entwurf an den Lieferanten).
+    # ===
+    from collections import defaultdict as _defaultdict
+    aktion_menge: dict[tuple[int, int], int] = _defaultdict(int)
+    for z in res.get("zuordnung", []):
+        if z.get("typ") != "Standard":
+            continue
+        try:
+            a, b = z["ziel"].split("x")
+            canon = (min(int(a), int(b)), max(int(a), int(b)))
+            aktion_menge[canon] += int(z.get("menge", 0) or 0)
+        except Exception:
+            pass
+
+    if aktion_menge:
+        card_open("🎯 Aktionen pro Paletten-Typ")
+        # Sortierung: absteigend nach Bedarfsmenge
+        aktionen = sorted(aktion_menge.items(), key=lambda x: -x[1])
+        cols_per_row = 3
+        for i in range(0, len(aktionen), cols_per_row):
+            row = aktionen[i:i + cols_per_row]
+            cols = st.columns(cols_per_row)
+            for col, ((cs, cl), menge) in zip(cols, row):
+                with col:
+                    preise = katalog_modul.lookup_preise(cl, cs)
+                    lief = preise.get("lieferant_name", "") if preise else ""
+                    lief_email = preise.get("lieferant_email", "") if preise else ""
+                    from urllib.parse import quote as _q
+                    betreff = _q(f"Bestellanfrage Paletten {cl}x{cs} mm — {menge} Stück")
+                    body = _q(
+                        f"Guten Tag {lief or '<Lieferant>'},\n\n"
+                        f"wir moechten folgende Bedarfsmenge bestellen:\n\n"
+                        f"  Palettengroesse: {cl} x {cs} mm\n"
+                        f"  Menge:           {menge} Stueck\n\n"
+                        f"Bitte um Angebot mit Preis und Liefertermin.\n\n"
+                        f"Mit freundlichen Gruessen\n"
+                        f"Draht Mueller GmbH"
+                    )
+                    mailto = (f"mailto:{lief_email}?subject={betreff}&body={body}"
+                               if lief_email else
+                               f"mailto:?subject={betreff}&body={body}")
+                    st.markdown(
+                        f'<div style="border:1px solid #e5e7eb;border-radius:10px;'
+                        f'padding:14px;background:#fff;margin-bottom:8px;'
+                        f'box-shadow:0 1px 2px rgba(0,0,0,0.03);">'
+                        f'<div style="color:#00236E;font-weight:800;font-size:15px;">'
+                        f'{cl} × {cs} mm</div>'
+                        f'<div style="color:#374151;font-size:13px;margin-top:4px;">'
+                        f'Σ Bedarf: <b>{menge}</b> Palette{"n" if menge != 1 else ""}</div>'
+                        f'{f"<div style=&quot;color:#6b7280;font-size:11px;margin-top:2px;&quot;>Lieferant: {escape(lief)}</div>" if lief else ""}'
+                        f'<a href="{mailto}" target="_blank" '
+                        f'style="display:block;margin-top:10px;background:#00236E;'
+                        f'color:#fff;padding:8px 12px;border-radius:8px;'
+                        f'text-decoration:none;text-align:center;font-weight:600;'
+                        f'font-size:13px;">📧 Komplette Bestellung</a>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
         card_close()
 
-    # --- Score-Breakdown (alle 7 Gewichte sichtbar, Spec §7) ---
-    bd = res.get("score_breakdown") or {}
-    if bd:
-        card_open(f"📊 Score-Breakdown — Gesamt {res.get('score', 0.0):.2f}")
-        score_zeilen = [
-            ("w1 · # Palettentypen", bd.get("w1_palettentypen", 0.0)),
-            ("w2 · Σ Paletten (info)", bd.get("w2_gesamt_paletten", 0.0)),
-            ("w3 · Verbrauchs-Bonus", bd.get("w3_verbrauch_bonus", 0.0)),
-            ("w4 · Σ EK-Kosten", bd.get("w4_gesamtkosten_ek", 0.0)),
-            ("w5 · Marge-Bonus", bd.get("w5_marge_bonus", 0.0)),
-            ("w6 · Sonder-Penalty", bd.get("w6_sonder_penalty", 0.0)),
-            ("w7 · Kombi-Penalty", bd.get("w7_kombi_penalty", 0.0)),
-            ("w8 · Logistik-Mehrkosten", bd.get("w8_logistik_mehrkosten", 0.0)),
-            ("w9 · Logistik-Einsparung",
-             bd.get("w9_logistik_einsparung_bonus", 0.0)),
-            ("BIG · # nicht zuordenbar", bd.get("slack_nicht_zuordenbar", 0.0)),
-        ]
-        df_score = pd.DataFrame(
-            [{"Komponente": k, "Beitrag": float(v)} for k, v in score_zeilen]
+    # --- B2: Score-Breakdown wurde auf Kundenwunsch entfernt.
+    # Die "Nicht zuordenbar"-Warnung bleibt als Standalone-Hinweis. ---
+    n_nz = len(res.get("nicht_zuordenbar", []))
+    if n_nz > 0:
+        st.warning(
+            f"⚠️ {n_nz} Auftrag/Aufträge konnten keinem Katalog-Standard "
+            f"zugeordnet werden (Toleranz zu eng oder kein passender "
+            f"Standard im Katalog). Siehe Filter 'Nicht zuordenbar'."
         )
-        st.dataframe(
-            df_score, use_container_width=True, hide_index=True,
-            column_config={
-                "Beitrag": st.column_config.NumberColumn(format="%.3f"),
-            },
-        )
-        n_nz = len(res.get("nicht_zuordenbar", []))
-        if n_nz > 0:
-            st.warning(
-                f"⚠️ {n_nz} Auftrag/Aufträge konnten keinem Katalog-Standard "
-                f"zugeordnet werden (Toleranz zu eng oder kein passender "
-                f"Standard im Katalog). Siehe Filter 'Nicht zuordenbar'."
-            )
-        card_close()
 
     # --- A1: Copy-Buttons für Standards- und Sonder-Liste ---
     def _fmt_masse(liste):
@@ -2447,6 +2461,48 @@ def seite_ergebnisse() -> None:
         file_name="paletten-mini-ergebnis.json",
         mime="application/json",
         use_container_width=True,
+    )
+
+    # === B4: Export Maße + Menge (CSV + XLSX) ===
+    # Aggregation: pro Ziel-Maß (Zieltext im Ergebnis) die Summe der
+    # Palettenanzahl. Sortiert absteigend nach Bedarfsmenge.
+    from collections import Counter as _Counter
+    ziel_summe: _Counter = _Counter()
+    for z in res["zuordnung"]:
+        ziel = z.get("ziel", "")
+        if not ziel:
+            continue
+        ziel_summe[ziel] += int(z.get("menge", 0) or 0)
+    masse_zeilen = sorted(
+        [{"Maß": ziel, "Bedarfsmenge (Paletten)": menge}
+         for ziel, menge in ziel_summe.items()],
+        key=lambda r: -r["Bedarfsmenge (Paletten)"],
+    )
+    df_masse = pd.DataFrame(masse_zeilen)
+    masse_csv = df_masse.to_csv(index=False, sep=";",
+                                  encoding="utf-8-sig").encode("utf-8-sig")
+    masse_buf = io.BytesIO()
+    with pd.ExcelWriter(masse_buf, engine="openpyxl") as _w:
+        df_masse.to_excel(_w, index=False, sheet_name="Maße + Menge")
+    masse_xlsx = masse_buf.getvalue()
+
+    st.markdown("**Maße + Menge (Aggregat)**")
+    mc1, mc2 = st.columns(2)
+    mc1.download_button(
+        "📥 Maße + Menge (CSV)",
+        data=masse_csv,
+        file_name="paletten-masse-menge.csv",
+        mime="text/csv",
+        use_container_width=True,
+        key="b4_masse_csv",
+    )
+    mc2.download_button(
+        "📥 Maße + Menge (XLSX)",
+        data=masse_xlsx,
+        file_name="paletten-masse-menge.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        use_container_width=True,
+        key="b4_masse_xlsx",
     )
 
     # === A3: PDF-Exports — Datei-Download + OS-Open, beide sofort wirksam ===
