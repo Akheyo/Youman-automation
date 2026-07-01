@@ -346,35 +346,37 @@ CSS = f"""
         color: {PRIMARY_TEXT} !important;
     }}
 
-    /* Download-Button (st.download_button) — weisser Hintergrund mit
-       DM-Blauer Schrift und Rand. Konsistent mit dem "PDF oeffnen"-
-       Secondary-Style; funktioniert auch dann klar lesbar, wenn
-       Streamlit-Frontend, WebView2 oder Windows-Emoji-Rendering die
-       Schrift auf dunkelblauem Grund grau/gedimmt darstellen. */
+    /* Download-Button (st.download_button) — normaler Secondary-Style:
+       weisser Hintergrund, dunkler Text, hellgrauer Rahmen.
+       WICHTIG: BG und border NUR auf das <button>-Element, NICHT auf
+       die inneren p/div/span (sonst rendert Streamlit fuer jedes
+       innere Element einen eigenen Rahmen -> verschachtelte Boxen). */
     .stDownloadButton > button,
-    .stDownloadButton > button *,
-    .stDownloadButton > button p,
-    .stDownloadButton > button div,
-    .stDownloadButton > button span,
     [data-testid="stDownloadButton"] button,
-    [data-testid="stDownloadButton"] button *,
-    [data-testid="stDownloadButton"] button p,
-    button[data-testid^="stBaseButton-secondaryDownload"],
-    button[data-testid^="stBaseButton-secondaryDownload"] * {{
+    button[data-testid^="stBaseButton-secondaryDownload"] {{
         font-weight: 600; border-radius: 8px;
         background-color: {SURFACE} !important;
-        color: {PRIMARY} !important;
-        border: 2px solid {PRIMARY} !important;
+        color: {SURFACE_TEXT} !important;
+        border: 1px solid #d1d5db !important;
+    }}
+    /* Textfarbe der inneren Elemente ohne Border-Assign */
+    .stDownloadButton > button *,
+    [data-testid="stDownloadButton"] button *,
+    button[data-testid^="stBaseButton-secondaryDownload"] * {{
+        color: {SURFACE_TEXT} !important;
+        background: transparent !important;
+        border: none !important;
     }}
     .stDownloadButton > button:hover,
-    .stDownloadButton > button:hover *,
     [data-testid="stDownloadButton"] button:hover,
-    [data-testid="stDownloadButton"] button:hover *,
-    button[data-testid^="stBaseButton-secondaryDownload"]:hover,
-    button[data-testid^="stBaseButton-secondaryDownload"]:hover * {{
-        background-color: {PRIMARY} !important;
-        color: {PRIMARY_TEXT} !important;
+    button[data-testid^="stBaseButton-secondaryDownload"]:hover {{
+        background-color: #f9fafb !important;
         border-color: {PRIMARY} !important;
+    }}
+    .stDownloadButton > button:hover *,
+    [data-testid="stDownloadButton"] button:hover *,
+    button[data-testid^="stBaseButton-secondaryDownload"]:hover * {{
+        color: {PRIMARY} !important;
     }}
 
     /* Form-Submit-Buttons (Anmelden im Login-Gate): gleiches Primary-Styling. */
