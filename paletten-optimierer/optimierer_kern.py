@@ -20,6 +20,9 @@ Ergebnis-Typen pro Zuordnung:
  - 'Kombi-Heterogen'  : 2-3 verschiedene Standards in einer Reihe
  - 'Sonder'           : eigenes Maß, nicht standardisierbar
 """
+# Historisch: hiess in der Mini-Phase paletten_optimierer_kern.py.
+# Beim Alignment mini/ -> Root wurde auf optimierer_kern.py
+# vereinheitlicht.
 import pulp
 from itertools import combinations, product
 
