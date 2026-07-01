@@ -230,6 +230,10 @@ def init_state() -> None:
             "deckel_toggle": True,
             "deckel_wert": 5,
             "sonder_erlaubt": True,
+            # KW-Fenster fuer Palettenbestellung (Default: aus).
+            "kw_filter_aktiv": False,
+            "kw_start": 30,          # wird beim ersten Rendern auf heutige KW gesetzt
+            "kw_vorlauf": 4,
             # Score-Gewichte (Spec §3)
             "w1": 1.0,   # Anzahl unterschiedlicher Palettentypen
             "w2": 0.0,   # Σ Paletten (info-only, post-hoc)
@@ -1358,11 +1362,47 @@ def _auto_standards_in_katalog(standard_masse: list) -> int:
     return neu
 
 
+def _im_kw_fenster_iso(iso: str, start_kw: int, vorlauf: int) -> bool:
+    """True wenn ISO-Datum in die KW-Fensterspanne faellt.
+    Kaputte/leere Daten werden konservativ als 'im Fenster' behandelt,
+    damit Bedarfe ohne Verbrauchsdatum nicht verloren gehen."""
+    from datetime import date as _date
+    if not iso:
+        return True
+    try:
+        d = _date.fromisoformat(iso[:10])
+    except (ValueError, TypeError):
+        return True
+    kw = d.isocalendar()[1]
+    ende = start_kw + max(1, int(vorlauf)) - 1
+    return start_kw <= kw <= ende
+
+
+def _zaehle_im_kw_fenster(mit_mass: list[dict], start_kw: int,
+                           vorlauf: int) -> tuple[int, int]:
+    """Anzahl Auftraege im Fenster + Gesamt (fuer die UI-Vorschau)."""
+    total = len(mit_mass)
+    treffer = sum(1 for m in mit_mass
+                   if _im_kw_fenster_iso(m.get("verbrauchsdatum", ""),
+                                          start_kw, vorlauf))
+    return treffer, total
+
+
 def run_optimierung() -> None:
     # Kein Pflicht-Gate mehr: neue/abweichende Maße werden direkt aus der
     # Excel übernommen ('Maße prüfen' ist optional).
     p = st.session_state.params
     mit_mass = st.session_state.import_dat["mit_mass"]
+
+    # === KW-Fenster-Filter (Bestellung ab KW + Vorlauf) ===
+    if bool(p.get("kw_filter_aktiv", False)):
+        start_kw = int(p.get("kw_start", 1))
+        vorlauf = int(p.get("kw_vorlauf", 4))
+        mit_mass = [
+            m for m in mit_mass
+            if _im_kw_fenster_iso(m.get("verbrauchsdatum", ""),
+                                    start_kw, vorlauf)
+        ]
 
     # Mini-Format -> Kern-v4-Format. L/B sind die PRODUKT-Maße
     # (Excel P-L/P-B minus PALETTEN_AUFSCHLAG_MM, im Importer berechnet).
@@ -1656,6 +1696,60 @@ def seite_optimierung() -> None:
         st.caption(f"ℹ️ {len(_offen)} neue/abweichende Artikel-Maße werden "
                    f"direkt aus der Excel übernommen. Optional pflegbar im "
                    f"Tab 'Maße prüfen'.")
+
+    # === KW-Fenster fuer den Bestellbedarf ===
+    # Filtert die importierten Auftraege nach Verbrauchsdatum-KW: nur
+    # Bedarfe im Fenster [Start-KW, Start-KW+Vorlauf-1] gehen in die
+    # Optimierung. Nuetzlich, wenn die Excel-Liste einen Jahres-Horizont
+    # abdeckt, aber nur fuer die naechsten 4 Wochen bestellt wird.
+    from datetime import date as _date
+    mit_mass_alle = st.session_state.import_dat["mit_mass"]
+    kw_datumfelder = sum(1 for m in mit_mass_alle if m.get("verbrauchsdatum"))
+
+    card_open("📅 Bestell-Fenster (Kalenderwoche)")
+    heute_kw = _date.today().isocalendar()[1]
+    fc1, fc2, fc3 = st.columns([1, 1, 2])
+    with fc1:
+        p["kw_start"] = st.number_input(
+            "Start-KW", min_value=1, max_value=53,
+            value=int(p.get("kw_start", heute_kw)),
+            step=1, key="opt_kw_start",
+            help="Erste Kalenderwoche, ab der Verbrauchsdaten in die "
+                 "Bestellung einfliessen.",
+        )
+    with fc2:
+        p["kw_vorlauf"] = st.number_input(
+            "Wochen Vorlauf", min_value=0, max_value=52,
+            value=int(p.get("kw_vorlauf", 4)),
+            step=1, key="opt_kw_vorlauf",
+            help="Wie viele Kalenderwochen ab Start-KW ins Fenster fallen.",
+        )
+    with fc3:
+        p["kw_filter_aktiv"] = st.toggle(
+            "KW-Filter aktiv",
+            value=bool(p.get("kw_filter_aktiv", False)),
+            key="opt_kw_aktiv",
+            help="OFF = alle importierten Auftraege optimieren "
+                 "(bisheriges Verhalten). ON = nur Auftraege deren "
+                 "Verbrauchsdatum in das Fenster faellt.",
+        )
+        end_kw = (int(p["kw_start"]) + max(1, int(p["kw_vorlauf"])) - 1)
+        st.caption(
+            f"Fenster: KW {int(p['kw_start'])} bis KW {end_kw}. "
+            f"{kw_datumfelder}/{len(mit_mass_alle)} Auftraege haben ein Verbrauchsdatum."
+        )
+    if p["kw_filter_aktiv"]:
+        anz_im_fenster, anz_gesamt = _zaehle_im_kw_fenster(
+            mit_mass_alle,
+            int(p["kw_start"]),
+            int(p["kw_vorlauf"]),
+        )
+        st.caption(
+            f"→ {anz_im_fenster} von {anz_gesamt} Auftraegen "
+            f"({anz_im_fenster/max(1, anz_gesamt)*100:.0f} %) landen "
+            f"in der Optimierung."
+        )
+    card_close()
 
     col_l, col_r = st.columns([1, 2])
     with col_l:
@@ -7270,10 +7364,12 @@ def _anleitung_pdf_bytes() -> bytes:
       "verbessern. Toggle ausschalten fuer unbegrenzte Sonder.")
 
     h2("5) Bestellung ab KW + Vorlauf")
-    p("Im Bestellungen-Tab kann ein Zeitfenster gesetzt werden: "
-      "Start-KW (Default: aktuelle KW) + Wochen Vorlauf (Default "
-      "4). Wenn der Filter aktiv ist, werden nur Bestellungen "
-      "angezeigt, deren Erstell-KW im Fenster liegt.")
+    p("Im Optimierungs-Tab steht oben die Card 'Bestell-Fenster "
+      "(Kalenderwoche)'. Start-KW (Default: aktuelle KW) + Wochen "
+      "Vorlauf (Default 4). Toggle 'KW-Filter aktiv' einschalten -> "
+      "nur Auftraege, deren Verbrauchsdatum in die KW-Spanne faellt, "
+      "gehen in die Optimierung. Auftraege ohne Verbrauchsdatum "
+      "werden konservativ als 'im Fenster' behandelt.")
 
     h2("6) Export / PDF / Komplett-Bestellung")
     p("Ergebnisse-Tab bietet: CSV-Zuordnung, JSON-Ergebnis, "
@@ -7336,11 +7432,16 @@ def seite_anleitung() -> None:
 
     st.markdown("### 5) Bestellung ab KW + Vorlauf")
     st.markdown(
-        "- Im **Bestellungen**-Tab lässt sich ein Zeitfenster setzen\n"
-        "- **Start-KW** (Default: aktuelle KW) + **Wochen Vorlauf** "
-        "(Default 4)\n"
-        "- Filter aktiv → nur Bestellungen im Fenster "
-        "`[Start-KW, Start-KW+Vorlauf−1]` sichtbar"
+        "- Im **Optimierung**-Tab steht oben die Card "
+        "**Bestell-Fenster (Kalenderwoche)**\n"
+        "- **Start-KW** (Default: heutige KW) + **Wochen Vorlauf** "
+        "(Default 4) + Toggle **KW-Filter aktiv**\n"
+        "- Wenn aktiv: nur Aufträge mit Verbrauchsdatum im Fenster "
+        "`[Start-KW, Start-KW+Vorlauf−1]` gehen in die Optimierung\n"
+        "- Beispiel: Excel mit 12 Monaten Bedarfen, Filter auf "
+        "KW 30 + 4 → nur KW 30–33 landen in der Palettenbestellung\n"
+        "- Aufträge ohne Verbrauchsdatum werden konservativ als "
+        "im-Fenster mitgenommen (kein Datenverlust)"
     )
 
     st.markdown("### 6) Export / PDF / Komplett-Bestellung")
