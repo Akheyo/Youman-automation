@@ -30,7 +30,7 @@ EDITIONS = {
         "label": "Basic",
         "tabs": [
             "Dashboard", "Datenimport", "Maße prüfen", "Optimierung",
-            "Ergebnisse", "Katalog", "Stammdaten 2",
+            "Ergebnisse", "Katalog", "Artikelmaße",
         ],
     },
     "full": {
@@ -41,7 +41,7 @@ EDITIONS = {
             "Ergebnisse", "Verlauf", "Katalog", "Bestand & Disposition",
             "Bestellungen", "Beschaffung", "Historie",
             "Wirtschaftlichkeit", "Kostenanalyse", "Stammdaten",
-            "Stammdaten 2", "Berichte", "App-Einstellungen",
+            "Artikelmaße", "Berichte", "App-Einstellungen",
         ],
     },
 }

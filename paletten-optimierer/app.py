@@ -257,7 +257,7 @@ def init_state() -> None:
             "auto_standard_schwelle": 4,
             # §5 Wiederbeschaffungs-Sicherheitspuffer
             "wbsch_puffer_tage": 7,
-            # Stammdaten 2 — Auftragsverwaltung
+            # Artikelmaße — Auftragsverwaltung
             "auf_filter_suche": "",
             "auf_filter_status": ["offen", "in_arbeit", "abgeschlossen"],
             "auf_filter_kunde": "",
@@ -341,7 +341,7 @@ with st.sidebar:
         "Optimierung",
         "Ergebnisse", "Verlauf", "Katalog", "Bestand & Disposition",
         "Bestellungen", "Beschaffung", "Historie", "Wirtschaftlichkeit",
-        "Kostenanalyse", "Stammdaten", "Stammdaten 2", "Berichte",
+        "Kostenanalyse", "Stammdaten", "Artikelmaße", "Berichte",
         "App-Einstellungen",
     ]
     _enabled = set(edition_modul.enabled_tabs())
@@ -491,7 +491,7 @@ if not st.session_state.get("_cron_done", False):
             )
     except Exception:
         pass
-    # Stammdaten 2: Auftrags-Status gegen Beschaffung syncen
+    # Artikelmaße: Auftrags-Status gegen Beschaffung syncen
     try:
         sync_erg = auftraege_modul.sync_status_aus_beschaffung(
             procurement_modul)
@@ -609,13 +609,13 @@ def seite_datenimport() -> None:
         st.session_state.ergebnis = None
         st.session_state.doppelschutz_preview = None
         st.session_state.doppelschutz_skip_ids = set()
-        # Stammdaten 2: eine Position pro Excel-Zeile anlegen (idempotent)
+        # Artikelmaße: eine Position pro Excel-Zeile anlegen (idempotent)
         try:
             erg_up = auftraege_modul.upsert_aus_excel(
                 dat.get("mit_mass", []))
             if erg_up["neu"] or erg_up.get("ersetzt"):
                 st.toast(
-                    f"📋 Stammdaten 2: {erg_up['neu']} neue · "
+                    f"📋 Artikelmaße: {erg_up['neu']} neue · "
                     f"{erg_up.get('ersetzt', 0)} geänderte (ersetzt) · "
                     f"{erg_up.get('unveraendert', 0)} unveränderte Aufträge."
                 )
@@ -3214,7 +3214,7 @@ def seite_dashboard() -> None:
     if sc3.button("➕ Auftrag manuell anlegen",
                     use_container_width=True, key="dash_q_neu"):
         st.session_state.params["auf_neu_drawer"] = True
-        st.session_state.seite = "Stammdaten 2"
+        st.session_state.seite = "Artikelmaße"
         st.rerun()
     card_close()
 
@@ -5827,7 +5827,7 @@ def seite_stammdaten() -> None:
 
 
 def seite_stammdaten_2() -> None:
-    """Auftragsverwaltung (Spec Stammdaten 2): zentrale Übersicht aller
+    """Auftragsverwaltung (Spec Artikelmaße): zentrale Übersicht aller
     AWs mit Status-Lifecycle + Edit/Anlage + Bulk-Aktionen."""
     p_state = st.session_state.params
 
@@ -6681,7 +6681,7 @@ def seite_berichte() -> None:
                     "Status-Verteilung.")
         alle_auf = auftraege_modul.alle()
         if not alle_auf:
-            st.info("Keine Aufträge — erst im Tab **Stammdaten 2** anlegen.")
+            st.info("Keine Aufträge — erst im Tab **Artikelmaße** anlegen.")
         else:
             fc1, fc2 = st.columns(2)
             with fc1:
@@ -7207,6 +7207,168 @@ def seite_app_einstellungen() -> None:
 
 # ---------------------------------------------------------------------------
 # Page-Router
+def _anleitung_pdf_bytes() -> bytes:
+    """Erzeugt eine PDF-Version der Anleitung mit fpdf2."""
+    from fpdf import FPDF
+    pdf = FPDF(format="A4")
+    pdf.set_margins(20, 20, 20)
+    pdf.set_auto_page_break(auto=True, margin=20)
+    pdf.add_page()
+    pdf.set_font("Helvetica", "B", 18)
+    pdf.set_text_color(0, 35, 110)  # DM-Blau
+    pdf.cell(0, 12, "Youman - Anleitung", ln=1)
+    pdf.set_draw_color(0, 35, 110)
+    pdf.line(20, pdf.get_y() + 1, 190, pdf.get_y() + 1)
+    pdf.ln(8)
+    pdf.set_text_color(31, 41, 55)
+
+    def h2(text: str) -> None:
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.set_text_color(0, 35, 110)
+        pdf.cell(0, 8, text, ln=1)
+        pdf.set_text_color(31, 41, 55)
+        pdf.set_font("Helvetica", "", 11)
+
+    def p(text: str) -> None:
+        pdf.set_font("Helvetica", "", 11)
+        # fpdf2 rendert Unicode nur mit UTF-8-Font oder mit ersetzten Zeichen.
+        # Fuer die A4-Anleitung reicht Latin-1-Approximation.
+        safe = (text.replace("→", "->").replace("×", "x")
+                     .replace("✓", "OK").replace("⚠", "!")
+                     .encode("latin-1", "replace").decode("latin-1"))
+        pdf.multi_cell(0, 6, safe)
+        pdf.ln(1)
+
+    h2("1) Excel-Import")
+    p("Format: .xlsx. Erwartete Spalten (Header in Zeile 5): "
+      "Auftrag, Name, Artikelnummer, Menge, Stck Pal, P-Laenge, "
+      "P-Breite, P-Hoehe, P-Anzahl. P-L und P-B enthalten den "
+      "Palettenaufschlag von 50 mm; die Optimierung rechnet mit "
+      "Produkt-Massen (P-Werte minus 50).")
+
+    h2("2) Toleranzen Breite vs. Laenge")
+    p("max. Uebermass BREITE (mm): wie viel Uebermass auf der "
+      "kurzen Achse erlaubt ist. Default 200 mm. "
+      "max. Uebermass LAENGE (mm): wie viel Uebermass auf der "
+      "langen Achse erlaubt ist. Default 400 mm. Groessere Werte "
+      "= weniger verschiedene Standards, aber mehr Verschnitt.")
+
+    h2("3) Ergebnis-Typen")
+    p("Standard (gruen, OK Standard): einzelner Standard deckt "
+      "die Last direkt.")
+    p("Kombi-Stapel (hellblau, Stapel k x LxB): k Kopien eines "
+      "Standards in einer Reihe.")
+    p("Kombi-Heterogen (hellblau, Kombination LxB + LxB): 2-3 "
+      "verschiedene Standards nebeneinander.")
+    p("Sonder (rot): eigenes Mass, nicht standardisierbar.")
+
+    h2("4) Sonder-Deckel")
+    p("Der Deckel ist eine Obergrenze fuer die Anzahl "
+      "Sonderpaletten (Default 5). Er ist KEIN Zwang: der Solver "
+      "nutzt Sonderpaletten nur, wenn sie das Gesamtergebnis "
+      "verbessern. Toggle ausschalten fuer unbegrenzte Sonder.")
+
+    h2("5) Bestellung ab KW + Vorlauf")
+    p("Im Bestellungen-Tab kann ein Zeitfenster gesetzt werden: "
+      "Start-KW (Default: aktuelle KW) + Wochen Vorlauf (Default "
+      "4). Wenn der Filter aktiv ist, werden nur Bestellungen "
+      "angezeigt, deren Erstell-KW im Fenster liegt.")
+
+    h2("6) Export / PDF / Komplett-Bestellung")
+    p("Ergebnisse-Tab bietet: CSV-Zuordnung, JSON-Ergebnis, "
+      "Aggregat Maesse+Menge (CSV+XLSX), PDF Palette->Artikel, "
+      "PDF Auftrag->Paletten (beide mit Download+Oeffnen-Button). "
+      "Dashboard 'Aktionen pro Paletten-Typ' bietet pro Typ einen "
+      "'Komplette Bestellung'-Button (mailto-Entwurf).")
+
+    return bytes(pdf.output())
+
+
+def seite_anleitung() -> None:
+    """Kurze Nutzer-Anleitung auf Deutsch, mit PDF-Download."""
+    card_open("Anleitung - Youman Paletten-Optimierung")
+
+    st.markdown("### 1) Excel-Import")
+    st.markdown(
+        "- Format: `.xlsx` mit Header in **Zeile 5**\n"
+        "- Erwartete Spalten: Auftrag, Name, Artikelnummer, "
+        "**Menge** (= Palettenanzahl), Stck Pal, **P-Länge**, "
+        "**P-Breite**, **P-Höhe**, P-Anzahl\n"
+        "- `P-L` und `P-B` enthalten den **Palettenaufschlag "
+        "von 50 mm**. Der Optimierer arbeitet intern mit den "
+        "Produkt-Maßen (P-Werte − 50)"
+    )
+
+    st.markdown("### 2) Toleranzen Breite vs. Länge")
+    st.markdown(
+        "- **max. Übermaß BREITE (mm)**: kurze Achse, Default 200\n"
+        "- **max. Übermaß LÄNGE (mm)**: lange Achse, Default 400\n"
+        "- Höhere Werte → weniger verschiedene Standards, "
+        "mehr Verschnitt"
+    )
+
+    st.markdown("### 3) Ergebnis-Typen (Farb-Legende)")
+    st.markdown(
+        "<div style='display:flex;gap:10px;flex-wrap:wrap;'>"
+        "<span style='background:#dcfce7;padding:6px 10px;"
+        "border-radius:6px;color:#166534;font-weight:600;'>"
+        "✓ Standard</span>"
+        "<span style='background:#eff6ff;padding:6px 10px;"
+        "border-radius:6px;color:#1e40af;font-weight:600;'>"
+        "🔗 Kombi-Stapel</span>"
+        "<span style='background:#eff6ff;padding:6px 10px;"
+        "border-radius:6px;color:#1e40af;font-weight:600;'>"
+        "🔗 Kombi-Heterogen</span>"
+        "<span style='background:#fee2e2;padding:6px 10px;"
+        "border-radius:6px;color:#991b1b;font-weight:600;'>"
+        "Sonder</span></div>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### 4) Sonder-Deckel")
+    st.markdown(
+        "- Obergrenze für die Anzahl Sonderpaletten (Default 5)\n"
+        "- **Kein Zwang**: der Solver setzt Sonder nur ein, "
+        "wenn sie das Gesamtergebnis verbessern\n"
+        "- Toggle aus → unbegrenzt viele Sonder erlaubt"
+    )
+
+    st.markdown("### 5) Bestellung ab KW + Vorlauf")
+    st.markdown(
+        "- Im **Bestellungen**-Tab lässt sich ein Zeitfenster setzen\n"
+        "- **Start-KW** (Default: aktuelle KW) + **Wochen Vorlauf** "
+        "(Default 4)\n"
+        "- Filter aktiv → nur Bestellungen im Fenster "
+        "`[Start-KW, Start-KW+Vorlauf−1]` sichtbar"
+    )
+
+    st.markdown("### 6) Export / PDF / Komplett-Bestellung")
+    st.markdown(
+        "- **Ergebnisse-Tab**: CSV-Zuordnung, JSON-Ergebnis, "
+        "Maße+Menge (CSV+XLSX)\n"
+        "- **PDF Palette→Artikel** und **PDF Auftrag→Paletten** — "
+        "jeweils mit zwei Buttons (Download + Öffnen)\n"
+        "- **Dashboard \"Aktionen pro Paletten-Typ\"**: pro Standard "
+        "eine Card mit **Komplette Bestellung**-Button "
+        "(mailto-Entwurf mit vorbefülltem Betreff und Body)"
+    )
+
+    st.markdown("---")
+    try:
+        pdf_bytes = _anleitung_pdf_bytes()
+        st.download_button(
+            "📥 Anleitung als PDF herunterladen",
+            data=pdf_bytes,
+            file_name="Youman-Anleitung.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+            key="anleitung_pdf_dl",
+        )
+    except Exception as exc:  # noqa: BLE001
+        st.error(f"PDF-Erzeugung fehlgeschlagen: {exc}")
+    card_close()
+
+
 # ---------------------------------------------------------------------------
 SEITEN = {
     "Dashboard":             seite_dashboard,
@@ -7224,8 +7386,9 @@ SEITEN = {
     "Wirtschaftlichkeit":    seite_wirtschaftlichkeit,
     "Kostenanalyse":         seite_kostenanalyse,
     "Stammdaten":            seite_stammdaten,
-    "Stammdaten 2":          seite_stammdaten_2,
+    "Artikelmaße":          seite_stammdaten_2,
     "Berichte":              seite_berichte,
+    "Anleitung":             seite_anleitung,
     "App-Einstellungen":     seite_app_einstellungen,
 }
 # Einmalige Migration der Artikel-Stammdaten aus auftraege.json
