@@ -346,10 +346,11 @@ CSS = f"""
         color: {PRIMARY_TEXT} !important;
     }}
 
-    /* Download-Button (st.download_button) — DM-Blau BG, weisse Schrift.
-       Streamlit wechselt zwischen .stDownloadButton-Wrapper und
-       data-testid="stDownloadButton" bzw. data-testid="stBaseButton-secondary"
-       je Version. Alle bekannten Varianten mit der gleichen Regel abdecken. */
+    /* Download-Button (st.download_button) — weisser Hintergrund mit
+       DM-Blauer Schrift und Rand. Konsistent mit dem "PDF oeffnen"-
+       Secondary-Style; funktioniert auch dann klar lesbar, wenn
+       Streamlit-Frontend, WebView2 oder Windows-Emoji-Rendering die
+       Schrift auf dunkelblauem Grund grau/gedimmt darstellen. */
     .stDownloadButton > button,
     .stDownloadButton > button *,
     .stDownloadButton > button p,
@@ -361,9 +362,9 @@ CSS = f"""
     button[data-testid^="stBaseButton-secondaryDownload"],
     button[data-testid^="stBaseButton-secondaryDownload"] * {{
         font-weight: 600; border-radius: 8px;
-        background-color: {PRIMARY} !important;
-        color: {PRIMARY_TEXT} !important;
-        border: none !important;
+        background-color: {SURFACE} !important;
+        color: {PRIMARY} !important;
+        border: 2px solid {PRIMARY} !important;
     }}
     .stDownloadButton > button:hover,
     .stDownloadButton > button:hover *,
@@ -371,8 +372,9 @@ CSS = f"""
     [data-testid="stDownloadButton"] button:hover *,
     button[data-testid^="stBaseButton-secondaryDownload"]:hover,
     button[data-testid^="stBaseButton-secondaryDownload"]:hover * {{
-        background-color: {PRIMARY_LIGHT} !important;
+        background-color: {PRIMARY} !important;
         color: {PRIMARY_TEXT} !important;
+        border-color: {PRIMARY} !important;
     }}
 
     /* Form-Submit-Buttons (Anmelden im Login-Gate): gleiches Primary-Styling. */
