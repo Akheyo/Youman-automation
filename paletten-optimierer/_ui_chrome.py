@@ -292,38 +292,91 @@ CSS = f"""
     .badge-sonder{{ background: {DANGER}; color: {DANGER_TEXT}; }}
 
     /* Buttons — Kontrast-Regel: Primary auf DM-Blau -> weiss (auch im Hover).
-       !important, weil Streamlit teils Inline-color-Styles auf das Button-
-       Element vergibt, die auf dunklem Grund untergehen wuerden. */
+       Alle Descendants werden explizit gefaerbt, weil Streamlit den
+       Button-Text in ein <p> innerhalb <div> rendert, das inline
+       color-Attribute mitbringen kann. */
     .stButton > button[kind="primary"],
-    .stButton > button[kind="primary"] * {{
-        background: {PRIMARY} !important;
+    .stButton > button[kind="primary"] *,
+    .stButton > button[kind="primary"] p,
+    .stButton > button[kind="primary"] div,
+    .stButton > button[kind="primary"] span,
+    button[data-testid="stBaseButton-primary"],
+    button[data-testid="stBaseButton-primary"] *,
+    button[data-testid="stBaseButton-primaryFormSubmit"],
+    button[data-testid="stBaseButton-primaryFormSubmit"] * {{
+        background-color: {PRIMARY} !important;
         color: {PRIMARY_TEXT} !important;
-        border: none;
+        border: none !important;
         font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }}
     .stButton > button[kind="primary"]:hover,
-    .stButton > button[kind="primary"]:hover * {{
-        background: {PRIMARY_LIGHT} !important;
+    .stButton > button[kind="primary"]:hover *,
+    button[data-testid="stBaseButton-primary"]:hover,
+    button[data-testid="stBaseButton-primary"]:hover * {{
+        background-color: {PRIMARY_LIGHT} !important;
         color: {PRIMARY_TEXT} !important;
         box-shadow: 0 4px 12px rgba(0,35,110,0.30);
     }}
-    .stButton > button[kind="secondary"] {{
-        background: {SURFACE}; color: {PRIMARY_LIGHT}; border: 1px solid #e5e7eb;
+
+    /* Secondary-Button im Hauptbereich: weisser BG, DM-Blau-Text. */
+    .block-container .stButton > button[kind="secondary"],
+    .block-container .stButton > button[kind="secondary"] * {{
+        background-color: {SURFACE} !important;
+        color: {PRIMARY_LIGHT} !important;
+        border: 1px solid #e5e7eb !important;
         font-weight: 600;
     }}
+
+    /* Sidebar-Buttons (z.B. Abmelden): weisser BG braucht dunklen Text.
+       Die generische Sidebar-Regel section-* fuer color #cbd5e1 ist
+       sonst spezifischer als der Button-Selector — wir schlagen sie mit
+       hoeherer Kaskaden-Spezifitaet plus !important. */
+    section[data-testid="stSidebar"] .stButton > button,
+    section[data-testid="stSidebar"] .stButton > button *,
+    section[data-testid="stSidebar"] button[data-testid^="stBaseButton"],
+    section[data-testid="stSidebar"] button[data-testid^="stBaseButton"] * {{
+        background-color: {SURFACE} !important;
+        color: {PRIMARY} !important;
+        border: 1px solid rgba(255,255,255,0.35) !important;
+        font-weight: 600;
+    }}
+    section[data-testid="stSidebar"] .stButton > button:hover,
+    section[data-testid="stSidebar"] .stButton > button:hover * {{
+        background-color: {PRIMARY_LIGHT} !important;
+        color: {PRIMARY_TEXT} !important;
+    }}
+
     /* Download-Button ist grundsaetzlich secondary-Style, aber wenn wir ihn
        via Primary rendern (z.B. B4 Export), muss der Text weiss bleiben. */
-    .stDownloadButton > button {{
+    .stDownloadButton > button,
+    .stDownloadButton > button *,
+    .stDownloadButton > button p {{
         font-weight: 600; border-radius: 8px;
-        background: {PRIMARY} !important;
+        background-color: {PRIMARY} !important;
         color: {PRIMARY_TEXT} !important;
         border: none !important;
     }}
-    .stDownloadButton > button:hover {{
-        background: {PRIMARY_LIGHT} !important;
+    .stDownloadButton > button:hover,
+    .stDownloadButton > button:hover * {{
+        background-color: {PRIMARY_LIGHT} !important;
         color: {PRIMARY_TEXT} !important;
     }}
-    .stDownloadButton > button * {{ color: {PRIMARY_TEXT} !important; }}
+
+    /* Form-Submit-Buttons (Anmelden im Login-Gate): gleiches Primary-Styling. */
+    button[data-testid="stFormSubmitButton"],
+    button[data-testid="stFormSubmitButton"] *,
+    .stFormSubmitButton > button,
+    .stFormSubmitButton > button * {{
+        background-color: {PRIMARY} !important;
+        color: {PRIMARY_TEXT} !important;
+        border: none !important;
+        font-weight: 600;
+    }}
+    button[data-testid="stFormSubmitButton"]:hover,
+    button[data-testid="stFormSubmitButton"]:hover * {{
+        background-color: {PRIMARY_LIGHT} !important;
+        color: {PRIMARY_TEXT} !important;
+    }}
 
     /* Inputs */
     [data-baseweb="input"] > div, [data-baseweb="select"] > div {{
