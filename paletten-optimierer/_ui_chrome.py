@@ -63,10 +63,23 @@ def _logo_base64() -> str | None:
 # PRIMARY_LIGHT ist der dunklere Hover-/Aktiv-Ton.
 PRIMARY = "#00236E"          # DM-Blau (Brand)
 PRIMARY_LIGHT = "#001A55"    # Hover/dunkler
+PRIMARY_TEXT = "#FFFFFF"     # Text auf DM-Blau
 ACCENT = PRIMARY             # Akzent-Bindings nutzen Brand-Blau
 BLUE = PRIMARY               # Primary-Buttons in DM-Blau
-GREEN = "#16a34a"            # Status: Standard ✓ (bleibt)
-GRAY_BG = "#f5f6f8"
+GREEN = "#16A34A"            # Status: Standard-Badge (mit weisser Schrift)
+GREEN_TEXT = "#FFFFFF"       # Text auf Success-Grün
+DANGER = "#DC2626"           # Physik-/Fehler-Rot
+DANGER_TEXT = "#FFFFFF"      # Text auf Rot
+STD_BG = "#DCFCE7"           # Standard-Zeilen (hell)
+STD_TEXT = "#14532D"         # Dunkles Grün auf Standard-BG
+SON_BG = "#FEE2E2"           # Sonder-Zeilen (hell)
+SON_TEXT = "#7F1D1D"         # Dunkles Rot auf Sonder-BG
+KOMBI_BG = "#EFF6FF"         # Kombi-Zeilen (hell)
+KOMBI_TEXT = "#1E3A8A"       # Dunkles Blau auf Kombi-BG
+SURFACE = "#FFFFFF"          # Card-Hintergrund
+SURFACE_TEXT = "#1F2937"     # Dunkelgrau auf weißem Hintergrund
+MUTED = "#6B7280"            # Neutralgrau für Sekundär-Text
+GRAY_BG = "#f5f6f8"          # App-Hintergrund
 
 
 CSS = f"""
@@ -74,10 +87,33 @@ CSS = f"""
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
     /* Brand-Tokens als CSS-Custom-Properties.
-       Wer eigenes Styling drauflegt, kann var(--color-primary) referenzieren. */
+       WCAG-Kontrast >= 4.5:1 fuer Body, >= 3:1 fuer grosse Schrift.
+       Regel: dunkler Hintergrund -> weisse Schrift, heller
+       Hintergrund -> dunkle Schrift. */
     :root {{
-        --color-primary: {PRIMARY};
-        --color-primary-hover: {PRIMARY_LIGHT};
+        --color-primary:        {PRIMARY};
+        --color-primary-hover:  {PRIMARY_LIGHT};
+        --color-primary-text:   {PRIMARY_TEXT};
+
+        --color-danger:         {DANGER};
+        --color-danger-text:    {DANGER_TEXT};
+
+        --color-success:        {GREEN};
+        --color-success-text:   {GREEN_TEXT};
+
+        --color-standard-bg:    {STD_BG};
+        --color-standard-text:  {STD_TEXT};
+
+        --color-sonder-bg:      {SON_BG};
+        --color-sonder-text:    {SON_TEXT};
+
+        --color-kombi-bg:       {KOMBI_BG};
+        --color-kombi-text:     {KOMBI_TEXT};
+
+        --color-surface:        {SURFACE};
+        --color-surface-text:   {SURFACE_TEXT};
+
+        --color-muted:          {MUTED};
     }}
 
     html, body, [class*="css"] {{
@@ -220,35 +256,74 @@ CSS = f"""
         color: #374151;
     }}
     .result-tbl tbody tr:hover td {{ background: #fafbfc; }}
+    /* Detail-Zeilen — Kontrast-Regel: heller Hintergrund -> dunkle Schrift.
+       !important, weil einige Zellen inline color-Styles mitbringen
+       (z.B. subtiler grauer Sub-Text), der auf pastellfarbenem Hintergrund
+       Kontrast verliert. Die Row-Klasse gewinnt jetzt und alle td und
+       inline-Kinder erben die dunkle Status-Textfarbe. */
+    .result-tbl tr.row-standard td,
+    .result-tbl tr.row-standard td div,
+    .result-tbl tr.row-standard td span {{ color: {STD_TEXT} !important; }}
+    .result-tbl tr.row-sonder td,
+    .result-tbl tr.row-sonder td div,
+    .result-tbl tr.row-sonder td span {{ color: {SON_TEXT} !important; }}
+    .result-tbl tr.row-kombi td,
+    .result-tbl tr.row-kombi td div,
+    .result-tbl tr.row-kombi td span {{ color: {KOMBI_TEXT} !important; }}
+    /* Badges innerhalb der Zeile behalten IHRE eigene Farbe (weiss auf dunkel) */
+    .result-tbl tr td .badge {{ color: {PRIMARY_TEXT} !important; }}
+    .result-tbl tr td .badge.badge-ok    {{ color: {GREEN_TEXT}   !important; }}
+    .result-tbl tr td .badge.badge-sonder{{ color: {DANGER_TEXT}  !important; }}
+    .result-tbl tr td .badge.badge-kombi {{ color: {PRIMARY_TEXT} !important; }}
     .standard-cell {{
-        background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%) !important;
-        color: #1e40af !important; font-weight: 700; text-align: center;
+        background: linear-gradient(180deg, {KOMBI_BG} 0%, #dbeafe 100%) !important;
+        color: {KOMBI_TEXT} !important; font-weight: 700; text-align: center;
         font-size: 14px; vertical-align: middle;
         border-right: 1px solid #bfdbfe !important;
     }}
-    .standard-cell .sub-line {{ font-size: 11px; color: #3b82f6; font-weight: 500; margin-top: 4px;}}
+    .standard-cell .sub-line {{ font-size: 11px; color: {KOMBI_TEXT}; font-weight: 500; margin-top: 4px;}}
     .badge {{
         display: inline-flex; align-items: center; gap: 4px;
         padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
     }}
-    .badge-ok    {{ background: #dcfce7; color: #166534; }}
-    .badge-kombi {{ background: #fef3c7; color: #92400e; }}
-    .badge-sonder{{ background: #fee2e2; color: #991b1b; }}
+    /* Badges nutzen dunkle Grundfarben -> weisse Schrift (WCAG > 4.5:1) */
+    .badge-ok    {{ background: {GREEN};  color: {GREEN_TEXT}; }}
+    .badge-kombi {{ background: {PRIMARY}; color: {PRIMARY_TEXT}; }}
+    .badge-sonder{{ background: {DANGER}; color: {DANGER_TEXT}; }}
 
-    /* Buttons */
-    .stButton > button[kind="primary"] {{
-        background: {PRIMARY}; color: #fff; border: none;
+    /* Buttons — Kontrast-Regel: Primary auf DM-Blau -> weiss (auch im Hover).
+       !important, weil Streamlit teils Inline-color-Styles auf das Button-
+       Element vergibt, die auf dunklem Grund untergehen wuerden. */
+    .stButton > button[kind="primary"],
+    .stButton > button[kind="primary"] * {{
+        background: {PRIMARY} !important;
+        color: {PRIMARY_TEXT} !important;
+        border: none;
         font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }}
-    .stButton > button[kind="primary"]:hover {{
-        background: {PRIMARY_LIGHT};
+    .stButton > button[kind="primary"]:hover,
+    .stButton > button[kind="primary"]:hover * {{
+        background: {PRIMARY_LIGHT} !important;
+        color: {PRIMARY_TEXT} !important;
         box-shadow: 0 4px 12px rgba(0,35,110,0.30);
     }}
     .stButton > button[kind="secondary"] {{
-        background: #fff; color: {PRIMARY_LIGHT}; border: 1px solid #e5e7eb;
+        background: {SURFACE}; color: {PRIMARY_LIGHT}; border: 1px solid #e5e7eb;
         font-weight: 600;
     }}
-    .stDownloadButton > button {{ font-weight: 600; border-radius: 8px; }}
+    /* Download-Button ist grundsaetzlich secondary-Style, aber wenn wir ihn
+       via Primary rendern (z.B. B4 Export), muss der Text weiss bleiben. */
+    .stDownloadButton > button {{
+        font-weight: 600; border-radius: 8px;
+        background: {PRIMARY} !important;
+        color: {PRIMARY_TEXT} !important;
+        border: none !important;
+    }}
+    .stDownloadButton > button:hover {{
+        background: {PRIMARY_LIGHT} !important;
+        color: {PRIMARY_TEXT} !important;
+    }}
+    .stDownloadButton > button * {{ color: {PRIMARY_TEXT} !important; }}
 
     /* Inputs */
     [data-baseweb="input"] > div, [data-baseweb="select"] > div {{
@@ -278,6 +353,9 @@ CSS = f"""
        da deren Regeln spezifischer sind. */
     .stApp, .block-container {{ color: #1f2937; }}
 
+    /* KPI-Karten (st.metric) — weisser Hintergrund, dunkler Wert.
+       Sicherstellen dass Container weiss bleibt und Value dunkelblau. */
+    [data-testid="stMetric"] {{ background: {SURFACE}; }}
     /* KPI-Karten (st.metric) — Wert dunkelblau, Label grau, gut sichtbar */
     [data-testid="stMetricValue"] {{ color: {PRIMARY} !important; font-weight: 700; }}
     [data-testid="stMetricLabel"],

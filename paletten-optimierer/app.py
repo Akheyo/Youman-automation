@@ -7214,12 +7214,13 @@ def _anleitung_pdf_bytes() -> bytes:
     pdf.set_margins(20, 20, 20)
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
+    # Header als DM-Blau-Balken mit weisser Schrift (Kontrast > 14:1)
+    pdf.set_fill_color(0, 35, 110)  # DM-Blau BG
+    pdf.set_text_color(255, 255, 255)  # weisse Schrift
     pdf.set_font("Helvetica", "B", 18)
-    pdf.set_text_color(0, 35, 110)  # DM-Blau
-    pdf.cell(0, 12, "Youman - Anleitung", ln=1)
-    pdf.set_draw_color(0, 35, 110)
-    pdf.line(20, pdf.get_y() + 1, 190, pdf.get_y() + 1)
-    pdf.ln(8)
+    pdf.cell(0, 14, "  Youman - Anleitung", border=0, fill=True, ln=1)
+    pdf.ln(6)
+    # Body-Text auf weissem Grund: dunkelgrau
     pdf.set_text_color(31, 41, 55)
 
     def h2(text: str) -> None:

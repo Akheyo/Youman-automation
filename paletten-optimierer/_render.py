@@ -96,7 +96,13 @@ def render_zuord_table(res: dict, katalog_masse: set | None = None) -> str:
         rs = max(1, len(members))
         gruppe_summe = sum(m.get("menge", 0) for m in members)
         bg = _row_bg(typ)
-        row_style = f' style="background:{bg};"' if bg else ""
+        row_cls = {
+            "Standard": "row-standard",
+            "Kombi-Stapel": "row-kombi",
+            "Kombi-Heterogen": "row-kombi",
+            "Sonder": "row-sonder",
+        }.get(typ, "")
+        row_style = f' class="{row_cls}" style="background:{bg};"' if bg else ""
 
         for i, m in enumerate(members):
             tds = []
