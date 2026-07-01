@@ -28,14 +28,15 @@ def _set_config(d: dict | None) -> str:
 
 
 def test_a_basic_default():
-    """Ohne config.json → basic mit 7 Tabs (inkl. 'Maße prüfen')."""
+    """Ohne config.json → basic mit 7 Tabs (inkl. 'Maße prüfen').
+    Nach C4-Rename heisst 'Stammdaten 2' jetzt 'Artikelmaße'."""
     _set_config(None)
     cfg = edition.lade_config()
     assert cfg["edition"] == "basic"
     tabs = edition.enabled_tabs()
     assert len(tabs) == 7
     for t in ["Dashboard", "Datenimport", "Maße prüfen", "Optimierung",
-                "Ergebnisse", "Katalog", "Stammdaten 2"]:
+                "Ergebnisse", "Katalog", "Artikelmaße"]:
         assert t in tabs
     print(f"  basic-Default: {len(tabs)} Tabs.")
 
