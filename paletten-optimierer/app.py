@@ -226,10 +226,10 @@ def init_state() -> None:
             "tol_kurz_pct": 15,       # Breite +15 %
             "tol_lang_pct": 10,       # Länge  +10 %
             "kombinieren": True,
-            # Sonderpaletten-Feature entfernt: Optimierer nutzt nur
-            # Katalog-Maße als Standards; nicht passende Artikel werden
-            # 'nicht zuordenbar'. sonder_erlaubt bleibt fest False.
-            "sonder_erlaubt": False,
+            # Sonder-Deckel: UI-Toggle (an/aus) + Zahlwert (max Sonder).
+            "deckel_toggle": True,
+            "deckel_wert": 5,
+            "sonder_erlaubt": True,
             # Score-Gewichte (Spec §3)
             "w1": 1.0,   # Anzahl unterschiedlicher Palettentypen
             "w2": 0.0,   # Σ Paletten (info-only, post-hoc)
@@ -896,9 +896,26 @@ def seite_einstellungen() -> None:
         )
         card_close()
 
-        # Sonderpaletten-Feature entfernt: keine Toggles/Deckel mehr.
-        # Es werden ausschließlich Katalog-Maße als Standards genutzt.
-        p["sonder_erlaubt"] = False
+        card_open("Sonder-Deckel")
+        p["deckel_toggle"] = st.toggle(
+            "Sonder-Deckel aktiv",
+            value=bool(p.get("deckel_toggle", True)),
+            key="deckel_toggle_in",
+            help="ON = Obergrenze für Sonderpaletten. "
+                 "OFF = kein Deckel (Solver darf beliebig viele setzen).",
+        )
+        p["deckel_wert"] = st.number_input(
+            "Max. Sonderpaletten erlaubt",
+            min_value=0, max_value=50,
+            value=int(p.get("deckel_wert", 5)),
+            step=1, key="deckel_wert_in",
+            disabled=not p["deckel_toggle"],
+            help="Obergrenze für die Anzahl Sonder-Standards. "
+                 "Nur wirksam, wenn der Deckel aktiv ist.",
+        )
+        card_close()
+
+        p["sonder_erlaubt"] = True
 
         card_open("Doppelschutz (Spec §8)")
         p["doppelschutz_aktiv"] = st.toggle(
@@ -1322,8 +1339,9 @@ def run_optimierung() -> None:
 
     # Toggle-Verdrahtung 1:1 nach FINAL-LOCK-Spec
     kombi = bool(p.get("kombinieren", True))
-    # Sonderpaletten-Feature entfernt: fest aus.
-    deckel = None
+    # Sonder-Deckel: UI-Toggle + Wert -> Obergrenze oder None (unbegrenzt).
+    deckel = (int(p.get("deckel_wert", 5))
+              if bool(p.get("deckel_toggle", True)) else None)
 
     # Toleranz-Modus: "absolut" (mm) oder "prozent" (%).
     # Im Prozent-Modus setzen wir die mm-Grenze auf einen sehr hohen
