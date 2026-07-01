@@ -523,6 +523,47 @@ def _fmt_int(n) -> str:
     return f"{int(n):,}".replace(",", ".")
 
 
+def copy_button(text: str, label: str = "📋 In Zwischenablage kopieren",
+                key: str | None = None, height: int = 46) -> None:
+    """Rendert einen Copy-Button, der bei Klick den gegebenen Text via
+    navigator.clipboard.writeText() in die Zwischenablage schreibt.
+
+    Streamlits Default-Buttons haben keinen Clipboard-Zugriff — deshalb
+    embedden wir einen kleinen HTML/JS-Snippet über streamlit.components.v1.
+    Funktioniert im Browser und im eingebetteten Desktop-WebView2-Fenster.
+    """
+    from html import escape
+    import json as _json
+    import streamlit.components.v1 as _components
+    payload = _json.dumps(text)
+    lbl_ok = escape(label)
+    key_suf = escape(key or "cp") if key else "cp"
+    html = f"""
+    <div style="margin:4px 0;">
+      <button id="btn_{key_suf}" style="
+        background:#00236E;color:#fff;border:0;
+        padding:8px 14px;border-radius:8px;font-weight:600;
+        font-family:Inter,sans-serif;font-size:13px;cursor:pointer;
+        width:100%;"
+        onclick="(async () => {{
+          try {{
+            await navigator.clipboard.writeText({payload});
+            const b = document.getElementById('btn_{key_suf}');
+            const orig = b.innerText;
+            b.innerText = '✓ Kopiert';
+            b.style.background = '#16a34a';
+            setTimeout(() => {{ b.innerText = orig; b.style.background = '#00236E'; }}, 1500);
+          }} catch (e) {{
+            const b = document.getElementById('btn_{key_suf}');
+            b.innerText = '✗ Fehler: ' + e.message;
+            b.style.background = '#dc2626';
+          }}
+        }})()">{lbl_ok}</button>
+    </div>
+    """
+    _components.html(html, height=height)
+
+
 # ---------------------------------------------------------------------------
 # Seite 1: Datenimport
 # ---------------------------------------------------------------------------
@@ -2273,6 +2314,30 @@ def seite_ergebnisse() -> None:
             )
         card_close()
 
+    # --- A1: Copy-Buttons für Standards- und Sonder-Liste ---
+    def _fmt_masse(liste):
+        return "\n".join(f"{int(cl)} × {int(cs)}" for (cs, cl) in liste)
+    std_txt = _fmt_masse(res.get("standards", []))
+    son_txt = _fmt_masse(res.get("sonder", []))
+    if std_txt or son_txt:
+        card_open("📋 Kopieren")
+        cc1, cc2 = st.columns(2)
+        with cc1:
+            if std_txt:
+                copy_button(std_txt,
+                            f"📋 Standards ({len(res.get('standards', []))} Maße) kopieren",
+                            key="cp_std")
+            else:
+                st.caption("Keine Standards")
+        with cc2:
+            if son_txt:
+                copy_button(son_txt,
+                            f"📋 Sonder ({len(res.get('sonder', []))} Maße) kopieren",
+                            key="cp_son")
+            else:
+                st.caption("Keine Sonder")
+        card_close()
+
     # --- Filter ---
     filter_opt = ["alle", "Standard", "Sonder", "Kombi", "Nicht zuordenbar"]
     aktiver_filter = p.get("ergebnis_filter", "alle")
@@ -2384,53 +2449,68 @@ def seite_ergebnisse() -> None:
         use_container_width=True,
     )
 
-    # === Zwei zusätzliche PDF-Exports (Spec: Palette→Artikel + AW→Palette) ===
+    # === A3: PDF-Exports — Datei-Download + OS-Open, beide sofort wirksam ===
     st.markdown("**PDF-Exports**")
     pc1, pc2 = st.columns(2)
+
+    def _cache_pdf(sess_key: str, gen_fn, name_key: str):
+        """Erzeugt das PDF genau einmal pro Session und cached bytes+pfad."""
+        if sess_key in st.session_state:
+            return st.session_state[sess_key]
+        try:
+            daten = gen_fn(
+                res, datei_name=st.session_state.get("datei_name", ""),
+            )
+            name = berichte_modul._dateiname(name_key, "pdf")
+            arch = berichte_modul.archiv_speichern(
+                name_key, name, daten,
+                quell_lauf_id=st.session_state.get("ergebnis_id"),
+            )
+            st.session_state[sess_key] = (name, daten, arch["pfad"])
+            return st.session_state[sess_key]
+        except Exception as exc:
+            st.error(f"PDF-Fehler: {exc}")
+            return None
+
     with pc1:
-        if st.button("📄 PDF: Palette → Artikel",
-                       use_container_width=True, key="erg_pdf_pa",
-                       help="Pro Standard-/Sonder-Palette eine Sektion mit "
-                            "allen zugeordneten Artikeln."):
-            try:
-                daten = berichte_modul.pdf_palette_artikel(
-                    res, datei_name=st.session_state.get("datei_name", ""),
+        st.markdown("**Palette → Artikel**")
+        pa = _cache_pdf("erg_pdf_pa_daten",
+                         berichte_modul.pdf_palette_artikel,
+                         "palette_artikel")
+        if pa:
+            name, daten, pfad = pa
+            b1, b2 = st.columns(2)
+            with b1:
+                st.download_button(
+                    "📥 PDF herunterladen", data=daten, file_name=name,
+                    mime="application/pdf", use_container_width=True,
+                    key="erg_pdf_pa_dl",
                 )
-                name = berichte_modul._dateiname("palette_artikel", "pdf")
-                arch = berichte_modul.archiv_speichern(
-                    "palette_artikel", name, daten,
-                    quell_lauf_id=st.session_state.get("ergebnis_id"),
-                )
-                st.session_state.erg_pdf_pa_daten = (name, daten,
-                                                       arch["pfad"])
-            except Exception as exc:
-                st.error(f"Fehler: {exc}")
-        if "erg_pdf_pa_daten" in st.session_state:
-            name, daten, pfad = st.session_state.erg_pdf_pa_daten
-            st.success(f"✓ {name} erstellt.")
-            _export_aktionen(name, daten, pfad, "erg_pdf_pa")
+            with b2:
+                if st.button("📄 PDF öffnen", use_container_width=True,
+                             key="erg_pdf_pa_open"):
+                    _datei_im_os_oeffnen(pfad)
+            st.caption(f"Datei: {name}")
+
     with pc2:
-        if st.button("📄 PDF: Auftrag → Paletten",
-                       use_container_width=True, key="erg_pdf_ap",
-                       help="Pro Auftragsnummer (AW): wie viele Paletten "
-                            "welcher Größe + Detail."):
-            try:
-                daten = berichte_modul.pdf_auftrag_palette(
-                    res, datei_name=st.session_state.get("datei_name", ""),
+        st.markdown("**Auftrag → Paletten**")
+        ap = _cache_pdf("erg_pdf_ap_daten",
+                         berichte_modul.pdf_auftrag_palette,
+                         "auftrag_paletten")
+        if ap:
+            name, daten, pfad = ap
+            b1, b2 = st.columns(2)
+            with b1:
+                st.download_button(
+                    "📥 PDF herunterladen", data=daten, file_name=name,
+                    mime="application/pdf", use_container_width=True,
+                    key="erg_pdf_ap_dl",
                 )
-                name = berichte_modul._dateiname("auftrag_paletten", "pdf")
-                arch = berichte_modul.archiv_speichern(
-                    "auftrag_paletten", name, daten,
-                    quell_lauf_id=st.session_state.get("ergebnis_id"),
-                )
-                st.session_state.erg_pdf_ap_daten = (name, daten,
-                                                       arch["pfad"])
-            except Exception as exc:
-                st.error(f"Fehler: {exc}")
-        if "erg_pdf_ap_daten" in st.session_state:
-            name, daten, pfad = st.session_state.erg_pdf_ap_daten
-            st.success(f"✓ {name} erstellt.")
-            _export_aktionen(name, daten, pfad, "erg_pdf_ap")
+            with b2:
+                if st.button("📄 PDF öffnen", use_container_width=True,
+                             key="erg_pdf_ap_open"):
+                    _datei_im_os_oeffnen(pfad)
+            st.caption(f"Datei: {name}")
         st.download_button(
             "📥 CSV: Auftrag → Paletten (inkl. optim. Palettenmaß)",
             data=berichte_modul.csv_auftrag_palette(res),
@@ -3343,6 +3423,55 @@ def seite_bestellungen() -> None:
 
     card_close()
 
+    # === A4: KW-Fenster (Start-KW + Vorlauf) ===
+    from datetime import date as _date
+    heute_kw = _date.today().isocalendar()[1]
+    card_open("📅 Bestell-Fenster (Kalenderwoche)")
+    fc1, fc2, fc3 = st.columns([1, 1, 2])
+    with fc1:
+        start_kw = st.number_input(
+            "Start-KW", min_value=1, max_value=53,
+            value=int(st.session_state.get("best_kw_start", heute_kw)),
+            step=1, key="best_kw_start_in",
+            help="Kalenderwoche, ab der Bedarfe in die Liste kommen.",
+        )
+        st.session_state.best_kw_start = start_kw
+    with fc2:
+        vorlauf = st.number_input(
+            "Wochen Vorlauf", min_value=0, max_value=52,
+            value=int(st.session_state.get("best_kw_vorlauf", 4)),
+            step=1, key="best_kw_vorlauf_in",
+            help="Wieviele KW ab Start-KW ins Fenster fallen.",
+        )
+        st.session_state.best_kw_vorlauf = vorlauf
+    with fc3:
+        kw_filter_aktiv = st.toggle(
+            "KW-Filter aktiv",
+            value=bool(st.session_state.get("best_kw_filter_aktiv", False)),
+            key="best_kw_aktiv_in",
+            help="OFF = alle Bestellungen anzeigen (unverändertes Verhalten).",
+        )
+        st.session_state.best_kw_filter_aktiv = kw_filter_aktiv
+        st.caption(
+            f"Fenster: KW {start_kw} bis KW {(start_kw + vorlauf - 1) if vorlauf else start_kw}"
+        )
+    card_close()
+
+    def _im_kw_fenster(a: dict) -> bool:
+        """True wenn datum_erstellt in [start_kw, start_kw+vorlauf-1]."""
+        if not kw_filter_aktiv:
+            return True
+        d = a.get("datum_erstellt", "")
+        if not d:
+            return True
+        try:
+            iso = _date.fromisoformat(d[:10])
+        except ValueError:
+            return True
+        kw = iso.isocalendar()[1]
+        ende = start_kw + max(1, int(vorlauf)) - 1
+        return start_kw <= kw <= ende
+
     # === Modal: Neue Bestellung anlegen ===
     if st.session_state.get("best_neu_modal_aktiv"):
         _bestellung_modal()
@@ -3365,6 +3494,8 @@ def seite_bestellungen() -> None:
             if not (filter_status == "eingegangen"
                     and a.get("status") == "wareneingang"):
                 continue
+        if not _im_kw_fenster(a):
+            continue
         gefiltert.append(a)
 
     # §9: bei aktiver AW-Suche zusaetzlich Treffer-Detail mit
