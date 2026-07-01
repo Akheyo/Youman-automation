@@ -342,7 +342,7 @@ with st.sidebar:
         "Ergebnisse", "Verlauf", "Katalog", "Bestand & Disposition",
         "Bestellungen", "Beschaffung", "Historie", "Wirtschaftlichkeit",
         "Kostenanalyse", "Stammdaten", "Artikelmaße", "Berichte",
-        "App-Einstellungen",
+        "Anleitung", "App-Einstellungen",
     ]
     _enabled = set(edition_modul.enabled_tabs())
     SEITEN_LISTE = [t for t in _ALLE_TABS if t in _enabled]
