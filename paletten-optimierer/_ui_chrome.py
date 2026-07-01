@@ -346,18 +346,31 @@ CSS = f"""
         color: {PRIMARY_TEXT} !important;
     }}
 
-    /* Download-Button ist grundsaetzlich secondary-Style, aber wenn wir ihn
-       via Primary rendern (z.B. B4 Export), muss der Text weiss bleiben. */
+    /* Download-Button (st.download_button) — DM-Blau BG, weisse Schrift.
+       Streamlit wechselt zwischen .stDownloadButton-Wrapper und
+       data-testid="stDownloadButton" bzw. data-testid="stBaseButton-secondary"
+       je Version. Alle bekannten Varianten mit der gleichen Regel abdecken. */
     .stDownloadButton > button,
     .stDownloadButton > button *,
-    .stDownloadButton > button p {{
+    .stDownloadButton > button p,
+    .stDownloadButton > button div,
+    .stDownloadButton > button span,
+    [data-testid="stDownloadButton"] button,
+    [data-testid="stDownloadButton"] button *,
+    [data-testid="stDownloadButton"] button p,
+    button[data-testid^="stBaseButton-secondaryDownload"],
+    button[data-testid^="stBaseButton-secondaryDownload"] * {{
         font-weight: 600; border-radius: 8px;
         background-color: {PRIMARY} !important;
         color: {PRIMARY_TEXT} !important;
         border: none !important;
     }}
     .stDownloadButton > button:hover,
-    .stDownloadButton > button:hover * {{
+    .stDownloadButton > button:hover *,
+    [data-testid="stDownloadButton"] button:hover,
+    [data-testid="stDownloadButton"] button:hover *,
+    button[data-testid^="stBaseButton-secondaryDownload"]:hover,
+    button[data-testid^="stBaseButton-secondaryDownload"]:hover * {{
         background-color: {PRIMARY_LIGHT} !important;
         color: {PRIMARY_TEXT} !important;
     }}
