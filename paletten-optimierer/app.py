@@ -2142,6 +2142,19 @@ def seite_ergebnisse() -> None:
             key="erg_kombi",
             help="ON = Stapel + heterogene Kombi erlaubt. OFF = nur Einzel.",
         )
+        p["deckel_toggle"] = st.toggle(
+            "Sonder-Deckel aktiv",
+            value=bool(p.get("deckel_toggle", True)),
+            key="erg_deckel_toggle",
+            help="ON = Obergrenze für Sonderpaletten. OFF = kein Deckel.",
+        )
+        p["deckel_wert"] = st.number_input(
+            "Max. Sonderpaletten erlaubt",
+            min_value=0, max_value=50,
+            value=int(p.get("deckel_wert", 5)),
+            step=1, key="erg_deckel_wert",
+            disabled=not p["deckel_toggle"],
+        )
     if st.button("🔄 Neu optimieren mit diesen Werten",
                  type="primary", use_container_width=True, key="erg_rerun"):
         run_optimierung()
