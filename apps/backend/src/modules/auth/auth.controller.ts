@@ -24,10 +24,9 @@ interface JwtUser {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // Brute-force protection: 5 attempts per minute per IP. The global
-  // ThrottlerModule limit (100/min) does not protect this endpoint enough.
+  // Rate-limiting removed by request — access is intentionally unlimited.
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: 10_000, ttl: 60_000 } })
   @Post("login")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Login mit E-Mail, Passwort und Tenant-Slug" })
@@ -37,7 +36,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @Throttle({ default: { limit: 10_000, ttl: 60_000 } })
   @Post("refresh")
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Access Token erneuern" })
