@@ -13,6 +13,7 @@ apps/desktop/dist/
 apps/desktop/electron/dist/
 packages/*/dist/
 packages/connectors/*/dist/
+pnpm-lock.yaml
 .turbo/
 *.tsbuildinfo
 prisma/migrations/*.sql
