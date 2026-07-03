@@ -11,6 +11,7 @@ import { QueueModule } from "./modules/queue/queue.module";
 import { AuditModule } from "./modules/audit/audit.module";
 import { ConnectorsModule } from "./modules/connectors/connectors.module";
 import { BrandingModule } from "./modules/branding/branding.module";
+import { CostAnalysesModule } from "./modules/cost-analyses/cost-analyses.module";
 import { HealthModule } from "./modules/health/health.module";
 import { DatabaseModule } from "./database/database.module";
 import appConfig from "./config/app.config";
@@ -34,6 +35,7 @@ import jwtConfig from "./config/jwt.config";
     AuditModule,
     ConnectorsModule,
     BrandingModule,
+    CostAnalysesModule,
     HealthModule,
   ],
   providers: [

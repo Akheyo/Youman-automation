@@ -29,6 +29,7 @@ model Tenant {
   executions      ActionExecution[]
   queueItems      QueueItem[]
   auditLogs       AuditLog[]
+  costAnalyses    CostAnalysis[]
 
   @@index([slug])
   @@map("tenants")
@@ -329,4 +330,29 @@ enum AuditSeverity {
   WARNING
   ERROR
   CRITICAL
+}
+
+// ─── Cost Analysis ────────────────────────────────────────────────────────────
+//
+// Simple scenario calculator: users capture cost items (e.g. "1 truck × 5 units
+// × 45,000 EUR = 225,000 EUR") and offsetting savings items (e.g. "pallet bulk
+// purchase saves 12,000 EUR"). The net effect is the delta between the two.
+// Persisted per tenant so scenarios can be reopened, edited, compared.
+
+model CostAnalysis {
+  id          String   @id @default(uuid())
+  tenantId    String
+  title       String
+  description String   @default("")
+  currency    String   @default("EUR")
+  // Array of { id, label, category?, unitCost, quantity, type: "cost"|"saving", note? }
+  items       Json     @default("[]")
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@map("cost_analyses")
 }

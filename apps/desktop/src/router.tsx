@@ -8,6 +8,7 @@ import { AuditScreen } from "./components/screens/AuditScreen";
 import { AdminScreen } from "./components/screens/AdminScreen";
 import { AuthGuard } from "./components/layout/AuthGuard";
 import { SettingsScreen } from "./components/screens/SettingsScreen";
+import { CostAnalysisScreen } from "./components/screens/CostAnalysisScreen";
 
 export const router = createHashRouter([
   {
@@ -30,6 +31,7 @@ export const router = createHashRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <DashboardScreen /> },
       { path: "action/:actionId", element: <ActionScreen /> },
+      { path: "cost-analysis", element: <CostAnalysisScreen /> },
       { path: "queue", element: <QueueScreen /> },
       { path: "audit", element: <AuditScreen /> },
       { path: "admin", element: <AdminScreen /> },

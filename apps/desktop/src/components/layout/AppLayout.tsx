@@ -2,7 +2,7 @@ import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Clock, FileText, Shield, Settings, Server,
-  LogOut, Wifi, WifiOff, Loader2, Download, RefreshCw
+  LogOut, Wifi, WifiOff, Loader2, Download, RefreshCw, Calculator,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useOfflineStore } from "@/stores/offlineStore";
@@ -15,6 +15,7 @@ import { toast } from "@/hooks/useToast";
 
 const NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/cost-analysis", icon: Calculator, label: "Kostenanalyse" },
   { to: "/queue", icon: Clock, label: "Warteschlange" },
   { to: "/audit", icon: FileText, label: "Protokoll" },
   { to: "/admin", icon: Settings, label: "Administration" },
