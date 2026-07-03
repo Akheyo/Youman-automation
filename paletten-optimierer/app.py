@@ -7183,133 +7183,207 @@ def seite_berichte() -> None:
             "**Ergebnisse**-Tab unter der Tabelle verfügbar.")
 
 
+def _de_eur(v: float, prefix: str = "") -> str:
+    """Formatiert einen Euro-Wert im deutschen Zahlenformat (1.234,56 €).
+    prefix kann '+' sein, um Vorzeichen zu erzwingen."""
+    fmt = f"{{:{prefix},.2f}}"
+    s = fmt.format(v).replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"{s} €"
+
+
 def seite_kostenanalyse_basic() -> None:
-    """Schlanke Kostenanalyse fuer die Basic-Edition.
+    """Kostenanalyse Basic-Edition.
 
     Modell:
-        Mehrkosten Transport (X) = LKW-Kosten x Anzahl LKW-Fahrten mehr
-        Einsparung Palettenkauf  (Y) = Ersparnis in Euro
-        Netto-Effekt             = Y - X
-                                   > 0 -> Standardisierung lohnt sich
-                                   < 0 -> Standardisierung ist teurer
+        Mehrkosten Transport (X)  = Pauschal pro LKW × Anzahl
+                                     ODER Kosten pro Lademeter × Δ Lademeter
+        Palettenkauf-Ersparnis(Y) = |Einkaufspreis − Selbstfertigung|
+                                     × Anzahl Paletten
+                                     (die günstigere Bezugsquelle ist die neue)
+        Netto-Effekt              = Y − X
     """
     card_open("💰 Kostenanalyse")
     st.markdown(
         "<div style='color:#475569;font-size:13px;line-height:1.6;"
-        "margin-bottom:8px;'>Netto-Effekt der Standardisierung:<br>"
-        "<b>Einsparung Palettenkauf</b> minus <b>Mehrkosten "
-        "durch zusaetzliche LKW-Fahrten</b>.</div>",
+        "margin-bottom:8px;'>Netto-Effekt der Standardisierung: "
+        "<b>Palettenkauf-Ersparnis (Y)</b> minus "
+        "<b>Transport-Mehrkosten (X)</b>.</div>",
         unsafe_allow_html=True,
     )
 
-    # Session-State-Defaults
     ka = st.session_state.setdefault("kostenanalyse", {
+        "transport_modus": "Pauschal pro LKW",
         "lkw_kosten_eur": 800.0,
         "lkw_anzahl": 5,
-        "einsparung_paletten_eur": 6000.0,
+        "lademeter_kosten_eur": 25.0,
+        "lademeter_delta": 40,
+        "paletten_anzahl": 500,
+        "einkauf_eur": 12.5,
+        "selbst_eur": 9.0,
         "periode": "pro Monat",
     })
 
+    # Anzahl aus letzter Optimierung uebernehmen (nur beim ersten Rendern)
+    erg = st.session_state.get("ergebnis")
+    if erg and "paletten_aus_erg_uebernommen" not in st.session_state:
+        try:
+            pg = sum(int(z.get("menge", 0)) for z in erg.get("zuordnung", []))
+            if pg > 0:
+                ka["paletten_anzahl"] = pg
+                st.session_state["paletten_aus_erg_uebernommen"] = True
+        except Exception:
+            pass
+
     c1, c2 = st.columns(2)
 
+    # === Transport-Mehrkosten (X) =====================================
     with c1:
         card_open("Mehrkosten Transport (X)")
-        ka["lkw_kosten_eur"] = st.number_input(
-            "Kosten pro LKW-Fahrt (€)",
-            min_value=0.0, max_value=100000.0,
-            value=float(ka.get("lkw_kosten_eur", 800.0)),
-            step=50.0, key="ka_lkw_kosten",
-            help="Was kostet eine zusaetzliche LKW-Fahrt "
-                 "durchschnittlich? (inkl. Diesel + Fahrer + Maut)",
+        modi = ["Pauschal pro LKW", "Pro Lademeter"]
+        ka["transport_modus"] = st.radio(
+            "Berechnungs-Modus",
+            modi,
+            index=modi.index(ka.get("transport_modus", modi[0])),
+            key="ka_modus", horizontal=True,
         )
-        ka["lkw_anzahl"] = st.number_input(
-            "Anzahl zusätzlicher LKW-Fahrten",
-            min_value=0, max_value=1000,
-            value=int(ka.get("lkw_anzahl", 5)),
-            step=1, key="ka_lkw_anzahl",
-            help="Wie viele LKW-Fahrten kommen durch die Standardi-"
-                 "sierung zusaetzlich dazu?",
-        )
-        X = float(ka["lkw_kosten_eur"]) * int(ka["lkw_anzahl"])
-        st.metric(
-            "Mehrkosten Transport (X)",
-            f"{X:,.2f} €".replace(",", "X").replace(".", ",").replace("X", "."),
-            help=f"{ka['lkw_kosten_eur']:.0f} € × {ka['lkw_anzahl']} Fahrten"
-        )
+        if ka["transport_modus"] == "Pauschal pro LKW":
+            ka["lkw_kosten_eur"] = st.number_input(
+                "Kosten pro LKW-Fahrt (€)",
+                min_value=0.0, max_value=100000.0,
+                value=float(ka.get("lkw_kosten_eur", 800.0)),
+                step=50.0, key="ka_lkw_kosten",
+                help="Diesel + Fahrer + Maut je Fahrt.",
+            )
+            ka["lkw_anzahl"] = st.number_input(
+                "Anzahl zusätzlicher LKW-Fahrten",
+                min_value=0, max_value=10000,
+                value=int(ka.get("lkw_anzahl", 5)),
+                step=1, key="ka_lkw_anzahl",
+                help="Wie viele Fahrten kommen durch die "
+                     "Standardisierung dazu?",
+            )
+            X = float(ka["lkw_kosten_eur"]) * int(ka["lkw_anzahl"])
+            X_formel = (f"{int(ka['lkw_anzahl'])} × "
+                        f"{_de_eur(float(ka['lkw_kosten_eur']))}")
+        else:
+            ka["lademeter_kosten_eur"] = st.number_input(
+                "Kosten pro Lademeter (€)",
+                min_value=0.0, max_value=1000.0,
+                value=float(ka.get("lademeter_kosten_eur", 25.0)),
+                step=1.0, key="ka_lm_kosten",
+                help="Was kostet 1 Lademeter im LKW? "
+                     "(Frachtsatz durchschnittlich)",
+            )
+            ka["lademeter_delta"] = st.number_input(
+                "Δ Lademeter (zusätzlich benötigt)",
+                min_value=0, max_value=100000,
+                value=int(ka.get("lademeter_delta", 40)),
+                step=1, key="ka_lm_delta",
+                help="Wie viele Lademeter kommen durch die "
+                     "Standardisierung dazu?",
+            )
+            X = float(ka["lademeter_kosten_eur"]) * int(ka["lademeter_delta"])
+            X_formel = (f"{int(ka['lademeter_delta'])} lm × "
+                        f"{_de_eur(float(ka['lademeter_kosten_eur']))}")
+        st.metric("X = Mehrkosten Transport", _de_eur(X), help=X_formel)
         card_close()
 
+    # === Palettenkauf-Ersparnis (Y) ===================================
     with c2:
-        card_open("Einsparung Palettenkauf (Y)")
-        ka["einsparung_paletten_eur"] = st.number_input(
-            "Einsparung Palettenkauf (€)",
-            min_value=0.0, max_value=10_000_000.0,
-            value=float(ka.get("einsparung_paletten_eur", 6000.0)),
-            step=100.0, key="ka_einsparung",
-            help="Wie viel Euro spart man durch weniger Paletten-"
-                 "typen ein? (Mengenrabatt, weniger Handling, "
-                 "geringere Lagerkosten)",
+        card_open("Palettenkauf-Ersparnis (Y)")
+        ka["paletten_anzahl"] = st.number_input(
+            "Anzahl Paletten",
+            min_value=0, max_value=10_000_000,
+            value=int(ka.get("paletten_anzahl", 500)),
+            step=10, key="ka_p_anzahl",
+            help="Menge, die eingekauft oder selbst gefertigt wird. "
+                 "Aus der letzten Optimierung übernommen; "
+                 "manuell anpassbar.",
         )
-        ka["periode"] = st.selectbox(
-            "Zeitraum",
-            ["pro Monat", "pro Quartal", "pro Jahr"],
-            index=["pro Monat", "pro Quartal", "pro Jahr"].index(
-                ka.get("periode", "pro Monat")),
-            key="ka_periode",
+        pk1, pk2 = st.columns(2)
+        with pk1:
+            ka["einkauf_eur"] = st.number_input(
+                "Einkaufspreis (€/Palette)",
+                min_value=0.0, max_value=10000.0,
+                value=float(ka.get("einkauf_eur", 12.5)),
+                step=0.5, key="ka_einkauf",
+                help="Ø Nettopreis pro Palette beim Lieferanten.",
+            )
+        with pk2:
+            ka["selbst_eur"] = st.number_input(
+                "Selbstfertigung (€/Palette)",
+                min_value=0.0, max_value=10000.0,
+                value=float(ka.get("selbst_eur", 9.0)),
+                step=0.5, key="ka_selbst",
+                help="Material + Arbeit + Overhead pro Palette in "
+                     "der eigenen Fertigung.",
+            )
+        anz = int(ka["paletten_anzahl"])
+        ekauf = float(ka["einkauf_eur"]) * anz
+        eigen = float(ka["selbst_eur"]) * anz
+        Y = abs(ekauf - eigen)
+        guenstig = "Selbstfertigung" if eigen < ekauf else "Einkauf"
+        st.markdown(
+            f"<div style='font-size:12px;color:#374151;line-height:1.7;"
+            f"margin-top:4px;'>"
+            f"Gesamt Einkauf: <b>{_de_eur(ekauf)}</b><br>"
+            f"Gesamt Selbstfertigung: <b>{_de_eur(eigen)}</b><br>"
+            f"Günstiger: <b>{guenstig}</b></div>",
+            unsafe_allow_html=True,
         )
-        Y = float(ka["einsparung_paletten_eur"])
         st.metric(
-            "Einsparung Palettenkauf (Y)",
-            f"{Y:,.2f} €".replace(",", "X").replace(".", ",").replace("X", "."),
-            help=f"Palettenkauf-Ersparnis {ka['periode']}"
+            "Y = Ersparnis (günstigere Option)",
+            _de_eur(Y),
+            help=f"|Einkauf − Selbstfertigung| × {anz} Paletten"
         )
         card_close()
 
-    # Netto-Ergebnis
+    # === Zeitraum + Netto-Banner ======================================
+    ka["periode"] = st.selectbox(
+        "Zeitraum",
+        ["pro Monat", "pro Quartal", "pro Jahr"],
+        index=["pro Monat", "pro Quartal", "pro Jahr"].index(
+            ka.get("periode", "pro Monat")),
+        key="ka_periode",
+    )
+
     netto = Y - X
     farbe_bg = "#DCFCE7" if netto >= 0 else "#FEE2E2"
     farbe_text = "#14532D" if netto >= 0 else "#7F1D1D"
     label = "Netto-Einsparung" if netto >= 0 else "Netto-Mehrkosten"
     icon = "✅" if netto >= 0 else "⚠️"
+    formel = (f"Y − X = {_de_eur(Y)} − {_de_eur(X)} = "
+              f"<b>{_de_eur(netto, prefix='+')}</b>")
     st.markdown(
         f'<div style="background:{farbe_bg};color:{farbe_text};'
         f'padding:20px 24px;border-radius:12px;margin-top:14px;'
         f'font-size:15px;line-height:1.5;">'
         f'<div style="font-weight:800;font-size:22px;">'
-        f'{icon} {label}: '
-        f'{abs(netto):,.2f} € {ka["periode"]}'.replace(",", "X")
-        .replace(".", ",").replace("X", ".") + '</div>'
+        f'{icon} {label}: {_de_eur(abs(netto))} {ka["periode"]}</div>'
         f'<div style="margin-top:8px;font-family:ui-monospace,monospace;">'
-        f'Y − X = {Y:,.2f} € − {X:,.2f} € = <b>{netto:+,.2f} €</b>'
-        .replace(",", "X").replace(".", ",").replace("X", ".") + '</div>'
+        f'{formel}</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
-
-    # Hochrechnung auf Jahr fuer bessere Vergleichbarkeit
     faktor = {"pro Monat": 12, "pro Quartal": 4, "pro Jahr": 1}[ka["periode"]]
-    jahr = netto * faktor
     if faktor != 1:
         st.caption(
-            f"Hochrechnung: {jahr:+,.2f} € pro Jahr".replace(",", "X")
-            .replace(".", ",").replace("X", ".")
+            f"Hochrechnung: {_de_eur(netto * faktor, prefix='+')} pro Jahr"
         )
     card_close()
 
-    # Optionaler Bezug zur letzten Optimierung
-    erg = st.session_state.get("ergebnis")
     if erg:
         card_open("Bezug zur letzten Optimierung")
         n_std = len(erg.get("standards", []))
         n_son = len(erg.get("sonder", []))
-        gesamt = int(erg.get("paletten_gesamt") or
-                     erg.get("gesamt") or 0)
         st.markdown(
             f"- **{n_std}** Standard-Maße · **{n_son}** Sonder\n"
-            f"- Nutze die Zahlen als Grundlage: wenige Standards "
-            f"= grosse Bestellmengen pro Typ = Mengenrabatt beim "
-            f"Palettenkauf (Y)\n"
-            f"- Kombis auf einer Palette = mehr Fahrten notwendig = "
-            f"hoehere Mehrkosten Transport (X)"
+            f"- Wenige Standards → große Bestellmengen pro Typ → "
+            f"Mengenrabatt beim Einkauf senkt den Einkaufspreis\n"
+            f"- Selbstfertigung wird bei standardisierten Maßen "
+            f"planbarer und günstiger (weniger Rüstzeit)\n"
+            f"- Mehr Kombinationen auf einer Palette → mehr "
+            f"Lademeter/Fahrten → höheres X"
         )
         card_close()
 
