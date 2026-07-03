@@ -7183,6 +7183,137 @@ def seite_berichte() -> None:
             "**Ergebnisse**-Tab unter der Tabelle verfügbar.")
 
 
+def seite_kostenanalyse_basic() -> None:
+    """Schlanke Kostenanalyse fuer die Basic-Edition.
+
+    Modell:
+        Mehrkosten Transport (X) = LKW-Kosten x Anzahl LKW-Fahrten mehr
+        Einsparung Palettenkauf  (Y) = Ersparnis in Euro
+        Netto-Effekt             = Y - X
+                                   > 0 -> Standardisierung lohnt sich
+                                   < 0 -> Standardisierung ist teurer
+    """
+    card_open("💰 Kostenanalyse")
+    st.markdown(
+        "<div style='color:#475569;font-size:13px;line-height:1.6;"
+        "margin-bottom:8px;'>Netto-Effekt der Standardisierung:<br>"
+        "<b>Einsparung Palettenkauf</b> minus <b>Mehrkosten "
+        "durch zusaetzliche LKW-Fahrten</b>.</div>",
+        unsafe_allow_html=True,
+    )
+
+    # Session-State-Defaults
+    ka = st.session_state.setdefault("kostenanalyse", {
+        "lkw_kosten_eur": 800.0,
+        "lkw_anzahl": 5,
+        "einsparung_paletten_eur": 6000.0,
+        "periode": "pro Monat",
+    })
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+        card_open("Mehrkosten Transport (X)")
+        ka["lkw_kosten_eur"] = st.number_input(
+            "Kosten pro LKW-Fahrt (€)",
+            min_value=0.0, max_value=100000.0,
+            value=float(ka.get("lkw_kosten_eur", 800.0)),
+            step=50.0, key="ka_lkw_kosten",
+            help="Was kostet eine zusaetzliche LKW-Fahrt "
+                 "durchschnittlich? (inkl. Diesel + Fahrer + Maut)",
+        )
+        ka["lkw_anzahl"] = st.number_input(
+            "Anzahl zusätzlicher LKW-Fahrten",
+            min_value=0, max_value=1000,
+            value=int(ka.get("lkw_anzahl", 5)),
+            step=1, key="ka_lkw_anzahl",
+            help="Wie viele LKW-Fahrten kommen durch die Standardi-"
+                 "sierung zusaetzlich dazu?",
+        )
+        X = float(ka["lkw_kosten_eur"]) * int(ka["lkw_anzahl"])
+        st.metric(
+            "Mehrkosten Transport (X)",
+            f"{X:,.2f} €".replace(",", "X").replace(".", ",").replace("X", "."),
+            help=f"{ka['lkw_kosten_eur']:.0f} € × {ka['lkw_anzahl']} Fahrten"
+        )
+        card_close()
+
+    with c2:
+        card_open("Einsparung Palettenkauf (Y)")
+        ka["einsparung_paletten_eur"] = st.number_input(
+            "Einsparung Palettenkauf (€)",
+            min_value=0.0, max_value=10_000_000.0,
+            value=float(ka.get("einsparung_paletten_eur", 6000.0)),
+            step=100.0, key="ka_einsparung",
+            help="Wie viel Euro spart man durch weniger Paletten-"
+                 "typen ein? (Mengenrabatt, weniger Handling, "
+                 "geringere Lagerkosten)",
+        )
+        ka["periode"] = st.selectbox(
+            "Zeitraum",
+            ["pro Monat", "pro Quartal", "pro Jahr"],
+            index=["pro Monat", "pro Quartal", "pro Jahr"].index(
+                ka.get("periode", "pro Monat")),
+            key="ka_periode",
+        )
+        Y = float(ka["einsparung_paletten_eur"])
+        st.metric(
+            "Einsparung Palettenkauf (Y)",
+            f"{Y:,.2f} €".replace(",", "X").replace(".", ",").replace("X", "."),
+            help=f"Palettenkauf-Ersparnis {ka['periode']}"
+        )
+        card_close()
+
+    # Netto-Ergebnis
+    netto = Y - X
+    farbe_bg = "#DCFCE7" if netto >= 0 else "#FEE2E2"
+    farbe_text = "#14532D" if netto >= 0 else "#7F1D1D"
+    label = "Netto-Einsparung" if netto >= 0 else "Netto-Mehrkosten"
+    icon = "✅" if netto >= 0 else "⚠️"
+    st.markdown(
+        f'<div style="background:{farbe_bg};color:{farbe_text};'
+        f'padding:20px 24px;border-radius:12px;margin-top:14px;'
+        f'font-size:15px;line-height:1.5;">'
+        f'<div style="font-weight:800;font-size:22px;">'
+        f'{icon} {label}: '
+        f'{abs(netto):,.2f} € {ka["periode"]}'.replace(",", "X")
+        .replace(".", ",").replace("X", ".") + '</div>'
+        f'<div style="margin-top:8px;font-family:ui-monospace,monospace;">'
+        f'Y − X = {Y:,.2f} € − {X:,.2f} € = <b>{netto:+,.2f} €</b>'
+        .replace(",", "X").replace(".", ",").replace("X", ".") + '</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Hochrechnung auf Jahr fuer bessere Vergleichbarkeit
+    faktor = {"pro Monat": 12, "pro Quartal": 4, "pro Jahr": 1}[ka["periode"]]
+    jahr = netto * faktor
+    if faktor != 1:
+        st.caption(
+            f"Hochrechnung: {jahr:+,.2f} € pro Jahr".replace(",", "X")
+            .replace(".", ",").replace("X", ".")
+        )
+    card_close()
+
+    # Optionaler Bezug zur letzten Optimierung
+    erg = st.session_state.get("ergebnis")
+    if erg:
+        card_open("Bezug zur letzten Optimierung")
+        n_std = len(erg.get("standards", []))
+        n_son = len(erg.get("sonder", []))
+        gesamt = int(erg.get("paletten_gesamt") or
+                     erg.get("gesamt") or 0)
+        st.markdown(
+            f"- **{n_std}** Standard-Maße · **{n_son}** Sonder\n"
+            f"- Nutze die Zahlen als Grundlage: wenige Standards "
+            f"= grosse Bestellmengen pro Typ = Mengenrabatt beim "
+            f"Palettenkauf (Y)\n"
+            f"- Kombis auf einer Palette = mehr Fahrten notwendig = "
+            f"hoehere Mehrkosten Transport (X)"
+        )
+        card_close()
+
+
 def seite_app_einstellungen() -> None:
     card_open("App-Einstellungen")
     st.markdown(
@@ -7486,7 +7617,7 @@ SEITEN = {
     "Beschaffung":           seite_beschaffung,
     "Historie":              seite_historie,
     "Wirtschaftlichkeit":    seite_wirtschaftlichkeit,
-    "Kostenanalyse":         seite_kostenanalyse,
+    "Kostenanalyse":         seite_kostenanalyse_basic,
     "Stammdaten":            seite_stammdaten,
     "Artikelmaße":          seite_stammdaten_2,
     "Berichte":              seite_berichte,

@@ -30,7 +30,8 @@ EDITIONS = {
         "label": "Basic",
         "tabs": [
             "Dashboard", "Datenimport", "Maße prüfen", "Optimierung",
-            "Ergebnisse", "Katalog", "Artikelmaße",
+            "Ergebnisse", "Katalog", "Artikelmaße", "Kostenanalyse",
+            "Anleitung",
         ],
     },
     "full": {

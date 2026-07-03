@@ -34,7 +34,7 @@ def test_a_basic_default():
     cfg = edition.lade_config()
     assert cfg["edition"] == "basic"
     tabs = edition.enabled_tabs()
-    assert len(tabs) == 7
+    assert len(tabs) == 9  # 7 alte Tabs + Kostenanalyse + Anleitung
     for t in ["Dashboard", "Datenimport", "Maße prüfen", "Optimierung",
                 "Ergebnisse", "Katalog", "Artikelmaße"]:
         assert t in tabs
