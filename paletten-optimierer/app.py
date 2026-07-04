@@ -2372,6 +2372,22 @@ def seite_ergebnisse() -> None:
 
     if aktion_menge:
         card_open("🎯 Aktionen pro Paletten-Typ")
+
+        # E3: Bestell-Puffer — Aufrundung der Bestellmenge auf naechstes
+        # Vielfaches. Puffer=1 schaltet das Feature aus.
+        puffer_optionen = [1, 5, 10, 25, 50, 100]
+        puffer_default = st.session_state.get("bestell_puffer", 5)
+        st.session_state["bestell_puffer"] = st.selectbox(
+            "Bestell-Puffer — auf nächstes Vielfaches von",
+            puffer_optionen,
+            index=puffer_optionen.index(puffer_default)
+                  if puffer_default in puffer_optionen else 1,
+            key="bp_select",
+            help="Rundet die Bestellmenge nach oben auf ein Vielfaches. "
+                 "Beispiel: Bedarf 78, Puffer 5 -> Bestellen 80.",
+        )
+        puffer = int(st.session_state["bestell_puffer"])
+
         # Sortierung: absteigend nach Bedarfsmenge
         aktionen = sorted(aktion_menge.items(), key=lambda x: -x[1])
         cols_per_row = 3
@@ -2383,20 +2399,43 @@ def seite_ergebnisse() -> None:
                     preise = katalog_modul.lookup_preise(cl, cs)
                     lief = preise.get("lieferant_name", "") if preise else ""
                     lief_email = preise.get("lieferant_email", "") if preise else ""
+                    bestell_menge = aufrunden_bestellmenge(int(menge), puffer)
+                    delta_puffer = bestell_menge - int(menge)
                     from urllib.parse import quote as _q
-                    betreff = _q(f"Bestellanfrage Paletten {cl}x{cs} mm — {menge} Stück")
-                    body = _q(
+                    betreff = _q(f"Bestellanfrage Paletten {cl}x{cs} mm — "
+                                  f"{bestell_menge} Stück")
+                    body_txt = (
                         f"Guten Tag {lief or '<Lieferant>'},\n\n"
-                        f"wir moechten folgende Bedarfsmenge bestellen:\n\n"
+                        f"wir moechten folgende Menge bestellen:\n\n"
                         f"  Palettengroesse: {cl} x {cs} mm\n"
-                        f"  Menge:           {menge} Stueck\n\n"
+                    )
+                    if delta_puffer > 0:
+                        body_txt += (
+                            f"  Menge:           {bestell_menge} Stueck "
+                            f"({int(menge)} Bedarf + {delta_puffer} Puffer)\n\n"
+                        )
+                    else:
+                        body_txt += f"  Menge:           {bestell_menge} Stueck\n\n"
+                    body_txt += (
                         f"Bitte um Angebot mit Preis und Liefertermin.\n\n"
                         f"Mit freundlichen Gruessen\n"
                         f"Draht Mueller GmbH"
                     )
+                    body = _q(body_txt)
                     mailto = (f"mailto:{lief_email}?subject={betreff}&body={body}"
                                if lief_email else
                                f"mailto:?subject={betreff}&body={body}")
+                    if delta_puffer > 0:
+                        menge_zeile = (
+                            f'Σ Bedarf: <b>{int(menge)}</b> · '
+                            f'Bestellen: <b>{bestell_menge}</b> '
+                            f'<span style="color:#00236E;">(+{delta_puffer} Puffer)</span>'
+                        )
+                    else:
+                        menge_zeile = (
+                            f'Σ Bedarf: <b>{int(menge)}</b> '
+                            f'Palette{"n" if menge != 1 else ""}'
+                        )
                     st.markdown(
                         f'<div style="border:1px solid #e5e7eb;border-radius:10px;'
                         f'padding:14px;background:#fff;margin-bottom:8px;'
@@ -2404,7 +2443,7 @@ def seite_ergebnisse() -> None:
                         f'<div style="color:#00236E;font-weight:800;font-size:15px;">'
                         f'{cl} × {cs} mm</div>'
                         f'<div style="color:#374151;font-size:13px;margin-top:4px;">'
-                        f'Σ Bedarf: <b>{menge}</b> Palette{"n" if menge != 1 else ""}</div>'
+                        f'{menge_zeile}</div>'
                         f'{f"<div style=&quot;color:#6b7280;font-size:11px;margin-top:2px;&quot;>Lieferant: {escape(lief)}</div>" if lief else ""}'
                         f'<a href="{mailto}" target="_blank" '
                         f'style="display:block;margin-top:10px;background:#00236E;'
@@ -7192,6 +7231,18 @@ def seite_berichte() -> None:
 
     st.info("ℹ️ Der CSV-Export der Detail-Zuordnung ist auch im "
             "**Ergebnisse**-Tab unter der Tabelle verfügbar.")
+
+
+def aufrunden_bestellmenge(bedarf: int, puffer: int) -> int:
+    """E3: Bestell-Puffer — Aufrundung auf naechstes Vielfaches.
+
+    Beispiel: bedarf=78, puffer=5 -> ceil(78/5)*5 = 80.
+    puffer=1 schaltet das Feature aus (Bestellmenge = Bedarf).
+    """
+    import math as _math
+    if puffer <= 1 or bedarf <= 0:
+        return bedarf
+    return _math.ceil(bedarf / puffer) * puffer
 
 
 def _de_eur(v: float, prefix: str = "") -> str:
