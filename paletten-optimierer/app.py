@@ -1414,6 +1414,7 @@ def run_optimierung() -> None:
         for pal in mit_mass
     ]
     artikel_lookup = [pal.get("artikelnummer", "") for pal in mit_mass]
+    anr_lookup = [pal.get("anr", "") for pal in mit_mass]
     vbd_lookup = [pal.get("verbrauchsdatum", "") for pal in mit_mass]
     palette_excel_lookup = [
         (pal.get("palette_L_excel"), pal.get("palette_B_excel"))
@@ -1607,6 +1608,7 @@ def run_optimierung() -> None:
     for idx, zg in enumerate(res.get("zuordnung", [])):
         zg["artikelnummer"] = (artikel_lookup[idx]
                                 if idx < len(artikel_lookup) else "")
+        zg["anr"] = (anr_lookup[idx] if idx < len(anr_lookup) else "")
         zg["verbrauchsdatum"] = (vbd_lookup[idx]
                                   if idx < len(vbd_lookup) else "")
         if idx < len(palette_excel_lookup):
@@ -2514,6 +2516,7 @@ def seite_ergebnisse() -> None:
     for z in res["zuordnung"]:
         rows.append({
             "Auftrag": z.get("auftrag", ""),
+            "ANr": z.get("anr", ""),
             "Kunde": z.get("name", ""),
             "Artikelnummer": z.get("artikelnummer", ""),
             "Verbrauchsdatum": z.get("verbrauchsdatum", ""),

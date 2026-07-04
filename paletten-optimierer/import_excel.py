@@ -36,6 +36,11 @@ PALETTEN_AUFSCHLAG_MM = 50
 SPALTEN = {
     "auftrag":       ["auftrag", "auftragsnummer", "auftrag_nr", "auftrag-nr",
                       "order", "order_no", "ordernumber"],
+    # E2: Abrufnummer (ANr) — unterscheidet mehrere Abrufe desselben
+    # Auftrags mit derselben Artikelnummer. Wenn im Excel nicht
+    # vorhanden, bleibt anr leer und der alte Dedup-Schluessel greift.
+    "anr":           ["anr", "a_nr", "a-nr", "abrufnummer", "abruf_nr",
+                      "abruf-nr", "abruf", "call_off", "call-off"],
     "name":          ["name", "kunde", "customer", "abnehmer"],
     "artikelnummer": ["artikelnummer", "artikel", "artikelnr", "artikel-nr",
                       "art-nr", "artnr", "sku", "item", "item number"],
@@ -213,6 +218,7 @@ def importiere(file_or_path: str | Path | IO[bytes]) -> dict:
 
         eintrag = {
             "auftrag":          _str(val(row, "auftrag")),
+            "anr":              _str(val(row, "anr")),
             "name":             _str(val(row, "name")),
             "artikelnummer":    _str(val(row, "artikelnummer")),
             # 'laenge' / 'breite' = PRODUKT-Maße (geht in die Optimierung)

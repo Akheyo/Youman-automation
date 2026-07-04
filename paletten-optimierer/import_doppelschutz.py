@@ -3,7 +3,9 @@
 Beim Excel-Import: pro Bedarfszeile pruefe gegen aktive
 Historie-Eintraege. Matching:
 
-  primaer: (auftragsnummer_aw, artikelnummer)  — exakter Treffer
+  primaer: (auftragsnummer_aw, artikelnummer, anr)  — exakter Treffer
+           (E2: ANr = Abrufnummer. Trennt mehrere Abrufe desselben
+           Auftrags mit derselben Artikelnummer.)
   fallback: (kunde, artikelnummer) + Bestelldatum
             innerhalb ± `zeitfenster_tage` (Default 30)
 
@@ -66,6 +68,7 @@ def pruefe_zeile(zeile: dict, aktive_bestellungen: list[dict],
     procurement.aws_mit_wareneingang() bereitgestellt).
     """
     aw = (zeile.get("auftrag") or "").strip()
+    anr = (zeile.get("anr") or "").strip()
     artnr = (zeile.get("artikelnummer") or "").strip()
     kunde = (zeile.get("name") or "").strip()
     menge_neu = int(zeile.get("anzahl", 0))
@@ -85,22 +88,31 @@ def pruefe_zeile(zeile: dict, aktive_bestellungen: list[dict],
     treffer: list[dict] = []
     match_typ: str | None = None
 
-    # Primaer: exakter AW + Artikelnummer
+    # Primaer: exakter AW + Artikelnummer + ANr (E2 Dedup-Erweiterung).
+    # ANr trennt mehrere Abrufe desselben Auftrags. Wenn im Historie-
+    # Eintrag KEINE ANr steht (Alt-Daten), matched ein leeres ANr im
+    # Neu-Eintrag — d.h. keine Regression fuer Bestandsdaten.
     if aw and artnr:
         for b in aktive_bestellungen:
+            b_anr = (b.get("anr", "") or "").strip()
             if (b.get("auftragsnummer_aw", "").strip() == aw
-                    and b.get("artikelnummer", "").strip() == artnr):
+                    and b.get("artikelnummer", "").strip() == artnr
+                    and b_anr == anr):
                 treffer.append(b)
         if treffer:
-            match_typ = "aw_artikel"
+            match_typ = "aw_artikel_anr" if anr else "aw_artikel"
 
-    # Fallback: Kunde + Artikel + Zeitfenster (nur wenn keine AW-Treffer)
+    # Fallback: Kunde + Artikel + Zeitfenster (nur wenn keine AW-Treffer).
+    # E2: Wenn beide Seiten eine ANr haben und sie sich unterscheiden,
+    # sind das trotz gleicher Kunde+Artikel+Zeitfenster verschiedene
+    # Abrufe -> NICHT als Doppelbestellung werten.
     if not treffer and artnr and kunde:
         for b in aktive_bestellungen:
             if (b.get("artikelnummer", "").strip() == artnr
                     and b.get("kunde", "").strip() == kunde):
-                # Pruefe Zeitfenster: Bestelldatum oder
-                # geplantes_verbrauchsdatum nahe am neuen Bedarf
+                b_anr = (b.get("anr", "") or "").strip()
+                if anr and b_anr and anr != b_anr:
+                    continue  # verschiedene Abrufe
                 ref = vbd_neu or date.today()
                 if _zeitfenster_match(b.get("bestelldatum", ""), ref,
                                        zeitfenster_tage):

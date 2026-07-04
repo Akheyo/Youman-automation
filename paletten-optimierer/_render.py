@@ -126,9 +126,13 @@ def render_zuord_table(res: dict, katalog_masse: set | None = None) -> str:
                 f'<div style="font-size:11px;color:#6b7280;margin-top:2px;">'
                 f'{escape(str(m.get("name", ""))[:35])}</div></td>'
             )
+            _anr = str(m.get("anr", "") or "").strip()
+            _anr_html = (f'<div style="font-size:11px;color:#6b7280;'
+                         f'margin-top:2px;">ANr {escape(_anr)}</div>'
+                         if _anr else "")
             tds.append(
                 f'<td style="font-family:ui-monospace,monospace;font-size:12px;">'
-                f'{escape(str(m.get("auftrag", "")))}</td>'
+                f'{escape(str(m.get("auftrag", "")))}{_anr_html}</td>'
             )
             tds.append(
                 f'<td style="text-align:right;font-weight:700;">'
