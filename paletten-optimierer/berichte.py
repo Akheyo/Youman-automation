@@ -971,6 +971,48 @@ def preisentwicklung_pdf(zeitreihe: dict[str, list[dict]]) -> bytes:
 # ---------------------------------------------------------------------------
 # Bericht 8: Palette → Artikel (welche Artikel auf welcher Palette)
 # ---------------------------------------------------------------------------
+def _kostenkalkulation_block(pdf, ergebnis: dict) -> None:
+    """Optionaler Kostenkalkulations-Block im PDF-Bericht: wenn im
+    ergebnis['kostenkalkulation'] eine Bilanz mitgegeben wurde, wird
+    sie als kompaktes IST/SOLL/Einsparung-Block gerendert."""
+    kk = ergebnis.get("kostenkalkulation")
+    if not kk:
+        return
+    pdf.ln(2)
+    pdf.set_font("Helvetica", "B", 11)
+    pdf.cell(0, 5, _latin1("Kostenkalkulation IST vs SOLL"), ln=True)
+    pdf.set_font("Helvetica", "", 9)
+    def _eur(v):
+        s = f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f"{s} EUR"
+    zeilen = [
+        f"IST  ohne Standardisierung:",
+        f"  Paletten gesamt:      {kk['paletten_gesamt']:,}".replace(",", "."),
+        f"  Anzahl LKWs:          {kk['anzahl_lkws_ist']}",
+        f"  LKW-Kosten:           {_eur(kk['lkw_kosten_ist'])}",
+        f"  Eigenfertigung:       {_eur(kk['eigenfertigung_ist'])}",
+        f"  GESAMT IST:           {_eur(kk['gesamt_ist'])}",
+        "",
+        f"SOLL mit Standardisierung:",
+        f"  Standard:             {kk['paletten_standard']:,}".replace(",", "."),
+        f"  Sonder:               {kk['paletten_sonder']:,}".replace(",", "."),
+        f"  Anzahl LKWs:          {kk['anzahl_lkws_soll']}",
+        f"  LKW-Kosten:           {_eur(kk['lkw_kosten_soll'])}",
+        f"  Palettenkauf:         {_eur(kk['palettenkauf_soll'])}",
+        f"  Eigenfertigung:       {_eur(kk['eigenfertigung_soll'])}",
+        f"  GESAMT SOLL:          {_eur(kk['gesamt_soll'])}",
+        "",
+    ]
+    for z in zeilen:
+        pdf.cell(0, 4, _latin1(z), ln=True)
+    pdf.set_font("Helvetica", "B", 10)
+    einsparung = kk.get("einsparung", 0.0)
+    pdf.cell(0, 6, _latin1(f"EINSPARUNG (IST - SOLL): {_eur(einsparung)}"),
+             ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.ln(3)
+
+
 def pdf_palette_artikel(ergebnis: dict, datei_name: str = "") -> bytes:
     """Pro Standard-/Sonder-Palette eine Sektion mit der Artikel-Liste,
     die ihr zugeordnet ist. Kombi-Zuordnungen + Sonder werden separat
@@ -986,6 +1028,7 @@ def pdf_palette_artikel(ergebnis: dict, datei_name: str = "") -> bytes:
               ln=True)
     n_zg = len(ergebnis.get("zuordnung", []))
     pdf.cell(0, 5, _latin1(f"Zuordnungen gesamt: {n_zg}"), ln=True)
+    _kostenkalkulation_block(pdf, ergebnis)
     pdf.ln(3)
 
     # Gruppen nach (typ, ziel) bauen — analog _render_zuord_table
@@ -1047,6 +1090,7 @@ def pdf_auftrag_palette(ergebnis: dict, datei_name: str = "") -> bytes:
     pdf.cell(0, 5,
               _latin1(f"Erzeugt: {datetime.now().strftime('%d.%m.%Y %H:%M')}"),
               ln=True)
+    _kostenkalkulation_block(pdf, ergebnis)
     pdf.ln(2)
 
     # Gruppieren nach AW

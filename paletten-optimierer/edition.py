@@ -31,7 +31,7 @@ EDITIONS = {
         "tabs": [
             "Dashboard", "Datenimport", "Maße prüfen", "Optimierung",
             "Ergebnisse", "Katalog", "Artikelmaße", "Kostenanalyse",
-            "Anleitung",
+            "Kostenkalkulation", "Anleitung",
         ],
     },
     "full": {

@@ -48,6 +48,7 @@ import auftraege as auftraege_modul  # noqa: E402
 import artikel_stammdaten as artikel_stamm_modul  # noqa: E402
 import edition as edition_modul  # noqa: E402
 import groessen_historie as groessen_hist_modul  # noqa: E402
+import kostenkalkulation as kostenkalk_modul  # noqa: E402
 from import_doppelschutz import pruefe_import as _pruefe_import  # noqa: E402
 from _render import render_zuord_table, ziel_label as _ziel_label  # noqa: E402
 from _ui_chrome import (  # noqa: E402
@@ -345,7 +346,8 @@ with st.sidebar:
         "Optimierung",
         "Ergebnisse", "Verlauf", "Katalog", "Bestand & Disposition",
         "Bestellungen", "Beschaffung", "Historie", "Wirtschaftlichkeit",
-        "Kostenanalyse", "Stammdaten", "Artikelmaße", "Berichte",
+        "Kostenanalyse", "Kostenkalkulation",
+        "Stammdaten", "Artikelmaße", "Berichte",
         "Anleitung", "App-Einstellungen",
     ]
     _enabled = set(edition_modul.enabled_tabs())
@@ -2607,9 +2609,15 @@ def seite_ergebnisse() -> None:
         """Erzeugt das PDF genau einmal pro Session und cached bytes+pfad."""
         if sess_key in st.session_state:
             return st.session_state[sess_key]
+        # E1: aktuelle Kostenkalkulation ans Ergebnis heften, damit
+        # sie im PDF im Header-Block auftaucht.
+        res_pdf = dict(res)
+        kk_last = st.session_state.get("kk_last")
+        if kk_last:
+            res_pdf["kostenkalkulation"] = kk_last
         try:
             daten = gen_fn(
-                res, datei_name=st.session_state.get("datei_name", ""),
+                res_pdf, datei_name=st.session_state.get("datei_name", ""),
             )
             name = berichte_modul._dateiname(name_key, "pdf")
             arch = berichte_modul.archiv_speichern(
@@ -7191,6 +7199,158 @@ def _de_eur(v: float, prefix: str = "") -> str:
     return f"{s} €"
 
 
+def seite_kostenkalkulation() -> None:
+    """E1: Kostenkalkulation IST vs SOLL aus der letzten Optimierung.
+
+    Modell: Ohne Standardisierung (alles Sonder, alles Eigenfertigung,
+    schlechter Ladefaktor) vs Mit Standardisierung (Kauf statt Eigen-
+    fertigung fuer Standards, besserer Ladefaktor). Ergebnis =
+    Gesamt IST - Gesamt SOLL.
+    """
+    card_open("💶 Kostenkalkulation")
+    st.markdown(
+        "<div style='color:#475569;font-size:13px;line-height:1.6;"
+        "margin-bottom:8px;'>Automatische Bilanz aus der letzten "
+        "Optimierung: <b>Ist-Zustand ohne Standardisierung</b> vs "
+        "<b>Soll-Zustand mit Standardisierung</b>. Einsparung = "
+        "Gesamt IST − Gesamt SOLL.</div>",
+        unsafe_allow_html=True,
+    )
+
+    erg = st.session_state.get("ergebnis")
+    if not erg:
+        st.info("Erst optimieren — die Kostenkalkulation braucht die "
+                "Zuordnung aus der Ergebnisse-Seite.")
+        card_close()
+        return
+
+    # Parameter-Panel
+    kp = st.session_state.setdefault("kk_params", {
+        "lkw_kosten_pro_stueck": 800.0,
+        "ladeflaeche_lkw_qm": 33.0,
+        "eigenfertigung_kosten_pro_palette": 45.0,
+        "palettenkauf_kosten_pro_palette": 12.0,
+        "ladefaktor_ist": 0.75,
+        "ladefaktor_soll": 0.90,
+    })
+
+    with st.expander("Parameter (Defaults sinnvoll für 13,6 m LKW, "
+                     "€-Werte anpassbar)", expanded=False):
+        pc1, pc2, pc3 = st.columns(3)
+        with pc1:
+            kp["lkw_kosten_pro_stueck"] = st.number_input(
+                "LKW-Kosten pro Fahrt (€)",
+                min_value=0.0, max_value=100000.0,
+                value=float(kp["lkw_kosten_pro_stueck"]),
+                step=50.0, key="kk_lkw",
+            )
+            kp["ladeflaeche_lkw_qm"] = st.number_input(
+                "Ladefläche LKW (m²)",
+                min_value=1.0, max_value=200.0,
+                value=float(kp["ladeflaeche_lkw_qm"]),
+                step=0.5, key="kk_lkw_qm",
+            )
+        with pc2:
+            kp["eigenfertigung_kosten_pro_palette"] = st.number_input(
+                "Eigenfertigung €/Palette",
+                min_value=0.0, max_value=10000.0,
+                value=float(kp["eigenfertigung_kosten_pro_palette"]),
+                step=1.0, key="kk_eigen",
+            )
+            kp["palettenkauf_kosten_pro_palette"] = st.number_input(
+                "Palettenkauf €/Palette",
+                min_value=0.0, max_value=10000.0,
+                value=float(kp["palettenkauf_kosten_pro_palette"]),
+                step=0.5, key="kk_kauf",
+            )
+        with pc3:
+            kp["ladefaktor_ist"] = st.slider(
+                "Ladefaktor IST (Sonder-Wildwuchs)",
+                min_value=0.20, max_value=1.00,
+                value=float(kp["ladefaktor_ist"]),
+                step=0.05, key="kk_lf_ist",
+            )
+            kp["ladefaktor_soll"] = st.slider(
+                "Ladefaktor SOLL (standardisiert)",
+                min_value=0.20, max_value=1.00,
+                value=float(kp["ladefaktor_soll"]),
+                step=0.05, key="kk_lf_soll",
+            )
+
+    p = kostenkalk_modul.KostenParameter(
+        lkw_kosten_pro_stueck=float(kp["lkw_kosten_pro_stueck"]),
+        ladeflaeche_lkw_qm=float(kp["ladeflaeche_lkw_qm"]),
+        eigenfertigung_kosten_pro_palette=float(
+            kp["eigenfertigung_kosten_pro_palette"]),
+        palettenkauf_kosten_pro_palette=float(
+            kp["palettenkauf_kosten_pro_palette"]),
+        ladefaktor_ist=float(kp["ladefaktor_ist"]),
+        ladefaktor_soll=float(kp["ladefaktor_soll"]),
+    )
+    r = kostenkalk_modul.berechne_einsparung(erg.get("zuordnung", []), p)
+    # Fuer den PDF-Bericht persistieren
+    st.session_state["kk_last"] = r
+
+    # IST/SOLL nebeneinander
+    ic, sc = st.columns(2)
+    with ic:
+        card_open("IST — ohne Standardisierung")
+        st.markdown(
+            f"<div style='font-size:13px;line-height:2;color:#374151;'>"
+            f"Paletten gesamt: <b>{r['paletten_gesamt']:,}</b><br>"
+            f"Fläche (bei {int(p.ladefaktor_ist*100)} % Auslastung): "
+            f"<b>{r['flaeche_ist_qm']:.1f} m²</b><br>"
+            f"Anzahl LKWs: <b>{r['anzahl_lkws_ist']}</b><br>"
+            f"LKW-Kosten: <b>{_de_eur(r['lkw_kosten_ist'])}</b><br>"
+            f"Eigenfertigung: <b>{_de_eur(r['eigenfertigung_ist'])}</b>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown("---")
+        st.metric("GESAMT IST", _de_eur(r['gesamt_ist']))
+        card_close()
+
+    with sc:
+        card_open("SOLL — mit Standardisierung")
+        st.markdown(
+            f"<div style='font-size:13px;line-height:2;color:#374151;'>"
+            f"Standard-Paletten: <b>{r['paletten_standard']:,}</b><br>"
+            f"Sonder-Paletten: <b>{r['paletten_sonder']:,}</b><br>"
+            f"Fläche (bei {int(p.ladefaktor_soll*100)} % Auslastung): "
+            f"<b>{r['flaeche_soll_qm']:.1f} m²</b><br>"
+            f"Anzahl LKWs: <b>{r['anzahl_lkws_soll']}</b><br>"
+            f"LKW-Kosten: <b>{_de_eur(r['lkw_kosten_soll'])}</b><br>"
+            f"Palettenkauf: <b>{_de_eur(r['palettenkauf_soll'])}</b><br>"
+            f"Eigenfertigung (Sonder): "
+            f"<b>{_de_eur(r['eigenfertigung_soll'])}</b>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown("---")
+        st.metric("GESAMT SOLL", _de_eur(r['gesamt_soll']))
+        card_close()
+
+    # Einsparung
+    ein = float(r['einsparung'])
+    bg = "#DCFCE7" if ein >= 0 else "#FEE2E2"
+    tf = "#14532D" if ein >= 0 else "#7F1D1D"
+    label = "EINSPARUNG" if ein >= 0 else "MEHRKOSTEN"
+    icon = "✅" if ein >= 0 else "⚠️"
+    st.markdown(
+        f'<div style="background:{bg};color:{tf};padding:22px 26px;'
+        f'border-radius:12px;margin-top:16px;">'
+        f'<div style="font-weight:800;font-size:24px;">'
+        f'{icon} {label}: {_de_eur(abs(ein))}</div>'
+        f'<div style="margin-top:8px;font-family:ui-monospace,monospace;'
+        f'font-size:13px;">GESAMT IST − GESAMT SOLL = '
+        f'{_de_eur(r["gesamt_ist"])} − {_de_eur(r["gesamt_soll"])} = '
+        f'<b>{_de_eur(ein, prefix="+")}</b></div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    card_close()
+
+
 def seite_kostenanalyse_basic() -> None:
     """Kostenanalyse Basic-Edition.
 
@@ -7692,6 +7852,7 @@ SEITEN = {
     "Historie":              seite_historie,
     "Wirtschaftlichkeit":    seite_wirtschaftlichkeit,
     "Kostenanalyse":         seite_kostenanalyse_basic,
+    "Kostenkalkulation":     seite_kostenkalkulation,
     "Stammdaten":            seite_stammdaten,
     "Artikelmaße":          seite_stammdaten_2,
     "Berichte":              seite_berichte,

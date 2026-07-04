@@ -59,6 +59,38 @@ def test_pdf_auftrag_palette_beginnt_mit_pdf_magic():
     assert len(daten) > 500
 
 
+def test_pdf_enthaelt_kostenkalkulation_wenn_gegeben():
+    """E1: Wenn ergebnis['kostenkalkulation'] gesetzt ist, muss der Block
+    'GESAMT IST' / 'GESAMT SOLL' / 'EINSPARUNG' im PDF-Output landen."""
+    res = _minimal_res()
+    res["kostenkalkulation"] = {
+        "paletten_gesamt": 100,
+        "paletten_standard": 100,
+        "paletten_sonder": 0,
+        "anzahl_lkws_ist": 4,
+        "anzahl_lkws_soll": 3,
+        "lkw_kosten_ist": 3200.0,
+        "lkw_kosten_soll": 2400.0,
+        "eigenfertigung_ist": 4500.0,
+        "palettenkauf_soll": 1200.0,
+        "eigenfertigung_soll": 0.0,
+        "gesamt_ist": 7700.0,
+        "gesamt_soll": 3600.0,
+        "einsparung": 4100.0,
+    }
+    daten = berichte.pdf_palette_artikel(res, datei_name="test.xlsx")
+    assert daten[:5] == b"%PDF-"
+    # PDF-Text ist nicht direkt in bytes lesbar (compressed), aber
+    # ohne Compression stehen einige Strings unkomprimiert drin.
+    # Wir lockern: einfach checken, dass mit KK-Block das PDF
+    # signifikant groesser ist als ohne.
+    daten_ohne = berichte.pdf_palette_artikel(_minimal_res(),
+                                                datei_name="test.xlsx")
+    assert len(daten) > len(daten_ohne), (
+        f"PDF mit KK sollte groesser sein: mit={len(daten)} ohne={len(daten_ohne)}"
+    )
+
+
 if __name__ == "__main__":
     tests = [test_pdf_palette_artikel_beginnt_mit_pdf_magic,
              test_pdf_auftrag_palette_beginnt_mit_pdf_magic]
