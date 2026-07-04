@@ -32,8 +32,18 @@ class KostenParameter:
 
 
 def _flaeche_soll_qm(z: dict) -> float:
-    """Beanspruchte Grundflaeche in m² fuer ein Zuordnungs-Item im Soll-
-    Zustand: Standard-Ziel + evtl. Kombi-Belegung; sonst Rohmass."""
+    """Beanspruchte Grundflaeche in m² fuer EIN Zuordnungs-Item im Soll.
+
+    Wichtig: Jedes Zuordnungs-Item ist EIN Auftrag. Wenn mehrere
+    Auftraege im Kernel zu einer Kombi zusammengepackt werden, tauchen
+    sie als je EIGENE Zuordnungs-Zeilen auf, alle mit dem gleichen
+    'ziel'. Die tatsaechlich pro Auftrag beanspruchte Fläche ist:
+
+      Standard          -> volle Standard-Fläche (Auftrag belegt 1 Palette)
+      Kombi-Stapel  kx  -> Einzel-Standard-Fläche (1 Slot im k-Stapel)
+      Kombi-Heterogen   -> Durchschnitts-Fläche der Slots
+      Sonder            -> Rohmaß der Palette
+    """
     typ = z.get("typ", "Sonder")
     ziel = z.get("ziel", "") or ""
     # Einzel-Standard: 'LxB'
@@ -43,28 +53,26 @@ def _flaeche_soll_qm(z: dict) -> float:
             return int(a) * int(b) / 1_000_000.0
         except ValueError:
             pass
-    # Kombi-Stapel: 'kx (LxB)'
+    # Kombi-Stapel: 'kx (LxB)' — der Auftrag belegt EINEN Slot im k-Stapel,
+    # nicht alle k. Daher nur die Einzel-Standard-Fläche zurückgeben.
     if typ == "Kombi-Stapel" and "(" in ziel:
         try:
-            k_teil, rest = ziel.split("x ", 1)
-            k = int(k_teil.strip())
+            _, rest = ziel.split("x ", 1)
             a, b = rest.strip("()").split("x")
-            # k Stapel nebeneinander in LAENGE
-            return int(a) * k * int(b) / 1_000_000.0
+            return int(a) * int(b) / 1_000_000.0
         except (ValueError, IndexError):
             pass
-    # Kombi-Heterogen: 'AxB + CxD'  -> Bounding-Box in LAENGE addiert
+    # Kombi-Heterogen: 'AxB + CxD + ...' — n Slots pro Ladeplatz. Ohne
+    # zu wissen welchen Slot dieser konkrete Auftrag belegt, nehmen wir
+    # die durchschnittliche Slot-Fläche.
     if typ == "Kombi-Heterogen" and "+" in ziel:
         try:
-            gesamt = 0.0
-            groesste_b = 0.0
+            slots: list[int] = []
             for teil in ziel.split("+"):
                 a, b = teil.strip().split("x")
-                gesamt += int(a) * int(b)
-                if int(b) > groesste_b:
-                    groesste_b = int(b)
-            return gesamt / 1_000_000.0
-        except ValueError:
+                slots.append(int(a) * int(b))
+            return (sum(slots) / len(slots)) / 1_000_000.0
+        except (ValueError, ZeroDivisionError):
             pass
     # Sonder + Fallback: Rohmass aus Zuordnung
     L = z.get("L", 0)

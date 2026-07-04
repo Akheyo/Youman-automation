@@ -81,26 +81,48 @@ def test_parameter_werden_im_ergebnis_gespiegelt():
     assert r["parameter"]["lkw_kosten_pro_stueck"] == 1000.0
 
 
-def test_kombi_stapel_flaeche_ist_k_mal_ziel():
+def test_kombi_stapel_flaeche_ist_ein_slot_pro_auftrag():
+    """Semantik-Fix: Ein Auftrag in Kombi-Stapel belegt EINEN Slot
+    (Einzel-Standard-Fläche), nicht die ganze k-Stapel-Fläche.
+    Wären alle 3 Slots dem Auftrag zugerechnet, wäre die SOLL-Fläche
+    3× so groß — das war der ursprüngliche Bug."""
     zuord = [
         {"auftrag": "K1", "L": 900, "B": 400, "menge": 50,
          "typ": "Kombi-Stapel", "ziel": "3x (400x900)"},
     ]
     r = berechne_einsparung(zuord, KostenParameter())
-    # Fläche SOLL für 1 Item Kombi-Stapel: 3 × (400*900) / 1e6 = 1.08 m²
-    # 50 Items × 1.08 m² / 0.90 = 60.0 m²
-    assert abs(r["flaeche_soll_qm"] - 60.0) < 0.01
+    # Fläche pro Item: 400*900 / 1e6 = 0.36 m² (nicht 3 * 0.36!)
+    # 50 Items × 0.36 / 0.90 = 20.0 m²
+    assert abs(r["flaeche_soll_qm"] - 20.0) < 0.01, r["flaeche_soll_qm"]
 
 
-def test_kombi_heterogen_bounding_addiert_flaeche():
+def test_kombi_heterogen_durchschnittliche_slot_flaeche():
+    """Ein Auftrag in Kombi-Heterogen belegt einen von n Slots. Ohne zu
+    wissen welchen, wird die durchschnittliche Slot-Fläche gerechnet."""
     zuord = [
         {"auftrag": "H1", "L": 800, "B": 400, "menge": 10,
          "typ": "Kombi-Heterogen", "ziel": "400x800 + 500x1000"},
     ]
     r = berechne_einsparung(zuord, KostenParameter())
-    # SOLL-Fläche pro Item: (800*400 + 1000*500) / 1e6 = 0.82 m²
-    # 10 × 0.82 / 0.90 = 9.111...
-    assert abs(r["flaeche_soll_qm"] - (10 * 0.82 / 0.90)) < 0.01
+    # Slots: 400*800 = 320000, 500*1000 = 500000; Ø = 410000 mm² = 0.41 m²
+    # 10 × 0.41 / 0.90 = 4.555...
+    erwartet = 10 * 0.41 / 0.90
+    assert abs(r["flaeche_soll_qm"] - erwartet) < 0.01, r["flaeche_soll_qm"]
+
+
+def test_kombi_reduziert_soll_flaeche_gegenueber_ist():
+    """Die Standardisierung soll die SOLL-Fläche unter die IST-Fläche
+    druecken — die Kombi-Konsolidierung darf nicht mehr Flaeche
+    verbrauchen als der IST-Roh-Zustand (bei sinnvollen Ladefaktoren)."""
+    zuord = [
+        {"auftrag": "K1", "L": 900, "B": 400, "menge": 50,
+         "typ": "Kombi-Stapel", "ziel": "3x (400x900)"},
+    ]
+    r = berechne_einsparung(zuord, KostenParameter())
+    # IST: 50 × 0.36 / 0.75 = 24.0 m²
+    # SOLL: 20.0 m² (siehe voriger Test)
+    # SOLL < IST -> Standardisierung wirkt
+    assert r["flaeche_soll_qm"] < r["flaeche_ist_qm"]
 
 
 if __name__ == "__main__":
@@ -109,8 +131,9 @@ if __name__ == "__main__":
              test_ladefaktor_soll_von_090_auf_060_reduziert_einsparung,
              test_leere_zuordnung_null_werte,
              test_parameter_werden_im_ergebnis_gespiegelt,
-             test_kombi_stapel_flaeche_ist_k_mal_ziel,
-             test_kombi_heterogen_bounding_addiert_flaeche]
+             test_kombi_stapel_flaeche_ist_ein_slot_pro_auftrag,
+             test_kombi_heterogen_durchschnittliche_slot_flaeche,
+             test_kombi_reduziert_soll_flaeche_gegenueber_ist]
     for t in tests:
         try:
             t()
