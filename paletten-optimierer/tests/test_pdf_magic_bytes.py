@@ -59,6 +59,18 @@ def test_pdf_auftrag_palette_beginnt_mit_pdf_magic():
     assert len(daten) > 500
 
 
+def test_pdf_ohne_kostenkalkulation_bleibt_valide():
+    """Wenn der User die Kostenkalkulation-Seite nicht besucht hat,
+    darf der PDF-Bericht trotzdem nicht crashen — der KK-Block bleibt
+    einfach aus dem PDF weg (der on-the-fly Fallback in app.py greift
+    dann)."""
+    res = _minimal_res()
+    # KEIN kostenkalkulation im res
+    assert "kostenkalkulation" not in res
+    daten = berichte.pdf_palette_artikel(res, datei_name="ohne-kk.xlsx")
+    assert daten[:5] == b"%PDF-"
+
+
 def test_pdf_enthaelt_kostenkalkulation_wenn_gegeben():
     """E1: Wenn ergebnis['kostenkalkulation'] gesetzt ist, muss der Block
     'GESAMT IST' / 'GESAMT SOLL' / 'EINSPARUNG' im PDF-Output landen."""

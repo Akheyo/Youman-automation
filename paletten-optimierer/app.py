@@ -2652,9 +2652,25 @@ def seite_ergebnisse() -> None:
         if sess_key in st.session_state:
             return st.session_state[sess_key]
         # E1: aktuelle Kostenkalkulation ans Ergebnis heften, damit
-        # sie im PDF im Header-Block auftaucht.
+        # sie im PDF im Header-Block auftaucht. Wenn der User die
+        # Kostenkalkulations-Seite noch nicht besucht hat, berechnen wir
+        # sie hier on-the-fly mit den zuletzt gespeicherten Parametern
+        # (oder Defaults), damit das PDF nie ohne den Block ausgeliefert
+        # wird.
         res_pdf = dict(res)
         kk_last = st.session_state.get("kk_last")
+        if not kk_last:
+            try:
+                kp_dict = st.session_state.get("kk_params", {})
+                kp = kostenkalk_modul.KostenParameter(**{
+                    k: v for k, v in kp_dict.items()
+                    if k in kostenkalk_modul.KostenParameter.__dataclass_fields__
+                })
+                kk_last = kostenkalk_modul.berechne_einsparung(
+                    res.get("zuordnung", []), kp)
+                st.session_state["kk_last"] = kk_last
+            except Exception:
+                kk_last = None
         if kk_last:
             res_pdf["kostenkalkulation"] = kk_last
         try:
