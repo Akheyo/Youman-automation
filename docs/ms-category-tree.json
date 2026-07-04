@@ -1,0 +1,8290 @@
+{
+"_meta": {
+"source": "GET /json/category/tree",
+"note": "MS Hauptkategorie-ID -> {name, leaves:[{id,name}]} (alle Descendant-Leaves). Fuer 2-stufige LLM-Kategoriewahl."
+},
+"mains": {
+"2": {
+"name": "Metallbearbeitungsmaschinen & Werkzeugmaschinen",
+"leaves": [
+{
+"id": 1026,
+"name": "CNC Drehmaschinen 0-199mm Drehdurchmesser"
+},
+{
+"id": 1033,
+"name": "CNC Drehmaschinen 200-249mm Drehdurchmesser"
+},
+{
+"id": 1056,
+"name": "CNC Drehmaschinen ab 1000mm Drehdurchmesser"
+},
+{
+"id": 1127,
+"name": "Abstechautomaten"
+},
+{
+"id": 1128,
+"name": "CNC Dreh-Fräszentren"
+},
+{
+"id": 1129,
+"name": "Feindrehbänke"
+},
+{
+"id": 1130,
+"name": "Futterautomaten"
+},
+{
+"id": 1131,
+"name": "Hinterdrehmaschinen"
+},
+{
+"id": 1132,
+"name": "Hohlspindeldrehmaschinen"
+},
+{
+"id": 1133,
+"name": "Kopierdrehmaschinen"
+},
+{
+"id": 1134,
+"name": "Kurbelwellendrehmaschinen"
+},
+{
+"id": 1135,
+"name": "Langdrehautomaten"
+},
+{
+"id": 1136,
+"name": "Mechanikerdrehmaschinen"
+},
+{
+"id": 1137,
+"name": "Mehrspindler"
+},
+{
+"id": 1140,
+"name": "Plandrehmaschinen"
+},
+{
+"id": 1141,
+"name": "Revolverdrehautomaten"
+},
+{
+"id": 1142,
+"name": "Stangenautomaten"
+},
+{
+"id": 1143,
+"name": "Tischdrehbänke"
+},
+{
+"id": 1144,
+"name": "Vertikaldrehmaschinen"
+},
+{
+"id": 1145,
+"name": "Zubehör & Ersatzteile für Drehmaschinen"
+},
+{
+"id": 1146,
+"name": "Sonstige Drehmaschinen"
+},
+{
+"id": 1172,
+"name": "CNC Drehmaschinen 700-999mm Drehdurchmesser"
+},
+{
+"id": 1178,
+"name": "CNC Drehmaschinen 500-599mm Drehdurchmesser"
+},
+{
+"id": 1182,
+"name": "CNC Drehmaschinen 300-349mm Drehdurchmesser"
+},
+{
+"id": 1183,
+"name": "CNC Drehmaschinen 400-449mm Drehdurchmesser"
+},
+{
+"id": 1276,
+"name": "Leit-/Zugspindeldrehmaschine 0-299mm Drehdurchmesser Bett"
+},
+{
+"id": 1277,
+"name": "Leit-/Zugspindeldrehmaschine 400-499mm Drehdurchmesser Bett"
+},
+{
+"id": 1278,
+"name": "Leit-/Zugspindeldrehmaschine 600-799mm Drehdurchmesser Bett"
+},
+{
+"id": 1279,
+"name": "Leit-/Zugspindeldrehmaschine 800-999mm Drehdurchmesser Bett"
+},
+{
+"id": 1518,
+"name": "Leit-/Zugspindeldrehmaschine 300-399mm Drehdurchmesser Bett"
+},
+{
+"id": 1519,
+"name": "Leit-/Zugspindeldrehmaschine 500-599mm Drehdurchmesser Bett"
+},
+{
+"id": 1520,
+"name": "Leit-/Zugspindeldrehmaschine ab 1000mm Drehdurchmesser Bett"
+},
+{
+"id": 1531,
+"name": "CNC Drehmaschinen 250-299mm Drehdurchmesser"
+},
+{
+"id": 1532,
+"name": "CNC Drehmaschinen 350-399mm Drehdurchmesser"
+},
+{
+"id": 1533,
+"name": "CNC Drehmaschinen 450-499mm Drehdurchmesser"
+},
+{
+"id": 1534,
+"name": "CNC Drehmaschinen 600-699mm Drehdurchmesser"
+},
+{
+"id": 1548,
+"name": "CNC Dreh-Schleifzentren"
+},
+{
+"id": 1605,
+"name": "Karusselldrehmaschinen – Einständer – 0-1000mm Planscheibendurchmesser"
+},
+{
+"id": 1606,
+"name": "Karusselldrehmaschinen – Einständer – 1001-1299mm Planscheibendurchmesser"
+},
+{
+"id": 1607,
+"name": "Karusselldrehmaschinen – Einständer – 1300-1499mm Planscheibendurchmesser"
+},
+{
+"id": 1608,
+"name": "Karusselldrehmaschinen – Einständer – 1500-1899mm Planscheibendurchmesser"
+},
+{
+"id": 1609,
+"name": "Karusselldrehmaschinen – Einständer – ab 1900mm Planscheibendurchmesser"
+},
+{
+"id": 1610,
+"name": "Karusselldrehmaschinen – Doppelständer – 0-1999mm Planscheibendurchmesser"
+},
+{
+"id": 1611,
+"name": "Karusselldrehmaschinen – Doppelständer – 2000-2999mm Planscheibendurchmesser"
+},
+{
+"id": 1612,
+"name": "Karusselldrehmaschinen – Doppelständer –3000-3999mm Planscheibendurchmesser"
+},
+{
+"id": 1613,
+"name": "Karusselldrehmaschinen – Doppelständer – ab 4000mm Planscheibendurchmesser"
+},
+{
+"id": 1614,
+"name": "Drehmaschinen - zyklengesteuert - 0-399mm Drehdurchmesser"
+},
+{
+"id": 1615,
+"name": "Drehmaschinen - zyklengesteuert - 400-499mm Drehdurchmesser"
+},
+{
+"id": 1616,
+"name": "Drehmaschinen - zyklengesteuert - 500-599mm Drehdurchmesser"
+},
+{
+"id": 1617,
+"name": "Drehmaschinen - zyklengesteuert - ab 600mm Drehdurchmesser"
+},
+{
+"id": 1024,
+"name": "Abfallscheren"
+},
+{
+"id": 1025,
+"name": "Tafelscheren - hydraulisch bis 5mm Schnittstärke"
+},
+{
+"id": 1028,
+"name": "Bandanlagen"
+},
+{
+"id": 1029,
+"name": "Bandrichtmaschinen"
+},
+{
+"id": 1030,
+"name": "Betonstahlbiegemaschinen"
+},
+{
+"id": 1031,
+"name": "Blechrichtanlagen"
+},
+{
+"id": 1032,
+"name": "Blechbearbeitungszentren"
+},
+{
+"id": 1034,
+"name": "Blechentgratungsmaschinen"
+},
+{
+"id": 1035,
+"name": "Bördelmaschinen"
+},
+{
+"id": 1036,
+"name": "Dornrohrbiegemaschinen"
+},
+{
+"id": 1037,
+"name": "Eckverbindungsmaschinen"
+},
+{
+"id": 1038,
+"name": "Falzformer"
+},
+{
+"id": 1039,
+"name": "Haspeln"
+},
+{
+"id": 1040,
+"name": "Knüppelscheren"
+},
+{
+"id": 1041,
+"name": "Laserschneidmaschinen 0-2999mm x-Weg"
+},
+{
+"id": 1042,
+"name": "Laserstanzpressen"
+},
+{
+"id": 1043,
+"name": "Längsteilanlagen & Querteilanlagen"
+},
+{
+"id": 1044,
+"name": "Nietmaschinen"
+},
+{
+"id": 1045,
+"name": "Planscheibenbiegemaschinen"
+},
+{
+"id": 1047,
+"name": "Richtmaschinen"
+},
+{
+"id": 1049,
+"name": "Rohrbiegemaschinen"
+},
+{
+"id": 1050,
+"name": "Schwenkbiegemaschinen motorisch 0-1999mm"
+},
+{
+"id": 1051,
+"name": "Sickenmaschinen & Bördelmaschinen"
+},
+{
+"id": 1052,
+"name": "Spaltanlagen"
+},
+{
+"id": 1053,
+"name": "Stanz- & Biegeautomaten"
+},
+{
+"id": 1055,
+"name": "Streifenscheren"
+},
+{
+"id": 1057,
+"name": "Walzen-Zangenvorschübe"
+},
+{
+"id": 1058,
+"name": "Zubehör & Ersatzteile für Blechbearbeitungsmaschinen"
+},
+{
+"id": 1059,
+"name": "Sonstige Blechbearbeitungsmaschinen"
+},
+{
+"id": 1292,
+"name": "Tafelscheren - hydraulisch 5-7mm Schnittstärke"
+},
+{
+"id": 1293,
+"name": "Tafelscheren - mechanisch bis 3mm Schnittstärke"
+},
+{
+"id": 1294,
+"name": "Tafelscheren - mechanisch über 3mm Schnittstärke"
+},
+{
+"id": 1295,
+"name": "Abkantpressen 0-49t Druck"
+},
+{
+"id": 1296,
+"name": "Abkantpressen 100-119t Druck"
+},
+{
+"id": 1297,
+"name": "Abkantpressen 200-299t Druck"
+},
+{
+"id": 1324,
+"name": "Profilieranlagen"
+},
+{
+"id": 1376,
+"name": "Behälterdrehvorrichtungen"
+},
+{
+"id": 1377,
+"name": "Kreisscheren"
+},
+{
+"id": 1439,
+"name": "Wasserstrahlschneidmaschinen"
+},
+{
+"id": 1464,
+"name": "Abkantpressen 120-149t Druck"
+},
+{
+"id": 1465,
+"name": "Abkantpressen 150-199t Druck"
+},
+{
+"id": 1466,
+"name": "Abkantpressen 50-74t Druck"
+},
+{
+"id": 1467,
+"name": "Abkantpressen 75-99t Druck"
+},
+{
+"id": 1468,
+"name": "Laserschneidmaschinen 3000-3999mm x-Weg"
+},
+{
+"id": 1469,
+"name": "Laserschneidmaschinen ab 4000mm x-Weg"
+},
+{
+"id": 1470,
+"name": "Schwenkbiegemaschinen motorisch 2000-2999mm"
+},
+{
+"id": 1471,
+"name": "Schwenkbiegemaschinen motorisch 3000-3999mm"
+},
+{
+"id": 1472,
+"name": "Schwenkbiegemaschinen motorisch ab 4000mm"
+},
+{
+"id": 1473,
+"name": "Tafelscheren - hydraulisch 8-9mm Schnittstärke"
+},
+{
+"id": 1474,
+"name": "Tafelscheren - hydraulisch 10-13mm Schnittstärke"
+},
+{
+"id": 1522,
+"name": "Rundbiegemaschinen manuell"
+},
+{
+"id": 1523,
+"name": "Rundbiegemaschinen motorisch 0-2,9mm Blechstärke"
+},
+{
+"id": 1524,
+"name": "Rundbiegemaschinen motorisch 3-6mm Blechstärke"
+},
+{
+"id": 1525,
+"name": "Rundbiegemaschinen motorisch 6,1-14mm Blechstärke"
+},
+{
+"id": 1526,
+"name": "Rundbiegemaschinen motorisch über 14mm Blechstärke"
+},
+{
+"id": 1527,
+"name": "Handhebelscheren"
+},
+{
+"id": 1528,
+"name": "Profilstahlscheren 0-49t Stanzleistung"
+},
+{
+"id": 1529,
+"name": "Profilstahlscheren 50-79t Stanzleistung"
+},
+{
+"id": 1530,
+"name": "Profilstahlscheren ab 80t Stanzleistung"
+},
+{
+"id": 1585,
+"name": "Kraftformer"
+},
+{
+"id": 1946,
+"name": "Abkantpressen ab 300t Druck"
+},
+{
+"id": 1953,
+"name": "Ausklinkmaschinen mit festem Winkel bis 4mm"
+},
+{
+"id": 1954,
+"name": "Ausklinkmaschinen mit festem Winkel über 4mm"
+},
+{
+"id": 1955,
+"name": "Ausklinkmaschinen mit verstellbarem Winkel bis 4mm"
+},
+{
+"id": 1956,
+"name": "Ausklinkmaschinen mit verstellbarem Winkel über 4mm"
+},
+{
+"id": 1957,
+"name": "Biegemaschinen horizontal 0-25t"
+},
+{
+"id": 1958,
+"name": "Biegemaschinen horizontal 26-39t"
+},
+{
+"id": 1959,
+"name": "Biegemaschinen horizontal ab 40t"
+},
+{
+"id": 1960,
+"name": "Lochstanzmaschinen 0-35t"
+},
+{
+"id": 1961,
+"name": "Lochstanzmaschinen 36-55t"
+},
+{
+"id": 1962,
+"name": "Lochstanzmaschinen 56-90t"
+},
+{
+"id": 1963,
+"name": "Lochstanzmaschinen ab 91t"
+},
+{
+"id": 1964,
+"name": "Stanz-Nibbelmaschinen CNC - Verfahrweg 0-1999mm"
+},
+{
+"id": 1965,
+"name": "Stanz-Nibbelmaschinen CNC - Verfahrweg 2000-2499mm"
+},
+{
+"id": 1966,
+"name": "Stanz-Nibbelmaschinen CNC - Verfahrweg ab 2500mm"
+},
+{
+"id": 1967,
+"name": "Stanz-Nibbelmaschinen konventionell"
+},
+{
+"id": 1968,
+"name": "Ring-/Profilbiegemaschinen Wellendurchmesser Aufnahme 0-30mm"
+},
+{
+"id": 1969,
+"name": "Ring-/Profilbiegemaschinen Wellendurchmesser Aufnahme 31-50mm"
+},
+{
+"id": 1970,
+"name": "Ring-/Profilbiegemaschinen Wellendurchmesser Aufnahme 51-70mm"
+},
+{
+"id": 1971,
+"name": "Ring-/Profilbiegemaschinen Wellendurchmesser Aufnahme ab 71mm"
+},
+{
+"id": 1972,
+"name": "Schwenkbiegemaschinen manuell - 0-1099mm Biegelänge"
+},
+{
+"id": 1973,
+"name": "Schwenkbiegemaschinen manuell - 1100-1599 mm Biegelänge"
+},
+{
+"id": 1974,
+"name": "Schwenkbiegemaschinen manuell - 1600-2099mm Biegelänge"
+},
+{
+"id": 1975,
+"name": "Schwenkbiegemaschinen manuell - ab 2100mm Biegelänge"
+},
+{
+"id": 1978,
+"name": "Tafelscheren - hydraulisch ab 14mm Schnittstärke"
+},
+{
+"id": 2035,
+"name": "Rohrstanzmaschinen & Profilstanzmaschinen"
+},
+{
+"id": 1287,
+"name": "Bearbeitungszentren horizontal 0-399mm x-Weg"
+},
+{
+"id": 1288,
+"name": "Bearbeitungszentren horizontal 400-599mm x-Weg"
+},
+{
+"id": 1289,
+"name": "Bearbeitungszentren horizontal ab 1200mm x-Weg"
+},
+{
+"id": 1290,
+"name": "Sonstige horizontale Bearbeitungszentren"
+},
+{
+"id": 1291,
+"name": "Zubehör & Ersatzteile für Bearbeitungszentren (horizontal)"
+},
+{
+"id": 1454,
+"name": "Bearbeitungszentren horizontal 800-999mm x-Weg"
+},
+{
+"id": 1455,
+"name": "Bearbeitungszentren horizontal 600-799mm x-Weg"
+},
+{
+"id": 1456,
+"name": "Bearbeitungszentren horizontal 1000-1199mm x-Weg"
+},
+{
+"id": 1280,
+"name": "Bearbeitungszentren vertikal 0-399mm x-Weg"
+},
+{
+"id": 1281,
+"name": "Bearbeitungszentren vertikal 400-599mm x-Weg"
+},
+{
+"id": 1282,
+"name": "Bearbeitungszentren vertikal 800-999mm x-Weg"
+},
+{
+"id": 1283,
+"name": "Bearbeitungszentren vertikal 1000-1199mm x-Weg"
+},
+{
+"id": 1284,
+"name": "Sonstige vertikale Bearbeitungszentren"
+},
+{
+"id": 1285,
+"name": "Zubehör & Ersatzteile für Bearbeitungszentren (vertikal)"
+},
+{
+"id": 1450,
+"name": "Bearbeitungszentren vertikal 600-699mm x-Weg"
+},
+{
+"id": 1451,
+"name": "Bearbeitungszentren vertikal 700-799mm x-Weg"
+},
+{
+"id": 1452,
+"name": "Bearbeitungszentren vertikal 1200-1699mm x-Weg"
+},
+{
+"id": 1453,
+"name": "Bearbeitungszentren vertikal ab 1700mm x-Weg"
+},
+{
+"id": 1457,
+"name": "Bearbeitungszentren universal 0-599mm x-Weg"
+},
+{
+"id": 1458,
+"name": "Bearbeitungszentren universal 600-699mm x-Weg"
+},
+{
+"id": 1459,
+"name": "Bearbeitungszentren universal 700-799mm x-Weg"
+},
+{
+"id": 1460,
+"name": "Bearbeitungszentren universal 800-999mm x-Weg"
+},
+{
+"id": 1461,
+"name": "Sonstige universale Bearbeitungszentren"
+},
+{
+"id": 1462,
+"name": "Zubehör & Ersatzteile für Bearbeitungszentren (universal)"
+},
+{
+"id": 1463,
+"name": "Bearbeitungszentren universal ab 1000mm x-Weg"
+},
+{
+"id": 1012,
+"name": "Schnellradialbohrmaschinen"
+},
+{
+"id": 1013,
+"name": "Bohr-Fräsmaschinen"
+},
+{
+"id": 1014,
+"name": "Bohrautomaten"
+},
+{
+"id": 1015,
+"name": "Bohrzentren"
+},
+{
+"id": 1016,
+"name": "Feinbohrwerke"
+},
+{
+"id": 1017,
+"name": "Koordinatenbohrwerke"
+},
+{
+"id": 1018,
+"name": "Mehrspindelbohrmaschinen"
+},
+{
+"id": 1019,
+"name": "Reihenbohrmaschinen"
+},
+{
+"id": 1020,
+"name": "Ständerbohrmaschinen"
+},
+{
+"id": 1021,
+"name": "Tieflochbohrmaschinen"
+},
+{
+"id": 1022,
+"name": "Zubehör & Ersatzteile für Bohrmaschinen & Bohrwerke"
+},
+{
+"id": 1023,
+"name": "Sonstige Bohrmaschinen & Bohrwerke"
+},
+{
+"id": 1198,
+"name": "Magnetbohrmaschinen"
+},
+{
+"id": 1498,
+"name": "Radialbohrmaschinen 0-999mm Ausladung"
+},
+{
+"id": 1499,
+"name": "Radialbohrmaschinen 1000-1299mm Ausladung"
+},
+{
+"id": 1500,
+"name": "Radialbohrmaschinen 1300-1999mm Ausladung"
+},
+{
+"id": 1501,
+"name": "Radialbohrmaschinen ab 2000 mm Ausladung"
+},
+{
+"id": 1502,
+"name": "Säulenbohrmaschinen 0-19mm Bohrleistung"
+},
+{
+"id": 1503,
+"name": "Säulenbohrmaschinen 20-29mm Bohrleistung"
+},
+{
+"id": 1504,
+"name": "Säulenbohrmaschinen 30-39mm Bohrleistung"
+},
+{
+"id": 1505,
+"name": "Säulenbohrmaschinen 40-49mm Bohrleistung"
+},
+{
+"id": 1506,
+"name": "Säulenbohrmaschinen ab 50mm Bohrleistung"
+},
+{
+"id": 1507,
+"name": "Tischbohrwerke 0-79mm Spindeldurchmesser"
+},
+{
+"id": 1508,
+"name": "Tischbohrwerke 80-99mm Spindeldurchmesser"
+},
+{
+"id": 1509,
+"name": "Tischbohrwerke 100-119mm Spindeldurchmesser"
+},
+{
+"id": 1510,
+"name": "Tischbohrwerke 120-129mm Spindeldurchmesser"
+},
+{
+"id": 1511,
+"name": "Tischbohrwerke ab 130mm Spindeldurchmesser"
+},
+{
+"id": 1599,
+"name": "Plattenbohrwerke 0-130mm Spindeldurchmesser"
+},
+{
+"id": 1600,
+"name": "Plattenbohrwerke 131-160mm Spindeldurchmesser"
+},
+{
+"id": 1601,
+"name": "Plattenbohrwerke ab 161mm Spindeldurchmesser"
+},
+{
+"id": 1602,
+"name": "Tischbohrmaschinen 0-10mm Bohrleistung"
+},
+{
+"id": 1603,
+"name": "Tischbohrmaschinen 11-16mm Bohrleistung"
+},
+{
+"id": 1604,
+"name": "Tischbohrmaschinen ab 17mm Bohrleistung"
+},
+{
+"id": 1976,
+"name": "Bohrwerkstische"
+},
+{
+"id": 214,
+"name": "Druckgussmaschinen"
+},
+{
+"id": 215,
+"name": "Drückmaschinen"
+},
+{
+"id": 1221,
+"name": "Startlocherodiermaschinen"
+},
+{
+"id": 1222,
+"name": "Zubehör & Ersatzteile für Erodiermaschinen"
+},
+{
+"id": 1223,
+"name": "Sonstige Erodiermaschinen"
+},
+{
+"id": 1893,
+"name": "Drahterodiermaschinen 0-299mm Längsweg"
+},
+{
+"id": 1894,
+"name": "Drahterodiermaschinen 300-399mm Längsweg"
+},
+{
+"id": 1895,
+"name": "Drahterodiermaschinen 400-499mm Längsweg"
+},
+{
+"id": 1896,
+"name": "Drahterodiermaschinen 500-699mm Längsweg"
+},
+{
+"id": 1897,
+"name": "Drahterodiermaschinen ab 700mm Längsweg"
+},
+{
+"id": 1898,
+"name": "Zubehör & Ersatzteile für Drahterodiermaschinen"
+},
+{
+"id": 1899,
+"name": "Zubehör & Ersatzteile für Senkerodiermaschinen"
+},
+{
+"id": 1900,
+"name": "Senkerodiermaschinen 0-299mm Längsweg"
+},
+{
+"id": 1901,
+"name": "Senkerodiermaschinen 300-399mm Längsweg"
+},
+{
+"id": 1902,
+"name": "Senkerodiermaschinen 400-499mm Längsweg"
+},
+{
+"id": 1903,
+"name": "Senkerodiermaschinen 500-699mm Längsweg"
+},
+{
+"id": 1904,
+"name": "Senkerodiermaschinen ab 700mm Längsweg"
+},
+{
+"id": 1224,
+"name": "Bohrmaschinen für Alu-Fensterbau"
+},
+{
+"id": 1225,
+"name": "Fräsen für Alu-Fensterbau"
+},
+{
+"id": 1226,
+"name": "Eckverbindungspressen"
+},
+{
+"id": 1227,
+"name": "Sägen für Alu-Fensterbau"
+},
+{
+"id": 1228,
+"name": "Schweißmaschinen für Alu-Fensterbau"
+},
+{
+"id": 1229,
+"name": "Stanzen für Alu-Fensterbau"
+},
+{
+"id": 1230,
+"name": "Zubehör & Ersatzteile für Alu-Fensterbaumaschinen"
+},
+{
+"id": 1231,
+"name": "Sonstige Fensterbaumaschinen"
+},
+{
+"id": 1232,
+"name": "Montagetische"
+},
+{
+"id": 1170,
+"name": "Bettfräsmaschinen - horizontal"
+},
+{
+"id": 1171,
+"name": "Bettfräsmaschinen - vertikal"
+},
+{
+"id": 1173,
+"name": "Doppelspindel - Fräsmaschinen"
+},
+{
+"id": 1174,
+"name": "Fahrständerfräsmaschinen"
+},
+{
+"id": 1175,
+"name": "Fräsmaschinen - horizontal"
+},
+{
+"id": 1176,
+"name": "Fräsmaschinen - vertikal"
+},
+{
+"id": 1177,
+"name": "Handhebelfräsmaschinen"
+},
+{
+"id": 1180,
+"name": "Kopierfräsmaschinen"
+},
+{
+"id": 1181,
+"name": "Kurvenfräsmaschinen"
+},
+{
+"id": 1184,
+"name": "Nutenfräsmaschinen"
+},
+{
+"id": 1185,
+"name": "Portalfräsmaschinen"
+},
+{
+"id": 1186,
+"name": "Universal-Fräsmaschinen & Bohrwerke"
+},
+{
+"id": 1187,
+"name": "Zubehör & Ersatzteile für Fräsmaschinen"
+},
+{
+"id": 1188,
+"name": "Sonstige Fräsmaschinen"
+},
+{
+"id": 1200,
+"name": "Nockenwellenfräsmaschinen"
+},
+{
+"id": 1332,
+"name": "Fräsmaschinen - universal konventionell 0-399mm x-Weg"
+},
+{
+"id": 1333,
+"name": "Fräsmaschinen - universal konventionell 400-499mm x-Weg"
+},
+{
+"id": 1334,
+"name": "Fräsmaschinen - universal konventionell 500-699mm x-Weg"
+},
+{
+"id": 1335,
+"name": "Fräsmaschinen - universal konventionell 700-999mm x-Weg"
+},
+{
+"id": 1336,
+"name": "Fräsmaschinen - universal konventionell über 1000mm x-Weg"
+},
+{
+"id": 1337,
+"name": "Fräsmaschinen - universal NC/CNC 0-399mm x-Weg"
+},
+{
+"id": 1338,
+"name": "Fräsmaschinen - universal NC/CNC 400-499mm x-Weg"
+},
+{
+"id": 1339,
+"name": "Fräsmaschinen - universal NC/CNC 500-699mm x-Weg"
+},
+{
+"id": 1340,
+"name": "Fräsmaschinen - universal NC/CNC 700-999mm x-Weg"
+},
+{
+"id": 1341,
+"name": "Fräsmaschinen - universal NC/CNC über 1000mm x-Weg"
+},
+{
+"id": 1342,
+"name": "Werkzeugfräsmaschinen universal konventionell 0-399mm x-Weg"
+},
+{
+"id": 1343,
+"name": "Werkzeugfräsmaschinen universal konventionell 400-499mm x-Weg"
+},
+{
+"id": 1344,
+"name": "Werkzeugfräsmaschinen universal konventionell 500-699mm x-Weg"
+},
+{
+"id": 1345,
+"name": "Werkzeugfräsmaschinen universal konventionell 700-999mm x-Weg"
+},
+{
+"id": 1346,
+"name": "Werkzeugfräsmaschinen universal konventionell über 1000mm x-Weg"
+},
+{
+"id": 1347,
+"name": "Werkzeugfräsmaschinen universal NC/CNC 0-399mm x-Weg"
+},
+{
+"id": 1348,
+"name": "Werkzeugfräsmaschinen universal NC/CNC 400-499mm x-Weg"
+},
+{
+"id": 1349,
+"name": "Werkzeugfräsmaschinen universal NC/CNC 500-699mm x-Weg"
+},
+{
+"id": 1350,
+"name": "Werkzeugfräsmaschinen universal NC/CNC 700-999mm x-Weg"
+},
+{
+"id": 1351,
+"name": "Werkzeugfräsmaschinen universal NC/CNC über 1000mm x-Weg"
+},
+{
+"id": 1513,
+"name": "Bettfräsmaschinen - universal 0-1299mm Längsweg"
+},
+{
+"id": 1514,
+"name": "Bettfräsmaschinen - universal 1300-1999mm Längsweg"
+},
+{
+"id": 1515,
+"name": "Bettfräsmaschinen - universal 2000-2999mm Längsweg"
+},
+{
+"id": 1516,
+"name": "Bettfräsmaschinen - universal 3000-3999mm Längsweg"
+},
+{
+"id": 1517,
+"name": "Bettfräsmaschinen - universal über 4000mm Längsweg"
+},
+{
+"id": 1537,
+"name": "Aussengewindeschneidmaschinen"
+},
+{
+"id": 1538,
+"name": "Innengewindeschneidmaschinen Gewindebereich bis M 8"
+},
+{
+"id": 1539,
+"name": "Innengewindeschneidmaschinen Gewindebereich M 9 - M 12"
+},
+{
+"id": 1540,
+"name": "Innengewindeschneidmaschinen Gewindebereich M 13 - M 20"
+},
+{
+"id": 1541,
+"name": "Innengewindeschneidmaschinen Gewindebereich ab M 21"
+},
+{
+"id": 1542,
+"name": "Gewinderollmaschinen"
+},
+{
+"id": 1543,
+"name": "Gewindeschleifmaschinen"
+},
+{
+"id": 1544,
+"name": "Sonstige Gewindebearbeitungsmaschinen"
+},
+{
+"id": 1545,
+"name": "Zubehör für Ersatzteile für Gewindebearbeitungsmaschinen"
+},
+{
+"id": 220,
+"name": "Graviermaschinen"
+},
+{
+"id": 1594,
+"name": "Schnellhobler & Kurzhobler"
+},
+{
+"id": 1595,
+"name": "Langhobelmaschinen – Einständer"
+},
+{
+"id": 1596,
+"name": "Langhobelmaschinen – Zweiständer"
+},
+{
+"id": 1597,
+"name": "Sonstige Metallhobelmaschinen"
+},
+{
+"id": 1598,
+"name": "Zubehör & Ersatzteile für Metallhobelmaschinen"
+},
+{
+"id": 222,
+"name": "Honmaschinen"
+},
+{
+"id": 223,
+"name": "Kompressoren"
+},
+{
+"id": 224,
+"name": "Läppmaschinen"
+},
+{
+"id": 1482,
+"name": "Auswuchtmaschinen & Wuchtmaschinen"
+},
+{
+"id": 1483,
+"name": "Digitalanzeigen + Zubehör"
+},
+{
+"id": 1484,
+"name": "Härteprüfgeräte & Werkstoffprüfung"
+},
+{
+"id": 1485,
+"name": "Höhenmessgeräte"
+},
+{
+"id": 1486,
+"name": "Koordinatenmessmaschinen"
+},
+{
+"id": 1487,
+"name": "Messplatten"
+},
+{
+"id": 1488,
+"name": "Mikroskope"
+},
+{
+"id": 1489,
+"name": "Profilprojektoren"
+},
+{
+"id": 1490,
+"name": "Waagen"
+},
+{
+"id": 1491,
+"name": "Werkzeugvoreinstellgeräte"
+},
+{
+"id": 1492,
+"name": "Sonstige Messmaschinen & Messtechnik"
+},
+{
+"id": 1493,
+"name": "Zubehör & Ersatzteile für Messmaschinen"
+},
+{
+"id": 1521,
+"name": "Werkzeugeinstellgeräte"
+},
+{
+"id": 1535,
+"name": "Zahnradmessmaschinen"
+},
+{
+"id": 227,
+"name": "Oberflächenbehandlung"
+},
+{
+"id": 228,
+"name": "Poliermaschinen"
+},
+{
+"id": 1112,
+"name": "Bördelmaschinen & Beschneidmaschinen"
+},
+{
+"id": 1113,
+"name": "Ziehpressen Doppelständer"
+},
+{
+"id": 1114,
+"name": "Dornpressen"
+},
+{
+"id": 1115,
+"name": "Ziehpressen Einständer"
+},
+{
+"id": 1116,
+"name": "Friktionsspindelpressen & Spindelschlagpressen"
+},
+{
+"id": 1117,
+"name": "Kniehebelpressen"
+},
+{
+"id": 1118,
+"name": "Pneumatische Pressen"
+},
+{
+"id": 1119,
+"name": "Richtpressen & Biegepressen"
+},
+{
+"id": 1120,
+"name": "Handspindelpressen"
+},
+{
+"id": 1121,
+"name": "Stufenpressen"
+},
+{
+"id": 1122,
+"name": "Transferpressen"
+},
+{
+"id": 1123,
+"name": "Tuschierpressen"
+},
+{
+"id": 1124,
+"name": "Werkstattpressen"
+},
+{
+"id": 1125,
+"name": "Zubehör & Ersatzteile für Metallpressen"
+},
+{
+"id": 1126,
+"name": "Sonstige Metallpressen"
+},
+{
+"id": 1194,
+"name": "Stanzautomaten"
+},
+{
+"id": 1195,
+"name": "Kurbelpressen"
+},
+{
+"id": 1220,
+"name": "Vulkanisierpressen"
+},
+{
+"id": 1325,
+"name": "Exzenterpressen Einständer 0-24t"
+},
+{
+"id": 1326,
+"name": "Exzenterpressen Einständer 25-54t"
+},
+{
+"id": 1327,
+"name": "Exzenterpressen Einständer 55-99t"
+},
+{
+"id": 1328,
+"name": "Exzenterpressen Einständer über 100t"
+},
+{
+"id": 1329,
+"name": "Exzenterpressen Doppelständer"
+},
+{
+"id": 1330,
+"name": "Hydraulische Doppelständerpressen & Viersäulenpressen"
+},
+{
+"id": 1331,
+"name": "Hydraulische Einständerpressen"
+},
+{
+"id": 1378,
+"name": "Feinschneidpressen"
+},
+{
+"id": 1379,
+"name": "Werkzeugprobierpressen"
+},
+{
+"id": 1536,
+"name": "Schmiedepressen"
+},
+{
+"id": 2084,
+"name": "Hydraulische Einständerpressen 0-15t"
+},
+{
+"id": 2085,
+"name": "Hydraulische Einständerpressen 16-25t"
+},
+{
+"id": 2086,
+"name": "Hydraulische Einständerpressen 26-50t"
+},
+{
+"id": 2087,
+"name": "Hydraulische Einständerpressen 51-99t"
+},
+{
+"id": 2088,
+"name": "Hydraulische Einständerpressen 100-124t"
+},
+{
+"id": 2089,
+"name": "Hydraulische Einständerpressen ab 125t"
+},
+{
+"id": 803,
+"name": "Bügelsägeautomaten"
+},
+{
+"id": 804,
+"name": "Doppelgehrungssägen"
+},
+{
+"id": 805,
+"name": "Langschnittsägen"
+},
+{
+"id": 806,
+"name": "Zubehör & Ersatzteile für Metallsägen"
+},
+{
+"id": 807,
+"name": "Sonstige Metallsägen"
+},
+{
+"id": 1321,
+"name": "Bügelsägen 0-249mm Schnittbereich"
+},
+{
+"id": 1322,
+"name": "Bügelsägen 250-399mm Schnittbereich"
+},
+{
+"id": 1323,
+"name": "Bügelsägen ab 400mm Schnittbereich"
+},
+{
+"id": 1618,
+"name": "Kaltkreissägen – manuell – 0-299mm Sägeblattdurchmesser"
+},
+{
+"id": 1619,
+"name": "Kaltkreissägen – manuell – 350-399mm Sägeblattdurchmesser"
+},
+{
+"id": 1620,
+"name": "Kaltkreissägen – manuell – 400-499mm Sägeblattdurchmesser"
+},
+{
+"id": 1621,
+"name": "Kaltkreissägen – manuell – ab 500mm Sägeblattdurchmesser"
+},
+{
+"id": 1622,
+"name": "Kaltkreissägen – halbautomatisch – 0-350mm Sägeblattdurchmesser"
+},
+{
+"id": 1623,
+"name": "Kaltkreissägen – halbautomatisch – 351-420mm Sägeblattdurchmesser"
+},
+{
+"id": 1624,
+"name": "Kaltkreissägen – halbautomatisch – 421-470mm Sägeblattdurchmesser"
+},
+{
+"id": 1625,
+"name": "Kaltkreissägen – halbautomatisch – 471-499mm Sägeblattdurchmesser"
+},
+{
+"id": 1626,
+"name": "Kaltkreissägen – halbautomatisch – ab 500mm Sägeblattdurchmesser"
+},
+{
+"id": 1627,
+"name": "Kaltkreissägen – vollautomatisch – 0-350mm Sägeblattdurchmesser"
+},
+{
+"id": 1628,
+"name": "Kaltkreissägen – vollautomatisch – 351-419mm Sägeblattdurchmesser"
+},
+{
+"id": 1629,
+"name": "Kaltkreissägen – vollautomatisch – 420-469mm Sägeblattdurchmesser"
+},
+{
+"id": 1630,
+"name": "Kaltkreissägen – vollautomatisch – ab 470mm Sägeblattdurchmesser"
+},
+{
+"id": 1631,
+"name": "Bandsägen horizontal – manuell – Schnittbereich rund 0-220mm"
+},
+{
+"id": 1632,
+"name": "Bandsägen horizontal – manuell – Schnittbereich rund 221-299mm"
+},
+{
+"id": 1633,
+"name": "Bandsägen horizontal – manuell – Schnittbereich rund ab 300mm"
+},
+{
+"id": 1634,
+"name": "Bandsägen horizontal – halbautomatisch – Schnittbereich rund 0-300mm"
+},
+{
+"id": 1635,
+"name": "Bandsägen horizontal – halbautomatisch – Schnittbereich rund 301-349mm"
+},
+{
+"id": 1636,
+"name": "Bandsägen horizontal – halbautomatisch – Schnittbereich rund 350-419mm"
+},
+{
+"id": 1637,
+"name": "Bandsägen horizontal – halbautomatisch – Schnittbereich rund ab 420mm"
+},
+{
+"id": 1638,
+"name": "Bandsägen horizontal – vollautomatisch – Schnittbereich rund 0-299mm"
+},
+{
+"id": 1639,
+"name": "Bandsägen horizontal – vollautomatisch – Schnittbereich rund 300-359mm"
+},
+{
+"id": 1640,
+"name": "Bandsägen horizontal – vollautomatisch – Schnittbereich rund 360-399mm"
+},
+{
+"id": 1641,
+"name": "Bandsägen horizontal – vollautomatisch – Schnittbereich rund ab 400mm"
+},
+{
+"id": 1642,
+"name": "Bandsägen - vertikal – 0-419mm Ausladung"
+},
+{
+"id": 1643,
+"name": "Bandsägen - vertikal – 420-799mm Ausladung"
+},
+{
+"id": 1644,
+"name": "Bandsägen - vertikal – ab 800mm Ausladung"
+},
+{
+"id": 1645,
+"name": "Leichtmetall- / Alu-Kreissägen manuell 0-299mm Sägeblattdurchmesser"
+},
+{
+"id": 1646,
+"name": "Leichtmetall- / Alu-Kreissägen manuell 300-369mm Sägeblattdurchmesser"
+},
+{
+"id": 1647,
+"name": "Leichtmetall- / Alu-Kreissägen manuell ab 370mm Sägeblattdurchmesser"
+},
+{
+"id": 1648,
+"name": "Leichtmetall- / Alu-Kreissägen - halbautomatisch"
+},
+{
+"id": 1649,
+"name": "Leichtmetall- / Alu-Kreissägen - vollautomatisch"
+},
+{
+"id": 1952,
+"name": "Kaltkreissägen – manuell – 300-349mm Sägeblattdurchmesser"
+},
+{
+"id": 1147,
+"name": "Bandschleifmaschinen"
+},
+{
+"id": 1148,
+"name": "Breitbandschleifmaschinen"
+},
+{
+"id": 1149,
+"name": "Bohrerschleifmaschinen"
+},
+{
+"id": 1150,
+"name": "Doppelschleifböcke"
+},
+{
+"id": 1151,
+"name": "Einstechschleifmaschinen"
+},
+{
+"id": 1152,
+"name": "Flachschleifmaschinen - Doppelständer"
+},
+{
+"id": 1153,
+"name": "Flachschleifmaschinen - Vertikal"
+},
+{
+"id": 1154,
+"name": "Frässtichel-Schleifmaschinen"
+},
+{
+"id": 1155,
+"name": "Führungsbahnenschleifmaschinen"
+},
+{
+"id": 1156,
+"name": "Gewindeschleifmaschinen"
+},
+{
+"id": 1157,
+"name": "Gleitschleifanlagen"
+},
+{
+"id": 1158,
+"name": "Innenschleifmaschinen & Planschleifmaschinen"
+},
+{
+"id": 1159,
+"name": "Koordinatenschleifmaschinen"
+},
+{
+"id": 1160,
+"name": "Kurbelwellenschleifmaschinen"
+},
+{
+"id": 1161,
+"name": "Messerschleifmaschinen"
+},
+{
+"id": 1162,
+"name": "Profilschleifmaschinen"
+},
+{
+"id": 1163,
+"name": "Rundtischflachschleifmaschinen"
+},
+{
+"id": 1164,
+"name": "Trennschleifmaschinen"
+},
+{
+"id": 1165,
+"name": "Walzenschleifmaschinen"
+},
+{
+"id": 1166,
+"name": "Werkzeugschleifmaschinen"
+},
+{
+"id": 1167,
+"name": "Zentrumschleifmaschinen"
+},
+{
+"id": 1168,
+"name": "Zubehör & Ersatzteile für Metallschleifmaschinen"
+},
+{
+"id": 1169,
+"name": "Sonstige Metallschleifmaschinen"
+},
+{
+"id": 1272,
+"name": "Topfschleifmaschinen"
+},
+{
+"id": 1368,
+"name": "Flachschleifmaschinen horizontal 0-399mm Schleiflänge"
+},
+{
+"id": 1369,
+"name": "Flachschleifmaschinen horizontal 400-699mm Schleiflänge"
+},
+{
+"id": 1370,
+"name": "Flachschleifmaschinen horizontal 700-999mm Schleiflänge"
+},
+{
+"id": 1371,
+"name": "Flachschleifmaschinen horizontal ab 1000mm Schleiflänge"
+},
+{
+"id": 1372,
+"name": "Rundschleifmaschinen 0-599mm Schleiflänge"
+},
+{
+"id": 1373,
+"name": "Rundschleifmaschinen 600-1099mm Schleiflänge"
+},
+{
+"id": 1374,
+"name": "Rundschleifmaschinen 1100-2099mm Schleiflänge"
+},
+{
+"id": 1375,
+"name": "Rundschleifmaschinen ab 2100mm Schleiflänge"
+},
+{
+"id": 1422,
+"name": "Stähleschleifmaschinen"
+},
+{
+"id": 1438,
+"name": "Kantenschleifmaschinen"
+},
+{
+"id": 1440,
+"name": "Nockenwellenschleifmaschinen"
+},
+{
+"id": 1494,
+"name": "Sägeblattschärfmaschinen"
+},
+{
+"id": 1495,
+"name": "Schleifapparate & Flexible Welle"
+},
+{
+"id": 1496,
+"name": "Stichelschleifmaschinen"
+},
+{
+"id": 1497,
+"name": "Rundschleifmaschinen spitzenlos"
+},
+{
+"id": 1546,
+"name": "Nutenschleifmaschinen"
+},
+{
+"id": 1547,
+"name": "Doppelplanschleifmaschinen"
+},
+{
+"id": 1581,
+"name": "Rohrausschleifer"
+},
+{
+"id": 900,
+"name": "Brennschneidanlagen"
+},
+{
+"id": 901,
+"name": "Buckelschweißmaschinen"
+},
+{
+"id": 902,
+"name": "Laserschneidanlagen"
+},
+{
+"id": 903,
+"name": "Plasmaschneidgeräte"
+},
+{
+"id": 904,
+"name": "Punktschweißmaschinen"
+},
+{
+"id": 905,
+"name": "Schweißgeräte"
+},
+{
+"id": 906,
+"name": "Stumpfschweißmaschinen"
+},
+{
+"id": 907,
+"name": "Zubehör & Ersatzteile für Schweißmaschinen & Schneidanlagen"
+},
+{
+"id": 908,
+"name": "Sonstige Schweißmaschinen & Schneidemaschinen"
+},
+{
+"id": 1189,
+"name": "Wasserstrahlschneidanlagen"
+},
+{
+"id": 1286,
+"name": "Schweißkantenabschrägmaschinen"
+},
+{
+"id": 1434,
+"name": "Schweißrauchabsaugungen"
+},
+{
+"id": 1448,
+"name": "Plasmaschneidmaschinen"
+},
+{
+"id": 1591,
+"name": "Schweißtische"
+},
+{
+"id": 2090,
+"name": "Schweißroboter"
+},
+{
+"id": 1233,
+"name": "Kaltwalzmaschinen"
+},
+{
+"id": 1234,
+"name": "Kegelradläppmaschinen"
+},
+{
+"id": 1235,
+"name": "Kegelradprüfmaschinen"
+},
+{
+"id": 1236,
+"name": "Kegelradfräsmaschinen Bogenverzahnung"
+},
+{
+"id": 1237,
+"name": "Kegelradfräsmaschinen Geradverzahnung"
+},
+{
+"id": 1238,
+"name": "Kegelradhobelmaschinen"
+},
+{
+"id": 1239,
+"name": "Kegelradschleifmaschinen"
+},
+{
+"id": 1240,
+"name": "Schabrad Schärfmaschinen"
+},
+{
+"id": 1241,
+"name": "Schneckenschleifmaschinen"
+},
+{
+"id": 1242,
+"name": "Spiralkegelradschneidmaschinen"
+},
+{
+"id": 1243,
+"name": "Verzahnungsmessmaschinen"
+},
+{
+"id": 1244,
+"name": "Zahnflankenschleifmaschinen"
+},
+{
+"id": 1245,
+"name": "Zahnkantenabrundmaschinen"
+},
+{
+"id": 1246,
+"name": "Zahnkantenentgratmaschinen"
+},
+{
+"id": 1247,
+"name": "Zahnkantenfräsmaschinen"
+},
+{
+"id": 1248,
+"name": "Zahnrad-Abwälzfräsmaschinen horizontal"
+},
+{
+"id": 1250,
+"name": "Zahnradentgratmaschinen"
+},
+{
+"id": 1251,
+"name": "Zahnradhobelmaschinen"
+},
+{
+"id": 1252,
+"name": "Zahnradhonmaschinen"
+},
+{
+"id": 1253,
+"name": "Zahnradprüfmaschinen"
+},
+{
+"id": 1254,
+"name": "Zahnradschabemaschinen"
+},
+{
+"id": 1255,
+"name": "Zahnradschleifmaschinen"
+},
+{
+"id": 1256,
+"name": "Zahnradstoßmaschinen"
+},
+{
+"id": 1257,
+"name": "Zahnstangenfräsmaschinen"
+},
+{
+"id": 1258,
+"name": "Sonstige Verzahnungsmaschinen"
+},
+{
+"id": 1259,
+"name": "Zubehör & Ersatzteile für Verzahnungsmaschinen"
+},
+{
+"id": 1275,
+"name": "Langgewindefräsmaschinen & Abwälzfräsmaschinen"
+},
+{
+"id": 2041,
+"name": "Zahnrad-Abwälzfräsmaschinen vertikal - 0-299mm Raddurchmesser"
+},
+{
+"id": 2042,
+"name": "Zahnrad-Abwälzfräsmaschinen vertikal - 300-499mm Raddurchmesser"
+},
+{
+"id": 2043,
+"name": "Zahnrad-Abwälzfräsmaschinen vertikal - 500-699mm Raddurchmesser"
+},
+{
+"id": 2044,
+"name": "Zahnrad-Abwälzfräsmaschinen vertikal - 700-999mm Raddurchmesser"
+},
+{
+"id": 2045,
+"name": "Zahnrad-Abwälzfräsmaschinen vertikal - 1000-1999mm Raddurchmesser"
+},
+{
+"id": 2046,
+"name": "Zahnrad-Abwälzfräsmaschinen vertikal - ab 2000mm Raddurchmesser"
+},
+{
+"id": 2503,
+"name": "Wälzschälmaschinen"
+},
+{
+"id": 1298,
+"name": "Anreißplatten & Tuschierplatten"
+},
+{
+"id": 1299,
+"name": "Ausdrehköpfe"
+},
+{
+"id": 1300,
+"name": "Aufspannplatten"
+},
+{
+"id": 1301,
+"name": "Aufspannwinkel"
+},
+{
+"id": 1302,
+"name": "Dreibackenfutter"
+},
+{
+"id": 1303,
+"name": "Fräsdorne"
+},
+{
+"id": 1304,
+"name": "Fräsköpfe"
+},
+{
+"id": 1305,
+"name": "Fräswerkzeuge & Drehwerkzeuge"
+},
+{
+"id": 1306,
+"name": "Lünetten"
+},
+{
+"id": 1307,
+"name": "Magnetplatten"
+},
+{
+"id": 1308,
+"name": "Planscheiben"
+},
+{
+"id": 1309,
+"name": "Richtplatten"
+},
+{
+"id": 1310,
+"name": "Rundtische"
+},
+{
+"id": 1311,
+"name": "Schraubstöcke"
+},
+{
+"id": 1312,
+"name": "Schleifscheiben"
+},
+{
+"id": 1313,
+"name": "Sonstige Teile für Metallbearbeitungsmaschinen & Werkzeugmaschinen"
+},
+{
+"id": 1314,
+"name": "Stangenzuführungen"
+},
+{
+"id": 1315,
+"name": "Teilapparate"
+},
+{
+"id": 1316,
+"name": "Vierbackenfutter"
+},
+{
+"id": 1317,
+"name": "Werkbänke"
+},
+{
+"id": 1318,
+"name": "Winkeltische & Universaltische"
+},
+{
+"id": 1319,
+"name": "Werkzeugschränke"
+},
+{
+"id": 1320,
+"name": "Würfeltische"
+},
+{
+"id": 1365,
+"name": "Absaugungen"
+},
+{
+"id": 1366,
+"name": "Kreuztische"
+},
+{
+"id": 1367,
+"name": "Wendespanner"
+},
+{
+"id": 1433,
+"name": "Werkzeugaufnahmen & Werkzeughalter"
+},
+{
+"id": 1449,
+"name": "Ölnebelabscheider"
+},
+{
+"id": 1475,
+"name": "Kühlmitteleinrichtungen"
+},
+{
+"id": 1476,
+"name": "Späneförderer"
+},
+{
+"id": 1477,
+"name": "Hydraulikaggregate"
+},
+{
+"id": 1478,
+"name": "Nivellierelemente & Fixatoren"
+},
+{
+"id": 1479,
+"name": "Maschinenfüsse & Schwingungsdämpfer"
+},
+{
+"id": 1480,
+"name": "Spannzangeneinrichtungen"
+},
+{
+"id": 1481,
+"name": "Aufspannwürfel"
+},
+{
+"id": 1582,
+"name": "Wendeplatten"
+},
+{
+"id": 1584,
+"name": "Schmierstoffe"
+},
+{
+"id": 1587,
+"name": "Luftfilter"
+},
+{
+"id": 2096,
+"name": "Sechsbackenfutter"
+},
+{
+"id": 235,
+"name": "Giessereimaschinen"
+},
+{
+"id": 236,
+"name": "Schmiedeeinrichtungen"
+},
+{
+"id": 237,
+"name": "Stoß-, Zieh- & Räummaschinen"
+},
+{
+"id": 238,
+"name": "Zentriermaschinen & Endenbearbeitungsmaschinen"
+},
+{
+"id": 658,
+"name": "Sonstige Metallbearbeitungsmaschinen & Werkzeugmaschinen"
+},
+{
+"id": 726,
+"name": "Transfermaschinen"
+},
+{
+"id": 742,
+"name": "Bedienungsanleitungen"
+},
+{
+"id": 744,
+"name": "Industrieöfen für Metallbearbeitung"
+},
+{
+"id": 771,
+"name": "Komplette Betriebe & Maschinenpakete"
+},
+{
+"id": 1980,
+"name": "Blechentgratmaschinen"
+},
+{
+"id": 1981,
+"name": "Bürstenentgratmaschinen"
+},
+{
+"id": 1982,
+"name": "Sonstige Entgratmaschinen"
+},
+{
+"id": 1983,
+"name": "Zubehör & Ersatzteile für Entgratmaschinen"
+},
+{
+"id": 2419,
+"name": "3D Metall-Drucker"
+}
+]
+},
+"3": {
+"name": "Holzbearbeitungsmaschinen",
+"leaves": [
+{
+"id": 2074,
+"name": "Horizontale Bearbeitungszentren mit Durchlauf (Holz)"
+},
+{
+"id": 2075,
+"name": "Horizontale Bearbeitungszentren mit Flachtisch oder Rastertisch (Holz)"
+},
+{
+"id": 2076,
+"name": "Horizontale Bearbeitungszentren mit Traversentisch (Holz)"
+},
+{
+"id": 2077,
+"name": "Aggregate & Winkelgetriebe"
+},
+{
+"id": 2078,
+"name": "Werkzeuge für CNC-Bearbeitungszentren (Holz)"
+},
+{
+"id": 2079,
+"name": "Zubehör & Ersatzteile für CNC-Bearbeitungszentren (Holz)"
+},
+{
+"id": 2502,
+"name": "Vertikale Bearbeitungszentren (Holz)"
+},
+{
+"id": 922,
+"name": "Astlochbohrmaschinen"
+},
+{
+"id": 923,
+"name": "Beschlagbohrmaschinen"
+},
+{
+"id": 924,
+"name": "Dübelbohrmaschinen"
+},
+{
+"id": 925,
+"name": "Langlochbohrmaschinen"
+},
+{
+"id": 926,
+"name": "Lochreihenbohrmaschinen"
+},
+{
+"id": 927,
+"name": "Mehrspindelbohrmaschinen"
+},
+{
+"id": 928,
+"name": "Reihenbohrmaschinen"
+},
+{
+"id": 929,
+"name": "Säulenbohrmaschinen"
+},
+{
+"id": 930,
+"name": "Tieflochbohrmaschinen"
+},
+{
+"id": 931,
+"name": "Tischbohrmaschinen"
+},
+{
+"id": 932,
+"name": "Topfbandbohrmaschinen"
+},
+{
+"id": 933,
+"name": "Universalbohrmaschinen"
+},
+{
+"id": 934,
+"name": "Zubehör & Ersatzteile für Bohrmaschinen"
+},
+{
+"id": 935,
+"name": "Sonstige Bohrmaschinen"
+},
+{
+"id": 2080,
+"name": "Durchlaufbohrmaschinen"
+},
+{
+"id": 138,
+"name": "Drechselbänke & Drehmaschinen"
+},
+{
+"id": 139,
+"name": "Förderanlagen"
+},
+{
+"id": 967,
+"name": "Doppelspindelfräsen"
+},
+{
+"id": 968,
+"name": "Dübelfräsen"
+},
+{
+"id": 969,
+"name": "Formfräsmaschinen"
+},
+{
+"id": 970,
+"name": "Kantenfräsen"
+},
+{
+"id": 971,
+"name": "Karussellfräsen"
+},
+{
+"id": 972,
+"name": "Klappladenfräsmaschinen"
+},
+{
+"id": 973,
+"name": "Kopieroberfräsen"
+},
+{
+"id": 974,
+"name": "Kopierunterfräsen"
+},
+{
+"id": 975,
+"name": "Kreuzsprossenfräsen"
+},
+{
+"id": 976,
+"name": "Langlochfräsmaschinen"
+},
+{
+"id": 977,
+"name": "Oberfräsmaschinen"
+},
+{
+"id": 978,
+"name": "Profilfräsmaschinen"
+},
+{
+"id": 979,
+"name": "Rundstabfräsen"
+},
+{
+"id": 980,
+"name": "Schwenkfräsen"
+},
+{
+"id": 981,
+"name": "Schwenkspindelfräsen"
+},
+{
+"id": 982,
+"name": "Starrfräsen"
+},
+{
+"id": 983,
+"name": "Tischfräsen"
+},
+{
+"id": 984,
+"name": "Zapfenfräsmaschinen"
+},
+{
+"id": 985,
+"name": "Zinkenfräsen"
+},
+{
+"id": 986,
+"name": "Zubehör & Ersatzteile für Holzfräsen"
+},
+{
+"id": 987,
+"name": "Sonstige Holzfräsen"
+},
+{
+"id": 1190,
+"name": "Kettenfräsen"
+},
+{
+"id": 1549,
+"name": "Treppenfräsen"
+},
+{
+"id": 2083,
+"name": "Ausklinkfräsen"
+},
+{
+"id": 141,
+"name": "Heizungsanlagen"
+},
+{
+"id": 854,
+"name": "Abricht- & Dickenhobel kombiniert"
+},
+{
+"id": 855,
+"name": "Abrichthobelmaschinen"
+},
+{
+"id": 856,
+"name": "Breithobelmaschinen"
+},
+{
+"id": 857,
+"name": "Dickenhobelmaschinen"
+},
+{
+"id": 858,
+"name": "Hobel- & Kehlautomaten"
+},
+{
+"id": 859,
+"name": "Zubehör & Ersatzteile für Hobelmaschinen"
+},
+{
+"id": 860,
+"name": "Sonstige Holzhobelmaschinen"
+},
+{
+"id": 1650,
+"name": "Hobelbänke"
+},
+{
+"id": 875,
+"name": "Doppelseitige Kantenanleimmaschinen"
+},
+{
+"id": 876,
+"name": "Formteil-Kantenanleimmaschinen"
+},
+{
+"id": 877,
+"name": "Kantenanleimmaschinen"
+},
+{
+"id": 878,
+"name": "Kantenbeleimmaschinen"
+},
+{
+"id": 879,
+"name": "Kantenfräsmaschinen"
+},
+{
+"id": 880,
+"name": "Kantenpressen"
+},
+{
+"id": 881,
+"name": "Softforming-Maschinen"
+},
+{
+"id": 882,
+"name": "Zubehör & Ersatzteile für Kantenanleimmaschinen"
+},
+{
+"id": 883,
+"name": "Sonstige Kantenanleimmaschinen"
+},
+{
+"id": 144,
+"name": "Kombinierte Maschinen"
+},
+{
+"id": 145,
+"name": "Kompressoren"
+},
+{
+"id": 1391,
+"name": "Arbeitsständer"
+},
+{
+"id": 1392,
+"name": "Beizanlagen"
+},
+{
+"id": 1393,
+"name": "Farbnebelabsaugungen"
+},
+{
+"id": 1394,
+"name": "Farbspritzgeräte"
+},
+{
+"id": 1395,
+"name": "Rollenbahnen & Transportbänder"
+},
+{
+"id": 1396,
+"name": "Flächenspritzmaschinen"
+},
+{
+"id": 1397,
+"name": "Heißwachsgeräte"
+},
+{
+"id": 1398,
+"name": "Trockner"
+},
+{
+"id": 1399,
+"name": "Komplette Lackieranlagen"
+},
+{
+"id": 1400,
+"name": "Lackgießmaschinen"
+},
+{
+"id": 1401,
+"name": "Luftbefeuchter"
+},
+{
+"id": 1402,
+"name": "Spritzwände"
+},
+{
+"id": 1403,
+"name": "Sonstige Lackieranlagen"
+},
+{
+"id": 1404,
+"name": "Zuluft-Umluft-Geräte"
+},
+{
+"id": 1421,
+"name": "Walzauftragmaschinen"
+},
+{
+"id": 1413,
+"name": "Absauganlagen (stationär)"
+},
+{
+"id": 1414,
+"name": "Absauganlagen (mobil)"
+},
+{
+"id": 1415,
+"name": "Absackfilter"
+},
+{
+"id": 1416,
+"name": "Absaugrohre"
+},
+{
+"id": 1417,
+"name": "Entfeuchter"
+},
+{
+"id": 1418,
+"name": "Entstauber"
+},
+{
+"id": 1419,
+"name": "Ventilatoren"
+},
+{
+"id": 1420,
+"name": "Sonstige Absauganlagen"
+},
+{
+"id": 1593,
+"name": "Luftbefeuchtungsanlagen"
+},
+{
+"id": 2068,
+"name": "Farbnebelabsaugungen"
+},
+{
+"id": 909,
+"name": "Brikettierpressen"
+},
+{
+"id": 910,
+"name": "Durchlaufpressen"
+},
+{
+"id": 911,
+"name": "Blockpressen"
+},
+{
+"id": 912,
+"name": "Furnierpressen"
+},
+{
+"id": 913,
+"name": "Kantenpressen"
+},
+{
+"id": 914,
+"name": "Karussellpressen"
+},
+{
+"id": 915,
+"name": "Korpuspressen"
+},
+{
+"id": 916,
+"name": "Membranpressen & Vakuumpressen"
+},
+{
+"id": 917,
+"name": "Pelletierpressen"
+},
+{
+"id": 918,
+"name": "Rahmenpressen"
+},
+{
+"id": 919,
+"name": "Verleimpressen"
+},
+{
+"id": 920,
+"name": "Zubehör & Ersatzteile für Holzpressen"
+},
+{
+"id": 921,
+"name": "Sonstige Holzpressen"
+},
+{
+"id": 1977,
+"name": "Minizinkenpressen"
+},
+{
+"id": 936,
+"name": "Bandsägen"
+},
+{
+"id": 937,
+"name": "Bandsägemaschinen"
+},
+{
+"id": 938,
+"name": "Besäumsägen"
+},
+{
+"id": 939,
+"name": "Dekupiersäge"
+},
+{
+"id": 940,
+"name": "Doppelabkürzsägen"
+},
+{
+"id": 941,
+"name": "Doppelwellenkreissägen"
+},
+{
+"id": 942,
+"name": "Gehrungssägen"
+},
+{
+"id": 943,
+"name": "Pendelsägen"
+},
+{
+"id": 944,
+"name": "Kappsägen"
+},
+{
+"id": 945,
+"name": "Klinkschnittsägen"
+},
+{
+"id": 946,
+"name": "Kreissägen"
+},
+{
+"id": 947,
+"name": "Trennsägen"
+},
+{
+"id": 948,
+"name": "Vielblattsägen"
+},
+{
+"id": 949,
+"name": "Zubehör & Ersatzteile für Sägen (Holz)"
+},
+{
+"id": 950,
+"name": "Sonstige Holzsägen"
+},
+{
+"id": 1191,
+"name": "Furniersägen"
+},
+{
+"id": 1423,
+"name": "Plattenaufteilsägen 0-999mm Schnittlänge"
+},
+{
+"id": 1424,
+"name": "Plattenaufteilsägen 1000-2999mm Schnittlänge"
+},
+{
+"id": 1425,
+"name": "Plattenaufteilsägen 3000-3999mm Schnittlänge"
+},
+{
+"id": 1426,
+"name": "Plattenaufteilsägen 4000-4999mm Schnittlänge"
+},
+{
+"id": 1427,
+"name": "Plattenaufteilsägen ab 5000mm Schnittlänge"
+},
+{
+"id": 1428,
+"name": "Formatkreissägen 0-1500mm Schnittlänge"
+},
+{
+"id": 1429,
+"name": "Formatkreissägen 2801-3300mm Schnittlänge"
+},
+{
+"id": 1430,
+"name": "Formatkreissägen 1501-2300mm Schnittlänge"
+},
+{
+"id": 1431,
+"name": "Formatkreissägen 2301-2800mm Schnittlänge"
+},
+{
+"id": 1432,
+"name": "Formatkreissägen 3301-3800mm Schnittlänge"
+},
+{
+"id": 2032,
+"name": "Formatkreissägen ab 3800mm Schnittlänge"
+},
+{
+"id": 2092,
+"name": "Brennholzsägen"
+},
+{
+"id": 2094,
+"name": "Tischkreissägen"
+},
+{
+"id": 2095,
+"name": "Plattensägen stehend"
+},
+{
+"id": 1381,
+"name": "Entrinden"
+},
+{
+"id": 1382,
+"name": "Fördern, schieben & kippen"
+},
+{
+"id": 1383,
+"name": "Sägen & trennen"
+},
+{
+"id": 1384,
+"name": "Fräsen"
+},
+{
+"id": 1385,
+"name": "Hobelmaschinen"
+},
+{
+"id": 1386,
+"name": "Imprägnieranlagen"
+},
+{
+"id": 1387,
+"name": "Sonstige Sägewerke"
+},
+{
+"id": 1388,
+"name": "Trocknen"
+},
+{
+"id": 1389,
+"name": "Komplette Sägewerke (stationär)"
+},
+{
+"id": 1390,
+"name": "Komplette Sägewerke (mobil)"
+},
+{
+"id": 2031,
+"name": "Rundholzplatz"
+},
+{
+"id": 151,
+"name": "Schärfmaschinen"
+},
+{
+"id": 825,
+"name": "Furnierschleifmaschinen"
+},
+{
+"id": 826,
+"name": "Kantenschleifmaschinen & Profilschleifmaschinen"
+},
+{
+"id": 827,
+"name": "Kontaktschleifmaschinen"
+},
+{
+"id": 828,
+"name": "Langbandschleifmaschinen"
+},
+{
+"id": 829,
+"name": "Poliermaschinen"
+},
+{
+"id": 830,
+"name": "Zubehör & Ersatzteile für Holzschleifmaschinen"
+},
+{
+"id": 831,
+"name": "Sonstige Holzschleifmaschinen"
+},
+{
+"id": 1193,
+"name": "Bodenschleifmaschinen"
+},
+{
+"id": 1199,
+"name": "Leistenschleifmaschinen"
+},
+{
+"id": 1273,
+"name": "Rundstabschleifmaschinen"
+},
+{
+"id": 1274,
+"name": "Rahmenschleifmaschinen"
+},
+{
+"id": 1406,
+"name": "Breitbandschleifmaschinen 0-999mm Arbeitsbreite"
+},
+{
+"id": 1407,
+"name": "Breitbandschleifmaschinen 1000-1099mm Arbeitsbreite"
+},
+{
+"id": 1408,
+"name": "Breitbandschleifmaschinen 1100-1199mm Arbeitsbreite"
+},
+{
+"id": 1409,
+"name": "Breitbandschleifmaschinen 1200-1299mm Arbeitsbreite"
+},
+{
+"id": 1410,
+"name": "Breitbandschleifmaschinen 1500-1999mm Arbeitsbreite"
+},
+{
+"id": 1411,
+"name": "Breitbandschleifmaschinen 1300-1499mm Arbeitsbreite"
+},
+{
+"id": 1412,
+"name": "Breitbandschleifmaschinen über 2000mm Arbeitsbreite"
+},
+{
+"id": 1580,
+"name": "Scheibenschleifmaschinen"
+},
+{
+"id": 2069,
+"name": "Kreuzschliffautomaten"
+},
+{
+"id": 2070,
+"name": "Zylinderschleifmaschinen"
+},
+{
+"id": 153,
+"name": "Stemm-Maschinen"
+},
+{
+"id": 154,
+"name": "Trockner"
+},
+{
+"id": 155,
+"name": "Zimmereimaschinen"
+},
+{
+"id": 156,
+"name": "Abbundanlagen"
+},
+{
+"id": 1086,
+"name": "Beschlagcenter"
+},
+{
+"id": 1087,
+"name": "Beschlagscheren & Stanzen"
+},
+{
+"id": 1088,
+"name": "Bohr- & Dübeleintreibmaschinen"
+},
+{
+"id": 1089,
+"name": "Doppelgehrungssägen für Holzfensterbau"
+},
+{
+"id": 1090,
+"name": "Dreh- & Kipptische"
+},
+{
+"id": 1091,
+"name": "Ecklager- & Scherenlagerbohrmaschinen"
+},
+{
+"id": 1092,
+"name": "Fein- & Hydrohobelmaschinen"
+},
+{
+"id": 1093,
+"name": "Fensterlackieranlagen"
+},
+{
+"id": 1094,
+"name": "Gehrungssägen für Holz-Fensterbau"
+},
+{
+"id": 1095,
+"name": "Glasleistensägen"
+},
+{
+"id": 1096,
+"name": "Keilzinkenanlagen"
+},
+{
+"id": 1097,
+"name": "Komplette Produktionslinien"
+},
+{
+"id": 1098,
+"name": "Lamellierpressen"
+},
+{
+"id": 1099,
+"name": "Lochplattenpressen"
+},
+{
+"id": 1100,
+"name": "Montagestationen"
+},
+{
+"id": 1101,
+"name": "Rahmenpressen"
+},
+{
+"id": 1102,
+"name": "Rollenbahnen"
+},
+{
+"id": 1103,
+"name": "Rundbogenfräsgeräte"
+},
+{
+"id": 1104,
+"name": "Schleifmaschinen für Holzfensterbau"
+},
+{
+"id": 1105,
+"name": "Topfbandbohrmaschinen"
+},
+{
+"id": 1106,
+"name": "Umfälzautomaten"
+},
+{
+"id": 1107,
+"name": "Verglasungspressen"
+},
+{
+"id": 1108,
+"name": "Vierseitenhobelmaschinen"
+},
+{
+"id": 1109,
+"name": "Winkelanlagen"
+},
+{
+"id": 1110,
+"name": "Zapfenschneid- & Schlitzmaschinen"
+},
+{
+"id": 1111,
+"name": "Sonstige Holz-Fensterbaumaschinen"
+},
+{
+"id": 1512,
+"name": "Fensterwerkzeuge"
+},
+{
+"id": 1571,
+"name": "Furnierklebemaschinen"
+},
+{
+"id": 1572,
+"name": "Furniernähmaschinen"
+},
+{
+"id": 1573,
+"name": "Furnierpressen"
+},
+{
+"id": 1574,
+"name": "Furniersägen"
+},
+{
+"id": 1575,
+"name": "Furnierscheren"
+},
+{
+"id": 1576,
+"name": "Furnierstanzen"
+},
+{
+"id": 1577,
+"name": "Furnierzusammensetzmaschinen"
+},
+{
+"id": 1578,
+"name": "Sonstige Furnierherstellungsmaschinen"
+},
+{
+"id": 1579,
+"name": "Zubehör & Ersatzteile für Furnierherstellungsmaschinen"
+},
+{
+"id": 2081,
+"name": "Leimauftragsmaschinen"
+},
+{
+"id": 159,
+"name": "Holzhacker"
+},
+{
+"id": 160,
+"name": "Leimauftragsmaschinen"
+},
+{
+"id": 161,
+"name": "Postformingmaschinen"
+},
+{
+"id": 162,
+"name": "Bürstmaschinen"
+},
+{
+"id": 163,
+"name": "Doppelendprofiler"
+},
+{
+"id": 164,
+"name": "Stapel- & Abstapelmaschinen"
+},
+{
+"id": 165,
+"name": "Finiermaschinen"
+},
+{
+"id": 166,
+"name": "Spanplattenherstellung"
+},
+{
+"id": 167,
+"name": "Palettenherstellungsmaschinen"
+},
+{
+"id": 169,
+"name": "Keilzinkenanlagen"
+},
+{
+"id": 171,
+"name": "Optimierungskappanlagen"
+},
+{
+"id": 172,
+"name": "Nagler & Klammergeräte"
+},
+{
+"id": 643,
+"name": "Ummantelungsmaschinen"
+},
+{
+"id": 654,
+"name": "Türenherstellungsmaschinen"
+},
+{
+"id": 655,
+"name": "Vorschübe"
+},
+{
+"id": 659,
+"name": "Sonstige Holzbearbeitungsmaschinen"
+},
+{
+"id": 710,
+"name": "Anschläge & Hilfsmittel"
+},
+{
+"id": 711,
+"name": "Beschneidungsmaschinen"
+},
+{
+"id": 712,
+"name": "Strukturiermaschinen"
+},
+{
+"id": 743,
+"name": "Bedienungsanleitungen"
+},
+{
+"id": 757,
+"name": "Parkettmaschinen"
+},
+{
+"id": 763,
+"name": "Holzspalter"
+},
+{
+"id": 768,
+"name": "Software"
+},
+{
+"id": 772,
+"name": "Komplette Betriebe & Maschinenpakete"
+},
+{
+"id": 1985,
+"name": "Zubehör & Ersatzteile für Holzbearbeitungsmaschinen"
+}
+]
+},
+"4": {
+"name": "Landmaschinen",
+"leaves": [
+{
+"id": 74,
+"name": "Beregnungsanlage"
+},
+{
+"id": 76,
+"name": "Drescher"
+},
+{
+"id": 77,
+"name": "Erntemaschinen"
+},
+{
+"id": 78,
+"name": "Häcksler"
+},
+{
+"id": 79,
+"name": "Forstwirtschaft"
+},
+{
+"id": 80,
+"name": "Frontlader"
+},
+{
+"id": 81,
+"name": "Futtertechnik & Fütterungstechnik"
+},
+{
+"id": 82,
+"name": "Gülletechnik & Dungstreuer"
+},
+{
+"id": 83,
+"name": "Ladetechnik"
+},
+{
+"id": 84,
+"name": "Mähdrescher"
+},
+{
+"id": 85,
+"name": "Pflanzenschutzmaschinen & Düngemaschinen"
+},
+{
+"id": 86,
+"name": "Pflegetechnik"
+},
+{
+"id": 88,
+"name": "Sämaschinen & Pflanzmaschinen"
+},
+{
+"id": 89,
+"name": "Schneidwerke"
+},
+{
+"id": 90,
+"name": "Sichelmäher"
+},
+{
+"id": 92,
+"name": "Traktoren & Schlepper (Landwirtschaft)"
+},
+{
+"id": 93,
+"name": "Transportgeräte & Anhänger"
+},
+{
+"id": 94,
+"name": "Ersatzteile & Zubehör für Landmaschinen"
+},
+{
+"id": 660,
+"name": "Sonstige Landmaschinen"
+},
+{
+"id": 706,
+"name": "Fördertechnik & Lagertechnik"
+},
+{
+"id": 767,
+"name": "Sprühgeräte"
+},
+{
+"id": 785,
+"name": "Gemüsetechnik & Maschinen für Gemüsebau"
+},
+{
+"id": 786,
+"name": "Getreidelagertechnik"
+},
+{
+"id": 789,
+"name": "Hopfentechnik"
+},
+{
+"id": 790,
+"name": "Kartoffeltechnik"
+},
+{
+"id": 792,
+"name": "Reifen, Räder & Felgen für Landmaschinen"
+},
+{
+"id": 793,
+"name": "Rübentechnik"
+},
+{
+"id": 794,
+"name": "Obstbau- & Weinbautechnik"
+},
+{
+"id": 795,
+"name": "Historische Landmaschinen & Oldtimer"
+},
+{
+"id": 2273,
+"name": "Düngerstreuer & Kalkstreuer"
+},
+{
+"id": 2282,
+"name": "Einzelkornsägeräte"
+},
+{
+"id": 2285,
+"name": "Forstfahrzeuge"
+},
+{
+"id": 2294,
+"name": "Heckenscheren"
+},
+{
+"id": 2300,
+"name": "Hofschlepper"
+},
+{
+"id": 2315,
+"name": "Mulcher"
+},
+{
+"id": 2333,
+"name": "Silo (Landwirtschaft)"
+},
+{
+"id": 2336,
+"name": "Stalldungstreuer & Miststreuer"
+},
+{
+"id": 2354,
+"name": "ATV & Quad (Landwirtschaft)"
+},
+{
+"id": 75,
+"name": "Sonstige Bodenbearbeitungsmaschinen"
+},
+{
+"id": 791,
+"name": "Ackerwalzen"
+},
+{
+"id": 2276,
+"name": "Eggenkombinationen"
+},
+{
+"id": 2279,
+"name": "Eggen"
+},
+{
+"id": 2288,
+"name": "Grubber & Kultivatoren"
+},
+{
+"id": 2291,
+"name": "Hacken (Landwirtschaft)"
+},
+{
+"id": 2303,
+"name": "Kreiseleggen"
+},
+{
+"id": 2318,
+"name": "Packer (Landwirtschaft)"
+},
+{
+"id": 2321,
+"name": "Pflüge"
+},
+{
+"id": 2327,
+"name": "Scheibeneggen"
+},
+{
+"id": 2339,
+"name": "Steinzerkleinerer"
+},
+{
+"id": 2345,
+"name": "Vertikutierer (Landwirtschaft)"
+},
+{
+"id": 2351,
+"name": "Zinkenrotoren"
+},
+{
+"id": 2466,
+"name": "Tiefenlockerer"
+},
+{
+"id": 87,
+"name": "Ballenpressen (Landwirtschaft)"
+},
+{
+"id": 694,
+"name": "Heumaschinen, Heuwender & Wiesengeräte"
+},
+{
+"id": 784,
+"name": "Feldhäcksler"
+},
+{
+"id": 787,
+"name": "Sonstige Grünlandtechnik"
+},
+{
+"id": 2270,
+"name": "Ballenwickelgeräte"
+},
+{
+"id": 2306,
+"name": "Ladewagen"
+},
+{
+"id": 2330,
+"name": "Silagetechnik"
+},
+{
+"id": 2342,
+"name": "Trockner (Landwirtschaft)"
+},
+{
+"id": 2456,
+"name": "Mähwerke"
+},
+{
+"id": 2461,
+"name": "Wiesenwalzen"
+},
+{
+"id": 91,
+"name": "Sonstige Stalleinrichtung & Hoftechnik"
+},
+{
+"id": 788,
+"name": "Hoftechnik"
+},
+{
+"id": 2267,
+"name": "Aufstallung"
+},
+{
+"id": 2297,
+"name": "Heizgeräte (Landwirtschaft)"
+},
+{
+"id": 2309,
+"name": "Stallanlagen & Lüftungsanlagen"
+},
+{
+"id": 2312,
+"name": "Melktechnik & Kühltechnik"
+},
+{
+"id": 2324,
+"name": "Reinigungsgeräte (Landwirtschaft)"
+},
+{
+"id": 2348,
+"name": "Waagen & Wiegeeinrichtungen (Landwirtschaft)"
+},
+{
+"id": 2411,
+"name": "Mühlen & Mischer (Landwirtschaft)"
+}
+]
+},
+"5": {
+"name": "Automatisierungstechnik",
+"leaves": [
+{
+"id": 95,
+"name": "Bestückungstechnik"
+},
+{
+"id": 96,
+"name": "Handhabungs-Manipulatoren"
+},
+{
+"id": 97,
+"name": "Montagemaschinen"
+},
+{
+"id": 98,
+"name": "Positioniermaschinen"
+},
+{
+"id": 99,
+"name": "Roboter"
+},
+{
+"id": 100,
+"name": "Schaltanlagen"
+},
+{
+"id": 101,
+"name": "Sortiermaschinen"
+},
+{
+"id": 102,
+"name": "Steuerungen"
+},
+{
+"id": 661,
+"name": "Sonstige Automatisierungsmaschinen"
+}
+]
+},
+"6": {
+"name": "Chemische & pharmazeutische Maschinen",
+"leaves": [
+{
+"id": 616,
+"name": "Absauganlagen"
+},
+{
+"id": 617,
+"name": "Abwasseranlagen"
+},
+{
+"id": 618,
+"name": "Behälter"
+},
+{
+"id": 619,
+"name": "Dampferzeugung"
+},
+{
+"id": 620,
+"name": "Dosieranlagen"
+},
+{
+"id": 621,
+"name": "Entsorgungsanlagen"
+},
+{
+"id": 622,
+"name": "Filtrieranlagen"
+},
+{
+"id": 623,
+"name": "Förderanlagen"
+},
+{
+"id": 624,
+"name": "Füll- & Verschließmaschinen"
+},
+{
+"id": 625,
+"name": "Kapselmaschinen"
+},
+{
+"id": 626,
+"name": "Laboreinrichtungen"
+},
+{
+"id": 627,
+"name": "Mixer"
+},
+{
+"id": 628,
+"name": "Mühlen"
+},
+{
+"id": 629,
+"name": "Laboröfen"
+},
+{
+"id": 630,
+"name": "Pressen für Pharma & Chemie"
+},
+{
+"id": 631,
+"name": "Pumpen"
+},
+{
+"id": 632,
+"name": "Reaktoren, Kessel & Behälter"
+},
+{
+"id": 633,
+"name": "Rührwerke & Mischanlagen"
+},
+{
+"id": 634,
+"name": "Siloanlagen"
+},
+{
+"id": 635,
+"name": "Trocknungsanlagen"
+},
+{
+"id": 636,
+"name": "Verpackungsmaschinen"
+},
+{
+"id": 637,
+"name": "Laborwaagen"
+},
+{
+"id": 638,
+"name": "Wärmetauscher"
+},
+{
+"id": 639,
+"name": "Wärmebehandlung"
+},
+{
+"id": 640,
+"name": "Zentrifugen"
+},
+{
+"id": 641,
+"name": "Zerkleinerungsmaschinen"
+},
+{
+"id": 662,
+"name": "Sonstige chemische & pharmazeutische Maschinen"
+}
+]
+},
+"7": {
+"name": "Transportfahrzeuge & Nutzfahrzeuge",
+"leaves": [
+{
+"id": 1761,
+"name": "Abrollanhänger"
+},
+{
+"id": 1762,
+"name": "Absetzkipper Anhänger"
+},
+{
+"id": 1763,
+"name": "Anhänger Arbeitsbühne"
+},
+{
+"id": 1764,
+"name": "Autotransportanhänger"
+},
+{
+"id": 1765,
+"name": "Baumaschinenanhänger"
+},
+{
+"id": 1766,
+"name": "Bauwagen Anhänger"
+},
+{
+"id": 1767,
+"name": "Betonmischer Anhänger"
+},
+{
+"id": 1768,
+"name": "Bootsanhänger"
+},
+{
+"id": 1769,
+"name": "Dreiseitenkipper Anhänger"
+},
+{
+"id": 1770,
+"name": "Anhänger Fahrgestell"
+},
+{
+"id": 1771,
+"name": "Getränkeanhänger"
+},
+{
+"id": 1772,
+"name": "Glastransportanhänger"
+},
+{
+"id": 1773,
+"name": "Holztransport Anhänger"
+},
+{
+"id": 1774,
+"name": "Kipper Anhänger"
+},
+{
+"id": 1775,
+"name": "Kofferanhänger"
+},
+{
+"id": 1776,
+"name": "Kühlanhänger & Frischdienstkoffer"
+},
+{
+"id": 1777,
+"name": "Motorradanhänger"
+},
+{
+"id": 1778,
+"name": "Möbelliftanhänger"
+},
+{
+"id": 1779,
+"name": "Langmaterialtransporter"
+},
+{
+"id": 1780,
+"name": "Lebensmitteltankanhänger"
+},
+{
+"id": 1781,
+"name": "Pferdeanhänger"
+},
+{
+"id": 1782,
+"name": "PKW-Anhänger"
+},
+{
+"id": 1783,
+"name": "Plattformanhänger"
+},
+{
+"id": 1784,
+"name": "Anhänger mit offener Pritsche"
+},
+{
+"id": 1785,
+"name": "Anhänger mit Pritsche & Plane"
+},
+{
+"id": 1786,
+"name": "Schwerlastanhänger"
+},
+{
+"id": 1787,
+"name": "Anhänger Sonderfahrzeuge"
+},
+{
+"id": 1788,
+"name": "Spezialanhänger & sonstige Anhänger"
+},
+{
+"id": 1789,
+"name": "Tankanhänger"
+},
+{
+"id": 1790,
+"name": "Tieflader Anhänger"
+},
+{
+"id": 1791,
+"name": "Verkaufsanhänger"
+},
+{
+"id": 1792,
+"name": "Viehanhänger"
+},
+{
+"id": 1793,
+"name": "Anhänger Wechselfahrgestell"
+},
+{
+"id": 1951,
+"name": "Siloanhänger"
+},
+{
+"id": 2159,
+"name": "Tieflader Anhänger (Baumaschinen)"
+},
+{
+"id": 2162,
+"name": "Abschiebewagen"
+},
+{
+"id": 2165,
+"name": "Anhänger mit Standardaufbau"
+},
+{
+"id": 2168,
+"name": "Anhänger mit MEGA Aufbau"
+},
+{
+"id": 2171,
+"name": "Muldenkipper Anhänger"
+},
+{
+"id": 2174,
+"name": "Teile & Zubehör für Anhänger"
+},
+{
+"id": 1884,
+"name": "Doppeldeckerbusse"
+},
+{
+"id": 1885,
+"name": "Gelenkbusse"
+},
+{
+"id": 1886,
+"name": "Kleinbusse"
+},
+{
+"id": 1887,
+"name": "Kombibusse"
+},
+{
+"id": 1888,
+"name": "Linienbusse"
+},
+{
+"id": 1889,
+"name": "Stadtbusse"
+},
+{
+"id": 1890,
+"name": "Reisebusse"
+},
+{
+"id": 1891,
+"name": "Überlandbusse"
+},
+{
+"id": 1892,
+"name": "Sonstige Busse"
+},
+{
+"id": 2198,
+"name": "Ersatzteile & Zubehör für Busse"
+},
+{
+"id": 1854,
+"name": "Abschleppwagen"
+},
+{
+"id": 1855,
+"name": "Abrollkipper"
+},
+{
+"id": 1856,
+"name": "Absetzkipper & Container LKW"
+},
+{
+"id": 1857,
+"name": "Autokrane"
+},
+{
+"id": 1858,
+"name": "Autotransporter"
+},
+{
+"id": 1859,
+"name": "Betonmischer LKW"
+},
+{
+"id": 1860,
+"name": "LKW Betonpumpe"
+},
+{
+"id": 1861,
+"name": "Dreiseitenkipper LKW"
+},
+{
+"id": 1862,
+"name": "LKW Fahrgestell"
+},
+{
+"id": 1863,
+"name": "Getreidekipper"
+},
+{
+"id": 1864,
+"name": "LKW mit Getränkeaufbau"
+},
+{
+"id": 1865,
+"name": "Holztransporter LKW"
+},
+{
+"id": 1866,
+"name": "LKW mit Hubarbeitsbühne"
+},
+{
+"id": 1867,
+"name": "Jumbo-LKW"
+},
+{
+"id": 1868,
+"name": "LKW Kipper"
+},
+{
+"id": 1869,
+"name": "LKW mit Kofferaufbau"
+},
+{
+"id": 1870,
+"name": "Lastzug & LKW Zug"
+},
+{
+"id": 1871,
+"name": "LKW mit Kühlkoffer & Frischdienstkoffer"
+},
+{
+"id": 1872,
+"name": "Lebensmitteltankwagen"
+},
+{
+"id": 1873,
+"name": "Müllwagen"
+},
+{
+"id": 1874,
+"name": "Muldenkipper"
+},
+{
+"id": 1875,
+"name": "LKW mit Pritsche (offen)"
+},
+{
+"id": 1876,
+"name": "LKW mit Pritsche & Plane"
+},
+{
+"id": 1877,
+"name": "Saugfahrzeuge & Druckwagen über 7,5t"
+},
+{
+"id": 1878,
+"name": "LKW mit Siloaufbau"
+},
+{
+"id": 1879,
+"name": "LKW mit Tankaufbau & Tankwagen"
+},
+{
+"id": 1880,
+"name": "LKW für Viehtransport & Pferdetransport"
+},
+{
+"id": 1881,
+"name": "LKW mit Verkaufsaufbau"
+},
+{
+"id": 1882,
+"name": "LKW mit Wechselfahrgestell & Wechselbrücke"
+},
+{
+"id": 1883,
+"name": "Spezial-LKW"
+},
+{
+"id": 1949,
+"name": "LKW mit Sonderaufbauten"
+},
+{
+"id": 2138,
+"name": "Kehrmaschine (LKW)"
+},
+{
+"id": 1800,
+"name": "Abschleppwagen bis 7,5t"
+},
+{
+"id": 1801,
+"name": "Abrollkipper bis 7,5t"
+},
+{
+"id": 1802,
+"name": "Absetzkipper bis 7,5t"
+},
+{
+"id": 1803,
+"name": "Autokrane bis 7,5t"
+},
+{
+"id": 1804,
+"name": "Autotransporter bis 7,5t"
+},
+{
+"id": 1805,
+"name": "Dreiseitenkipper bis 7,5t"
+},
+{
+"id": 1806,
+"name": "Transporter Fahrgestell"
+},
+{
+"id": 1807,
+"name": "Geldtransporter"
+},
+{
+"id": 1808,
+"name": "Getränketransporter"
+},
+{
+"id": 1809,
+"name": "Glastransporter"
+},
+{
+"id": 1810,
+"name": "Transporter Kastenwagen"
+},
+{
+"id": 1811,
+"name": "Hochdach-Kastenwagen & Hochdach-Van"
+},
+{
+"id": 1812,
+"name": "Kastenwagen hoch + lang"
+},
+{
+"id": 1813,
+"name": "Kastenwagen lang"
+},
+{
+"id": 1814,
+"name": "Transporter & Pritschenwagen mit Kipper"
+},
+{
+"id": 1815,
+"name": "Transporter mit Kofferaufbau"
+},
+{
+"id": 1816,
+"name": "Kombis & Kleinbusse bis 9 Sitze"
+},
+{
+"id": 1817,
+"name": "Kühlkastenwagen"
+},
+{
+"id": 1818,
+"name": "Kühlkoffer LKW bis 7,5t"
+},
+{
+"id": 1819,
+"name": "Müllwagen bis 7,5t"
+},
+{
+"id": 1820,
+"name": "Pick-up"
+},
+{
+"id": 1821,
+"name": "Pritschenwagen"
+},
+{
+"id": 1822,
+"name": "Transporter mit Pritsche & Plane"
+},
+{
+"id": 1823,
+"name": "Rettungswagen"
+},
+{
+"id": 1824,
+"name": "Saugfahrzeuge & Druckwagen bis 7,5t"
+},
+{
+"id": 1825,
+"name": "Tankwagen"
+},
+{
+"id": 1826,
+"name": "Tiertransporter & Viehtransporter"
+},
+{
+"id": 1827,
+"name": "Wechselfahrgestell Transporter"
+},
+{
+"id": 1828,
+"name": "Andere Transporter & LKW bis 7,5t"
+},
+{
+"id": 2144,
+"name": "Transporter Teile & Zubehör"
+},
+{
+"id": 2147,
+"name": "Leichter Lieferwagen & Kleintransporter"
+},
+{
+"id": 2150,
+"name": "Transporter & LKW bis 7,5t mit Spezialaufbauten"
+},
+{
+"id": 2153,
+"name": "Transporter mit Doppelkabine"
+},
+{
+"id": 2156,
+"name": "Food Trucks & Verkaufswagen"
+},
+{
+"id": 2425,
+"name": "Transporter & LKW bis 7,5t mit Arbeitsbühne"
+},
+{
+"id": 250,
+"name": "Schienen-, Luft- & Wasserfahrzeuge"
+},
+{
+"id": 251,
+"name": "LKW Teile & Zubehör"
+},
+{
+"id": 1795,
+"name": "Gefahrgut LKW"
+},
+{
+"id": 1796,
+"name": "Schwerlast LKW/SZM"
+},
+{
+"id": 1797,
+"name": "Sonstige Sattelzugmaschinen"
+},
+{
+"id": 1798,
+"name": "Standard Sattelzugmaschinen (SZM)"
+},
+{
+"id": 1799,
+"name": "Volumen Sattelzugmaschine (SZM)"
+},
+{
+"id": 2141,
+"name": "Teile & Zubehör für Sattelzugmaschinen (SZM)"
+},
+{
+"id": 663,
+"name": "Sonstige Fahrzeuge"
+},
+{
+"id": 1829,
+"name": "Auflieger mit Arbeitsbühne"
+},
+{
+"id": 1830,
+"name": "Betonmischer Auflieger"
+},
+{
+"id": 1831,
+"name": "Autokran Auflieger"
+},
+{
+"id": 1832,
+"name": "Autotransporter Auflieger"
+},
+{
+"id": 1833,
+"name": "Auflieger Fahrgestell"
+},
+{
+"id": 1834,
+"name": "Getränkeauflieger"
+},
+{
+"id": 1835,
+"name": "Holztransport Auflieger"
+},
+{
+"id": 1836,
+"name": "Kipper Auflieger"
+},
+{
+"id": 1837,
+"name": "Dreiseitenkipper Auflieger"
+},
+{
+"id": 1838,
+"name": "Kofferauflieger"
+},
+{
+"id": 1839,
+"name": "Kühlauflieger & Frischdienstkoffer"
+},
+{
+"id": 1840,
+"name": "Langmaterialtransporter Auflieger"
+},
+{
+"id": 1841,
+"name": "Lebensmitteltank Auflieger"
+},
+{
+"id": 1842,
+"name": "Plattform Auflieger"
+},
+{
+"id": 1843,
+"name": "Auflieger mit offener Pritsche"
+},
+{
+"id": 1844,
+"name": "Auflieger mit Pritsche & Plane"
+},
+{
+"id": 1845,
+"name": "Siloauflieger"
+},
+{
+"id": 1846,
+"name": "Tankauflieger"
+},
+{
+"id": 1847,
+"name": "Tiefkühlauflieger"
+},
+{
+"id": 1848,
+"name": "Tieflader Auflieger (Baumaschinen)"
+},
+{
+"id": 1849,
+"name": "Auflieger mit Verkaufsaufbau"
+},
+{
+"id": 1850,
+"name": "Viehtransporter Auflieger"
+},
+{
+"id": 1851,
+"name": "Auflieger mit Walkingfloor & Schubboden"
+},
+{
+"id": 1852,
+"name": "Auflieger Wechselfahrgestell"
+},
+{
+"id": 1853,
+"name": "Sonderauflieger & sonstige Auflieger"
+},
+{
+"id": 2177,
+"name": "Tieflader Auflieger"
+},
+{
+"id": 2186,
+"name": "Abschiebe-Sattelauflieger"
+},
+{
+"id": 2189,
+"name": "Muldenkipper Auflieger"
+},
+{
+"id": 2192,
+"name": "Teile & Zubehör für Auflieger"
+},
+{
+"id": 2195,
+"name": "Bandauflieger"
+},
+{
+"id": 2132,
+"name": "Oldtimer LKW"
+}
+]
+},
+"8": {
+"name": "Baumaschinen",
+"leaves": [
+{
+"id": 2201,
+"name": "Kompaktor Deponie"
+},
+{
+"id": 2422,
+"name": "Zubehör & Ersatzteile für Abbruch-, Recycling- & Deponiegeräte"
+},
+{
+"id": 104,
+"name": "Baumaschinenanhänger"
+},
+{
+"id": 861,
+"name": "Abbruchbagger"
+},
+{
+"id": 862,
+"name": "Friedhofsbagger"
+},
+{
+"id": 863,
+"name": "Hydraulikbagger"
+},
+{
+"id": 864,
+"name": "Kettenbagger"
+},
+{
+"id": 865,
+"name": "Minibagger"
+},
+{
+"id": 866,
+"name": "Mobilbagger"
+},
+{
+"id": 867,
+"name": "Raupenbagger"
+},
+{
+"id": 868,
+"name": "Schreitbagger"
+},
+{
+"id": 869,
+"name": "Seilbagger"
+},
+{
+"id": 870,
+"name": "Teleskopbagger"
+},
+{
+"id": 871,
+"name": "Umschlagbagger"
+},
+{
+"id": 872,
+"name": "Zweiwegebagger"
+},
+{
+"id": 873,
+"name": "Zubehör & Ersatzteile für Bagger"
+},
+{
+"id": 874,
+"name": "Sonstige Bagger"
+},
+{
+"id": 1179,
+"name": "Schwimmbagger"
+},
+{
+"id": 1442,
+"name": "Hochlöffelbagger"
+},
+{
+"id": 1682,
+"name": "Saugbagger"
+},
+{
+"id": 1683,
+"name": "Baggerlader"
+},
+{
+"id": 106,
+"name": "Baugeräte"
+},
+{
+"id": 107,
+"name": "Baustoffprüfgeräte"
+},
+{
+"id": 108,
+"name": "Baustoffherstellung"
+},
+{
+"id": 1684,
+"name": "Anhänger-Betonpumpe"
+},
+{
+"id": 1685,
+"name": "Autobetonpumpen"
+},
+{
+"id": 1686,
+"name": "Fahrmischer"
+},
+{
+"id": 1687,
+"name": "Fertigteileinrichtungen"
+},
+{
+"id": 1688,
+"name": "Gleitschalungsfertiger"
+},
+{
+"id": 1689,
+"name": "Betonmischanlagen - mobil"
+},
+{
+"id": 1690,
+"name": "Betonmischanlagen - stationär"
+},
+{
+"id": 1691,
+"name": "Betonmischanlagen - Zubehör"
+},
+{
+"id": 1692,
+"name": "Betonsteinformen"
+},
+{
+"id": 1693,
+"name": "Betonsteinmaschinen"
+},
+{
+"id": 1694,
+"name": "Betonsteinfertigungsanlagen"
+},
+{
+"id": 1695,
+"name": "Zubehör & Ersatzteile für Betontechnik & Mörtelaufbereitung"
+},
+{
+"id": 1696,
+"name": "Bohrgeräte - Brunnenbau"
+},
+{
+"id": 1697,
+"name": "Bohrgeräte - horizontal"
+},
+{
+"id": 1698,
+"name": "Bohrgeräte - vertikal"
+},
+{
+"id": 1699,
+"name": "Sonstige Bohrgeräte"
+},
+{
+"id": 1700,
+"name": "Zubehör & Ersatzteile für Bohrgeräte"
+},
+{
+"id": 111,
+"name": "Siebanlagen & Brechanlagen"
+},
+{
+"id": 112,
+"name": "Baucontainer"
+},
+{
+"id": 1701,
+"name": "Knickgelenkdumper"
+},
+{
+"id": 1702,
+"name": "Minidumper"
+},
+{
+"id": 1703,
+"name": "Muldenkipper starr"
+},
+{
+"id": 1704,
+"name": "Raupendumper"
+},
+{
+"id": 1705,
+"name": "Zubehör & Ersatzteile für Dumper"
+},
+{
+"id": 114,
+"name": "Grader"
+},
+{
+"id": 115,
+"name": "Kanalbau & Rohrbau"
+},
+{
+"id": 116,
+"name": "Kipper"
+},
+{
+"id": 117,
+"name": "Kompressoren"
+},
+{
+"id": 1745,
+"name": "Autokräne"
+},
+{
+"id": 1746,
+"name": "Hochbaukrane-Obendreher"
+},
+{
+"id": 1747,
+"name": "Hochbaukrane-Untendreher"
+},
+{
+"id": 1748,
+"name": "Mobilkrane"
+},
+{
+"id": 1749,
+"name": "Raupenkrane"
+},
+{
+"id": 1750,
+"name": "Sonstige Krane"
+},
+{
+"id": 1751,
+"name": "Zubehör & Ersatzteile für Krane"
+},
+{
+"id": 816,
+"name": "Hoflader"
+},
+{
+"id": 817,
+"name": "Kleinlader"
+},
+{
+"id": 818,
+"name": "Knicklader"
+},
+{
+"id": 819,
+"name": "Kompaktlader"
+},
+{
+"id": 820,
+"name": "Radlader"
+},
+{
+"id": 821,
+"name": "Teleskoplader"
+},
+{
+"id": 822,
+"name": "Schwenklader"
+},
+{
+"id": 823,
+"name": "Zubehör & Ersatzteile für Lader"
+},
+{
+"id": 824,
+"name": "Sonstige Lader"
+},
+{
+"id": 120,
+"name": "Betonpressen"
+},
+{
+"id": 121,
+"name": "Pumpen"
+},
+{
+"id": 122,
+"name": "Putzmaschinen"
+},
+{
+"id": 123,
+"name": "Rammen & Ziehgeräte"
+},
+{
+"id": 1752,
+"name": "Zubehör & Ersatzteile für Raupen"
+},
+{
+"id": 1753,
+"name": "Laderaupen"
+},
+{
+"id": 1754,
+"name": "Planierraupen & Bulldozer"
+},
+{
+"id": 1755,
+"name": "Rohrleger"
+},
+{
+"id": 1756,
+"name": "Schürfkübelraupen"
+},
+{
+"id": 1948,
+"name": "Sonstige Raupen"
+},
+{
+"id": 125,
+"name": "Rüttelplatten"
+},
+{
+"id": 126,
+"name": "Schalungstechnik"
+},
+{
+"id": 127,
+"name": "Schleifen & Schneiden"
+},
+{
+"id": 128,
+"name": "Stampfer"
+},
+{
+"id": 129,
+"name": "Stanz- & Biegemaschinen (Bauwesen)"
+},
+{
+"id": 131,
+"name": "Straßenfertiger"
+},
+{
+"id": 132,
+"name": "Stromgenerator & Stromerzeuger"
+},
+{
+"id": 2207,
+"name": "Scherenarbeitsbühnen"
+},
+{
+"id": 2210,
+"name": "Selbstfahrende Arbeitsbühnen"
+},
+{
+"id": 2213,
+"name": "Spezial-Arbeitsbühnen"
+},
+{
+"id": 2216,
+"name": "Sonstige Arbeitsbühnen"
+},
+{
+"id": 2219,
+"name": "Raupenarbeitsbühnen"
+},
+{
+"id": 2222,
+"name": "Teleskoparbeitsbühnen"
+},
+{
+"id": 1711,
+"name": "Anhängewalzen"
+},
+{
+"id": 1712,
+"name": "Grabenwalzen"
+},
+{
+"id": 1713,
+"name": "Kombiwalzen"
+},
+{
+"id": 1714,
+"name": "Tandemwalzen"
+},
+{
+"id": 1715,
+"name": "Walzenzüge"
+},
+{
+"id": 1716,
+"name": "Zubehör & Ersatzteile für Walzen für Bau & Straßenbau"
+},
+{
+"id": 1950,
+"name": "Sonstige Walzen"
+},
+{
+"id": 135,
+"name": "Werkzeuge"
+},
+{
+"id": 524,
+"name": "Grabenfräsen"
+},
+{
+"id": 664,
+"name": "Spezial-Baumaschinen"
+},
+{
+"id": 1667,
+"name": "Asphaltfräsen"
+},
+{
+"id": 1668,
+"name": "Beschicker"
+},
+{
+"id": 1669,
+"name": "Abbruchbagger"
+},
+{
+"id": 1670,
+"name": "Gusskocher"
+},
+{
+"id": 1671,
+"name": "Kettenfertiger"
+},
+{
+"id": 1672,
+"name": "Kleinfertiger"
+},
+{
+"id": 1673,
+"name": "Micromaschinen"
+},
+{
+"id": 1674,
+"name": "Asphaltmischanlagen - mobil"
+},
+{
+"id": 1675,
+"name": "Asphaltmischanlagen - stationär"
+},
+{
+"id": 1676,
+"name": "Asphaltmischanlagen - Zubehör"
+},
+{
+"id": 1677,
+"name": "Radfertiger"
+},
+{
+"id": 1678,
+"name": "Asphaltrecycler"
+},
+{
+"id": 1679,
+"name": "Splitmaschinen"
+},
+{
+"id": 1680,
+"name": "Thermo Container"
+},
+{
+"id": 1681,
+"name": "Zubehör & Ersatzteile für Asphalttechnik"
+},
+{
+"id": 1947,
+"name": "Sonstige Asphalttechnik"
+},
+{
+"id": 2225,
+"name": "Asphaltfertiger"
+},
+{
+"id": 2228,
+"name": "Asphaltmischanlage"
+},
+{
+"id": 1651,
+"name": "Abbruchgreifer"
+},
+{
+"id": 1652,
+"name": "Abbruchhämmer"
+},
+{
+"id": 1653,
+"name": "Abbruchscheren"
+},
+{
+"id": 1654,
+"name": "Anbaukrane"
+},
+{
+"id": 1655,
+"name": "Bodenverdichter"
+},
+{
+"id": 1656,
+"name": "Brecherlöffel"
+},
+{
+"id": 1657,
+"name": "Erdbohrer"
+},
+{
+"id": 1658,
+"name": "Löffel"
+},
+{
+"id": 1659,
+"name": "Palettengabeln"
+},
+{
+"id": 1660,
+"name": "Pulverisierer"
+},
+{
+"id": 1661,
+"name": "Reißzähne"
+},
+{
+"id": 1662,
+"name": "Schalengreifer"
+},
+{
+"id": 1663,
+"name": "Schaufeln"
+},
+{
+"id": 1664,
+"name": "Schnellwechsler"
+},
+{
+"id": 1665,
+"name": "Sonstige Anbaugeräte für Baumaschinen"
+},
+{
+"id": 1666,
+"name": "Zubehör & Ersatzteile für Anbaugeräte (Bauwesen)"
+},
+{
+"id": 1706,
+"name": "Zubehör & Ersatzteile für Fräsen (Bauwesen)"
+},
+{
+"id": 1707,
+"name": "Baumstumpffräsen"
+},
+{
+"id": 1708,
+"name": "Grabenfräsen"
+},
+{
+"id": 1709,
+"name": "Mobilfräsen"
+},
+{
+"id": 1710,
+"name": "Universalfräsen"
+},
+{
+"id": 775,
+"name": "Bodenstabilisierer"
+},
+{
+"id": 776,
+"name": "Gleisbaumaschinen"
+},
+{
+"id": 1717,
+"name": "Achsen"
+},
+{
+"id": 1718,
+"name": "Dichtungssätze"
+},
+{
+"id": 1719,
+"name": "Drehdurchführung"
+},
+{
+"id": 1720,
+"name": "Drehkränze"
+},
+{
+"id": 1721,
+"name": "Drehmomentwandler"
+},
+{
+"id": 1722,
+"name": "Drehwerksgetriebe"
+},
+{
+"id": 1723,
+"name": "Elektrik"
+},
+{
+"id": 1724,
+"name": "Ersatzteilträger"
+},
+{
+"id": 1725,
+"name": "Fahrwerke"
+},
+{
+"id": 1726,
+"name": "Filtersätze"
+},
+{
+"id": 1727,
+"name": "Gelenkwellen"
+},
+{
+"id": 1728,
+"name": "Getriebe für Baumaschinen"
+},
+{
+"id": 1729,
+"name": "Hydrauliktechnik"
+},
+{
+"id": 1730,
+"name": "Karosserie"
+},
+{
+"id": 1731,
+"name": "Ketten"
+},
+{
+"id": 1732,
+"name": "Kraftstofftechnik"
+},
+{
+"id": 1733,
+"name": "Kühltechnik für Baumaschinen"
+},
+{
+"id": 1734,
+"name": "Ladeschwinge & Ausleger"
+},
+{
+"id": 1735,
+"name": "Lastschaltgetriebe"
+},
+{
+"id": 1736,
+"name": "Benzinmotoren für Baumaschinen"
+},
+{
+"id": 1737,
+"name": "Dieselmotoren für Baumaschinen"
+},
+{
+"id": 1738,
+"name": "Elektromotoren für Baumaschinen"
+},
+{
+"id": 1739,
+"name": "Motorenteile"
+},
+{
+"id": 1740,
+"name": "Partikelfilter"
+},
+{
+"id": 1741,
+"name": "Planetensätze"
+},
+{
+"id": 1742,
+"name": "Reifen & Räder für Baumaschinen"
+},
+{
+"id": 1743,
+"name": "Sonstige Ersatzteile & Zubehör für Baumaschinen"
+},
+{
+"id": 1744,
+"name": "Steuerblöcke & Ventile"
+},
+{
+"id": 778,
+"name": "Raddozer"
+},
+{
+"id": 779,
+"name": "Scraper"
+},
+{
+"id": 780,
+"name": "Tunnelbaumaschinen"
+},
+{
+"id": 1757,
+"name": "Produktionsanlagen für Gestein"
+},
+{
+"id": 1758,
+"name": "Produktionsanlagen für Metall"
+},
+{
+"id": 1759,
+"name": "Produktionsanlagen für Müll"
+},
+{
+"id": 1760,
+"name": "Papierproduktionsanlagen"
+},
+{
+"id": 2204,
+"name": "Estrichpumpe"
+},
+{
+"id": 2231,
+"name": "Leitern & Gerüste"
+},
+{
+"id": 2426,
+"name": "Lichtmasten"
+}
+]
+},
+"9": {
+"name": "Lebensmitteltechnik",
+"leaves": [
+{
+"id": 988,
+"name": "Abwieger"
+},
+{
+"id": 989,
+"name": "Anschlagmaschinen"
+},
+{
+"id": 990,
+"name": "Ausrollmaschinen"
+},
+{
+"id": 991,
+"name": "Blitzkneter"
+},
+{
+"id": 992,
+"name": "Brötchenanlagen"
+},
+{
+"id": 993,
+"name": "Doppeltkonuskneter"
+},
+{
+"id": 994,
+"name": "Fettbackgeräte"
+},
+{
+"id": 995,
+"name": "Füll- & Formmaschinen"
+},
+{
+"id": 996,
+"name": "Gabelkneter"
+},
+{
+"id": 997,
+"name": "Hörnchenwickelmaschinen"
+},
+{
+"id": 998,
+"name": "Hubkneter"
+},
+{
+"id": 999,
+"name": "Kopfmaschinen"
+},
+{
+"id": 1000,
+"name": "Backöfen"
+},
+{
+"id": 1001,
+"name": "Planetenrührmaschinen"
+},
+{
+"id": 1002,
+"name": "Rundwirker & Langwirkmaschinen"
+},
+{
+"id": 1003,
+"name": "Schneidemaschinen"
+},
+{
+"id": 1004,
+"name": "Schneidetische"
+},
+{
+"id": 1005,
+"name": "Spiralkneter"
+},
+{
+"id": 1006,
+"name": "Teigauspressmaschinen"
+},
+{
+"id": 1007,
+"name": "Teigausrollmaschinen"
+},
+{
+"id": 1008,
+"name": "Teigteiler & Wirkmaschinen"
+},
+{
+"id": 1009,
+"name": "Wendelkneter"
+},
+{
+"id": 1010,
+"name": "Zubehör & Ersatzteile für Bäckereimaschinen"
+},
+{
+"id": 1011,
+"name": "Sonstige Bäckereimaschinen"
+},
+{
+"id": 1201,
+"name": "Brotanlagen"
+},
+{
+"id": 1203,
+"name": "Profilrichtmaschinen"
+},
+{
+"id": 1204,
+"name": "Teilerichtmaschinen"
+},
+{
+"id": 1205,
+"name": "Wellenrichtmaschinen"
+},
+{
+"id": 1206,
+"name": "Sonstige"
+},
+{
+"id": 1588,
+"name": "Mühlen"
+},
+{
+"id": 1589,
+"name": "Restbrotzerkleinerer"
+},
+{
+"id": 1590,
+"name": "Sauerteiganlagen"
+},
+{
+"id": 1592,
+"name": "Feingebäcklinien"
+},
+{
+"id": 2091,
+"name": "Hebekipper"
+},
+{
+"id": 301,
+"name": "Brauereianlagen"
+},
+{
+"id": 302,
+"name": "Dekanter"
+},
+{
+"id": 303,
+"name": "Eismaschinen"
+},
+{
+"id": 304,
+"name": "Fettherstellung & Verarbeitung"
+},
+{
+"id": 305,
+"name": "Filter (Lebensmitteltechnik)"
+},
+{
+"id": 306,
+"name": "Fischverarbeitungsmaschinen"
+},
+{
+"id": 307,
+"name": "Fleischverarbeitungsmaschinen"
+},
+{
+"id": 308,
+"name": "Gastronomiemaschinen & -Geräte"
+},
+{
+"id": 309,
+"name": "Getränkeautomaten"
+},
+{
+"id": 310,
+"name": "Getränkemaschinen"
+},
+{
+"id": 311,
+"name": "Getreideverarbeitung"
+},
+{
+"id": 312,
+"name": "Kaffee-, Tee- & Tabakmaschinen"
+},
+{
+"id": 313,
+"name": "Kartoffelchipsherstellungsmaschinen"
+},
+{
+"id": 314,
+"name": "Kochkessel"
+},
+{
+"id": 315,
+"name": "Küchentechnik"
+},
+{
+"id": 316,
+"name": "Kühlanlagen für Lebensmittel"
+},
+{
+"id": 317,
+"name": "Labortechnik für Lebensmittel"
+},
+{
+"id": 318,
+"name": "Lagerung & Handhabung von Lebensmitteln"
+},
+{
+"id": 319,
+"name": "Maschinen für Feinkost"
+},
+{
+"id": 320,
+"name": "Milch & Milchprodukte"
+},
+{
+"id": 321,
+"name": "Mischanlagen für Lebensmittel"
+},
+{
+"id": 322,
+"name": "Mühlen für Lebensmittel"
+},
+{
+"id": 323,
+"name": "Molkereianlagen"
+},
+{
+"id": 324,
+"name": "Obstverarbeitung & Gemüseverarbeitung"
+},
+{
+"id": 325,
+"name": "Ölherstellung"
+},
+{
+"id": 326,
+"name": "Popcornmaschinen"
+},
+{
+"id": 327,
+"name": "Pastamaschinen"
+},
+{
+"id": 328,
+"name": "Pulverherstellung & Verarbeitung"
+},
+{
+"id": 329,
+"name": "Reinigungstechnik"
+},
+{
+"id": 330,
+"name": "Separatoren für Lebensmittel"
+},
+{
+"id": 331,
+"name": "Siebanlagen für Lebensmittel"
+},
+{
+"id": 332,
+"name": "Süßwarenmaschinen"
+},
+{
+"id": 333,
+"name": "Trockner für Lebensmittel"
+},
+{
+"id": 334,
+"name": "Verpackungsmaschinen"
+},
+{
+"id": 335,
+"name": "Waagen (Lebensmittel)"
+},
+{
+"id": 336,
+"name": "Zuckerindustrieanlagen"
+},
+{
+"id": 653,
+"name": "Räucheranlagen"
+},
+{
+"id": 665,
+"name": "Sonstige Lebensmitteltechnik"
+},
+{
+"id": 719,
+"name": "Anschlagmaschinen"
+},
+{
+"id": 720,
+"name": "Mengenmaschinen"
+},
+{
+"id": 2082,
+"name": "Pumpen (Lebensmitteltechnik)"
+}
+]
+},
+"10": {
+"name": "Lagertechnik",
+"leaves": [
+{
+"id": 384,
+"name": "Aufsatzrahmen"
+},
+{
+"id": 1443,
+"name": "Bürocontainer & Wohncontainer"
+},
+{
+"id": 1444,
+"name": "Seecontainer & Lagercontainer"
+},
+{
+"id": 1445,
+"name": "Sonstige Wechselbehälter & Container"
+},
+{
+"id": 1446,
+"name": "Tankcontainer"
+},
+{
+"id": 1447,
+"name": "Zubehör & Ersatzteile für Container"
+},
+{
+"id": 1794,
+"name": "Wechselbrücken mit Pritsche"
+},
+{
+"id": 2234,
+"name": "Abrollcontainer"
+},
+{
+"id": 2237,
+"name": "Absetzcontainer"
+},
+{
+"id": 2240,
+"name": "Bulk Container"
+},
+{
+"id": 2243,
+"name": "Kühlcontainer"
+},
+{
+"id": 2246,
+"name": "Sanitärcontainer"
+},
+{
+"id": 2249,
+"name": "Spezialcontainer"
+},
+{
+"id": 2255,
+"name": "Wechselbrücken mit Kofferaufbau"
+},
+{
+"id": 2258,
+"name": "Wechselbrücken mit Kühlkoffer"
+},
+{
+"id": 2261,
+"name": "Wechselbrücken mit Pritsche & Plane"
+},
+{
+"id": 387,
+"name": "Gitterboxen"
+},
+{
+"id": 388,
+"name": "Glaslager"
+},
+{
+"id": 389,
+"name": "Lagerhallen & sonstige Hallen"
+},
+{
+"id": 391,
+"name": "Kommissionierlager"
+},
+{
+"id": 393,
+"name": "Hallenkrane & Lagerkrane"
+},
+{
+"id": 394,
+"name": "Paletten"
+},
+{
+"id": 397,
+"name": "Plattenlagerung"
+},
+{
+"id": 399,
+"name": "Silos"
+},
+{
+"id": 656,
+"name": "Hochregallager"
+},
+{
+"id": 666,
+"name": "Sonstige Lagertechnik"
+},
+{
+"id": 695,
+"name": "Paternoster & Lagerlifte"
+},
+{
+"id": 699,
+"name": "Lagerschränke für Gefahrstoffe"
+},
+{
+"id": 731,
+"name": "Hubtische"
+},
+{
+"id": 732,
+"name": "Scherenhubtische"
+},
+{
+"id": 733,
+"name": "Trolleyanlagen"
+},
+{
+"id": 752,
+"name": "Stapelboxen"
+},
+{
+"id": 760,
+"name": "Lagerbühnen"
+},
+{
+"id": 765,
+"name": "Rollregalanlagen"
+},
+{
+"id": 1984,
+"name": "Lagertanks"
+},
+{
+"id": 2033,
+"name": "Lagerbeleuchtung & Hallenbeleuchtung"
+},
+{
+"id": 386,
+"name": "Durchlaufregale"
+},
+{
+"id": 392,
+"name": "Kragarmregale"
+},
+{
+"id": 395,
+"name": "Paletten-Durchlaufregale"
+},
+{
+"id": 396,
+"name": "Paletten-Einfahrregale"
+},
+{
+"id": 398,
+"name": "Schwerlastregale"
+},
+{
+"id": 707,
+"name": "Paletten-Freilagerregale"
+},
+{
+"id": 728,
+"name": "Weitspannregale"
+},
+{
+"id": 729,
+"name": "Steckregale"
+},
+{
+"id": 730,
+"name": "Schraubregale"
+},
+{
+"id": 734,
+"name": "Kabeltrommelregale"
+}
+]
+},
+"11": {
+"name": "Medizintechnik",
+"leaves": [
+{
+"id": 337,
+"name": "Beatmungstechnik"
+},
+{
+"id": 338,
+"name": "Diagnosegeräte"
+},
+{
+"id": 339,
+"name": "Elektromedizinische Geräte"
+},
+{
+"id": 340,
+"name": "Krankenhauseinrichtungen"
+},
+{
+"id": 341,
+"name": "Labortechnik"
+},
+{
+"id": 342,
+"name": "Laser"
+},
+{
+"id": 343,
+"name": "Nuklearmedizinische Geräte"
+},
+{
+"id": 344,
+"name": "Operationseinrichtungen"
+},
+{
+"id": 345,
+"name": "Pumpen"
+},
+{
+"id": 346,
+"name": "Sehtestgeräte"
+},
+{
+"id": 347,
+"name": "Überwachungsgeräte"
+},
+{
+"id": 348,
+"name": "Ultraschallgeräte"
+},
+{
+"id": 349,
+"name": "Verbrauchsmaterial"
+},
+{
+"id": 350,
+"name": "Zahnmedizin"
+},
+{
+"id": 351,
+"name": "Bildgebende Systeme"
+},
+{
+"id": 652,
+"name": "Dialysetechnik"
+},
+{
+"id": 667,
+"name": "Sonstige Medizintechnik"
+}
+]
+},
+"12": {
+"name": "Bürotechnik",
+"leaves": [
+{
+"id": 190,
+"name": "Aktenvernichter"
+},
+{
+"id": 191,
+"name": "Bürodrucker"
+},
+{
+"id": 192,
+"name": "Falzmaschinen"
+},
+{
+"id": 193,
+"name": "Frankiermaschinen"
+},
+{
+"id": 194,
+"name": "Kuvertiermaschinen"
+},
+{
+"id": 195,
+"name": "Kopierer"
+},
+{
+"id": 196,
+"name": "Lichtpausmaschinen"
+},
+{
+"id": 197,
+"name": "Büromöbel"
+},
+{
+"id": 198,
+"name": "Schreibmaschinen"
+},
+{
+"id": 199,
+"name": "Telefonanlagen & Faxgeräte"
+},
+{
+"id": 200,
+"name": "Tresore"
+},
+{
+"id": 201,
+"name": "Videoprojektionsgeräte"
+},
+{
+"id": 668,
+"name": "Sonstige Bürotechnik"
+},
+{
+"id": 737,
+"name": "Computerprogramme"
+},
+{
+"id": 754,
+"name": "Geldbearbeitungsmaschinen"
+}
+]
+},
+"13": {
+"name": "Verpackungsmaschinen",
+"leaves": [
+{
+"id": 525,
+"name": "Abfüllanlagen"
+},
+{
+"id": 526,
+"name": "Abpackmaschinen"
+},
+{
+"id": 527,
+"name": "Aluverpackungsmaschinen"
+},
+{
+"id": 528,
+"name": "Banderoliermaschinen"
+},
+{
+"id": 529,
+"name": "Blisterverpackungsmaschinen"
+},
+{
+"id": 530,
+"name": "Etikettieranlagen"
+},
+{
+"id": 531,
+"name": "Herstellung von Verpackungsmaterial"
+},
+{
+"id": 532,
+"name": "Kartonverpackungsmaschinen"
+},
+{
+"id": 533,
+"name": "Kuvertiermaschinen"
+},
+{
+"id": 534,
+"name": "Papierverpackungsmaschinen"
+},
+{
+"id": 535,
+"name": "Palettierer & Palettieranlagen"
+},
+{
+"id": 536,
+"name": "Schlauchbeutelmaschinen"
+},
+{
+"id": 537,
+"name": "Schrumpfanlagen"
+},
+{
+"id": 538,
+"name": "Siegelrandbeutelmaschinen"
+},
+{
+"id": 539,
+"name": "Tiefziehmaschinen"
+},
+{
+"id": 540,
+"name": "Umreifungsmaschinen"
+},
+{
+"id": 541,
+"name": "Vakuumverpackungsmaschinen"
+},
+{
+"id": 542,
+"name": "Verschliessmaschinen"
+},
+{
+"id": 543,
+"name": "Wickler"
+},
+{
+"id": 544,
+"name": "Wiege-Füllmaschinen"
+},
+{
+"id": 669,
+"name": "Sonstige Verpackungsmaschinen"
+},
+{
+"id": 698,
+"name": "Endbearbeitungsmaschinen"
+},
+{
+"id": 725,
+"name": "Flachfolienanlagen"
+},
+{
+"id": 749,
+"name": "Steigenaufrichter"
+}
+]
+},
+"14": {
+"name": "Kunststoffverarbeitung & Kunststofftechnik",
+"leaves": [
+{
+"id": 445,
+"name": "Abzüge"
+},
+{
+"id": 446,
+"name": "Agglomeratoren"
+},
+{
+"id": 447,
+"name": "Kunststoffaufbereitung & Recycling"
+},
+{
+"id": 448,
+"name": "Bearbeitungs-, Verarbeitungs- & Folgemaschinen"
+},
+{
+"id": 449,
+"name": "Blasformmaschinen"
+},
+{
+"id": 450,
+"name": "Druckmaschinen"
+},
+{
+"id": 451,
+"name": "Ersatzteile, Werkzeuge & Bauteile für Kunststoffverarbeitung & Kunststofftechnik"
+},
+{
+"id": 452,
+"name": "Extruder & Extrusionsanlagen"
+},
+{
+"id": 1060,
+"name": "Armierungsschrauber"
+},
+{
+"id": 1061,
+"name": "Ausklinkfräsen für Kunststoff-Fensterbau"
+},
+{
+"id": 1062,
+"name": "Doppelgehrungssägen für Kunststoff-Fensterbau"
+},
+{
+"id": 1063,
+"name": "Stanzen für Kunststoff-Fensterbau"
+},
+{
+"id": 1064,
+"name": "Eckenputzautomaten"
+},
+{
+"id": 1065,
+"name": "Eckverbindungspressen für Kunststoff-Fensterbau"
+},
+{
+"id": 1066,
+"name": "Einkopfschweissmaschinen"
+},
+{
+"id": 1067,
+"name": "Einrollmaschinen"
+},
+{
+"id": 1068,
+"name": "Einspindelkopierfräsen für Kunststoff-Fensterbau"
+},
+{
+"id": 1069,
+"name": "Flügelbeschlagstationen"
+},
+{
+"id": 1070,
+"name": "Gehrungssägen für Kunststoff-Fensterbau"
+},
+{
+"id": 1071,
+"name": "Glasleistensägen für Kunststoff-Fensterbau"
+},
+{
+"id": 1072,
+"name": "Handabstechgeräte"
+},
+{
+"id": 1073,
+"name": "Komplette Produktionlinien"
+},
+{
+"id": 1074,
+"name": "Kopierfräsen für Kunststoff-Fensterbau"
+},
+{
+"id": 1075,
+"name": "Mehrkopfschweissmaschinen"
+},
+{
+"id": 1076,
+"name": "Schraubautomaten"
+},
+{
+"id": 1077,
+"name": "Schweißmaschinen für Kunststoff-Fensterbau"
+},
+{
+"id": 1078,
+"name": "Spindelkopierfräsen für Kunststoff-Fensterbau"
+},
+{
+"id": 1079,
+"name": "Tischkreissägen für Kunststoff-Fensterbau"
+},
+{
+"id": 1080,
+"name": "Türbandbohrmaschinen"
+},
+{
+"id": 1081,
+"name": "Unterflursägen"
+},
+{
+"id": 1082,
+"name": "Verputzautomaten"
+},
+{
+"id": 1083,
+"name": "Verglasungspressen"
+},
+{
+"id": 1084,
+"name": "Wasserschlitzfräsen"
+},
+{
+"id": 1085,
+"name": "Sonstige Fensterbaumaschinen (Kunststoff)"
+},
+{
+"id": 1364,
+"name": "Zubehör & Werkzeuge für Kunststoff-Fensterbaumaschinen"
+},
+{
+"id": 1405,
+"name": "Klinkschnittsägen für Kunststoff-Fensterbau"
+},
+{
+"id": 2034,
+"name": "Zuschnitt- & Bearbeitungszentren für Kunststoff-Fensterbau"
+},
+{
+"id": 454,
+"name": "Formen"
+},
+{
+"id": 455,
+"name": "Folienbearbeitungsmaschinen"
+},
+{
+"id": 456,
+"name": "Granulieranlagen"
+},
+{
+"id": 457,
+"name": "Gummiverarbeitungsmaschinen"
+},
+{
+"id": 458,
+"name": "Kalander & Walzwerke"
+},
+{
+"id": 459,
+"name": "Komplette Produktionslinien"
+},
+{
+"id": 460,
+"name": "Veredeln, Dekorieren, Drucken & Markieren"
+},
+{
+"id": 461,
+"name": "Mischer"
+},
+{
+"id": 462,
+"name": "Mühlen (Kunststoff)"
+},
+{
+"id": 463,
+"name": "Polyurethanverarbeitungsmaschinen"
+},
+{
+"id": 464,
+"name": "Pressen für Kunststoff"
+},
+{
+"id": 465,
+"name": "Qualitätskontrollmaschinen"
+},
+{
+"id": 466,
+"name": "Schweißmaschinen"
+},
+{
+"id": 1207,
+"name": "CD-Herstellung"
+},
+{
+"id": 1208,
+"name": "Spritzgießmaschinen für duroplastische & thermoplastische Massen"
+},
+{
+"id": 1209,
+"name": "Greifer für Kunststoffmaschinen"
+},
+{
+"id": 1210,
+"name": "Mehrkomponentenspritzgießmaschinen"
+},
+{
+"id": 1211,
+"name": "Spritzgießmaschinen für Metall- & Keramikverarbeitung"
+},
+{
+"id": 1212,
+"name": "Spritzgießmaschinen für PET-Verarbeitung"
+},
+{
+"id": 1213,
+"name": "Spritzgießmaschinen Schließkraft 0 - 249 kN"
+},
+{
+"id": 1214,
+"name": "Spritzgießmaschinen Schließkraft 250 - 999 kN"
+},
+{
+"id": 1215,
+"name": "Spritzgießmaschinen Schließkraft 1.000 - 4.999 kN"
+},
+{
+"id": 1216,
+"name": "Spritzgießmaschinen Schließkraft 5.000 - 9.999 kN"
+},
+{
+"id": 1217,
+"name": "Spritzgießmaschinen Schließkraft über 10.000 kN"
+},
+{
+"id": 1218,
+"name": "Zubehör & Ersatzteile für Spritzgießmaschinen"
+},
+{
+"id": 1219,
+"name": "Sonstige Spritzgießmaschinen"
+},
+{
+"id": 468,
+"name": "Thermoformen"
+},
+{
+"id": 469,
+"name": "Tiefziehmaschinen"
+},
+{
+"id": 470,
+"name": "Trockner"
+},
+{
+"id": 471,
+"name": "Wickler"
+},
+{
+"id": 670,
+"name": "Sonstige Kunststoffverarbeitungsmaschinen & Kunststofftechnik"
+},
+{
+"id": 716,
+"name": "Schnellmaschinen"
+},
+{
+"id": 738,
+"name": "Handlinggeräte & Roboter"
+},
+{
+"id": 739,
+"name": "Heiz- & Kühlgeräte"
+},
+{
+"id": 740,
+"name": "Peripheriegeräte"
+}
+]
+},
+"15": {
+"name": "Energietechnik",
+"leaves": [
+{
+"id": 56,
+"name": "Blockheizkraftwerke"
+},
+{
+"id": 57,
+"name": "Dampfkessel"
+},
+{
+"id": 58,
+"name": "Dampfturbinen"
+},
+{
+"id": 59,
+"name": "Dieselaggregate"
+},
+{
+"id": 60,
+"name": "Druckluft"
+},
+{
+"id": 61,
+"name": "Gastechnik"
+},
+{
+"id": 62,
+"name": "Generatoren"
+},
+{
+"id": 63,
+"name": "Heizungen & Gebläse"
+},
+{
+"id": 64,
+"name": "Kälteanlagen"
+},
+{
+"id": 65,
+"name": "Ersatzteile, Komponenten & Zubehör für Energietechnik"
+},
+{
+"id": 66,
+"name": "Notstromaggregate"
+},
+{
+"id": 67,
+"name": "Photovoltaik Module"
+},
+{
+"id": 68,
+"name": "Schaltanlagen & Schaltkomponenten"
+},
+{
+"id": 69,
+"name": "Stromerzeuger"
+},
+{
+"id": 70,
+"name": "Transformatoren"
+},
+{
+"id": 71,
+"name": "Wärmetauscher"
+},
+{
+"id": 72,
+"name": "Wasserkraftanlagen"
+},
+{
+"id": 73,
+"name": "Windkraftanlagen"
+},
+{
+"id": 671,
+"name": "Sonstige Energietechnik"
+},
+{
+"id": 782,
+"name": "Unterbrechungsfreie Stromversorgung (USV)"
+},
+{
+"id": 2471,
+"name": "Biogasanlagen"
+},
+{
+"id": 2491,
+"name": "Wärmepumpen"
+},
+{
+"id": 2496,
+"name": "Batteriespeicher"
+},
+{
+"id": 2501,
+"name": "Photovoltaik Wechselrichter"
+}
+]
+},
+"16": {
+"name": "Druckereimaschinen & Druckmaschinen",
+"leaves": [
+{
+"id": 173,
+"name": "Formulardruckmaschinen"
+},
+{
+"id": 174,
+"name": "Buchbindereimaschinen"
+},
+{
+"id": 175,
+"name": "Repromaschinen"
+},
+{
+"id": 176,
+"name": "Buchdruckmaschinen"
+},
+{
+"id": 177,
+"name": "Digitaldruckmaschinen"
+},
+{
+"id": 842,
+"name": "Andruckpressen"
+},
+{
+"id": 843,
+"name": "Belichter"
+},
+{
+"id": 844,
+"name": "Drucker"
+},
+{
+"id": 845,
+"name": "Entwicklungsmaschinen"
+},
+{
+"id": 846,
+"name": "Großformatdrucker & Plotter"
+},
+{
+"id": 847,
+"name": "Kameras"
+},
+{
+"id": 848,
+"name": "Kontaktgeräte"
+},
+{
+"id": 849,
+"name": "Kopierer"
+},
+{
+"id": 850,
+"name": "Proofgeräte"
+},
+{
+"id": 851,
+"name": "Scanner"
+},
+{
+"id": 852,
+"name": "Zubehör & Ersatzteile für die Druckvorstufe"
+},
+{
+"id": 853,
+"name": "Sonstige Maschinen Druckvorstufe"
+},
+{
+"id": 1138,
+"name": "Plattenstanzen"
+},
+{
+"id": 1139,
+"name": "Einbrennöfen"
+},
+{
+"id": 1192,
+"name": "Leuchttische"
+},
+{
+"id": 1435,
+"name": "Software"
+},
+{
+"id": 179,
+"name": "Etikettendruck & Stanzmaschinen"
+},
+{
+"id": 180,
+"name": "Flexodruckmaschinen"
+},
+{
+"id": 181,
+"name": "Hochdruckmaschinen"
+},
+{
+"id": 182,
+"name": "Kuvertiermaschinen"
+},
+{
+"id": 832,
+"name": "1-Farben-Offsetdruckmaschinen"
+},
+{
+"id": 833,
+"name": "2-Farben-Offsetdruckmaschinen"
+},
+{
+"id": 834,
+"name": "3-Farben-Offsetdruckmaschinen"
+},
+{
+"id": 835,
+"name": "4-Farben-Offsetdruckmaschinen"
+},
+{
+"id": 836,
+"name": "5-Farben-Offsetdruckmaschinen"
+},
+{
+"id": 837,
+"name": "6-Farben-Offsetdruckmaschinen"
+},
+{
+"id": 838,
+"name": "7-Farben-Offsetdruckmaschinen"
+},
+{
+"id": 839,
+"name": "8-Farben-Offsetdruckmaschinen"
+},
+{
+"id": 840,
+"name": "Zubehör & Ersatzteile für Offsetdruckmaschinen"
+},
+{
+"id": 841,
+"name": "Sonstige Offsetdruckmaschinen"
+},
+{
+"id": 1196,
+"name": "10-Farben-Offsetdruckmaschinen"
+},
+{
+"id": 1441,
+"name": "11-Farben-Offsetdruckmaschinen"
+},
+{
+"id": 184,
+"name": "Rotationsdruckmaschinen"
+},
+{
+"id": 185,
+"name": "Siebdruckmaschinen"
+},
+{
+"id": 186,
+"name": "Stackers"
+},
+{
+"id": 187,
+"name": "Tampondruckmaschinen"
+},
+{
+"id": 188,
+"name": "Tiefdruckmaschinen"
+},
+{
+"id": 1261,
+"name": "Falzmaschinen"
+},
+{
+"id": 1262,
+"name": "Folieneinschlagmaschinen"
+},
+{
+"id": 1263,
+"name": "Heftmaschinen"
+},
+{
+"id": 1264,
+"name": "Laminiermaschinen"
+},
+{
+"id": 1265,
+"name": "Papierbohrmaschinen"
+},
+{
+"id": 1266,
+"name": "Papierzählmaschinen"
+},
+{
+"id": 1267,
+"name": "Rütteltische"
+},
+{
+"id": 1268,
+"name": "Schneidemaschinen"
+},
+{
+"id": 1269,
+"name": "Sonstige Weiterverarbeitungsmaschinen"
+},
+{
+"id": 1270,
+"name": "Stapelheber"
+},
+{
+"id": 1271,
+"name": "Zusammentragmaschinen"
+},
+{
+"id": 1352,
+"name": "Klebebinder"
+},
+{
+"id": 1353,
+"name": "Nut- & Perforiermaschinen"
+},
+{
+"id": 1354,
+"name": "Ösmaschinen"
+},
+{
+"id": 1355,
+"name": "Sammelhefter"
+},
+{
+"id": 1436,
+"name": "Broschürenfertigungssysteme"
+},
+{
+"id": 1437,
+"name": "Stapelwender"
+},
+{
+"id": 1583,
+"name": "Nummeriermaschinen"
+},
+{
+"id": 1586,
+"name": "Stanzen"
+},
+{
+"id": 672,
+"name": "Sonstige Druckereimaschinen & Druckmaschinen"
+},
+{
+"id": 708,
+"name": "Bedruckmaschinen"
+},
+{
+"id": 709,
+"name": "Kartondruckmaschinen"
+},
+{
+"id": 1356,
+"name": "Akzidenzdruckmaschinen"
+},
+{
+"id": 1357,
+"name": "Endlosdruckmaschinen"
+},
+{
+"id": 1358,
+"name": "Etikettendruckmaschinen (Rollenoffset)"
+},
+{
+"id": 1359,
+"name": "Flexodruckmaschinen (Rollenoffset)"
+},
+{
+"id": 1360,
+"name": "Formulardruckmaschinen (Rollenoffset)"
+},
+{
+"id": 1361,
+"name": "Tiefdruckmaschinen (Rollenoffset)"
+},
+{
+"id": 1362,
+"name": "Zeitungsdruckmaschinen"
+},
+{
+"id": 1363,
+"name": "Zubehör & Ersatzteile für Rollenoffsetdruckmaschinen"
+},
+{
+"id": 759,
+"name": "Komplette Druckereien"
+},
+{
+"id": 2073,
+"name": "3D Drucker"
+}
+]
+},
+"17": {
+"name": "Verfahrenstechnik",
+"leaves": [
+{
+"id": 499,
+"name": "Automation"
+},
+{
+"id": 500,
+"name": "Dekanter"
+},
+{
+"id": 501,
+"name": "Filteranlagen"
+},
+{
+"id": 502,
+"name": "Gebläse"
+},
+{
+"id": 503,
+"name": "Ionentauscher"
+},
+{
+"id": 504,
+"name": "Kammerfilterpressen"
+},
+{
+"id": 505,
+"name": "Kompressoren"
+},
+{
+"id": 506,
+"name": "Lagertanks"
+},
+{
+"id": 507,
+"name": "Mischanlagen"
+},
+{
+"id": 508,
+"name": "Mühlen"
+},
+{
+"id": 509,
+"name": "Pressen"
+},
+{
+"id": 510,
+"name": "Pumpen"
+},
+{
+"id": 511,
+"name": "Trockenanlagen"
+},
+{
+"id": 512,
+"name": "Wasseraufbereitungsanlagen"
+},
+{
+"id": 513,
+"name": "Zentrifugen"
+},
+{
+"id": 673,
+"name": "Sonstige Verfahrenstechnik"
+},
+{
+"id": 2038,
+"name": "Vakuumverdampfer"
+},
+{
+"id": 2040,
+"name": "Membranfiltrationsanlagen"
+}
+]
+},
+"18": {
+"name": "Fördertechnik & Antriebstechnik",
+"leaves": [
+{
+"id": 363,
+"name": "Elektromotoren"
+},
+{
+"id": 364,
+"name": "Förderanlagen"
+},
+{
+"id": 365,
+"name": "Förderbänder"
+},
+{
+"id": 366,
+"name": "Hubwagen"
+},
+{
+"id": 367,
+"name": "Hubtische"
+},
+{
+"id": 368,
+"name": "Kettenzüge & Hebetechnik"
+},
+{
+"id": 369,
+"name": "Magnete"
+},
+{
+"id": 370,
+"name": "Pumpen"
+},
+{
+"id": 371,
+"name": "Rollenbahnen"
+},
+{
+"id": 372,
+"name": "Scherentische"
+},
+{
+"id": 373,
+"name": "Schüttgüterförderer"
+},
+{
+"id": 374,
+"name": "Vibratoren"
+},
+{
+"id": 674,
+"name": "Sonstige Fördertechnik & Antriebstechnik"
+}
+]
+},
+"19": {
+"name": "Textilmaschinen",
+"leaves": [
+{
+"id": 569,
+"name": "Bügelmaschinen"
+},
+{
+"id": 570,
+"name": "Textildruckmaschinen"
+},
+{
+"id": 571,
+"name": "Doubliermaschinen"
+},
+{
+"id": 572,
+"name": "Etikettiermaschinen"
+},
+{
+"id": 573,
+"name": "Färbeanlagen"
+},
+{
+"id": 574,
+"name": "Fach- & Zwirnmaschinen"
+},
+{
+"id": 575,
+"name": "Filter"
+},
+{
+"id": 576,
+"name": "Flechtmaschinen"
+},
+{
+"id": 577,
+"name": "Hutherstellung"
+},
+{
+"id": 578,
+"name": "Kaschiermaschinen"
+},
+{
+"id": 579,
+"name": "Nähmaschinen"
+},
+{
+"id": 580,
+"name": "Plissiermaschine"
+},
+{
+"id": 581,
+"name": "Textilpressen"
+},
+{
+"id": 582,
+"name": "Rauhmaschinen"
+},
+{
+"id": 583,
+"name": "Schneidemaschinen"
+},
+{
+"id": 584,
+"name": "Spinnmaschinen"
+},
+{
+"id": 585,
+"name": "Spulmaschinen"
+},
+{
+"id": 586,
+"name": "Stanzmaschinen"
+},
+{
+"id": 587,
+"name": "Steppmaschinen"
+},
+{
+"id": 588,
+"name": "Stickmaschinen"
+},
+{
+"id": 589,
+"name": "Strickmaschinen"
+},
+{
+"id": 590,
+"name": "Textilreinigungsmaschinen"
+},
+{
+"id": 591,
+"name": "Vliesstoffmaschinen"
+},
+{
+"id": 592,
+"name": "Webmaschinen"
+},
+{
+"id": 642,
+"name": "Raschelmaschinen"
+},
+{
+"id": 677,
+"name": "Sonstige Textilmaschinen"
+},
+{
+"id": 701,
+"name": "Kettenwirkmaschinen"
+},
+{
+"id": 702,
+"name": "Schärmaschinen"
+},
+{
+"id": 723,
+"name": "Riegelautomaten"
+},
+{
+"id": 724,
+"name": "Zwirnmaschinen"
+},
+{
+"id": 735,
+"name": "Spannrahmen"
+},
+{
+"id": 755,
+"name": "Streckspulmaschinen"
+},
+{
+"id": 756,
+"name": "Texturiermaschinen"
+},
+{
+"id": 758,
+"name": "Wickler"
+},
+{
+"id": 769,
+"name": "Textilverpackung"
+},
+{
+"id": 2048,
+"name": "Absaugungen & Entlüftungsanlagen"
+},
+{
+"id": 2049,
+"name": "Bügelmaschinen"
+},
+{
+"id": 2050,
+"name": "Dampfkessel"
+},
+{
+"id": 2051,
+"name": "Enthärtungsanlagen"
+},
+{
+"id": 2052,
+"name": "Detachiertische"
+},
+{
+"id": 2053,
+"name": "Garderobenformer"
+},
+{
+"id": 2054,
+"name": "Hemdenfinisher"
+},
+{
+"id": 2055,
+"name": "Hosentopper"
+},
+{
+"id": 2056,
+"name": "Kompressoren"
+},
+{
+"id": 2057,
+"name": "Mangeln"
+},
+{
+"id": 2058,
+"name": "Pressen"
+},
+{
+"id": 2059,
+"name": "Textilreinigungsmaschinen KWL"
+},
+{
+"id": 2060,
+"name": "Textilreinigungsmaschinen PER"
+},
+{
+"id": 2061,
+"name": "Sonstige Textilpflegemaschinen"
+},
+{
+"id": 2062,
+"name": "Trockner"
+},
+{
+"id": 2063,
+"name": "Verpackungsmaschinen"
+},
+{
+"id": 2064,
+"name": "Waagen"
+},
+{
+"id": 2065,
+"name": "Waschmaschinen"
+},
+{
+"id": 2066,
+"name": "Zentrifugen"
+},
+{
+"id": 2067,
+"name": "Zubehör & Ersatzteile für Textilpflegemaschinen"
+}
+]
+},
+"20": {
+"name": "Recycling- & Entsorgungsmaschinen",
+"leaves": [
+{
+"id": 545,
+"name": "Absauganlagen & Filter"
+},
+{
+"id": 546,
+"name": "Agglomeratoren"
+},
+{
+"id": 547,
+"name": "Compoundieranlagen"
+},
+{
+"id": 548,
+"name": "Müllcontainer & Abfallbehälter"
+},
+{
+"id": 549,
+"name": "Entwässerungsmaschinen"
+},
+{
+"id": 550,
+"name": "Extruder & Extrusionsanlagen"
+},
+{
+"id": 551,
+"name": "Förderbänder"
+},
+{
+"id": 552,
+"name": "Granulieranlagen"
+},
+{
+"id": 553,
+"name": "Häcksler"
+},
+{
+"id": 554,
+"name": "Kühlgeräte-Recyclinganlagen"
+},
+{
+"id": 555,
+"name": "Kunststoffaufbereitung"
+},
+{
+"id": 556,
+"name": "Mahlanlagen"
+},
+{
+"id": 557,
+"name": "Mühlen"
+},
+{
+"id": 558,
+"name": "Regenerierungsanlagen"
+},
+{
+"id": 2097,
+"name": "Einwellenzerkleinerer"
+},
+{
+"id": 2100,
+"name": "Zweiwellenzerkleinerer"
+},
+{
+"id": 2103,
+"name": "Dreiwellenzerkleinerer"
+},
+{
+"id": 2106,
+"name": "Vierwellenzerkleinerer"
+},
+{
+"id": 2109,
+"name": "Aktenvernichter (Industrie)"
+},
+{
+"id": 2112,
+"name": "Vorzerkleinerer"
+},
+{
+"id": 2115,
+"name": "Nachzerkleinerer"
+},
+{
+"id": 2118,
+"name": "Styroporschredder"
+},
+{
+"id": 2121,
+"name": "Zerkleinerungswellen"
+},
+{
+"id": 2124,
+"name": "Mobile Zerkleinerungsanlage"
+},
+{
+"id": 2127,
+"name": "Rotorschere"
+},
+{
+"id": 2130,
+"name": "Zubehör & Ersatzteile für Shredder"
+},
+{
+"id": 560,
+"name": "Siebanlagen"
+},
+{
+"id": 561,
+"name": "Silos"
+},
+{
+"id": 562,
+"name": "Sortieranlagen"
+},
+{
+"id": 563,
+"name": "Trenntechnik"
+},
+{
+"id": 564,
+"name": "Trockner"
+},
+{
+"id": 1555,
+"name": "Altreifenpressen"
+},
+{
+"id": 1556,
+"name": "Ballenpressen"
+},
+{
+"id": 1557,
+"name": "Brikettierpressen"
+},
+{
+"id": 1558,
+"name": "Dosenpressen"
+},
+{
+"id": 1559,
+"name": "Pelletierpressen"
+},
+{
+"id": 1560,
+"name": "Papierpressen"
+},
+{
+"id": 1561,
+"name": "Paketierpressen"
+},
+{
+"id": 1562,
+"name": "Presscontainer"
+},
+{
+"id": 1563,
+"name": "Schrottpressen"
+},
+{
+"id": 1570,
+"name": "Zubehör & Ersatzteile für Müllpressen"
+},
+{
+"id": 2093,
+"name": "Sonstige Müllpressen"
+},
+{
+"id": 2416,
+"name": "Schneckenpressen"
+},
+{
+"id": 566,
+"name": "Windsichter"
+},
+{
+"id": 567,
+"name": "Zentrifugen"
+},
+{
+"id": 568,
+"name": "Zerkleinerungsanlagen"
+},
+{
+"id": 675,
+"name": "Sonstige Maschinen für Recycling & Entsorgung"
+},
+{
+"id": 697,
+"name": "Entmetallisierungsanlagen"
+},
+{
+"id": 1564,
+"name": "Alligatorscheren"
+},
+{
+"id": 1565,
+"name": "Kabelscheren"
+},
+{
+"id": 1566,
+"name": "Metallscheren"
+},
+{
+"id": 1567,
+"name": "Profilscheren"
+},
+{
+"id": 1568,
+"name": "Schrottscheren"
+},
+{
+"id": 1569,
+"name": "Zubehör & Ersatzteile für Scheren"
+}
+]
+},
+"21": {
+"name": "Drahtverarbeitungsmaschinen",
+"leaves": [
+{
+"id": 472,
+"name": "Ablängautomaten"
+},
+{
+"id": 473,
+"name": "Ablaufhaspel"
+},
+{
+"id": 474,
+"name": "Anspitzmaschinen"
+},
+{
+"id": 475,
+"name": "Drahtbiegemaschine & Biegeteilherstellungsmaschinen"
+},
+{
+"id": 476,
+"name": "Drahterodiermaschinen"
+},
+{
+"id": 477,
+"name": "Drahtgitterschweissmaschinen"
+},
+{
+"id": 478,
+"name": "Drahtrichtmaschinen"
+},
+{
+"id": 479,
+"name": "Drahtschneidemaschinen"
+},
+{
+"id": 480,
+"name": "Drahtstiftpressen"
+},
+{
+"id": 481,
+"name": "Drahtwebstühle"
+},
+{
+"id": 482,
+"name": "Drahtziehmaschinen"
+},
+{
+"id": 483,
+"name": "Federendeschleifmaschinen"
+},
+{
+"id": 484,
+"name": "Federn-Herstellungsmaschinen"
+},
+{
+"id": 485,
+"name": "Federn-Prüfgeräte"
+},
+{
+"id": 486,
+"name": "Galvanisieranlagen"
+},
+{
+"id": 487,
+"name": "Grobzüge"
+},
+{
+"id": 488,
+"name": "Heftklammermaschinen"
+},
+{
+"id": 489,
+"name": "Kettenherstellungsmaschinen"
+},
+{
+"id": 490,
+"name": "Krippmaschinen"
+},
+{
+"id": 491,
+"name": "Putzmaschinen"
+},
+{
+"id": 492,
+"name": "Pressen für die Drahtverarbeitung"
+},
+{
+"id": 493,
+"name": "Schraubenherstellungsmaschinen"
+},
+{
+"id": 494,
+"name": "Spuler & Aufwickler"
+},
+{
+"id": 495,
+"name": "Stumpfschweissmaschinen"
+},
+{
+"id": 496,
+"name": "Verpackungsanlagen"
+},
+{
+"id": 497,
+"name": "Viereckgeflechtmaschinen"
+},
+{
+"id": 498,
+"name": "Zuführgeräte"
+},
+{
+"id": 676,
+"name": "Sonstige Drahtverarbeitungsmaschinen"
+},
+{
+"id": 705,
+"name": "Kneifmaschinen"
+},
+{
+"id": 727,
+"name": "Stacheldrahtmaschinen"
+},
+{
+"id": 741,
+"name": "Kabelherstellungsmaschinen"
+},
+{
+"id": 750,
+"name": "Federwickelmaschinen"
+},
+{
+"id": 753,
+"name": "Anfasmaschinen"
+}
+]
+},
+"22": {
+"name": "Kfz-Werkstattausrüstung",
+"leaves": [
+{
+"id": 276,
+"name": "Abgasabsauganlagen"
+},
+{
+"id": 808,
+"name": "Bremstrommeldrehmaschinen"
+},
+{
+"id": 809,
+"name": "Bremsbelagabdrehmaschinen"
+},
+{
+"id": 810,
+"name": "PKW-Bremsscheibendrehmaschinen"
+},
+{
+"id": 811,
+"name": "LKW-Bremsscheibendrehmaschinen"
+},
+{
+"id": 812,
+"name": "Bremsbackenschleifmaschinen"
+},
+{
+"id": 813,
+"name": "Bremsbelagnietmaschinen"
+},
+{
+"id": 814,
+"name": "Zubehör & Ersatzteile für Bremsendienstmaschinen"
+},
+{
+"id": 815,
+"name": "Sonstige Bremsendienstmaschinen"
+},
+{
+"id": 1197,
+"name": "Bremsenheisswascher"
+},
+{
+"id": 278,
+"name": "Hebetechnik"
+},
+{
+"id": 279,
+"name": "Industriesauger"
+},
+{
+"id": 280,
+"name": "Klimaservicegeräte"
+},
+{
+"id": 281,
+"name": "Motoreninstandsetzung"
+},
+{
+"id": 282,
+"name": "Reifenservicegeräte"
+},
+{
+"id": 283,
+"name": "Werkstatteinrichtungen"
+},
+{
+"id": 657,
+"name": "Sonstige Kfz-Werkstattausrüstung"
+},
+{
+"id": 748,
+"name": "Achsvermessung & Spurvermessung"
+},
+{
+"id": 2436,
+"name": "Bremsenprüfstände"
+}
+]
+},
+"23": {
+"name": "Elektrowerkzeuge",
+"leaves": [
+{
+"id": 44,
+"name": "Elektrosägen"
+},
+{
+"id": 45,
+"name": "Elektroschleifer"
+},
+{
+"id": 46,
+"name": "Schneidwerkzeuge"
+},
+{
+"id": 47,
+"name": "Elektrosauger"
+},
+{
+"id": 48,
+"name": "Oberflächenbearbeitung"
+},
+{
+"id": 49,
+"name": "Handhobelmaschinen"
+},
+{
+"id": 50,
+"name": "Elektrofräsen"
+},
+{
+"id": 51,
+"name": "Rührwerkzeuge"
+},
+{
+"id": 52,
+"name": "Druckluftwerkzeuge"
+},
+{
+"id": 53,
+"name": "Akku-Ladegeräte"
+},
+{
+"id": 54,
+"name": "Handbohrmaschinen & Akkuschrauber"
+},
+{
+"id": 55,
+"name": "Kleben, Wärmen, Schweißen & Löten"
+},
+{
+"id": 678,
+"name": "Sonstige Elektrowerkzeuge"
+}
+]
+},
+"24": {
+"name": "Abfüllanlagen & Abfülltechnik",
+"leaves": [
+{
+"id": 436,
+"name": "Abfüllsäulen"
+},
+{
+"id": 437,
+"name": "Behälterfüllsysteme"
+},
+{
+"id": 438,
+"name": "Fassfüllsysteme"
+},
+{
+"id": 439,
+"name": "Fördersysteme"
+},
+{
+"id": 440,
+"name": "Lagersysteme"
+},
+{
+"id": 441,
+"name": "Mineralwasserabfüllanlagen"
+},
+{
+"id": 442,
+"name": "Palettenfüllsysteme"
+},
+{
+"id": 443,
+"name": "Palettiersysteme"
+},
+{
+"id": 444,
+"name": "Tubenfüller"
+},
+{
+"id": 679,
+"name": "Sonstige Abfüllanlagen & Abfülltechnik"
+},
+{
+"id": 703,
+"name": "Absackanlagen"
+}
+]
+},
+"25": {
+"name": "Kältetechnik",
+"leaves": [
+{
+"id": 259,
+"name": "Eismaschinen"
+},
+{
+"id": 260,
+"name": "Kältemaschinen"
+},
+{
+"id": 261,
+"name": "Kühlzellen"
+},
+{
+"id": 262,
+"name": "Klimaanlagen"
+},
+{
+"id": 263,
+"name": "Kühlmöbel"
+},
+{
+"id": 264,
+"name": "Verdampfer"
+},
+{
+"id": 265,
+"name": "Verdichter"
+},
+{
+"id": 266,
+"name": "Verdichtersätze"
+},
+{
+"id": 680,
+"name": "Sonstige Kältetechnik"
+},
+{
+"id": 714,
+"name": "Tiefkühltunnel"
+},
+{
+"id": 715,
+"name": "Verbundanlagen"
+}
+]
+},
+"26": {
+"name": "Glasbearbeitung & Keramikbearbeitung",
+"leaves": [
+{
+"id": 514,
+"name": "Glasbohrmaschinen"
+},
+{
+"id": 515,
+"name": "Glasformgebungsmaschinen"
+},
+{
+"id": 516,
+"name": "Glashärteöfen"
+},
+{
+"id": 517,
+"name": "Glasschleifmaschinen"
+},
+{
+"id": 518,
+"name": "Glasschneidetische"
+},
+{
+"id": 519,
+"name": "Isolierglasherstellungsmaschinen"
+},
+{
+"id": 520,
+"name": "Pressen für Glas & Keramik"
+},
+{
+"id": 521,
+"name": "Scherbenaufbereitung"
+},
+{
+"id": 522,
+"name": "Tonbearbeitung"
+},
+{
+"id": 523,
+"name": "Ziegeleimaschinen"
+},
+{
+"id": 681,
+"name": "Sonstige Glasbearbeitung & Keramikbearbeitung"
+}
+]
+},
+"27": {
+"name": "Klärtechnik",
+"leaves": [
+{
+"id": 408,
+"name": "Anaerob-Reaktoren"
+},
+{
+"id": 409,
+"name": "Eindicker"
+},
+{
+"id": 410,
+"name": "Faultürme"
+},
+{
+"id": 411,
+"name": "Gasfackelanlagen"
+},
+{
+"id": 412,
+"name": "Gebläse"
+},
+{
+"id": 413,
+"name": "Nachklärung"
+},
+{
+"id": 414,
+"name": "Pumpen für Kläranlagen"
+},
+{
+"id": 415,
+"name": "Rechen"
+},
+{
+"id": 416,
+"name": "Sandfänge"
+},
+{
+"id": 417,
+"name": "Schlammentwässerung"
+},
+{
+"id": 418,
+"name": "Vorklärung"
+},
+{
+"id": 419,
+"name": "Vorversäuerung"
+},
+{
+"id": 420,
+"name": "Zubehör & Ersatzteile für Klärtechnik"
+},
+{
+"id": 421,
+"name": "Mischbecken & Ausgleichsbecken"
+},
+{
+"id": 682,
+"name": "Sonstige Klärtechnik"
+}
+]
+},
+"28": {
+"name": "Kommunaltechnik",
+"leaves": [
+{
+"id": 267,
+"name": "Golfplatzpflegemaschinen"
+},
+{
+"id": 268,
+"name": "Holzzerkleinerer"
+},
+{
+"id": 269,
+"name": "Kehrmaschinen & Straßendienstfahrzeuge"
+},
+{
+"id": 270,
+"name": "Kommunalfahrzeuge & Sonderfahrzeuge"
+},
+{
+"id": 271,
+"name": "Kompakttraktoren"
+},
+{
+"id": 272,
+"name": "Motorfräsen"
+},
+{
+"id": 273,
+"name": "Mäher (Landwirtschaft)"
+},
+{
+"id": 274,
+"name": "Umwelttechnik"
+},
+{
+"id": 275,
+"name": "Winterdienstgeräte"
+},
+{
+"id": 683,
+"name": "Sonstige Kommunalmaschinen"
+},
+{
+"id": 2264,
+"name": "Aufsitzmäher"
+},
+{
+"id": 2390,
+"name": "Sonderfahrzeuge"
+},
+{
+"id": 2393,
+"name": "Kommunalschlepper"
+},
+{
+"id": 2396,
+"name": "Saugwagen & Spülfahrzeuge"
+},
+{
+"id": 2399,
+"name": "Müllwagen & Entsorgungsfahrzeuge"
+},
+{
+"id": 2402,
+"name": "Feuerwehrfahrzeuge & Rettungswagen"
+},
+{
+"id": 2405,
+"name": "Ersatzteile Kommunal- & Sonderfahrzeuge"
+},
+{
+"id": 2408,
+"name": "Pistenfahrzeuge & Pistenbully"
+},
+{
+"id": 2414,
+"name": "Unimog"
+}
+]
+},
+"29": {
+"name": "Motoren",
+"leaves": [
+{
+"id": 202,
+"name": "Benzinmotoren"
+},
+{
+"id": 203,
+"name": "Dieselmotoren"
+},
+{
+"id": 204,
+"name": "Elektromotoren"
+},
+{
+"id": 205,
+"name": "Gasmotoren"
+},
+{
+"id": 206,
+"name": "LKW-Motoren"
+},
+{
+"id": 207,
+"name": "PKW-Motoren"
+},
+{
+"id": 208,
+"name": "Getriebe"
+},
+{
+"id": 684,
+"name": "Sonstige Motoren & Ersatzteile"
+}
+]
+},
+"30": {
+"name": "Oberflächentechnik",
+"leaves": [
+{
+"id": 375,
+"name": "Ätzmaschinen"
+},
+{
+"id": 376,
+"name": "Absauganlagen"
+},
+{
+"id": 377,
+"name": "Galvanikanlagen"
+},
+{
+"id": 378,
+"name": "Lackieranlagen"
+},
+{
+"id": 379,
+"name": "Öfen"
+},
+{
+"id": 380,
+"name": "Pulveranlagen"
+},
+{
+"id": 381,
+"name": "Schleifmaschinen"
+},
+{
+"id": 382,
+"name": "Vorbehandlungsanlagen"
+},
+{
+"id": 685,
+"name": "Sonstige Oberflächentechnik"
+},
+{
+"id": 746,
+"name": "Sandstrahlanlagen"
+},
+{
+"id": 747,
+"name": "Filteranlagen"
+}
+]
+},
+"31": {
+"name": "Postbearbeitungsmaschinen",
+"leaves": [
+{
+"id": 294,
+"name": "Falzmaschinen"
+},
+{
+"id": 295,
+"name": "Frankiermaschinen"
+},
+{
+"id": 296,
+"name": "Kuvertiermaschinen"
+},
+{
+"id": 297,
+"name": "Poststrassen"
+},
+{
+"id": 298,
+"name": "Reißen, Schneiden, Separieren"
+},
+{
+"id": 299,
+"name": "Waagen"
+},
+{
+"id": 686,
+"name": "Sonstige Postbearbeitungsmaschinen"
+},
+{
+"id": 717,
+"name": "Ablaufbänder"
+},
+{
+"id": 718,
+"name": "Staffelablagen"
+},
+{
+"id": 751,
+"name": "Brieföffner"
+}
+]
+},
+"32": {
+"name": "Reinigungstechnik",
+"leaves": [
+{
+"id": 226,
+"name": "Niederdruckreiniger"
+},
+{
+"id": 284,
+"name": "Einscheibenmaschinen"
+},
+{
+"id": 285,
+"name": "Hochdruckreiniger"
+},
+{
+"id": 286,
+"name": "Hochdruckwasserstrahlanlagen"
+},
+{
+"id": 287,
+"name": "Aufsitzkehrmaschinen & Scheuersaugmaschinen"
+},
+{
+"id": 288,
+"name": "Sandstrahler"
+},
+{
+"id": 289,
+"name": "Scheuersaugmaschinen"
+},
+{
+"id": 290,
+"name": "Staubsauger"
+},
+{
+"id": 291,
+"name": "Textilreinigungsmaschinen"
+},
+{
+"id": 292,
+"name": "Ultraschallreinigungsanlagen"
+},
+{
+"id": 293,
+"name": "Waschanlagen"
+},
+{
+"id": 687,
+"name": "Sonstige Reinigungsmaschinen"
+},
+{
+"id": 736,
+"name": "Maschinen- & Teilereinigungsgeräte"
+},
+{
+"id": 766,
+"name": "Trockeneisstrahlgeräte"
+}
+]
+},
+"33": {
+"name": "Sondermaschinen",
+"leaves": [
+{
+"id": 33,
+"name": "Sondermaschinen"
+}
+]
+},
+"34": {
+"name": "Sonstige Maschinen",
+"leaves": [
+{
+"id": 34,
+"name": "Sonstige Maschinen"
+}
+]
+},
+"35": {
+"name": "Steinbearbeitungsmaschinen",
+"leaves": [
+{
+"id": 422,
+"name": "Abflammgeräte"
+},
+{
+"id": 423,
+"name": "Steinbohrmaschinen"
+},
+{
+"id": 424,
+"name": "Entwässerungsanlagen"
+},
+{
+"id": 425,
+"name": "Steinfräsen"
+},
+{
+"id": 426,
+"name": "Kegelbrecher"
+},
+{
+"id": 427,
+"name": "Klassieranlagen"
+},
+{
+"id": 428,
+"name": "Kompressoren"
+},
+{
+"id": 429,
+"name": "Mühlen für Steinverarbeitung"
+},
+{
+"id": 430,
+"name": "Schleifmaschinen für Steinbearbeitung"
+},
+{
+"id": 431,
+"name": "Steinsägen"
+},
+{
+"id": 432,
+"name": "Sandstrahlgeräte"
+},
+{
+"id": 433,
+"name": "Vakuumheber"
+},
+{
+"id": 434,
+"name": "Wasserversorgungsanlagen"
+},
+{
+"id": 435,
+"name": "Ziehsteinbearbeitungsmaschinen"
+},
+{
+"id": 688,
+"name": "Sonstige Steinbearbeitungsmaschinen"
+},
+{
+"id": 721,
+"name": "Steinspaltmaschinen"
+},
+{
+"id": 770,
+"name": "Bearbeitungszentren für Stein und Marmor"
+}
+]
+},
+"36": {
+"name": "Messtechnik & Prüftechnik",
+"leaves": [
+{
+"id": 401,
+"name": "Auswuchtmaschinen"
+},
+{
+"id": 402,
+"name": "Koordinatenmessmaschinen"
+},
+{
+"id": 403,
+"name": "Kraftmessgeräte"
+},
+{
+"id": 404,
+"name": "Messsysteme"
+},
+{
+"id": 405,
+"name": "Motorprüfstände"
+},
+{
+"id": 406,
+"name": "Prüftische"
+},
+{
+"id": 407,
+"name": "Werkstoffprüfung"
+},
+{
+"id": 689,
+"name": "Sonstige Messtechnik & Prüftechnik"
+}
+]
+},
+"37": {
+"name": "Vakuumtechnik",
+"leaves": [
+{
+"id": 253,
+"name": "Beschleuniger"
+},
+{
+"id": 254,
+"name": "Dichtheitsprüfanlagen"
+},
+{
+"id": 255,
+"name": "Vakuumkammern"
+},
+{
+"id": 256,
+"name": "Vakuumpumpen"
+},
+{
+"id": 257,
+"name": "Thermosysteme"
+},
+{
+"id": 258,
+"name": "UHV-Systeme & Manipulatoren"
+},
+{
+"id": 690,
+"name": "Sonstige Vakuummaschinen"
+}
+]
+},
+"38": {
+"name": "Papierverarbeitung & Folienverarbeitung",
+"leaves": [
+{
+"id": 593,
+"name": "Briefumschlagmaschinen"
+},
+{
+"id": 594,
+"name": "Etikettiermaschinen"
+},
+{
+"id": 595,
+"name": "Faltschachtelklebemaschinen"
+},
+{
+"id": 596,
+"name": "Falzmaschinen"
+},
+{
+"id": 597,
+"name": "Beutelmaschinen"
+},
+{
+"id": 598,
+"name": "Kaschieranlagen"
+},
+{
+"id": 599,
+"name": "Kartonaufrichter"
+},
+{
+"id": 600,
+"name": "Kartonagenherstellung"
+},
+{
+"id": 601,
+"name": "Kartonverschliesser"
+},
+{
+"id": 602,
+"name": "Papierhandtuchherstellungsmaschinen"
+},
+{
+"id": 603,
+"name": "Papierhülsenherstellungsanlagen"
+},
+{
+"id": 604,
+"name": "Papierschachtelherstellungsmaschinen"
+},
+{
+"id": 605,
+"name": "Pappbecherherstellung"
+},
+{
+"id": 606,
+"name": "Perforiermaschinen"
+},
+{
+"id": 607,
+"name": "Pressen für Papier & Karton"
+},
+{
+"id": 608,
+"name": "Rollbahnen"
+},
+{
+"id": 609,
+"name": "Schneidemaschinen"
+},
+{
+"id": 610,
+"name": "Slotter & Casemaker"
+},
+{
+"id": 611,
+"name": "Stanzen für Papier & Karton"
+},
+{
+"id": 612,
+"name": "Stanztiegel"
+},
+{
+"id": 613,
+"name": "Toilettenpapierherstellungsmaschinen"
+},
+{
+"id": 614,
+"name": "Wickelmaschinen"
+},
+{
+"id": 615,
+"name": "Wellpappenherstellung & Verarbeitung"
+},
+{
+"id": 691,
+"name": "Sonstige Maschinen zur Papierverarbeitung & Folienverarbeitung"
+},
+{
+"id": 696,
+"name": "Schulheftmaschinen"
+},
+{
+"id": 722,
+"name": "Papierliniermaschinen"
+}
+]
+},
+"39": {
+"name": "Überschüssige Lagerbestände & Restbestände",
+"leaves": [
+{
+"id": 39,
+"name": "Überschüssige Lagerbestände & Restbestände"
+}
+]
+},
+"40": {
+"name": "Telekommunikationstechnik & Computertechnik",
+"leaves": [
+{
+"id": 352,
+"name": "Computerprogramme"
+},
+{
+"id": 353,
+"name": "Faxgeräte"
+},
+{
+"id": 354,
+"name": "Handys"
+},
+{
+"id": 355,
+"name": "Industrie Computer"
+},
+{
+"id": 356,
+"name": "Laptops"
+},
+{
+"id": 357,
+"name": "Peripheriegeräte & Ersatzteile"
+},
+{
+"id": 358,
+"name": "PCs"
+},
+{
+"id": 359,
+"name": "Server"
+},
+{
+"id": 360,
+"name": "Telefonanlagen"
+},
+{
+"id": 361,
+"name": "Telefone"
+},
+{
+"id": 362,
+"name": "Workstations"
+},
+{
+"id": 692,
+"name": "Sonstige Telekommunikationstechnik & Computertechnik"
+}
+]
+},
+"41": {
+"name": "Drucklufttechnik",
+"leaves": [
+{
+"id": 644,
+"name": "Druckluftbehälter"
+},
+{
+"id": 645,
+"name": "Filter"
+},
+{
+"id": 1550,
+"name": "Kolbenkompressoren"
+},
+{
+"id": 1551,
+"name": "Schraubenkompressoren"
+},
+{
+"id": 1552,
+"name": "Rotationskompressoren"
+},
+{
+"id": 1553,
+"name": "Atemluftkompressoren"
+},
+{
+"id": 1554,
+"name": "Zubehör & Ersatzteile für Kompressoren"
+},
+{
+"id": 647,
+"name": "Kühler"
+},
+{
+"id": 648,
+"name": "Pumpen"
+},
+{
+"id": 649,
+"name": "Trockner"
+},
+{
+"id": 650,
+"name": "Zubehör & Ersatzteile Drucklufttechnik"
+},
+{
+"id": 651,
+"name": "Druckluftwerkzeuge"
+},
+{
+"id": 693,
+"name": "Sonstige Drucklufttechnik"
+},
+{
+"id": 761,
+"name": "Motoren"
+},
+{
+"id": 762,
+"name": "Regler"
+}
+]
+},
+"42": {
+"name": "Stapler & Flurförderzeuge",
+"leaves": [
+{
+"id": 383,
+"name": "Ameisen"
+},
+{
+"id": 1919,
+"name": "Niederhubwagen"
+},
+{
+"id": 1921,
+"name": "Hochhubwagen"
+},
+{
+"id": 1929,
+"name": "Kommissionierer"
+},
+{
+"id": 798,
+"name": "Frontstapler"
+},
+{
+"id": 802,
+"name": "Sonstige Stapler & Flurförderzeuge"
+},
+{
+"id": 1906,
+"name": "Geländestapler"
+},
+{
+"id": 1907,
+"name": "Teleskoparmstapler"
+},
+{
+"id": 1908,
+"name": "Seitenstapler"
+},
+{
+"id": 1909,
+"name": "Containerstapler"
+},
+{
+"id": 1910,
+"name": "Reachstacker"
+},
+{
+"id": 1911,
+"name": "Mitnahmestapler"
+},
+{
+"id": 1915,
+"name": "3-Rad Gabelstapler"
+},
+{
+"id": 1916,
+"name": "4-Rad Gabelstapler"
+},
+{
+"id": 1917,
+"name": "Schubmaststapler"
+},
+{
+"id": 1927,
+"name": "Vierwegestapler"
+},
+{
+"id": 1928,
+"name": "Hochregalstapler & Schmalgangstapler"
+},
+{
+"id": 1930,
+"name": "Gabelstapler Traktor & Schlepper"
+},
+{
+"id": 1931,
+"name": "Fahrersitzwagen"
+},
+{
+"id": 1933,
+"name": "Zubehör / Ersatzteile für Gabelstapler"
+},
+{
+"id": 1987,
+"name": "Abschieber"
+},
+{
+"id": 1988,
+"name": "Baustoffbehälter"
+},
+{
+"id": 1989,
+"name": "Ballenklammer"
+},
+{
+"id": 1990,
+"name": "Befülltrichter"
+},
+{
+"id": 1991,
+"name": "Drehgeräte"
+},
+{
+"id": 1992,
+"name": "Entleergeräte"
+},
+{
+"id": 1993,
+"name": "Fasshandling"
+},
+{
+"id": 1994,
+"name": "Gabeln"
+},
+{
+"id": 1995,
+"name": "Gabelverlängerungen"
+},
+{
+"id": 1996,
+"name": "Geräteklammern"
+},
+{
+"id": 1997,
+"name": "Hafenklammern"
+},
+{
+"id": 1998,
+"name": "Hydraulische Seilwinden"
+},
+{
+"id": 1999,
+"name": "Kartonklammern"
+},
+{
+"id": 2000,
+"name": "Kastenwagen"
+},
+{
+"id": 2001,
+"name": "Kehraufsätze"
+},
+{
+"id": 2002,
+"name": "Kippvorrichtungen mit Schaufeln"
+},
+{
+"id": 2003,
+"name": "Klammern für Zementrohre"
+},
+{
+"id": 2004,
+"name": "Klammergabeln"
+},
+{
+"id": 2005,
+"name": "Klemmschieber"
+},
+{
+"id": 2006,
+"name": "Kranarme"
+},
+{
+"id": 2007,
+"name": "Lasthalter"
+},
+{
+"id": 2008,
+"name": "Mehrpalettengabeln"
+},
+{
+"id": 2009,
+"name": "Palettenwendegeräte"
+},
+{
+"id": 2010,
+"name": "Papierrollenklammern"
+},
+{
+"id": 2011,
+"name": "Personenkörbe"
+},
+{
+"id": 2012,
+"name": "Reifenklammern"
+},
+{
+"id": 2013,
+"name": "Rohrklammern"
+},
+{
+"id": 2014,
+"name": "Rundholzzangen"
+},
+{
+"id": 2015,
+"name": "Schaumstoffklammern"
+},
+{
+"id": 2016,
+"name": "Schneeschieber"
+},
+{
+"id": 2017,
+"name": "Schüttgutschaufeln"
+},
+{
+"id": 2018,
+"name": "Seitenschieber"
+},
+{
+"id": 2019,
+"name": "Seitenschubgeräte"
+},
+{
+"id": 2020,
+"name": "Silobehälter"
+},
+{
+"id": 2021,
+"name": "Steinklammern"
+},
+{
+"id": 2022,
+"name": "Stapelkipper"
+},
+{
+"id": 2023,
+"name": "Tabakklammern"
+},
+{
+"id": 2024,
+"name": "Teleskopgabelzinken"
+},
+{
+"id": 2025,
+"name": "Tragdorne & Teppichdorne"
+},
+{
+"id": 2026,
+"name": "Vorschubgabelträger"
+},
+{
+"id": 2027,
+"name": "Zelluloseklammern & Ballenklammern"
+},
+{
+"id": 2028,
+"name": "Zinkenverstellgeräte"
+},
+{
+"id": 2029,
+"name": "Sonstige Anbaugeräte für Stapler"
+},
+{
+"id": 2030,
+"name": "Zubehör & Ersatzteile für Anbaugeräte (Stapler)"
+}
+]
+},
+"2357": {
+"name": "Wohnwagen & Wohnmobile",
+"leaves": [
+{
+"id": 2360,
+"name": "Alkoven Wohnmobile & Wohnwagen"
+},
+{
+"id": 2363,
+"name": "Integrierte Wohnmobile"
+},
+{
+"id": 2366,
+"name": "Kastenwagen Wohnmobile & Campervans"
+},
+{
+"id": 2369,
+"name": "Teilintegrierte Wohnmobile"
+},
+{
+"id": 2372,
+"name": "Wohnkabinen"
+},
+{
+"id": 2375,
+"name": "Pickup Camper & Wohnkabine"
+},
+{
+"id": 2378,
+"name": "LKW Wohnmobile"
+},
+{
+"id": 2381,
+"name": "Wohnwagen"
+},
+{
+"id": 2384,
+"name": "Sonstige Wohnmobile & Wohnwagen"
+},
+{
+"id": 2387,
+"name": "Mobilheime"
+}
+]
+}
+}
+}
