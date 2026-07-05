@@ -83,6 +83,7 @@ app_datas = [
     ("../procurement.py", "."),
     ("../lieferanten.py", "."),
     ("../kostenanalyse_szenarien.py", "."),
+    ("../kostenkalkulation.py", "."),
     ("../berichte.py", "."),
     ("../audit_log.py", "."),
     ("../preis_historie.py", "."),
