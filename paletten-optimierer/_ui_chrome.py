@@ -123,7 +123,14 @@ CSS = f"""
     .stApp {{ background: {GRAY_BG}; }}
     .block-container {{ padding-top: 1rem; padding-bottom: 2rem; max-width: 100%; }}
     header[data-testid="stHeader"] {{ background: transparent; height: 0; }}
-    #MainMenu, footer {{ visibility: hidden; }}
+    /* Alle Streamlit-Chrome-Elemente verstecken — App-Feel, kein Web-Feel */
+    #MainMenu, footer,
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"],
+    [data-testid="stDeployButton"],
+    .stAppDeployButton,
+    .streamlitBadge {{ visibility: hidden !important; display: none !important; }}
 
     /* Sidebar */
     section[data-testid="stSidebar"] {{
