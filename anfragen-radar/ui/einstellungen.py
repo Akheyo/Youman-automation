@@ -150,6 +150,23 @@ def render() -> None:
         config.update({"sources_enabled": switches})
         st.toast("Quellen-Einstellungen gespeichert.")
 
+    st.divider()
+
+    # -------------------------------------------------------- App beenden
+    st.subheader("App beenden")
+    st.caption(
+        "Die App läuft unsichtbar im Hintergrund weiter (Mail-Überwachung), "
+        "auch wenn dieser Browser-Tab geschlossen wird. Hier lässt sie sich "
+        "komplett beenden."
+    )
+    if st.button("🛑 Anfragen-Radar beenden", type="secondary"):
+        st.warning("Anfragen-Radar wird beendet – dieser Tab kann geschlossen werden.")
+        import os as _os
+        import threading as _threading
+
+        # kleiner Aufschub, damit die Meldung den Browser noch erreicht
+        _threading.Timer(1.0, lambda: _os._exit(0)).start()
+
 
 def _run_test(func) -> None:
     with st.spinner("Teste …"):

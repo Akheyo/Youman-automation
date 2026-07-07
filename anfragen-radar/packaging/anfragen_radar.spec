@@ -63,7 +63,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=True,  # Konsole sichtbar lassen: Server-Log, sauberes Beenden
+    console=False,  # kein schwarzes Fenster; Logs liegen in %APPDATA%/AnfragenRadar/logs
     disable_windowed_traceback=False,
 )
 

@@ -86,14 +86,20 @@ Treffer mehr liefert, zuerst Such-URL/`href_pattern` des Plugins prüfen
 
 1. Unter GitHub-Releases die aktuelle `AnfragenRadar-Setup-<version>.exe`
    herunterladen und installieren (keine Admin-Rechte nötig).
-2. „Anfragen-Radar“ starten – ein Konsolenfenster (Server) öffnet sich,
-   der Browser mit dem Dashboard startet automatisch
+2. „Anfragen-Radar“ starten – der Server läuft unsichtbar im Hintergrund,
+   der Browser mit dem Dashboard öffnet sich automatisch
    (http://127.0.0.1:8531).
 3. Einstellungen ausfüllen (siehe oben). Fertig.
 4. Optional beim Setup „Beim Windows-Start automatisch starten“ anhaken,
    damit die App auf dem Firmen-PC dauerhaft läuft.
 
-**Wichtig:** Das Konsolenfenster ist der Server – schließen beendet die App.
+Hinweise:
+
+- Browser-Tab schließen beendet die App **nicht** – die Mail-Überwachung
+  läuft im Hintergrund weiter. Erneuter Doppelklick auf „Anfragen-Radar“
+  öffnet das Dashboard wieder (startet keinen zweiten Server).
+- Komplett beenden: Einstellungen → „Anfragen-Radar beenden“.
+- Server-Logs liegen in `%APPDATA%/AnfragenRadar/logs/`.
 
 ## Release bauen
 
