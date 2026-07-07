@@ -1,0 +1,56 @@
+{
+  "_hinweis": "NICHT ausfüllen und committen! Alle Werte werden über die Einstellungen-Seite der App eingegeben und lokal verschlüsselt in %APPDATA%/AnfragenRadar/config.enc gespeichert. Diese Datei zeigt nur die Struktur.",
+  "imap": {
+    "host": "imap.example.com",
+    "port": 993,
+    "user": "maschinensucher@komplett-konzept.de",
+    "password": "",
+    "ssl": true,
+    "folder": "INBOX",
+    "mark_seen": false,
+    "poll_interval_seconds": 120,
+    "search_days_back": 14
+  },
+  "sender_filter": "info@mail.machineseeker.com",
+  "subject_filter": "Kategorie-Anfragen",
+  "anthropic": {
+    "api_key": "",
+    "model": "claude-sonnet-4-6",
+    "llm_rerank": false
+  },
+  "plenty": {
+    "base_url": "https://p14443.my.plentysystems.com",
+    "user": "",
+    "password": ""
+  },
+  "maschinensucher": {
+    "api_base": "https://api.maschinensucher.de",
+    "api_key": "",
+    "dealer_id": ""
+  },
+  "websearch": {
+    "provider": "duckduckgo",
+    "api_key": ""
+  },
+  "search": {
+    "per_source_timeout": 25,
+    "max_terms_per_source": 4,
+    "max_hits_per_source": 15
+  },
+  "sources_enabled": {
+    "own_plenty": true,
+    "own_maschinensucher": true,
+    "maschinensucher_markt": true,
+    "ebay": true,
+    "kleinanzeigen": true,
+    "surplex": true,
+    "trademachines": true,
+    "resale": true,
+    "exapro": true,
+    "mascus": true,
+    "machinio": true,
+    "machineseeker_com": true,
+    "gebrauchtmaschinen": true,
+    "websearch": true
+  }
+}

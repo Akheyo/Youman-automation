@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+
+# Build-Artefakte
+build/
+dist/
+*.spec.bak
+
+# Secrets / lokale Daten – NIEMALS committen
+config.enc
+config.key
+*.sqlite3
+*.log
+config.json
