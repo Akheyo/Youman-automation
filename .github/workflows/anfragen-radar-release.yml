@@ -1,0 +1,67 @@
+name: Anfragen-Radar – Build & Release Setup.exe
+
+on:
+  push:
+    tags:
+      - "radar-v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: anfragen-radar
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: anfragen-radar/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: python -m pytest tests/ -v
+
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/radar-v* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/radar-v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0.0-dev" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: PyInstaller build (onedir)
+        run: pyinstaller packaging/anfragen_radar.spec --noconfirm
+
+      - name: Build Setup.exe (Inno Setup)
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" `
+            packaging\installer.iss `
+            /DAppVersion=${{ steps.version.outputs.version }}
+
+      - name: Upload artifact (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnfragenRadar-Setup
+          path: anfragen-radar/dist/AnfragenRadar-Setup-*.exe
+
+      - name: Attach Setup.exe to release
+        if: startsWith(github.ref, 'refs/tags/radar-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: anfragen-radar/dist/AnfragenRadar-Setup-*.exe
+          generate_release_notes: true
