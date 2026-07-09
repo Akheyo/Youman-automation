@@ -125,3 +125,7 @@ Reserve für 1–2 Nachbesserungen einplanen. Fehlgeschlagene/NSFW-geflaggte Job
 Bilder: Titel `4cc80e69`, Prinzipalmarkt-Junge `bff9bf8a`, Dom-Radfahrer `0ca165ab`, Aasee-Tretboot `e0bdd0b9`, Familie-Bank `eb68d95b`, Abbiege-Szene `3f13943d`, Ampel-Szene `39bf725f`, Promenade `dac2880d`, Aasee-Lastenrad `6dbf97e9`, Rathaus-Auto `27e8de28`.
 Beste Clips: Auffahrunfall-Choreo `44e69626` (gut, aber falscher Dom), Abbiege-Choreo `dc09ac79` (Teleport-/Blaulicht-Fehler), Promenade `acb7e62b`, Aasee `ef81d44a`, Intro `6c4970e6`, Finale `b2269343`.
 Fertiger Schnitt v1 liegt beim Nutzer als `Muenster_Edition_1080p.mp4`.
+
+## Video-Dateien im Repo (Runde 1, gesichert)
+
+Unter `assets/muenster-edition/` liegen die 6 Original-Clips der ersten Runde (nummeriert in Schnittreihenfolge) sowie der fertige Schnitt `Muenster_Edition_v1_komplett.mp4`. Die neue Session kann sie direkt verwenden (z. B. als Vergleich, oder um einzelne gute Szenen zu übernehmen statt alles neu zu generieren).
