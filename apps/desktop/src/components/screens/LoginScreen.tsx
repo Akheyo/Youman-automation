@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Building2, Mail, Lock, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Building2, Mail, Lock, Loader2, Server, ChevronRight } from "lucide-react";
 import { LoginRequestSchema, type LoginRequestDto } from "@youman/shared";
 import { useAuthStore } from "@/stores/authStore";
-import { apiClient } from "@/services/api";
+import { apiClient, getApiBaseUrl, setApiBaseUrl, isCustomApiBaseUrl } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/useToast";
@@ -14,6 +14,17 @@ import type { LoginResponse } from "@youman/shared";
 export function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showServer, setShowServer] = useState(false);
+  const [serverUrl, setServerUrl] = useState(() => (isCustomApiBaseUrl() ? getApiBaseUrl() : ""));
+
+  const applyServerUrl = () => {
+    const applied = setApiBaseUrl(serverUrl);
+    setServerUrl(isCustomApiBaseUrl() ? applied : "");
+    toast({
+      title: isCustomApiBaseUrl() ? `Server: ${applied}` : "Server: lokaler Standard",
+      variant: "success",
+    });
+  };
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
 
@@ -124,6 +135,34 @@ export function LoginScreen() {
             {isLoading ? "Anmelden..." : "Anmelden"}
           </Button>
         </form>
+
+        {/* Server settings */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowServer((v) => !v)}
+            className="mx-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronRight className={showServer ? "h-3 w-3 rotate-90 transition-transform" : "h-3 w-3 transition-transform"} />
+            <Server className="h-3 w-3" />
+            Server-Einstellungen
+            {isCustomApiBaseUrl() && <span className="ml-1 h-1.5 w-1.5 rounded-full bg-success" />}
+          </button>
+          {showServer && (
+            <div className="mt-2 flex gap-2">
+              <Input
+                value={serverUrl}
+                onChange={(e) => setServerUrl(e.target.value)}
+                placeholder="Leer = lokaler Server (localhost:3001)"
+                className="font-mono text-xs"
+                autoComplete="off"
+              />
+              <Button type="button" variant="outline" size="sm" onClick={applyServerUrl} className="shrink-0 h-9">
+                Übernehmen
+              </Button>
+            </div>
+          )}
+        </div>
 
         {/* Dev hint */}
         {import.meta.env.DEV && (

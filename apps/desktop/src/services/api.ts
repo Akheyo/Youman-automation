@@ -2,16 +2,39 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "../stores/authStore";
 import type { ApiResponse, ApiError } from "@youman/shared";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api/v1";
+const DEFAULT_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api/v1";
+const SERVER_URL_KEY = "adept.serverUrl";
+
+/** User-configurable backend URL (login screen), falls back to the built-in default. */
+export function getApiBaseUrl(): string {
+  return localStorage.getItem(SERVER_URL_KEY) ?? DEFAULT_BASE_URL;
+}
+
+/** Persists a custom backend URL; empty input resets to the default. */
+export function setApiBaseUrl(input: string): string {
+  const trimmed = input.trim().replace(/\/+$/, "");
+  if (!trimmed) {
+    localStorage.removeItem(SERVER_URL_KEY);
+    return DEFAULT_BASE_URL;
+  }
+  const url = trimmed.endsWith("/api/v1") ? trimmed : `${trimmed}/api/v1`;
+  localStorage.setItem(SERVER_URL_KEY, url);
+  return url;
+}
+
+export function isCustomApiBaseUrl(): boolean {
+  return localStorage.getItem(SERVER_URL_KEY) !== null;
+}
 
 export const apiClient = axios.create({
-  baseURL: BASE_URL,
   timeout: 30_000,
   headers: { "Content-Type": "application/json" },
 });
 
 // Attach access token on every request
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  // Resolved per request so a changed server URL applies without app restart.
+  config.baseURL = getApiBaseUrl();
   // Action configs carry absolute paths ("/api/v1/search/…") while baseURL
   // already ends in /api/v1 – strip the duplicate prefix so requests don't
   // end up at /api/v1/api/v1/… (404).
@@ -42,7 +65,7 @@ apiClient.interceptors.response.use(
 
       try {
         const res = await axios.post<{ accessToken: string; refreshToken: string }>(
-          `${BASE_URL}/auth/refresh`,
+          `${getApiBaseUrl()}/auth/refresh`,
           { refreshToken }
         );
         const { accessToken, refreshToken: newRefresh } = res.data;

@@ -1,0 +1,25 @@
+# Render Blueprint: adept& Backend
+# Deploy: render.com → New → Blueprint → dieses Repo + Branch wählen.
+# Die drei secret-Variablen werden beim ersten Deploy im Render-UI abgefragt.
+services:
+  - type: web
+    name: adept-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ALLOWED_ORIGINS
+        value: http://localhost:5173,app://localhost
+      - key: JWT_ACCESS_EXPIRY
+        value: 1h
+      - key: JWT_REFRESH_EXPIRY
+        value: 30d
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
