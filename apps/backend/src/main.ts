@@ -9,7 +9,11 @@ import { AuditInterceptor } from "./common/interceptors/audit.interceptor";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger: ["error", "warn", "log"],
+    // debug enabled in development so connector diagnostics (e.g. Plenty
+    // search hit counts) are visible in the console
+    logger: process.env.NODE_ENV === "development"
+      ? ["error", "warn", "log", "debug"]
+      : ["error", "warn", "log"],
   });
 
   // Security
