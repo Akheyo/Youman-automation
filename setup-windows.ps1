@@ -6,6 +6,20 @@ $ErrorActionPreference = "Stop"
 $repo = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $repo
 
+function Invoke-Step {
+    param([string]$Label, [scriptblock]$Command)
+    Write-Host ""
+    Write-Host ">> $Label" -ForegroundColor Cyan
+    & $Command
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host ""
+        Write-Host "FEHLER bei: $Label (Exit-Code $LASTEXITCODE)" -ForegroundColor Red
+        Write-Host "Bitte die Meldung oben kopieren und Claude schicken." -ForegroundColor Red
+        Read-Host "Enter zum Beenden"
+        exit 1
+    }
+}
+
 Write-Host ""
 Write-Host "=== adept& Backend-Setup ===" -ForegroundColor Cyan
 Write-Host ""
@@ -65,24 +79,28 @@ ALLOWED_ORIGINS=http://localhost:5173,app://localhost
     Write-Host ".env erstellt: $envFile" -ForegroundColor Green
 }
 
-# ── Abhängigkeiten installieren und Pakete bauen ─────────────────────────────
-Write-Host ""
-Write-Host "Installiere Abhängigkeiten (kann beim ersten Mal einige Minuten dauern)..." -ForegroundColor Cyan
-pnpm install --no-frozen-lockfile
+# ── Abhängigkeiten installieren (nur Backend + Bibliotheken) ─────────────────
+# Bewusst OHNE die Desktop-App: deren native Module (better-sqlite3) brauchen
+# einen C++-Compiler. Die Desktop-App kommt als fertiger Installer von GitHub.
+Invoke-Step "Installiere Backend-Abhängigkeiten (erster Lauf dauert einige Minuten)" {
+    pnpm install --filter "@youman/backend..." --no-frozen-lockfile
+}
 
-Write-Host "Baue Workspace-Pakete..." -ForegroundColor Cyan
-pnpm build:shared
-pnpm build:config-engine
-pnpm build:sap
-pnpm build:plenty
+Invoke-Step "Baue Workspace-Pakete" {
+    pnpm build:shared
+    if ($LASTEXITCODE -ne 0) { return }
+    pnpm build:config-engine
+    if ($LASTEXITCODE -ne 0) { return }
+    pnpm build:sap
+    if ($LASTEXITCODE -ne 0) { return }
+    pnpm build:plenty
+}
 
 # ── Datenbank einrichten ─────────────────────────────────────────────────────
-Write-Host ""
-Write-Host "Richte Supabase-Datenbank ein (Schema + Demo-Daten)..." -ForegroundColor Cyan
 Set-Location (Join-Path $repo "apps\backend")
-pnpm exec prisma generate
-pnpm exec prisma db push
-pnpm run db:seed
+Invoke-Step "Generiere Prisma-Client" { pnpm exec prisma generate }
+Invoke-Step "Lege Datenbankschema in Supabase an" { pnpm exec prisma db push }
+Invoke-Step "Lege Demo-Mandant und Demo-User an" { pnpm run db:seed }
 Set-Location $repo
 
 Write-Host ""
