@@ -120,18 +120,24 @@ export class ActionsService {
         const draft = this.buildQuoteDraft(dto, req.tenantId, req.userId);
         const result = await connector.createQuote(draft);
 
-        // Post-success actions
+        // Post-success actions – best effort: not every ERP supports tasks
+        // (e.g. Plentymarkets throws NotSupportedError). The quote itself is
+        // already created, so a failing follow-up must not fail the action.
         if (dto.lineItems.length > 0) {
-          await connector.createFollowUpTask({
-            tenantId: req.tenantId,
-            userId: req.userId,
-            title: `Nachfassen: Angebot ${result.erpQuoteNumber}`,
-            relatedCustomerId: dto.customerId,
-            relatedQuoteId: result.erpQuoteId,
-            priority: "medium",
-            status: "open",
-            source: "adept",
-          });
+          try {
+            await connector.createFollowUpTask({
+              tenantId: req.tenantId,
+              userId: req.userId,
+              title: `Nachfassen: Angebot ${result.erpQuoteNumber}`,
+              relatedCustomerId: dto.customerId,
+              relatedQuoteId: result.erpQuoteId,
+              priority: "medium",
+              status: "open",
+              source: "adept",
+            });
+          } catch (err) {
+            this.logger.warn(`Nachfass-Aufgabe zu Angebot ${result.erpQuoteNumber} übersprungen: ${err instanceof Error ? err.message : err}`);
+          }
         }
 
         return result;
