@@ -201,28 +201,9 @@
     {
       "type": "toast",
       "config": {
-        "message": "Angebot {quoteNumber} erfolgreich erstellt!",
+        "message": "Angebot {quoteNumber} erstellt – Dokument zum Download bereit.",
         "variant": "success",
         "durationMs": 5000
-      }
-    },
-    {
-      "type": "open_pdf",
-      "config": { "urlField": "pdfUrl" }
-    },
-    {
-      "type": "prepare_email",
-      "config": {
-        "subject": "Angebot {quoteNumber}",
-        "body": "Sehr geehrte Damen und Herren,\n\nim Anhang finden Sie unser Angebot {quoteNumber}.\n\nMit freundlichen Grüßen"
-      }
-    },
-    {
-      "type": "create_followup",
-      "config": {
-        "title": "Nachfassen: Angebot {quoteNumber}",
-        "daysUntilDue": 7,
-        "priority": "medium"
       }
     }
   ],
