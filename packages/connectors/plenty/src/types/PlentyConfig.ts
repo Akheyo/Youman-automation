@@ -105,12 +105,23 @@ export interface PlentyVariationBarcode {
   code: string;
 }
 
+export interface PlentyItemText {
+  lang?: string;
+  /** Item name as delivered via with=itemTexts. */
+  name?: string;
+  name1?: string;
+  name2?: string;
+  name3?: string;
+  previewDescription?: string;
+  description?: string;
+}
+
 export interface PlentyVariation {
   id: number;
   itemId: number;
   number?: string | null; // variation number / SKU
   name?: string | null;
-  model?: string | null;
+  model?: string | null; // manufacturer part number
   externalId?: string | null;
   isActive?: boolean;
   unitCombinationId?: number | null;
@@ -119,8 +130,10 @@ export interface PlentyVariation {
   item?: {
     id: number;
     manufacturerId?: number | null;
-    texts?: Array<{ lang?: string; name1?: string; name2?: string; name3?: string; description?: string }>;
+    texts?: PlentyItemText[];
   };
+  /** Delivered via with=itemTexts (&lang=…). */
+  itemTexts?: PlentyItemText[];
   variationSalesPrices?: PlentyVariationSalesPrice[];
   stock?: PlentyVariationStock[];
   variationBarcodes?: PlentyVariationBarcode[];

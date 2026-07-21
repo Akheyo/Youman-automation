@@ -92,8 +92,11 @@ export function mapVariationToProduct(
   opts: { currency?: string; defaultWarehouseId?: number } = {}
 ): Product {
   const currency = opts.currency ?? "EUR";
-  const itemText = variation.item?.texts?.[0];
-  const designation = variation.name || itemText?.name1 || `Variante ${variation.id}`;
+  // Item names arrive via with=itemTexts (field "name"); prefer German texts.
+  const texts = variation.itemTexts ?? variation.item?.texts ?? [];
+  const itemText = texts.find((t) => t.lang === "de") ?? texts[0];
+  const designation =
+    variation.name || itemText?.name || itemText?.name1 || `Variante ${variation.id}`;
   const ean = variation.variationBarcodes?.[0]?.code;
   const price = pickDefaultSalesPrice(variation);
   const stockInfos = mapVariationStock(variation.stock ?? [], String(variation.id));
@@ -109,7 +112,8 @@ export function mapVariationToProduct(
     articleNumber: variation.number ?? String(variation.id),
     ...(ean ? { ean } : {}),
     designation,
-    ...(itemText?.description ? { description: itemText.description } : {}),
+    ...(variation.model ? { manufacturerArticleNumber: variation.model } : {}),
+    ...(itemText?.previewDescription ? { description: itemText.previewDescription } : {}),
     unit: "ST",
     basePrice: price ?? 0,
     currency,

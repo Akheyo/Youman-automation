@@ -79,17 +79,22 @@ export const variationSearchResponse: PlentyPagedResponse<PlentyVariation> = {
       isActive: true,
       createdAt: "2024-02-01T10:00:00+01:00",
       updatedAt: "2025-12-15T06:00:00+01:00",
+      model: "FJ-50-001",
       item: {
         id: 210,
         manufacturerId: 7,
-        texts: [
-          {
-            lang: "de",
-            name1: "Trekkingrucksack Fjell 50 L",
-            description: "Wasserabweisender Trekkingrucksack mit Alu-Rahmen",
-          },
-        ],
       },
+      itemTexts: [
+        {
+          lang: "de",
+          name: "Trekkingrucksack Fjell 50 L",
+          previewDescription: "Wasserabweisender Trekkingrucksack mit Alu-Rahmen",
+        },
+        {
+          lang: "en",
+          name: "Trekking backpack Fjell 50 L",
+        },
+      ],
       variationSalesPrices: [
         { variationId: 1101, salesPriceId: 2, price: 89.9, updatedAt: "2025-11-01T00:00:00+01:00" },
         { variationId: 1101, salesPriceId: 1, price: 74.9, updatedAt: "2025-11-01T00:00:00+01:00" },

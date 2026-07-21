@@ -78,9 +78,14 @@ describe("mapVariationToProduct", () => {
     expect(product.stockInfo?.available).toBe(15);
   });
 
-  it("falls back to the item text name when the variation has no own name", () => {
+  it("falls back to the German itemTexts name when the variation has no own name", () => {
     const product = mapVariationToProduct({ ...variation, name: null }, TENANT);
     expect(product.designation).toBe("Trekkingrucksack Fjell 50 L");
+  });
+
+  it("maps the model as manufacturer article number", () => {
+    const product = mapVariationToProduct(variation, TENANT);
+    expect(product.manufacturerArticleNumber).toBe("FJ-50-001");
   });
 });
 

@@ -45,7 +45,10 @@ import {
   pickDefaultSalesPrice,
 } from "../mapping";
 
-const VARIATION_WITH = "item,variationSalesPrices,stock,variationBarcodes";
+// itemTexts carries the item names (variation.name is usually empty);
+// requires the lang parameter alongside.
+const VARIATION_WITH = "itemTexts,variationSalesPrices,stock,variationBarcodes";
+const VARIATION_LANG = "de";
 
 export interface PlentyConnectorDeps {
   /** Injectable for tests. */
@@ -201,7 +204,7 @@ export class PlentyConnector implements IErpConnector {
     // Heuristic: EAN-like digit strings → barcode; other numeric queries →
     // variation number, then variation id, then item id; compact codes →
     // variation number (SKU) with itemName fallback; everything else → itemName.
-    const base: Record<string, unknown> = { page, itemsPerPage: pageSize, with: VARIATION_WITH };
+    const base: Record<string, unknown> = { page, itemsPerPage: pageSize, with: VARIATION_WITH, lang: VARIATION_LANG };
     let res: PlentyPagedResponse<PlentyVariation>;
     if (/^\d{8}$|^\d{12,14}$/.test(query)) {
       res = await this.searchVariations({ ...base, barcode: query }, query, "barcode");
@@ -348,7 +351,7 @@ export class PlentyConnector implements IErpConnector {
   }
 
   private async getVariation(id: string): Promise<PlentyVariation> {
-    const res = await this.searchVariations({ id: Number(id), with: VARIATION_WITH, itemsPerPage: 1, page: 1 });
+    const res = await this.searchVariations({ id: Number(id), with: VARIATION_WITH, lang: VARIATION_LANG, itemsPerPage: 1, page: 1 });
     const variation = res.entries[0];
     if (!variation) throw new NotFoundError(`Plenty-Variante '${id}' nicht gefunden`);
     return variation;
