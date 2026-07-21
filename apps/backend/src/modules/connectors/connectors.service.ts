@@ -38,9 +38,16 @@ export class ConnectorsService {
 
     // PLENTY lives in its own package; registering it here avoids a circular
     // dependency between @youman/connector-sap (factory) and @youman/connector-plenty.
+    // Nest suppresses debug output in production; route the connector's debug
+    // lines (search diagnostics) to log level so they show up in cloud logs.
+    const connectorLogger = {
+      debug: (msg: string) => this.logger.log(msg),
+      warn: (msg: string) => this.logger.warn(msg),
+      error: (msg: string) => this.logger.error(msg),
+    };
     const connector: IErpConnector =
       config.connectorType === "PLENTY"
-        ? new PlentyConnector(tenantId, config.config as unknown as PlentyConfig, { logger: this.logger })
+        ? new PlentyConnector(tenantId, config.config as unknown as PlentyConfig, { logger: connectorLogger })
         : ConnectorFactory.create({
             id: config.id,
             tenantId,

@@ -18,7 +18,7 @@ import type {
   QuoteResult,
   ReservationResult,
 } from "@youman/connector-sap";
-import { NotFoundError, NotSupportedError, ValidationError } from "../errors";
+import { AuthError, NotFoundError, NotSupportedError, RateLimitError, ValidationError } from "../errors";
 import { PlentyTokenManager, type PlentyLogger } from "../auth/PlentyTokenManager";
 import { PlentyHttpClient } from "../http/PlentyHttpClient";
 import type {
@@ -207,23 +207,26 @@ export class PlentyConnector implements IErpConnector {
     const base: Record<string, unknown> = { page, itemsPerPage: pageSize, with: VARIATION_WITH, lang: VARIATION_LANG };
     let res: PlentyPagedResponse<PlentyVariation>;
     if (/^\d{8}$|^\d{12,14}$/.test(query)) {
-      res = await this.searchVariations({ ...base, barcode: query }, query, "barcode");
+      res = await this.trySearchVariations({ ...base, barcode: query }, query, "barcode");
     } else if (/^\d+$/.test(query)) {
-      res = await this.searchVariations({ ...base, numberFuzzy: query }, query, "numberFuzzy");
+      const idNum = Number(query);
+      res = await this.trySearchVariations({ ...base, numberFuzzy: query }, query, "numberFuzzy");
       if (res.entries.length === 0) {
-        res = await this.searchVariations({ ...base, id: Number(query) }, query, "id");
+        // Guard against Plenty silently ignoring the filter and returning the
+        // whole catalogue: only accept entries that actually match the id.
+        res = await this.trySearchVariations({ ...base, id: idNum }, query, "id", (v) => v.id === idNum);
       }
       if (res.entries.length === 0) {
-        res = await this.searchVariations({ ...base, itemId: Number(query) }, query, "itemId");
+        res = await this.trySearchVariations({ ...base, itemId: idNum }, query, "itemId", (v) => v.itemId === idNum);
       }
       if (res.entries.length === 0) {
         // Part numbers often live inside the item name (e.g. "Ford 1815863 …").
-        res = await this.searchVariations({ ...base, itemName: query }, query, "itemName");
+        res = await this.trySearchVariations({ ...base, itemName: query }, query, "itemName");
       }
     } else if (query && !/\s/.test(query)) {
-      res = await this.searchVariations({ ...base, numberFuzzy: query }, query, "numberFuzzy");
+      res = await this.trySearchVariations({ ...base, numberFuzzy: query }, query, "numberFuzzy");
       if (res.entries.length === 0) {
-        res = await this.searchVariations({ ...base, itemName: query }, query, "itemName");
+        res = await this.trySearchVariations({ ...base, itemName: query }, query, "itemName");
       }
     } else {
       res = await this.searchVariations({ ...base, ...(query ? { itemName: query } : {}) }, query, "itemName");
@@ -347,16 +350,60 @@ export class PlentyConnector implements IErpConnector {
     query?: string,
     mode?: string
   ): Promise<PlentyPagedResponse<PlentyVariation>> {
-    const res = await this.http.get<PlentyPagedResponse<PlentyVariation>>("/items/variations", params);
+    const raw = await this.http.get<PlentyPagedResponse<PlentyVariation> | PlentyVariation[]>(
+      "/items/variations",
+      params
+    );
+    // Some Plenty endpoints answer with a bare array instead of a paged object.
+    const res: PlentyPagedResponse<PlentyVariation> = Array.isArray(raw)
+      ? { page: 1, totalsCount: raw.length, isLastPage: true, entries: raw, lastPageNumber: 1, firstOnPage: 1, lastOnPage: raw.length, itemsPerPage: raw.length }
+      : { ...raw, entries: raw.entries ?? [] };
     if (mode !== undefined) {
       this.logger.debug(`Plenty-Artikelsuche '${query}' (${mode}) → ${res.entries.length} von ${res.totalsCount} Treffern`);
     }
     return res;
   }
 
+  /**
+   * One step of the product-search fallback chain: a failing search mode
+   * (e.g. an unsupported filter answered with HTTP 400/404) must not kill the
+   * whole search – it logs and falls through to the next mode. Auth and
+   * rate-limit problems still surface, retrying other modes won't fix those.
+   * The optional verifier drops entries Plenty returned despite not matching
+   * the filter (observed when a filter parameter is silently ignored).
+   */
+  private async trySearchVariations(
+    params: Record<string, unknown>,
+    query: string,
+    mode: string,
+    verify?: (v: PlentyVariation) => boolean
+  ): Promise<PlentyPagedResponse<PlentyVariation>> {
+    try {
+      const res = await this.searchVariations(params, query, mode);
+      if (verify && res.entries.length > 0) {
+        const matching = res.entries.filter(verify);
+        if (matching.length !== res.entries.length) {
+          this.logger.warn(
+            `Plenty-Artikelsuche '${query}' (${mode}): ${res.entries.length - matching.length} Treffer verworfen, die nicht zum Filter passen`
+          );
+          return { ...res, entries: matching, totalsCount: matching.length, isLastPage: true };
+        }
+      }
+      return res;
+    } catch (err) {
+      if (err instanceof AuthError || err instanceof RateLimitError) throw err;
+      this.logger.warn(
+        `Plenty-Artikelsuche '${query}' (${mode}) fehlgeschlagen (${err instanceof Error ? err.message : String(err)}) – versuche nächsten Suchmodus`
+      );
+      return { page: 1, totalsCount: 0, isLastPage: true, entries: [], lastPageNumber: 1, firstOnPage: 0, lastOnPage: 0, itemsPerPage: 0 };
+    }
+  }
+
   private async getVariation(id: string): Promise<PlentyVariation> {
-    const res = await this.searchVariations({ id: Number(id), with: VARIATION_WITH, lang: VARIATION_LANG, itemsPerPage: 1, page: 1 });
-    const variation = res.entries[0];
+    const idNum = Number(id);
+    const res = await this.searchVariations({ id: idNum, with: VARIATION_WITH, lang: VARIATION_LANG, itemsPerPage: 1, page: 1 });
+    // Accept only an exact id match – never a random entry from an ignored filter.
+    const variation = res.entries.find((v) => v.id === idNum);
     if (!variation) throw new NotFoundError(`Plenty-Variante '${id}' nicht gefunden`);
     return variation;
   }

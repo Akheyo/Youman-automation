@@ -95,16 +95,44 @@ describe("PlentyConnector product search heuristics", () => {
 
   it("chains number → variation id → item id for numeric queries", async () => {
     const { connector, http } = connectorWithStub();
+    // Fixture variation: id 1101, itemId 210 → the itemId step must match.
     http.get
       .mockResolvedValueOnce({ ...variationSearchResponse, entries: [], totalsCount: 0 })
       .mockResolvedValueOnce({ ...variationSearchResponse, entries: [], totalsCount: 0 })
       .mockResolvedValueOnce(variationSearchResponse);
 
-    const result = await connector.searchProducts({ query: "54752" });
-    expect(http.get).toHaveBeenNthCalledWith(1, "/items/variations", expect.objectContaining({ numberFuzzy: "54752" }));
-    expect(http.get).toHaveBeenNthCalledWith(2, "/items/variations", expect.objectContaining({ id: 54752 }));
-    expect(http.get).toHaveBeenNthCalledWith(3, "/items/variations", expect.objectContaining({ itemId: 54752 }));
+    const result = await connector.searchProducts({ query: "210" });
+    expect(http.get).toHaveBeenNthCalledWith(1, "/items/variations", expect.objectContaining({ numberFuzzy: "210" }));
+    expect(http.get).toHaveBeenNthCalledWith(2, "/items/variations", expect.objectContaining({ id: 210 }));
+    expect(http.get).toHaveBeenNthCalledWith(3, "/items/variations", expect.objectContaining({ itemId: 210 }));
     expect(result.items).toHaveLength(1);
+  });
+
+  it("drops id/itemId hits that do not match the filter and falls back to itemName", async () => {
+    const { connector, http } = connectorWithStub();
+    // Plenty ignores the filter and returns unrelated entries (id 1101/itemId 210
+    // for query 54752) → both id steps must be discarded, itemName wins.
+    http.get
+      .mockResolvedValueOnce({ ...variationSearchResponse, entries: [], totalsCount: 0 })
+      .mockResolvedValueOnce(variationSearchResponse)
+      .mockResolvedValueOnce(variationSearchResponse)
+      .mockResolvedValueOnce(variationSearchResponse);
+
+    const result = await connector.searchProducts({ query: "54752" });
+    expect(http.get).toHaveBeenNthCalledWith(4, "/items/variations", expect.objectContaining({ itemName: "54752" }));
+    expect(result.items).toHaveLength(1);
+  });
+
+  it("continues the fallback chain when a single search mode fails", async () => {
+    const { connector, http } = connectorWithStub();
+    http.get
+      .mockRejectedValueOnce(new Error("Plenty-Request ungültig (HTTP 400)"))
+      .mockResolvedValueOnce({ ...variationSearchResponse, entries: [], totalsCount: 0 })
+      .mockResolvedValueOnce(variationSearchResponse);
+
+    const result = await connector.searchProducts({ query: "210" });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.articleNumber).toBe("TRK-500-BLK");
   });
 
   it("searches by itemName for queries containing whitespace", async () => {
