@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException, HttpException, UnprocessableEntityException, Logger } from "@nestjs/common";
 import { ZodError } from "zod";
 import { v4 as uuid } from "uuid";
 import { PrismaService } from "../../database/prisma.service";
@@ -125,7 +125,15 @@ export class ActionsService {
         metadata: { actionId: req.actionId, error: errorMsg },
       });
 
-      throw err;
+      // Surface the real reason (e.g. the ERP's validation message) to the
+      // client instead of a generic 500 "unerwarteter Fehler". Validation
+      // errors (parseDto) already are HttpExceptions and pass through.
+      if (err instanceof HttpException) throw err;
+      const code = (err as { code?: string }).code;
+      throw new UnprocessableEntityException({
+        message: errorMsg,
+        ...(code ? { code } : {}),
+      });
     }
   }
 
@@ -135,31 +143,17 @@ export class ActionsService {
     switch (req.actionId) {
       case "action-create-quote": {
         const dto = this.parseDto(CreateQuoteSchema, req.payload);
-        const draft = this.buildQuoteDraft(dto, req.tenantId, req.userId);
-        const quote = await connector.createQuote(draft);
-        const result = { ...quote, ...(await this.buildQuoteDocumentData(req.tenantId, dto)) };
-
-        // Post-success actions – best effort: not every ERP supports tasks
-        // (e.g. Plentymarkets throws NotSupportedError). The quote itself is
-        // already created, so a failing follow-up must not fail the action.
-        if (dto.lineItems.length > 0) {
-          try {
-            await connector.createFollowUpTask({
-              tenantId: req.tenantId,
-              userId: req.userId,
-              title: `Nachfassen: Angebot ${result.erpQuoteNumber}`,
-              relatedCustomerId: dto.customerId,
-              relatedQuoteId: result.erpQuoteId,
-              priority: "medium",
-              status: "open",
-              source: "adept",
-            });
-          } catch (err) {
-            this.logger.warn(`Nachfass-Aufgabe zu Angebot ${result.erpQuoteNumber} übersprungen: ${err instanceof Error ? err.message : err}`);
-          }
-        }
-
-        return result;
+        // Das Angebot wird NICHT im ERP als Auftrag angelegt, sondern in adept
+        // als Dokument erzeugt und zum Download bereitgestellt. Aus dem ERP
+        // werden nur (lesend) die Kundendaten für Name/Adresse geholt.
+        const quoteNumber = await this.nextQuoteNumber(req.tenantId);
+        return {
+          erpQuoteId: quoteNumber,
+          erpQuoteNumber: quoteNumber,
+          status: "created",
+          createdAt: new Date().toISOString(),
+          ...(await this.buildQuoteDocumentData(req.tenantId, dto)),
+        };
       }
 
       case "action-create-customer": {
@@ -272,46 +266,17 @@ export class ActionsService {
     }
   }
 
-  private buildQuoteDraft(dto: CreateQuoteDto, tenantId: string, userId: string) {
-    const totalNet = dto.lineItems.reduce(
-      (sum, item) => sum + item.quantity * item.pricePerUnit * (1 - (item.discount ?? 0) / 100),
-      0
-    );
-
-    return {
-      id: uuid(),
-      tenantId,
-      userId,
-      customerId: dto.customerId,
-      // Optional in the request – Plenty's order only needs customerId; these
-      // are best-effort labels, the real name is resolved for the document.
-      customerNumber: dto.customerNumber ?? "",
-      customerName: dto.customerName ?? "",
-      deliveryAddressId: dto.deliveryAddressId,
-      currency: dto.currency,
-      validUntil: dto.validUntil,
-      lineItems: dto.lineItems.map((item, idx) => ({
-        position: idx + 1,
-        productId: item.productId,
-        articleNumber: item.articleNumber ?? item.productId,
-        designation: item.designation ?? "",
-        quantity: item.quantity,
-        unit: item.unit,
-        pricePerUnit: item.pricePerUnit,
-        discount: item.discount,
-        netTotal: item.quantity * item.pricePerUnit * (1 - (item.discount ?? 0) / 100),
-        grossTotal: item.quantity * item.pricePerUnit * (1 - (item.discount ?? 0) / 100) * 1.19,
-        currency: dto.currency,
-        deliveryDate: item.deliveryDate,
-        notes: item.notes,
-      })),
-      notes: dto.notes,
-      totalNet,
-      totalGross: totalNet * 1.19,
-      status: "submitted" as const,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  /**
+   * Fortlaufende Angebotsnummer pro Mandant im Format JJJJ-NNNN, abgeleitet aus
+   * der Zahl bereits erstellter Angebote. Rein lokal – es entsteht kein
+   * ERP-Auftrag; die Vorlage setzt "An-" davor ("Angebot Nr. An-2026-0001").
+   */
+  private async nextQuoteNumber(tenantId: string): Promise<string> {
+    const year = new Date().getFullYear();
+    const count = await this.prisma.actionExecution.count({
+      where: { tenantId, actionId: "action-create-quote", status: "SUCCESS" },
+    });
+    return `${year}-${String(count + 1).padStart(4, "0")}`;
   }
 
   /**

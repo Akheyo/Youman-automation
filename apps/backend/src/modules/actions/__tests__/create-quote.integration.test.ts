@@ -22,6 +22,8 @@ describe("ActionsService – create quote (minimal payload)", () => {
         return row;
       }),
       update: vi.fn(async () => ({})),
+      // Used to derive the running quote number; no quotes yet → next is 0001.
+      count: vi.fn(async () => 0),
     },
     actionDefinition: {
       // No documentOutput here → the post-success document step is skipped,
@@ -32,6 +34,8 @@ describe("ActionsService – create quote (minimal payload)", () => {
   };
 
   const connector = new PlentyMockConnector("tenant-a");
+  // createQuote must NOT be called – the Angebot is a document, not an ERP order.
+  const createQuoteSpy = vi.spyOn(connector, "createQuote");
   const connectorsStub = { getConnector: vi.fn(async () => connector) };
   const auditStub = { log: vi.fn(async () => undefined) };
   const templatesStub = { findDefault: vi.fn(async () => null) };
@@ -79,9 +83,11 @@ describe("ActionsService – create quote (minimal payload)", () => {
 
     expect(result.status).toBe("success");
     expect(result.error).toBeNull();
+    // No ERP order was created – the quote lives only as an adept document.
+    expect(createQuoteSpy).not.toHaveBeenCalled();
     const data = result.result as Record<string, unknown>;
-    expect(data["erpQuoteId"]).toBeTruthy();
-    expect(data["erpQuoteNumber"]).toBeTruthy();
+    // Locally assigned running number (JJJJ-NNNN), not an ERP order id.
+    expect(data["erpQuoteNumber"]).toMatch(/^\d{4}-0001$/);
     // Document-ready data resolved from the customer (proves customer name lookup).
     expect((data["kunde"] as { name: string }).name).toBe("Bergmann Handels GmbH");
     expect(data["positionen"]).toHaveLength(1);

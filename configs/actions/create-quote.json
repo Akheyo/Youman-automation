@@ -3,7 +3,7 @@
   "tenantId": null,
   "name": "create_quote",
   "displayName": "Angebot erstellen",
-  "description": "Erstellt ein neues Angebot im ERP-System für einen Kunden mit Artikelpositionen.",
+  "description": "Erstellt ein Angebot als Dokument (PDF/DOCX) zum Download – ohne Auftrag im ERP anzulegen.",
   "icon": "FileText",
   "category": "sales",
   "targetSystem": "SAP",
