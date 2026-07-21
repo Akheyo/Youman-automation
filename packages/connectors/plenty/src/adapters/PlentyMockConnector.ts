@@ -175,14 +175,23 @@ export class PlentyMockConnector implements IErpConnector {
   async searchProducts(req: SearchRequest): Promise<SearchResult<Product>> {
     await this.delay(150);
     const q = req.query.trim().toLowerCase();
-    const items = PlentyMockConnector.PRODUCTS.filter(
+    // Mirrors the real connector's multi-track behaviour: numeric queries also
+    // match the variation id / item id exactly, with exact-ID hits first.
+    const exactIdHits = /^\d+$/.test(q)
+      ? PlentyMockConnector.PRODUCTS.filter((p) => p.id === q || p.externalId === q)
+      : [];
+    const textHits = PlentyMockConnector.PRODUCTS.filter(
       (p) =>
         !q ||
         p.designation.toLowerCase().includes(q) ||
         p.articleNumber.toLowerCase().includes(q) ||
         p.ean?.includes(q) ||
         p.manufacturer?.toLowerCase().includes(q)
-    ).map((p) => ({ ...p, tenantId: this.tenantId }));
+    );
+    const seen = new Set<string>();
+    const items = [...exactIdHits, ...textHits]
+      .filter((p) => (seen.has(p.id) ? false : (seen.add(p.id), true)))
+      .map((p) => ({ ...p, tenantId: this.tenantId }));
     return { items, total: items.length, page: req.page ?? 1, pageSize: req.pageSize ?? 20, hasMore: false, searchDurationMs: 150 };
   }
 

@@ -89,6 +89,12 @@ describe("PlentyMockConnector", () => {
     expect((await connector.searchProducts({ query: "4012345678905" })).items[0]!.id).toBe("3310");
   });
 
+  it("finds products by exact numeric id (offline demo of the id search)", async () => {
+    const result = await connector.searchProducts({ query: "2205" });
+    expect(result.items[0]!.id).toBe("2205");
+    expect(result.items[0]!.designation).toContain("Isolierflasche");
+  });
+
   it("returns variation-shaped products with price and stock", async () => {
     const product = await connector.getProduct("1101");
     expect(product.articleNumber).toBe("TRK-500-BLK");

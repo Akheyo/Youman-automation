@@ -209,17 +209,29 @@ export class PlentyConnector implements IErpConnector {
     if (/^\d{8}$|^\d{12,14}$/.test(query)) {
       res = await this.trySearchVariations({ ...base, barcode: query }, query, "barcode");
     } else if (/^\d+$/.test(query)) {
+      // Multi-track search: variation id, Plenty item id and variation number
+      // (SKU) in parallel; results are merged and deduped by variation id with
+      // exact-ID hits first. A failing or empty track never blocks the others.
+      // The verify guards only accept entries actually matching the id filter
+      // (Plenty silently ignores unknown filters and would return everything).
       const idNum = Number(query);
-      res = await this.trySearchVariations({ ...base, numberFuzzy: query }, query, "numberFuzzy");
-      if (res.entries.length === 0) {
-        // Guard against Plenty silently ignoring the filter and returning the
-        // whole catalogue: only accept entries that actually match the id.
-        res = await this.trySearchVariations({ ...base, id: idNum }, query, "id", (v) => v.id === idNum);
-      }
-      if (res.entries.length === 0) {
-        res = await this.trySearchVariations({ ...base, itemId: idNum }, query, "itemId", (v) => v.itemId === idNum);
-      }
-      if (res.entries.length === 0) {
+      const [byVariationId, byItemId, byNumber] = await Promise.all([
+        this.trySearchVariations({ ...base, id: idNum }, query, "id", (v) => v.id === idNum),
+        this.trySearchVariations({ ...base, itemId: idNum }, query, "itemId", (v) => v.itemId === idNum),
+        this.trySearchVariations({ ...base, numberFuzzy: query }, query, "numberFuzzy"),
+      ]);
+      const merged = dedupeVariations([...byVariationId.entries, ...byItemId.entries, ...byNumber.entries]);
+      if (merged.length > 0) {
+        const pageEntries = merged.slice(0, pageSize);
+        res = {
+          page: 1,
+          totalsCount: merged.length,
+          isLastPage: merged.length <= pageSize,
+          entries: pageEntries,
+          itemsPerPage: pageSize,
+        };
+        this.logger.debug(`Plenty-Artikelsuche '${query}' (kombiniert) → ${merged.length} eindeutige Treffer`);
+      } else {
         // Part numbers often live inside the item name (e.g. "Ford 1815863 …").
         res = await this.trySearchVariations({ ...base, itemName: query }, query, "itemName");
       }
@@ -441,4 +453,16 @@ export class PlentyConnector implements IErpConnector {
 export function normalizeBaseUrl(baseUrl: string): string {
   const trimmed = baseUrl.replace(/\/+$/, "");
   return trimmed.endsWith("/rest") ? trimmed : `${trimmed}/rest`;
+}
+
+/** Merges multi-track search results, keeping the first occurrence per variation id. */
+function dedupeVariations(entries: PlentyVariation[]): PlentyVariation[] {
+  const seen = new Set<number>();
+  const result: PlentyVariation[] = [];
+  for (const v of entries) {
+    if (seen.has(v.id)) continue;
+    seen.add(v.id);
+    result.push(v);
+  }
+  return result;
 }

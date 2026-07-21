@@ -93,29 +93,69 @@ describe("PlentyConnector product search heuristics", () => {
     expect(result.items[0]!.articleNumber).toBe("TRK-500-BLK");
   });
 
-  it("chains number → variation id → item id for numeric queries", async () => {
+  // Numeric queries run three tracks in parallel; the stub consumes the
+  // mocked responses in call order: (1) id, (2) itemId, (3) numberFuzzy.
+  const empty = { ...variationSearchResponse, entries: [], totalsCount: 0 };
+
+  it("finds variations by Plenty item id (fixture itemId 210)", async () => {
     const { connector, http } = connectorWithStub();
-    // Fixture variation: id 1101, itemId 210 → the itemId step must match.
     http.get
-      .mockResolvedValueOnce({ ...variationSearchResponse, entries: [], totalsCount: 0 })
-      .mockResolvedValueOnce({ ...variationSearchResponse, entries: [], totalsCount: 0 })
-      .mockResolvedValueOnce(variationSearchResponse);
+      .mockResolvedValueOnce(empty)
+      .mockResolvedValueOnce(variationSearchResponse)
+      .mockResolvedValueOnce(empty);
 
     const result = await connector.searchProducts({ query: "210" });
-    expect(http.get).toHaveBeenNthCalledWith(1, "/items/variations", expect.objectContaining({ numberFuzzy: "210" }));
-    expect(http.get).toHaveBeenNthCalledWith(2, "/items/variations", expect.objectContaining({ id: 210 }));
-    expect(http.get).toHaveBeenNthCalledWith(3, "/items/variations", expect.objectContaining({ itemId: 210 }));
+    expect(http.get).toHaveBeenNthCalledWith(1, "/items/variations", expect.objectContaining({ id: 210 }));
+    expect(http.get).toHaveBeenNthCalledWith(2, "/items/variations", expect.objectContaining({ itemId: 210 }));
+    expect(http.get).toHaveBeenNthCalledWith(3, "/items/variations", expect.objectContaining({ numberFuzzy: "210" }));
     expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.articleNumber).toBe("TRK-500-BLK");
+  });
+
+  it("finds variations by variation id (fixture id 1101)", async () => {
+    const { connector, http } = connectorWithStub();
+    http.get
+      .mockResolvedValueOnce(variationSearchResponse)
+      .mockResolvedValueOnce(empty)
+      .mockResolvedValueOnce(empty);
+
+    const result = await connector.searchProducts({ query: "1101" });
+    expect(result.items).toHaveLength(1);
+  });
+
+  it("finds variations by variation number via numberFuzzy", async () => {
+    const { connector, http } = connectorWithStub();
+    http.get
+      .mockResolvedValueOnce(empty)
+      .mockResolvedValueOnce(empty)
+      .mockResolvedValueOnce(variationSearchResponse);
+
+    const result = await connector.searchProducts({ query: "500123" });
+    expect(result.items).toHaveLength(1);
+  });
+
+  it("dedupes hits that several tracks return for the same variation", async () => {
+    const { connector, http } = connectorWithStub();
+    // Variation 1101 (itemId 210) can't match id=1101 AND itemId=1101 at once,
+    // but numberFuzzy overlapping with an exact-id hit is realistic.
+    http.get
+      .mockResolvedValueOnce(variationSearchResponse)
+      .mockResolvedValueOnce(empty)
+      .mockResolvedValueOnce(variationSearchResponse);
+
+    const result = await connector.searchProducts({ query: "1101" });
+    expect(result.items).toHaveLength(1);
+    expect(result.total).toBe(1);
   });
 
   it("drops id/itemId hits that do not match the filter and falls back to itemName", async () => {
     const { connector, http } = connectorWithStub();
     // Plenty ignores the filter and returns unrelated entries (id 1101/itemId 210
-    // for query 54752) → both id steps must be discarded, itemName wins.
+    // for query 54752) → both id tracks must be discarded, itemName wins.
     http.get
-      .mockResolvedValueOnce({ ...variationSearchResponse, entries: [], totalsCount: 0 })
       .mockResolvedValueOnce(variationSearchResponse)
       .mockResolvedValueOnce(variationSearchResponse)
+      .mockResolvedValueOnce(empty)
       .mockResolvedValueOnce(variationSearchResponse);
 
     const result = await connector.searchProducts({ query: "54752" });
@@ -123,11 +163,11 @@ describe("PlentyConnector product search heuristics", () => {
     expect(result.items).toHaveLength(1);
   });
 
-  it("continues the fallback chain when a single search mode fails", async () => {
+  it("a failing track does not block the others", async () => {
     const { connector, http } = connectorWithStub();
     http.get
       .mockRejectedValueOnce(new Error("Plenty-Request ungültig (HTTP 400)"))
-      .mockResolvedValueOnce({ ...variationSearchResponse, entries: [], totalsCount: 0 })
+      .mockResolvedValueOnce(empty)
       .mockResolvedValueOnce(variationSearchResponse);
 
     const result = await connector.searchProducts({ query: "210" });
