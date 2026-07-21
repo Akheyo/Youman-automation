@@ -48,6 +48,7 @@
     "@types/passport-local": "^1.0.38",
     "@types/uuid": "^10.0.0",
     "prisma": "^5.15.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.4.5",
     "vitest": "^1.6.1"
   }
