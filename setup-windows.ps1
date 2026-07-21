@@ -96,11 +96,19 @@ Invoke-Step "Baue Workspace-Pakete" {
     pnpm build:plenty
 }
 
-# ── Datenbank einrichten ─────────────────────────────────────────────────────
+# ── Datenbank einrichten (nur beim ersten erfolgreichen Lauf) ────────────────
 Set-Location (Join-Path $repo "apps\backend")
 Invoke-Step "Generiere Prisma-Client" { pnpm exec prisma generate }
-Invoke-Step "Lege Datenbankschema in Supabase an" { pnpm exec prisma db push }
-Invoke-Step "Lege Demo-Mandant und Demo-User an" { pnpm run db:seed }
+
+$dbMarker = Join-Path $repo "apps\backend\.db-setup-done"
+if (Test-Path $dbMarker) {
+    Write-Host "Datenbank ist bereits eingerichtet - Schritt wird übersprungen." -ForegroundColor Yellow
+    Write-Host "(Zum erneuten Einrichten die Datei apps\backend\.db-setup-done löschen.)"
+} else {
+    Invoke-Step "Lege Datenbankschema in Supabase an" { pnpm exec prisma db push }
+    Invoke-Step "Lege Demo-Mandant und Demo-User an" { pnpm run db:seed }
+    "done" | Set-Content -Path $dbMarker
+}
 Set-Location $repo
 
 Write-Host ""

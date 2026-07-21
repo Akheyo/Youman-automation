@@ -17,3 +17,4 @@ prisma/migrations/*.sql
 .DS_Store
 Thumbs.db
 coverage/
+.db-setup-done
