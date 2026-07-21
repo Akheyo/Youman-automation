@@ -216,6 +216,10 @@ export class PlentyConnector implements IErpConnector {
       if (res.entries.length === 0) {
         res = await this.searchVariations({ ...base, itemId: Number(query) }, query, "itemId");
       }
+      if (res.entries.length === 0) {
+        // Part numbers often live inside the item name (e.g. "Ford 1815863 …").
+        res = await this.searchVariations({ ...base, itemName: query }, query, "itemName");
+      }
     } else if (query && !/\s/.test(query)) {
       res = await this.searchVariations({ ...base, numberFuzzy: query }, query, "numberFuzzy");
       if (res.entries.length === 0) {
