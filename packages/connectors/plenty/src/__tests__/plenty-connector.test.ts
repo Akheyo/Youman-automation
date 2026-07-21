@@ -50,15 +50,15 @@ describe("PlentyConnector customer search heuristics", () => {
     );
   });
 
-  it("searches by externalId for numeric queries and by name otherwise", async () => {
+  it("uses Plenty full-text search for non-email queries", async () => {
     const { connector, http } = connectorWithStub();
     http.get.mockResolvedValue(contactSearchResponse);
 
     await connector.searchCustomers({ query: "118" });
-    expect(http.get).toHaveBeenLastCalledWith("/accounts/contacts", expect.objectContaining({ externalId: "118" }));
+    expect(http.get).toHaveBeenLastCalledWith("/accounts/contacts", expect.objectContaining({ fullText: "118" }));
 
     await connector.searchCustomers({ query: "Bergmann" });
-    expect(http.get).toHaveBeenLastCalledWith("/accounts/contacts", expect.objectContaining({ name: "Bergmann" }));
+    expect(http.get).toHaveBeenLastCalledWith("/accounts/contacts", expect.objectContaining({ fullText: "Bergmann" }));
   });
 
   it("maps paged results including hasMore", async () => {
@@ -91,6 +91,20 @@ describe("PlentyConnector product search heuristics", () => {
     expect(http.get).toHaveBeenNthCalledWith(1, "/items/variations", expect.objectContaining({ numberFuzzy: "Fjell" }));
     expect(http.get).toHaveBeenNthCalledWith(2, "/items/variations", expect.objectContaining({ itemName: "Fjell" }));
     expect(result.items[0]!.articleNumber).toBe("TRK-500-BLK");
+  });
+
+  it("chains number → variation id → item id for numeric queries", async () => {
+    const { connector, http } = connectorWithStub();
+    http.get
+      .mockResolvedValueOnce({ ...variationSearchResponse, entries: [], totalsCount: 0 })
+      .mockResolvedValueOnce({ ...variationSearchResponse, entries: [], totalsCount: 0 })
+      .mockResolvedValueOnce(variationSearchResponse);
+
+    const result = await connector.searchProducts({ query: "54752" });
+    expect(http.get).toHaveBeenNthCalledWith(1, "/items/variations", expect.objectContaining({ numberFuzzy: "54752" }));
+    expect(http.get).toHaveBeenNthCalledWith(2, "/items/variations", expect.objectContaining({ id: 54752 }));
+    expect(http.get).toHaveBeenNthCalledWith(3, "/items/variations", expect.objectContaining({ itemId: 54752 }));
+    expect(result.items).toHaveLength(1);
   });
 
   it("searches by itemName for queries containing whitespace", async () => {

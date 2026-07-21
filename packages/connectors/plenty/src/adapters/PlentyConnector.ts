@@ -69,9 +69,11 @@ export class PlentyConnector implements IErpConnector {
 
   private readonly cfg: PlentyConfig;
   private readonly http: PlentyHttpClient;
+  private readonly logger: PlentyLogger;
 
   constructor(tenantId: string, config: PlentyConfig, deps: PlentyConnectorDeps = {}) {
     this.tenantId = tenantId;
+    this.logger = deps.logger ?? console;
 
     const missing = (["baseUrl", "username", "password", "plentyId"] as const).filter((k) => !config?.[k]);
     if (missing.length > 0) {
@@ -116,13 +118,16 @@ export class PlentyConnector implements IErpConnector {
     const pageSize = req.pageSize ?? 20;
     const query = req.query.trim();
 
-    // Heuristic: '@' → email search, pure digits → external id, else name.
+    // Heuristic: '@' → email search, else Plenty full-text search, which
+    // covers name, company, contact number and email in one go.
     const params: Record<string, unknown> = { page, itemsPerPage: pageSize, with: "addresses" };
     if (query.includes("@")) params["email"] = query;
-    else if (/^\d+$/.test(query)) params["externalId"] = query;
-    else if (query) params["name"] = query;
+    else if (query) params["fullText"] = query;
 
     const res = await this.http.get<PlentyPagedResponse<PlentyContact>>("/accounts/contacts", params);
+    this.logger.debug(
+      `Plenty-Kundensuche '${query}' (${query.includes("@") ? "email" : "fullText"}) → ${res.entries.length} von ${res.totalsCount} Treffern`
+    );
     const items = res.entries.map((c) => mapContactToCustomer(c, this.tenantId));
     return {
       items,
@@ -193,19 +198,28 @@ export class PlentyConnector implements IErpConnector {
     const pageSize = req.pageSize ?? 20;
     const query = req.query.trim();
 
-    // Heuristic: EAN-like digit strings → barcode; compact codes → variation
-    // number (SKU) with itemName fallback; everything else → itemName.
+    // Heuristic: EAN-like digit strings → barcode; other numeric queries →
+    // variation number, then variation id, then item id; compact codes →
+    // variation number (SKU) with itemName fallback; everything else → itemName.
     const base: Record<string, unknown> = { page, itemsPerPage: pageSize, with: VARIATION_WITH };
     let res: PlentyPagedResponse<PlentyVariation>;
     if (/^\d{8}$|^\d{12,14}$/.test(query)) {
-      res = await this.searchVariations({ ...base, barcode: query });
-    } else if (query && !/\s/.test(query)) {
-      res = await this.searchVariations({ ...base, numberFuzzy: query });
+      res = await this.searchVariations({ ...base, barcode: query }, query, "barcode");
+    } else if (/^\d+$/.test(query)) {
+      res = await this.searchVariations({ ...base, numberFuzzy: query }, query, "numberFuzzy");
       if (res.entries.length === 0) {
-        res = await this.searchVariations({ ...base, itemName: query });
+        res = await this.searchVariations({ ...base, id: Number(query) }, query, "id");
+      }
+      if (res.entries.length === 0) {
+        res = await this.searchVariations({ ...base, itemId: Number(query) }, query, "itemId");
+      }
+    } else if (query && !/\s/.test(query)) {
+      res = await this.searchVariations({ ...base, numberFuzzy: query }, query, "numberFuzzy");
+      if (res.entries.length === 0) {
+        res = await this.searchVariations({ ...base, itemName: query }, query, "itemName");
       }
     } else {
-      res = await this.searchVariations({ ...base, ...(query ? { itemName: query } : {}) });
+      res = await this.searchVariations({ ...base, ...(query ? { itemName: query } : {}) }, query, "itemName");
     }
 
     const items = res.entries.map((v) =>
@@ -321,8 +335,16 @@ export class PlentyConnector implements IErpConnector {
 
   // ─── Internals ──────────────────────────────────────────────────────────────
 
-  private async searchVariations(params: Record<string, unknown>): Promise<PlentyPagedResponse<PlentyVariation>> {
-    return this.http.get<PlentyPagedResponse<PlentyVariation>>("/items/variations", params);
+  private async searchVariations(
+    params: Record<string, unknown>,
+    query?: string,
+    mode?: string
+  ): Promise<PlentyPagedResponse<PlentyVariation>> {
+    const res = await this.http.get<PlentyPagedResponse<PlentyVariation>>("/items/variations", params);
+    if (mode !== undefined) {
+      this.logger.debug(`Plenty-Artikelsuche '${query}' (${mode}) → ${res.entries.length} von ${res.totalsCount} Treffern`);
+    }
+    return res;
   }
 
   private async getVariation(id: string): Promise<PlentyVariation> {
