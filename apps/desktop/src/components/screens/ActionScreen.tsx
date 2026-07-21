@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, WifiOff } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Download, FileText, Info, Loader2, WifiOff } from "lucide-react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiClient } from "@/services/api";
@@ -13,15 +13,22 @@ import { Button } from "@/components/ui/button";
 import { ActionFormRenderer } from "@/components/forms/ActionFormRenderer";
 import { toast } from "@/hooks/useToast";
 import { getApiError } from "@/services/api";
-import type { ActionDefinition, ActionExecution } from "@youman/shared";
+import { DocumentRenderError, describePlaceholder, downloadDocument } from "@/services/documentService";
+import type { ActionDefinition, ActionExecution, ExecutionDocumentInfo } from "@youman/shared";
 
 const formBuilder = new FormBuilder();
+
+interface SuccessState {
+  document: ExecutionDocumentInfo | null;
+  referenceNumber: string;
+}
 
 export function ActionScreen() {
   const { actionId } = useParams<{ actionId: string }>();
   const navigate = useNavigate();
   const { isOnline } = useOfflineStore();
   const { user } = useAuthStore();
+  const [successState, setSuccessState] = useState<SuccessState | null>(null);
 
   const { data: action, isLoading } = useQuery({
     queryKey: ["action-definition", actionId],
@@ -71,7 +78,9 @@ export function ActionScreen() {
       if ((result as unknown as { status: string }).status === "queued_offline") {
         toast({
           title: "Aktion gespeichert",
-          description: "Die Aktion wird nach Wiederherstellung der Verbindung ausgeführt.",
+          description: action.documentOutput
+            ? "Die Aktion wird nach Wiederherstellung der Verbindung ausgeführt. Das Dokument wird erst nach erfolgreicher Synchronisation erstellt."
+            : "Die Aktion wird nach Wiederherstellung der Verbindung ausgeführt.",
           variant: "warning",
         });
         navigate("/dashboard");
@@ -88,6 +97,18 @@ export function ActionScreen() {
         description: `${action.displayName} wurde ausgeführt.`,
         variant: "success",
       });
+
+      // Actions with document output show a result panel (download buttons /
+      // template hint) instead of jumping straight back to the dashboard.
+      const resultData = result.result as Record<string, unknown> | null;
+      const documentInfo = (resultData?.["document"] as ExecutionDocumentInfo | undefined) ?? null;
+      if (action.documentOutput) {
+        setSuccessState({
+          document: documentInfo,
+          referenceNumber: String(resultData?.["erpQuoteNumber"] ?? resultData?.["erpOrderNumber"] ?? ""),
+        });
+        return;
+      }
 
       navigate("/dashboard");
     },
@@ -118,6 +139,20 @@ export function ActionScreen() {
           Zurück
         </Button>
       </div>
+    );
+  }
+
+  if (successState) {
+    return (
+      <ActionSuccessPanel
+        action={action}
+        state={successState}
+        onDone={() => navigate("/dashboard")}
+        onNew={() => {
+          setSuccessState(null);
+          methods.reset(initialValues);
+        }}
+      />
     );
   }
 
@@ -166,6 +201,94 @@ export function ActionScreen() {
           </div>
         </form>
       </FormProvider>
+    </div>
+  );
+}
+
+function ActionSuccessPanel({
+  action,
+  state,
+  onDone,
+  onNew,
+}: {
+  action: ActionDefinition;
+  state: SuccessState;
+  onDone: () => void;
+  onNew: () => void;
+}) {
+  const [busy, setBusy] = useState<"docx" | "pdf" | null>(null);
+  const [renderError, setRenderError] = useState<DocumentRenderError | null>(null);
+  const doc = state.document;
+
+  const handleDownload = async (format: "docx" | "pdf") => {
+    if (!doc) return;
+    setBusy(format);
+    setRenderError(null);
+    try {
+      await downloadDocument(doc, format, state.referenceNumber || undefined);
+    } catch (err) {
+      const renderErr = err instanceof DocumentRenderError ? err : new DocumentRenderError(getApiError(err));
+      setRenderError(renderErr);
+      toast({ title: "Dokument konnte nicht erstellt werden", description: renderErr.message, variant: "error" });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="p-6 max-w-3xl mx-auto space-y-6">
+      <div className="rounded-xl border border-border bg-card p-8 text-center space-y-4">
+        <CheckCircle2 className="h-12 w-12 text-success mx-auto" />
+        <div>
+          <h1 className="text-xl font-bold text-foreground">{action.displayName} erfolgreich</h1>
+          {state.referenceNumber && (
+            <p className="text-sm text-muted-foreground mt-1">Nummer: {state.referenceNumber}</p>
+          )}
+        </div>
+
+        {doc?.templateId ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Dokument aus Ihrer Vorlage erstellen:</p>
+            <div className="flex items-center justify-center gap-3">
+              <Button onClick={() => handleDownload("pdf")} loading={busy === "pdf"} disabled={busy !== null} className="gap-2">
+                <Download className="h-4 w-4" />
+                Dokument herunterladen (PDF)
+              </Button>
+              <Button variant="outline" onClick={() => handleDownload("docx")} loading={busy === "docx"} disabled={busy !== null} className="gap-2">
+                <FileText className="h-4 w-4" />
+                DOCX herunterladen
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mx-auto max-w-md flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3 text-left">
+            <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              {doc?.hint ?? "Keine Vorlage hinterlegt – unter Administration » Dokumentvorlagen können Sie eine .docx-Vorlage hochladen."}
+            </p>
+          </div>
+        )}
+
+        {renderError && renderError.missingFields.length > 0 && (
+          <div className="mx-auto max-w-md rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-left">
+            <p className="text-sm font-medium text-destructive">Folgende Felder fehlen für das Dokument:</p>
+            <ul className="mt-1.5 list-disc pl-5 text-xs text-destructive/90 space-y-0.5">
+              {renderError.missingFields.map((f) => (
+                <li key={f}>{describePlaceholder(f)}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <Button variant="outline" onClick={onNew}>
+            Weitere Aktion
+          </Button>
+          <Button variant="ghost" onClick={onDone}>
+            Zum Dashboard
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

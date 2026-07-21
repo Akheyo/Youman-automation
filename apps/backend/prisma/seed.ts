@@ -137,6 +137,34 @@ async function main() {
     console.warn(`  No configs dir found at ${configsDir}`);
   }
 
+  // Beispiel-Dokumentvorlage (Angebot) – wird nur angelegt, wenn der Tenant
+  // noch keine OFFER-Vorlage hat, damit hochgeladene Vorlagen erhalten bleiben.
+  const templatePath = path.resolve(__dirname, "../../../configs/templates/beispiel-angebot.docx");
+  if (fs.existsSync(templatePath)) {
+    const existing = await prisma.documentTemplate.count({
+      where: { tenantId: tenant.id, documentType: "OFFER" },
+    });
+    if (existing === 0) {
+      await prisma.documentTemplate.create({
+        data: {
+          tenantId: tenant.id,
+          name: "Angebot Standard",
+          documentType: "OFFER",
+          fileName: "beispiel-angebot.docx",
+          fileData: fs.readFileSync(templatePath),
+          placeholders: [
+            "kunde_name", "kunde_adresse", "ansprechpartner", "angebotsnummer", "anrede", "datum",
+            "lieferdatum", "zwischensumme", "zahlungsart", "rabatt", "zahlungsziel", "endbetrag", "versandart",
+            "positionen", "positionen.pos", "positionen.menge", "positionen.artikel_id",
+            "positionen.bezeichnung", "positionen.nettopreis",
+          ],
+          isDefault: true,
+        },
+      });
+      console.log("  Dokumentvorlage: beispiel-angebot.docx (OFFER, Default)");
+    }
+  }
+
   console.log("Seeding complete.");
   void admin;
 }

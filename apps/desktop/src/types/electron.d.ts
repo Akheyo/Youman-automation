@@ -31,6 +31,9 @@ declare global {
         open: (url: string) => Promise<void>;
         download: (url: string, filename: string) => Promise<void>;
       };
+      documents: {
+        save: (fileName: string, base64: string) => Promise<string | null>;
+      };
       on: (channel: string, callback: (...args: unknown[]) => void) => void;
       off: (channel: string, callback: (...args: unknown[]) => void) => void;
     };

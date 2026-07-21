@@ -39,6 +39,12 @@ contextBridge.exposeInMainWorld("adept", {
     download: (url: string, filename: string) => ipcRenderer.invoke("pdf:download", url, filename),
   },
 
+  // Generated documents (DOCX/PDF from templates)
+  documents: {
+    /** Saves base64 content via save dialog and opens it; returns the path or null on cancel. */
+    save: (fileName: string, base64: string) => ipcRenderer.invoke("documents:save", fileName, base64),
+  },
+
   // Events from main to renderer
   on: (channel: string, callback: (...args: unknown[]) => void) => {
     const validChannels = ["sync:status", "network:changed", "app:update", "app:updateAvailable", "app:updateDownloaded"];

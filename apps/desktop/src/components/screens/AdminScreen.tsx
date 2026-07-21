@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Settings, Users, Palette, Plug, ChevronRight, Loader2, CheckCircle2, XCircle, FlaskConical } from "lucide-react";
+import { Settings, Users, Palette, Plug, ChevronRight, Loader2, CheckCircle2, XCircle, FlaskConical, FileText } from "lucide-react";
+import { DocumentTemplatesPanel } from "./admin/DocumentTemplatesPanel";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient } from "@/services/api";
 import { Button } from "@/components/ui/button";
@@ -9,12 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/useToast";
 import { cn } from "@/utils/cn";
 
-type AdminTab = "general" | "branding" | "connector" | "users";
+type AdminTab = "general" | "branding" | "connector" | "documents" | "users";
 
 const TABS: { id: AdminTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "general", label: "Allgemein", icon: Settings },
   { id: "branding", label: "Erscheinungsbild", icon: Palette },
   { id: "connector", label: "Connector", icon: Plug },
+  { id: "documents", label: "Dokumentvorlagen", icon: FileText },
   { id: "users", label: "Benutzer", icon: Users },
 ];
 
@@ -65,6 +67,7 @@ export function AdminScreen() {
           {activeTab === "general" && <GeneralSettings />}
           {activeTab === "branding" && <BrandingSettings />}
           {activeTab === "connector" && <ConnectorSettings />}
+          {activeTab === "documents" && <DocumentTemplatesPanel />}
           {activeTab === "users" && <UsersPanel />}
         </div>
       </div>

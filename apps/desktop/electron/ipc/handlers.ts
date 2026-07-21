@@ -1,4 +1,6 @@
-import { IpcMain, app, shell, BrowserWindow, net } from "electron";
+import { IpcMain, app, shell, BrowserWindow, net, dialog } from "electron";
+import { writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import type { OfflineQueueStore } from "../store/OfflineQueueStore";
 import type { SecureStorage } from "../store/SecureStorage";
 
@@ -36,4 +38,19 @@ export function setupIpcHandlers(
   // ── PDF ────────────────────────────────────────────────────────────────────
   ipcMain.handle("pdf:open", (_, url: string) => shell.openExternal(url));
   ipcMain.handle("pdf:download", (_, url: string, _filename: string) => shell.openExternal(url));
+
+  // ── Generated documents ────────────────────────────────────────────────────
+  ipcMain.handle("documents:save", async (_, fileName: string, base64: string) => {
+    const win = BrowserWindow.getFocusedWindow();
+    const { canceled, filePath } = await dialog.showSaveDialog(win ?? new BrowserWindow({ show: false }), {
+      defaultPath: join(app.getPath("downloads"), fileName),
+      filters: fileName.toLowerCase().endsWith(".pdf")
+        ? [{ name: "PDF", extensions: ["pdf"] }]
+        : [{ name: "Word-Dokument", extensions: ["docx"] }],
+    });
+    if (canceled || !filePath) return null;
+    await writeFile(filePath, Buffer.from(base64, "base64"));
+    void shell.openPath(filePath);
+    return filePath;
+  });
 }

@@ -17,7 +17,11 @@ export type AuditEventType =
   | "user.created"
   | "user.role_changed"
   | "connector.configured"
-  | "system.error";
+  | "system.error"
+  | "template.uploaded"
+  | "template.updated"
+  | "template.deleted"
+  | "document.rendered";
 
 export interface AuditLog {
   id: string;

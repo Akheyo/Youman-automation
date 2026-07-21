@@ -36,6 +36,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           message = "Validierungsfehler";
           details = { errors: r["message"] };
         }
+        // Typed errors (e.g. MissingFieldsError) carry a field list for the UI.
+        if (Array.isArray(r["fields"])) {
+          details = { ...details, fields: r["fields"] };
+        }
       } else {
         message = String(exRes);
       }

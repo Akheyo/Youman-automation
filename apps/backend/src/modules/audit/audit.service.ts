@@ -37,6 +37,10 @@ const EVENT_MAP: Record<AuditEventType, string> = {
   "user.role_changed": "USER_ROLE_CHANGED",
   "connector.configured": "CONNECTOR_CONFIGURED",
   "system.error": "SYSTEM_ERROR",
+  "template.uploaded": "TEMPLATE_UPLOADED",
+  "template.updated": "TEMPLATE_UPDATED",
+  "template.deleted": "TEMPLATE_DELETED",
+  "document.rendered": "DOCUMENT_RENDERED",
 };
 
 @Injectable()

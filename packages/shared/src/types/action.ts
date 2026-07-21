@@ -131,6 +131,51 @@ export interface FailureHandling {
   userMessage?: string;
 }
 
+/** Document types a tenant can store templates for. */
+export type DocumentType = "OFFER" | "INVOICE" | "ORDER_CONFIRMATION" | "DELIVERY_NOTE" | "OTHER";
+
+/**
+ * Mapping of a template placeholder to a value from the executed action.
+ * Path syntax: "$.form.<key>" (form payload), "$.result.<key>" (connector
+ * result); "<path>[*]" maps an array. Anything not starting with "$." is a
+ * literal constant. Array entries use `itemMapping` with the same syntax
+ * relative to the array element ("$.quantity"), plus "$pos" for the 1-based
+ * index.
+ */
+export type DocumentFieldMapping = Record<
+  string,
+  string | { path: string; itemMapping: Record<string, string> }
+>;
+
+/** Optional per-action document generation config. */
+export interface DocumentOutput {
+  documentType: DocumentType;
+  fieldMapping: DocumentFieldMapping;
+}
+
+/** Template metadata as served by the backend (fileData stays server-side). */
+export interface DocumentTemplateInfo {
+  id: string;
+  tenantId: string;
+  name: string;
+  documentType: DocumentType;
+  fileName: string;
+  placeholders: string[];
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Attached to a successful execution result when the action has documentOutput. */
+export interface ExecutionDocumentInfo {
+  templateId: string | null;
+  documentType: DocumentType;
+  /** Placeholder data ready to POST to /templates/:id/render. */
+  data: Record<string, unknown>;
+  /** Set when no template is configured for the documentType. */
+  hint?: string;
+}
+
 export interface ActionDefinition {
   id: string;
   tenantId: string | null;
@@ -149,6 +194,7 @@ export interface ActionDefinition {
   successActions: SuccessAction[];
   failureHandling: FailureHandling;
   offlineBehavior: OfflineBehavior;
+  documentOutput?: DocumentOutput;
   estimatedDurationMs?: number;
   tags?: string[];
   sortOrder: number;

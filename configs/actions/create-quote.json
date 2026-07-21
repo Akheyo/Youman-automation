@@ -160,6 +160,25 @@
       "width": "full"
     }
   ],
+  "documentOutput": {
+    "documentType": "OFFER",
+    "fieldMapping": {
+      "angebotsnummer": "$.result.erpQuoteNumber",
+      "datum": "$.meta.datum",
+      "anrede": "Sehr geehrte Damen und Herren,",
+      "ansprechpartner": "$.meta.userName",
+      "kunde_name": "$.result.kunde.name",
+      "kunde_adresse": "$.result.kunde.adresse",
+      "positionen": "$.result.positionen[*]",
+      "zwischensumme": "$.result.zwischensumme",
+      "rabatt": "$.result.rabatt",
+      "endbetrag": "$.result.endbetrag",
+      "lieferdatum": "$.result.lieferdatum",
+      "zahlungsart": "Rechnung",
+      "zahlungsziel": "7 Tage netto",
+      "versandart": "Spedition oder Selbstabholung"
+    }
+  },
   "apiMapping": {
     "method": "POST",
     "endpoint": "/api/v1/actions/execute",

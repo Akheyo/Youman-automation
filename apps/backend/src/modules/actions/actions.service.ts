@@ -3,9 +3,14 @@ import { v4 as uuid } from "uuid";
 import { PrismaService } from "../../database/prisma.service";
 import { ConnectorsService } from "../connectors/connectors.service";
 import { AuditService } from "../audit/audit.service";
+import { TemplatesService } from "../templates/templates.service";
+import { resolveFieldMapping } from "../templates/document-mapper";
+import { formatGermanNumber } from "../templates/formatters";
 import type {
   ActionExecutionRequest,
   ActionExecution,
+  ActionDefinition,
+  ExecutionDocumentInfo,
   CreateCustomerDto,
   CreateProductDto,
   CreateQuoteDto,
@@ -29,7 +34,8 @@ export class ActionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly connectors: ConnectorsService,
-    private readonly audit: AuditService
+    private readonly audit: AuditService,
+    private readonly templates: TemplatesService
   ) {}
 
   async executeAction(req: ActionExecutionRequest): Promise<ActionExecution> {
@@ -49,7 +55,18 @@ export class ActionsService {
     });
 
     try {
-      const result = await this.routeAction(req);
+      let result = (await this.routeAction(req)) as Record<string, unknown>;
+
+      // Document generation is strictly best-effort: the ERP transaction has
+      // already succeeded, so problems here must never fail the action.
+      try {
+        const documentInfo = await this.buildDocumentOutput(req, result);
+        if (documentInfo) result = { ...result, document: documentInfo };
+      } catch (err) {
+        this.logger.warn(
+          `Dokumentdaten für Aktion '${req.actionId}' konnten nicht aufbereitet werden: ${err instanceof Error ? err.message : err}`
+        );
+      }
 
       await this.prisma.actionExecution.update({
         where: { id: executionId },
@@ -118,7 +135,8 @@ export class ActionsService {
       case "action-create-quote": {
         const dto = CreateQuoteSchema.parse(req.payload);
         const draft = this.buildQuoteDraft(dto, req.tenantId, req.userId);
-        const result = await connector.createQuote(draft);
+        const quote = await connector.createQuote(draft);
+        const result = { ...quote, ...(await this.buildQuoteDocumentData(req.tenantId, dto)) };
 
         // Post-success actions – best effort: not every ERP supports tasks
         // (e.g. Plentymarkets throws NotSupportedError). The quote itself is
@@ -278,6 +296,87 @@ export class ActionsService {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+  }
+
+  /**
+   * Document-ready values for the Angebot template that a pure path mapping
+   * cannot compute: line totals, sums (Zwischensumme/Rabatt/Endbetrag),
+   * customer name/address and the delivery date. Amounts are pre-formatted
+   * German decimals; referenced from the action config via "$.result.…".
+   */
+  private async buildQuoteDocumentData(tenantId: string, dto: CreateQuoteDto): Promise<Record<string, unknown>> {
+    const lineNet = (item: CreateQuoteDto["lineItems"][number]) =>
+      item.quantity * item.pricePerUnit * (1 - (item.discount ?? 0) / 100);
+    const zwischensumme = dto.lineItems.reduce((sum, item) => sum + item.quantity * item.pricePerUnit, 0);
+    const endbetrag = dto.lineItems.reduce((sum, item) => sum + lineNet(item), 0);
+
+    const kunde: { name: string; adresse: string } = { name: dto.customerName ?? "", adresse: "" };
+    try {
+      const connector = await this.connectors.getConnector(tenantId);
+      const customer = await connector.getCustomer(dto.customerId);
+      kunde.name = customer.name;
+      const addr = customer.addresses.find((a) => a.type === "billing" && a.isDefault)
+        ?? customer.addresses.find((a) => a.type === "billing")
+        ?? customer.addresses[0];
+      if (addr) {
+        kunde.adresse = [`${addr.street} ${addr.streetNumber ?? ""}`.trim(), `${addr.zip} ${addr.city}`.trim()]
+          .filter(Boolean)
+          .join("\n");
+      }
+    } catch (err) {
+      this.logger.warn(`Kundendaten für Dokument nicht ladbar: ${err instanceof Error ? err.message : err}`);
+    }
+
+    return {
+      positionen: dto.lineItems.map((item, idx) => ({
+        pos: idx + 1,
+        menge: item.quantity,
+        artikel_id: item.articleNumber ?? item.productId,
+        bezeichnung: item.designation ?? "",
+        nettopreis: formatGermanNumber(lineNet(item)),
+      })),
+      zwischensumme: formatGermanNumber(zwischensumme),
+      rabatt: formatGermanNumber(zwischensumme - endbetrag),
+      endbetrag: formatGermanNumber(endbetrag),
+      kunde,
+      lieferdatum: dto.lineItems.find((i) => i.deliveryDate)?.deliveryDate ?? "ab sofort",
+    };
+  }
+
+  /**
+   * When the executed action declares documentOutput, resolve its fieldMapping
+   * against form + result and look up the tenant's default template.
+   */
+  private async buildDocumentOutput(
+    req: ActionExecutionRequest,
+    result: Record<string, unknown>
+  ): Promise<ExecutionDocumentInfo | undefined> {
+    const def = await this.prisma.actionDefinition.findUnique({ where: { id: req.actionId } });
+    const config = def?.configJson as ActionDefinition | undefined;
+    const documentOutput = config?.documentOutput;
+    if (!documentOutput) return undefined;
+
+    const user = await this.prisma.user.findUnique({ where: { id: req.userId } });
+    const data = resolveFieldMapping(documentOutput.fieldMapping, {
+      form: req.payload,
+      result,
+      meta: {
+        datum: new Date().toISOString().slice(0, 10),
+        userName: user ? `${user.firstName} ${user.lastName}`.trim() : "",
+        userEmail: user?.email ?? "",
+      },
+    });
+
+    const template = await this.templates.findDefault(req.tenantId, documentOutput.documentType);
+    if (!template) {
+      return {
+        templateId: null,
+        documentType: documentOutput.documentType,
+        data,
+        hint: "Keine Vorlage hinterlegt – unter Administration » Dokumentvorlagen können Sie eine .docx-Vorlage hochladen.",
+      };
+    }
+    return { templateId: template.id, documentType: documentOutput.documentType, data };
   }
 
   async getActionDefinitions(tenantId: string) {

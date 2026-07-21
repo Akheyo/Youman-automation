@@ -26,6 +26,7 @@ model Tenant {
   executions      ActionExecution[]
   queueItems      QueueItem[]
   auditLogs       AuditLog[]
+  documentTemplates DocumentTemplate[]
 
   @@index([slug])
   @@map("tenants")
@@ -320,6 +321,38 @@ enum AuditEventType {
   USER_ROLE_CHANGED
   CONNECTOR_CONFIGURED
   SYSTEM_ERROR
+  TEMPLATE_UPLOADED
+  TEMPLATE_UPDATED
+  TEMPLATE_DELETED
+  DOCUMENT_RENDERED
+}
+
+// ─── Document templates ──────────────────────────────────────────────────────
+
+model DocumentTemplate {
+  id           String       @id @default(uuid())
+  tenantId     String
+  name         String
+  documentType DocumentType @default(OFFER)
+  fileName     String
+  fileData     Bytes
+  placeholders Json         @default("[]")
+  isDefault    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, documentType])
+  @@map("document_templates")
+}
+
+enum DocumentType {
+  OFFER
+  INVOICE
+  ORDER_CONFIRMATION
+  DELIVERY_NOTE
+  OTHER
 }
 
 enum AuditSeverity {

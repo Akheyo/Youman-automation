@@ -16,9 +16,18 @@ RUN pnpm build:shared && pnpm build:config-engine && pnpm build:sap && pnpm buil
 RUN cd apps/backend && pnpm exec prisma generate && pnpm build
 
 FROM node:20-bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+# LibreOffice (headless) wird für die DOCX→PDF-Konvertierung der
+# Dokumentvorlagen benötigt – siehe docs/DOKUMENTVORLAGEN.md.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      openssl \
+      libreoffice-writer \
+      fonts-liberation \
+      fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 COPY --from=build /app /app
 WORKDIR /app/apps/backend
 EXPOSE 3001
-CMD ["node", "dist/src/main.js"]
+# Beim Start: Schema-Änderungen anwenden (Projekt nutzt db push statt
+# Migrationshistorie), Seed best-effort (idempotente Upserts), dann Backend.
+CMD ["sh", "-c", "./node_modules/.bin/prisma db push --skip-generate && (./node_modules/.bin/ts-node prisma/seed.ts || echo 'Seed übersprungen') && node dist/src/main.js"]
