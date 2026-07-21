@@ -17,9 +17,17 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
     exit 1
 }
 if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
-    Write-Host "pnpm nicht gefunden - wird über corepack aktiviert..." -ForegroundColor Yellow
-    corepack enable
-    corepack prepare pnpm@9.15.0 --activate
+    Write-Host "pnpm nicht gefunden - wird installiert..." -ForegroundColor Yellow
+    # corepack braucht Admin-Rechte (schreibt nach C:\Program Files); npm -g
+    # installiert nach %APPDATA%\npm und funktioniert ohne Admin.
+    npm install -g pnpm@9
+    $npmBin = Join-Path $env:APPDATA "npm"
+    if (Test-Path $npmBin) { $env:Path = "$npmBin;$env:Path" }
+    if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
+        Write-Host "FEHLER: pnpm konnte nicht installiert werden. Bitte einmal manuell ausführen:  npm install -g pnpm@9" -ForegroundColor Red
+        Read-Host "Enter zum Beenden"
+        exit 1
+    }
 }
 
 # ── .env anlegen (falls noch nicht vorhanden) ────────────────────────────────
