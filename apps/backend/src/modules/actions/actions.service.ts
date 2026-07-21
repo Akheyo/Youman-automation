@@ -283,16 +283,18 @@ export class ActionsService {
       tenantId,
       userId,
       customerId: dto.customerId,
-      customerNumber: dto.customerNumber,
-      customerName: dto.customerName,
+      // Optional in the request – Plenty's order only needs customerId; these
+      // are best-effort labels, the real name is resolved for the document.
+      customerNumber: dto.customerNumber ?? "",
+      customerName: dto.customerName ?? "",
       deliveryAddressId: dto.deliveryAddressId,
       currency: dto.currency,
       validUntil: dto.validUntil,
       lineItems: dto.lineItems.map((item, idx) => ({
         position: idx + 1,
         productId: item.productId,
-        articleNumber: item.articleNumber,
-        designation: item.designation,
+        articleNumber: item.articleNumber ?? item.productId,
+        designation: item.designation ?? "",
         quantity: item.quantity,
         unit: item.unit,
         pricePerUnit: item.pricePerUnit,

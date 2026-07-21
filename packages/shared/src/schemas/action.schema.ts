@@ -54,29 +54,51 @@ export const CreateProductSchema = z.object({
   taxClass: z.string().default("STANDARD"),
 });
 
+// The desktop form sends explicit `null` (and "") for empty optional fields
+// (FormBuilder marks them .optional().nullable()). Treat null/"" as "not
+// provided" so an optional string field isn't rejected for being null.
+const optionalString = (schema: z.ZodString = z.string()) =>
+  z.preprocess((v) => (v === null || v === "" ? undefined : v), schema.optional());
+
+// <input type="date"> sends "YYYY-MM-DD"; some callers send full ISO datetimes.
+// Accept both (and null/"" → undefined) instead of requiring a strict datetime.
+const optionalDate = z.preprocess(
+  (v) => (v === null || v === "" ? undefined : v),
+  z
+    .union([z.string().datetime({ offset: true }), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)])
+    .optional()
+);
+
+/**
+ * A quote must be creatable with the absolute minimum: a customer + at least
+ * one position (article, quantity, price) + currency. Everything else
+ * (delivery address, valid-until, per-line delivery date, notes, and the
+ * customer's number/name which the backend resolves from customerId) is
+ * optional and must never block submission.
+ */
 export const CreateQuoteSchema = z.object({
   customerId: z.string().min(1, "Kunde erforderlich"),
-  customerNumber: z.string(),
-  customerName: z.string(),
-  deliveryAddressId: z.string().optional(),
+  customerNumber: optionalString(),
+  customerName: optionalString(),
+  deliveryAddressId: optionalString(),
   currency: z.string().length(3).default("EUR"),
-  validUntil: z.string().datetime().optional(),
+  validUntil: optionalDate,
   lineItems: z
     .array(
       z.object({
         productId: z.string().min(1),
-        articleNumber: z.string(),
-        designation: z.string(),
+        articleNumber: optionalString(),
+        designation: optionalString(),
         quantity: z.number().positive("Menge muss größer als 0 sein"),
         unit: z.string().default("ST"),
         pricePerUnit: z.number().min(0),
         discount: z.number().min(0).max(100).optional(),
-        deliveryDate: z.string().datetime().optional(),
-        notes: z.string().optional(),
+        deliveryDate: optionalDate,
+        notes: optionalString(z.string().max(2000)),
       })
     )
     .min(1, "Mindestens eine Position erforderlich"),
-  notes: z.string().max(2000).optional(),
+  notes: optionalString(z.string().max(2000)),
 });
 
 export const CreateFollowUpSchema = z.object({
