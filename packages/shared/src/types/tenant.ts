@@ -48,4 +48,4 @@ export interface ConnectorConfig {
   updatedAt: string;
 }
 
-export type ConnectorType = "SAP_RFC" | "SAP_ODATA" | "SAP_BAPI" | "MOCK" | "REST_GENERIC";
+export type ConnectorType = "SAP_RFC" | "SAP_ODATA" | "SAP_BAPI" | "MOCK" | "REST_GENERIC" | "PLENTY";

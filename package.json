@@ -10,9 +10,10 @@
     "build:shared": "pnpm --filter @youman/shared build",
     "build:config-engine": "pnpm --filter @youman/config-engine build",
     "build:sap": "pnpm --filter @youman/connector-sap build",
+    "build:plenty": "pnpm --filter @youman/connector-plenty build",
     "build:backend": "pnpm --filter @youman/backend build",
     "build:desktop": "pnpm --filter @youman/desktop build",
-    "build": "pnpm build:shared && pnpm build:config-engine && pnpm build:sap && pnpm build:backend && pnpm build:desktop",
+    "build": "pnpm build:shared && pnpm build:config-engine && pnpm build:sap && pnpm build:plenty && pnpm build:backend && pnpm build:desktop",
     "test": "pnpm --recursive test",
     "lint": "pnpm --recursive lint",
     "typecheck": "pnpm --recursive typecheck"

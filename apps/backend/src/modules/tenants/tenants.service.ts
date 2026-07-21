@@ -27,7 +27,14 @@ export class TenantsService {
   }
 
   async getConnectorConfig(tenantId: string) {
-    return this.prisma.connectorConfig.findUnique({ where: { tenantId } });
+    const config = await this.prisma.connectorConfig.findUnique({ where: { tenantId } });
+    if (config?.connectorType === "PLENTY" && config.config && typeof config.config === "object") {
+      // Plenty credentials must never reach the Electron client; the admin UI
+      // keeps the stored password by submitting an empty field.
+      const { password: _password, ...rest } = config.config as Record<string, unknown>;
+      return { ...config, config: { ...rest, password: "" } };
+    }
+    return config;
   }
 
   async updateConnectorConfig(tenantId: string, data: {
@@ -36,6 +43,19 @@ export class TenantsService {
     enabled?: boolean;
     config?: Record<string, unknown>;
   }) {
+    // Empty PLENTY password means "keep the stored one" – the GET endpoint
+    // redacts it, so the admin form round-trips an empty string.
+    if (data.connectorType === "PLENTY" && data.config && !data.config["password"]) {
+      const existing = await this.prisma.connectorConfig.findUnique({ where: { tenantId } });
+      const storedPassword =
+        existing?.connectorType === "PLENTY" && existing.config && typeof existing.config === "object"
+          ? (existing.config as Record<string, unknown>)["password"]
+          : undefined;
+      if (storedPassword) {
+        data.config = { ...data.config, password: storedPassword };
+      }
+    }
+
     const updated = await this.prisma.connectorConfig.upsert({
       where: { tenantId },
       create: {

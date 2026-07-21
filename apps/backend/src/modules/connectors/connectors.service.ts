@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../../database/prisma.service";
 import { ConnectorFactory, type IErpConnector } from "@youman/connector-sap";
+import { PlentyConnector, type PlentyConfig } from "@youman/connector-plenty";
 import type { ConnectorConfig } from "@youman/shared";
 
 @Injectable()
@@ -35,16 +36,21 @@ export class ConnectorsService {
       return mock;
     }
 
-    const connector = ConnectorFactory.create({
-      id: config.id,
-      tenantId,
-      connectorType: config.connectorType as ConnectorConfig["connectorType"],
-      displayName: config.displayName,
-      enabled: config.enabled,
-      config: config.config as Record<string, unknown>,
-      createdAt: config.createdAt.toISOString(),
-      updatedAt: config.updatedAt.toISOString(),
-    });
+    // PLENTY lives in its own package; registering it here avoids a circular
+    // dependency between @youman/connector-sap (factory) and @youman/connector-plenty.
+    const connector: IErpConnector =
+      config.connectorType === "PLENTY"
+        ? new PlentyConnector(tenantId, config.config as unknown as PlentyConfig, { logger: this.logger })
+        : ConnectorFactory.create({
+            id: config.id,
+            tenantId,
+            connectorType: config.connectorType as ConnectorConfig["connectorType"],
+            displayName: config.displayName,
+            enabled: config.enabled,
+            config: config.config as Record<string, unknown>,
+            createdAt: config.createdAt.toISOString(),
+            updatedAt: config.updatedAt.toISOString(),
+          });
 
     this.cache.set(tenantId, connector);
     return connector;

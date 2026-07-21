@@ -161,7 +161,7 @@ function BrandingSettings() {
   );
 }
 
-type ConnectorType = "MOCK" | "SAP_ODATA" | "REST_GENERIC";
+type ConnectorType = "MOCK" | "SAP_ODATA" | "REST_GENERIC" | "PLENTY";
 type AuthType = "none" | "basic" | "bearer" | "apikey";
 
 interface ConnectorFormState {
@@ -182,6 +182,10 @@ interface ConnectorFormState {
   epAppointments: string;
   epNotes: string;
   searchParam: string;
+  plentyId: string;
+  plentyWarehouseId: string;
+  plentyCurrency: string;
+  plentyReferrerId: string;
 }
 
 const DEFAULTS: ConnectorFormState = {
@@ -191,6 +195,7 @@ const DEFAULTS: ConnectorFormState = {
   epCustomers: "/customers", epProducts: "/products", epQuotes: "/quotes",
   epTasks: "/tasks", epAppointments: "/appointments", epNotes: "/notes",
   searchParam: "q",
+  plentyId: "", plentyWarehouseId: "", plentyCurrency: "EUR", plentyReferrerId: "",
 };
 
 function ConnectorSettings() {
@@ -213,7 +218,9 @@ function ConnectorSettings() {
         enabled: Boolean(d?.["enabled"] ?? true),
         baseUrl: String(cfg?.["baseUrl"] ?? ""),
         authType: (auth?.["type"] as AuthType) ?? "none",
-        username: String(auth?.["username"] ?? ""),
+        // PLENTY stores credentials at config top level; the backend redacts
+        // the password (empty field on save = keep stored password).
+        username: String(auth?.["username"] ?? cfg?.["username"] ?? ""),
         password: String(auth?.["password"] ?? ""),
         token: String(auth?.["token"] ?? ""),
         apiKeyHeader: String(auth?.["apiKeyHeader"] ?? "X-API-Key"),
@@ -225,6 +232,10 @@ function ConnectorSettings() {
         epAppointments: String(endpoints?.["appointments"] ?? "/appointments"),
         epNotes: String(endpoints?.["notes"] ?? "/notes"),
         searchParam: String(cfg?.["searchParam"] ?? "q"),
+        plentyId: cfg?.["plentyId"] != null ? String(cfg["plentyId"]) : "",
+        plentyWarehouseId: cfg?.["defaultWarehouseId"] != null ? String(cfg["defaultWarehouseId"]) : "",
+        plentyCurrency: String(cfg?.["defaultCurrency"] ?? "EUR"),
+        plentyReferrerId: cfg?.["defaultReferrerId"] != null ? String(cfg["defaultReferrerId"]) : "",
       });
       return d;
     },
@@ -236,7 +247,15 @@ function ConnectorSettings() {
       connectorType: f.connectorType,
       displayName: f.displayName,
       enabled: f.enabled,
-      config: f.connectorType === "MOCK" ? {} : {
+      config: f.connectorType === "MOCK" ? {} : f.connectorType === "PLENTY" ? {
+        baseUrl: f.baseUrl,
+        username: f.username,
+        password: f.password,
+        plentyId: Number(f.plentyId) || 0,
+        ...(f.plentyWarehouseId ? { defaultWarehouseId: Number(f.plentyWarehouseId) } : {}),
+        defaultCurrency: f.plentyCurrency || "EUR",
+        ...(f.plentyReferrerId ? { defaultReferrerId: Number(f.plentyReferrerId) } : {}),
+      } : {
         baseUrl: f.baseUrl,
         searchParam: f.searchParam || "q",
         auth: f.authType === "none" ? { type: "none" } :
@@ -287,6 +306,7 @@ function ConnectorSettings() {
               <option value="MOCK">Mock (Demo/Test)</option>
               <option value="SAP_ODATA">SAP OData</option>
               <option value="REST_GENERIC">REST API (Generic)</option>
+              <option value="PLENTY">Plentymarkets</option>
             </select>
           </div>
           <div className="space-y-1.5">
@@ -303,12 +323,53 @@ function ConnectorSettings() {
               <Input
                 value={form.baseUrl}
                 onChange={(e) => set("baseUrl", e.target.value)}
-                placeholder="https://api.example.com"
+                placeholder={form.connectorType === "PLENTY" ? "https://xy123.my.plentysystems.com/rest" : "https://api.example.com"}
                 className="font-mono text-sm"
               />
             </div>
 
+            {/* Plentymarkets: fixed username/password auth + Mandanten-Einstellungen */}
+            {form.connectorType === "PLENTY" && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">API-Benutzer</label>
+                    <Input value={form.username} onChange={(e) => set("username", e.target.value)} autoComplete="off" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Passwort</label>
+                    <Input
+                      type="password"
+                      value={form.password}
+                      onChange={(e) => set("password", e.target.value)}
+                      placeholder="Leer lassen, um gespeichertes Passwort zu behalten"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Plenty-ID (Mandant)</label>
+                    <Input value={form.plentyId} onChange={(e) => set("plentyId", e.target.value)} placeholder="1000" className="font-mono text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Standard-Lager-ID (optional)</label>
+                    <Input value={form.plentyWarehouseId} onChange={(e) => set("plentyWarehouseId", e.target.value)} placeholder="1" className="font-mono text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Währung</label>
+                    <Input value={form.plentyCurrency} onChange={(e) => set("plentyCurrency", e.target.value)} placeholder="EUR" className="font-mono text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Referrer-ID (optional)</label>
+                    <Input value={form.plentyReferrerId} onChange={(e) => set("plentyReferrerId", e.target.value)} placeholder="1" className="font-mono text-sm" />
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* Auth */}
+            {form.connectorType !== "PLENTY" && (
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Authentifizierung</label>
@@ -355,6 +416,7 @@ function ConnectorSettings() {
                 </div>
               )}
             </div>
+            )}
 
             {/* Advanced endpoints */}
             {form.connectorType === "REST_GENERIC" && (

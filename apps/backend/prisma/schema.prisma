@@ -149,6 +149,7 @@ enum ConnectorType {
   SAP_ODATA
   SAP_BAPI
   REST_GENERIC
+  PLENTY
   MOCK
 }
 
