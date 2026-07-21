@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
 
-const CONNECT_MAX_ATTEMPTS = 10;
+const CONNECT_MAX_ATTEMPTS = 60; // ~5 minutes – Supabase pooler outages can last minutes
 const CONNECT_RETRY_DELAY_MS = 5_000;
 
 @Injectable()
