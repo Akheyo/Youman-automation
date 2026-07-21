@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, Logger } from "@nestjs/common";
+import { ZodError } from "zod";
 import { v4 as uuid } from "uuid";
 import { PrismaService } from "../../database/prisma.service";
 import { ConnectorsService } from "../connectors/connectors.service";
@@ -133,7 +134,7 @@ export class ActionsService {
 
     switch (req.actionId) {
       case "action-create-quote": {
-        const dto = CreateQuoteSchema.parse(req.payload);
+        const dto = this.parseDto(CreateQuoteSchema, req.payload);
         const draft = this.buildQuoteDraft(dto, req.tenantId, req.userId);
         const quote = await connector.createQuote(draft);
         const result = { ...quote, ...(await this.buildQuoteDocumentData(req.tenantId, dto)) };
@@ -162,7 +163,7 @@ export class ActionsService {
       }
 
       case "action-create-customer": {
-        const dto = CreateCustomerSchema.parse(req.payload);
+        const dto = this.parseDto(CreateCustomerSchema, req.payload);
         return connector.createCustomer({
           tenantId: req.tenantId,
           customerNumber: dto.customerNumber ?? "",
@@ -192,7 +193,7 @@ export class ActionsService {
       }
 
       case "action-create-product": {
-        const dto = CreateProductSchema.parse(req.payload);
+        const dto = this.parseDto(CreateProductSchema, req.payload);
         return connector.createProduct({
           tenantId: req.tenantId,
           articleNumber: dto.articleNumber ?? "",
@@ -211,7 +212,7 @@ export class ActionsService {
       }
 
       case "action-create-appointment": {
-        const dto = CreateAppointmentSchema.parse(req.payload);
+        const dto = this.parseDto(CreateAppointmentSchema, req.payload);
         return connector.createAppointment({
           tenantId: req.tenantId,
           userId: req.userId,
@@ -226,7 +227,7 @@ export class ActionsService {
       }
 
       case "action-create-note": {
-        const dto = CreateNoteSchema.parse(req.payload);
+        const dto = this.parseDto(CreateNoteSchema, req.payload);
         return connector.createNote({
           tenantId: req.tenantId,
           userId: req.userId,
@@ -237,7 +238,7 @@ export class ActionsService {
       }
 
       case "action-create-followup": {
-        const dto = CreateFollowUpSchema.parse(req.payload);
+        const dto = this.parseDto(CreateFollowUpSchema, req.payload);
         return connector.createFollowUpTask({
           tenantId: req.tenantId,
           userId: req.userId,
@@ -255,6 +256,19 @@ export class ActionsService {
 
       default:
         throw new BadRequestException(`Unbekannte Aktion: ${req.actionId}`);
+    }
+  }
+
+  /** Zod-Fehler als 400 mit lesbarer Feldliste statt generischem 500 ausgeben. */
+  private parseDto<T>(schema: { parse: (v: unknown) => T }, payload: unknown): T {
+    try {
+      return schema.parse(payload);
+    } catch (err) {
+      if (err instanceof ZodError) {
+        const detail = err.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+        throw new BadRequestException(`Eingaben ungültig – ${detail}`);
+      }
+      throw err;
     }
   }
 

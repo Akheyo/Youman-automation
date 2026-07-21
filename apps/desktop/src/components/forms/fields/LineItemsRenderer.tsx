@@ -1,6 +1,7 @@
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { Plus, Trash2, Search, Loader2 } from "lucide-react";
 import { useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,10 @@ export function LineItemsRenderer({ field, disabled }: Props) {
   const errorMsg = (errors[field.key] as { message?: string } | undefined)?.message;
 
   const addLine = () => {
-    const empty = Object.fromEntries(columns.map((col) => [col.key, col.type === "number" ? 0 : ""]));
+    // Menge startet bei 1 – 0 wäre nie eine gültige Position.
+    const empty = Object.fromEntries(
+      columns.map((col) => [col.key, col.type === "number" ? (col.key === "quantity" ? 1 : 0) : ""])
+    );
     append(empty);
   };
 
@@ -129,10 +133,20 @@ function ProductSearchCell({
 }) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  // The table wrapper uses overflow-hidden (rounded corners), which clips any
+  // absolutely positioned dropdown – so the panel is rendered into a portal
+  // at a fixed position derived from the input's viewport rect.
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+  const anchorRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const source = col.dynamicSource;
   const currentValue = watch(fieldKey) as string;
   const [label, setLabel] = useState("");
+
+  const openDropdown = () => {
+    setAnchorRect(anchorRef.current?.getBoundingClientRect() ?? null);
+    setIsOpen(true);
+  };
 
   const { data, isFetching } = useQuery({
     queryKey: ["line-item-search", col.key, query],
@@ -165,11 +179,11 @@ function ProductSearchCell({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={anchorRef}>
       {currentValue && !isOpen ? (
         <div
           className="w-full h-8 px-2 text-sm text-foreground truncate flex items-center cursor-pointer hover:bg-input rounded"
-          onClick={() => !disabled && setIsOpen(true)}
+          onClick={() => !disabled && openDropdown()}
           title={label}
         >
           {label || currentValue}
@@ -180,8 +194,8 @@ function ProductSearchCell({
             type="text"
             placeholder="Artikel suchen..."
             disabled={disabled}
-            onChange={(e) => { handleSearch(e.target.value); setIsOpen(true); }}
-            onFocus={() => setIsOpen(true)}
+            onChange={(e) => { handleSearch(e.target.value); openDropdown(); }}
+            onFocus={openDropdown}
             className="w-full h-8 pl-6 pr-2 rounded border border-transparent bg-transparent text-sm text-foreground focus:border-input focus:bg-input focus:outline-none focus:ring-1 focus:ring-ring selectable placeholder:text-muted-foreground"
             autoComplete="off"
           />
@@ -190,10 +204,13 @@ function ProductSearchCell({
         </div>
       )}
 
-      {isOpen && !disabled && (
+      {isOpen && !disabled && anchorRect && createPortal(
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute top-full left-0 z-50 w-64 mt-1 rounded-lg border border-border bg-popover shadow-xl overflow-hidden">
+          <div
+            className="fixed z-50 w-72 rounded-lg border border-border bg-popover shadow-xl overflow-hidden"
+            style={{ top: anchorRect.bottom + 4, left: anchorRect.left }}
+          >
             {items.length > 0 ? (
               <ul className="max-h-48 overflow-y-auto py-1">
                 {items.map((item) => (
@@ -204,18 +221,19 @@ function ProductSearchCell({
                       onClick={() => handleSelect(item)}
                     >
                       <p className="font-medium text-foreground truncate">{item.designation}</p>
-                      <p className="text-muted-foreground">{item.articleNumber} · {item.basePrice.toFixed(2)} {item.currency}</p>
+                      <p className="text-muted-foreground">{item.articleNumber} · {(item.basePrice ?? 0).toFixed(2)} {item.currency ?? "EUR"}</p>
                     </button>
                   </li>
                 ))}
               </ul>
             ) : (
               <p className="px-3 py-3 text-xs text-muted-foreground text-center">
-                {query.length < 2 ? "Mindestens 2 Zeichen..." : "Keine Ergebnisse"}
+                {query.length < 2 ? "Mindestens 2 Zeichen eingeben..." : isFetching ? "Suche..." : "Keine Ergebnisse"}
               </p>
             )}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

@@ -120,7 +120,15 @@ export function ActionScreen() {
   });
 
   const onSubmit = methods.handleSubmit((data) => {
-    executeMutation.mutate(data as Record<string, unknown>);
+    const payload = data as Record<string, unknown>;
+    // FormBuilder validates flat fields, but not the rows inside line-item
+    // tables – check those here with readable German messages.
+    const problem = action ? validateLineItems(action, payload) : null;
+    if (problem) {
+      toast({ title: "Eingaben unvollständig", description: problem, variant: "error" });
+      return;
+    }
+    executeMutation.mutate(payload);
   });
 
   if (isLoading) {
@@ -203,6 +211,41 @@ export function ActionScreen() {
       </FormProvider>
     </div>
   );
+}
+
+const LINE_ITEM_LABELS: Record<string, string> = {
+  productId: "Artikel",
+  quantity: "Menge",
+  pricePerUnit: "Einzelpreis",
+};
+
+/** Returns a German error message when a line-item table has invalid rows, else null. */
+function validateLineItems(action: ActionDefinition, payload: Record<string, unknown>): string | null {
+  for (const field of action.fields) {
+    if (field.type !== "table_line_items") continue;
+    const rows = payload[field.key];
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return "Bitte mindestens eine Position hinzufügen.";
+    }
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i] as Record<string, unknown>;
+      for (const col of field.lineItemColumns ?? []) {
+        if (!col.required) continue;
+        const value = row[col.key];
+        const label = LINE_ITEM_LABELS[col.key] ?? col.label;
+        if (col.type === "number") {
+          if (typeof value !== "number" || Number.isNaN(value) || value <= 0) {
+            return `Position ${i + 1}: ${label} muss größer als 0 sein.`;
+          }
+        } else if (value === undefined || value === null || String(value).trim() === "") {
+          return col.key === "productId"
+            ? `Position ${i + 1}: Bitte einen Artikel auswählen (im Feld „Artikel" suchen und Treffer anklicken).`
+            : `Position ${i + 1}: ${label} fehlt.`;
+        }
+      }
+    }
+  }
+  return null;
 }
 
 function ActionSuccessPanel({
