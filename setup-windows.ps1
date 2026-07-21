@@ -98,7 +98,22 @@ Invoke-Step "Baue Workspace-Pakete" {
 
 # ── Datenbank einrichten (nur beim ersten erfolgreichen Lauf) ────────────────
 Set-Location (Join-Path $repo "apps\backend")
-Invoke-Step "Generiere Prisma-Client" { pnpm exec prisma generate }
+Write-Host ""
+Write-Host ">> Generiere Prisma-Client" -ForegroundColor Cyan
+pnpm exec prisma generate
+if ($LASTEXITCODE -ne 0) {
+    $clientDir = Join-Path $repo "node_modules\.prisma\client"
+    $clientDirAlt = Get-ChildItem -Path (Join-Path $repo "node_modules\.pnpm") -Filter ".prisma" -Recurse -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ((Test-Path $clientDir) -or $clientDirAlt) {
+        Write-Host "Prisma-Generate fehlgeschlagen (Datei vermutlich von laufendem Backend gesperrt) - vorhandener Client wird weiterverwendet." -ForegroundColor Yellow
+        Write-Host "Tipp: Alle alten Backend-Fenster schließen, dann klappt das Generieren wieder."
+    } else {
+        Write-Host "FEHLER: Prisma-Client konnte nicht generiert werden und existiert noch nicht." -ForegroundColor Red
+        Write-Host "Bitte alle Node-Prozesse beenden (taskkill /f /im node.exe) und erneut versuchen." -ForegroundColor Red
+        Read-Host "Enter zum Beenden"
+        exit 1
+    }
+}
 
 $dbMarker = Join-Path $repo "apps\backend\.db-setup-done"
 if (Test-Path $dbMarker) {
