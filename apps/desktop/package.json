@@ -1,6 +1,6 @@
 {
   "name": "@youman/desktop",
-  "version": "1.1.4",
+  "version": "1.1.18",
   "description": "adept& – Universal Business Process Desktop App",
   "main": "./electron/dist/main.js",
   "scripts": {
@@ -69,7 +69,9 @@
     "appId": "de.adept.desktop",
     "productName": "adept&",
     "npmRebuild": false,
-    "directories": { "output": "dist-electron" },
+    "directories": {
+      "output": "dist-electron"
+    },
     "publish": [
       {
         "provider": "github",
@@ -79,13 +81,23 @@
       }
     ],
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "assets/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerLanguages": ["de_DE", "en_US"],
+      "installerLanguages": [
+        "de_DE",
+        "en_US"
+      ],
       "language": "1031"
     },
     "files": [
