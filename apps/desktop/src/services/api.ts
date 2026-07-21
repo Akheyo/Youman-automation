@@ -12,6 +12,12 @@ export const apiClient = axios.create({
 
 // Attach access token on every request
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  // Action configs carry absolute paths ("/api/v1/search/…") while baseURL
+  // already ends in /api/v1 – strip the duplicate prefix so requests don't
+  // end up at /api/v1/api/v1/… (404).
+  if (config.url?.startsWith("/api/v1/")) {
+    config.url = config.url.slice("/api/v1".length);
+  }
   const token = useAuthStore.getState().accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
