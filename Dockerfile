@@ -15,7 +15,7 @@ RUN pnpm install --filter "@youman/backend..." --no-frozen-lockfile
 # CACHEBUST erzwingt einen frischen Build der Workspace-Pakete bei jedem Bump.
 # Nötig, weil Render sonst gecachte (veraltete) Build-Layer wiederverwenden
 # kann – dann liefe neuer Formular-Config, aber alter kompilierter Connector.
-ARG CACHEBUST=2026-07-22-addr-name1
+ARG CACHEBUST=2026-07-22-phone-typeid
 RUN echo "cachebust ${CACHEBUST}" && pnpm build:shared && pnpm build:config-engine && pnpm build:sap && pnpm build:plenty
 RUN cd apps/backend && pnpm exec prisma generate && pnpm build
 

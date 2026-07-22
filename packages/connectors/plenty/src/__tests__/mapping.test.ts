@@ -115,7 +115,7 @@ describe("buildContactPayload", () => {
     const options = payload["options"] as Array<Record<string, unknown>>;
     expect(options).toHaveLength(3);
     expect(options[0]).toMatchObject({ typeId: 2, value: "info@testfirma.de" });
-    expect(options[2]).toMatchObject({ typeId: 4, subTypeId: 2, value: "+49 171 9876" });
+    expect(options[2]).toMatchObject({ typeId: 1, subTypeId: 4, value: "+49 171 9876" });
   });
 });
 

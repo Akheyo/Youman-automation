@@ -19,8 +19,8 @@ export const contactSearchResponse: PlentyPagedResponse<PlentyContact> = {
       updatedAt: "2025-11-02T14:05:00+01:00",
       options: [
         { id: 901, typeId: 2, subTypeId: 4, value: "einkauf@bergmann-handel.de", priority: 0 },
-        { id: 902, typeId: 4, subTypeId: 4, value: "+49 221 4780-0", priority: 0 },
-        { id: 903, typeId: 4, subTypeId: 2, value: "+49 170 1122334", priority: 0 },
+        { id: 902, typeId: 1, subTypeId: 1, value: "+49 221 4780-0", priority: 0 },
+        { id: 903, typeId: 1, subTypeId: 4, value: "+49 170 1122334", priority: 0 },
       ],
       addresses: [
         {

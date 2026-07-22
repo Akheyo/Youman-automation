@@ -9,10 +9,16 @@ import type {
 } from "./types/PlentyConfig";
 
 // Plenty stores contact communication data as typed options.
+// Plenty-System-typeIds: 1 = Telefon, 2 = E-Mail, 4 = Webseite/URL.
+// (Vorher stand PHONE fälschlich auf 4 -> Telefonnummern landeten in "Webseite".)
 export const CONTACT_OPTION_TYPE_EMAIL = 2;
-export const CONTACT_OPTION_TYPE_PHONE = 4;
-export const CONTACT_OPTION_SUBTYPE_PRIVATE = 4;
-export const CONTACT_OPTION_SUBTYPE_MOBILE = 2;
+export const CONTACT_OPTION_TYPE_PHONE = 1;
+export const CONTACT_OPTION_TYPE_WEBSITE = 4;
+// Sub-Typen für Telefon (Plenty-Standard): 1 = privat, 4 = mobil.
+export const CONTACT_OPTION_SUBTYPE_PRIVATE = 1;
+export const CONTACT_OPTION_SUBTYPE_MOBILE = 4;
+// E-Mail-Sub-Typ (Plenty-Standard): 4 = privat.
+export const CONTACT_OPTION_SUBTYPE_EMAIL_PRIVATE = 4;
 
 // Plenty address relation types on orders/contacts.
 export const ADDRESS_TYPE_BILLING = 1;
@@ -153,7 +159,7 @@ export function buildContactPayload(
 ): Record<string, unknown> {
   const options: Array<Record<string, unknown>> = [];
   if (data.email) {
-    options.push({ typeId: CONTACT_OPTION_TYPE_EMAIL, subTypeId: CONTACT_OPTION_SUBTYPE_PRIVATE, value: data.email, priority: 0 });
+    options.push({ typeId: CONTACT_OPTION_TYPE_EMAIL, subTypeId: CONTACT_OPTION_SUBTYPE_EMAIL_PRIVATE, value: data.email, priority: 0 });
   }
   if (data.phone) {
     options.push({ typeId: CONTACT_OPTION_TYPE_PHONE, subTypeId: CONTACT_OPTION_SUBTYPE_PRIVATE, value: data.phone, priority: 0 });
