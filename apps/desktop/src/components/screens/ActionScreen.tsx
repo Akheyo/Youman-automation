@@ -71,6 +71,10 @@ export function ActionScreen() {
         payload,
         clientTimestamp: new Date().toISOString(),
       });
+      // eslint-disable-next-line no-console
+      console.log("ADEPT_DEBUG mutationFn typeof res:", typeof res, "| has .data:", res && "data" in res);
+      // eslint-disable-next-line no-console
+      console.log("ADEPT_DEBUG mutationFn res.data:", JSON.stringify(res?.data, null, 2));
       return res.data;
     },
 
@@ -107,16 +111,21 @@ export function ActionScreen() {
       // sein. Wir suchen die Ebene, die erpQuoteNumber/erpOrderNumber/document
       // trägt (ActionExecution.result), egal wie tief sie liegt.
       const resultData = extractExecutionResult(result);
-      // eslint-disable-next-line no-console
-      console.log("[adept] execute-Response:", JSON.stringify(result));
-      // eslint-disable-next-line no-console
-      console.log("[adept] erkanntes result-Objekt:", JSON.stringify(resultData));
       const documentInfo = (resultData?.["document"] as ExecutionDocumentInfo | undefined) ?? null;
       const isDocumentAction =
         !!documentInfo ||
         !!action.documentOutput ||
         !!resultData?.["erpQuoteNumber"] ||
         !!resultData?.["erpOrderNumber"];
+      /* eslint-disable no-console */
+      console.log("ADEPT_DEBUG raw result (onSuccess arg):", JSON.stringify(result, null, 2));
+      console.log("ADEPT_DEBUG top-level keys:", result && typeof result === "object" ? Object.keys(result) : String(result));
+      console.log("ADEPT_DEBUG extracted resultData:", JSON.stringify(resultData, null, 2));
+      console.log("ADEPT_DEBUG documentInfo:", JSON.stringify(documentInfo));
+      console.log("ADEPT_DEBUG action.documentOutput:", JSON.stringify(action.documentOutput ?? null));
+      console.log("ADEPT_DEBUG isDocumentAction:", isDocumentAction);
+      console.log("ADEPT_DEBUG will navigate to dashboard?", !isDocumentAction);
+      /* eslint-enable no-console */
       if (isDocumentAction) {
         setSuccessState({
           document: documentInfo,
