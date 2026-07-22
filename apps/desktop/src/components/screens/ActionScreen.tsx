@@ -98,11 +98,12 @@ export function ActionScreen() {
         variant: "success",
       });
 
-      // Actions with document output show a result panel (download buttons /
-      // template hint) instead of jumping straight back to the dashboard.
+      // Show the result panel whenever the BACKEND attached a document to the
+      // result (authoritative), not based on the desktop's cached action config
+      // – otherwise a stale/absent documentOutput would skip the download panel.
       const resultData = result.result as Record<string, unknown> | null;
       const documentInfo = (resultData?.["document"] as ExecutionDocumentInfo | undefined) ?? null;
-      if (action.documentOutput) {
+      if (documentInfo || action.documentOutput) {
         setSuccessState({
           document: documentInfo,
           referenceNumber: String(resultData?.["erpQuoteNumber"] ?? resultData?.["erpOrderNumber"] ?? ""),
