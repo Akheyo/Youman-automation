@@ -161,24 +161,33 @@ export function buildContactPayload(
   if (data.mobile) {
     options.push({ typeId: CONTACT_OPTION_TYPE_PHONE, subTypeId: CONTACT_OPTION_SUBTYPE_MOBILE, value: data.mobile, priority: 0 });
   }
-  // Plenty verlangt beim Anlegen mindestens eines von name1/name2/name3:
-  // name1 = Firma, name2 = Vorname, name3 = Nachname (Plenty-Namenskonvention,
-  // identisch zu Adressen und dem Kontakt-Datenimport).
-  const names =
-    data.isCompany === false && (data.firstName || data.lastName)
-      ? {
-          ...(data.firstName ? { name2: data.firstName } : {}),
-          ...(data.lastName ? { name3: data.lastName } : {}),
-        }
-      : { name1: data.name };
-
   return {
     // typeId 1 = customer
     typeId: 1,
     referrerId: 1,
-    ...names,
+    ...buildPlentyNames(data),
     ...(options.length > 0 ? { options } : {}),
   };
+}
+
+/**
+ * Plenty-Namensfelder für Kontakt UND Adresse: mindestens eines von
+ * name1/name2/name3 muss gefüllt sein, sonst lehnt Plenty ab.
+ * name1 = Firma, name2 = Vorname, name3 = Nachname (Plenty-Konvention).
+ */
+export function buildPlentyNames(data: {
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  isCompany?: boolean;
+}): Record<string, string> {
+  if (data.isCompany === false && (data.firstName || data.lastName)) {
+    return {
+      ...(data.firstName ? { name2: data.firstName } : {}),
+      ...(data.lastName ? { name3: data.lastName } : {}),
+    };
+  }
+  return data.name ? { name1: data.name } : {};
 }
 
 export function buildAddressPayload(address: Omit<Address, "id">): Record<string, unknown> {

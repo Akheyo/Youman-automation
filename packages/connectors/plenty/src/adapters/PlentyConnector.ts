@@ -37,6 +37,7 @@ import {
   ORDER_TYPE_SALES_ORDER,
   buildAddressPayload,
   buildContactPayload,
+  buildPlentyNames,
   buildOrderPayload,
   mapContactToCustomer,
   mapPlentyAddress,
@@ -155,14 +156,21 @@ export class PlentyConnector implements IErpConnector {
     // name1 (Firma) bzw. name2/name3 (Person) gefüllt bei Plenty ankommen.
     this.logger.debug(`Kontakt-Payload an Plenty: ${JSON.stringify(payload)}`);
     const contact = await this.http.post<PlentyContact>("/accounts/contacts", payload);
+    this.logger.debug(`Kontakt angelegt: id=${contact.id}`);
 
-    // Addresses are created separately in Plenty (typeId 1 = billing, 2 = shipping).
+    // Plenty-Adressen verlangen ebenfalls name1/name2/name3 – ohne diese wirft
+    // der Adress-POST denselben Namensfehler. Wir übernehmen die Kunden-Namen
+    // (Firma → name1, Person → name2/name3) in jedes Adress-Payload.
+    const nameFields = buildPlentyNames(data);
     const created: PlentyAddress[] = [];
     for (const address of data.addresses ?? []) {
+      const addressPayload = { ...buildAddressPayload(address), ...nameFields };
+      this.logger.debug(`Adress-Payload an Plenty: ${JSON.stringify(addressPayload)}`);
       const res = await this.http.post<PlentyAddress>(
         `/accounts/contacts/${contact.id}/addresses`,
-        buildAddressPayload(address)
+        addressPayload
       );
+      this.logger.debug(`Adresse angelegt: id=${res.id}`);
       created.push({ ...res, pivot: { typeId: address.type === "shipping" ? ADDRESS_TYPE_SHIPPING : ADDRESS_TYPE_BILLING } });
     }
 
