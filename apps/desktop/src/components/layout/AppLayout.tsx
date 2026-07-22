@@ -29,10 +29,16 @@ export function AppLayout() {
   const [updateState, setUpdateState] = useState<UpdateState>("idle");
   const [updateVersion, setUpdateVersion] = useState<string | null>(null);
   const [isInstalling, setIsInstalling] = useState(false);
+  const [appVersion, setAppVersion] = useState<string>("");
 
   useEffect(() => {
     syncService.start();
     return () => syncService.stop();
+  }, []);
+
+  // Show the running app version so the installed build is unambiguous.
+  useEffect(() => {
+    void window.adept?.app.getVersion().then((v) => setAppVersion(v)).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -141,6 +147,9 @@ export function AppLayout() {
               <Badge variant="destructive" className="ml-auto text-xs px-1.5 py-0">
                 {syncStatus.failedCount}
               </Badge>
+            )}
+            {appVersion && (
+              <span className="ml-auto text-[10px] text-muted-foreground/70 tabular-nums">v{appVersion}</span>
             )}
           </div>
         </div>
