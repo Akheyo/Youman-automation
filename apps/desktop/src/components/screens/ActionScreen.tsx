@@ -101,10 +101,16 @@ export function ActionScreen() {
       });
 
       // Nach erfolgreicher Online-Ausführung eines Angebots/Auftrags bleibt das
-      // Ergebnis-Panel IMMER stehen (kein automatischer Rücksprung zum
-      // Dashboard). Der Download hängt am Backend-Ergebnis (result.document);
-      // fehlt es, zeigt das Panel die vorhandenen Felder zur Diagnose an.
-      const resultData = result.result as Record<string, unknown> | null;
+      // Ergebnis-Panel IMMER stehen (kein automatischer Rücksprung).
+      // Der Zugriff ist robust gegen die tatsächliche Verschachtelung: je nach
+      // Interceptor kann `result` das ActionExecution ODER die Axios-Response
+      // sein. Wir suchen die Ebene, die erpQuoteNumber/erpOrderNumber/document
+      // trägt (ActionExecution.result), egal wie tief sie liegt.
+      const resultData = extractExecutionResult(result);
+      // eslint-disable-next-line no-console
+      console.log("[adept] execute-Response:", JSON.stringify(result));
+      // eslint-disable-next-line no-console
+      console.log("[adept] erkanntes result-Objekt:", JSON.stringify(resultData));
       const documentInfo = (resultData?.["document"] as ExecutionDocumentInfo | undefined) ?? null;
       const isDocumentAction =
         !!documentInfo ||
@@ -221,6 +227,37 @@ export function ActionScreen() {
       </FormProvider>
     </div>
   );
+}
+
+/**
+ * Finds the ActionExecution's `result` object regardless of how the response
+ * is nested at runtime. The execute response is the ActionExecution
+ * `{ ..., result: { erpQuoteNumber, document, ... } }`, but depending on axios
+ * interceptors the value handed to onSuccess can be the ActionExecution itself
+ * or the raw Axios response. We probe the plausible levels and pick the one
+ * that actually carries the ERP result fields.
+ */
+function extractExecutionResult(raw: unknown): Record<string, unknown> | null {
+  const carriesResult = (o: unknown): o is Record<string, unknown> =>
+    !!o &&
+    typeof o === "object" &&
+    ("document" in o || "erpQuoteNumber" in o || "erpOrderNumber" in o);
+
+  const rec = (raw ?? {}) as Record<string, unknown>;
+  const candidates: unknown[] = [
+    rec["result"], // ActionExecution.result  (result = ActionExecution)
+    (rec["data"] as Record<string, unknown> | undefined)?.["result"], // AxiosResponse.data.result
+    rec, // document/erpQuoteNumber already at top level
+    rec["data"], // AxiosResponse.data == ActionExecution
+  ];
+  for (const c of candidates) {
+    if (carriesResult(c)) return c;
+  }
+  // Fallback: the ActionExecution's result even if it has no ERP fields yet.
+  const fallback = (rec["result"] ?? (rec["data"] as Record<string, unknown> | undefined)?.["result"]) as
+    | Record<string, unknown>
+    | undefined;
+  return fallback ?? null;
 }
 
 const LINE_ITEM_LABELS: Record<string, string> = {
