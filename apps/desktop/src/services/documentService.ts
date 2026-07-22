@@ -25,11 +25,18 @@ const DOC_TYPE_FILENAME: Record<string, string> = {
  * Electron save dialog when available, otherwise as a browser download.
  * Throws DocumentRenderError with the uncovered placeholder list on 422.
  */
+/**
+ * Renders the document on the backend and saves it. Returns the saved file
+ * path (Electron) or null (browser fallback). Throws DocumentRenderError.
+ *
+ * PDF via LibreOffice on a cold Render instance can take well over the default
+ * API timeout, so this request gets a generous 120 s timeout of its own.
+ */
 export async function downloadDocument(
   info: ExecutionDocumentInfo,
   format: "docx" | "pdf",
   referenceNumber?: string
-): Promise<void> {
+): Promise<string | null> {
   if (!info.templateId) {
     throw new DocumentRenderError(info.hint ?? "Keine Vorlage hinterlegt.");
   }
@@ -38,11 +45,11 @@ export async function downloadDocument(
     const res = await apiClient.post<ArrayBuffer>(
       `/templates/${info.templateId}/render`,
       { data: info.data },
-      { params: { format }, responseType: "arraybuffer" }
+      { params: { format }, responseType: "arraybuffer", timeout: 120_000 }
     );
     content = res.data;
   } catch (err) {
-    throw toRenderError(err);
+    throw toRenderError(err, format);
   }
 
   const base = DOC_TYPE_FILENAME[info.documentType] ?? "Dokument";
@@ -50,8 +57,7 @@ export async function downloadDocument(
 
   if (window.adept?.documents?.save) {
     const base64 = arrayBufferToBase64(content);
-    await window.adept.documents.save(fileName, base64);
-    return;
+    return window.adept.documents.save(fileName, base64);
   }
   // Browser fallback (dev mode)
   const blob = new Blob([content], {
@@ -63,23 +69,34 @@ export async function downloadDocument(
   a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
+  return null;
 }
 
-function toRenderError(err: unknown): DocumentRenderError {
-  if (axios.isAxiosError(err) && err.response) {
-    // responseType arraybuffer → error body arrives as bytes and needs decoding
-    let body: unknown = err.response.data;
-    if (body instanceof ArrayBuffer) {
-      try {
-        body = JSON.parse(new TextDecoder().decode(body));
-      } catch {
-        body = undefined;
-      }
+function toRenderError(err: unknown, format: "docx" | "pdf"): DocumentRenderError {
+  if (axios.isAxiosError(err)) {
+    // Timeout / aborted request (slow LibreOffice cold start) has no response.
+    if (!err.response && (err.code === "ECONNABORTED" || err.code === "ETIMEDOUT")) {
+      return new DocumentRenderError(
+        format === "pdf"
+          ? "Die PDF-Erstellung dauert zu lange (Server war im Ruhezustand). Bitte erneut versuchen oder DOCX herunterladen."
+          : "Zeitüberschreitung beim Erstellen des Dokuments. Bitte erneut versuchen."
+      );
     }
-    const parsed = body as { error?: { message?: string; details?: { fields?: string[] } } } | undefined;
-    const message = parsed?.error?.message ?? "Dokument konnte nicht erstellt werden.";
-    const fields = parsed?.error?.details?.fields ?? [];
-    return new DocumentRenderError(message, fields);
+    if (err.response) {
+      // responseType arraybuffer → error body arrives as bytes and needs decoding
+      let body: unknown = err.response.data;
+      if (body instanceof ArrayBuffer) {
+        try {
+          body = JSON.parse(new TextDecoder().decode(body));
+        } catch {
+          body = undefined;
+        }
+      }
+      const parsed = body as { error?: { message?: string; details?: { fields?: string[] } } } | undefined;
+      const message = parsed?.error?.message ?? "Dokument konnte nicht erstellt werden.";
+      const fields = parsed?.error?.details?.fields ?? [];
+      return new DocumentRenderError(message, fields);
+    }
   }
   return new DocumentRenderError(err instanceof Error ? err.message : "Dokument konnte nicht erstellt werden.");
 }

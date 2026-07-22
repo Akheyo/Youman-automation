@@ -1,6 +1,7 @@
-import { IpcMain, app, shell, BrowserWindow, net, dialog } from "electron";
+import { IpcMain, app, shell, BrowserWindow, net } from "electron";
 import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { existsSync } from "node:fs";
+import { join, extname, basename } from "node:path";
 import type { OfflineQueueStore } from "../store/OfflineQueueStore";
 import type { SecureStorage } from "../store/SecureStorage";
 
@@ -40,17 +41,20 @@ export function setupIpcHandlers(
   ipcMain.handle("pdf:download", (_, url: string, _filename: string) => shell.openExternal(url));
 
   // ── Generated documents ────────────────────────────────────────────────────
+  // Speichert die Datei OHNE modalen Dialog direkt in den Downloads-Ordner
+  // (ein an ein unsichtbares Fenster gehängter Save-Dialog kann nie zurückkehren
+  //  -> Endlos-Spinner). Kollidierende Namen werden durchnummeriert. Danach wird
+  // die Datei geöffnet und der Pfad an den Renderer zurückgegeben.
   ipcMain.handle("documents:save", async (_, fileName: string, base64: string) => {
-    const win = BrowserWindow.getFocusedWindow();
-    const { canceled, filePath } = await dialog.showSaveDialog(win ?? new BrowserWindow({ show: false }), {
-      defaultPath: join(app.getPath("downloads"), fileName),
-      filters: fileName.toLowerCase().endsWith(".pdf")
-        ? [{ name: "PDF", extensions: ["pdf"] }]
-        : [{ name: "Word-Dokument", extensions: ["docx"] }],
-    });
-    if (canceled || !filePath) return null;
-    await writeFile(filePath, Buffer.from(base64, "base64"));
-    void shell.openPath(filePath);
-    return filePath;
+    const dir = app.getPath("downloads");
+    const ext = extname(fileName);
+    const stem = basename(fileName, ext);
+    let target = join(dir, fileName);
+    for (let i = 1; existsSync(target); i++) {
+      target = join(dir, `${stem} (${i})${ext}`);
+    }
+    await writeFile(target, Buffer.from(base64, "base64"));
+    void shell.openPath(target);
+    return target;
   });
 }

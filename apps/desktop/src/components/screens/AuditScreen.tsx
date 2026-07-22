@@ -18,10 +18,22 @@ function documentFromLog(log: AuditLog): { info: ExecutionDocumentInfo; ref: str
 
 function DocumentDownloadButton({ info, refNr }: { info: ExecutionDocumentInfo; refNr: string }) {
   const [busy, setBusy] = useState(false);
-  const handle = async () => {
+  const handle = async (format: "docx" | "pdf") => {
     setBusy(true);
+    if (format === "pdf") {
+      toast({
+        title: "PDF wird erstellt…",
+        description: "Beim ersten Mal kann das bis zu einer Minute dauern (Server wacht auf).",
+        variant: "info",
+      });
+    }
     try {
-      await downloadDocument(info, "pdf", refNr || undefined);
+      const path = await downloadDocument(info, format, refNr || undefined);
+      toast({
+        title: "Dokument gespeichert",
+        description: path ? `Gespeichert unter: ${path}` : "Der Download wurde gestartet.",
+        variant: "success",
+      });
     } catch (err) {
       const msg = err instanceof DocumentRenderError ? err.message : getApiError(err);
       toast({ title: "Download fehlgeschlagen", description: msg, variant: "error" });
@@ -30,15 +42,25 @@ function DocumentDownloadButton({ info, refNr }: { info: ExecutionDocumentInfo; 
     }
   };
   return (
-    <button
-      type="button"
-      onClick={handle}
-      disabled={busy}
-      className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-primary hover:bg-primary/5 disabled:opacity-50"
-    >
-      {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-      PDF
-    </button>
+    <div className="flex items-center gap-1.5">
+      <button
+        type="button"
+        onClick={() => handle("pdf")}
+        disabled={busy}
+        className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-primary hover:bg-primary/5 disabled:opacity-50"
+      >
+        {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+        PDF
+      </button>
+      <button
+        type="button"
+        onClick={() => handle("docx")}
+        disabled={busy}
+        className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-secondary disabled:opacity-50"
+      >
+        DOCX
+      </button>
+    </div>
   );
 }
 

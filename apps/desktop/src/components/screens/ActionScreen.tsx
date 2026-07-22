@@ -268,8 +268,20 @@ function ActionSuccessPanel({
     if (!doc) return;
     setBusy(format);
     setRenderError(null);
+    if (format === "pdf") {
+      toast({
+        title: "PDF wird erstellt…",
+        description: "Beim ersten Mal kann das bis zu einer Minute dauern (Server wacht auf).",
+        variant: "info",
+      });
+    }
     try {
-      await downloadDocument(doc, format, state.referenceNumber || undefined);
+      const path = await downloadDocument(doc, format, state.referenceNumber || undefined);
+      toast({
+        title: "Dokument gespeichert",
+        description: path ? `Gespeichert unter: ${path}` : "Der Download wurde gestartet.",
+        variant: "success",
+      });
     } catch (err) {
       const renderErr = err instanceof DocumentRenderError ? err : new DocumentRenderError(getApiError(err));
       setRenderError(renderErr);

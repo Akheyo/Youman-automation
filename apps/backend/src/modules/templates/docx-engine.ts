@@ -143,6 +143,7 @@ let conversionChain: Promise<unknown> = Promise.resolve();
  */
 export async function convertDocxToPdf(docx: Buffer): Promise<Buffer> {
   const run = async (): Promise<Buffer> => {
+    const startedAt = Date.now();
     const dir = await mkdtemp(join(tmpdir(), "adept-doc-"));
     try {
       const docxPath = join(dir, "document.docx");
@@ -171,7 +172,10 @@ export async function convertDocxToPdf(docx: Buffer): Promise<Buffer> {
         );
       });
       try {
-        return await readFile(join(dir, "document.pdf"));
+        const pdf = await readFile(join(dir, "document.pdf"));
+        // eslint-disable-next-line no-console
+        console.log(`PDF-Konvertierung: ${Date.now() - startedAt} ms (${pdf.length} Bytes)`);
+        return pdf;
       } catch (err) {
         throw new RenderError("LibreOffice hat keine PDF-Datei erzeugt.", { cause: err });
       }
