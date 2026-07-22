@@ -7,6 +7,11 @@ export interface Customer {
   customerNumber: string;
   name: string;
   name2?: string;
+  /** Privatperson: Vor-/Nachname (ERP-seitig z.B. Plenty name2/name3). */
+  firstName?: string;
+  lastName?: string;
+  /** false = Privatperson; fehlt/true = Firma (Name → Plenty name1). */
+  isCompany?: boolean;
   email?: string;
   phone?: string;
   mobile?: string;

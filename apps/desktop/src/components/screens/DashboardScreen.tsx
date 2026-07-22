@@ -192,6 +192,18 @@ function ActionForm({ action, isOnline, onDone }: ActionFormProps) {
         return;
       }
 
+      // Kundenanlage bestätigt mit der echten Plenty-Kunden-ID.
+      const createdRecord = ((result as ActionExecution).result ?? null) as Record<string, unknown> | null;
+      if (action.id === "action-create-customer" && createdRecord?.["id"]) {
+        toast({
+          title: "Kunde angelegt",
+          description: `${String(createdRecord["name"] ?? "")} – Kunden-ID ${String(createdRecord["id"])}`,
+          variant: "success",
+        });
+        onDone();
+        return;
+      }
+
       toast({ title: "Erfolgreich", description: `${action.displayName} ausgeführt.`, variant: "success" });
 
       // Angebot/Auftrag mit Dokument: Ergebnis-Panel mit Download anzeigen,

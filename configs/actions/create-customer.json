@@ -9,21 +9,116 @@
   "targetSystem": "SAP",
   "version": "1.0.0",
   "enabled": true,
-  "allowedRoles": ["TENANT_ADMIN", "MANAGER", "SALES", "INNENDIENST"],
+  "allowedRoles": [
+    "TENANT_ADMIN",
+    "MANAGER",
+    "SALES",
+    "INNENDIENST"
+  ],
   "sortOrder": 5,
   "offlineBehavior": "queue",
   "fieldGroups": [
-    { "id": "basic", "label": "Stammdaten", "order": 1 },
-    { "id": "contact", "label": "Kontakt", "order": 2 },
-    { "id": "address", "label": "Adresse", "order": 3 },
-    { "id": "commercial", "label": "Handelsdaten", "order": 4, "collapsible": true, "defaultCollapsed": true }
+    {
+      "id": "basic",
+      "label": "Stammdaten",
+      "order": 1
+    },
+    {
+      "id": "contact",
+      "label": "Kontakt",
+      "order": 2
+    },
+    {
+      "id": "address",
+      "label": "Adresse",
+      "order": 3
+    },
+    {
+      "id": "commercial",
+      "label": "Handelsdaten",
+      "order": 4,
+      "collapsible": true,
+      "defaultCollapsed": true
+    }
   ],
   "fields": [
+    {
+      "id": "f-customer-type",
+      "actionId": "action-create-customer",
+      "key": "customerType",
+      "label": "Kundentyp",
+      "type": "dropdown",
+      "required": true,
+      "defaultValue": "company",
+      "order": 0,
+      "groupId": "basic",
+      "width": "half",
+      "options": [
+        {
+          "value": "company",
+          "label": "Firma"
+        },
+        {
+          "value": "person",
+          "label": "Privatperson"
+        }
+      ]
+    },
+    {
+      "id": "f-first-name",
+      "actionId": "action-create-customer",
+      "key": "firstName",
+      "label": "Vorname",
+      "type": "text",
+      "required": true,
+      "order": 1,
+      "groupId": "basic",
+      "width": "half",
+      "constraints": [
+        {
+          "id": "c-dep-f-first-name",
+          "fieldId": "f-first-name",
+          "type": "dependency",
+          "value": null,
+          "message": "",
+          "condition": {
+            "fieldId": "customerType",
+            "operator": "eq",
+            "value": "person"
+          }
+        }
+      ]
+    },
+    {
+      "id": "f-last-name",
+      "actionId": "action-create-customer",
+      "key": "lastName",
+      "label": "Nachname",
+      "type": "text",
+      "required": true,
+      "order": 1,
+      "groupId": "basic",
+      "width": "half",
+      "constraints": [
+        {
+          "id": "c-dep-f-last-name",
+          "fieldId": "f-last-name",
+          "type": "dependency",
+          "value": null,
+          "message": "",
+          "condition": {
+            "fieldId": "customerType",
+            "operator": "eq",
+            "value": "person"
+          }
+        }
+      ]
+    },
     {
       "id": "f-name",
       "actionId": "action-create-customer",
       "key": "name",
-      "label": "Firmenname / Name",
+      "label": "Firmenname",
       "type": "text",
       "required": true,
       "placeholder": "Mustermann GmbH",
@@ -31,7 +126,25 @@
       "groupId": "basic",
       "width": "full",
       "constraints": [
-        { "id": "c-max-name", "fieldId": "f-name", "type": "max", "value": 200, "message": "Max. 200 Zeichen" }
+        {
+          "id": "c-max-name",
+          "fieldId": "f-name",
+          "type": "max",
+          "value": 200,
+          "message": "Max. 200 Zeichen"
+        },
+        {
+          "id": "c-dep-f-name",
+          "fieldId": "f-name",
+          "type": "dependency",
+          "value": null,
+          "message": "",
+          "condition": {
+            "fieldId": "customerType",
+            "operator": "eq",
+            "value": "company"
+          }
+        }
       ]
     },
     {
@@ -142,12 +255,30 @@
       "groupId": "address",
       "width": "third",
       "options": [
-        { "value": "DE", "label": "Deutschland" },
-        { "value": "AT", "label": "Österreich" },
-        { "value": "CH", "label": "Schweiz" },
-        { "value": "FR", "label": "Frankreich" },
-        { "value": "GB", "label": "Großbritannien" },
-        { "value": "US", "label": "USA" }
+        {
+          "value": "DE",
+          "label": "Deutschland"
+        },
+        {
+          "value": "AT",
+          "label": "Österreich"
+        },
+        {
+          "value": "CH",
+          "label": "Schweiz"
+        },
+        {
+          "value": "FR",
+          "label": "Frankreich"
+        },
+        {
+          "value": "GB",
+          "label": "Großbritannien"
+        },
+        {
+          "value": "US",
+          "label": "USA"
+        }
       ]
     },
     {
@@ -162,10 +293,22 @@
       "groupId": "commercial",
       "width": "third",
       "options": [
-        { "value": "EUR", "label": "EUR" },
-        { "value": "USD", "label": "USD" },
-        { "value": "GBP", "label": "GBP" },
-        { "value": "CHF", "label": "CHF" }
+        {
+          "value": "EUR",
+          "label": "EUR"
+        },
+        {
+          "value": "USD",
+          "label": "USD"
+        },
+        {
+          "value": "GBP",
+          "label": "GBP"
+        },
+        {
+          "value": "CHF",
+          "label": "CHF"
+        }
       ]
     },
     {
@@ -184,7 +327,9 @@
   "apiMapping": {
     "method": "POST",
     "endpoint": "/api/v1/actions/execute",
-    "bodyMapping": { "actionId": "action-create-customer" },
+    "bodyMapping": {
+      "actionId": "action-create-customer"
+    },
     "responseMapping": {
       "customerId": "result.id",
       "customerNumber": "result.customerNumber"
@@ -205,7 +350,10 @@
     "retryable": true,
     "userMessage": "Der Kunde konnte nicht angelegt werden."
   },
-  "tags": ["crm", "customer"],
+  "tags": [
+    "crm",
+    "customer"
+  ],
   "createdAt": "2024-01-01T00:00:00Z",
   "updatedAt": "2024-01-01T00:00:00Z"
 }

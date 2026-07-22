@@ -12,17 +12,24 @@ export type FormValues = Record<string, unknown>;
  * This allows config-driven forms without writing validation code per action.
  */
 export class FormBuilder {
-  buildZodSchema(action: ActionDefinition): z.ZodObject<Record<string, ZodTypeAny>> {
+  buildZodSchema(action: ActionDefinition): ZodTypeAny {
     const shape: Record<string, ZodTypeAny> = {};
     // Dotted field keys (e.g. "address.street") map to nested objects, because
     // react-hook-form's register("address.street") writes {address:{street}}.
     // A flat schema key would never match that nested value and would block
     // submission silently. Group such keys into a nested z.object per parent.
     const nested: Record<string, Record<string, ZodTypeAny>> = {};
+    // Required fields gated by a visibility dependency (e.g. "Firmenname" only
+    // for Kundentyp=Firma) must not block submission while hidden – they are
+    // validated conditionally after parsing instead.
+    const conditionallyRequired: FieldDefinition[] = [];
 
     for (const field of action.fields) {
       if (field.hidden) continue;
-      const schema = this.buildFieldSchema(field);
+      const hasDependency = (field.constraints ?? []).some((c) => c.type === "dependency" && c.condition);
+      const gatedRequired = field.required && hasDependency;
+      if (gatedRequired) conditionallyRequired.push(field);
+      const schema = this.buildFieldSchema(field, gatedRequired);
       const dot = field.key.indexOf(".");
       if (dot === -1) {
         shape[field.key] = schema;
@@ -37,10 +44,25 @@ export class FormBuilder {
       shape[parent] = z.object(childShape);
     }
 
-    return z.object(shape);
+    const base = z.object(shape);
+    if (conditionallyRequired.length === 0) return base;
+
+    return base.superRefine((data, ctx) => {
+      for (const field of conditionallyRequired) {
+        if (!this.evaluateVisibility(field, data as FormValues)) continue;
+        const value = getValueAtPath(data as FormValues, field.key);
+        if (value === null || value === undefined || value === "") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: field.key.split("."),
+            message: `${field.label} ist erforderlich`,
+          });
+        }
+      }
+    });
   }
 
-  private buildFieldSchema(field: FieldDefinition): ZodTypeAny {
+  private buildFieldSchema(field: FieldDefinition, forceOptional = false): ZodTypeAny {
     let schema: ZodTypeAny;
 
     switch (field.type) {
@@ -82,7 +104,7 @@ export class FormBuilder {
 
     schema = this.applyConstraints(schema, field.constraints ?? []);
 
-    if (!field.required) {
+    if (!field.required || forceOptional) {
       schema = schema.optional().nullable();
     } else {
       if (field.type === "text" || field.type === "textarea") {
@@ -200,4 +222,12 @@ export class FormBuilder {
       default: return true;
     }
   }
+}
+
+/** Reads a (possibly dotted) key from nested form values. */
+function getValueAtPath(values: FormValues, key: string): unknown {
+  return key.split(".").reduce<unknown>((acc, part) => {
+    if (acc && typeof acc === "object") return (acc as Record<string, unknown>)[part];
+    return undefined;
+  }, values);
 }

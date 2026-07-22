@@ -161,12 +161,22 @@ export function buildContactPayload(
   if (data.mobile) {
     options.push({ typeId: CONTACT_OPTION_TYPE_PHONE, subTypeId: CONTACT_OPTION_SUBTYPE_MOBILE, value: data.mobile, priority: 0 });
   }
+  // Plenty verlangt beim Anlegen mindestens eines von name1/name2/name3:
+  // name1 = Firma, name2 = Vorname, name3 = Nachname (Plenty-Namenskonvention,
+  // identisch zu Adressen und dem Kontakt-Datenimport).
+  const names =
+    data.isCompany === false && (data.firstName || data.lastName)
+      ? {
+          ...(data.firstName ? { name2: data.firstName } : {}),
+          ...(data.lastName ? { name3: data.lastName } : {}),
+        }
+      : { name1: data.name };
+
   return {
     // typeId 1 = customer
     typeId: 1,
     referrerId: 1,
-    lastName: data.name,
-    ...(data.name2 ? { firstName: data.name2 } : {}),
+    ...names,
     ...(options.length > 0 ? { options } : {}),
   };
 }

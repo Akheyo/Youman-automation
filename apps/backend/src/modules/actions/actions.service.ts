@@ -164,11 +164,18 @@ export class ActionsService {
 
       case "action-create-customer": {
         const dto = this.parseDto(CreateCustomerSchema, req.payload);
+        const isCompany = dto.customerType !== "person";
+        const displayName = isCompany
+          ? dto.name ?? ""
+          : [dto.firstName, dto.lastName].filter(Boolean).join(" ");
         return connector.createCustomer({
           tenantId: req.tenantId,
           customerNumber: dto.customerNumber ?? "",
-          name: dto.name,
-          name2: dto.name2,
+          name: displayName,
+          isCompany,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          name2: dto.name2 ?? undefined,
           email: dto.email,
           phone: dto.phone,
           mobile: dto.mobile,

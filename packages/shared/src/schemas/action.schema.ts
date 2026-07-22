@@ -19,41 +19,6 @@ export const SearchRequestSchema = z.object({
   sortDir: z.enum(["asc", "desc"]).optional(),
 });
 
-export const CreateCustomerSchema = z.object({
-  customerNumber: z.string().optional(),
-  name: z.string().min(1, "Name erforderlich").max(200),
-  name2: z.string().max(200).optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  phone: z.string().max(50).optional(),
-  mobile: z.string().max(50).optional(),
-  taxNumber: z.string().max(50).optional(),
-  vatId: z.string().max(50).optional(),
-  currency: z.string().length(3).default("EUR"),
-  paymentTerms: z.string().optional(),
-  address: z.object({
-    street: z.string().min(1, "Straße erforderlich"),
-    streetNumber: z.string().optional(),
-    zip: z.string().min(1, "PLZ erforderlich"),
-    city: z.string().min(1, "Ort erforderlich"),
-    countryCode: z.string().length(2).default("DE"),
-    state: z.string().optional(),
-  }),
-});
-
-export const CreateProductSchema = z.object({
-  articleNumber: z.string().optional(),
-  ean: z.string().max(20).optional(),
-  designation: z.string().min(1, "Bezeichnung erforderlich").max(300),
-  description: z.string().max(2000).optional(),
-  manufacturer: z.string().max(200).optional(),
-  manufacturerArticleNumber: z.string().max(100).optional(),
-  category: z.string().optional(),
-  unit: z.string().min(1).default("ST"),
-  basePrice: z.number().min(0),
-  currency: z.string().length(3).default("EUR"),
-  taxClass: z.string().default("STANDARD"),
-});
-
 // The desktop form sends explicit `null` (and "") for empty optional fields
 // (FormBuilder marks them .optional().nullable()). Treat null/"" as "not
 // provided" so an optional string field isn't rejected for being null.
@@ -68,6 +33,54 @@ const optionalDate = z.preprocess(
     .union([z.string().datetime({ offset: true }), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)])
     .optional()
 );
+
+export const CreateCustomerSchema = z
+  .object({
+    customerNumber: optionalString(),
+    /** Firma (name → Plenty name1) oder Privatperson (firstName/lastName → name2/name3). */
+    customerType: z.enum(["company", "person"]).default("company"),
+    name: optionalString(z.string().max(200)),
+    firstName: optionalString(z.string().max(100)),
+    lastName: optionalString(z.string().max(100)),
+    name2: optionalString(z.string().max(200)),
+    email: z.preprocess((v) => (v === null || v === "" ? undefined : v), z.string().email("Ungültige E-Mail").optional()),
+    phone: optionalString(z.string().max(50)),
+    mobile: optionalString(z.string().max(50)),
+    taxNumber: optionalString(z.string().max(50)),
+    vatId: optionalString(z.string().max(50)),
+    currency: z.string().length(3).default("EUR"),
+    paymentTerms: optionalString(),
+    address: z.object({
+      street: z.string().min(1, "Straße erforderlich"),
+      streetNumber: optionalString(),
+      zip: z.string().min(1, "PLZ erforderlich"),
+      city: z.string().min(1, "Ort erforderlich"),
+      countryCode: z.string().length(2).default("DE"),
+      state: optionalString(),
+    }),
+  })
+  .superRefine((data, ctx) => {
+    if (data.customerType === "person") {
+      if (!data.firstName) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["firstName"], message: "Vorname erforderlich" });
+      if (!data.lastName) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["lastName"], message: "Nachname erforderlich" });
+    } else if (!data.name) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["name"], message: "Firmenname erforderlich" });
+    }
+  });
+
+export const CreateProductSchema = z.object({
+  articleNumber: z.string().optional(),
+  ean: z.string().max(20).optional(),
+  designation: z.string().min(1, "Bezeichnung erforderlich").max(300),
+  description: z.string().max(2000).optional(),
+  manufacturer: z.string().max(200).optional(),
+  manufacturerArticleNumber: z.string().max(100).optional(),
+  category: z.string().optional(),
+  unit: z.string().min(1).default("ST"),
+  basePrice: z.number().min(0),
+  currency: z.string().length(3).default("EUR"),
+  taxClass: z.string().default("STANDARD"),
+});
 
 /**
  * A quote must be creatable with the absolute minimum: a customer + at least
