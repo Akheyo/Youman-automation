@@ -168,16 +168,21 @@ export class ActionsService {
         const displayName = isCompany
           ? dto.name ?? ""
           : [dto.firstName, dto.lastName].filter(Boolean).join(" ");
+        // Bei einer Firma sind firstName/lastName der optionale Ansprechpartner
+        // (eigene Formularfelder contactFirstName/contactLastName). Bei einer
+        // Privatperson sind es Vor-/Nachname des Kunden selbst.
+        const contactFirstName = isCompany ? dto.contactFirstName : dto.firstName;
+        const contactLastName = isCompany ? dto.contactLastName : dto.lastName;
         this.logger.log(
-          `Kunde-Anlage eingehend: ${JSON.stringify({ customerType: dto.customerType, name: dto.name, firstName: dto.firstName, lastName: dto.lastName })}`
+          `Kunde-Anlage eingehend: ${JSON.stringify({ customerType: dto.customerType, name: dto.name, firstName: contactFirstName, lastName: contactLastName })}`
         );
         return connector.createCustomer({
           tenantId: req.tenantId,
           customerNumber: dto.customerNumber ?? "",
           name: displayName,
           isCompany,
-          firstName: dto.firstName,
-          lastName: dto.lastName,
+          firstName: contactFirstName,
+          lastName: contactLastName,
           name2: dto.name2 ?? undefined,
           email: dto.email,
           phone: dto.phone,

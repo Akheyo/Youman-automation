@@ -179,9 +179,18 @@ export function buildContactPayload(
 /**
  * Namensfelder für den KONTAKT (/rest/accounts/contacts). Plenty-Kontakte
  * nutzen firstName/lastName (NICHT name1/name2/name3 – das sind Adressfelder).
+ *
+ * WICHTIG: Der Kontakt hat KEIN eigenes "Firma"-Feld. In Plenty ist die "Firma"
+ * ein eigenes Account-Objekt (companyName), das per contactId mit dem Kontakt
+ * verknüpft wird (ContactAccountRepositoryContract.createAccount, siehe
+ * PlentyConnector.createCustomer). Der Firmenname darf deshalb NICHT als
+ * lastName gesendet werden – sonst landet er im Nachnamen statt im Firma-Feld.
+ *
  * Person: firstName = Vorname, lastName = Nachname.
- * Firma:  Firmenname → lastName (der Kontakt hat kein eigenes Firma-Feld; die
- *         Firma erscheint korrekt über die Adresse name1, siehe buildPlentyNames).
+ * Firma:  firstName/lastName = OPTIONALER Ansprechpartner. Ist kein
+ *         Ansprechpartner angegeben, dient der Firmenname als lastName-Fallback,
+ *         damit der Kontakt einen anzeigbaren Namen hat (die Firma selbst kommt
+ *         zusätzlich über den Account ins Firma-Feld).
  */
 export function buildContactNames(data: {
   name?: string;
@@ -189,12 +198,22 @@ export function buildContactNames(data: {
   lastName?: string;
   isCompany?: boolean;
 }): Record<string, string> {
-  if (data.isCompany === false && (data.firstName || data.lastName)) {
+  // Privatperson: Vor-/Nachname sind der Kunde.
+  if (data.isCompany === false) {
     return {
       ...(data.firstName ? { firstName: data.firstName } : {}),
       ...(data.lastName ? { lastName: data.lastName } : {}),
     };
   }
+  // Firma mit Ansprechpartner: dessen Vor-/Nachname wird der Kontaktname.
+  if (data.firstName || data.lastName) {
+    return {
+      ...(data.firstName ? { firstName: data.firstName } : {}),
+      ...(data.lastName ? { lastName: data.lastName } : {}),
+    };
+  }
+  // Firma ohne Ansprechpartner: Firmenname als Fallback-Nachname, damit der
+  // Kontakt benannt/auffindbar ist. Das Firma-Feld füllt der Account separat.
   return data.name ? { lastName: data.name } : {};
 }
 

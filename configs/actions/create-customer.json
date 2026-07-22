@@ -148,14 +148,66 @@
       ]
     },
     {
+      "id": "f-contact-first-name",
+      "actionId": "action-create-customer",
+      "key": "contactFirstName",
+      "label": "Ansprechpartner (Vorname)",
+      "type": "text",
+      "required": false,
+      "placeholder": "optional",
+      "order": 2,
+      "groupId": "basic",
+      "width": "half",
+      "constraints": [
+        {
+          "id": "c-dep-f-contact-first-name",
+          "fieldId": "f-contact-first-name",
+          "type": "dependency",
+          "value": null,
+          "message": "",
+          "condition": {
+            "fieldId": "customerType",
+            "operator": "eq",
+            "value": "company"
+          }
+        }
+      ]
+    },
+    {
+      "id": "f-contact-last-name",
+      "actionId": "action-create-customer",
+      "key": "contactLastName",
+      "label": "Ansprechpartner (Nachname)",
+      "type": "text",
+      "required": false,
+      "placeholder": "optional",
+      "order": 2,
+      "groupId": "basic",
+      "width": "half",
+      "constraints": [
+        {
+          "id": "c-dep-f-contact-last-name",
+          "fieldId": "f-contact-last-name",
+          "type": "dependency",
+          "value": null,
+          "message": "",
+          "condition": {
+            "fieldId": "customerType",
+            "operator": "eq",
+            "value": "company"
+          }
+        }
+      ]
+    },
+    {
       "id": "f-name2",
       "actionId": "action-create-customer",
       "key": "name2",
       "label": "Namenszusatz",
       "type": "text",
       "required": false,
-      "placeholder": "Abteilung, Ansprechpartner...",
-      "order": 2,
+      "placeholder": "Abteilung, weitere Angaben...",
+      "order": 3,
       "groupId": "basic",
       "width": "full"
     },

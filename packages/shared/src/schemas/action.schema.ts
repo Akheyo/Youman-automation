@@ -42,6 +42,9 @@ export const CreateCustomerSchema = z
     name: optionalString(z.string().max(200)),
     firstName: optionalString(z.string().max(100)),
     lastName: optionalString(z.string().max(100)),
+    /** Optionaler Ansprechpartner bei einer Firma (→ Kontakt firstName/lastName). */
+    contactFirstName: optionalString(z.string().max(100)),
+    contactLastName: optionalString(z.string().max(100)),
     name2: optionalString(z.string().max(200)),
     email: z.preprocess((v) => (v === null || v === "" ? undefined : v), z.string().email("Ungültige E-Mail").optional()),
     phone: optionalString(z.string().max(50)),

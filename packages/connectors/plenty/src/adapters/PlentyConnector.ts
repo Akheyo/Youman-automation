@@ -178,6 +178,29 @@ export class PlentyConnector implements IErpConnector {
     // debug wird backend-seitig auf log-Level geroutet (ConnectorsService).
     this.logger.debug(`Kontakt in Plenty angelegt: id=${contact.id} (${data.isCompany === false ? "Person" : "Firma"})`);
 
+    // "Firma"-Feld: In Plenty ist die Firma KEIN Kontaktfeld, sondern ein
+    // eigenes Account-Objekt (companyName), das per contactId mit dem Kontakt
+    // verknüpft wird (ContactAccountRepositoryContract.createAccount). Nur so
+    // erscheint der Firmenname im Feld "Firma" statt im Nachnamen. Best-effort:
+    // schlägt die Verknüpfung fehl, bleibt der Kontakt trotzdem bestehen – der
+    // Firmenname liegt dann weiterhin als Adress-name1 vor.
+    if (data.isCompany !== false && data.name) {
+      try {
+        const account = await this.http.post<{ id?: number }>(
+          `/accounts/contacts/${contact.id}/account`,
+          { companyName: data.name }
+        );
+        this.logger.debug(
+          `Firma-Account verknüpft: contactId=${contact.id}, accountId=${account?.id ?? "?"}, companyName=${data.name}`
+        );
+      } catch (err) {
+        this.logger.warn(
+          `Firma-Account für Kontakt ${contact.id} konnte nicht angelegt werden ` +
+            `(${err instanceof Error ? err.message : String(err)}). Der Firmenname bleibt über die Adresse (name1) erhalten.`
+        );
+      }
+    }
+
     // Plenty-Adressen verlangen ebenfalls name1/name2/name3 – ohne diese wirft
     // der Adress-POST denselben Namensfehler. Wir übernehmen die Kunden-Namen
     // (Firma → name1, Person → name2/name3) in jedes Adress-Payload.

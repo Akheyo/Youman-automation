@@ -110,12 +110,52 @@ describe("buildContactPayload", () => {
       addresses: [],
     });
     expect(payload["typeId"]).toBe(1);
-    // Kontakt nutzt firstName/lastName; Firma -> lastName (Adresse trägt name1).
+    // Firma ohne Ansprechpartner: Firmenname als Fallback-Nachname (das echte
+    // "Firma"-Feld füllt separat der Account, siehe createCustomer).
     expect(payload["lastName"]).toBe("Testfirma GmbH");
+    // Der Firmenname darf NICHT als name1 im Kontakt-Payload landen (name1 ist
+    // ein Adressfeld – der Kontakt kennt es nicht).
+    expect(payload["name1"]).toBeUndefined();
     const options = payload["options"] as Array<Record<string, unknown>>;
     expect(options).toHaveLength(3);
     expect(options[0]).toMatchObject({ typeId: 2, value: "info@testfirma.de" });
     expect(options[2]).toMatchObject({ typeId: 1, subTypeId: 4, value: "+49 171 9876" });
+  });
+
+  it("uses the contact person as first/last name for a company (Ansprechpartner)", () => {
+    const payload = buildContactPayload({
+      tenantId: TENANT,
+      customerNumber: "",
+      name: "Testfirma GmbH",
+      firstName: "Erika",
+      lastName: "Musterfrau",
+      isCompany: true,
+      email: "info@testfirma.de",
+      currency: "EUR",
+      isActive: true,
+      source: "PLENTY",
+      addresses: [],
+    } as Parameters<typeof buildContactPayload>[0]);
+    // Ansprechpartner steht im Kontaktnamen, der Firmenname NICHT im Nachnamen.
+    expect(payload["firstName"]).toBe("Erika");
+    expect(payload["lastName"]).toBe("Musterfrau");
+    expect(payload["name1"]).toBeUndefined();
+  });
+
+  it("maps a private person to first/last name", () => {
+    const payload = buildContactPayload({
+      tenantId: TENANT,
+      customerNumber: "",
+      firstName: "Max",
+      lastName: "Mustermann",
+      isCompany: false,
+      currency: "EUR",
+      isActive: true,
+      source: "PLENTY",
+      addresses: [],
+    } as Parameters<typeof buildContactPayload>[0]);
+    expect(payload["firstName"]).toBe("Max");
+    expect(payload["lastName"]).toBe("Mustermann");
   });
 });
 
