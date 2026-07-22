@@ -203,13 +203,6 @@ function ActionForm({ action, isOnline, onDone }: ActionFormProps) {
         !!action.documentOutput ||
         !!resultData?.["erpQuoteNumber"] ||
         !!resultData?.["erpOrderNumber"];
-      /* eslint-disable no-console */
-      console.log("ADEPT_DEBUG DashboardScreen onSuccess erreicht");
-      console.log("ADEPT_DEBUG raw result:", JSON.stringify(result, null, 2));
-      console.log("ADEPT_DEBUG extracted resultData:", JSON.stringify(resultData, null, 2));
-      console.log("ADEPT_DEBUG documentInfo:", JSON.stringify(documentInfo));
-      console.log("ADEPT_DEBUG isDocumentAction:", isDocumentAction);
-      /* eslint-enable no-console */
 
       if (isDocumentAction) {
         setSuccessState({

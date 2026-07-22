@@ -14,10 +14,27 @@ export type FormValues = Record<string, unknown>;
 export class FormBuilder {
   buildZodSchema(action: ActionDefinition): z.ZodObject<Record<string, ZodTypeAny>> {
     const shape: Record<string, ZodTypeAny> = {};
+    // Dotted field keys (e.g. "address.street") map to nested objects, because
+    // react-hook-form's register("address.street") writes {address:{street}}.
+    // A flat schema key would never match that nested value and would block
+    // submission silently. Group such keys into a nested z.object per parent.
+    const nested: Record<string, Record<string, ZodTypeAny>> = {};
 
     for (const field of action.fields) {
       if (field.hidden) continue;
-      shape[field.key] = this.buildFieldSchema(field);
+      const schema = this.buildFieldSchema(field);
+      const dot = field.key.indexOf(".");
+      if (dot === -1) {
+        shape[field.key] = schema;
+      } else {
+        const parent = field.key.slice(0, dot);
+        const child = field.key.slice(dot + 1);
+        (nested[parent] ??= {})[child] = schema;
+      }
+    }
+
+    for (const [parent, childShape] of Object.entries(nested)) {
+      shape[parent] = z.object(childShape);
     }
 
     return z.object(shape);
@@ -124,14 +141,29 @@ export class FormBuilder {
   getInitialValues(action: ActionDefinition): FormValues {
     const values: FormValues = {};
     for (const field of action.fields) {
+      let value: unknown;
       if (field.defaultValue !== undefined) {
-        values[field.key] = field.defaultValue;
+        value = field.defaultValue;
       } else if (field.type === "multi_select" || field.type === "table_line_items") {
-        values[field.key] = [];
+        value = [];
       } else if (field.type === "checkbox") {
-        values[field.key] = false;
+        value = false;
       } else {
-        values[field.key] = null;
+        value = null;
+      }
+      // Nest dotted keys ("address.street" → {address:{street}}) so the initial
+      // values match the shape react-hook-form and the Zod schema use.
+      const parts = field.key.split(".");
+      if (parts.length === 1) {
+        values[field.key] = value;
+      } else {
+        let cursor = values;
+        for (let i = 0; i < parts.length - 1; i++) {
+          const seg = parts[i]!;
+          if (typeof cursor[seg] !== "object" || cursor[seg] === null) cursor[seg] = {};
+          cursor = cursor[seg] as FormValues;
+        }
+        cursor[parts[parts.length - 1]!] = value;
       }
     }
     return values;

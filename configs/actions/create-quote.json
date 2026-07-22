@@ -63,7 +63,7 @@
         }
       ],
       "dynamicSource": {
-        "endpoint": "/api/v1/customers/{customerId}/addresses",
+        "endpoint": "/api/v1/search/customers/{customerId}/addresses",
         "searchParam": "q",
         "valueField": "id",
         "labelField": "city",

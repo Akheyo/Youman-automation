@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/utils/cn";
 import type { FieldDefinition, Customer, Product } from "@youman/shared";
 import { SEARCH_DEBOUNCE_MS, MIN_SEARCH_CHARS } from "@youman/shared";
+import { fieldErrorMessage } from "@/utils/formErrors";
 
 type SearchItem = Customer | Product | { id: string; [key: string]: unknown };
 
@@ -33,7 +34,7 @@ export function SearchableSelectRenderer({ field, disabled }: Props) {
   const navigate = useNavigate();
 
   const source = field.dynamicSource;
-  const error = errors[field.key]?.message as string | undefined;
+  const error = fieldErrorMessage(errors, field.key);
   const isDynamic = field.type === "dynamic_dropdown";
 
   // Resolve URL template params from form values

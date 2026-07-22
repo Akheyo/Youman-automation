@@ -2,12 +2,13 @@ import { useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "lucide-react";
 import type { FieldDefinition } from "@youman/shared";
+import { fieldErrorMessage } from "@/utils/formErrors";
 
 interface Props { field: FieldDefinition; disabled?: boolean }
 
 export function DateFieldRenderer({ field, disabled }: Props) {
   const { register, formState: { errors } } = useFormContext();
-  const error = errors[field.key]?.message as string | undefined;
+  const error = fieldErrorMessage(errors, field.key);
   const inputType = field.type === "datetime" ? "datetime-local" : "date";
 
   return (
