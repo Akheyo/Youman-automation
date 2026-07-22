@@ -151,12 +151,31 @@ export class PlentyConnector implements IErpConnector {
   }
 
   async createCustomer(data: Omit<Customer, "id" | "externalId" | "createdAt" | "updatedAt">): Promise<Customer> {
+    // Plenty dedupliziert Kontakte serverseitig über die E-Mail (Instanz-
+    // Einstellung): ein zweites Anlegen mit gleicher E-Mail würde still den
+    // bestehenden Kontakt aktualisieren statt einen neuen anzulegen. Deshalb
+    // vorab prüfen und den Nutzer klar informieren, statt stumm zu überschreiben.
+    if (data.email) {
+      const existing = await this.http.get<PlentyPagedResponse<PlentyContact>>("/accounts/contacts", {
+        email: data.email,
+        itemsPerPage: 1,
+        page: 1,
+      });
+      const match = existing.entries?.[0];
+      if (match) {
+        throw new ValidationError(
+          `Ein Kontakt mit der E-Mail ${data.email} existiert in Plentymarkets bereits (Kunden-ID ${match.id}). ` +
+            `Bitte eine andere E-Mail verwenden oder den bestehenden Kunden nutzen – sonst würde der vorhandene Kontakt überschrieben.`
+        );
+      }
+    }
+
     const payload = buildContactPayload(data);
     // In Produktion sichtbar (debug wird auf log-Level geroutet): belegt, ob
     // name1 (Firma) bzw. name2/name3 (Person) gefüllt bei Plenty ankommen.
     this.logger.debug(`Kontakt-Payload an Plenty: ${JSON.stringify(payload)}`);
     const contact = await this.http.post<PlentyContact>("/accounts/contacts", payload);
-    this.logger.debug(`Kontakt angelegt: id=${contact.id}`);
+    this.logger.log(`Kontakt in Plenty angelegt: id=${contact.id} (${data.isCompany === false ? "Person" : "Firma"})`);
 
     // Plenty-Adressen verlangen ebenfalls name1/name2/name3 – ohne diese wirft
     // der Adress-POST denselben Namensfehler. Wir übernehmen die Kunden-Namen
