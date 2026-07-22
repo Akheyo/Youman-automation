@@ -168,6 +168,9 @@ export class ActionsService {
         const displayName = isCompany
           ? dto.name ?? ""
           : [dto.firstName, dto.lastName].filter(Boolean).join(" ");
+        this.logger.log(
+          `Kunde-Anlage eingehend: ${JSON.stringify({ customerType: dto.customerType, name: dto.name, firstName: dto.firstName, lastName: dto.lastName })}`
+        );
         return connector.createCustomer({
           tenantId: req.tenantId,
           customerNumber: dto.customerNumber ?? "",

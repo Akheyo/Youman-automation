@@ -150,7 +150,11 @@ export class PlentyConnector implements IErpConnector {
   }
 
   async createCustomer(data: Omit<Customer, "id" | "externalId" | "createdAt" | "updatedAt">): Promise<Customer> {
-    const contact = await this.http.post<PlentyContact>("/accounts/contacts", buildContactPayload(data));
+    const payload = buildContactPayload(data);
+    // In Produktion sichtbar (debug wird auf log-Level geroutet): belegt, ob
+    // name1 (Firma) bzw. name2/name3 (Person) gefüllt bei Plenty ankommen.
+    this.logger.debug(`Kontakt-Payload an Plenty: ${JSON.stringify(payload)}`);
+    const contact = await this.http.post<PlentyContact>("/accounts/contacts", payload);
 
     // Addresses are created separately in Plenty (typeId 1 = billing, 2 = shipping).
     const created: PlentyAddress[] = [];
