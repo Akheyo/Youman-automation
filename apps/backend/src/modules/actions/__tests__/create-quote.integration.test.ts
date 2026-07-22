@@ -88,9 +88,17 @@ describe("ActionsService – create quote (minimal payload)", () => {
     const data = result.result as Record<string, unknown>;
     // Locally assigned running number (JJJJ-NNNN), not an ERP order id.
     expect(data["erpQuoteNumber"]).toMatch(/^\d{4}-0001$/);
-    // Document-ready data resolved from the customer (proves customer name lookup).
-    expect((data["kunde"] as { name: string }).name).toBe("Bergmann Handels GmbH");
-    expect(data["positionen"]).toHaveLength(1);
-    expect(data["endbetrag"]).toBe("74,90");
+
+    // The document is attached DIRECTLY (independent of any DB documentOutput).
+    const doc = data["document"] as { templateId: string | null; documentType: string; data: Record<string, unknown> };
+    expect(doc).toBeTruthy();
+    expect(doc.documentType).toBe("OFFER");
+    // Flat placeholder set matching the template.
+    expect(doc.data["angebotsnummer"]).toMatch(/^\d{4}-0001$/);
+    expect(doc.data["kunde_name"]).toBe("Bergmann Handels GmbH"); // resolved via getCustomer
+    expect(doc.data["kunde_adresse"]).toContain("Köln");
+    expect(doc.data["positionen"]).toHaveLength(1);
+    expect(doc.data["endbetrag"]).toBe("74,90");
+    expect(doc.data["zahlungsart"]).toBe("Rechnung");
   });
 });

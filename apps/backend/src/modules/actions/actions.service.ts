@@ -60,9 +60,12 @@ export class ActionsService {
 
       // Document generation is strictly best-effort: the ERP transaction has
       // already succeeded, so problems here must never fail the action.
+      // Actions that attach their own document (e.g. Angebot) are left as-is.
       try {
-        const documentInfo = await this.buildDocumentOutput(req, result);
-        if (documentInfo) result = { ...result, document: documentInfo };
+        if (!("document" in result)) {
+          const documentInfo = await this.buildDocumentOutput(req, result);
+          if (documentInfo) result = { ...result, document: documentInfo };
+        }
       } catch (err) {
         this.logger.warn(
           `Dokumentdaten für Aktion '${req.actionId}' konnten nicht aufbereitet werden: ${err instanceof Error ? err.message : err}`
@@ -145,14 +148,17 @@ export class ActionsService {
         const dto = this.parseDto(CreateQuoteSchema, req.payload);
         // Das Angebot wird NICHT im ERP als Auftrag angelegt, sondern in adept
         // als Dokument erzeugt und zum Download bereitgestellt. Aus dem ERP
-        // werden nur (lesend) die Kundendaten für Name/Adresse geholt.
+        // werden nur (lesend) die Kundendaten für Name/Adresse geholt. Die
+        // Dokument-Info wird hier DIREKT angehängt – unabhängig von einer
+        // documentOutput-Config in der DB (die sonst per Seed gepflegt wäre).
         const quoteNumber = await this.nextQuoteNumber(req.tenantId);
+        const document = await this.buildQuoteDocument(req.tenantId, req.userId, dto, quoteNumber);
         return {
           erpQuoteId: quoteNumber,
           erpQuoteNumber: quoteNumber,
           status: "created",
           createdAt: new Date().toISOString(),
-          ...(await this.buildQuoteDocumentData(req.tenantId, dto)),
+          document,
         };
       }
 
@@ -280,27 +286,33 @@ export class ActionsService {
   }
 
   /**
-   * Document-ready values for the Angebot template that a pure path mapping
-   * cannot compute: line totals, sums (Zwischensumme/Rabatt/Endbetrag),
-   * customer name/address and the delivery date. Amounts are pre-formatted
-   * German decimals; referenced from the action config via "$.result.…".
+   * Builds the complete, flat placeholder set for the Angebot template and
+   * looks up the tenant's default OFFER template. Fully self-contained – no
+   * dependency on a documentOutput mapping in the DB config. Amounts are
+   * pre-formatted German decimals; `datum` stays ISO and is formatted at render.
    */
-  private async buildQuoteDocumentData(tenantId: string, dto: CreateQuoteDto): Promise<Record<string, unknown>> {
+  private async buildQuoteDocument(
+    tenantId: string,
+    userId: string,
+    dto: CreateQuoteDto,
+    quoteNumber: string
+  ): Promise<ExecutionDocumentInfo> {
     const lineNet = (item: CreateQuoteDto["lineItems"][number]) =>
       item.quantity * item.pricePerUnit * (1 - (item.discount ?? 0) / 100);
     const zwischensumme = dto.lineItems.reduce((sum, item) => sum + item.quantity * item.pricePerUnit, 0);
     const endbetrag = dto.lineItems.reduce((sum, item) => sum + lineNet(item), 0);
 
-    const kunde: { name: string; adresse: string } = { name: dto.customerName ?? "", adresse: "" };
+    let kundeName = dto.customerName ?? "";
+    let kundeAdresse = "";
     try {
       const connector = await this.connectors.getConnector(tenantId);
       const customer = await connector.getCustomer(dto.customerId);
-      kunde.name = customer.name;
+      kundeName = customer.name;
       const addr = customer.addresses.find((a) => a.type === "billing" && a.isDefault)
         ?? customer.addresses.find((a) => a.type === "billing")
         ?? customer.addresses[0];
       if (addr) {
-        kunde.adresse = [`${addr.street} ${addr.streetNumber ?? ""}`.trim(), `${addr.zip} ${addr.city}`.trim()]
+        kundeAdresse = [`${addr.street} ${addr.streetNumber ?? ""}`.trim(), `${addr.zip} ${addr.city}`.trim()]
           .filter(Boolean)
           .join("\n");
       }
@@ -308,7 +320,14 @@ export class ActionsService {
       this.logger.warn(`Kundendaten für Dokument nicht ladbar: ${err instanceof Error ? err.message : err}`);
     }
 
-    return {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const data: Record<string, unknown> = {
+      angebotsnummer: quoteNumber,
+      datum: new Date().toISOString().slice(0, 10),
+      anrede: "Sehr geehrte Damen und Herren,",
+      ansprechpartner: user ? `${user.firstName} ${user.lastName}`.trim() : "",
+      kunde_name: kundeName,
+      kunde_adresse: kundeAdresse,
       positionen: dto.lineItems.map((item, idx) => ({
         pos: idx + 1,
         menge: item.quantity,
@@ -319,9 +338,22 @@ export class ActionsService {
       zwischensumme: formatGermanNumber(zwischensumme),
       rabatt: formatGermanNumber(zwischensumme - endbetrag),
       endbetrag: formatGermanNumber(endbetrag),
-      kunde,
       lieferdatum: dto.lineItems.find((i) => i.deliveryDate)?.deliveryDate ?? "ab sofort",
+      zahlungsart: "Rechnung",
+      zahlungsziel: "7 Tage netto",
+      versandart: "Spedition oder Selbstabholung",
     };
+
+    const template = await this.templates.findDefault(tenantId, "OFFER");
+    if (!template) {
+      return {
+        templateId: null,
+        documentType: "OFFER",
+        data,
+        hint: "Keine Vorlage hinterlegt – unter Administration » Dokumentvorlagen können Sie eine .docx-Vorlage hochladen.",
+      };
+    }
+    return { templateId: template.id, documentType: "OFFER", data };
   }
 
   /**
