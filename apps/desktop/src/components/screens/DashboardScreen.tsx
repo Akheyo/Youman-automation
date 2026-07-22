@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronDown, WifiOff, Loader2 } from "lucide-react";
+import { ChevronDown, WifiOff, Loader2, CheckCircle2, Download, FileText, Info } from "lucide-react";
 import { FormBuilder } from "@youman/config-engine";
 import { apiClient } from "@/services/api";
 import { syncService } from "@/services/syncService";
@@ -11,11 +10,11 @@ import { useAuthStore } from "@/stores/authStore";
 import { useOfflineStore } from "@/stores/offlineStore";
 import { ActionFormRenderer } from "@/components/forms/ActionFormRenderer";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/useToast";
 import { getApiError } from "@/services/api";
+import { DocumentRenderError, describePlaceholder, downloadDocument } from "@/services/documentService";
 import { cn } from "@/utils/cn";
-import type { ActionDefinition, ActionExecution } from "@youman/shared";
+import type { ActionDefinition, ActionExecution, ExecutionDocumentInfo } from "@youman/shared";
 
 const CATEGORY_LABELS: Record<string, string> = {
   sales: "Vertrieb",
@@ -126,10 +125,36 @@ interface ActionFormProps {
   onDone: () => void;
 }
 
+interface DashboardSuccessState {
+  document: ExecutionDocumentInfo | null;
+  referenceNumber: string;
+  resultKeys: string[];
+}
+
+/**
+ * Finds the ActionExecution's `result` object regardless of nesting (the value
+ * onSuccess receives can be the ActionExecution or the raw Axios response).
+ */
+function extractExecutionResult(raw: unknown): Record<string, unknown> | null {
+  const carries = (o: unknown): o is Record<string, unknown> =>
+    !!o && typeof o === "object" && ("document" in o || "erpQuoteNumber" in o || "erpOrderNumber" in o);
+  const rec = (raw ?? {}) as Record<string, unknown>;
+  const candidates: unknown[] = [
+    rec["result"],
+    (rec["data"] as Record<string, unknown> | undefined)?.["result"],
+    rec,
+    rec["data"],
+  ];
+  for (const c of candidates) if (carries(c)) return c;
+  return (rec["result"] ?? (rec["data"] as Record<string, unknown> | undefined)?.["result"]) as
+    | Record<string, unknown>
+    | null ?? null;
+}
+
 function ActionForm({ action, isOnline, onDone }: ActionFormProps) {
-  const navigate = useNavigate();
   const schema = formBuilder.buildZodSchema(action);
   const initialValues = formBuilder.getInitialValues(action);
+  const [successState, setSuccessState] = useState<DashboardSuccessState | null>(null);
 
   const methods = useForm({
     resolver: zodResolver(schema),
@@ -167,20 +192,34 @@ function ActionForm({ action, isOnline, onDone }: ActionFormProps) {
         return;
       }
 
-      for (const sa of action.successActions) {
-        if (sa.type === "open_pdf") {
-          const url = (result.result as Record<string, string> | null)?.[sa.config["urlField"] as string];
-          if (url && window.adept) await window.adept.pdf.open(url);
-        }
-        if (sa.type === "prepare_email") {
-          const qn = (result.result as Record<string, string> | null)?.["erpQuoteNumber"] ?? "";
-          const subject = String(sa.config["subject"] ?? "").replace("{quoteNumber}", qn);
-          const body = String(sa.config["body"] ?? "").replace("{quoteNumber}", qn);
-          if (window.adept) await window.adept.app.openExternal(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-        }
+      toast({ title: "Erfolgreich", description: `${action.displayName} ausgeführt.`, variant: "success" });
+
+      // Angebot/Auftrag mit Dokument: Ergebnis-Panel mit Download anzeigen,
+      // statt das Formular zu schließen. Zugriff robust gegen Verschachtelung.
+      const resultData = extractExecutionResult(result);
+      const documentInfo = (resultData?.["document"] as ExecutionDocumentInfo | undefined) ?? null;
+      const isDocumentAction =
+        !!documentInfo ||
+        !!action.documentOutput ||
+        !!resultData?.["erpQuoteNumber"] ||
+        !!resultData?.["erpOrderNumber"];
+      /* eslint-disable no-console */
+      console.log("ADEPT_DEBUG DashboardScreen onSuccess erreicht");
+      console.log("ADEPT_DEBUG raw result:", JSON.stringify(result, null, 2));
+      console.log("ADEPT_DEBUG extracted resultData:", JSON.stringify(resultData, null, 2));
+      console.log("ADEPT_DEBUG documentInfo:", JSON.stringify(documentInfo));
+      console.log("ADEPT_DEBUG isDocumentAction:", isDocumentAction);
+      /* eslint-enable no-console */
+
+      if (isDocumentAction) {
+        setSuccessState({
+          document: documentInfo,
+          referenceNumber: String(resultData?.["erpQuoteNumber"] ?? resultData?.["erpOrderNumber"] ?? ""),
+          resultKeys: resultData ? Object.keys(resultData) : [],
+        });
+        return;
       }
 
-      toast({ title: "Erfolgreich", description: `${action.displayName} ausgeführt.`, variant: "success" });
       onDone();
     },
 
@@ -192,6 +231,20 @@ function ActionForm({ action, isOnline, onDone }: ActionFormProps) {
   const onSubmit = methods.handleSubmit((data) => {
     executeMutation.mutate(data as Record<string, unknown>);
   });
+
+  if (successState) {
+    return (
+      <DocumentSuccessPanel
+        action={action}
+        state={successState}
+        onNew={() => {
+          setSuccessState(null);
+          methods.reset(initialValues);
+        }}
+        onDone={onDone}
+      />
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -231,6 +284,110 @@ function ActionForm({ action, isOnline, onDone }: ActionFormProps) {
           </div>
         </form>
       </FormProvider>
+    </div>
+  );
+}
+
+function DocumentSuccessPanel({
+  action,
+  state,
+  onNew,
+  onDone,
+}: {
+  action: ActionDefinition;
+  state: DashboardSuccessState;
+  onNew: () => void;
+  onDone: () => void;
+}) {
+  const [busy, setBusy] = useState<"docx" | "pdf" | null>(null);
+  const [renderError, setRenderError] = useState<DocumentRenderError | null>(null);
+  const doc = state.document;
+
+  const handleDownload = async (format: "docx" | "pdf") => {
+    if (!doc) return;
+    setBusy(format);
+    setRenderError(null);
+    if (format === "pdf") {
+      toast({
+        title: "PDF wird erstellt…",
+        description: "Beim ersten Mal kann das bis zu einer Minute dauern (Server wacht auf).",
+        variant: "info",
+      });
+    }
+    try {
+      const path = await downloadDocument(doc, format, state.referenceNumber || undefined);
+      toast({
+        title: "Dokument gespeichert",
+        description: path ? `Gespeichert unter: ${path}` : "Der Download wurde gestartet.",
+        variant: "success",
+      });
+    } catch (err) {
+      const renderErr = err instanceof DocumentRenderError ? err : new DocumentRenderError(getApiError(err));
+      setRenderError(renderErr);
+      toast({ title: "Dokument konnte nicht erstellt werden", description: renderErr.message, variant: "error" });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-8 text-center space-y-4">
+      <CheckCircle2 className="h-12 w-12 text-success mx-auto" />
+      <div>
+        <h2 className="text-xl font-bold text-foreground">{action.displayName} erfolgreich</h2>
+        {state.referenceNumber && (
+          <p className="text-sm text-muted-foreground mt-1">Nummer: {state.referenceNumber}</p>
+        )}
+      </div>
+
+      {doc?.templateId ? (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Dokument herunterladen:</p>
+          <div className="flex items-center justify-center gap-3">
+            <Button onClick={() => handleDownload("pdf")} loading={busy === "pdf"} disabled={busy !== null} className="gap-2">
+              <Download className="h-4 w-4" />
+              Dokument herunterladen (PDF)
+            </Button>
+            <Button variant="outline" onClick={() => handleDownload("docx")} loading={busy === "docx"} disabled={busy !== null} className="gap-2">
+              <FileText className="h-4 w-4" />
+              DOCX herunterladen
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="mx-auto max-w-md space-y-2">
+          <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3 text-left">
+            <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-xs text-muted-foreground">
+              {doc?.hint ?? "Für dieses Angebot kam kein Dokument vom Server zurück. Bitte prüfen Sie, ob unter Administration » Dokumentvorlagen eine Angebots-Vorlage als Standard markiert ist."}
+            </p>
+          </div>
+          <p className="text-[10px] text-muted-foreground/60 font-mono break-all text-left">
+            Debug – Antwortfelder: [{state.resultKeys.join(", ") || "leer"}]
+            {state.resultKeys.includes("document") ? " · document: vorhanden, aber ohne Vorlagen-ID" : " · document: fehlt"}
+          </p>
+        </div>
+      )}
+
+      {renderError && renderError.missingFields.length > 0 && (
+        <div className="mx-auto max-w-md rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-left">
+          <p className="text-sm font-medium text-destructive">Folgende Felder fehlen für das Dokument:</p>
+          <ul className="mt-1.5 list-disc pl-5 text-xs text-destructive/90 space-y-0.5">
+            {renderError.missingFields.map((f) => (
+              <li key={f}>{describePlaceholder(f)}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="flex items-center justify-center gap-3 pt-2">
+        <Button variant="outline" onClick={onNew}>
+          Weitere Aktion
+        </Button>
+        <Button variant="ghost" onClick={onDone}>
+          Fertig
+        </Button>
+      </div>
     </div>
   );
 }
