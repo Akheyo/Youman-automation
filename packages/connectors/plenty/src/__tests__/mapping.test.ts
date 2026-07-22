@@ -110,8 +110,8 @@ describe("buildContactPayload", () => {
       addresses: [],
     });
     expect(payload["typeId"]).toBe(1);
-    // Firmenname geht in Plentys name1 (name2/name3 = Vor-/Nachname bei Personen).
-    expect(payload["name1"]).toBe("Testfirma GmbH");
+    // Kontakt nutzt firstName/lastName; Firma -> lastName (Adresse trägt name1).
+    expect(payload["lastName"]).toBe("Testfirma GmbH");
     const options = payload["options"] as Array<Record<string, unknown>>;
     expect(options).toHaveLength(3);
     expect(options[0]).toMatchObject({ typeId: 2, value: "info@testfirma.de" });

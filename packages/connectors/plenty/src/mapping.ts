@@ -171,15 +171,37 @@ export function buildContactPayload(
     // typeId 1 = customer
     typeId: 1,
     referrerId: 1,
-    ...buildPlentyNames(data),
+    ...buildContactNames(data),
     ...(options.length > 0 ? { options } : {}),
   };
 }
 
 /**
- * Plenty-Namensfelder für Kontakt UND Adresse: mindestens eines von
- * name1/name2/name3 muss gefüllt sein, sonst lehnt Plenty ab.
- * name1 = Firma, name2 = Vorname, name3 = Nachname (Plenty-Konvention).
+ * Namensfelder für den KONTAKT (/rest/accounts/contacts). Plenty-Kontakte
+ * nutzen firstName/lastName (NICHT name1/name2/name3 – das sind Adressfelder).
+ * Person: firstName = Vorname, lastName = Nachname.
+ * Firma:  Firmenname → lastName (der Kontakt hat kein eigenes Firma-Feld; die
+ *         Firma erscheint korrekt über die Adresse name1, siehe buildPlentyNames).
+ */
+export function buildContactNames(data: {
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  isCompany?: boolean;
+}): Record<string, string> {
+  if (data.isCompany === false && (data.firstName || data.lastName)) {
+    return {
+      ...(data.firstName ? { firstName: data.firstName } : {}),
+      ...(data.lastName ? { lastName: data.lastName } : {}),
+    };
+  }
+  return data.name ? { lastName: data.name } : {};
+}
+
+/**
+ * Namensfelder für die ADRESSE (…/addresses). Plenty-Adressen verlangen
+ * mindestens eines von name1/name2/name3.
+ * Firma:  name1 = Firmenname. Person: name2 = Vorname, name3 = Nachname.
  */
 export function buildPlentyNames(data: {
   name?: string;
