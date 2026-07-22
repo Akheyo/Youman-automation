@@ -21,6 +21,8 @@ const formBuilder = new FormBuilder();
 interface SuccessState {
   document: ExecutionDocumentInfo | null;
   referenceNumber: string;
+  /** Diagnostic: top-level keys of the backend result (shown if no document came back). */
+  resultKeys: string[];
 }
 
 export function ActionScreen() {
@@ -98,15 +100,22 @@ export function ActionScreen() {
         variant: "success",
       });
 
-      // Show the result panel whenever the BACKEND attached a document to the
-      // result (authoritative), not based on the desktop's cached action config
-      // – otherwise a stale/absent documentOutput would skip the download panel.
+      // Nach erfolgreicher Online-Ausführung eines Angebots/Auftrags bleibt das
+      // Ergebnis-Panel IMMER stehen (kein automatischer Rücksprung zum
+      // Dashboard). Der Download hängt am Backend-Ergebnis (result.document);
+      // fehlt es, zeigt das Panel die vorhandenen Felder zur Diagnose an.
       const resultData = result.result as Record<string, unknown> | null;
       const documentInfo = (resultData?.["document"] as ExecutionDocumentInfo | undefined) ?? null;
-      if (documentInfo || action.documentOutput) {
+      const isDocumentAction =
+        !!documentInfo ||
+        !!action.documentOutput ||
+        !!resultData?.["erpQuoteNumber"] ||
+        !!resultData?.["erpOrderNumber"];
+      if (isDocumentAction) {
         setSuccessState({
           document: documentInfo,
           referenceNumber: String(resultData?.["erpQuoteNumber"] ?? resultData?.["erpOrderNumber"] ?? ""),
+          resultKeys: resultData ? Object.keys(resultData) : [],
         });
         return;
       }
@@ -317,10 +326,17 @@ function ActionSuccessPanel({
             </div>
           </div>
         ) : (
-          <div className="mx-auto max-w-md flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3 text-left">
-            <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-            <p className="text-xs text-muted-foreground">
-              {doc?.hint ?? "Keine Vorlage hinterlegt – unter Administration » Dokumentvorlagen können Sie eine .docx-Vorlage hochladen."}
+          <div className="mx-auto max-w-md space-y-2">
+            <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 p-3 text-left">
+              <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground">
+                {doc?.hint ?? "Für dieses Angebot kam kein Dokument vom Server zurück. Bitte prüfen Sie, ob unter Administration » Dokumentvorlagen eine Angebots-Vorlage als Standard markiert ist."}
+              </p>
+            </div>
+            {/* Diagnose: zeigt, welche Felder die Server-Antwort tatsächlich enthielt. */}
+            <p className="text-[10px] text-muted-foreground/60 font-mono break-all text-left">
+              Debug – Antwortfelder: [{state.resultKeys.join(", ") || "leer"}]
+              {state.resultKeys.includes("document") ? " · document: vorhanden, aber ohne Vorlagen-ID" : " · document: fehlt"}
             </p>
           </div>
         )}
