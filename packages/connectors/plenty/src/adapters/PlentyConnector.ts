@@ -175,7 +175,8 @@ export class PlentyConnector implements IErpConnector {
     // name1 (Firma) bzw. name2/name3 (Person) gefüllt bei Plenty ankommen.
     this.logger.debug(`Kontakt-Payload an Plenty: ${JSON.stringify(payload)}`);
     const contact = await this.http.post<PlentyContact>("/accounts/contacts", payload);
-    this.logger.log(`Kontakt in Plenty angelegt: id=${contact.id} (${data.isCompany === false ? "Person" : "Firma"})`);
+    // debug wird backend-seitig auf log-Level geroutet (ConnectorsService).
+    this.logger.debug(`Kontakt in Plenty angelegt: id=${contact.id} (${data.isCompany === false ? "Person" : "Firma"})`);
 
     // Plenty-Adressen verlangen ebenfalls name1/name2/name3 – ohne diese wirft
     // der Adress-POST denselben Namensfehler. Wir übernehmen die Kunden-Namen
