@@ -489,8 +489,13 @@ export class PlentyConnector implements IErpConnector {
       const shipping = addresses.find((a) => a.pivot?.typeId === ADDRESS_TYPE_SHIPPING) ?? billing;
       billingAddressId = billing?.id;
       shippingAddressId = shipping?.id;
-    } catch {
-      // Order creation without address relations is still valid in Plenty.
+    } catch (err) {
+      // Order creation without address relations is still valid in Plenty –
+      // aber protokollieren: ein Auth-/Netzwerkproblem soll hier nicht wie
+      // "Kontakt hat einfach keine Adressen" aussehen.
+      this.logger.warn(
+        `Adress-Lookup für Kontakt ${draft.customerId} fehlgeschlagen (${err instanceof Error ? err.message : String(err)}) – Beleg wird ohne Adress-Relationen angelegt`
+      );
     }
     if (draft.deliveryAddressId) {
       shippingAddressId = Number(draft.deliveryAddressId);

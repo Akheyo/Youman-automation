@@ -1,6 +1,7 @@
 import { safeStorage, app } from "electron";
 import Database from "better-sqlite3";
 import path from "path";
+import { logToFile, describeError } from "../logger";
 
 /** Vom IPC-Layer benötigte Schnittstelle – erlaubt einen Fallback-Stub. */
 export interface SecureStorageLike {
@@ -65,7 +66,11 @@ export class SecureStorage implements SecureStorageLike {
       return safeStorage.isEncryptionAvailable()
         ? safeStorage.decryptString(row.value)
         : row.value.toString("utf8");
-    } catch {
+    } catch (err) {
+      // Z. B. OS-Schlüsselbund gewechselt: nicht mehr entschlüsselbar. Wie
+      // "nicht vorhanden" behandeln, aber protokollieren – sonst wirkt der
+      // dadurch nötige Neu-Login wie ein Geisterfehler.
+      logToFile("warn", `Credential '${key}' nicht entschlüsselbar – wird wie fehlend behandelt: ${describeError(err)}`);
       return null;
     }
   }

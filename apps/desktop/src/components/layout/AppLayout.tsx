@@ -38,7 +38,9 @@ export function AppLayout() {
 
   // Show the running app version so the installed build is unambiguous.
   useEffect(() => {
-    void window.adept?.app.getVersion().then((v) => setAppVersion(v)).catch(() => undefined);
+    void window.adept?.app.getVersion().then((v) => setAppVersion(v)).catch((err) => {
+      console.warn("[AppLayout] App-Version nicht abrufbar:", err);
+    });
   }, []);
 
   useEffect(() => {
@@ -65,8 +67,14 @@ export function AppLayout() {
     try {
       await window.adept.app.checkForUpdates();
       setTimeout(() => setUpdateState(s => s === "checking" ? "idle" : s), 5000);
-    } catch {
+    } catch (err) {
+      console.warn("[AppLayout] Update-Prüfung fehlgeschlagen:", err);
       setUpdateState("idle");
+      toast({
+        title: "Update-Prüfung fehlgeschlagen",
+        description: "Der Update-Server ist gerade nicht erreichbar. Bitte später erneut versuchen.",
+        variant: "warning",
+      });
     }
   };
 
@@ -92,8 +100,9 @@ export function AppLayout() {
   const handleLogout = async () => {
     try {
       await apiClient.post("/auth/logout");
-    } catch {
-      // Ignore network errors on logout
+    } catch (err) {
+      // Lokale Abmeldung geht trotzdem weiter – aber nachvollziehbar lassen.
+      console.warn("[AppLayout] Server-Logout fehlgeschlagen (lokal trotzdem abgemeldet):", err);
     }
     logout();
     navigate("/login");
