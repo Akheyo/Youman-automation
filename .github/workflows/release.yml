@@ -38,6 +38,12 @@ jobs:
           pnpm build:plenty
         shell: bash
 
+      # Prisma-Client generieren – ohne ihn wirft schon der Import von
+      # PrismaService (extends PrismaClient) und die Backend-Tests scheitern.
+      - name: Prisma-Client generieren
+        run: pnpm --filter @youman/backend exec prisma generate
+        shell: bash
+
       # Qualitäts-Gate: Bricht ein Nutzerweg (Smoke-Tests) oder der
       # Typecheck, entsteht KEIN Installer.
       - name: Typecheck + alle Tests (inkl. Smoke-Testreihe)
