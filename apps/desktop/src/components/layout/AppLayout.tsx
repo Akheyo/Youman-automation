@@ -73,7 +73,20 @@ export function AppLayout() {
   const handleInstall = async () => {
     if (!window.adept) return;
     setIsInstalling(true);
-    await window.adept.app.installUpdate();
+    try {
+      await window.adept.app.installUpdate();
+      // Bei Erfolg beendet sich die App – dieser Code läuft dann nicht mehr.
+    } catch (err) {
+      toast({
+        title: "Update konnte nicht installiert werden",
+        description: err instanceof Error ? err.message : "Bitte die App neu starten und erneut versuchen.",
+        variant: "error",
+      });
+    } finally {
+      // Pflicht: Ladezustand IMMER zurücksetzen, sonst hängt der Button für
+      // immer in „Wird neu gestartet…", wenn die Installation fehlschlägt.
+      setIsInstalling(false);
+    }
   };
 
   const handleLogout = async () => {

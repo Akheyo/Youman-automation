@@ -207,7 +207,7 @@ function ConnectorSettings() {
   const [testResult, setTestResult] = useState<{ healthy: boolean; message?: string; latencyMs?: number } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const { isLoading } = useQuery({
+  const { isLoading, isError, refetch } = useQuery({
     queryKey: ["connector-config"],
     queryFn: async () => {
       const res = await apiClient.get<Record<string, unknown>>("/tenants/connector");
@@ -242,8 +242,10 @@ function ConnectorSettings() {
       });
       return d;
     },
-    onError: () => setForm(DEFAULTS),
-  } as Parameters<typeof useQuery>[0]);
+    // Hinweis: KEIN onError hier – React Query v5 unterstützt onError auf
+    // useQuery nicht mehr (der frühere Cast hat das nur verschleiert, der
+    // Handler feuerte nie). Der Fehlerzustand wird unten im Render behandelt.
+  });
 
   const saveMutation = useMutation({
     mutationFn: (f: ConnectorFormState) => apiClient.patch("/tenants/connector", {
@@ -287,6 +289,25 @@ function ConnectorSettings() {
 
   const set = (k: keyof ConnectorFormState, v: unknown) =>
     setForm((prev) => prev ? { ...prev, [k]: v } : prev);
+
+  // Fehlgeschlagener Config-Load: kein ewiger Spinner, sondern Meldung mit
+  // "Erneut versuchen" und der Möglichkeit, mit Standardwerten fortzufahren.
+  if (isError && !form) {
+    return (
+      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+        <p className="text-sm text-foreground">
+          Die Connector-Konfiguration konnte nicht geladen werden. Der Server ist
+          möglicherweise gerade nicht erreichbar.
+        </p>
+        <div className="flex items-center gap-3">
+          <Button size="sm" onClick={() => void refetch()}>Erneut versuchen</Button>
+          <Button size="sm" variant="outline" onClick={() => setForm(DEFAULTS)}>
+            Mit Standardwerten fortfahren
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading || !form) {
     return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;

@@ -64,9 +64,13 @@ apiClient.interceptors.response.use(
       }
 
       try {
+        // Bewusst nacktes axios (der Interceptor von apiClient würde bei 401
+        // endlos rekursieren) – aber MIT Timeout: ein hängender Refresh darf
+        // nicht den ursprünglichen Request und damit die UI ewig blockieren.
         const res = await axios.post<{ accessToken: string; refreshToken: string }>(
           `${getApiBaseUrl()}/auth/refresh`,
-          { refreshToken }
+          { refreshToken },
+          { timeout: 30_000 }
         );
         const { accessToken, refreshToken: newRefresh } = res.data;
         setTokens(accessToken, newRefresh);

@@ -89,9 +89,21 @@ export function ActionScreen() {
         return;
       }
 
-      // Execute success actions
+      // Erfolgsaktionen (PDF öffnen, E-Mail vorbereiten) sind best-effort:
+      // Die Aktion IST serverseitig erfolgreich – ein Fehler hier darf weder
+      // den Erfolgs-Toast noch die Navigation verhindern (sonst bliebe die
+      // Ansicht nach bereits ausgeführter Aktion in der Schwebe).
       for (const successAction of action.successActions) {
-        await executeSuccessAction(successAction, result);
+        try {
+          await executeSuccessAction(successAction, result);
+        } catch (err) {
+          console.error("[successAction]", successAction.type, err);
+          toast({
+            title: "Hinweis",
+            description: "Die Aktion war erfolgreich, aber ein Folgeschritt (z. B. PDF öffnen) ist fehlgeschlagen.",
+            variant: "warning",
+          });
+        }
       }
 
       toast({
