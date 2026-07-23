@@ -1,5 +1,5 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useParams, useNavigate, useBlocker } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, Download, FileText, Info, Loader2, WifiOff } from "lucide-react";
 import { useForm, FormProvider } from "react-hook-form";
@@ -18,6 +18,52 @@ import { DocumentRenderError, describePlaceholder, downloadDocument } from "@/se
 import type { ActionDefinition, ActionExecution, ExecutionDocumentInfo } from "@youman/shared";
 
 const formBuilder = new FormBuilder();
+
+// ── Entwurfs-Persistenz ──────────────────────────────────────────────────────
+// Formularzustand überlebt Neu-Mounten, Session-Ablauf (Re-Login) und sogar
+// einen App-Neustart. Gespeichert wird pro Aktion inklusive Idempotenz-ID,
+// damit ein erneutes Absenden desselben Entwurfs im Backend keinen zweiten
+// ERP-Eintrag erzeugen kann.
+const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
+const draftStorageKey = (actionId: string) => `adept.draft.${actionId}`;
+
+interface StoredDraft {
+  values: Record<string, unknown>;
+  idempotencyKey: string;
+  savedAt: number;
+}
+
+function loadDraft(actionId: string): StoredDraft | null {
+  try {
+    const raw = localStorage.getItem(draftStorageKey(actionId));
+    if (!raw) return null;
+    const draft = JSON.parse(raw) as StoredDraft;
+    if (!draft.values || Date.now() - draft.savedAt > DRAFT_TTL_MS) {
+      localStorage.removeItem(draftStorageKey(actionId));
+      return null;
+    }
+    return draft;
+  } catch {
+    // Korrupter Entwurf: verwerfen statt den Screen zu blockieren.
+    try { localStorage.removeItem(draftStorageKey(actionId)); } catch { /* ignore */ }
+    return null;
+  }
+}
+
+function saveDraft(actionId: string, values: Record<string, unknown>, idempotencyKey: string): void {
+  try {
+    localStorage.setItem(
+      draftStorageKey(actionId),
+      JSON.stringify({ values, idempotencyKey, savedAt: Date.now() } satisfies StoredDraft)
+    );
+  } catch {
+    // Speicher voll o. ä. – Entwurf ist Komfort, niemals ein Fehlergrund.
+  }
+}
+
+function clearDraft(actionId: string): void {
+  try { localStorage.removeItem(draftStorageKey(actionId)); } catch { /* ignore */ }
+}
 
 interface SuccessState {
   document: ExecutionDocumentInfo | null;
@@ -51,6 +97,66 @@ export function ActionScreen() {
     defaultValues: initialValues,
   });
 
+  // Idempotenz-ID des aktuellen Entwurfs: bleibt über Fehlversuche hinweg
+  // stabil (Schutz vor Doppel-Anlage), wird nach Erfolg verworfen.
+  const idempotencyKeyRef = useRef<string | null>(null);
+  const draftRestoredRef = useRef(false);
+  const draftSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Entwurf wiederherstellen, sobald die Aktionsdefinition geladen ist.
+  useEffect(() => {
+    if (!action || draftRestoredRef.current) return;
+    draftRestoredRef.current = true;
+    const draft = loadDraft(action.id);
+    if (draft) {
+      methods.reset({ ...initialValues, ...draft.values });
+      idempotencyKeyRef.current = draft.idempotencyKey;
+      toast({
+        title: "Entwurf wiederhergestellt",
+        description: "Ihre zuletzt eingegebenen Daten wurden geladen.",
+        variant: "info",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [action]);
+
+  // Eingaben laufend (entprellt) als Entwurf sichern.
+  useEffect(() => {
+    if (!action) return;
+    const subscription = methods.watch((values) => {
+      if (draftSaveTimer.current) clearTimeout(draftSaveTimer.current);
+      draftSaveTimer.current = setTimeout(() => {
+        if (!methods.formState.isDirty) return;
+        idempotencyKeyRef.current ??= crypto.randomUUID();
+        saveDraft(action.id, values as Record<string, unknown>, idempotencyKeyRef.current);
+      }, 800);
+    });
+    return () => {
+      subscription.unsubscribe();
+      if (draftSaveTimer.current) clearTimeout(draftSaveTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [action, methods]);
+
+  // Verlassen mit ungespeicherten Eingaben: Rückfrage. Die Eingaben bleiben
+  // in jedem Fall als Entwurf erhalten – die Frage verhindert nur ein
+  // versehentliches Wegklicken mitten in der Arbeit.
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      methods.formState.isDirty &&
+      !successState &&
+      !executeMutation.isPending &&
+      currentLocation.pathname !== nextLocation.pathname
+  );
+  useEffect(() => {
+    if (blocker.state !== "blocked") return;
+    const leave = window.confirm(
+      "Das Formular enthält ungespeicherte Eingaben. Sie bleiben als Entwurf erhalten, wenn Sie später zurückkehren.\n\nTrotzdem verlassen?"
+    );
+    if (leave) blocker.proceed();
+    else blocker.reset();
+  }, [blocker]);
+
   const executeMutation = useMutation({
     mutationFn: async (payload: Record<string, unknown>) => {
       if (!action) throw new Error("Action nicht gefunden");
@@ -67,16 +173,26 @@ export function ActionScreen() {
         return { status: "queued_offline", queueId: queued.id } as unknown as ActionExecution;
       }
 
+      // Stabile Idempotenz-ID pro Entwurf: Schlägt der Request nach dem
+      // ERP-Aufruf fehl (Timeout, Verbindungsabriss), liefert ein erneutes
+      // Absenden das gespeicherte Ergebnis statt einen Duplikat-Kontakt/-Beleg.
+      idempotencyKeyRef.current ??= crypto.randomUUID();
       const res = await apiClient.post<ActionExecution>("/actions/execute", {
         actionId: action.id,
         payload,
         clientTimestamp: new Date().toISOString(),
+        idempotencyKey: idempotencyKeyRef.current,
       });
       return res.data;
     },
 
     onSuccess: async (result, payload) => {
       if (!action) return;
+
+      // Erfolg: Entwurf und Idempotenz-ID verwerfen – die nächste Eingabe ist
+      // eine neue, eigenständige Aktion.
+      clearDraft(action.id);
+      idempotencyKeyRef.current = null;
 
       if ((result as unknown as { status: string }).status === "queued_offline") {
         toast({

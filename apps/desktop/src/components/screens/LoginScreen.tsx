@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Building2, Mail, Lock, Loader2, Server, ChevronRight } from "lucide-react";
 import { LoginRequestSchema, type LoginRequestDto } from "@youman/shared";
 import { useAuthStore } from "@/stores/authStore";
-import { apiClient, getApiBaseUrl, setApiBaseUrl, isCustomApiBaseUrl } from "@/services/api";
+import { apiClient, getApiBaseUrl, setApiBaseUrl, isCustomApiBaseUrl, consumePostLoginRedirect } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/useToast";
@@ -46,7 +46,9 @@ export function LoginScreen() {
       const res = await apiClient.post<LoginResponse>("/auth/login", data);
       const { user, tenant, accessToken, refreshToken } = res.data;
       setAuth(user, tenant, accessToken, refreshToken);
-      navigate("/dashboard", { replace: true });
+      // Nach Session-Ablauf: zurück an die Stelle, an der der Nutzer war –
+      // Formulareingaben liegen dort als Entwurf bereit (kein Datenverlust).
+      navigate(consumePostLoginRedirect() ?? "/dashboard", { replace: true });
       toast({ title: `Willkommen, ${user.firstName}!`, variant: "success" });
     } catch (err) {
       const msg =

@@ -77,6 +77,7 @@ apiClient.interceptors.response.use(
 
       const { refreshToken, setTokens, logout } = useAuthStore.getState();
       if (!refreshToken) {
+        rememberLocationForRelogin();
         logout();
         return Promise.reject(err);
       }
@@ -95,6 +96,7 @@ apiClient.interceptors.response.use(
         original.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(original);
       } catch {
+        rememberLocationForRelogin();
         logout();
         return Promise.reject(err);
       }
@@ -103,6 +105,37 @@ apiClient.interceptors.response.use(
     return Promise.reject(err);
   }
 );
+
+const POST_LOGIN_REDIRECT_KEY = "adept.postLoginRedirect";
+
+/**
+ * Session abgelaufen: aktuelle Stelle merken, damit der Nutzer nach dem
+ * Re-Login dorthin zurückkehrt. Formulareingaben überleben ohnehin als
+ * Entwurf (localStorage) – so geht beim 401 nichts verloren.
+ */
+function rememberLocationForRelogin(): void {
+  try {
+    const hash = window.location.hash;
+    if (hash && !hash.startsWith("#/login")) {
+      localStorage.setItem(POST_LOGIN_REDIRECT_KEY, hash);
+    }
+  } catch {
+    // best-effort
+  }
+}
+
+/** Nach erfolgreichem Login: gemerkte Stelle abholen (einmalig). */
+export function consumePostLoginRedirect(): string | null {
+  try {
+    const hash = localStorage.getItem(POST_LOGIN_REDIRECT_KEY);
+    localStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
+    if (!hash) return null;
+    const path = hash.replace(/^#/, "");
+    return path.startsWith("/") ? path : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function apiGet<T>(url: string, params?: Record<string, unknown>): Promise<T> {
   const res = await apiClient.get<ApiResponse<T>>(url, { params });
