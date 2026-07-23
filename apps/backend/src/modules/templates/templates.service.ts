@@ -3,6 +3,7 @@ import type { DocumentTemplateInfo, DocumentType } from "@youman/shared";
 import { PrismaService } from "../../database/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { convertDocxToPdf, extractTemplateStructure, renderDocx } from "./docx-engine";
+import { appendAgb } from "./pdf-appendix";
 import { TemplateParseError } from "./errors";
 
 const MAX_TEMPLATE_BYTES = 10 * 1024 * 1024;
@@ -171,7 +172,12 @@ export class TemplatesService {
     });
 
     if (format === "pdf") {
-      const pdf = await convertDocxToPdf(docx);
+      let pdf = await convertDocxToPdf(docx);
+      // Angebote bekommen die festen AGB-Seiten 1:1 ans PDF gehängt
+      // (best-effort – ein AGB-Problem verhindert nie das Angebot).
+      if (row.documentType === "OFFER") {
+        pdf = await appendAgb(pdf);
+      }
       return { content: pdf, fileName: `${baseName}.pdf`, contentType: "application/pdf" };
     }
     return {
