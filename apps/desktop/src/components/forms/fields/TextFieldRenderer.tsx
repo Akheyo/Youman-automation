@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import type { FieldDefinition } from "@youman/shared";
 import { fieldErrorMessage } from "@/utils/formErrors";
 
-interface Props { field: FieldDefinition; disabled?: boolean }
+interface Props { field: FieldDefinition; disabled?: boolean | undefined }
 
 export function TextFieldRenderer({ field, disabled }: Props) {
   const { register, formState: { errors } } = useFormContext();

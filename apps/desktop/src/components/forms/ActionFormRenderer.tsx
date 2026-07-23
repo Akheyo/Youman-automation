@@ -13,7 +13,7 @@ const formBuilder = new FormBuilder();
 
 interface ActionFormRendererProps {
   action: ActionDefinition;
-  isLoading?: boolean;
+  isLoading?: boolean | undefined;
 }
 
 export function ActionFormRenderer({ action, isLoading }: ActionFormRendererProps) {
@@ -47,7 +47,7 @@ export function ActionFormRenderer({ action, isLoading }: ActionFormRendererProp
   );
 }
 
-function FieldGrid({ fields, isLoading }: { fields: FieldDefinition[]; isLoading?: boolean }) {
+function FieldGrid({ fields, isLoading }: { fields: FieldDefinition[]; isLoading?: boolean | undefined }) {
   return (
     <div className="grid grid-cols-6 gap-4">
       {fields.map((field) => (
@@ -65,7 +65,7 @@ function FieldGrid({ fields, isLoading }: { fields: FieldDefinition[]; isLoading
   );
 }
 
-function FieldRenderer({ field, isLoading }: { field: FieldDefinition; isLoading?: boolean }) {
+function FieldRenderer({ field, isLoading }: { field: FieldDefinition; isLoading?: boolean | undefined }) {
   const props = { field, disabled: isLoading };
 
   switch (field.type) {

@@ -12,7 +12,12 @@ import { fieldErrorMessage } from "@/utils/formErrors";
 
 type SearchItem = Customer | Product | { id: string; [key: string]: unknown };
 
-interface Props { field: FieldDefinition; disabled?: boolean }
+/** Config-getriebener Feldzugriff (valueField/labelField) auf ein SearchItem. */
+function itemField(item: SearchItem, key: string): unknown {
+  return (item as Record<string, unknown>)[key];
+}
+
+interface Props { field: FieldDefinition; disabled?: boolean | undefined }
 
 // Replace {paramName} tokens in endpoint URLs with actual form values.
 function resolveEndpoint(endpoint: string, values: Record<string, string>): string {
@@ -73,8 +78,8 @@ export function SearchableSelectRenderer({ field, disabled }: Props) {
   const handleSelect = (item: SearchItem) => {
     const valueField = source?.valueField ?? "id";
     const labelField = source?.labelField ?? "name";
-    setValue(field.key, item[valueField] as string, { shouldValidate: true });
-    setSelectedLabel(item[labelField] as string ?? "");
+    setValue(field.key, itemField(item, valueField) as string, { shouldValidate: true });
+    setSelectedLabel(itemField(item, labelField) as string ?? "");
     setIsOpen(false);
     setQuery("");
   };
@@ -151,15 +156,15 @@ export function SearchableSelectRenderer({ field, disabled }: Props) {
                       const labelField = source?.labelField ?? "name";
                       const descField = source?.descriptionField;
                       return (
-                        <li key={item[valueField] as string}>
+                        <li key={itemField(item, valueField) as string}>
                           <button
                             type="button"
                             className="w-full flex flex-col px-3 py-2 text-sm hover:bg-secondary transition-colors text-left"
                             onClick={() => handleSelect(item)}
                           >
-                            <span className="font-medium text-foreground">{item[labelField] as string}</span>
+                            <span className="font-medium text-foreground">{itemField(item, labelField) as string}</span>
                             {descField && (
-                              <span className="text-xs text-muted-foreground">{item[descField] as string}</span>
+                              <span className="text-xs text-muted-foreground">{itemField(item, descField) as string}</span>
                             )}
                           </button>
                         </li>
@@ -238,16 +243,16 @@ export function SearchableSelectRenderer({ field, disabled }: Props) {
                   const labelField = source?.labelField ?? "name";
                   const descField = source?.descriptionField;
                   return (
-                    <li key={item[valueField] as string}>
+                    <li key={itemField(item, valueField) as string}>
                       <button
                         type="button"
                         className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-secondary transition-colors text-left"
                         onClick={() => handleSelect(item)}
                       >
                         <div className="min-w-0">
-                          <p className="font-medium text-foreground truncate">{item[labelField] as string}</p>
+                          <p className="font-medium text-foreground truncate">{itemField(item, labelField) as string}</p>
                           {descField && (
-                            <p className="text-xs text-muted-foreground truncate">{item[descField] as string}</p>
+                            <p className="text-xs text-muted-foreground truncate">{itemField(item, descField) as string}</p>
                           )}
                         </div>
                       </button>

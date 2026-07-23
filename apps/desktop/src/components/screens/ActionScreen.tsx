@@ -46,7 +46,7 @@ export function ActionScreen() {
   const initialValues = action ? formBuilder.getInitialValues(action) : {};
 
   const methods = useForm({
-    resolver: schema ? zodResolver(schema) : undefined,
+    ...(schema ? { resolver: zodResolver(schema) } : {}),
     defaultValues: initialValues,
   });
 

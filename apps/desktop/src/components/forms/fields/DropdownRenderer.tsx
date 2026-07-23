@@ -3,7 +3,7 @@ import { cn } from "@/utils/cn";
 import type { FieldDefinition } from "@youman/shared";
 import { fieldErrorMessage } from "@/utils/formErrors";
 
-interface Props { field: FieldDefinition; disabled?: boolean }
+interface Props { field: FieldDefinition; disabled?: boolean | undefined }
 
 export function DropdownRenderer({ field, disabled }: Props) {
   const { register, formState: { errors } } = useFormContext();

@@ -9,7 +9,7 @@ import { apiClient } from "@/services/api";
 import { cn } from "@/utils/cn";
 import type { FieldDefinition, Product } from "@youman/shared";
 
-interface Props { field: FieldDefinition; disabled?: boolean }
+interface Props { field: FieldDefinition; disabled?: boolean | undefined }
 
 export function LineItemsRenderer({ field, disabled }: Props) {
   const { control, register, setValue, watch, formState: { errors } } = useFormContext();
@@ -125,7 +125,7 @@ function ProductSearchCell({
 }: {
   fieldKey: string;
   col: NonNullable<FieldDefinition["lineItemColumns"]>[number];
-  disabled?: boolean;
+  disabled?: boolean | undefined;
   rowIdx: number;
   fieldKey2: string;
   setValue: ReturnType<typeof useFormContext>["setValue"];

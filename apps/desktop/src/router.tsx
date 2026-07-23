@@ -8,7 +8,7 @@ import { AuditScreen } from "./components/screens/AuditScreen";
 import { AdminScreen } from "./components/screens/AdminScreen";
 import { AuthGuard } from "./components/layout/AuthGuard";
 
-export const router = createHashRouter([
+export const router: ReturnType<typeof createHashRouter> = createHashRouter([
   {
     path: "/login",
     element: <LoginScreen />,

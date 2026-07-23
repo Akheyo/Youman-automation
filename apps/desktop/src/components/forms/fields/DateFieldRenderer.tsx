@@ -4,7 +4,7 @@ import { Calendar } from "lucide-react";
 import type { FieldDefinition } from "@youman/shared";
 import { fieldErrorMessage } from "@/utils/formErrors";
 
-interface Props { field: FieldDefinition; disabled?: boolean }
+interface Props { field: FieldDefinition; disabled?: boolean | undefined }
 
 export function DateFieldRenderer({ field, disabled }: Props) {
   const { register, formState: { errors } } = useFormContext();

@@ -64,7 +64,9 @@ function DocumentDownloadButton({ info, refNr }: { info: ExecutionDocumentInfo; 
   );
 }
 
-const SEVERITY_ICON = {
+// Record<string, …> statt Literal-Keys: log.severity kommt je nach Quelle in
+// Groß- oder Kleinschreibung an; der ??-Fallback fängt Unbekanntes ab.
+const SEVERITY_ICON: Record<string, React.ReactNode> = {
   INFO: <Info className="h-3.5 w-3.5 text-primary" />,
   WARNING: <AlertTriangle className="h-3.5 w-3.5 text-warning" />,
   ERROR: <XCircle className="h-3.5 w-3.5 text-destructive" />,

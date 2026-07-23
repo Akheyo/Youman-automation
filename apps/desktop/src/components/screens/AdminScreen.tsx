@@ -12,7 +12,7 @@ import { cn } from "@/utils/cn";
 
 type AdminTab = "general" | "branding" | "connector" | "documents" | "users";
 
-const TABS: { id: AdminTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const TABS: { id: AdminTab; label: string; icon: React.ComponentType<{ className?: string | undefined }> }[] = [
   { id: "general", label: "Allgemein", icon: Settings },
   { id: "branding", label: "Erscheinungsbild", icon: Palette },
   { id: "connector", label: "Connector", icon: Plug },

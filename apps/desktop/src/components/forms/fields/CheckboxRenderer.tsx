@@ -1,7 +1,7 @@
 import { useFormContext } from "react-hook-form";
 import type { FieldDefinition } from "@youman/shared";
 
-interface Props { field: FieldDefinition; disabled?: boolean }
+interface Props { field: FieldDefinition; disabled?: boolean | undefined }
 
 export function CheckboxRenderer({ field, disabled }: Props) {
   const { register } = useFormContext();

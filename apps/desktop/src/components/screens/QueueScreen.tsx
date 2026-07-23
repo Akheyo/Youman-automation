@@ -7,7 +7,7 @@ import { toast } from "@/hooks/useToast";
 import { cn } from "@/utils/cn";
 import type { QueueItem } from "@youman/shared";
 
-const STATUS_CONFIG: Record<string, { label: string; variant: "success" | "warning" | "destructive" | "muted" | "default"; icon: React.ComponentType<{ className?: string }> }> = {
+const STATUS_CONFIG: Record<string, { label: string; variant: "success" | "warning" | "destructive" | "muted" | "default"; icon: React.ComponentType<{ className?: string | undefined }> }> = {
   pending: { label: "Ausstehend", variant: "warning", icon: Clock },
   processing: { label: "Wird verarbeitet", variant: "default", icon: Loader2 },
   success: { label: "Erfolgreich", variant: "success", icon: CheckCircle2 },
