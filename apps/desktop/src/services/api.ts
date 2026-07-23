@@ -82,13 +82,13 @@ function refreshTokensOnce(refreshToken: string): Promise<{ accessToken: string;
 // Session-Ablauf genau EINMAL sichtbar machen (nicht pro fehlgeschlagenem
 // Request): Stelle merken, abmelden, Meldung zeigen und HART zum Login
 // navigieren – unabhängig davon, ob gerade ein Router/Blocker im Weg ist.
-let sessionExpiredHandled = false;
-
+// Dedupliziert über den Auth-Zustand selbst (wer schon abgemeldet ist, wird
+// nicht erneut behandelt) statt über ein fragiles Zeit-Flag.
 function handleSessionExpired(): void {
-  if (sessionExpiredHandled) return;
-  sessionExpiredHandled = true;
+  const store = useAuthStore.getState();
+  if (!store.isAuthenticated) return;
   rememberLocationForRelogin();
-  useAuthStore.getState().logout();
+  store.logout();
   toast({
     title: "Sitzung abgelaufen",
     description: "Ihre Sitzung ist abgelaufen, bitte erneut anmelden. Ihre Eingaben bleiben als Entwurf erhalten.",
@@ -96,10 +96,6 @@ function handleSessionExpired(): void {
     duration: 8000,
   });
   window.location.hash = "#/login";
-  // Nach der Anmeldung darf ein späterer Ablauf wieder behandelt werden.
-  setTimeout(() => {
-    sessionExpiredHandled = false;
-  }, 3000);
 }
 
 // Auto-refresh on 401 + Kaltstart-Toleranz bei Netzwerkfehlern

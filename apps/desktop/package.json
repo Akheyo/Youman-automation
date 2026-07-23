@@ -9,7 +9,9 @@
     "dist": "pnpm build && electron-builder",
     "release": "pnpm build && electron-builder --publish always",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src electron --ext .ts,.tsx"
+    "lint": "eslint src electron --ext .ts,.tsx",
+    "test": "vitest run --passWithNoTests",
+    "smoke": "vitest run src/__tests__"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.6.0",
@@ -68,7 +70,7 @@
     "tsup": "^8.0.2",
     "typescript": "^5.4.5",
     "vite": "^5.3.1",
-    "vitest": "^4.1.10",
+    "vitest": "^1.6.1",
     "wait-on": "^7.2.0"
   },
   "build": {

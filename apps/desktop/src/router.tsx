@@ -14,7 +14,9 @@ function bounded(section: string, element: React.ReactNode): React.ReactNode {
   return <ErrorBoundary section={section}>{element}</ErrorBoundary>;
 }
 
-export const router: ReturnType<typeof createHashRouter> = createHashRouter([
+/** Router-Fabrik – App und Smoke-Tests nutzen dieselbe Routen-Definition. */
+export function createAppRouter(): ReturnType<typeof createHashRouter> {
+  return createHashRouter([
   {
     path: "/login",
     element: bounded("Anmeldung", <LoginScreen />),
@@ -36,3 +38,6 @@ export const router: ReturnType<typeof createHashRouter> = createHashRouter([
     ],
   },
 ]);
+}
+
+export const router: ReturnType<typeof createHashRouter> = createAppRouter();

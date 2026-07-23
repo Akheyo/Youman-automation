@@ -33,3 +33,8 @@ export function useToast() {
 }
 
 export const toast = useToastStore.getState().toast;
+
+/** Räumt alle offenen Toasts ab (Logout, Test-Isolation). */
+export function dismissAllToasts(): void {
+  useToastStore.setState({ toasts: [] });
+}

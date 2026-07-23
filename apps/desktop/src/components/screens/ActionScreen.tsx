@@ -103,7 +103,12 @@ export function ActionScreen() {
   const draftRestoredRef = useRef(false);
   const draftSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Entwurf wiederherstellen, sobald die Aktionsdefinition geladen ist.
+  // Sobald die Aktionsdefinition geladen ist: Formular DETERMINISTISCH auf
+  // die Initialwerte (bzw. den gespeicherten Entwurf) setzen. Ohne diesen
+  // reset initialisierte useForm mit {} (die Definition kommt erst nach dem
+  // ersten Render) – Default-Werte wie customerType='company' hingen dann am
+  // Zufall der DOM-Registrierung und abhängige Felder (Firma/Ansprechpartner)
+  // waren mal sichtbar, mal nicht.
   useEffect(() => {
     if (!action || draftRestoredRef.current) return;
     draftRestoredRef.current = true;
@@ -116,6 +121,8 @@ export function ActionScreen() {
         description: "Ihre zuletzt eingegebenen Daten wurden geladen.",
         variant: "info",
       });
+    } else {
+      methods.reset(initialValues);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [action]);
