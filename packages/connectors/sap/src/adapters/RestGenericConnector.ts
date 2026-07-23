@@ -248,10 +248,20 @@ export class RestGenericConnector implements IErpConnector {
         grossPrice: Number(pick(r, "grossPrice", "gross") ?? 0),
         currency: str(pick(r, "currency"), "EUR"),
       };
-    } catch {
+    } catch (err) {
+      // Fallback auf den Stammdaten-Basispreis – aber OHNE erfundenen
+      // Bruttopreis: Das frühere harte *1.19 unterstellte 19 % USt und war
+      // bei ermäßigten Steuersätzen schlicht falsch. Brutto = Netto
+      // signalisiert "kein Steuersatz bekannt"; wenn auch der Basispreis
+      // fehlt, ist das ein echter Fehler und wird als solcher geworfen.
       const prod = await this.getProduct(productId).catch(() => null);
-      const net = (prod?.basePrice ?? 0) * quantity;
-      return { productId, quantity, netPrice: net, grossPrice: net * 1.19, currency: prod?.currency ?? "EUR" };
+      if (!prod || prod.basePrice === undefined || prod.basePrice === null) {
+        throw err instanceof Error
+          ? err
+          : new Error(`Preis für Artikel '${productId}' nicht ermittelbar`);
+      }
+      const net = prod.basePrice * quantity;
+      return { productId, quantity, netPrice: net, grossPrice: net, currency: prod.currency ?? "EUR" };
     }
   }
 

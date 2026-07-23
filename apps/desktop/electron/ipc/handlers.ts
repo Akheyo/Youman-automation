@@ -39,7 +39,38 @@ export function setupIpcHandlers(
 
   // ── PDF ────────────────────────────────────────────────────────────────────
   ipcMain.handle("pdf:open", (_, url: string) => shell.openExternal(url));
-  ipcMain.handle("pdf:download", (_, url: string, _filename: string) => shell.openExternal(url));
+  // Echter Download (vorher ein Stub, der nur den Browser öffnete und den
+  // Dateinamen ignorierte): Datei in den Downloads-Ordner laden und öffnen.
+  ipcMain.handle("pdf:download", async (_, url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const data = Buffer.from(await response.arrayBuffer());
+      const dir = app.getPath("downloads");
+      const safeName = (filename || "dokument.pdf").replace(/[\\/:*?"<>|]/g, "_");
+      const ext = extname(safeName) || ".pdf";
+      const stem = basename(safeName, extname(safeName));
+      let target = join(dir, `${stem}${ext}`);
+      for (let i = 1; existsSync(target); i++) {
+        target = join(dir, `${stem} (${i})${ext}`);
+      }
+      await writeFile(target, data);
+      shell
+        .openPath(target)
+        .then((openError) => {
+          if (openError) logToFile("warn", `PDF gespeichert, aber Öffnen fehlgeschlagen: ${openError}`);
+        })
+        .catch((err) => logToFile("warn", `PDF gespeichert, aber Öffnen fehlgeschlagen: ${describeError(err)}`));
+      return target;
+    } catch (err) {
+      logToFile("error", `pdf:download fehlgeschlagen (${url}): ${describeError(err)}`);
+      throw new Error(
+        "Das PDF konnte nicht heruntergeladen werden. Bitte Verbindung prüfen und erneut versuchen."
+      );
+    }
+  });
 
   // ── Generated documents ────────────────────────────────────────────────────
   // Speichert die Datei OHNE modalen Dialog direkt in den Downloads-Ordner

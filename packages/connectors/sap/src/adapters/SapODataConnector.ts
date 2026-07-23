@@ -1,4 +1,5 @@
-import axios, { type AxiosInstance, type AxiosError } from "axios";
+import axios, { type AxiosInstance, type AxiosError, type AxiosAdapter, type InternalAxiosRequestConfig } from "axios";
+import { isTransientError } from "@youman/shared";
 import type { SearchRequest, SearchResult, Customer, Product, PriceInfo, StockInfo, QuoteDraft, FollowUpTask, Appointment, Note, Address } from "@youman/shared";
 import type { IErpConnector, ConnectorHealthResult, QuoteResult, OrderResult, ReservationResult } from "./IErpConnector";
 import type { SapConfig } from "../types/SapConfig";
@@ -16,15 +17,18 @@ export class SapODataConnector implements IErpConnector {
 
   private readonly http: AxiosInstance;
   private readonly config: SapConfig;
+  private readonly sleep: (ms: number) => Promise<void>;
   private csrfToken: string | null = null;
 
-  constructor(tenantId: string, config: SapConfig) {
+  constructor(tenantId: string, config: SapConfig, opts?: { adapter?: AxiosAdapter; sleep?: (ms: number) => Promise<void> }) {
     this.tenantId = tenantId;
     this.config = config;
+    this.sleep = opts?.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
 
     this.http = axios.create({
       baseURL: config.baseUrl,
       timeout: config.timeout ?? 30_000,
+      ...(opts?.adapter ? { adapter: opts.adapter } : {}),
       headers: {
         "Accept": "application/json",
         "Content-Type": "application/json",
@@ -43,30 +47,91 @@ export class SapODataConnector implements IErpConnector {
         username: this.config.auth.username!,
         password: this.config.auth.password!,
       };
+      return;
     }
+    // oauth2/saml sind (noch) nicht implementiert. Früher liefen Requests
+    // dann still UNAUTHENTIFIZIERT los und scheiterten mit kryptischen
+    // SAP-Fehlern – jetzt scheitert der erste Request laut und eindeutig.
+    this.http.interceptors.request.use(() => {
+      throw makeTypedError(
+        "SAP_AUTH_ERROR",
+        `SAP-Auth-Typ '${this.config.auth.type}' ist nicht implementiert. Bitte Basic Auth in der Administration konfigurieren.`
+      );
+    });
   }
 
   private setupInterceptors(): void {
     this.http.interceptors.response.use(
       (res) => res,
-      (err: AxiosError) => {
-        const sapError = this.parseSapError(err);
-        throw sapError;
+      async (err: AxiosError) => {
+        // Bereits typisierte / Nicht-Axios-Fehler (z. B. aus dem Auth-Guard
+        // im Request-Interceptor) unverändert durchreichen.
+        if (err.isAxiosError !== true) {
+          throw err;
+        }
+        const cfg = err.config as (InternalAxiosRequestConfig & { _retryCount?: number; _csrfRetried?: boolean }) | undefined;
+
+        // Abgelaufene CSRF-Session: SAP antwortet 403 mit "CSRF token validation
+        // failed". Vorher blieb der veraltete Token für immer im Cache und ALLE
+        // Schreibzugriffe scheiterten dauerhaft. Jetzt: Token verwerfen, einmal
+        // neu holen und den Request genau einmal wiederholen.
+        if (cfg && err.response?.status === 403 && this.isCsrfFailure(err) && !cfg._csrfRetried) {
+          cfg._csrfRetried = true;
+          this.csrfToken = null;
+          const token = await this.fetchCsrfToken();
+          cfg.headers.set("X-CSRF-Token", token);
+          return this.http.request(cfg);
+        }
+
+        // Transiente Fehler (Netzwerk/Timeout/429/5xx): NUR lesende Requests
+        // bis zu 2x mit Backoff wiederholen – Schreibzugriffe nicht, die sind
+        // ohne Idempotenz-Garantie des SAP-Endpunkts Duplikat-gefährdet.
+        const method = (cfg?.method ?? "get").toUpperCase();
+        if (cfg && method === "GET" && isTransientError(err)) {
+          const attempt = (cfg._retryCount ?? 0) + 1;
+          if (attempt <= 2) {
+            cfg._retryCount = attempt;
+            await this.sleep(500 * 2 ** (attempt - 1) * (0.5 + Math.random()));
+            return this.http.request(cfg);
+          }
+        }
+
+        throw this.parseSapError(err);
       }
     );
   }
 
+  /** SAP signalisiert CSRF-Ablauf per Header oder Body-Text. */
+  private isCsrfFailure(err: AxiosError): boolean {
+    const headerHint = String(err.response?.headers?.["x-csrf-token"] ?? "").toLowerCase() === "required";
+    const bodyHint = JSON.stringify(err.response?.data ?? "").toLowerCase().includes("csrf");
+    return headerHint || bodyHint;
+  }
+
+  /**
+   * Übersetzt Axios-/SAP-Fehler in typisierte Fehler mit Code-Suffixen, die
+   * der zentrale Backend-Mapper versteht (_AUTH_ERROR, _NOT_FOUND, _RATE_LIMIT,
+   * _VALIDATION, _SERVER_ERROR, _UNREACHABLE). Vorher waren 401, 404, 429 und
+   * 500 für Aufrufer ununterscheidbar (alle ein nackter Error).
+   */
   private parseSapError(err: AxiosError): Error {
     const data = err.response?.data as Record<string, unknown> | undefined;
     const sapMsg =
       (data?.error as Record<string, unknown> | undefined)?.message as
         | Record<string, unknown>
         | undefined;
-    const message = sapMsg?.value ?? err.message ?? "SAP error";
-    const code = (data?.error as Record<string, unknown> | undefined)?.code ?? "SAP_ERROR";
-    const error = new Error(String(message));
-    (error as Error & { code: unknown }).code = code;
-    return error;
+    const message = String(sapMsg?.value ?? err.message ?? "SAP error");
+    const status = err.response?.status;
+
+    if (!err.response) return makeTypedError("SAP_UNREACHABLE", `SAP-System nicht erreichbar: ${message}`);
+    if (status === 401 || status === 403) return makeTypedError("SAP_AUTH_ERROR", message);
+    if (status === 404) return makeTypedError("SAP_NOT_FOUND", message);
+    if (status === 429) return makeTypedError("SAP_RATE_LIMIT", message);
+    if (status === 400 || status === 422) return makeTypedError("SAP_VALIDATION", message);
+    if (status !== undefined && status >= 500) return makeTypedError("SAP_SERVER_ERROR", message);
+
+    const sapCode = (data?.error as Record<string, unknown> | undefined)?.code;
+    return makeTypedError(typeof sapCode === "string" && sapCode ? sapCode : "SAP_HTTP_ERROR", message);
   }
 
   private async fetchCsrfToken(): Promise<string> {
@@ -461,4 +526,11 @@ export class SapODataConnector implements IErpConnector {
       updatedAt: new Date().toISOString(),
     };
   }
+}
+
+/** Fehler mit maschinenlesbarem Code (Konvention des zentralen Backend-Mappers). */
+function makeTypedError(code: string, message: string): Error {
+  const error = new Error(message);
+  (error as Error & { code: string }).code = code;
+  return error;
 }
