@@ -87,6 +87,7 @@ export class PlentyHttpClient {
     let retries5xx = 0;
     let retriesNetwork = 0;
     let reauthDone = false;
+    const startedAt = this.now();
 
     // Bounded loop: every path either returns, throws, or increments one of
     // the retry counters, all of which are capped.
@@ -103,6 +104,12 @@ export class PlentyHttpClient {
           headers: { Authorization: `Bearer ${token}` },
         });
         this.trackRateLimit(res.headers as Record<string, unknown>);
+        // Betriebs-Sichtbarkeit: jeder ERP-Aufruf mit Endpoint, Dauer und
+        // Ergebnis (Retries inklusive), auffindbar in den Cloud-Logs.
+        const attempts = retries429 + retries5xx + retriesNetwork;
+        this.logger.debug(
+          `Plenty ${req.method} ${req.url} -> OK in ${this.now() - startedAt} ms${attempts > 0 ? ` (nach ${attempts} Retry(s))` : ""}`
+        );
         return res.data;
       } catch (err) {
         // Nicht-Axios-Fehler sind Programmierfehler – unverändert durchreichen.
