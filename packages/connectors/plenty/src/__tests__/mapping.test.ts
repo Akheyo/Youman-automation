@@ -146,6 +146,7 @@ describe("buildContactPayload", () => {
     const payload = buildContactPayload({
       tenantId: TENANT,
       customerNumber: "",
+      name: "Max Mustermann",
       firstName: "Max",
       lastName: "Mustermann",
       isCompany: false,

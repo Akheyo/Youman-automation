@@ -26,7 +26,47 @@ type QueueItemRow = {
   is_offline_created: number;
 };
 
-export class OfflineQueueStore {
+/** Vom IPC-Layer benötigte Schnittstelle – erlaubt einen Fallback-Stub. */
+export interface QueueStoreLike {
+  enqueue(item: {
+    tenantId: string;
+    userId: string;
+    actionId: string;
+    actionName: string;
+    payload: Record<string, unknown>;
+    priority?: number;
+  }): QueueItem;
+  getAll(): QueueItem[];
+  getPending(): QueueItem[];
+  markSynced(id: string): void;
+  markFailed(id: string, error: string): void;
+  remove(id: string): void;
+  clear(): void;
+}
+
+/**
+ * Fallback, wenn die SQLite-Datei korrupt/gesperrt ist: Die App startet und
+ * arbeitet online normal weiter. Lesend liefert der Stub leere Listen;
+ * `enqueue` schlägt LAUT fehl (eine still verschluckte Offline-Aktion wäre
+ * Datenverlust – der Nutzer bekommt so eine klare Meldung).
+ */
+export function createUnavailableQueueStore(): QueueStoreLike {
+  return {
+    enqueue: () => {
+      throw new Error(
+        "Der lokale Offline-Speicher ist nicht verfügbar. Die Aktion kann derzeit nicht offline gespeichert werden – bitte online erneut versuchen."
+      );
+    },
+    getAll: () => [],
+    getPending: () => [],
+    markSynced: () => undefined,
+    markFailed: () => undefined,
+    remove: () => undefined,
+    clear: () => undefined,
+  };
+}
+
+export class OfflineQueueStore implements QueueStoreLike {
   private db: Database.Database;
 
   constructor() {

@@ -2,13 +2,14 @@ import { IpcMain, app, shell, BrowserWindow, net } from "electron";
 import { writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join, extname, basename } from "node:path";
-import type { OfflineQueueStore } from "../store/OfflineQueueStore";
-import type { SecureStorage } from "../store/SecureStorage";
+import type { QueueStoreLike } from "../store/OfflineQueueStore";
+import type { SecureStorageLike } from "../store/SecureStorage";
+import { logToFile, describeError } from "../logger";
 
 export function setupIpcHandlers(
   ipcMain: IpcMain,
-  queueStore: OfflineQueueStore,
-  secureStorage: SecureStorage
+  queueStore: QueueStoreLike,
+  secureStorage: SecureStorageLike
 ): void {
   // ── Queue ──────────────────────────────────────────────────────────────────
   ipcMain.handle("queue:enqueue", (_, item: unknown) => queueStore.enqueue(item as Parameters<typeof queueStore.enqueue>[0]));
@@ -46,15 +47,32 @@ export function setupIpcHandlers(
   //  -> Endlos-Spinner). Kollidierende Namen werden durchnummeriert. Danach wird
   // die Datei geöffnet und der Pfad an den Renderer zurückgegeben.
   ipcMain.handle("documents:save", async (_, fileName: string, base64: string) => {
-    const dir = app.getPath("downloads");
-    const ext = extname(fileName);
-    const stem = basename(fileName, ext);
-    let target = join(dir, fileName);
-    for (let i = 1; existsSync(target); i++) {
-      target = join(dir, `${stem} (${i})${ext}`);
+    let target = "";
+    try {
+      const dir = app.getPath("downloads");
+      const ext = extname(fileName);
+      const stem = basename(fileName, ext);
+      target = join(dir, fileName);
+      for (let i = 1; existsSync(target); i++) {
+        target = join(dir, `${stem} (${i})${ext}`);
+      }
+      await writeFile(target, Buffer.from(base64, "base64"));
+    } catch (err) {
+      // Platte voll, Schreibrecht fehlt, defekter Buffer: sauber und deutsch
+      // an den Renderer melden statt als kryptische IPC-Rejection.
+      logToFile("error", `documents:save fehlgeschlagen (${fileName}): ${describeError(err)}`);
+      throw new Error(
+        "Das Dokument konnte nicht im Downloads-Ordner gespeichert werden. Bitte Speicherplatz und Berechtigungen prüfen und erneut versuchen."
+      );
     }
-    await writeFile(target, Buffer.from(base64, "base64"));
-    void shell.openPath(target);
+    // Öffnen ist best-effort: Die Datei IST gespeichert – ein Fehler beim
+    // Öffnen (kein Programm verknüpft o. ä.) darf den Erfolg nicht zunichtemachen.
+    shell
+      .openPath(target)
+      .then((openError) => {
+        if (openError) logToFile("warn", `Dokument gespeichert, aber Öffnen fehlgeschlagen: ${openError}`);
+      })
+      .catch((err) => logToFile("warn", `Dokument gespeichert, aber Öffnen fehlgeschlagen: ${describeError(err)}`));
     return target;
   });
 }

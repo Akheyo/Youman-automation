@@ -2,11 +2,34 @@ import { safeStorage, app } from "electron";
 import Database from "better-sqlite3";
 import path from "path";
 
+/** Vom IPC-Layer benötigte Schnittstelle – erlaubt einen Fallback-Stub. */
+export interface SecureStorageLike {
+  set(key: string, value: string): void;
+  get(key: string): string | null;
+  delete(key: string): void;
+}
+
+/**
+ * Fallback, wenn die Credential-Datenbank korrupt/gesperrt ist: Die App
+ * startet normal, gespeicherte Zugangsdaten sind nur nicht verfügbar (der
+ * Nutzer meldet sich manuell an). `set` schlägt LAUT fehl, damit niemand
+ * glaubt, seine Zugangsdaten seien gespeichert worden.
+ */
+export function createUnavailableSecureStorage(): SecureStorageLike {
+  return {
+    set: () => {
+      throw new Error("Der sichere Speicher ist nicht verfügbar – Zugangsdaten konnten nicht gespeichert werden.");
+    },
+    get: () => null,
+    delete: () => undefined,
+  };
+}
+
 /**
  * Secure credential storage using Electron's safeStorage API.
  * Falls back to base64 encoding in dev environments where safeStorage is unavailable.
  */
-export class SecureStorage {
+export class SecureStorage implements SecureStorageLike {
   private db: Database.Database;
 
   constructor() {
