@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "../stores/authStore";
+import { describeApiError } from "./errorMessages";
 import type { ApiResponse, ApiError } from "@youman/shared";
 
 const DEFAULT_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api/v1";
@@ -48,11 +49,28 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
-// Auto-refresh on 401
+/** Kleiner Sleep-Helfer für den Kaltstart-Retry. */
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Auto-refresh on 401 + Kaltstart-Toleranz bei Netzwerkfehlern
 apiClient.interceptors.response.use(
   (res) => res,
   async (err: AxiosError<ApiError>) => {
-    const original = err.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const original = err.config as InternalAxiosRequestConfig & { _retry?: boolean; _coldRetry?: boolean };
+
+    // Render-Free-Tier schläft ein: Der erste Request nach Inaktivität kann
+    // scheitern, während der Server hochfährt. Lesende Requests werden einmal
+    // automatisch nach kurzer Wartezeit wiederholt (kein fachlicher Fehler).
+    // Schreibende Requests werden NICHT blind wiederholt – dort entscheidet
+    // der Aufrufer (Idempotenz-ID vorausgesetzt).
+    if (!err.response && original && !original._coldRetry) {
+      const method = (original.method ?? "get").toUpperCase();
+      if (method === "GET") {
+        original._coldRetry = true;
+        await sleep(2_500);
+        return apiClient(original);
+      }
+    }
 
     if (err.response?.status === 401 && !original._retry) {
       original._retry = true;
@@ -101,10 +119,12 @@ export async function apiPatch<T>(url: string, data?: unknown): Promise<T> {
   return res.data.data;
 }
 
+/**
+ * Deutsche Fehlermeldung für die Anzeige. Delegiert an die zentrale
+ * Code->Meldung-Übersetzung (errorMessages.ts); der frühere „Unbekannter
+ * Fehler"-Fallback existiert nicht mehr – unklassifizierte Fehler nennen
+ * immer die Kennung (correlationId).
+ */
 export function getApiError(err: unknown): string {
-  if (axios.isAxiosError(err)) {
-    const data = err.response?.data as ApiError | undefined;
-    return data?.error?.message ?? err.message ?? "Unbekannter Fehler";
-  }
-  return err instanceof Error ? err.message : "Unbekannter Fehler";
+  return describeApiError(err).message;
 }

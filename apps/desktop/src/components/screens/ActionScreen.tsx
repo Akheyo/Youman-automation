@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ActionFormRenderer } from "@/components/forms/ActionFormRenderer";
 import { toast } from "@/hooks/useToast";
 import { getApiError } from "@/services/api";
+import { describeApiError } from "@/services/errorMessages";
 import { DocumentRenderError, describePlaceholder, downloadDocument } from "@/services/documentService";
 import type { ActionDefinition, ActionExecution, ExecutionDocumentInfo } from "@youman/shared";
 
@@ -138,8 +139,25 @@ export function ActionScreen() {
     },
 
     onError: (err) => {
-      const msg = getApiError(err);
-      toast({ title: "Fehler", description: msg, variant: "error" });
+      const described = describeApiError(err);
+      // Feldbezogene Serverfehler (z. B. „E-Mail bereits vergeben") direkt am
+      // betroffenen Feld anzeigen (roter Rand + Text) und das erste fokussieren.
+      // Reine Anzeige – die Validierungsregeln selbst bleiben unverändert.
+      if (described.fields && action) {
+        const formKeys = new Set(action.fields.map((f) => f.key));
+        let firstKey: string | null = null;
+        for (const [key, msgs] of Object.entries(described.fields)) {
+          if (formKeys.has(key)) {
+            methods.setError(key, { type: "server", message: msgs.join("; ") });
+            firstKey ??= key;
+          }
+        }
+        if (firstKey) methods.setFocus(firstKey);
+      }
+      toast({ title: "Fehler", description: described.message, variant: "error" });
+      // Wichtig für „kein Datenverlust": KEIN reset, keine Navigation – das
+      // ausgefüllte Formular bleibt vollständig stehen, der Nutzer korrigiert
+      // und sendet erneut.
     },
   });
 
