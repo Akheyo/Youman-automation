@@ -42,7 +42,10 @@ export function LineItemsRenderer({ field, disabled }: Props) {
 
       {errorMsg && <p className="text-xs text-destructive">{errorMsg}</p>}
 
-      <div className="border border-border rounded-lg overflow-hidden">
+      {/* overflow-x-auto: die Positionstabelle ist mit allen Spalten breiter
+          als das Formular – vorher wurden die rechten Spalten (u.a. Rabatt)
+          abgeschnitten ("nur halb sichtbar"). Jetzt horizontal scrollbar. */}
+      <div className="border border-border rounded-lg overflow-x-auto">
         {/* Header */}
         <div className="grid bg-secondary/50" style={{ gridTemplateColumns: `${columns.map((c) => `${c.width ?? 120}px`).join(" ")} 36px` }}>
           {columns.map((col) => (

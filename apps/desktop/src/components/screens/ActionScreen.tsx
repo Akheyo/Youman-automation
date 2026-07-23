@@ -1,7 +1,7 @@
 import { useParams, useNavigate, useBlocker } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, CheckCircle2, Download, FileText, Info, Loader2, WifiOff } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Download, FileText, Info, Loader2, Trash2, WifiOff } from "lucide-react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiClient } from "@/services/api";
@@ -102,6 +102,9 @@ export function ActionScreen() {
   const idempotencyKeyRef = useRef<string | null>(null);
   const draftRestoredRef = useRef(false);
   const draftSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Sichtbar, wenn ein gespeicherter Entwurf geladen wurde – blendet den
+  // "Entwurf verwerfen"-Knopf ein.
+  const [draftRestored, setDraftRestored] = useState(false);
 
   // Sobald die Aktionsdefinition geladen ist: Formular DETERMINISTISCH auf
   // die Initialwerte (bzw. den gespeicherten Entwurf) setzen. Ohne diesen
@@ -116,6 +119,7 @@ export function ActionScreen() {
     if (draft) {
       methods.reset({ ...initialValues, ...draft.values });
       idempotencyKeyRef.current = draft.idempotencyKey;
+      setDraftRestored(true);
       toast({
         title: "Entwurf wiederhergestellt",
         description: "Ihre zuletzt eingegebenen Daten wurden geladen.",
@@ -126,6 +130,16 @@ export function ActionScreen() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [action]);
+
+  // Entwurf bewusst wegwerfen: leert das Formular und die gespeicherte Kopie.
+  const discardDraft = () => {
+    if (!action) return;
+    clearDraft(action.id);
+    idempotencyKeyRef.current = null;
+    methods.reset(initialValues);
+    setDraftRestored(false);
+    toast({ title: "Entwurf verworfen", description: "Das Formular wurde geleert.", variant: "info" });
+  };
 
   // Eingaben laufend (entprellt) als Entwurf sichern.
   useEffect(() => {
@@ -353,6 +367,20 @@ export function ActionScreen() {
           </div>
         )}
       </div>
+
+      {/* Wiederhergestellter Entwurf: klar kennzeichnen + Verwerfen-Möglichkeit,
+          damit alte/ungewollte Eingaben nicht wortlos stehen bleiben. */}
+      {draftRestored && (
+        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2">
+          <span className="text-xs text-muted-foreground">
+            Ein zuvor gespeicherter Entwurf wurde geladen.
+          </span>
+          <Button type="button" variant="ghost" size="sm" onClick={discardDraft} className="h-7 gap-1.5">
+            <Trash2 className="h-3.5 w-3.5" />
+            Entwurf verwerfen
+          </Button>
+        </div>
+      )}
 
       {/* Form */}
       <FormProvider {...methods}>
