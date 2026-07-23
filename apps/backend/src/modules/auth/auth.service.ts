@@ -8,7 +8,13 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import * as argon2 from "argon2";
+import { createHash } from "node:crypto";
 import { v4 as uuid } from "uuid";
+
+/** Deterministischer Hash für Refresh-Token-Lookups (Token = 256-bit-Zufall). */
+function sha256(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
 import { PrismaService } from "../../database/prisma.service";
 import type { LoginRequest, LoginResponse, AuthTokenPayload, UserRole } from "@youman/shared";
 
@@ -153,9 +159,15 @@ export class AuthService {
   }
 
   async refreshTokens(token: string): Promise<{ accessToken: string; refreshToken: string }> {
-    const hash = await argon2.hash(token);
+    // WICHTIG: Deterministischer SHA-256-Hash als Lookup-Schlüssel.
+    // Der frühere Code hashte den eingereichten Token mit argon2 – das salzt
+    // bei JEDEM Aufruf neu, der Lookup nach tokenHash konnte also NIEMALS den
+    // beim Login gespeicherten Hash treffen: jeder Refresh endete 401, jede
+    // Session war nach Ablauf des Access-Tokens unrettbar. SHA-256 ohne Salt
+    // ist hier korrekt und sicher: Der Token ist ein hochentropisches
+    // 256-bit-Zufallsgeheimnis (kein erratbares Passwort, Salting unnötig).
     const record = await this.prisma.refreshToken.findFirst({
-      where: { tokenHash: hash, revokedAt: null, expiresAt: { gt: new Date() } },
+      where: { tokenHash: sha256(token), revokedAt: null, expiresAt: { gt: new Date() } },
       include: { user: true },
     });
 
@@ -191,12 +203,11 @@ export class AuthService {
 
   private async createRefreshToken(userId: string): Promise<string> {
     const token = uuid() + uuid();
-    const hash = await argon2.hash(token);
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
     await this.prisma.refreshToken.create({
-      data: { userId, tokenHash: hash, expiresAt },
+      data: { userId, tokenHash: sha256(token), expiresAt },
     });
 
     return token;
