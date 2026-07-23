@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, RotateCcw, XCircle, CheckCircle2, Clock, AlertTriangle, Loader2 } from "lucide-react";
-import { apiClient } from "@/services/api";
+import { apiClient, getApiError } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/useToast";
@@ -35,6 +35,8 @@ export function QueueScreen() {
       queryClient.invalidateQueries({ queryKey: ["queue"] });
       toast({ title: "Aktion wird wiederholt", variant: "info" });
     },
+    onError: (err) =>
+      toast({ title: "Wiederholen fehlgeschlagen", description: getApiError(err), variant: "error" }),
   });
 
   const cancelMutation = useMutation({
@@ -43,6 +45,8 @@ export function QueueScreen() {
       queryClient.invalidateQueries({ queryKey: ["queue"] });
       toast({ title: "Aktion abgebrochen", variant: "info" });
     },
+    onError: (err) =>
+      toast({ title: "Abbrechen fehlgeschlagen", description: getApiError(err), variant: "error" }),
   });
 
   const processMutation = useMutation({
@@ -51,6 +55,8 @@ export function QueueScreen() {
       queryClient.invalidateQueries({ queryKey: ["queue"] });
       toast({ title: "Verarbeitung gestartet", variant: "success" });
     },
+    onError: (err) =>
+      toast({ title: "Verarbeitung fehlgeschlagen", description: getApiError(err), variant: "error" }),
   });
 
   const pending = items.filter((i) => ["pending", "retrying"].includes(i.status));

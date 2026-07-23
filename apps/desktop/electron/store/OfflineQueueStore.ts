@@ -138,7 +138,7 @@ export class OfflineQueueStore implements QueueStoreLike {
 
   getAll(): QueueItem[] {
     const rows = this.db.prepare("SELECT * FROM queue_items ORDER BY created_at DESC LIMIT 200").all() as QueueItemRow[];
-    return rows.map(this.mapRow);
+    return this.mapRows(rows);
   }
 
   getPending(): QueueItem[] {
@@ -147,7 +147,31 @@ export class OfflineQueueStore implements QueueStoreLike {
         "SELECT * FROM queue_items WHERE status IN ('pending', 'retrying') ORDER BY priority ASC, created_at ASC"
       )
       .all() as QueueItemRow[];
-    return rows.map(this.mapRow);
+    return this.mapRows(rows);
+  }
+
+  /**
+   * Eine einzelne korrupte Zeile (defektes JSON) darf nicht die gesamte
+   * Queue unsichtbar machen: Solche Zeilen werden übersprungen und markiert,
+   * alle intakten Einträge bleiben nutzbar.
+   */
+  private mapRows(rows: QueueItemRow[]): QueueItem[] {
+    const items: QueueItem[] = [];
+    for (const row of rows) {
+      try {
+        items.push(this.mapRow(row));
+      } catch (err) {
+        console.error(`[OfflineQueueStore] Korrupter Queue-Eintrag ${row.id} übersprungen:`, err);
+        try {
+          this.db
+            .prepare("UPDATE queue_items SET status = 'dead_letter', error = ? WHERE id = ?")
+            .run("Lokaler Eintrag ist beschädigt und kann nicht mehr verarbeitet werden.", row.id);
+        } catch {
+          // Markierung ist best-effort.
+        }
+      }
+    }
+    return items;
   }
 
   markSynced(id: string): void {

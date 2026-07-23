@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Settings, Users, Palette, Plug, ChevronRight, Loader2, CheckCircle2, XCircle, FlaskConical, FileText } from "lucide-react";
 import { DocumentTemplatesPanel } from "./admin/DocumentTemplatesPanel";
 import { useAuthStore } from "@/stores/authStore";
-import { apiClient } from "@/services/api";
+import { apiClient, getApiError } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -123,6 +123,8 @@ function BrandingSettings() {
       queryClient.invalidateQueries({ queryKey: ["branding"] });
       toast({ title: "Branding gespeichert", variant: "success" });
     },
+    onError: (err) =>
+      toast({ title: "Branding konnte nicht gespeichert werden", description: getApiError(err), variant: "error" }),
   });
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
@@ -278,7 +280,8 @@ function ConnectorSettings() {
       toast({ title: "Connector gespeichert", variant: "success" });
       setTestResult(null);
     },
-    onError: () => toast({ title: "Fehler beim Speichern", variant: "error" }),
+    onError: (err) =>
+      toast({ title: "Connector konnte nicht gespeichert werden", description: getApiError(err), variant: "error" }),
   });
 
   const testMutation = useMutation({
@@ -509,8 +512,19 @@ function ConnectorSettings() {
           {form.connectorType !== "MOCK" && (
             <Button
               variant="outline" size="sm"
-              onClick={() => { saveMutation.mutate(form); setTimeout(() => testMutation.mutate(), 500); }}
-              loading={testMutation.isPending}
+              // Erst speichern, DANN testen – vorher lief der Test nach fixen
+              // 500 ms und traf bei langsamem Save die alte/ungespeicherte
+              // Konfiguration. Schlägt das Speichern fehl, wird nicht getestet.
+              onClick={async () => {
+                try {
+                  await saveMutation.mutateAsync(form);
+                } catch {
+                  return; // Fehler-Toast kommt aus saveMutation.onError
+                }
+                testMutation.mutate();
+              }}
+              loading={saveMutation.isPending || testMutation.isPending}
+              disabled={saveMutation.isPending || testMutation.isPending}
               className="gap-1.5"
             >
               <FlaskConical className="h-3.5 w-3.5" />

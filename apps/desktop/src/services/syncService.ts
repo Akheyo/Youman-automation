@@ -2,10 +2,13 @@ import { apiClient } from "./api";
 import { useOfflineStore } from "../stores/offlineStore";
 import { useAuthStore } from "../stores/authStore";
 import { withRetry } from "@youman/shared";
+import { toast } from "../hooks/useToast";
 import type { SyncStatus, QueueItem } from "@youman/shared";
 
 const SYNC_INTERVAL_MS = 10_000;
 let syncIntervalId: ReturnType<typeof setInterval> | null = null;
+/** Zähler für Sync-Fehlschläge in Folge – steuert die einmalige Warnung. */
+let consecutiveSyncFailures = 0;
 
 export const syncService = {
   start() {
@@ -51,8 +54,10 @@ export const syncService = {
       if (!window.adept) return;
       const items = await window.adept.queue.getAll();
       useOfflineStore.getState().setLocalQueue(items as QueueItem[]);
-    } catch {
-      // Ignore – running in browser dev mode
+    } catch (err) {
+      // Im Browser-Dev-Modus normal; in der App ein echtes Problem (z. B.
+      // SQLite defekt) – sichtbar machen statt still zu schlucken.
+      console.error("[syncService] Lokale Queue nicht ladbar:", err);
     }
   },
 
@@ -64,17 +69,24 @@ export const syncService = {
     const { user, tenant } = useAuthStore.getState();
     if (!user || !tenant || !window.adept) return null;
 
-    const queued = await window.adept.queue.enqueue({
-      tenantId: tenant.id,
-      userId: user.id,
-      actionId: item.actionId,
-      actionName: item.actionName,
-      payload: item.payload,
-    });
-
-    const queueItem = queued as QueueItem;
-    useOfflineStore.getState().addToLocalQueue(queueItem);
-    return queueItem;
+    try {
+      const queued = await window.adept.queue.enqueue({
+        tenantId: tenant.id,
+        userId: user.id,
+        actionId: item.actionId,
+        actionName: item.actionName,
+        payload: item.payload,
+      });
+      const queueItem = queued as QueueItem;
+      useOfflineStore.getState().addToLocalQueue(queueItem);
+      return queueItem;
+    } catch (err) {
+      // SQLite-Schreibfehler o. ä.: null zurückgeben – der Aufrufer meldet
+      // dann klar, dass die Aktion NICHT gespeichert wurde (kein stiller
+      // Datenverlust).
+      console.error("[syncService] Offline-Speichern fehlgeschlagen:", err);
+      return null;
+    }
   },
 
   async sync() {
@@ -112,8 +124,20 @@ export const syncService = {
 
       await this.loadLocalQueue();
       await this.fetchServerStatus();
-    } catch {
-      // Will retry next cycle
+      consecutiveSyncFailures = 0;
+    } catch (err) {
+      // Nächster Zyklus versucht es erneut – aber nicht mehr unsichtbar:
+      // protokollieren und nach 3 Fehlschlägen in Folge einmalig warnen.
+      consecutiveSyncFailures += 1;
+      console.error(`[syncService] Sync fehlgeschlagen (${consecutiveSyncFailures}x in Folge):`, err);
+      if (consecutiveSyncFailures === 3) {
+        toast({
+          title: "Synchronisation gestört",
+          description:
+            "Offline gespeicherte Aktionen konnten mehrfach nicht übertragen werden. Es wird automatisch weiter versucht – Details in der Warteschlange.",
+          variant: "warning",
+        });
+      }
     } finally {
       useOfflineStore.getState().setIsSyncing(false);
     }
@@ -123,8 +147,10 @@ export const syncService = {
     try {
       const res = await apiClient.get<SyncStatus>("/queue/status");
       useOfflineStore.getState().setSyncStatus(res.data);
-    } catch {
-      // Server unreachable
+    } catch (err) {
+      // Server nicht erreichbar: kein Nutzer-Alarm (Offline-Anzeige übernimmt
+      // die Sidebar), aber fürs Debugging nachvollziehbar.
+      console.warn("[syncService] Server-Status nicht abrufbar:", err);
     }
   },
 };
