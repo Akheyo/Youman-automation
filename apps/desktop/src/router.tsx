@@ -7,11 +7,17 @@ import { QueueScreen } from "./components/screens/QueueScreen";
 import { AuditScreen } from "./components/screens/AuditScreen";
 import { AdminScreen } from "./components/screens/AdminScreen";
 import { AuthGuard } from "./components/layout/AuthGuard";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+
+/** Bereichs-Fehlergrenze: ein Renderfehler betrifft nur diesen Bereich. */
+function bounded(section: string, element: React.ReactNode): React.ReactNode {
+  return <ErrorBoundary section={section}>{element}</ErrorBoundary>;
+}
 
 export const router: ReturnType<typeof createHashRouter> = createHashRouter([
   {
     path: "/login",
-    element: <LoginScreen />,
+    element: bounded("Anmeldung", <LoginScreen />),
   },
   {
     path: "/",
@@ -22,11 +28,11 @@ export const router: ReturnType<typeof createHashRouter> = createHashRouter([
     ),
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
-      { path: "dashboard", element: <DashboardScreen /> },
-      { path: "action/:actionId", element: <ActionScreen /> },
-      { path: "queue", element: <QueueScreen /> },
-      { path: "audit", element: <AuditScreen /> },
-      { path: "admin", element: <AdminScreen /> },
+      { path: "dashboard", element: bounded("Dashboard", <DashboardScreen />) },
+      { path: "action/:actionId", element: bounded("Aktionsformular", <ActionScreen />) },
+      { path: "queue", element: bounded("Warteschlange", <QueueScreen />) },
+      { path: "audit", element: bounded("Protokoll", <AuditScreen />) },
+      { path: "admin", element: bounded("Administration", <AdminScreen />) },
     ],
   },
 ]);
