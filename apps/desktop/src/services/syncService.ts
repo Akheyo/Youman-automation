@@ -1,6 +1,7 @@
 import { apiClient } from "./api";
 import { useOfflineStore } from "../stores/offlineStore";
 import { useAuthStore } from "../stores/authStore";
+import { withRetry } from "@youman/shared";
 import type { SyncStatus, QueueItem } from "@youman/shared";
 
 const SYNC_INTERVAL_MS = 10_000;
@@ -89,15 +90,20 @@ export const syncService = {
     useOfflineStore.getState().setIsSyncing(true);
 
     try {
-      await apiClient.post("/queue/sync", {
-        items: pending.map((item) => ({
-          clientId: item.clientId,
-          actionId: item.actionId,
-          actionName: item.actionName,
-          payload: item.payload,
-          createdOfflineAt: item.createdAt,
-        })),
-      });
+      // Retry mit Backoff nur für transiente Fehler (Netzwerk/Timeout/429/5xx).
+      // Der Sync ist serverseitig über clientId dedupliziert und damit
+      // gefahrlos wiederholbar.
+      await withRetry(() =>
+        apiClient.post("/queue/sync", {
+          items: pending.map((item) => ({
+            clientId: item.clientId,
+            actionId: item.actionId,
+            actionName: item.actionName,
+            payload: item.payload,
+            createdOfflineAt: item.createdAt,
+          })),
+        })
+      );
 
       // Mark synced items locally
       for (const item of pending) {
