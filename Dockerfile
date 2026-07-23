@@ -33,5 +33,7 @@ COPY --from=build /app /app
 WORKDIR /app/apps/backend
 EXPOSE 3001
 # Beim Start: Schema-Änderungen anwenden (Projekt nutzt db push statt
-# Migrationshistorie), Seed best-effort (idempotente Upserts), dann Backend.
-CMD ["sh", "-c", "./node_modules/.bin/prisma db push --skip-generate && (./node_modules/.bin/ts-node prisma/seed.ts || echo 'Seed übersprungen') && node dist/src/main.js"]
+# Migrationshistorie), dann Backend. Demo-Mandant/-Nutzer und Action-Configs
+# seedet das Backend selbst beim Bootstrap (DemoSeedService/ConfigSyncService)
+# – der frühere stille ts-node-Seed ("Seed übersprungen") ist damit Geschichte.
+CMD ["sh", "-c", "./node_modules/.bin/prisma db push --skip-generate && node dist/src/main.js"]
