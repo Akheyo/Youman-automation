@@ -11,6 +11,7 @@ import { AuditModule } from "./modules/audit/audit.module";
 import { ConnectorsModule } from "./modules/connectors/connectors.module";
 import { BrandingModule } from "./modules/branding/branding.module";
 import { TemplatesModule } from "./modules/templates/templates.module";
+import { HealthModule } from "./modules/health/health.module";
 import { DatabaseModule } from "./database/database.module";
 import appConfig from "./config/app.config";
 import jwtConfig from "./config/jwt.config";
@@ -34,6 +35,7 @@ import jwtConfig from "./config/jwt.config";
     ConnectorsModule,
     BrandingModule,
     TemplatesModule,
+    HealthModule,
   ],
 })
 export class AppModule {}
