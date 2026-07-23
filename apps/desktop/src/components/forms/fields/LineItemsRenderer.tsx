@@ -148,7 +148,7 @@ function ProductSearchCell({
     setIsOpen(true);
   };
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, isError } = useQuery({
     queryKey: ["line-item-search", col.key, query],
     queryFn: async () => {
       if (!source || query.length < (source.minChars ?? 2)) return { items: [] };
@@ -227,8 +227,14 @@ function ProductSearchCell({
                 ))}
               </ul>
             ) : (
-              <p className="px-3 py-3 text-xs text-muted-foreground text-center">
-                {query.length < 2 ? "Mindestens 2 Zeichen eingeben..." : isFetching ? "Suche..." : "Keine Ergebnisse"}
+              <p className={isError ? "px-3 py-3 text-xs text-destructive text-center" : "px-3 py-3 text-xs text-muted-foreground text-center"}>
+                {query.length < 2
+                  ? "Mindestens 2 Zeichen eingeben..."
+                  : isFetching
+                    ? "Suche..."
+                    : isError
+                      ? "Suche fehlgeschlagen – Server nicht erreichbar. Bitte erneut versuchen."
+                      : "Keine Ergebnisse"}
               </p>
             )}
           </div>

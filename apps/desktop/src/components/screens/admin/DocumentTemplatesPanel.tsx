@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/useToast";
+import { LoadErrorNotice } from "@/components/ui/load-error";
 import type { ActionDefinition, DocumentTemplateInfo, DocumentType } from "@youman/shared";
 
 const DOC_TYPES: { value: DocumentType; label: string }[] = [
@@ -27,7 +28,7 @@ export function DocumentTemplatesPanel() {
   const [renameValue, setRenameValue] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const { data: templates = [], isLoading } = useQuery({
+  const { data: templates = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["document-templates"],
     queryFn: async () => (await apiClient.get<DocumentTemplateInfo[]>("/templates")).data,
   });
@@ -160,6 +161,10 @@ export function DocumentTemplatesPanel() {
       {/* List */}
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+      ) : isError ? (
+        // Vorher: Ladefehler = "Noch keine Vorlagen hochgeladen" -> Admins
+        // hätten Duplikate hochgeladen.
+        <LoadErrorNotice what="Die Vorlagen" onRetry={() => void refetch()} compact />
       ) : templates.length === 0 ? (
         <div className="text-center py-10 border border-dashed border-border rounded-lg">
           <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />

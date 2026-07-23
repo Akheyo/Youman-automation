@@ -146,7 +146,13 @@ export function ActionScreen() {
       methods.formState.isDirty &&
       !successState &&
       !executeMutation.isPending &&
-      currentLocation.pathname !== nextLocation.pathname
+      currentLocation.pathname !== nextLocation.pathname &&
+      // NIE die Abmelde-Navigation blockieren: Bei Session-Ablauf leitet der
+      // AuthGuard zum Login um – hielte der Blocker das auf, säße der Nutzer
+      // auf einem toten Formular fest (Tokens weg, jeder Klick folgenlos).
+      // Der Entwurf ist ohnehin gesichert und wartet nach dem Re-Login.
+      nextLocation.pathname !== "/login" &&
+      useAuthStore.getState().isAuthenticated
   );
   useEffect(() => {
     if (blocker.state !== "blocked") return;

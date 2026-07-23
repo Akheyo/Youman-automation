@@ -11,6 +11,7 @@ import { useOfflineStore } from "@/stores/offlineStore";
 import { ActionFormRenderer } from "@/components/forms/ActionFormRenderer";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/useToast";
+import { LoadErrorNotice } from "@/components/ui/load-error";
 import { getApiError } from "@/services/api";
 import { DocumentRenderError, describePlaceholder, downloadDocument } from "@/services/documentService";
 import { cn } from "@/utils/cn";
@@ -32,7 +33,7 @@ export function DashboardScreen() {
   const { isOnline } = useOfflineStore();
   const [selectedId, setSelectedId] = useState<string>("");
 
-  const { data: actions = [], isLoading } = useQuery({
+  const { data: actions = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["actions", "definitions"],
     queryFn: async () => {
       const res = await apiClient.get<ActionDefinition[]>("/actions/definitions");
@@ -71,6 +72,9 @@ export function DashboardScreen() {
         {/* Action selector */}
         {isLoading ? (
           <div className="h-11 rounded-lg bg-muted animate-pulse" />
+        ) : isError ? (
+          // Kein leeres Dropdown, das wie "keine Aktionen vorhanden" aussieht.
+          <LoadErrorNotice what="Die Aktionen" onRetry={() => void refetch()} compact />
         ) : (
           <div className="relative">
             <select

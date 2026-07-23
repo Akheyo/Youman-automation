@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/useToast";
+import { LoadErrorNotice } from "@/components/ui/load-error";
 import { cn } from "@/utils/cn";
 
 type AdminTab = "general" | "branding" | "connector" | "documents" | "users";
@@ -76,7 +77,7 @@ export function AdminScreen() {
 }
 
 function GeneralSettings() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["tenant-settings"],
     queryFn: async () => {
       const res = await apiClient.get("/tenants/settings");
@@ -85,6 +86,9 @@ function GeneralSettings() {
   });
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+  // Unsichtbar-Regel: keine erfundenen Default-Werte anzeigen, wenn der
+  // Ladevorgang gescheitert ist.
+  if (isError) return <LoadErrorNotice what="Die Einstellungen" onRetry={() => void refetch()} compact />;
 
   return (
     <div className="space-y-4">
@@ -109,7 +113,7 @@ function GeneralSettings() {
 
 function BrandingSettings() {
   const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["branding"],
     queryFn: async () => {
       const res = await apiClient.get<Record<string, unknown>>("/branding");
@@ -128,6 +132,9 @@ function BrandingSettings() {
   });
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+  // Nicht mit Platzhalter-Defaults so tun, als wären es die echten Werte –
+  // ein Speichern würde die Tenant-Konfiguration mit Defaults überschreiben.
+  if (isError) return <LoadErrorNotice what="Das Erscheinungsbild" onRetry={() => void refetch()} compact />;
 
   return (
     <div className="space-y-4">
@@ -538,7 +545,7 @@ function ConnectorSettings() {
 }
 
 function UsersPanel() {
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
       const res = await apiClient.get<Array<{ id: string; email: string; firstName: string; lastName: string; role: string; isActive: boolean }>>("/users");
@@ -547,6 +554,7 @@ function UsersPanel() {
   });
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
+  if (isError) return <LoadErrorNotice what="Die Benutzerliste" onRetry={() => void refetch()} compact />;
 
   return (
     <div className="space-y-4">

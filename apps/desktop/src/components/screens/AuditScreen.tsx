@@ -4,6 +4,7 @@ import { FileText, Loader2, AlertTriangle, XCircle, Info, Download } from "lucid
 import { apiClient, getApiError } from "@/services/api";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/useToast";
+import { LoadErrorNotice } from "@/components/ui/load-error";
 import { DocumentRenderError, downloadDocument } from "@/services/documentService";
 import type { AuditLog, ExecutionDocumentInfo } from "@youman/shared";
 
@@ -76,7 +77,7 @@ const SEVERITY_ICON: Record<string, React.ReactNode> = {
 export function AuditScreen() {
   const [page, setPage] = useState(1);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["audit", page],
     queryFn: async () => {
       const res = await apiClient.get<{ items: AuditLog[]; total: number; totalPages: number }>(
@@ -101,6 +102,9 @@ export function AuditScreen() {
         <div className="flex justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
+      ) : isError ? (
+        // Vorher sah ein Ladefehler wie ein leeres Protokoll aus.
+        <LoadErrorNotice what="Das Protokoll" onRetry={() => void refetch()} />
       ) : (
         <div className="border border-border rounded-lg overflow-hidden">
           <table className="w-full text-sm">

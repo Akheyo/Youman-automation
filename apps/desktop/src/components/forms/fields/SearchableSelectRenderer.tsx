@@ -53,7 +53,7 @@ export function SearchableSelectRenderer({ field, disabled }: Props) {
 
   const minChars = source?.minChars ?? (isDynamic ? 0 : MIN_SEARCH_CHARS);
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, isError } = useQuery({
     queryKey: ["field-search", field.id, resolvedEndpoint, query],
     queryFn: async () => {
       if (!source) return { items: [] };
@@ -173,6 +173,10 @@ export function SearchableSelectRenderer({ field, disabled }: Props) {
                   </ul>
                 ) : isFetching ? (
                   <div className="px-3 py-4 text-center text-sm text-muted-foreground">Lade...</div>
+                ) : isError ? (
+                  <div className="px-3 py-4 text-center text-sm text-destructive">
+                    Suche fehlgeschlagen – Server nicht erreichbar. Bitte erneut versuchen.
+                  </div>
                 ) : (
                   <div className="px-3 py-4 text-center text-sm text-muted-foreground">Keine Einträge gefunden</div>
                 )}
@@ -260,6 +264,10 @@ export function SearchableSelectRenderer({ field, disabled }: Props) {
                   );
                 })}
               </ul>
+            ) : isError ? (
+              <div className="px-3 py-4 text-center">
+                <p className="text-sm text-destructive">Suche fehlgeschlagen – Server nicht erreichbar. Bitte erneut versuchen.</p>
+              </div>
             ) : query.length >= minChars && !isFetching ? (
               <div className="px-3 py-4 text-center">
                 <p className="text-sm text-muted-foreground">Keine Ergebnisse für „{query}"</p>

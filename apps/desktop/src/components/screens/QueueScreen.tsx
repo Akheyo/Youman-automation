@@ -4,6 +4,7 @@ import { apiClient, getApiError } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/useToast";
+import { LoadErrorNotice } from "@/components/ui/load-error";
 import { cn } from "@/utils/cn";
 import type { QueueItem } from "@youman/shared";
 
@@ -20,7 +21,7 @@ const STATUS_CONFIG: Record<string, { label: string; variant: "success" | "warni
 export function QueueScreen() {
   const queryClient = useQueryClient();
 
-  const { data: items = [], isLoading, refetch } = useQuery({
+  const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["queue", "items"],
     queryFn: async () => {
       const res = await apiClient.get<QueueItem[]>("/queue/items");
@@ -95,6 +96,10 @@ export function QueueScreen() {
         <div className="flex justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
+      ) : isError ? (
+        // Unsichtbar-Regel, schlimmste Variante vorher: Ein Ladefehler wurde
+        // als "Alle Aktionen wurden erfolgreich verarbeitet" angezeigt.
+        <LoadErrorNotice what="Die Warteschlange" onRetry={() => void refetch()} />
       ) : items.length === 0 ? (
         <div className="text-center py-16 space-y-2">
           <CheckCircle2 className="h-10 w-10 text-success mx-auto" />

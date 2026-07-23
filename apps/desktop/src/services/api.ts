@@ -1,6 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "../stores/authStore";
 import { describeApiError } from "./errorMessages";
+import { toast } from "../hooks/useToast";
 import type { ApiResponse, ApiError } from "@youman/shared";
 
 const DEFAULT_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api/v1";
@@ -52,6 +53,55 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 /** Kleiner Sleep-Helfer für den Kaltstart-Retry. */
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// ── Single-Flight-Refresh ────────────────────────────────────────────────────
+// Zu jedem Zeitpunkt läuft höchstens EIN POST /auth/refresh. Bekommen mehrere
+// Requests gleichzeitig 401, warten alle auf dasselbe Ergebnis. Ohne das
+// starteten parallele Refreshes mit demselben (rotierenden) Token – der zweite
+// wurde vom Server abgelehnt und meldete eine gerade frisch erneuerte Session
+// wieder ab.
+let refreshInFlight: Promise<{ accessToken: string; refreshToken: string }> | null = null;
+
+function refreshTokensOnce(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  refreshInFlight ??= axios
+    .post<{ accessToken: string; refreshToken: string }>(
+      `${getApiBaseUrl()}/auth/refresh`,
+      { refreshToken },
+      { timeout: 30_000 }
+    )
+    .then((res) => {
+      const { accessToken, refreshToken: newRefresh } = res.data;
+      useAuthStore.getState().setTokens(accessToken, newRefresh);
+      return res.data;
+    })
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
+// Session-Ablauf genau EINMAL sichtbar machen (nicht pro fehlgeschlagenem
+// Request): Stelle merken, abmelden, Meldung zeigen und HART zum Login
+// navigieren – unabhängig davon, ob gerade ein Router/Blocker im Weg ist.
+let sessionExpiredHandled = false;
+
+function handleSessionExpired(): void {
+  if (sessionExpiredHandled) return;
+  sessionExpiredHandled = true;
+  rememberLocationForRelogin();
+  useAuthStore.getState().logout();
+  toast({
+    title: "Sitzung abgelaufen",
+    description: "Ihre Sitzung ist abgelaufen, bitte erneut anmelden. Ihre Eingaben bleiben als Entwurf erhalten.",
+    variant: "warning",
+    duration: 8000,
+  });
+  window.location.hash = "#/login";
+  // Nach der Anmeldung darf ein späterer Ablauf wieder behandelt werden.
+  setTimeout(() => {
+    sessionExpiredHandled = false;
+  }, 3000);
+}
+
 // Auto-refresh on 401 + Kaltstart-Toleranz bei Netzwerkfehlern
 apiClient.interceptors.response.use(
   (res) => res,
@@ -72,32 +122,23 @@ apiClient.interceptors.response.use(
       }
     }
 
-    if (err.response?.status === 401 && !original._retry) {
+    if (err.response?.status === 401 && !original._retry && !original.url?.includes("/auth/refresh")) {
       original._retry = true;
 
-      const { refreshToken, setTokens, logout } = useAuthStore.getState();
+      const { refreshToken } = useAuthStore.getState();
       if (!refreshToken) {
-        rememberLocationForRelogin();
-        logout();
+        handleSessionExpired();
         return Promise.reject(err);
       }
 
       try {
-        // Bewusst nacktes axios (der Interceptor von apiClient würde bei 401
-        // endlos rekursieren) – aber MIT Timeout: ein hängender Refresh darf
-        // nicht den ursprünglichen Request und damit die UI ewig blockieren.
-        const res = await axios.post<{ accessToken: string; refreshToken: string }>(
-          `${getApiBaseUrl()}/auth/refresh`,
-          { refreshToken },
-          { timeout: 30_000 }
-        );
-        const { accessToken, refreshToken: newRefresh } = res.data;
-        setTokens(accessToken, newRefresh);
+        // Single-Flight: alle parallelen 401er teilen sich EINEN Refresh.
+        const { accessToken } = await refreshTokensOnce(refreshToken);
         original.headers.Authorization = `Bearer ${accessToken}`;
         return apiClient(original);
       } catch {
-        rememberLocationForRelogin();
-        logout();
+        // Refresh endgültig gescheitert: sofort sichtbar zum Login.
+        handleSessionExpired();
         return Promise.reject(err);
       }
     }
