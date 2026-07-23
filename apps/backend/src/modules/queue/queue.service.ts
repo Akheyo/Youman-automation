@@ -68,6 +68,10 @@ export class QueueService {
           payload: item.payload as Record<string, unknown>,
           clientTimestamp: item.createdAt.toISOString(),
           offlineQueueId: item.id,
+          // Stabile ID pro Queue-Eintrag: Stürzt die Verarbeitung NACH dem
+          // ERP-Aufruf ab, liefert der nächste Durchlauf das gespeicherte
+          // Ergebnis statt einen zweiten ERP-Eintrag zu erzeugen.
+          idempotencyKey: `queue-${item.id}`,
         });
 
         await this.prisma.queueItem.update({

@@ -7,6 +7,8 @@ export const ActionExecutionSchema = z.object({
   payload: z.record(z.unknown()),
   clientTimestamp: z.string().datetime(),
   offlineQueueId: z.string().optional(),
+  // Idempotenz-Schutz: gleiche ID => gespeichertes Ergebnis statt neuem ERP-Aufruf.
+  idempotencyKey: z.string().min(8).max(64).regex(/^[A-Za-z0-9._-]+$/).optional(),
 });
 
 export const SearchRequestSchema = z.object({

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Logger } from "@nestjs/common";
+import { Injectable, BadRequestException, ConflictException, Logger } from "@nestjs/common";
 import { ZodError } from "zod";
 import { v4 as uuid } from "uuid";
 import { PrismaService } from "../../database/prisma.service";
@@ -30,6 +30,9 @@ import {
 
 @Injectable()
 export class ActionsService {
+  /** Nach dieser Frist gilt ein RUNNING-Idempotenz-Key als verwaist (Absturz). */
+  private static readonly IDEMPOTENCY_STALE_MS = 10 * 60 * 1000;
+
   private readonly logger = new Logger(ActionsService.name);
 
   constructor(
@@ -40,6 +43,105 @@ export class ActionsService {
   ) {}
 
   async executeAction(req: ActionExecutionRequest): Promise<ActionExecution> {
+    // Idempotenz-Schutzschicht VOR jeder Ausführung: Derselbe Request mit
+    // derselben ID liefert das gespeicherte Ergebnis zurück – es entsteht
+    // kein zweiter ERP-Eintrag (z. B. kein doppelter Kontakt in Plenty).
+    if (req.idempotencyKey) {
+      const replay = await this.claimIdempotencyKey(req);
+      if (replay) return replay;
+    }
+    try {
+      const result = await this.executeActionInner(req);
+      if (req.idempotencyKey) {
+        await this.completeIdempotencyKey(req, result);
+      }
+      return result;
+    } catch (err) {
+      // Fehlgeschlagene Ausführung: Key freigeben, damit ein bewusster
+      // erneuter Versuch wieder ausgeführt wird.
+      if (req.idempotencyKey) {
+        await this.releaseIdempotencyKey(req).catch(() => undefined);
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Reserviert die Idempotenz-ID atomar (Unique-Constraint auf tenantId+key).
+   * Rückgabe: gespeichertes Ergebnis bei einem Replay, sonst undefined
+   * (= Ausführung darf starten). Läuft dieselbe ID gerade noch, wird mit 409
+   * abgelehnt statt doppelt auszuführen.
+   */
+  private async claimIdempotencyKey(req: ActionExecutionRequest): Promise<ActionExecution | undefined> {
+    try {
+      await this.prisma.idempotencyKey.create({
+        data: { tenantId: req.tenantId, key: req.idempotencyKey!, actionId: req.actionId },
+      });
+      return undefined;
+    } catch (err) {
+      // P2002 = Unique-Verletzung: Es gibt den Key schon.
+      if ((err as { code?: string }).code !== "P2002") throw err;
+      const existing = await this.prisma.idempotencyKey.findUnique({
+        where: { tenantId_key: { tenantId: req.tenantId, key: req.idempotencyKey! } },
+      });
+      if (existing?.status === "COMPLETED" && existing.result) {
+        this.logger.log(
+          `Idempotenz-Replay für Aktion '${req.actionId}' (key=${req.idempotencyKey}): gespeichertes Ergebnis, kein neuer ERP-Aufruf`
+        );
+        return existing.result as unknown as ActionExecution;
+      }
+      // Verwaister RUNNING-Key (Prozess-Absturz mitten in der Ausführung):
+      // nach Ablauf der Stale-Frist atomar übernehmen, sonst bliebe der Key
+      // für immer gesperrt. updateMany mit Bedingung verhindert, dass zwei
+      // gleichzeitige Retries beide übernehmen.
+      const staleCutoff = new Date(Date.now() - ActionsService.IDEMPOTENCY_STALE_MS);
+      const takeover = await this.prisma.idempotencyKey.updateMany({
+        where: {
+          tenantId: req.tenantId,
+          key: req.idempotencyKey!,
+          status: "RUNNING",
+          updatedAt: { lt: staleCutoff },
+        },
+        data: { updatedAt: new Date() },
+      });
+      if (takeover.count === 1) {
+        this.logger.warn(
+          `Verwaister Idempotenz-Key übernommen (key=${req.idempotencyKey}, Aktion '${req.actionId}') – vorherige Ausführung ist mutmaßlich abgestürzt`
+        );
+        return undefined;
+      }
+      throw new ConflictException(
+        "Diese Aktion wird gerade bereits verarbeitet. Bitte einen Moment warten – sie wird nicht doppelt ausgeführt."
+      );
+    }
+  }
+
+  private async completeIdempotencyKey(req: ActionExecutionRequest, result: ActionExecution): Promise<void> {
+    try {
+      await this.prisma.idempotencyKey.update({
+        where: { tenantId_key: { tenantId: req.tenantId, key: req.idempotencyKey! } },
+        data: {
+          status: "COMPLETED",
+          executionId: result.id,
+          result: result as unknown as import("@prisma/client").Prisma.InputJsonValue,
+        },
+      });
+    } catch (err) {
+      // Ergebnis-Speicherung ist best-effort: Die Aktion IST erfolgreich –
+      // schlimmstenfalls fehlt der Replay-Schutz für genau diesen Key.
+      this.logger.warn(
+        `Idempotenz-Ergebnis konnte nicht gespeichert werden (key=${req.idempotencyKey}): ${err instanceof Error ? err.message : err}`
+      );
+    }
+  }
+
+  private async releaseIdempotencyKey(req: ActionExecutionRequest): Promise<void> {
+    await this.prisma.idempotencyKey.delete({
+      where: { tenantId_key: { tenantId: req.tenantId, key: req.idempotencyKey! } },
+    });
+  }
+
+  private async executeActionInner(req: ActionExecutionRequest): Promise<ActionExecution> {
     const start = Date.now();
     const executionId = uuid();
 

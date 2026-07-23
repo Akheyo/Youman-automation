@@ -234,6 +234,34 @@ enum ExecutionStatus {
   DEAD_LETTER
 }
 
+// ─── Idempotenz ───────────────────────────────────────────────────────────────
+
+/// Schutzschicht vor Doppel-Ausführung schreibender Aktionen: Der Client sendet
+/// pro Absenden eine Idempotenz-ID; ein wiederholter Request mit derselben ID
+/// bekommt das gespeicherte Ergebnis zurück statt eines neuen ERP-Aufrufs.
+/// Fehlgeschlagene Ausführungen löschen ihren Eintrag, damit ein bewusster
+/// Retry erneut ausgeführt wird.
+model IdempotencyKey {
+  id          String            @id @default(uuid())
+  tenantId    String
+  key         String
+  actionId    String
+  status      IdempotencyStatus @default(RUNNING)
+  executionId String?
+  result      Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([tenantId, key])
+  @@index([createdAt])
+  @@map("idempotency_keys")
+}
+
+enum IdempotencyStatus {
+  RUNNING
+  COMPLETED
+}
+
 // ─── Queue ────────────────────────────────────────────────────────────────────
 
 model QueueItem {

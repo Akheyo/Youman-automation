@@ -209,6 +209,12 @@ export interface ActionExecutionRequest {
   payload: Record<string, unknown>;
   clientTimestamp: string;
   offlineQueueId?: string;
+  /**
+   * Idempotenz-Schutz für schreibende Aktionen: Der Client vergibt beim ersten
+   * Absenden eine ID; ein Retry mit derselben ID liefert das gespeicherte
+   * Ergebnis zurück statt einen zweiten ERP-Eintrag zu erzeugen.
+   */
+  idempotencyKey?: string;
 }
 
 export type ExecutionStatus =
