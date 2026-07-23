@@ -7,11 +7,13 @@ services:
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
-    # Produktionsbranch: Render deployt AUSSCHLIESSLICH main. Feature-/
-    # Session-Branches werden per PR (mit grüner CI) nach main gemergt –
-    # nie direkt deployt. Hinweis: Wurde der Service im Render-UI mit einem
-    # anderen Branch angelegt, muss das dort einmalig umgestellt werden.
-    branch: main
+    # ACHTUNG Deploy-Kette (Stand Analyse): 'main' enthält ein ANDERES
+    # Produkt (Next.js "Youman Automation") mit konkurrierendem Repo-Root –
+    # adept& kann dort nicht hineingemergt werden, ohne eines der beiden
+    # Produkte zu zerlegen. Bis zur Struktur-Entscheidung (eigener
+    # Produktionsbranch 'adept-main' ODER eigenes Repo) deployt Render den
+    # im Render-UI konfigurierten Branch. Sobald entschieden: hier
+    # 'branch: <produktionsbranch>' eintragen.
     autoDeploy: true
     envVars:
       - key: NODE_ENV
