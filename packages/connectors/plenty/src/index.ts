@@ -9,6 +9,8 @@ export {
   NotFoundError,
   ValidationError,
   NotSupportedError,
+  ConnectionError,
+  ServerError,
   toValidationError,
 } from "./errors";
 export type { PlentyConfig, PlentyLoginResponse, PlentyPagedResponse, PlentyContact, PlentyAddress, PlentyVariation, PlentyOrder } from "./types/PlentyConfig";

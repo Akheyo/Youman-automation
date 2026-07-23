@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { AxiosInstance } from "axios";
 import { PlentyHttpClient } from "../http/PlentyHttpClient";
 import type { PlentyTokenManager } from "../auth/PlentyTokenManager";
-import { AuthError, NotFoundError, RateLimitError, ValidationError } from "../errors";
+import { AuthError, ConnectionError, NotFoundError, PlentyConnectorError, RateLimitError, ServerError, ValidationError } from "../errors";
 import { validationErrorBody } from "./fixtures";
 
 const silentLogger = { debug: vi.fn(), warn: vi.fn(), error: vi.fn() };
@@ -145,6 +145,70 @@ describe("PlentyHttpClient – auth handling", () => {
     await expect(client.get("/accounts/contacts")).rejects.toBeInstanceOf(AuthError);
     expect(tokens.handleUnauthorized).toHaveBeenCalledTimes(1); // no endless auth loop
     expect(request).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("PlentyHttpClient – Transportfehler (Netzwerk/Timeout)", () => {
+  const networkError = (code: string) =>
+    Object.assign(new Error(`connect ${code}`), { isAxiosError: true, code, response: undefined });
+
+  it("wiederholt GET bei Netzwerkfehlern und liefert dann das Ergebnis", async () => {
+    const { client, request, sleep } = harness();
+    request
+      .mockRejectedValueOnce(networkError("ECONNRESET"))
+      .mockRejectedValueOnce(networkError("ETIMEDOUT"))
+      .mockResolvedValueOnce(ok({ recovered: true }));
+
+    await expect(client.get("/accounts/contacts")).resolves.toEqual({ recovered: true });
+    expect(request).toHaveBeenCalledTimes(3);
+    expect(sleep).toHaveBeenCalledTimes(2);
+  });
+
+  it("wirft ConnectionError, wenn GET-Retries erschöpft sind", async () => {
+    const { client, request } = harness();
+    request.mockRejectedValue(networkError("ECONNREFUSED"));
+
+    const err = await client.get("/accounts/contacts").catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ConnectionError);
+    expect((err as ConnectionError).code).toBe("PLENTY_UNREACHABLE");
+    expect(request).toHaveBeenCalledTimes(3); // initial + 2 Retries
+  });
+
+  it("wiederholt POST bei Transportfehlern NICHT (Duplikat-Gefahr) und wirft ConnectionError", async () => {
+    const { client, request, sleep } = harness();
+    request.mockRejectedValue(networkError("ECONNABORTED"));
+
+    const err = await client.post("/accounts/contacts", { name: "X" }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ConnectionError);
+    expect(request).toHaveBeenCalledTimes(1); // kein Retry für schreibende Verben
+    expect(sleep).not.toHaveBeenCalled();
+  });
+
+  it("reicht Nicht-Axios-Fehler (Programmierfehler) unverändert durch", async () => {
+    const { client, request } = harness();
+    const bug = new TypeError("Cannot read properties of undefined");
+    request.mockRejectedValue(bug);
+    await expect(client.get("/x")).rejects.toBe(bug);
+  });
+});
+
+describe("PlentyHttpClient – typisierte 5xx/HTTP-Fehler", () => {
+  it("wirft ServerError (PLENTY_SERVER_ERROR) nach erschöpften 5xx-Retries", async () => {
+    const { client, request } = harness();
+    request.mockRejectedValue(axiosError(500));
+
+    const err = await client.get("/health").catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ServerError);
+    expect((err as ServerError).code).toBe("PLENTY_SERVER_ERROR");
+  });
+
+  it("wirft PlentyConnectorError mit PLENTY_HTTP_ERROR für unerwartete Status", async () => {
+    const { client, request } = harness();
+    request.mockRejectedValue(axiosError(418));
+
+    const err = await client.get("/teapot").catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(PlentyConnectorError);
+    expect((err as PlentyConnectorError).code).toBe("PLENTY_HTTP_ERROR");
   });
 });
 

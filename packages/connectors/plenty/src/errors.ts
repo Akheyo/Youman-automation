@@ -49,6 +49,23 @@ export class ValidationError extends PlentyConnectorError {
   }
 }
 
+/**
+ * Transport-Ebene: Plenty ist nicht erreichbar (Netzwerkfehler, Timeout, DNS).
+ * Wird vom Backend auf ERP_UNREACHABLE gemappt (Offline-Queue/Retry statt 500).
+ */
+export class ConnectionError extends PlentyConnectorError {
+  constructor(message: string) {
+    super("PLENTY_UNREACHABLE", message);
+  }
+}
+
+/** Plenty antwortet dauerhaft mit 5xx (nach erschöpften Wiederholungen). */
+export class ServerError extends PlentyConnectorError {
+  constructor(message: string) {
+    super("PLENTY_SERVER_ERROR", message);
+  }
+}
+
 /** IErpConnector operation that has no sensible Plentymarkets equivalent. */
 export class NotSupportedError extends PlentyConnectorError {
   constructor(operation: string, reason: string) {

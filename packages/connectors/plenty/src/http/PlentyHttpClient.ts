@@ -1,5 +1,13 @@
 import axios, { type AxiosInstance, type AxiosResponse, type Method, isAxiosError } from "axios";
-import { AuthError, NotFoundError, RateLimitError, toValidationError } from "../errors";
+import {
+  AuthError,
+  ConnectionError,
+  NotFoundError,
+  PlentyConnectorError,
+  RateLimitError,
+  ServerError,
+  toValidationError,
+} from "../errors";
 import { PlentyTokenManager, describeAxiosError, type PlentyLogger } from "../auth/PlentyTokenManager";
 
 export interface PlentyRequest {
@@ -26,6 +34,8 @@ export interface PlentyHttpClientOptions {
 
 const MAX_RETRIES_429 = 3;
 const MAX_RETRIES_5XX = 2;
+/** Transportfehler (Netzwerk/Timeout) werden NUR für GET wiederholt. */
+const MAX_RETRIES_NETWORK = 2;
 const BACKOFF_BASE_MS = 1000;
 /** Throttle when fewer than 10% of the period's calls remain. */
 const THROTTLE_THRESHOLD = 0.1;
@@ -75,6 +85,7 @@ export class PlentyHttpClient {
   async request<T>(req: PlentyRequest): Promise<T> {
     let retries429 = 0;
     let retries5xx = 0;
+    let retriesNetwork = 0;
     let reauthDone = false;
 
     // Bounded loop: every path either returns, throws, or increments one of
@@ -94,8 +105,28 @@ export class PlentyHttpClient {
         this.trackRateLimit(res.headers as Record<string, unknown>);
         return res.data;
       } catch (err) {
-        if (!isAxiosError(err) || !err.response) {
-          throw err; // network/timeout errors: surface as-is
+        // Nicht-Axios-Fehler sind Programmierfehler – unverändert durchreichen.
+        if (!isAxiosError(err)) {
+          throw err;
+        }
+        // Transportfehler (keine Antwort: Timeout, Connection-Reset, DNS):
+        // GET ist idempotent und darf wiederholt werden. Schreibende Verben
+        // NICHT – der Request könnte den Server bereits erreicht haben; vor
+        // Duplikaten schützt dort die Idempotenz-Schicht im Backend.
+        if (!err.response) {
+          const transport = describeAxiosError(err);
+          if (String(req.method).toUpperCase() === "GET" && retriesNetwork < MAX_RETRIES_NETWORK) {
+            retriesNetwork += 1;
+            const delay = this.backoffDelay(retriesNetwork);
+            this.logger.warn(
+              `Plenty-Transportfehler auf GET ${req.url} (${transport}) – Retry ${retriesNetwork}/${MAX_RETRIES_NETWORK} in ${delay} ms`
+            );
+            await this.sleep(delay);
+            continue;
+          }
+          throw new ConnectionError(
+            `Plenty-API nicht erreichbar (${req.method} ${req.url}): ${transport}`
+          );
         }
         const { status, headers, data } = err.response as AxiosResponse;
         this.trackRateLimit(headers as Record<string, unknown>);
@@ -125,7 +156,7 @@ export class PlentyHttpClient {
 
         if (status >= 500) {
           if (retries5xx >= MAX_RETRIES_5XX) {
-            throw new Error(`Plenty-API-Fehler HTTP ${status} nach ${MAX_RETRIES_5XX} Wiederholungen (${req.method} ${req.url})`);
+            throw new ServerError(`Plenty-API-Fehler HTTP ${status} nach ${MAX_RETRIES_5XX} Wiederholungen (${req.method} ${req.url})`);
           }
           retries5xx += 1;
           const delay = this.backoffDelay(retries5xx);
@@ -142,7 +173,12 @@ export class PlentyHttpClient {
           throw toValidationError(data, `Plenty-Request ungültig (HTTP ${status}, ${req.method} ${req.url})`);
         }
 
-        throw new Error(`Plenty-API-Fehler: ${describeAxiosError(err)} (${req.method} ${req.url})`);
+        // Unerwarteter HTTP-Status: typisiert werfen, damit das Backend ihn
+        // als ERP_ERROR klassifizieren kann statt als generischen 500.
+        throw new PlentyConnectorError(
+          "PLENTY_HTTP_ERROR",
+          `Plenty-API-Fehler: ${describeAxiosError(err)} (${req.method} ${req.url})`
+        );
       }
     }
   }
