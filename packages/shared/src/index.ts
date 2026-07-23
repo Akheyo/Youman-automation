@@ -6,6 +6,7 @@ export * from "./types/erp";
 export * from "./types/queue";
 export * from "./types/audit";
 export * from "./types/api";
+export * from "./types/error-codes";
 
 // Schemas
 export * from "./schemas/auth.schema";

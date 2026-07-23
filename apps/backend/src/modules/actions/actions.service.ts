@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, HttpException, UnprocessableEntityException, Logger } from "@nestjs/common";
+import { Injectable, BadRequestException, Logger } from "@nestjs/common";
 import { ZodError } from "zod";
 import { v4 as uuid } from "uuid";
 import { PrismaService } from "../../database/prisma.service";
@@ -128,15 +128,12 @@ export class ActionsService {
         metadata: { actionId: req.actionId, error: errorMsg },
       });
 
-      // Surface the real reason (e.g. the ERP's validation message) to the
-      // client instead of a generic 500 "unerwarteter Fehler". Validation
-      // errors (parseDto) already are HttpExceptions and pass through.
-      if (err instanceof HttpException) throw err;
-      const code = (err as { code?: string }).code;
-      throw new UnprocessableEntityException({
-        message: errorMsg,
-        ...(code ? { code } : {}),
-      });
+      // Kein rohes err.message mehr im Response: Der GlobalExceptionFilter
+      // klassifiziert typisierte Connector-Fehler (Auth/RateLimit/NotFound/
+      // Validation/NotSupported/Unreachable) zentral in Codes + deutsche
+      // Meldungen; Unbekanntes wird zu INTERNAL_ERROR mit correlationId.
+      // ERP-Interna (URLs, Prisma-/Axios-Text) landen nur noch im Log.
+      throw err;
     }
   }
 

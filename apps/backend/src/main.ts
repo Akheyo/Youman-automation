@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import { AppModule } from "./app.module";
 import { GlobalExceptionFilter } from "./common/filters/global-exception.filter";
 import { AuditInterceptor } from "./common/interceptors/audit.interceptor";
+import { correlationIdMiddleware } from "./common/middleware/correlation-id.middleware";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -15,6 +16,10 @@ async function bootstrap() {
       ? ["error", "warn", "log", "debug"]
       : ["error", "warn", "log"],
   });
+
+  // correlationId als allererste Middleware, damit jeder Response (auch
+  // Fehler aus helmet/cors) den X-Correlation-Id-Header trägt.
+  app.use(correlationIdMiddleware);
 
   // Security
   app.use(helmet());

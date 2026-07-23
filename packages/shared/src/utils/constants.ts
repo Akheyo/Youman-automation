@@ -36,19 +36,6 @@ export const HTTP_STATUS = {
   SERVICE_UNAVAILABLE: 503,
 } as const;
 
-export const ERROR_CODES = {
-  INVALID_CREDENTIALS: "AUTH_001",
-  TOKEN_EXPIRED: "AUTH_002",
-  INSUFFICIENT_PERMISSIONS: "AUTH_003",
-  TENANT_NOT_FOUND: "TENANT_001",
-  TENANT_SUSPENDED: "TENANT_002",
-  CUSTOMER_NOT_FOUND: "ERP_001",
-  PRODUCT_NOT_FOUND: "ERP_002",
-  ERP_UNAVAILABLE: "ERP_003",
-  ERP_TIMEOUT: "ERP_004",
-  ERP_VALIDATION_ERROR: "ERP_005",
-  QUEUE_FULL: "QUEUE_001",
-  OFFLINE_ACTION_UNSUPPORTED: "QUEUE_002",
-  VALIDATION_ERROR: "VAL_001",
-  INTERNAL_ERROR: "SYS_001",
-} as const;
+// Fehlercodes: siehe types/error-codes.ts (ERROR_CODES) – die frühere,
+// ungenutzte Tabelle mit kryptischen Codes (AUTH_001, SYS_001, …) wurde durch
+// sprechende Codes ersetzt, die Backend-Filter und Client-Meldungs-Mapping teilen.

@@ -7,10 +7,21 @@ export interface ApiResponse<T> {
 export interface ApiError {
   success: false;
   error: {
+    /** Maschinenlesbarer Fehlercode, z. B. ERP_UNREACHABLE, VALIDATION_FAILED. */
     code: string;
+    /** Deutsche, endnutzertaugliche Meldung. */
     message: string;
+    /**
+     * Strukturierte, nutzer-relevante Zusatzdaten (z. B. Feldfehler-Listen).
+     * Technische Interna (Stacktraces, Roh-Fehler) landen hier NIE – die
+     * werden ausschließlich serverseitig geloggt.
+     */
     details?: Record<string, unknown>;
     field?: string;
+    /** Feldbezogene Fehlermeldungen für die Anzeige am Formularfeld. */
+    fields?: Record<string, string[]>;
+    /** Kennung zur Korrelation mit den Server-Logs (auch im Header X-Correlation-Id). */
+    correlationId?: string;
   };
   requestId?: string;
 }
