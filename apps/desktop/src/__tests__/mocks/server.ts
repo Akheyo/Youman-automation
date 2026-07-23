@@ -22,6 +22,9 @@ export const API = "http://localhost:3001/api/v1";
  * Zustandsmatrix herbeizuführen (401, 500, Netzwerkfehler, Kaltstart, …).
  */
 export const handlers = [
+  http.get(`${API}/health`, () =>
+    HttpResponse.json({ status: "ok", version: "1.0.0", apiContract: 2, db: { healthy: true } })
+  ),
   http.post(`${API}/auth/login`, () => HttpResponse.json(LOGIN_RESPONSE)),
   http.post(`${API}/auth/refresh`, () =>
     HttpResponse.json({ accessToken: "access-token-2", refreshToken: "refresh-token-2" })

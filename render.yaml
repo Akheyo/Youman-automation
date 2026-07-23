@@ -7,6 +7,11 @@ services:
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
+    # Produktionsbranch: Render deployt AUSSCHLIESSLICH main. Feature-/
+    # Session-Branches werden per PR (mit grüner CI) nach main gemergt –
+    # nie direkt deployt. Hinweis: Wurde der Service im Render-UI mit einem
+    # anderen Branch angelegt, muss das dort einmalig umgestellt werden.
+    branch: main
     autoDeploy: true
     envVars:
       - key: NODE_ENV

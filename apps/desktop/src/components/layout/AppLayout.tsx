@@ -12,6 +12,7 @@ import { cn } from "@/utils/cn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/useToast";
+import { API_CONTRACT_VERSION } from "@youman/shared";
 
 const NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -41,6 +42,28 @@ export function AppLayout() {
     void window.adept?.app.getVersion().then((v) => setAppVersion(v)).catch((err) => {
       console.warn("[AppLayout] App-Version nicht abrufbar:", err);
     });
+  }, []);
+
+  // Kontrakt-Check beim Start: passt der Backend-Stand zu dieser App-Version?
+  // Bei Abweichung sofort sichtbar warnen, statt später mit kryptischen
+  // Folgefehlern zu scheitern. Best-effort – ein nicht erreichbarer
+  // Health-Endpoint ist hier kein Fehler (das melden andere Stellen).
+  useEffect(() => {
+    void apiClient
+      .get<{ version?: string; apiContract?: number }>("/health")
+      .then((res) => {
+        const backend = res.data;
+        console.log(`[AppLayout] Backend v${backend.version ?? "?"} (Kontrakt ${backend.apiContract ?? "?"}), App erwartet Kontrakt ${API_CONTRACT_VERSION}`);
+        if (backend.apiContract !== undefined && backend.apiContract !== API_CONTRACT_VERSION) {
+          toast({
+            title: "App und Server passen nicht zusammen",
+            description: `Der Server läuft auf einem ${backend.apiContract < API_CONTRACT_VERSION ? "älteren" : "neueren"} Stand (Kontrakt ${backend.apiContract}, App erwartet ${API_CONTRACT_VERSION}). Bitte App aktualisieren bzw. Deployment prüfen.`,
+            variant: "warning",
+            duration: 10_000,
+          });
+        }
+      })
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {

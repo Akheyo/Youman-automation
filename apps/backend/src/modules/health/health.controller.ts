@@ -1,7 +1,23 @@
 import { Controller, Get, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { API_CONTRACT_VERSION } from "@youman/shared";
 import { PrismaService } from "../../database/prisma.service";
 import { ConnectorsService } from "../connectors/connectors.service";
+
+/** Backend-Version aus package.json (einmalig, best-effort). */
+const BACKEND_VERSION: string = (() => {
+  for (const p of [resolve(process.cwd(), "package.json"), resolve(__dirname, "../../../../package.json")]) {
+    try {
+      const pkg = JSON.parse(readFileSync(p, "utf8")) as { name?: string; version?: string };
+      if (pkg.name === "@youman/backend" && pkg.version) return pkg.version;
+    } catch {
+      // nächsten Kandidaten probieren
+    }
+  }
+  return "unbekannt";
+})();
 
 interface ProbeResult {
   healthy: boolean;
@@ -38,6 +54,10 @@ export class HealthController {
       status: healthy ? "ok" : "degraded",
       timestamp: new Date().toISOString(),
       uptimeSeconds: Math.round(process.uptime()),
+      version: BACKEND_VERSION,
+      // Kontrakt-Check: Die Desktop-App vergleicht diesen Wert mit ihrer
+      // eigenen API_CONTRACT_VERSION und warnt bei Abweichung.
+      apiContract: API_CONTRACT_VERSION,
       db,
       ...(erp ? { erp } : {}),
     };

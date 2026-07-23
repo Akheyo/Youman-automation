@@ -35,6 +35,15 @@ jobs:
           pnpm build:shared
           pnpm build:config-engine
           pnpm build:sap
+          pnpm build:plenty
+        shell: bash
+
+      # Qualitäts-Gate: Bricht ein Nutzerweg (Smoke-Tests) oder der
+      # Typecheck, entsteht KEIN Installer.
+      - name: Typecheck + alle Tests (inkl. Smoke-Testreihe)
+        run: |
+          pnpm --filter @youman/desktop typecheck
+          pnpm -r test
         shell: bash
 
       - name: Generate app icon

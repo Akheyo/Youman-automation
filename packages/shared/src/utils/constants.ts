@@ -1,6 +1,15 @@
 export const API_VERSION = "v1";
 export const API_PREFIX = `/api/${API_VERSION}`;
 
+/**
+ * Kontrakt-Version zwischen Desktop-App und Backend. Bei einem BREAKING
+ * Change an API-Shape/Fehlerstruktur/Auth-Fluss hochzählen – Backend liefert
+ * sie über GET /health, die App vergleicht beim Start und warnt bei
+ * Abweichung ("App und Server passen nicht zusammen") statt mit kryptischen
+ * Folgefehlern zu scheitern.
+ */
+export const API_CONTRACT_VERSION = 2;
+
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 export const DEFAULT_RETRY_ATTEMPTS = 3;

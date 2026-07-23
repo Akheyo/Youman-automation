@@ -1,0 +1,56 @@
+name: CI
+
+# Läuft bei JEDEM Push und PR: kompletter Build (alle Packages inklusive
+# DTS-Builds), Backend-Build, Desktop-Typecheck und ALLE Tests inklusive der
+# Smoke-Testreihe (Zustandsmatrix + Nutzerwege). Fällt hier etwas um, ist es
+# in ~3 Minuten sichtbar – nicht erst nach 20 Minuten Render-Build oder beim
+# Nutzer. Der Release-Workflow (Installer) setzt dieselben Checks voraus.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build alle Workspace-Packages (inkl. DTS)
+        run: |
+          pnpm build:shared
+          pnpm build:config-engine
+          pnpm build:sap
+          pnpm build:plenty
+
+      - name: Prisma-Client generieren
+        run: pnpm --filter @youman/backend exec prisma generate
+
+      - name: Backend-Build (nest)
+        run: pnpm build:backend
+
+      - name: Desktop-Build (vite) + Typecheck
+        run: |
+          pnpm --filter @youman/desktop build
+          pnpm --filter @youman/desktop typecheck
+
+      - name: Alle Tests (Backend, Connectoren, Smoke-Testreihe)
+        run: pnpm -r test
