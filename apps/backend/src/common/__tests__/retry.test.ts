@@ -34,7 +34,7 @@ describe("isTransientError – Retry-Matrix", () => {
 
 describe("withRetry", () => {
   it("wiederholt transiente Fehler mit exponentiellem Backoff und liefert dann das Ergebnis", async () => {
-    const sleep = vi.fn(async () => undefined);
+    const sleep = vi.fn(async (_ms: number) => undefined);
     const fn = vi
       .fn()
       .mockRejectedValueOnce(httpError(503))
