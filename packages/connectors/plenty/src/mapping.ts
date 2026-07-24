@@ -115,7 +115,10 @@ export function mapVariationToProduct(
     id: String(variation.id),
     externalId: variation.externalId ?? String(variation.id),
     tenantId,
-    articleNumber: variation.number ?? String(variation.id),
+    // Artikel-ID = Plenty itemId (die 5-stellige Artikelnummer), NICHT die
+    // Varianten-Nummer/SKU (variation.number). Diese ID erscheint u.a. in der
+    // Angebots-Positionstabelle. Fallback auf SKU bzw. Varianten-ID.
+    articleNumber: variation.itemId ? String(variation.itemId) : (variation.number ?? String(variation.id)),
     ...(ean ? { ean } : {}),
     designation,
     ...(variation.model ? { manufacturerArticleNumber: variation.model } : {}),

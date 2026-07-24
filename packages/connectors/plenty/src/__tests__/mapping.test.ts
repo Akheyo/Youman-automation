@@ -61,8 +61,8 @@ describe("mapVariationToProduct", () => {
 
   it("maps a variation to a product with EAN, price and stock", () => {
     const product = mapVariationToProduct(variation, TENANT, { currency: "EUR" });
-    expect(product.id).toBe("1101");
-    expect(product.articleNumber).toBe("TRK-500-BLK");
+    expect(product.id).toBe("1101"); // variation id (für ERP-Auftrag)
+    expect(product.articleNumber).toBe("210"); // Artikel-ID = Plenty itemId (nicht die SKU "TRK-500-BLK")
     expect(product.ean).toBe("4260123456789");
     expect(product.designation).toBe("50 L / schwarz");
     expect(product.basePrice).toBe(74.9); // lowest salesPriceId (1) wins

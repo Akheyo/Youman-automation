@@ -24,6 +24,10 @@ export interface TenantSettings {
   sessionTimeoutMinutes: number;
   maxRetryAttempts: number;
   retryBackoffMs: number;
+  /** Nächste zu vergebende Angebotsnummer (im Admin konfigurierbar). */
+  quoteNumberNext: number;
+  /** Schrittweite, um die die Angebotsnummer je Angebot hochzählt. */
+  quoteNumberStep: number;
 }
 
 export interface TenantBranding {

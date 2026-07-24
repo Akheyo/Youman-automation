@@ -56,6 +56,10 @@ model TenantSettings {
   sessionTimeoutMinutes Int     @default(480)
   maxRetryAttempts      Int     @default(3)
   retryBackoffMs        Int     @default(2000)
+  // Angebotsnummern-Vergabe: quoteNumberNext ist die NÄCHSTE zu vergebende
+  // Nummer, quoteNumberStep die Schrittweite. Beide im Admin konfigurierbar.
+  quoteNumberNext       Int     @default(1000)
+  quoteNumberStep       Int     @default(1)
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 

@@ -109,6 +109,8 @@ export class AuthService {
               sessionTimeoutMinutes: tenant.settings.sessionTimeoutMinutes,
               maxRetryAttempts: tenant.settings.maxRetryAttempts,
               retryBackoffMs: tenant.settings.retryBackoffMs,
+              quoteNumberNext: tenant.settings.quoteNumberNext,
+              quoteNumberStep: tenant.settings.quoteNumberStep,
             }
           : {
               tenantId: tenant.id,
@@ -118,6 +120,8 @@ export class AuthService {
               dateFormat: "DD.MM.YYYY",
               enableOfflineMode: true,
               sessionTimeoutMinutes: 480,
+              quoteNumberNext: 1000,
+              quoteNumberStep: 1,
               maxRetryAttempts: 3,
               retryBackoffMs: 2000,
             },

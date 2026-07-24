@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings, Users, Palette, Plug, ChevronRight, Loader2, CheckCircle2, XCircle, FlaskConical, FileText } from "lucide-react";
 import { DocumentTemplatesPanel } from "./admin/DocumentTemplatesPanel";
 import { useAuthStore } from "@/stores/authStore";
@@ -77,6 +77,7 @@ export function AdminScreen() {
 }
 
 function GeneralSettings() {
+  const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["tenant-settings"],
     queryFn: async () => {
@@ -85,14 +86,72 @@ function GeneralSettings() {
     },
   });
 
+  const [quoteNext, setQuoteNext] = useState("");
+  const [quoteStep, setQuoteStep] = useState("");
+  useEffect(() => {
+    if (data) {
+      setQuoteNext(String(data["quoteNumberNext"] ?? 1000));
+      setQuoteStep(String(data["quoteNumberStep"] ?? 1));
+    }
+  }, [data]);
+
+  const saveQuote = useMutation({
+    mutationFn: () =>
+      apiClient.patch("/tenants/settings", {
+        quoteNumberNext: Number(quoteNext),
+        quoteNumberStep: Number(quoteStep),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-settings"] });
+      toast({ title: "Angebotsnummer gespeichert", variant: "success" });
+    },
+    onError: (err) =>
+      toast({ title: "Speichern fehlgeschlagen", description: getApiError(err), variant: "error" }),
+  });
+
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
   // Unsichtbar-Regel: keine erfundenen Default-Werte anzeigen, wenn der
   // Ladevorgang gescheitert ist.
   if (isError) return <LoadErrorNotice what="Die Einstellungen" onRetry={() => void refetch()} compact />;
 
+  const nextNum = Number(quoteNext) || 0;
+  const stepNum = Math.max(1, Number(quoteStep) || 1);
+  const preview = `An-${String(nextNum).padStart(4, "0")}, An-${String(nextNum + stepNum).padStart(4, "0")}, An-${String(nextNum + 2 * stepNum).padStart(4, "0")} …`;
+
   return (
     <div className="space-y-4">
       <h2 className="text-base font-semibold text-foreground">Allgemeine Einstellungen</h2>
+
+      {/* Angebotsnummer – editierbar */}
+      <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Angebotsnummer</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Legt fest, mit welcher Nummer Angebote weiterlaufen und in welchen Schritten sie hochzählen.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Nächste Angebotsnummer</label>
+            <Input type="number" min={0} value={quoteNext} onChange={(e) => setQuoteNext(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Schrittweite</label>
+            <Input type="number" min={1} value={quoteStep} onChange={(e) => setQuoteStep(e.target.value)} />
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">Vorschau: {preview}</p>
+        <Button
+          size="sm"
+          onClick={() => saveQuote.mutate()}
+          loading={saveQuote.isPending}
+          disabled={quoteNext === "" || quoteStep === ""}
+        >
+          Speichern
+        </Button>
+      </div>
+
+      {/* Übrige Einstellungen – Anzeige */}
       <div className="rounded-lg border border-border bg-card p-4 space-y-3 text-sm">
         <div className="grid grid-cols-2 gap-2">
           <span className="text-muted-foreground">Standard-Währung</span>

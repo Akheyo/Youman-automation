@@ -90,7 +90,7 @@ describe("PlentyConnector product search heuristics", () => {
     const result = await connector.searchProducts({ query: "Fjell" });
     expect(http.get).toHaveBeenNthCalledWith(1, "/items/variations", expect.objectContaining({ numberFuzzy: "Fjell" }));
     expect(http.get).toHaveBeenNthCalledWith(2, "/items/variations", expect.objectContaining({ itemName: "Fjell" }));
-    expect(result.items[0]!.articleNumber).toBe("TRK-500-BLK");
+    expect(result.items[0]!.articleNumber).toBe("210");
   });
 
   // Numeric queries run three tracks in parallel; the stub consumes the
@@ -109,7 +109,7 @@ describe("PlentyConnector product search heuristics", () => {
     expect(http.get).toHaveBeenNthCalledWith(2, "/items/variations", expect.objectContaining({ itemId: 210 }));
     expect(http.get).toHaveBeenNthCalledWith(3, "/items/variations", expect.objectContaining({ numberFuzzy: "210" }));
     expect(result.items).toHaveLength(1);
-    expect(result.items[0]!.articleNumber).toBe("TRK-500-BLK");
+    expect(result.items[0]!.articleNumber).toBe("210");
   });
 
   it("finds variations by variation id (fixture id 1101)", async () => {
@@ -172,7 +172,7 @@ describe("PlentyConnector product search heuristics", () => {
 
     const result = await connector.searchProducts({ query: "210" });
     expect(result.items).toHaveLength(1);
-    expect(result.items[0]!.articleNumber).toBe("TRK-500-BLK");
+    expect(result.items[0]!.articleNumber).toBe("210");
   });
 
   it("searches by itemName for queries containing whitespace", async () => {

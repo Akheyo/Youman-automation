@@ -66,7 +66,7 @@ export class PlentyMockConnector implements IErpConnector {
 
   private static readonly PRODUCTS: Product[] = [
     {
-      id: "1101", externalId: "1101", tenantId: "", articleNumber: "TRK-500-BLK",
+      id: "1101", externalId: "1101", tenantId: "", articleNumber: "21001",
       ean: "4260123456789", designation: "Trekkingrucksack Fjell 50 L schwarz",
       description: "Wasserabweisender Trekkingrucksack mit Alu-Rahmen", manufacturer: "Nordkamm",
       unit: "ST", basePrice: 74.9, currency: "EUR", taxClass: "STANDARD", isActive: true, source: "PLENTY",
@@ -74,7 +74,7 @@ export class PlentyMockConnector implements IErpConnector {
       createdAt: "2024-02-01T10:00:00Z", updatedAt: "2025-12-15T06:00:00Z",
     },
     {
-      id: "1102", externalId: "1102", tenantId: "", articleNumber: "TRK-500-OLV",
+      id: "1102", externalId: "1102", tenantId: "", articleNumber: "21002",
       ean: "4260123456796", designation: "Trekkingrucksack Fjell 50 L oliv",
       manufacturer: "Nordkamm",
       unit: "ST", basePrice: 74.9, currency: "EUR", taxClass: "STANDARD", isActive: true, source: "PLENTY",
@@ -82,7 +82,7 @@ export class PlentyMockConnector implements IErpConnector {
       createdAt: "2024-02-01T10:00:00Z", updatedAt: "2025-12-15T06:00:00Z",
     },
     {
-      id: "2205", externalId: "2205", tenantId: "", articleNumber: "ISO-750-EDST",
+      id: "2205", externalId: "2205", tenantId: "", articleNumber: "22050",
       ean: "4009876543210", designation: "Isolierflasche Polar 750 ml Edelstahl",
       manufacturer: "Thermaris",
       unit: "ST", basePrice: 21.5, currency: "EUR", taxClass: "STANDARD", isActive: true, source: "PLENTY",
@@ -90,7 +90,7 @@ export class PlentyMockConnector implements IErpConnector {
       createdAt: "2024-06-14T08:30:00Z", updatedAt: "2025-12-15T06:00:00Z",
     },
     {
-      id: "3310", externalId: "3310", tenantId: "", articleNumber: "ZLT-2P-GRN",
+      id: "3310", externalId: "3310", tenantId: "", articleNumber: "33100",
       ean: "4012345678905", designation: "Kuppelzelt Lofoten 2 Personen grün",
       manufacturer: "Nordkamm",
       unit: "ST", basePrice: 129.0, currency: "EUR", taxClass: "STANDARD", isActive: true, source: "PLENTY",

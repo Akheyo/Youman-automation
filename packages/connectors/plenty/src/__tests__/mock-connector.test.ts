@@ -85,7 +85,7 @@ describe("PlentyMockConnector", () => {
 
   it("searches products by name, SKU and EAN", async () => {
     expect((await connector.searchProducts({ query: "trekking" })).items).toHaveLength(2);
-    expect((await connector.searchProducts({ query: "ISO-750-EDST" })).items[0]!.id).toBe("2205");
+    expect((await connector.searchProducts({ query: "22050" })).items[0]!.id).toBe("2205"); // Artikel-ID statt SKU
     expect((await connector.searchProducts({ query: "4012345678905" })).items[0]!.id).toBe("3310");
   });
 
@@ -97,7 +97,7 @@ describe("PlentyMockConnector", () => {
 
   it("returns variation-shaped products with price and stock", async () => {
     const product = await connector.getProduct("1101");
-    expect(product.articleNumber).toBe("TRK-500-BLK");
+    expect(product.articleNumber).toBe("21001"); // Artikel-ID (numerisch), nicht SKU
     expect(product.basePrice).toBe(74.9);
     expect(product.stockInfo?.available).toBe(142);
   });

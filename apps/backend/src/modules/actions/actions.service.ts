@@ -392,11 +392,30 @@ export class ActionsService {
    * ERP-Auftrag; die Vorlage setzt "An-" davor ("Angebot Nr. An-2026-0001").
    */
   private async nextQuoteNumber(tenantId: string): Promise<string> {
-    const year = new Date().getFullYear();
-    const count = await this.prisma.actionExecution.count({
-      where: { tenantId, actionId: "action-create-quote", status: "SUCCESS" },
+    // Konfigurierbare, fortlaufende Angebotsnummer: quoteNumberNext ist die
+    // nächste Nummer, quoteNumberStep die Schrittweite (beides im Admin
+    // einstellbar). Der atomare increment vergibt auch bei parallelen
+    // Angeboten eindeutige Nummern.
+    const settings = await this.prisma.tenantSettings.findUnique({
+      where: { tenantId },
+      select: { quoteNumberStep: true },
     });
-    return `${year}-${String(count + 1).padStart(4, "0")}`;
+    const step = Math.max(1, settings?.quoteNumberStep ?? 1);
+    try {
+      const updated = await this.prisma.tenantSettings.update({
+        where: { tenantId },
+        data: { quoteNumberNext: { increment: step } },
+        select: { quoteNumberNext: true },
+      });
+      const used = updated.quoteNumberNext - step;
+      return String(Math.max(0, used)).padStart(4, "0");
+    } catch {
+      // Kein Settings-Datensatz (untypisch): stabiler zählbasierter Fallback.
+      const count = await this.prisma.actionExecution.count({
+        where: { tenantId, actionId: "action-create-quote", status: "SUCCESS" },
+      });
+      return String(1000 + count).padStart(4, "0");
+    }
   }
 
   /**

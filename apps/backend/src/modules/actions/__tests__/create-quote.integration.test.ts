@@ -31,6 +31,11 @@ describe("ActionsService – create quote (minimal payload)", () => {
       findUnique: vi.fn(async () => ({ configJson: {} })),
     },
     user: { findUnique: vi.fn(async () => ({ firstName: "Max", lastName: "Admin", email: "admin@demo.adept.de" })) },
+    // Konfigurierbare Angebotsnummer: nächste Nummer 1000, Schrittweite 1.
+    tenantSettings: {
+      findUnique: vi.fn(async () => ({ quoteNumberStep: 1 })),
+      update: vi.fn(async () => ({ quoteNumberNext: 1001 })), // vergeben: 1001 - 1 = 1000
+    },
   };
 
   const connector = new PlentyMockConnector("tenant-a");
@@ -87,14 +92,14 @@ describe("ActionsService – create quote (minimal payload)", () => {
     expect(createQuoteSpy).not.toHaveBeenCalled();
     const data = result.result as Record<string, unknown>;
     // Locally assigned running number (JJJJ-NNNN), not an ERP order id.
-    expect(data["erpQuoteNumber"]).toMatch(/^\d{4}-0001$/);
+    expect(data["erpQuoteNumber"]).toBe("1000"); // konfigurierbare Startnummer
 
     // The document is attached DIRECTLY (independent of any DB documentOutput).
     const doc = data["document"] as { templateId: string | null; documentType: string; data: Record<string, unknown> };
     expect(doc).toBeTruthy();
     expect(doc.documentType).toBe("OFFER");
     // Flat placeholder set matching the template.
-    expect(doc.data["angebotsnummer"]).toMatch(/^\d{4}-0001$/);
+    expect(doc.data["angebotsnummer"]).toBe("1000");
     expect(doc.data["kunde_name"]).toBe("Bergmann Handels GmbH"); // resolved via getCustomer
     expect(doc.data["kunde_adresse"]).toContain("Köln");
     expect(doc.data["positionen"]).toHaveLength(1);

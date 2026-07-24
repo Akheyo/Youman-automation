@@ -23,7 +23,24 @@ export class TenantsService {
   }
 
   async updateSettings(tenantId: string, data: Record<string, unknown>) {
-    return this.prisma.tenantSettings.update({ where: { tenantId }, data });
+    // Whitelist statt rohem Body: nur bekannte Felder, korrekt typisiert –
+    // verhindert, dass beliebige Settings-Spalten überschrieben werden.
+    const patch: Record<string, unknown> = {};
+    for (const f of ["defaultLocale", "defaultCurrency", "timezone", "dateFormat"]) {
+      if (typeof data[f] === "string") patch[f] = data[f];
+    }
+    if (typeof data["enableOfflineMode"] === "boolean") patch["enableOfflineMode"] = data["enableOfflineMode"];
+    for (const f of ["sessionTimeoutMinutes", "maxRetryAttempts", "retryBackoffMs", "quoteNumberNext", "quoteNumberStep"]) {
+      if (data[f] !== undefined && data[f] !== null) {
+        const n = Number(data[f]);
+        if (Number.isFinite(n)) patch[f] = Math.trunc(n);
+      }
+    }
+    // Sinnvolle Grenzen für die Angebotsnummer.
+    if (patch["quoteNumberStep"] !== undefined) patch["quoteNumberStep"] = Math.max(1, patch["quoteNumberStep"] as number);
+    if (patch["quoteNumberNext"] !== undefined) patch["quoteNumberNext"] = Math.max(0, patch["quoteNumberNext"] as number);
+
+    return this.prisma.tenantSettings.update({ where: { tenantId }, data: patch });
   }
 
   async getConnectorConfig(tenantId: string) {
