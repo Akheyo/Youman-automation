@@ -35,13 +35,12 @@ bereits ins Schema eingetragen:
 | **Telefon** | **02861 / 9080137** ✅ |
 | **E-Mail** | **info@ab-solarenergy.de** ✅ |
 | Leistungen | Photovoltaik, Stromspeicher, Wallbox/Ladeinfrastruktur, Wartung/Service (Elektromeisterbetrieb) ✅ |
+| Öffnungszeiten | Mo–Fr 08:00–16:00 ✅ |
 | Region | Borken & Münsterland ✅ |
 
-**Bitte nur noch bestätigen/ergänzen:**
-- **Öffnungszeiten** (im Schema stehen Mo–Fr 08–17 Uhr als Annahme)
-- Bietet ihr auch **Wärmepumpen** an? (steht aktuell drin — falls nein, raus)
-- Gibt es eine **zweite Niederlassung in Münster**? (im Impressum tauchte eine 0251-Nummer auf)
-- **Google-Bewertungen:** Anzahl + Schnitt (für das Bewertungs-Schema)
+**Vom Kunden bestätigt:** keine Wärmepumpen (aus Schema/Metas entfernt) · keine zweite
+Niederlassung in Münster · Bewertungs-Schema (Sterne) vorerst ausgelassen, bis echte
+Google-Bewertungszahlen vorliegen (werden nie erfunden).
 
 ---
 

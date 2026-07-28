@@ -19,7 +19,6 @@
       { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Photovoltaikanlage – Aufdach" } },
       { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Stromspeicher / Nachrüstung" } },
       { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Wallbox-Installation" } },
-      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Wärmepumpe mit PV-Kopplung" } },
       { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Wartung & Service" } }
     ]
   }

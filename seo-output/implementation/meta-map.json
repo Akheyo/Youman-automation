@@ -2,7 +2,7 @@
   "__hinweis__": "Slug -> SEO-Meta. Slugs an die echten WordPress-Slugs anpassen (Dry-Run listet sie). Quelle: 02-META-COPY-PASTE.md",
   "home": {
     "title": "Photovoltaik Borken – Solaranlagen & Speicher | A&B Solarenergy",
-    "description": "Ihr Fachbetrieb für Photovoltaik in Borken & im Münsterland. Solaranlagen, Stromspeicher, Wallbox & Wärmepumpe – Beratung, Planung, Montage aus einer Hand. Jetzt kostenlos anfragen!",
+    "description": "Ihr Elektromeisterbetrieb für Photovoltaik in Borken & im Münsterland. Solaranlagen, Stromspeicher & Wallbox – Beratung, Planung, Montage aus einer Hand. Jetzt kostenlos anfragen!",
     "focus": "Photovoltaik Borken"
   },
   "photovoltaik": {
@@ -20,11 +20,6 @@
     "description": "Wallbox-Installation vom Elektro-Fachbetrieb in Borken: sicher laden mit eigenem Solarstrom. Beratung, Montage & Anmeldung beim Netzbetreiber inklusive. Jetzt Angebot anfordern.",
     "focus": "Wallbox Borken"
   },
-  "waermepumpe": {
-    "title": "Wärmepumpe Borken – effizient heizen mit Solarstrom | A&B",
-    "description": "Wärmepumpe kombiniert mit Photovoltaik: heizen Sie günstig und klimafreundlich mit eigenem Solarstrom. Planung & Installation in Borken. Jetzt zur Wärmepumpe beraten lassen.",
-    "focus": "Wärmepumpe Borken"
-  },
   "ueber-uns": {
     "title": "Über uns – Ihr Solar-Fachbetrieb in Borken | A&B Solarenergy",
     "description": "Lernen Sie das Team von A&B Solarenergy kennen: erfahrene Fachleute für Photovoltaik in Borken. Regionale Nähe, geprüfte Qualität und persönliche Beratung. Jetzt kennenlernen.",
@@ -37,7 +32,7 @@
   },
   "kontakt": {
     "title": "Kontakt & kostenlose Beratung – A&B Solarenergy Borken",
-    "description": "Kostenlose Beratung zu Photovoltaik, Speicher & Wärmepumpe in Borken. Rufen Sie an oder schreiben Sie uns – wir melden uns schnell zurück. Jetzt Kontakt aufnehmen.",
+    "description": "Kostenlose Beratung zu Photovoltaik, Stromspeicher & Wallbox in Borken. Rufen Sie an unter 02861 / 9080137 oder schreiben Sie uns – wir melden uns schnell zurück.",
     "focus": "Photovoltaik Anfrage Borken"
   },
   "faq": {

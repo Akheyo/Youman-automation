@@ -14,7 +14,7 @@ Diese Titles & Descriptions bei **jeder Seite** im SEO-Plugin einfügen:
 ## Startseite — `/`
 **Fokus-KW:** Photovoltaik Borken
 - **SEO-Titel:** `Photovoltaik Borken – Solaranlagen & Speicher | A&B Solarenergy`
-- **Meta-Beschreibung:** `Ihr Fachbetrieb für Photovoltaik in Borken & im Münsterland. Solaranlagen, Stromspeicher, Wallbox & Wärmepumpe – Beratung, Planung, Montage aus einer Hand. Jetzt kostenlos anfragen!`
+- **Meta-Beschreibung:** `Ihr Elektromeisterbetrieb für Photovoltaik in Borken & im Münsterland. Solaranlagen, Stromspeicher & Wallbox – Beratung, Planung, Montage aus einer Hand. Jetzt kostenlos anfragen!`
 
 ## Photovoltaikanlagen — `/photovoltaik/`
 **Fokus-KW:** Photovoltaikanlage Borken
@@ -31,11 +31,6 @@ Diese Titles & Descriptions bei **jeder Seite** im SEO-Plugin einfügen:
 - **SEO-Titel:** `Wallbox Borken – Ladestation fürs E-Auto | A&B Solarenergy`
 - **Meta-Beschreibung:** `Wallbox-Installation vom Elektro-Fachbetrieb in Borken: sicher laden mit eigenem Solarstrom. Beratung, Montage & Anmeldung beim Netzbetreiber inklusive. Jetzt Angebot anfordern.`
 
-## Wärmepumpe — `/waermepumpe/`
-**Fokus-KW:** Wärmepumpe Borken
-- **SEO-Titel:** `Wärmepumpe Borken – effizient heizen mit Solarstrom | A&B`
-- **Meta-Beschreibung:** `Wärmepumpe kombiniert mit Photovoltaik: heizen Sie günstig und klimafreundlich mit eigenem Solarstrom. Planung & Installation in Borken. Jetzt zur Wärmepumpe beraten lassen.`
-
 ## Über uns / Team — `/ueber-uns/`
 **Fokus-KW:** Solar Fachbetrieb Borken
 - **SEO-Titel:** `Über uns – Ihr Solar-Fachbetrieb in Borken | A&B Solarenergy`
@@ -49,7 +44,7 @@ Diese Titles & Descriptions bei **jeder Seite** im SEO-Plugin einfügen:
 ## Kontakt — `/kontakt/`
 **Fokus-KW:** Photovoltaik Anfrage Borken
 - **SEO-Titel:** `Kontakt & kostenlose Beratung – A&B Solarenergy Borken`
-- **Meta-Beschreibung:** `Kostenlose Beratung zu Photovoltaik, Speicher & Wärmepumpe in Borken. Rufen Sie an unter <<TELEFON>> oder schreiben Sie uns – wir melden uns schnell zurück. Jetzt Kontakt aufnehmen.`
+- **Meta-Beschreibung:** `Kostenlose Beratung zu Photovoltaik, Stromspeicher & Wallbox in Borken. Rufen Sie an unter 02861 / 9080137 oder schreiben Sie uns – wir melden uns schnell zurück.`
 
 ## FAQ — `/faq/`
 **Fokus-KW:** Photovoltaik Fragen Kosten
@@ -59,7 +54,7 @@ Diese Titles & Descriptions bei **jeder Seite** im SEO-Plugin einfügen:
 ## Blog/Ratgeber (Übersicht) — `/ratgeber/`
 **Fokus-KW:** Photovoltaik Ratgeber
 - **SEO-Titel:** `Photovoltaik-Ratgeber – Tipps zu Solar, Speicher & Förderung`
-- **Meta-Beschreibung:** `Der Photovoltaik-Ratgeber von A&B Solarenergy: verständliche Tipps zu Solarstrom, Speicher, Wallbox, Wärmepumpe und Förderung in NRW. Jetzt informieren.`
+- **Meta-Beschreibung:** `Der Photovoltaik-Ratgeber von A&B Solarenergy: verständliche Tipps zu Solarstrom, Stromspeicher, Wallbox und Förderung in NRW. Jetzt informieren.`
 
 ---
 
@@ -67,7 +62,7 @@ Diese Titles & Descriptions bei **jeder Seite** im SEO-Plugin einfügen:
 
 Für Startseite (Yoast: Tab „Social" / Rank Math: „Social"):
 - **OG-Titel:** `Photovoltaik in Borken – A&B Solarenergy`
-- **OG-Beschreibung:** `Solaranlagen, Speicher, Wallbox & Wärmepumpe vom regionalen Fachbetrieb im Münsterland.`
+- **OG-Beschreibung:** `Solaranlagen, Stromspeicher & Wallbox vom regionalen Elektromeisterbetrieb im Münsterland.`
 - **OG-Bild:** 1200×630 px, Firmenlogo + Anlagenfoto (WebP/JPG, < 300 KB).
 
 ---

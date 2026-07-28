@@ -39,7 +39,7 @@
       "@type": ["LocalBusiness", "ElectricalContractor", "HomeAndConstructionBusiness"],
       "@id": "https://ab-solarenergy.de/#localbusiness",
       "name": "A&B Solarenergy GmbH",
-      "description": "Fachbetrieb für Photovoltaik, Stromspeicher, Wallbox und Wärmepumpe in Borken und im Münsterland. Beratung, Planung, Montage und Wartung aus einer Hand.",
+      "description": "Elektromeisterbetrieb für Photovoltaik, Stromspeicher und Wallbox/Ladeinfrastruktur in Borken und im Münsterland. Beratung, Planung, Montage und Wartung aus einer Hand.",
       "url": "https://ab-solarenergy.de/",
       "image": "https://ab-solarenergy.de/wp-content/uploads/anlage-referenz.jpg",
       "logo": "https://ab-solarenergy.de/wp-content/uploads/logo.png",
@@ -73,20 +73,15 @@
           "@type": "OpeningHoursSpecification",
           "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
           "opens": "08:00",
-          "closes": "17:00"
+          "closes": "16:00"
         }
       ],
       "makesOffer": [
         { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Photovoltaikanlagen" } },
         { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Stromspeicher / Batteriespeicher" } },
         { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Wallbox / Ladeinfrastruktur" } },
-        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Wärmepumpe" } }
-      ],
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "<<4.8>>",
-        "reviewCount": "<<ANZAHL>>"
-      }
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Wartung & Service" } }
+      ]
     }
   ]
 }
