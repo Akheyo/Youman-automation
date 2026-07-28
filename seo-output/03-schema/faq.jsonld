@@ -1,0 +1,47 @@
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://ab-solarenergy.de/faq/#faq",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Was kostet eine Photovoltaikanlage in Borken?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Die Kosten einer Photovoltaikanlage hängen von Dachgröße, gewünschter Leistung (kWp) und Speicher ab. Für ein Einfamilienhaus liegt eine typische Anlage (8–10 kWp) meist zwischen <<X.000>> und <<Y.000>> Euro inklusive Montage. Wir erstellen ein kostenloses, individuelles Angebot für Ihr Dach in Borken und Umgebung."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Lohnt sich ein Stromspeicher zur Photovoltaikanlage?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ein Stromspeicher erhöht den Eigenverbrauch Ihres Solarstroms von rund 30 % auf oft 60–80 %. Dadurch beziehen Sie weniger teuren Netzstrom. Ob sich ein Speicher für Ihren Haushalt rechnet, hängt von Ihrem Verbrauchsprofil ab – wir rechnen es in der Beratung transparent durch."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Welche Förderung gibt es für Photovoltaik in NRW?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Neben der bundesweiten Nullsteuer (0 % Mehrwertsteuer) auf PV-Anlagen für Wohngebäude gibt es je nach Zeitraum KfW-Kredite sowie regionale und kommunale Programme in NRW. Wir informieren Sie zu aktuellen Fördermöglichkeiten und unterstützen bei der Antragstellung."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Wie lange dauert die Installation einer Solaranlage?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Die eigentliche Montage einer Photovoltaikanlage auf einem Einfamilienhaus dauert in der Regel 1–3 Tage. Hinzu kommen Planung, Materialbeschaffung sowie die Anmeldung beim Netzbetreiber. Den gesamten Ablauf koordinieren wir für Sie aus einer Hand."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Übernehmen Sie auch die Anmeldung beim Netzbetreiber?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja. Wir übernehmen die Anmeldung Ihrer Photovoltaikanlage beim zuständigen Netzbetreiber und die Registrierung im Marktstammdatenregister, damit Sie sich um nichts kümmern müssen."
+      }
+    }
+  ]
+}

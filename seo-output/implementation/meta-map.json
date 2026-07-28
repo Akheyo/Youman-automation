@@ -1,0 +1,48 @@
+{
+  "__hinweis__": "Slug -> SEO-Meta. Slugs an die echten WordPress-Slugs anpassen (Dry-Run listet sie). Quelle: 02-META-COPY-PASTE.md",
+  "home": {
+    "title": "Photovoltaik Borken – Solaranlagen & Speicher | A&B Solarenergy",
+    "description": "Ihr Fachbetrieb für Photovoltaik in Borken & im Münsterland. Solaranlagen, Stromspeicher, Wallbox & Wärmepumpe – Beratung, Planung, Montage aus einer Hand. Jetzt kostenlos anfragen!",
+    "focus": "Photovoltaik Borken"
+  },
+  "photovoltaik": {
+    "title": "Photovoltaikanlage Borken – Planung & Montage | A&B Solarenergy",
+    "description": "Photovoltaikanlagen vom Fachbetrieb in Borken: individuelle Planung, hochwertige Module, professionelle Montage & Inbetriebnahme. Sichern Sie sich günstigen Solarstrom – jetzt anfragen.",
+    "focus": "Photovoltaikanlage Borken"
+  },
+  "stromspeicher": {
+    "title": "Stromspeicher für PV-Anlagen in Borken | A&B Solarenergy",
+    "description": "Mehr Eigenverbrauch mit dem passenden Batteriespeicher zur Photovoltaikanlage. Beratung, Auslegung & Nachrüstung in Borken und Umgebung. Unabhängiger werden vom Stromnetz – jetzt beraten lassen.",
+    "focus": "Stromspeicher Photovoltaik"
+  },
+  "wallbox": {
+    "title": "Wallbox Borken – Ladestation fürs E-Auto | A&B Solarenergy",
+    "description": "Wallbox-Installation vom Elektro-Fachbetrieb in Borken: sicher laden mit eigenem Solarstrom. Beratung, Montage & Anmeldung beim Netzbetreiber inklusive. Jetzt Angebot anfordern.",
+    "focus": "Wallbox Borken"
+  },
+  "waermepumpe": {
+    "title": "Wärmepumpe Borken – effizient heizen mit Solarstrom | A&B",
+    "description": "Wärmepumpe kombiniert mit Photovoltaik: heizen Sie günstig und klimafreundlich mit eigenem Solarstrom. Planung & Installation in Borken. Jetzt zur Wärmepumpe beraten lassen.",
+    "focus": "Wärmepumpe Borken"
+  },
+  "ueber-uns": {
+    "title": "Über uns – Ihr Solar-Fachbetrieb in Borken | A&B Solarenergy",
+    "description": "Lernen Sie das Team von A&B Solarenergy kennen: erfahrene Fachleute für Photovoltaik in Borken. Regionale Nähe, geprüfte Qualität und persönliche Beratung. Jetzt kennenlernen.",
+    "focus": "Solar Fachbetrieb Borken"
+  },
+  "referenzen": {
+    "title": "Referenzen – Photovoltaik-Projekte im Münsterland | A&B",
+    "description": "Ausgewählte Photovoltaik-Projekte von A&B Solarenergy in Borken und dem Münsterland: Anlagen, Speicher & Wallboxen aus der Praxis. Lassen Sie sich inspirieren – jetzt ansehen.",
+    "focus": "Photovoltaik Referenzen Borken"
+  },
+  "kontakt": {
+    "title": "Kontakt & kostenlose Beratung – A&B Solarenergy Borken",
+    "description": "Kostenlose Beratung zu Photovoltaik, Speicher & Wärmepumpe in Borken. Rufen Sie an oder schreiben Sie uns – wir melden uns schnell zurück. Jetzt Kontakt aufnehmen.",
+    "focus": "Photovoltaik Anfrage Borken"
+  },
+  "faq": {
+    "title": "Photovoltaik FAQ – Kosten, Förderung & Ablauf | A&B Solarenergy",
+    "description": "Antworten auf die häufigsten Fragen zu Photovoltaik: Kosten, Förderung in NRW, Speicher, Ablauf & Wartung. Kompakt erklärt vom Fachbetrieb aus Borken.",
+    "focus": "Photovoltaik Fragen Kosten"
+  }
+}
