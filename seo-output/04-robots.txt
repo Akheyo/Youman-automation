@@ -1,0 +1,26 @@
+# robots.txt — Empfehlung für ab-solarenergy.de (WordPress)
+# Domain ggf. auf die kanonische Schreibweise anpassen (energy/energie – siehe ACTION-PLAN C1).
+
+User-agent: *
+Allow: /
+
+# WordPress-Interna sperren (Standard-Best-Practice)
+Disallow: /wp-admin/
+Allow: /wp-admin/admin-ajax.php
+Disallow: /?s=
+Disallow: /search/
+Disallow: /*?replytocom
+Disallow: /trackback/
+Disallow: /xmlrpc.php
+
+# AI-Crawler: standardmäßig ERLAUBT (für GEO/AI-Sichtbarkeit).
+# Zum Blockieren die folgenden Blöcke einkommentieren:
+# User-agent: GPTBot
+# Disallow: /
+# User-agent: PerplexityBot
+# Disallow: /
+# User-agent: CCBot
+# Disallow: /
+
+# Sitemap (Pfad je nach Plugin: Yoast = sitemap_index.xml, Rank Math = sitemap_index.xml)
+Sitemap: https://ab-solarenergy.de/sitemap_index.xml
