@@ -5,41 +5,43 @@ Alles Weitere (Details, fertige Texte, Skripte) liegt in den anderen Dateien die
 
 ---
 
-## ⚠️ Das WICHTIGSTE zuerst: Ist deine Seite überhaupt bei Google?
+## ✅ Gute Nachricht: Deine Seite IST bei Google
 
-Bei der Recherche kam heraus: Wenn man bei Google nach **ab-solarenergy.de** sucht,
-**taucht deine Seite nicht auf**. Was auftaucht, ist `ab-solarenerg**ie**.de` — aber das
-ist eine **andere Firma** (A&B-Solarenergie GmbH in **Visbek**), NICHT deine.
+Der Check `site:ab-solarenergy.de` zeigt: Deine Seite **ist indexiert** — Startseite,
+Impressum, Datenschutz und weitere Seiten sind bei Google. Die Startseite rankt schon mit
+dem Titel *„A&B Solarenergy: Photovoltaik Borken & Münsterland"*. Kein Indexierungsproblem. 👍
 
-👉 Das heißt vermutlich: **Deine Seite ist bei Google nicht (richtig) indexiert.**
-Solange das so ist, bringt jede weitere Optimierung wenig. Das ist Problem Nummer 1.
+**Trotzdem in die Google Search Console (wichtig für Kontrolle & Wachstum):**
 
-**Das machst du zuerst (ca. 15 Min, kein Programmieren):**
+1. Öffne **Google Search Console**: https://search.google.com/search-console
+2. Mit deinem Google-Konto anmelden → **Property hinzufügen** → `ab-solarenergy.de`.
+3. Inhaberschaft bestätigen (DNS-Eintrag oder Datei — dein Hoster/WordPress-Admin hilft).
+4. Links **Sitemap** einreichen: `https://ab-solarenergy.de/sitemap_index.xml` (Yoast)
+   oder `.../sitemap.xml` (Rank Math).
 
-1. Geh zu Google und tippe genau das ein: `site:ab-solarenergy.de`
-   - **Kommen Ergebnisse?** → gut, Seite ist drin. Weiter zu Schritt 2.
-   - **Nichts / kaum was?** → Seite ist nicht indexiert. Dann:
-2. Öffne **Google Search Console**: https://search.google.com/search-console
-3. Mit deinem Google-Konto anmelden → **Property hinzufügen** → deine Domain `ab-solarenergy.de` eintragen.
-4. Inhaberschaft bestätigen (Google zeigt dir, wie — meist ein DNS-Eintrag oder eine Datei; dein Webhoster/WordPress-Admin hilft dabei).
-5. In der Search Console links **Sitemap** einreichen: `https://ab-solarenergy.de/sitemap_index.xml`
-   (bei Yoast) oder `.../sitemap.xml` (bei Rank Math).
-6. Bei den wichtigsten Seiten oben in der **URL-Prüfung** die Adresse eingeben → **Indexierung beantragen**.
-
-> Das ist der Hebel mit der größten Wirkung. Ohne Indexierung findet dich niemand.
+> Damit siehst du, für welche Suchbegriffe du gefunden wirst und wo du wachsen kannst.
 
 ---
 
-## ✅ Schritt 2: Firmendaten prüfen (5 Min)
+## ✅ Schritt 2: Firmendaten (verifiziert aus dem Google-Index ✅)
 
-Für lokales SEO müssen deine Daten überall **exakt gleich** sein. Bitte bestätige mir:
+Diese Daten habe ich aus deinen indexierten Seiten (Impressum/Datenschutz) übernommen und
+bereits ins Schema eingetragen:
 
-- **Adresse:** In den Registern stehen zwei — `Lange Stiege 66` (alte UG) und
-  `Heinrich-Hertz-Straße 6a` (GmbH), beide 46325 Borken. **Welche ist heute aktuell?**
-- **Telefon, E-Mail, Öffnungszeiten:** (stehen noch als Platzhalter in den Dateien)
-- **Eure Leistungen:** Photovoltaik, Speicher, Wallbox, Wärmepumpe, Wartung — stimmt das? Fehlt was?
+| Feld | Wert |
+|------|------|
+| Firma | A&B Solarenergy GmbH |
+| **Adresse** | **Heinrich-Hertz-Straße 6a, 46325 Borken** ✅ (klärt die alte Adress-Frage) |
+| **Telefon** | **02861 / 9080137** ✅ |
+| **E-Mail** | **info@ab-solarenergy.de** ✅ |
+| Leistungen | Photovoltaik, Stromspeicher, Wallbox/Ladeinfrastruktur, Wartung/Service (Elektromeisterbetrieb) ✅ |
+| Region | Borken & Münsterland ✅ |
 
-Sobald du mir das gibst, trage ich es in Schema + Texte ein.
+**Bitte nur noch bestätigen/ergänzen:**
+- **Öffnungszeiten** (im Schema stehen Mo–Fr 08–17 Uhr als Annahme)
+- Bietet ihr auch **Wärmepumpen** an? (steht aktuell drin — falls nein, raus)
+- Gibt es eine **zweite Niederlassung in Münster**? (im Impressum tauchte eine 0251-Nummer auf)
+- **Google-Bewertungen:** Anzahl + Schnitt (für das Bewertungs-Schema)
 
 ---
 
@@ -94,7 +96,8 @@ Details & fertiges Skript: **`implementation/README.md`** und **`NETWORK-POLICY.
 ### Korrektur-Hinweis (wichtig)
 
 Ein früherer Report-Teil deutete `ab-solarenergie.de` als „Domain-Dublette" deiner Seite
-(mit 301-Weiterleitungs-Empfehlung). **Das ist nicht korrekt** — `ab-solarenergie.de` gehört
-zur **eigenständigen Firma in Visbek**. Deine Aufgabe ist deshalb **keine** 301-Weiterleitung,
-sondern sicherzustellen, dass **deine** Domain `ab-solarenergy.de` sauber indexiert wird
-(Schritt 1 oben).
+(mit 301-Weiterleitungs-Empfehlung) und vermutete ein Indexierungsproblem. **Beides ist
+nicht korrekt:** `ab-solarenergie.de` gehört zur **eigenständigen Firma in Visbek**, und
+deine Domain `ab-solarenergy.de` **ist bei Google indexiert** (per `site:`-Check bestätigt).
+Es ist also **keine** 301-Weiterleitung nötig — der Fokus liegt auf den echten Hebeln:
+Schema, Metas, Content-Tiefe, lokale Signale und Google Business Profil.
