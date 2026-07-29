@@ -88,6 +88,10 @@ def pruefe_und_dedupliziere(leads):
         if not quelle.startswith("http"):
             aussortiert.append((firma, f"keine belastbare Quell-URL fuer {email}"))
             continue
+        if lead.get("_verifiziert") is not True:
+            grund = lead.get("_verifiziert_status", "noch nicht gegen die Quelle geprueft")
+            aussortiert.append((firma, f"{email} nicht bestaetigt ({grund})"))
+            continue
         schluessel = email.lower()
         if schluessel in gesehen:
             aussortiert.append((firma, f"Dublette zu {gesehen[schluessel]}"))

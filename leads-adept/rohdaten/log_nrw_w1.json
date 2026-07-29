@@ -14,7 +14,14 @@
       "ort": "Mönchengladbach (Niederrhein, NRW)",
       "mitarbeiter_ca": "250-400",
       "beschreibung": "Familienbetrieb seit 1931 mit Transport, Lagerlogistik, Textil- und Kontraktlogistik auf >100.000 qm Lagerfläche. Gewachsene Gruppenstruktur mit mehreren Standorten, Variantenvielfalt (Textilaufbereitung, Kontraktlogistik) und vorhandener Logistik-IT (ecovium/SPEDION im Einsatz) — viel Potenzial für Prozessdigitalisierung und Schnittstellen-/ERP-Themen.",
-      "weitere_quellen": ["https://vetten-gruppe.de/", "https://vetten-gruppe.de/impressum/", "https://vetten-gruppe.de/die-vetten-gruppe/"]
+      "weitere_quellen": [
+        "https://vetten-gruppe.de/",
+        "https://vetten-gruppe.de/impressum/",
+        "https://vetten-gruppe.de/die-vetten-gruppe/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
     },
     {
       "name": "Hubertus Beumer",
@@ -28,7 +35,13 @@
       "ort": "Ennigerloh (Münsterland, NRW)",
       "mitarbeiter_ca": "220",
       "beschreibung": "Mittelständischer, inhabergeführter Kontraktlogistiker mit 65.000 qm Logistikfläche an drei Standorten (u. a. Pharma-Logistik-Centrum, Retail/E-Commerce, Nahrungsmittel). Branchenmix mit hohen Compliance-Anforderungen (Pharma/GDP) und kundenindividuellen Value-Added-Services — klassisches Umfeld für manuelle Prozesse und ERP-/LVS-Integration.",
-      "weitere_quellen": ["https://www.b-logistik.de/", "https://www.b-logistik.de/ueber-uns/unser-team"]
+      "weitere_quellen": [
+        "https://www.b-logistik.de/",
+        "https://www.b-logistik.de/ueber-uns/unser-team"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
     },
     {
       "name": "Bernd Häger",
@@ -42,7 +55,12 @@
       "ort": "Bestwig (Sauerland, NRW)",
       "mitarbeiter_ca": "nicht öffentlich",
       "beschreibung": "Familiengeführte Sauerland-Spedition mit Transport-, Lager- und Kontraktlogistik über zwei Schwestergesellschaften. Zwei-Firmen-Struktur und gewachsene Dispositions-/Lagerprozesse sprechen für manuelle Abläufe mit Digitalisierungs- und Systemintegrationsbedarf.",
-      "weitere_quellen": ["https://www.spedition-haeger.de/kontakt/"]
+      "weitere_quellen": [
+        "https://www.spedition-haeger.de/kontakt/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
     },
     {
       "name": "Theodor Schulz",
@@ -56,7 +74,12 @@
       "ort": "Münster (NRW)",
       "mitarbeiter_ca": "nicht öffentlich",
       "beschreibung": "Inhabergeführte Münsteraner Spedition mit Transport, Lagerung/Lagerverwaltung, Palettenmanagement und Abrechnung als eigene Abteilungen. Geschäftsführung sitzt selbst in der Disposition — kurze Entscheidungswege, viele manuell getriebene Dispo- und Abrechnungsprozesse als Digitalisierungsansatz.",
-      "weitere_quellen": ["https://www.schulz-spedition.de/#unternehmen"]
+      "weitere_quellen": [
+        "https://www.schulz-spedition.de/#unternehmen"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
     },
     {
       "name": "Anja Hollenhorst",
@@ -70,7 +93,12 @@
       "ort": "Münster (NRW)",
       "mitarbeiter_ca": "nicht öffentlich",
       "beschreibung": "Familiengeführte Spedition (Familie Hollenhorst) mit Fernverkehr, Luft-/Seefracht inkl. Zollabwicklung, Lager und Status Reglementierter Beauftragter. Zoll-, Fracht- und Dispositionsprozesse mit hohem Dokumentenaufkommen — gutes Feld für Prozessautomatisierung und Systemanbindung.",
-      "weitere_quellen": ["https://hti-spedition.de/impressum/"]
+      "weitere_quellen": [
+        "https://hti-spedition.de/impressum/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
     },
     {
       "name": "Florian Meyer",
@@ -84,7 +112,13 @@
       "ort": "Krefeld (Niederrhein, NRW), zweiter Standort Willich",
       "mitarbeiter_ca": "nicht öffentlich",
       "beschreibung": "Inhabergeführter Lager- und Distributionslogistiker am Niederrhein (seit 2000) mit Lagerlogistik, Distribution und Fuhrpark an zwei Standorten. Geschäftsführung leitet operativ Lager und Abrechnung selbst — Digitalisierung von Lagerverwaltung, Disposition und Abrechnung ist unmittelbar chef-relevant.",
-      "weitere_quellen": ["https://rdllogistik.de/", "https://rdllogistik.de/impressum/"]
+      "weitere_quellen": [
+        "https://rdllogistik.de/",
+        "https://rdllogistik.de/impressum/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
     },
     {
       "name": "Michael Hoeper",
@@ -98,18 +132,60 @@
       "ort": "Südlohn-Oeding (Westmünsterland, NRW)",
       "mitarbeiter_ca": "ca. 20-50 (unter Zielgröße, als Zusatz-Lead markiert)",
       "beschreibung": "Familienunternehmen in zweiter Generation mit Transporten, eigenem Fuhrpark, Lagerlogistik und Palettenmanagement im Westmünsterland. Kleinerer, aber voll ausgebauter Betrieb mit Dispo-, QM- und Projektmanagement-Funktionen; Hinweis: liegt vermutlich unterhalb der 50-Mitarbeiter-Schwelle.",
-      "weitere_quellen": ["https://hoeper-spedition.de/", "https://hoeper-spedition.de/impressum/"]
+      "weitere_quellen": [
+        "https://hoeper-spedition.de/",
+        "https://hoeper-spedition.de/impressum/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
     }
   ],
   "verworfen": [
-    {"firma": "Kraftverkehr Münsterland C. Weilke GmbH & Co. KG", "ort": "Greven", "grund": "nur info@weilke.de auf Website, keine Ansprechpartner-/Teamseite mit Personen-E-Mails gefunden"},
-    {"firma": "Richter Spedition GmbH", "ort": "Schwerte", "grund": "nur info@richter-spedition.de, keine Personenseite; Geschäftsführung nicht mit E-Mail veröffentlicht"},
-    {"firma": "Gustav Mäuler GmbH & Co. KG", "ort": "Remscheid", "grund": "nur info@ und verkauf@ (Funktionsadressen), keine namentlichen Ansprechpartner auf Homepage und Kontaktseite"},
-    {"firma": "Spedition Zobel", "ort": "Wetter (Ruhr)", "grund": "Ansprechpartner-Seite nennt nur Personalmanagement; keine E-Mail der Geschäftsführer Philip/Christian Zobel veröffentlicht"},
-    {"firma": "LLS-Service GmbH", "ort": "Gladbeck", "grund": "nur info@lls.services, keine namentlichen Entscheidungsträger auf der Website"},
-    {"firma": "Emmerich & Rosenberger GmbH & Co. KG (EMRO)", "ort": "Duisburg", "grund": "nur info@emro.de, keine Ansprechpartner-Seite mit persönlichen E-Mails gefunden"},
-    {"firma": "NW Logistik", "ort": "Ahlen", "grund": "Website nicht erreichbar (DNS-Fehler), keine Daten verifizierbar"},
-    {"firma": "Emons Spedition GmbH", "ort": "Köln", "grund": "Konzernähnliche Größe (>3.000 Mitarbeiter, 100 Standorte) — außerhalb Mittelstands-Zielprofil"},
-    {"firma": "TEAM Logistic (Greinert/Diel)", "ort": "Raum Montabaur (RLP)", "grund": "persönliche GF-E-Mails vorhanden, aber außerhalb Zielregion und Größe nicht verifiziert — nachqualifizierbar"}
+    {
+      "firma": "Kraftverkehr Münsterland C. Weilke GmbH & Co. KG",
+      "ort": "Greven",
+      "grund": "nur info@weilke.de auf Website, keine Ansprechpartner-/Teamseite mit Personen-E-Mails gefunden"
+    },
+    {
+      "firma": "Richter Spedition GmbH",
+      "ort": "Schwerte",
+      "grund": "nur info@richter-spedition.de, keine Personenseite; Geschäftsführung nicht mit E-Mail veröffentlicht"
+    },
+    {
+      "firma": "Gustav Mäuler GmbH & Co. KG",
+      "ort": "Remscheid",
+      "grund": "nur info@ und verkauf@ (Funktionsadressen), keine namentlichen Ansprechpartner auf Homepage und Kontaktseite"
+    },
+    {
+      "firma": "Spedition Zobel",
+      "ort": "Wetter (Ruhr)",
+      "grund": "Ansprechpartner-Seite nennt nur Personalmanagement; keine E-Mail der Geschäftsführer Philip/Christian Zobel veröffentlicht"
+    },
+    {
+      "firma": "LLS-Service GmbH",
+      "ort": "Gladbeck",
+      "grund": "nur info@lls.services, keine namentlichen Entscheidungsträger auf der Website"
+    },
+    {
+      "firma": "Emmerich & Rosenberger GmbH & Co. KG (EMRO)",
+      "ort": "Duisburg",
+      "grund": "nur info@emro.de, keine Ansprechpartner-Seite mit persönlichen E-Mails gefunden"
+    },
+    {
+      "firma": "NW Logistik",
+      "ort": "Ahlen",
+      "grund": "Website nicht erreichbar (DNS-Fehler), keine Daten verifizierbar"
+    },
+    {
+      "firma": "Emons Spedition GmbH",
+      "ort": "Köln",
+      "grund": "Konzernähnliche Größe (>3.000 Mitarbeiter, 100 Standorte) — außerhalb Mittelstands-Zielprofil"
+    },
+    {
+      "firma": "TEAM Logistic (Greinert/Diel)",
+      "ort": "Raum Montabaur (RLP)",
+      "grund": "persönliche GF-E-Mails vorhanden, aber außerhalb Zielregion und Größe nicht verifiziert — nachqualifizierbar"
+    }
   ]
 }

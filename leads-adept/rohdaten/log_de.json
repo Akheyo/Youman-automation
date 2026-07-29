@@ -1,0 +1,455 @@
+{
+  "branche": "Logistik & Supply Chain",
+  "fokus": "Deutschland ohne NRW",
+  "leads": [
+    {
+      "name": "Andreas Koch",
+      "position": "Geschäftsführer",
+      "email": "a.koch@eckhardt-logistik.de",
+      "email_quelle": "https://eckhardt-logistik.de/kontakt/ansprechpartner",
+      "email_beleg": "<input type='hidden' name='email_to' value='a.koch@eckhardt-logistik.de'> ... <input type='hidden' name='email_for' value='Andreas Koch'> (Kontaktkarte 'Andreas Koch – Geschäftsführer' auf der Seite 'Ihre Ansprechpartner bei Eckhardt Logistik')",
+      "telefon": "+49 711 80000-0 (Zentrale)",
+      "telefon_quelle": "https://eckhardt-logistik.de/kontakt/ansprechpartner",
+      "firma": "Walter Eckhardt GmbH Spedition + Logistik",
+      "ort": "Korntal-Münchingen (Raum Stuttgart), Baden-Württemberg",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführte Spedition seit 1987 mit Stückgut, Gefahrgut- und Pflanzentransporten sowie eigenem Lager-/Kommissionierzentrum (seit 2019). Eigene Bereiche für Umschlag, Lagerlogistik und Disposition.",
+      "weitere_quellen": [
+        "https://eckhardt-logistik.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Marc Eckhardt",
+      "position": "Gesellschafter (Inhaberfamilie)",
+      "email": "m.eckhardt@eckhardt-logistik.de",
+      "email_quelle": "https://eckhardt-logistik.de/kontakt/ansprechpartner",
+      "email_beleg": "<input type='hidden' name='email_to' value='m.eckhardt@eckhardt-logistik.de'> zur Kontaktkarte 'Marc Eckhardt – Gesellschafter'",
+      "telefon": "+49 711 80000-0 (Zentrale)",
+      "telefon_quelle": "https://eckhardt-logistik.de/kontakt/ansprechpartner",
+      "firma": "Walter Eckhardt GmbH Spedition + Logistik",
+      "ort": "Korntal-Münchingen (Raum Stuttgart), Baden-Württemberg",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Gesellschafter und Namensträger des familiengeführten Speditions- und Logistikunternehmens; zweiter Entscheidungsträger neben der Geschäftsführung.",
+      "weitere_quellen": [
+        "https://eckhardt-logistik.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Frank Blodt",
+      "position": "Geschäftsführer",
+      "email": "frankblodt@spedition-blodt.de",
+      "email_quelle": "https://spedition-blodt.de/unser-team/",
+      "email_beleg": "Kontaktkarte 'Frank Blodt – Geschäftsführer' mit mailto-Link 'frankblodt@spedition-blodt.de'",
+      "telefon": "+49 6131 25007-0",
+      "telefon_quelle": "https://spedition-blodt.de/unser-team/",
+      "firma": "Spedition Blodt GmbH",
+      "ort": "Mainz, Rheinland-Pfalz",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführte Spedition in Mainz mit Transport, Lagerlogistik und Projektmanagement; Geschäftsführung und Lagerlogistik liegen in der Familie Blodt.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Miriam Blodt",
+      "position": "Geschäftsführerin",
+      "email": "miriamblodt@spedition-blodt.de",
+      "email_quelle": "https://spedition-blodt.de/unser-team/",
+      "email_beleg": "Kontaktkarte 'Miriam Blodt – Geschäftsführerin' mit mailto-Link 'miriamblodt@spedition-blodt.de'",
+      "telefon": "+49 6131 25007-0",
+      "telefon_quelle": "https://spedition-blodt.de/unser-team/",
+      "firma": "Spedition Blodt GmbH",
+      "ort": "Mainz, Rheinland-Pfalz",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Zweite Geschäftsführerin des inhabergeführten Mainzer Speditions- und Lagerlogistikbetriebs.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Ralf Greinert",
+      "position": "Geschäftsführer",
+      "email": "ralf.greinert@teamlogistic.de",
+      "email_quelle": "https://teamlogistic.de/ansprechpartner/",
+      "email_beleg": "'Ralf Greinert – Geschäftsführer' mit E-Mail 'ralf.greinert@teamlogistic.de'",
+      "telefon": "+49 2602 1309-0 (Zentrale)",
+      "telefon_quelle": "https://teamlogistic.de/ansprechpartner/",
+      "firma": "TEAM Logistic GmbH & Co. KG",
+      "ort": "Montabaur (Westerwaldstr. 2a, 56410), Rheinland-Pfalz",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführte Spedition im Westerwald (Familie Greinert) mit eigener Disposition, Werkstatt und Verwaltung; Transporte national/international.",
+      "weitere_quellen": [
+        "https://teamlogistic.de/impressum/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Uwe Diel",
+      "position": "Geschäftsführer",
+      "email": "uwe.diel@teamlogistic.de",
+      "email_quelle": "https://teamlogistic.de/ansprechpartner/",
+      "email_beleg": "'Uwe Diel – Geschäftsführer' mit E-Mail 'uwe.diel@teamlogistic.de'",
+      "telefon": "+49 2602 1309-0 (Zentrale)",
+      "telefon_quelle": "https://teamlogistic.de/ansprechpartner/",
+      "firma": "TEAM Logistic GmbH & Co. KG",
+      "ort": "Montabaur, Rheinland-Pfalz",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Zweiter Geschäftsführer der Team Logistic GmbH & Co. KG, mittelständische Spedition mit eigenem Fuhrpark.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jens Haverland",
+      "position": "Geschäftsführer",
+      "email": "jhaverland@cargomar.de",
+      "email_quelle": "https://www.cargomar.de/",
+      "email_beleg": "Ansprechpartner-Bereich: 'Jens Haverland, Geschäftsführer' mit mailto 'jhaverland@cargomar.de'",
+      "telefon": "+49 421 5590-10 (Zentrale)",
+      "telefon_quelle": "https://www.cargomar.de/",
+      "firma": "Cargomar GmbH Internationale Spedition / Cargomar Air & Sea GmbH",
+      "ort": "Bremen",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführte Bremer Spedition mit See-/Luftfracht, Import/Export sowie eigener Lagerlogistik (Teamleitung Lagerlogistik im Haus).",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Nicole Körtge",
+      "position": "Leitung Auftragsmanagement/Logistik",
+      "email": "nicolekoertge@spedition-wagner.net",
+      "email_quelle": "https://spedition-wagner.net/unternehmen/team/",
+      "email_beleg": "'Nicole Körtge – Leitung Auftragsmanagement/Logistik' mit E-Mail 'nicolekoertge@spedition-wagner.net'",
+      "telefon": "+49 2642 9022922",
+      "telefon_quelle": "https://spedition-wagner.net/unternehmen/team/",
+      "firma": "Spedition Wagner GmbH",
+      "ort": "Remagen (Am Römerhof 60, 53424), Rheinland-Pfalz",
+      "mitarbeiter_ca": "nicht öffentlich (großes Team mit Standorten Remagen und Kreuztal)",
+      "beschreibung": "Familiengeführter Logistikdienstleister mit Kontraktlogistik für die Getränkeindustrie (u. a. Krombacher), Lagerlogistik, Displaybau und eigenem Fuhrpark. Geschäftsführung (Arlt/Gaßner/Kröhl) ohne öffentliche E-Mail – Bereichsleitung Logistik als Entscheidungsträger.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Marco Oppermann",
+      "position": "Speditionsleitung & Prokurist",
+      "email": "marco.oppermann@kraftverkehr-emsland.de",
+      "email_quelle": "https://www.kraftverkehr-emsland.de/kontakt/",
+      "email_beleg": "'Marco Oppermann – Speditionsleitung & Prokurist' mit mailto 'marco.oppermann@kraftverkehr-emsland.de'",
+      "telefon": "+49 5921 8034-96",
+      "telefon_quelle": "https://www.kraftverkehr-emsland.de/kontakt/",
+      "firma": "Kraftverkehr Emsland GmbH",
+      "ort": "Nordhorn, Niedersachsen",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Mittelständische Spedition mit Sammelgut, Ladungsverkehren und eigenem Warehousing-Bereich; Prokurist und Speditionsleiter mit Entscheidungsbefugnis über Prozesse/IT-Themen.",
+      "weitere_quellen": [
+        "https://www.kraftverkehr-emsland.de/spedition-logistiklager/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Joachim Berends",
+      "position": "Geschäftsführer",
+      "email": "j.berends@bentheimer-eisenbahn.de",
+      "email_quelle": "https://www.kraftverkehr-emsland.de/kontakt/",
+      "email_beleg": "'Joachim Berends – Geschäftsführer' mit mailto 'j.berends@bentheimer-eisenbahn.de' (Muttergesellschaft Bentheimer Eisenbahn AG)",
+      "telefon": "+49 5921 8034-0",
+      "telefon_quelle": "https://www.kraftverkehr-emsland.de/kontakt/",
+      "firma": "Kraftverkehr Emsland GmbH",
+      "ort": "Nordhorn, Niedersachsen",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Geschäftsführer der Kraftverkehr Emsland GmbH (Spedition/Logistiklager der Bentheimer Eisenbahn-Gruppe). Hinweis: die auf der Ansprechpartner-Seite genannte E-Mail läuft über die Domain der Muttergesellschaft.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Tanja Meininghaus",
+      "position": "Geschäftsführerin",
+      "email": "tanja.meininghaus@sitra-spedition.de",
+      "email_quelle": "https://sitra-spedition.de/team/",
+      "email_beleg": "Teamkarte 'Tanja Meininghaus – Geschäftsführerin' mit E-Mail 'tanja.meininghaus@sitra-spedition.de'",
+      "telefon": "+49 40 751006-0 (Zentrale)",
+      "telefon_quelle": "https://sitra-spedition.de/team/",
+      "firma": "SITRA Spedition GmbH",
+      "ort": "Hamburg",
+      "mitarbeiter_ca": "nicht öffentlich (ca. 30 Personen auf der Teamseite gelistet)",
+      "beschreibung": "Inhabergeführte Hamburger Spedition mit nationalen Stückgut-/Ladungsverkehren, internationalem Geschäft und eigener Disposition; bewusst als persönlich erreichbare Alternative zu Konzernen positioniert.",
+      "weitere_quellen": [
+        "https://sitra-spedition.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Ingo Kaiser",
+      "position": "Geschäftsführung (Management)",
+      "email": "ingo.kaiser@ikg-spedition.de",
+      "email_quelle": "https://www.ikg-spedition.de/team/",
+      "email_beleg": "Teamseite: 'Ingo Kaiser – Geschäftsführung' mit E-Mail 'ingo.kaiser@ikg-spedition.de'",
+      "telefon": "+49 7223 281689-19",
+      "telefon_quelle": "https://www.ikg-spedition.de/team/",
+      "firma": "IKG Spedition GmbH",
+      "ort": "Baden-Baden / Sinzheim, Baden-Württemberg",
+      "mitarbeiter_ca": "nicht öffentlich (ca. 35 Personen auf der Teamseite)",
+      "beschreibung": "Familiengeführte Spedition (Ingo und Kristina Kaiser) mit intermodalen Transporten Richtung Italien/Frankreich/Schweiz, eigenem Lager und Fuhrpark sowie Niederlassung in Busto Arsizio.",
+      "weitere_quellen": [
+        "https://www.ikg-spedition.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Sandra Aleksanderek",
+      "position": "Geschäftsführung",
+      "email": "sandra.aleksanderek@sander-logistics.de",
+      "email_quelle": "https://sander-logistics.de/ihre-ansprechpartner/",
+      "email_beleg": "'Sandra Aleksanderek – Geschäftsführung' mit mailto 'sandra.aleksanderek@sander-logistics.de'",
+      "telefon": "+49 40 73354-128",
+      "telefon_quelle": "https://sander-logistics.de/ihre-ansprechpartner/",
+      "firma": "Sander Logistics GmbH",
+      "ort": "Hamburg (Altenwerder), weitere Standorte Itzehoe und Rostock",
+      "mitarbeiter_ca": "ca. 250 (Angabe aus Unternehmensbeschreibung, nicht auf der gecrawlten Seite belegt)",
+      "beschreibung": "Mittelständisches, familiengeführtes Logistikunternehmen mit Sammelgut, Komplettladungen, Seefracht sowie Lager-, Beschaffungs- und Kontraktlogistik an fünf Standorten.",
+      "weitere_quellen": [
+        "https://sander-logistics.de/kontakt/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Matthias Schork",
+      "position": "Geschäftsführer",
+      "email": "m.schork@wuest.com",
+      "email_quelle": "https://www.wuest.com/kontakt/",
+      "email_beleg": "'Matthias Schork – Geschäftsführer' mit mailto 'm.schork@wuest.com'",
+      "telefon": "+49 9141 8684-140",
+      "telefon_quelle": "https://www.wuest.com/kontakt/",
+      "firma": "Spedition Wüst (Wüst GmbH & Co. KG)",
+      "ort": "Weißenburg i. Bay., weiteres Logistikzentrum Ansbach, Bayern",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Mittelständische bayerische Spedition mit Stückgut- und Ladungsverkehren sowie zwei eigenen Logistikzentren (Lagerung, Kommissionierung, Value Added Services).",
+      "weitere_quellen": [
+        "https://www.wuest.com/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Michael Müller",
+      "position": "Logistikleiter",
+      "email": "m.mueller@wuest.com",
+      "email_quelle": "https://www.wuest.com/kontakt/",
+      "email_beleg": "'Michael Müller – Logistikleiter' mit mailto 'm.mueller@wuest.com'",
+      "telefon": "+49 9141 8684-106",
+      "telefon_quelle": "https://www.wuest.com/kontakt/",
+      "firma": "Spedition Wüst (Wüst GmbH & Co. KG)",
+      "ort": "Weißenburg i. Bay., Bayern",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Verantwortlicher für die Logistikzentren Weißenburg und Ansbach – direkter Entscheider für Lager-/Kontraktlogistikprozesse.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Peter Plank",
+      "position": "Vorsitzender Geschäftsführer / Inhaber",
+      "email": "peterplank@hellmold-plank.de",
+      "email_quelle": "https://www.hellmold-plank.de/de/kontakt",
+      "email_beleg": "'Peter Plank – Vorsitzender Geschäftsführer' mit mailto 'peterplank@hellmold-plank.de'",
+      "telefon": "+49 641 95201-16",
+      "telefon_quelle": "https://www.hellmold-plank.de/de/kontakt",
+      "firma": "Hellmold & Plank GmbH & Co. KG Spedition",
+      "ort": "Gießen (Europastr. 7+9, 35394), Hessen",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "1904 gegründete, inhabergeführte hessische Spedition (seit 1996 im Alleinbesitz der Familie Plank) mit Systemverkehren, Fernverkehr und Lagerlogistik; zweite Generation (Niklas Plank) in der Geschäftsführung.",
+      "weitere_quellen": [
+        "https://www.hellmold-plank.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Wolfgang Heidel",
+      "position": "Geschäftsleitung",
+      "email": "wolfgang.heidel@bayern-express-spedition.de",
+      "email_quelle": "https://www.bayern-express-spedition.de/mitarbeiter.php",
+      "email_beleg": "'Wolfgang Heidel – Geschäftsleitung' mit E-Mail 'wolfgang.heidel@bayern-express-spedition.de'",
+      "telefon": "+49 89 329892-10",
+      "telefon_quelle": "https://www.bayern-express-spedition.de/mitarbeiter.php",
+      "firma": "Bayern Express Spedition GmbH",
+      "ort": "Garching bei München, weiterer Standort Pilsting-Ganacker, Bayern",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführte bayerische Spedition (Familie Heidel) mit Fernverkehr, Nahverkehrsdisposition, Stückgut-/VTL-Systemverkehr und eigener Abwicklung an zwei Standorten.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dr. Rimbert J. Kelber",
+      "position": "Niederlassungsleitung",
+      "email": "rimbert.kelber@koester-hapke-sped.com",
+      "email_quelle": "https://koester-hapke-sped.com/ansprechpartner/",
+      "email_beleg": "'rimbert.kelber@koester-hapke-sped.com' unterhalb von 'Dr. Rimbert J. Kelber' mit Funktionsangabe 'Niederlassungsleitung'",
+      "telefon": "+49 5132 822-100",
+      "telefon_quelle": "https://koester-hapke-sped.com/ansprechpartner/",
+      "firma": "Carl Köster & Louis Hapke GmbH & Co. KG",
+      "ort": "Sehnde-Höver bei Hannover, Niedersachsen",
+      "mitarbeiter_ca": "ca. 200 (Angabe aus Unternehmensprofil, nicht auf der gecrawlten Seite belegt)",
+      "beschreibung": "Mittelständische, inhabergeführte Spedition seit 1854 mit nationalen/internationalen Stückgutverkehren, Messelogistik und eigener Lagerlogistik (eigene Lagerleitung).",
+      "weitere_quellen": [
+        "https://koester-hapke-sped.com/wir-ueber-uns/",
+        "https://koester-hapke-sped.com/kontakt/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "Hermann Ritter GmbH & Co. KG (Ritter Spedition)",
+      "ort": "Feilitzsch-Zedtwitz, Bayern",
+      "grund": "nur 40 Mitarbeiter (unter Zielgröße) und nur info@-Adresse"
+    },
+    {
+      "firma": "Metzger Spedition GmbH",
+      "ort": "Neu-Kupfer, Baden-Württemberg",
+      "grund": "nur info@metzger-spedition.de, keine Personen auf der Website"
+    },
+    {
+      "firma": "Rüdinger Spedition GmbH",
+      "ort": "Krautheim, Baden-Württemberg",
+      "grund": "Ansprechpartner mit Namen/Positionen, aber E-Mail-Adressen verschleiert; auch per curl keine Adresse im Quelltext"
+    },
+    {
+      "firma": "ZUFALL logistics group (Friedrich Zufall GmbH & Co. KG)",
+      "ort": "Göttingen, Niedersachsen",
+      "grund": "nur standortbezogene Sammeladressen (goettingen@, kassel@ …), keine persönliche E-Mail der Geschäftsführung"
+    },
+    {
+      "firma": "Heinrich Koch Internationale Spedition GmbH & Co. KG",
+      "ort": "Osnabrück, Niedersachsen",
+      "grund": "auf der Kontaktseite nur info@koch-international.de, keine Ansprechpartner-Seite mit Personen-E-Mails"
+    },
+    {
+      "firma": "Döderlein Spedition GmbH",
+      "ort": "Nördlingen, Bayern",
+      "grund": "nur info@doederlein.de, keine Ansprechpartner-/Teamseite"
+    },
+    {
+      "firma": "Elflein Spedition & Transport GmbH",
+      "ort": "Bamberg, Bayern",
+      "grund": "Geschäftsführer mit Durchwahl gelistet, aber E-Mail-Links leer ('#') – keine wörtliche Adresse auf der Seite"
+    },
+    {
+      "firma": "Spedicam GmbH",
+      "ort": "Neufahrn (Raum München), Bayern",
+      "grund": "nur Funktionsadressen (Gf@, Sl@, Vl@ …), keine personenbezogenen E-Mails"
+    },
+    {
+      "firma": "Wiedmann & Winz GmbH",
+      "ort": "Geislingen an der Steige, Baden-Württemberg",
+      "grund": "nur Funktionsadressen (mail@, offer@, anfrage@), keine Ansprechpartner-Seite"
+    },
+    {
+      "firma": "BKV Logistik GmbH & Co. KG",
+      "ort": "Rheinstetten, Baden-Württemberg",
+      "grund": "nur Funktionsadressen (kontakt@, transportlogistik@, kontraktlogistik@)"
+    },
+    {
+      "firma": "BECK Spedition + Logistik GmbH",
+      "ort": "Filderstadt, Baden-Württemberg",
+      "grund": "nur info@becksped.de, keine Personen auf der Kontaktseite"
+    },
+    {
+      "firma": "Abt Spedition & Service",
+      "ort": "Schwäbisch Gmünd, Baden-Württemberg",
+      "grund": "Ansprechpartner Jochen Abt genannt, aber nur info@abt-spedition.de"
+    },
+    {
+      "firma": "Honold Contract Logistics GmbH",
+      "ort": "Neu-Ulm, Bayern",
+      "grund": "Geschäftsführer namentlich genannt, aber nur Sammeladresse kontraktlogistik@honold.net"
+    },
+    {
+      "firma": "LTG Logistik und Transport GmbH",
+      "ort": "Hamburg",
+      "grund": "keine E-Mail-Adressen auf der Kontaktseite"
+    },
+    {
+      "firma": "RM Logistik GmbH",
+      "ort": "Grasberg / Bremen",
+      "grund": "Geschäftsführung (Familie Meyer) mit Telefon, aber keine E-Mail-Adressen auf der Seite"
+    },
+    {
+      "firma": "Spedition Bode GmbH & Co. KG",
+      "ort": "Bad Oldesloe/Bargteheide, Schleswig-Holstein",
+      "grund": "persönliche GF-Adresse vorhanden, aber Standort außerhalb der definierten Zielregionen"
+    },
+    {
+      "firma": "Finsterwalder Transport & Logistik GmbH",
+      "ort": "Türkheim, Bayern",
+      "grund": "nur standortbezogene Sammeladressen (sales.tu@ …)"
+    },
+    {
+      "firma": "Noerpel-Gruppe",
+      "ort": "Ulm / Hamburg / Hannover",
+      "grund": "über 1.000 Mitarbeiter, außerhalb der Zielgröße; nur info@noerpel.de"
+    },
+    {
+      "firma": "Rudolph Logistik Gruppe",
+      "ort": "Gudensberg, Hessen",
+      "grund": "ca. 4.500 Mitarbeiter an 42 Standorten – Konzerngröße, außerhalb Zielprofil"
+    },
+    {
+      "firma": "LOXXESS AG",
+      "ort": "Tegernsee, Bayern",
+      "grund": "Kontraktlogistiker deutlich über 1.000 Mitarbeitern – außerhalb Zielgröße"
+    },
+    {
+      "firma": "Spedition König",
+      "ort": "Esslingen, Baden-Württemberg",
+      "grund": "nur info@koenig-sped.de"
+    },
+    {
+      "firma": "Spedition Kübler GmbH",
+      "ort": "Michelfeld/Schwäbisch Hall, Baden-Württemberg",
+      "grund": "nur info@kuebler-spedition.de, keine personenbezogenen E-Mails"
+    },
+    {
+      "firma": "E3 Spedition (E3 Gruppe)",
+      "ort": "Homberg (Hessen) u. a.",
+      "grund": "Ansprechpartner nur über JavaScript-Filter, keine E-Mails im Seitenquelltext"
+    },
+    {
+      "firma": "Carl Köster & Louis Hapke – Kontaktseite",
+      "ort": "Sehnde-Höver, Niedersachsen",
+      "grund": "Hinweis: /kontakt/ enthält nur info@; verwertbare Daten ausschließlich auf /ansprechpartner/ (siehe Lead)"
+    }
+  ]
+}
