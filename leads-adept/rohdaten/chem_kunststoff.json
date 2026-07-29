@@ -1,0 +1,640 @@
+{
+  "branche": "Chemie & Prozessindustrie",
+  "fokus": "Kunststoff/Verpackung/Lohnfertigung",
+  "leads": [
+    {
+      "name": "Olaf Allekotte",
+      "position": "General Manager (Geschäftsführung)",
+      "email": "o.allekotte@constab.com",
+      "email_quelle": "https://constab.com/kontaktsales/ansprechpartner/",
+      "email_beleg": "Olaf Allekotte General Manager ... o.allekotte@constab.com",
+      "telefon": "+49 2952 819 0",
+      "telefon_quelle": "https://constab.com/kontaktsales/ansprechpartner/",
+      "firma": "CONSTAB Polyolefin Additives GmbH",
+      "ort": "Rüthen (NRW)",
+      "mitarbeiter_ca": "150-250",
+      "beschreibung": "Hersteller von Additiv-Masterbatches und Compounds für die Polyolefin- und Folienindustrie (BOPP, Verpackungsfolien). Eigenständiger Mittelständler am Standort Rüthen im Sauerland.",
+      "weitere_quellen": [
+        "https://constab.com/kontakt/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Alexander Könnecke",
+      "position": "Director Sales & Technical Service",
+      "email": "a.koennecke@constab.com",
+      "email_quelle": "https://constab.com/kontaktsales/ansprechpartner/",
+      "email_beleg": "Alexander Könnecke Director Sales & Technical Service ... a.koennecke@constab.com",
+      "telefon": "+49 2952 819 124",
+      "telefon_quelle": "https://constab.com/kontaktsales/ansprechpartner/",
+      "firma": "CONSTAB Polyolefin Additives GmbH",
+      "ort": "Rüthen (NRW)",
+      "mitarbeiter_ca": "150-250",
+      "beschreibung": "Leitet Vertrieb und technischen Service des Masterbatch-/Compound-Herstellers. Zweiter Entscheidungsträger neben der Geschäftsführung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Wolfgang Ebner",
+      "position": "Geschäftsführer",
+      "email": "w.ebner@mkt-gmbh.org",
+      "email_quelle": "https://www.mkt-gmbh.org/kontakt/ansprechpartner",
+      "email_beleg": "Geschäftsführer Wolfgang Ebner ... w.ebner@mkt-gmbh.org",
+      "telefon": "+49 7741 9670-11",
+      "telefon_quelle": "https://www.mkt-gmbh.org/kontakt/ansprechpartner",
+      "firma": "MKT Metall- und Kunststofftechnik GmbH",
+      "ort": "Küssaberg (Baden-Württemberg)",
+      "mitarbeiter_ca": "80-150",
+      "beschreibung": "Kunststoffspritzguss, Werkzeugbau und Metalltechnik in Serienfertigung. Inhabergeführter Zulieferbetrieb mit eigener Konstruktion und Spritzerei.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Rainer Abend",
+      "position": "Kaufmännischer Leiter",
+      "email": "r.abend@mkt-gmbh.org",
+      "email_quelle": "https://www.mkt-gmbh.org/kontakt/ansprechpartner",
+      "email_beleg": "Kaufmännischer Leiter Rainer Abend ... r.abend@mkt-gmbh.org",
+      "telefon": "+49 7741 9670-12",
+      "telefon_quelle": "https://www.mkt-gmbh.org/kontakt/ansprechpartner",
+      "firma": "MKT Metall- und Kunststofftechnik GmbH",
+      "ort": "Küssaberg (Baden-Württemberg)",
+      "mitarbeiter_ca": "80-150",
+      "beschreibung": "Verantwortet Kaufmännischen Bereich inkl. IT-/Verwaltungsthemen bei dem Kunststoff- und Metallverarbeiter.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Frank Balkenhol",
+      "position": "Gesellschafter, Geschäftsführer",
+      "email": "f.balkenhol@kunststoffgmbh.de",
+      "email_quelle": "https://www.kunststoffgmbh.de/ansprechpartner.html",
+      "email_beleg": "Frank Balkenhol Gesellschafter, Geschäftsführer ... f.balkenhol@kunststoffgmbh.de",
+      "telefon": "0234 26 43 96",
+      "telefon_quelle": "https://www.kunststoffgmbh.de/ansprechpartner.html",
+      "firma": "Kunststoff GmbH Grontzki & Weller",
+      "ort": "Bochum (NRW)",
+      "mitarbeiter_ca": "40-70",
+      "beschreibung": "Inhabergeführter Betrieb für Kunststoffverarbeitung, Kunststoff-Rohrleitungs- und Behälterbau für Chemie- und Industrieanlagen im Ruhrgebiet.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Daniel Balkenhol",
+      "position": "Geschäftsführer, Betriebsleiter",
+      "email": "d.balkenhol@kunststoffgmbh.de",
+      "email_quelle": "https://www.kunststoffgmbh.de/ansprechpartner.html",
+      "email_beleg": "Daniel Balkenhol Geschäftsführer, Betriebsleiter ... d.balkenhol@kunststoffgmbh.de",
+      "telefon": "0234 26 43 96",
+      "telefon_quelle": "https://www.kunststoffgmbh.de/ansprechpartner.html",
+      "firma": "Kunststoff GmbH Grontzki & Weller",
+      "ort": "Bochum (NRW)",
+      "mitarbeiter_ca": "40-70",
+      "beschreibung": "Zweiter Geschäftsführer und zugleich Betriebsleiter, verantwortet Produktion und Montage des Familienbetriebs.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Christian Hammerl",
+      "position": "Technischer Leiter",
+      "email": "chammerl@bas-kv.de",
+      "email_quelle": "https://www.bas-kunststoffverarbeitung.de/%C3%BCber-uns/ansprechpartner/",
+      "email_beleg": "Christian Hammerl technischer Leiter ... chammerl@bas-kv.de",
+      "telefon": "09653 / 9290-0",
+      "telefon_quelle": "https://www.bas-kunststoffverarbeitung.de/%C3%BCber-uns/ansprechpartner/",
+      "firma": "BaS Kunststoffverarbeitung GmbH",
+      "ort": "Eslarn (Bayern)",
+      "mitarbeiter_ca": "100-200",
+      "beschreibung": "Familiengeführter Spritzguss- und Kunststoffverarbeiter (Geschäftsführung Fabian und Ludwig Bauriedl). Technische Leitung verantwortet Produktion und Prozesstechnik.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Christian Dorn",
+      "position": "Verkaufsleiter",
+      "email": "Christian.Dorn@geru-plast.de",
+      "email_quelle": "https://www.geru-plast.de/ansprechpartner/",
+      "email_beleg": "Verkaufsleiter Christian Dorn ... Christian.Dorn@geru-plast.de",
+      "telefon": "09151 / 9078 - 17",
+      "telefon_quelle": "https://www.geru-plast.de/ansprechpartner/",
+      "firma": "GERU-PLAST Verpackungs GmbH",
+      "ort": "Hersbruck (Bayern)",
+      "mitarbeiter_ca": "50-100",
+      "beschreibung": "Familiengeführter PE-Folienhersteller (Geschäftsführer Gerd Ruderisch) für Verpackungsfolien und technische Folien. Verkaufsleitung als operativer Entscheider.",
+      "weitere_quellen": [
+        "https://www.geru-plast.de/impressum/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Catrin Ruderisch",
+      "position": "Leitung Finanz- und Personalbuchhaltung (Inhaberfamilie)",
+      "email": "Catrin.Ruderisch@geru-plast.de",
+      "email_quelle": "https://www.geru-plast.de/ansprechpartner/",
+      "email_beleg": "Leitung Finanz- und Personalbuchhaltung Catrin Ruderisch ... Catrin.Ruderisch@geru-plast.de",
+      "telefon": "09151 / 9078 - 11",
+      "telefon_quelle": "https://www.geru-plast.de/ansprechpartner/",
+      "firma": "GERU-PLAST Verpackungs GmbH",
+      "ort": "Hersbruck (Bayern)",
+      "mitarbeiter_ca": "50-100",
+      "beschreibung": "Kaufmännische Leitung des Folienherstellers, Teil der Inhaberfamilie Ruderisch.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Patrick Ferber",
+      "position": "Geschäftsführer",
+      "email": "pferber@megatec-gmbh.de",
+      "email_quelle": "https://www.megatec-kunststofftechnik.de/kontakt/",
+      "email_beleg": "Geschäftsführer Patrick Ferber ... pferber@megatec-gmbh.de",
+      "telefon": "+49 (2351) 379 335 - 220",
+      "telefon_quelle": "https://www.megatec-kunststofftechnik.de/kontakt/",
+      "firma": "MEGATEC Kunststofftechnik GmbH",
+      "ort": "Lüdenscheid (NRW)",
+      "mitarbeiter_ca": "60-120",
+      "beschreibung": "Kunststoffspritzguss und Werkzeugbau im Zentrum der südwestfälischen Kunststoffindustrie. Inhabergeführt, Serienfertigung technischer Teile.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Stefan Zöllig",
+      "position": "Betriebsleiter",
+      "email": "szoellig@megatec-gmbh.de",
+      "email_quelle": "https://www.megatec-kunststofftechnik.de/kontakt/",
+      "email_beleg": "Betriebsleiter Stefan Zöllig ... szoellig@megatec-gmbh.de",
+      "telefon": "+49 (2351) 379 335 - 150",
+      "telefon_quelle": "https://www.megatec-kunststofftechnik.de/kontakt/",
+      "firma": "MEGATEC Kunststofftechnik GmbH",
+      "ort": "Lüdenscheid (NRW)",
+      "mitarbeiter_ca": "60-120",
+      "beschreibung": "Verantwortet Produktion und Betriebsabläufe des Spritzgussbetriebs.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Thomas Nowak",
+      "position": "Leiter Logistik",
+      "email": "tnowak@megatec-gmbh.de",
+      "email_quelle": "https://www.megatec-kunststofftechnik.de/kontakt/",
+      "email_beleg": "Leiter Logistik Thomas Nowak ... tnowak@megatec-gmbh.de",
+      "telefon": "+49 (2351) 379 335 - 171",
+      "telefon_quelle": "https://www.megatec-kunststofftechnik.de/kontakt/",
+      "firma": "MEGATEC Kunststofftechnik GmbH",
+      "ort": "Lüdenscheid (NRW)",
+      "mitarbeiter_ca": "60-120",
+      "beschreibung": "Logistikleitung des Kunststoffverarbeiters, Ansprechpartner für Supply-Chain- und Lagerprozesse.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Reinhard Locke",
+      "position": "Geschäftsführer",
+      "email": "r.locke@kmk-gmbh.com",
+      "email_quelle": "http://www.kmk-gmbh.com/kontakt/ansprechpartner/",
+      "email_beleg": "Reinhard Locke | Geschäftsführer ... r.locke@kmk-gmbh.com",
+      "telefon": "+49 9174 47760",
+      "telefon_quelle": "http://www.kmk-gmbh.com/kontakt/ansprechpartner/",
+      "firma": "KMK Kunststofftechnik GmbH",
+      "ort": "Hilpoltstein (Bayern)",
+      "mitarbeiter_ca": "50-120",
+      "beschreibung": "Inhabergeführter Kunststoffverarbeiter (Spritzguss, Baugruppen) mit eigener Fertigung und QS am Standort Hilpoltstein.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dieter Bauer",
+      "position": "Fertigungsleiter (Geschäftsleitung)",
+      "email": "d.bauer@kmk-gmbh.com",
+      "email_quelle": "http://www.kmk-gmbh.com/kontakt/ansprechpartner/",
+      "email_beleg": "Dieter Bauer | Fertigungsleiter ... d.bauer@kmk-gmbh.com",
+      "telefon": "+49 9174 4776-20",
+      "telefon_quelle": "http://www.kmk-gmbh.com/kontakt/ansprechpartner/",
+      "firma": "KMK Kunststofftechnik GmbH",
+      "ort": "Hilpoltstein (Bayern)",
+      "mitarbeiter_ca": "50-120",
+      "beschreibung": "Leitet die Fertigung des Spritzgussbetriebs; Entscheider für Produktions- und Prozessthemen.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dr. Tako Mattik",
+      "position": "Geschäftsführung / Inhaber",
+      "email": "tm@mattik-gmbh.de",
+      "email_quelle": "https://mattik-gmbh.de/kontakt",
+      "email_beleg": "Dr. Tako Mattik Geschäftsführung ... tm@mattik-gmbh.de",
+      "telefon": "0511 646657-0",
+      "telefon_quelle": "https://mattik-gmbh.de/kontakt",
+      "firma": "Mattik Gesellschaft für Oberflächenveredelung mbH",
+      "ort": "Isernhagen (Niedersachsen)",
+      "mitarbeiter_ca": "80-150",
+      "beschreibung": "Familiengeführter Lohnbeschichter: Pulverbeschichtung, Industrielackierung, Beizen/Phosphatieren und Speziallackierungen für Industriekunden.",
+      "weitere_quellen": [
+        "https://www.mattik-gmbh.de/taetigkeitsfelder/pulverbeschichtung"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Georg Wroblewski",
+      "position": "Geschäftsführung",
+      "email": "gw@mattik-gmbh.de",
+      "email_quelle": "https://mattik-gmbh.de/kontakt",
+      "email_beleg": "Georg Wroblewski Geschäftsführung ... gw@mattik-gmbh.de",
+      "telefon": "0511 646657-122",
+      "telefon_quelle": "https://mattik-gmbh.de/kontakt",
+      "firma": "Mattik Gesellschaft für Oberflächenveredelung mbH",
+      "ort": "Isernhagen (Niedersachsen)",
+      "mitarbeiter_ca": "80-150",
+      "beschreibung": "Zweiter Geschäftsführer, zuständig u.a. für Haftvermittler, Entfettung und Speziallackierungen.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Ewald Manderfeld",
+      "position": "Vertriebsleitung",
+      "email": "E.Manderfeld@peter-greven.de",
+      "email_quelle": "https://peter-greven.de/kontakt",
+      "email_beleg": "Ewald Manderfeld Vertriebsleitung ... E.Manderfeld@peter-greven.de",
+      "telefon": "02253 313-0",
+      "telefon_quelle": "https://peter-greven.de/kontakt",
+      "firma": "Peter Greven GmbH & Co. KG",
+      "ort": "Bad Münstereifel (NRW)",
+      "mitarbeiter_ca": "300-500",
+      "beschreibung": "Familiengeführter Oleochemie-Hersteller (Metallseifen, Additive, Schmierstoffkomponenten) für Kunststoff-, Bau- und Life-Science-Industrie. Klassische Prozessindustrie mit Lohnfertigungsanteil.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Nadine Flügel",
+      "position": "Leiterin Produktmanagement Lubricants",
+      "email": "N.Fluegel@peter-greven.de",
+      "email_quelle": "https://peter-greven.de/kontakt",
+      "email_beleg": "Nadine Flügel Leiterin Produktmanagement Lubricants ... N.Fluegel@peter-greven.de",
+      "telefon": "02253 313-0",
+      "telefon_quelle": "https://peter-greven.de/kontakt",
+      "firma": "Peter Greven GmbH & Co. KG",
+      "ort": "Bad Münstereifel (NRW)",
+      "mitarbeiter_ca": "300-500",
+      "beschreibung": "Bereichsleitung Produktmanagement im Geschäftsfeld Schmierstoffadditive des Oleochemie-Mittelständlers.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "FRAKU Kunststoffe GmbH",
+      "ort": "Obermichelbach",
+      "grund": "nur kontakt@fraku.de, keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Ferdinand Stükerjürgen GmbH & Co. KG",
+      "ort": "Rietberg",
+      "grund": "nur info@stuekerjuergen.de"
+    },
+    {
+      "firma": "Finke Colors GmbH",
+      "ort": "Wuppertal",
+      "grund": "personenbezogene Adressen vorhanden, aber keine Klarnamen/Positionen zuordenbar"
+    },
+    {
+      "firma": "GRAFE GmbH & Co. KG",
+      "ort": "Blankenhain",
+      "grund": "nur regionale Vertriebsmitarbeiter, keine Entscheidungsträger mit E-Mail"
+    },
+    {
+      "firma": "MURTFELDT GmbH & Co. KG",
+      "ort": "Dortmund",
+      "grund": "nur Außendienst-/Channel-Mitarbeiter, keine Geschäftsführung/Bereichsleitung"
+    },
+    {
+      "firma": "The Coatinc Company",
+      "ort": "Siegen",
+      "grund": "überwiegend Standort-Sammeladressen, Konzernstruktur/Größe"
+    },
+    {
+      "firma": "Rowa Group Holding",
+      "ort": "Pinneberg",
+      "grund": "keine personenbezogenen Adressen auf DE-Seiten"
+    },
+    {
+      "firma": "SysKem Chemie GmbH",
+      "ort": "Wuppertal",
+      "grund": "nur info@syskem.de"
+    },
+    {
+      "firma": "per-chemie GmbH",
+      "ort": "-",
+      "grund": "keine personenbezogenen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Westfalen AG",
+      "ort": "Münster",
+      "grund": "nur Funktionsadressen; zudem Konzerngröße"
+    },
+    {
+      "firma": "Chemische Werke Kluthe GmbH",
+      "ort": "Heidelberg",
+      "grund": "nur Funktions-/Sales-Adressen"
+    },
+    {
+      "firma": "Zeller+Gmelin GmbH & Co. KG",
+      "ort": "Eislingen",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Peter Kwasny GmbH",
+      "ort": "Gundelsheim",
+      "grund": "keine E-Mail-Adressen auf Kontaktseiten"
+    },
+    {
+      "firma": "WEILBURGER Coatings GmbH",
+      "ort": "Grebenhain",
+      "grund": "nur Auslands-/Funktionsadressen"
+    },
+    {
+      "firma": "Karl Wörwag Lack- und Farbenfabrik",
+      "ort": "Stuttgart",
+      "grund": "Website leitet auf PPG (Konzern) um"
+    },
+    {
+      "firma": "Hermann Bantleon GmbH",
+      "ort": "Ulm",
+      "grund": "nur Funktions- und Partneradressen"
+    },
+    {
+      "firma": "Tyczka GmbH",
+      "ort": "Geretsried",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "BASI Schöberl GmbH & Co. KG",
+      "ort": "Rastatt",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Ostendorf Kunststoffe GmbH",
+      "ort": "Vechta",
+      "grund": "Ansprechpartnerseiten ohne E-Mail-Adressen"
+    },
+    {
+      "firma": "ELKAMET Kunststofftechnik GmbH",
+      "ort": "Biedenkopf",
+      "grund": "keine E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Nordfolien GmbH",
+      "ort": "Steinfeld",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Holzapfel Group",
+      "ort": "Sinn",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Hesse GmbH & Co. KG (Hesse Lignal)",
+      "ort": "Hamm",
+      "grund": "keine E-Mail-Adressen auf Kontaktseiten"
+    },
+    {
+      "firma": "Lackwerke Peters GmbH & Co. KG",
+      "ort": "Kempen",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Worlée-Chemie GmbH",
+      "ort": "Hamburg",
+      "grund": "nur Bereichs-Funktionsadressen (cosmetics@, naturprodukte@)"
+    },
+    {
+      "firma": "Jäger Lacke GmbH",
+      "ort": "Düsseldorf",
+      "grund": "keine E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "GERHARDI Kunststofftechnik GmbH",
+      "ort": "Lüdenscheid",
+      "grund": "nur Funktionsadressen (Bewerbung, Beschwerden)"
+    },
+    {
+      "firma": "WEFAPRESS Beck + Co. GmbH",
+      "ort": "Beckum",
+      "grund": "keine E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "SÜDPACK Verpackungen SE & Co. KG",
+      "ort": "Ochsenhausen",
+      "grund": "keine personenbezogenen Adressen; Größe grenzwertig"
+    },
+    {
+      "firma": "DUO PLAST AG",
+      "ort": "Lauterbach",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Wentus Kunststoff GmbH",
+      "ort": "Höxter",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "TEGA Technische Gase und Gasetechnik GmbH",
+      "ort": "Würzburg",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Remmers GmbH",
+      "ort": "Löningen",
+      "grund": "keine personenbezogenen Adressen auf Kontaktseiten"
+    },
+    {
+      "firma": "Geholit+Wiemer Lack- und Kunststoff-Chemie GmbH",
+      "ort": "Graben-Neudorf",
+      "grund": "nur Standort-Sammeladressen (vek-...)"
+    },
+    {
+      "firma": "PFINDER KG",
+      "ort": "Böblingen",
+      "grund": "nur pfinder@pfinder.de"
+    },
+    {
+      "firma": "Schill+Seilacher GmbH",
+      "ort": "Böblingen",
+      "grund": "keine E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Richard Geiss GmbH",
+      "ort": "Offingen",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Gizeh Verpackungen GmbH & Co. KG",
+      "ort": "Bergneustadt",
+      "grund": "keine E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Bischof + Klein SE & Co. KG",
+      "ort": "Lengerich",
+      "grund": "keine personenbezogenen Adressen; Größe > 1000 MA"
+    },
+    {
+      "firma": "silver plastics GmbH & Co. KG",
+      "ort": "Troisdorf",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Siepe GmbH",
+      "ort": "Attendorn",
+      "grund": "nur qualitaet@siepe.net (Funktionsadresse)"
+    },
+    {
+      "firma": "INFOLIO Verpackungen GmbH",
+      "ort": "-",
+      "grund": "nur eine Adresse ohne zuordenbaren Personennamen; Firmengröße < 50 MA"
+    },
+    {
+      "firma": "Helmut Schmidt Verpackungsfolien GmbH",
+      "ort": "Lindlar",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Dürrbeck Kunststoffe GmbH",
+      "ort": "Roth",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "JMK Kunststoffverpackungen",
+      "ort": "-",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Ahrbach Verpackungen GmbH",
+      "ort": "Höhr-Grenzhausen",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Vopelius Chemie AG",
+      "ort": "Nürnberg",
+      "grund": "nur vertrieb@vopelius-chemie.de"
+    },
+    {
+      "firma": "Weiss Chemie + Technik GmbH & Co. KG",
+      "ort": "Haiger",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "CARL BECHEM GmbH",
+      "ort": "Hagen",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "WEVO-CHEMIE GmbH",
+      "ort": "Ostfildern",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Chemische Fabrik Wocklum",
+      "ort": "Balve",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "SKT Kunststofftechnik",
+      "ort": "-",
+      "grund": "nur mail@skt-kunststoff.de"
+    },
+    {
+      "firma": "Kerren Kunststofftechnik GmbH",
+      "ort": "Kall",
+      "grund": "Teamseite ohne E-Mail-Adressen"
+    },
+    {
+      "firma": "plasma Kunststofftechnik GmbH",
+      "ort": "Bad Salzuflen",
+      "grund": "Ansprechpartnerseite ohne E-Mail-Adressen"
+    },
+    {
+      "firma": "Hesse Kunststoffverarbeitung",
+      "ort": "-",
+      "grund": "nur eine fremde Domain-Adresse ohne Zuordnung"
+    },
+    {
+      "firma": "EWS GmbH Pulverbeschichtung",
+      "ort": "Vlotho-Exter",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Eisele Oberflächentechnik GmbH",
+      "ort": "-",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "SEB Gase GmbH",
+      "ort": "Hannover",
+      "grund": "Ansprechpartnerseite nur mit info@sebgmbh.com"
+    },
+    {
+      "firma": "Vertrieb Technischer Gase GmbH",
+      "ort": "Steinfurt",
+      "grund": "Website nicht erreichbar / keine Adressen"
+    },
+    {
+      "firma": "Erkol Fill GmbH",
+      "ort": "-",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Drexel Private Label",
+      "ort": "-",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "OH!S Service GmbH",
+      "ort": "-",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Kunststoff Helmbrechts AG",
+      "ort": "Helmbrechts",
+      "grund": "keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Kunststoff Fischer GmbH",
+      "ort": "-",
+      "grund": "keine personenbezogenen Adressen"
+    }
+  ]
+}
