@@ -1,0 +1,719 @@
+{
+  "branche": "Chemie & Prozessindustrie",
+  "fokus": "Spezialsegmente",
+  "leads": [
+    {
+      "name": "Michael Grabbe",
+      "position": "Leiter Einkauf",
+      "email": "m.grabbe@kiesow.org",
+      "email_quelle": "https://kiesow.org/kontakt/ansprechpartner",
+      "email_beleg": "m.grabbe@kiesow.org",
+      "telefon": "+49 5231 7604-300",
+      "telefon_quelle": "https://kiesow.org/kontakt/ansprechpartner",
+      "firma": "KIESOW OBERFLÄCHENCHEMIE GmbH & Co. KG",
+      "ort": "Detmold",
+      "mitarbeiter_ca": "ca. 100",
+      "beschreibung": "Inhabergeführter Hersteller von Galvanik- und Oberflächenchemie (Entfettung, Beizen, Passivierung, Grundchemikalien) im Verbund der DR. BRINKMANN Beteiligungen. Michael Grabbe verantwortet als Leiter Einkauf die Rohstoff- und Lieferantenseite.",
+      "weitere_quellen": [
+        "https://kiesow.org/impressum"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Katja Wallbaum",
+      "position": "Export/Zoll sowie Vertriebsleitung",
+      "email": "k.wallbaum@kiesow.org",
+      "email_quelle": "https://kiesow.org/kontakt/ansprechpartner",
+      "email_beleg": "k.wallbaum@kiesow.org",
+      "telefon": "+49 5231 7604-380",
+      "telefon_quelle": "https://kiesow.org/kontakt/ansprechpartner",
+      "firma": "KIESOW OBERFLÄCHENCHEMIE GmbH & Co. KG",
+      "ort": "Detmold",
+      "mitarbeiter_ca": "ca. 100",
+      "beschreibung": "Mittelständischer Spezialchemie-Hersteller für Galvanik und Metalloberflächenbehandlung. Katja Wallbaum leitet Export/Zoll und ist im Vertrieb in leitender Funktion tätig.",
+      "weitere_quellen": [
+        "https://kiesow.org/impressum"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jens-Peter Budde",
+      "position": "Managementbeauftragter (Management)",
+      "email": "j.budde@kiesow.org",
+      "email_quelle": "https://kiesow.org/kontakt/ansprechpartner",
+      "email_beleg": "j.budde@kiesow.org",
+      "telefon": "+49 5231 7604-810",
+      "telefon_quelle": "https://kiesow.org/kontakt/ansprechpartner",
+      "firma": "KIESOW OBERFLÄCHENCHEMIE GmbH & Co. KG",
+      "ort": "Detmold",
+      "mitarbeiter_ca": "ca. 100",
+      "beschreibung": "Hersteller von Prozesschemie für die Galvanik- und Oberflächentechnik. Jens-Peter Budde ist als Managementbeauftragter auf Leitungsebene für Prozesse und Managementsysteme zuständig.",
+      "weitere_quellen": [
+        "https://kiesow.org/impressum"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Marcus Kuczer",
+      "position": "Leiter Objektmanagement",
+      "email": "marcus.kuczer@schomburg.de",
+      "email_quelle": "https://www.schomburg.com/de/de/objektmanagement",
+      "email_beleg": "marcus.kuczer@schomburg.de",
+      "telefon": "+49 5231 953-133",
+      "telefon_quelle": "https://www.schomburg.com/de/de/objektmanagement",
+      "firma": "SCHOMBURG GmbH & Co. KG",
+      "ort": "Detmold",
+      "mitarbeiter_ca": "ca. 200 (Standort), Gruppe ca. 1.000",
+      "beschreibung": "Familiengeführter Bauchemie-Hersteller (Abdichtung, Mörtel, Fliesenverlegung, Betoninstandsetzung) in dritter Generation. Marcus Kuczer leitet das Objektmanagement und steuert damit das Projektgeschäft.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jan Bröring",
+      "position": "Spartenleitung Agrar",
+      "email": "j.broering@broering.com",
+      "email_quelle": "https://broering.com/kontakt/beratungswunsch/",
+      "email_beleg": "Spartenleitung Agrar Telefon: +49 4443 970 1043 j.broering@broering.com",
+      "telefon": "+49 4443 970 1043",
+      "telefon_quelle": "https://broering.com/kontakt/beratungswunsch/",
+      "firma": "H. Bröring GmbH & Co. KG",
+      "ort": "Dinklage",
+      "mitarbeiter_ca": "ca. 700",
+      "beschreibung": "Familienunternehmen in vierter Generation, Hersteller von Mischfutter, Mineralfutter und Futtermittelzusatzstoffen sowie Agrarhandel. Jan Bröring führt als Mitglied der Inhaberfamilie die Sparte Agrar.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Tobias Bolte",
+      "position": "Spartenleitung Schwein",
+      "email": "t.bolte@broering.com",
+      "email_quelle": "https://broering.com/kontakt/beratungswunsch/",
+      "email_beleg": "Spartenleitung Schwein Telefon: +49 4443 970 1601 t.bolte@broering.com",
+      "telefon": "+49 4443 970 1601",
+      "telefon_quelle": "https://broering.com/kontakt/beratungswunsch/",
+      "firma": "H. Bröring GmbH & Co. KG",
+      "ort": "Dinklage",
+      "mitarbeiter_ca": "ca. 700",
+      "beschreibung": "Familiengeführter Hersteller von Futtermitteln und Futtermittelzusatzstoffen. Tobias Bolte verantwortet als Spartenleiter den Geschäftsbereich Schwein inklusive Produkt- und Ergänzungsfutterprogramm.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Christian Brünink",
+      "position": "Spartenleitung Rind",
+      "email": "c.bruenink@broering.com",
+      "email_quelle": "https://broering.com/kontakt/beratungswunsch/",
+      "email_beleg": "Spartenleitung Rind Telefon: 0162 2492306 c.bruenink@broering.com",
+      "telefon": "+49 162 2492306",
+      "telefon_quelle": "https://broering.com/kontakt/beratungswunsch/",
+      "firma": "H. Bröring GmbH & Co. KG",
+      "ort": "Dinklage",
+      "mitarbeiter_ca": "ca. 700",
+      "beschreibung": "Inhabergeführte Unternehmensgruppe für Tierernährung und Futtermittelzusatzstoffe. Christian Brünink leitet die Sparte Rind mit Mineral- und Ergänzungsfutterlinien.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Nadine Flügel",
+      "position": "Leiterin Produktmanagement Lubricants",
+      "email": "N.Fluegel@peter-greven.de",
+      "email_quelle": "https://peter-greven.de/kontakt",
+      "email_beleg": "N.Fluegel@peter-greven.de",
+      "telefon": "",
+      "telefon_quelle": "",
+      "firma": "Peter Greven GmbH & Co. KG",
+      "ort": "Bad Münstereifel",
+      "mitarbeiter_ca": "ca. 400",
+      "beschreibung": "Familiengeführter Oleochemie-Hersteller (Metallseifen, Ester, Additive) mit Schwerpunkt Schmierstoff-Additive, Polymere und Life Science. Nadine Flügel leitet das Produktmanagement des Geschäftsbereichs Lubricants.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Berend Willach",
+      "position": "Key Accounts BCC, Chemicals & Lubricants",
+      "email": "B.Willach@peter-greven.de",
+      "email_quelle": "https://peter-greven.de/kontakt",
+      "email_beleg": "Key Accounts BCC, Chemicals & Lubricants B.Willach@peter-greven.de",
+      "telefon": "",
+      "telefon_quelle": "",
+      "firma": "Peter Greven GmbH & Co. KG",
+      "ort": "Bad Münstereifel",
+      "mitarbeiter_ca": "ca. 400",
+      "beschreibung": "Inhabergeführter Hersteller oleochemischer Additive für Schmierstoffe, Bauchemie und Kunststoffe. Berend Willach verantwortet die Key Accounts in Chemie und Schmierstoffen.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Ewald Manderfeld",
+      "position": "Key Accounts Distribution, Life Science & Polymers",
+      "email": "E.Manderfeld@peter-greven.de",
+      "email_quelle": "https://peter-greven.de/kontakt",
+      "email_beleg": "Key Accounts Distribution, Life Science & Polymers E.Manderfeld@peter-greven.de",
+      "telefon": "",
+      "telefon_quelle": "",
+      "firma": "Peter Greven GmbH & Co. KG",
+      "ort": "Bad Münstereifel",
+      "mitarbeiter_ca": "ca. 400",
+      "beschreibung": "Familienunternehmen der Oleochemie mit Produktionsstandorten in Deutschland und den Niederlanden. Ewald Manderfeld steuert die Key Accounts für Distribution, Life Science und Polymere.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Holger Klenke",
+      "position": "Vertriebsleitung Fertighausindustrie",
+      "email": "HKlenke@remmers.de",
+      "email_quelle": "https://remmers.de/",
+      "email_beleg": "Fertighausindustrie Vertriebsleitung Holger Klenke HKlenke@remmers.de +49 152 54 77 95 30",
+      "telefon": "+49 152 54779530",
+      "telefon_quelle": "https://remmers.de/",
+      "firma": "Remmers GmbH",
+      "ort": "Löningen",
+      "mitarbeiter_ca": "ca. 1.800 (Gruppe), Familienunternehmen",
+      "beschreibung": "Familiengeführter Hersteller von Bauchemie, Holzschutz und Industrielacken in zweiter Generation. Holger Klenke leitet den Vertrieb in die Fertighausindustrie.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Martin Stöger",
+      "position": "Vertriebsleitung Holzindustrie",
+      "email": "MStoeger@remmers.de",
+      "email_quelle": "https://remmers.de/",
+      "email_beleg": "Holzindustrie Vertriebsleitung Martin Stöger MStoeger@remmers.de +49 6261 91 47 50",
+      "telefon": "+49 6261 914750",
+      "telefon_quelle": "https://remmers.de/",
+      "firma": "Remmers GmbH",
+      "ort": "Löningen",
+      "mitarbeiter_ca": "ca. 1.800 (Gruppe), Familienunternehmen",
+      "beschreibung": "Bauchemie- und Lackhersteller in Familienbesitz mit Werken in Löningen und Lövenich. Martin Stöger verantwortet die Vertriebsleitung für das Segment Holzindustrie.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Uwe Börger",
+      "position": "Vertriebsleitung Innenlacke",
+      "email": "uboerger@remmers.de",
+      "email_quelle": "https://remmers.de/",
+      "email_beleg": "Innenlacke Vertriebsleitung Uwe Börger uboerger@remmers.de +49 5221 3809 221",
+      "telefon": "+49 5221 3809221",
+      "telefon_quelle": "https://remmers.de/",
+      "firma": "Remmers GmbH",
+      "ort": "Löningen",
+      "mitarbeiter_ca": "ca. 1.800 (Gruppe), Familienunternehmen",
+      "beschreibung": "Inhabergeführter Spezialchemie-Hersteller für Bautenschutz, Beschichtungen und Lacke. Uwe Börger leitet den Vertrieb des Geschäftsbereichs Innenlacke.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Schneider",
+      "position": "Vertriebsleiter Gebiet Süd",
+      "email": "andreas.schneider@hasit.de",
+      "email_quelle": "https://hasit.de/ueber-uns/hasit-in-deutschland",
+      "email_beleg": "Andreas Schneider Vertriebsleiter Gebiet Süd Tel.: +49 8122 120-15 andreas.schneider@hasit.de",
+      "telefon": "+49 8122 120-15",
+      "telefon_quelle": "https://hasit.de/ueber-uns/hasit-in-deutschland",
+      "firma": "HASIT Trockenmörtel GmbH",
+      "ort": "Freising",
+      "mitarbeiter_ca": "ca. 500",
+      "beschreibung": "Mittelständischer Hersteller von Trockenmörtel, Putzen, WDVS und Bauchemie mit mehreren deutschen Werken. Andreas Schneider verantwortet als Vertriebsleiter das Gebiet Süd.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Stephan Rackl",
+      "position": "Vertriebsleiter Gebiet Mitte",
+      "email": "stephan.rackl@hasit.de",
+      "email_quelle": "https://hasit.de/ueber-uns/hasit-in-deutschland",
+      "email_beleg": "stephan.rackl@hasit.de",
+      "telefon": "+49 941 79595-0",
+      "telefon_quelle": "https://hasit.de/ueber-uns/hasit-in-deutschland",
+      "firma": "HASIT Trockenmörtel GmbH",
+      "ort": "Freising",
+      "mitarbeiter_ca": "ca. 500",
+      "beschreibung": "Hersteller von Trockenmörtelsystemen und Bauchemie (Putze, Estriche, Fassadensysteme). Stephan Rackl leitet den Vertrieb im Gebiet Mitte.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dr. Rolf Stöhr",
+      "position": "Technischer Leiter",
+      "email": "rolf.stoehr@drpetry.de",
+      "email_quelle": "https://www.drpetry.de/produkte/produktuebersicht/vorbehandlung/",
+      "email_beleg": "Dr. Rolf Stöhr Technischer Leiter +49 7121 9589-20 rolf.stoehr@drpetry.de",
+      "telefon": "+49 7121 9589-20",
+      "telefon_quelle": "https://www.drpetry.de/produkte/produktuebersicht/vorbehandlung/",
+      "firma": "Textilchemie Dr. Petry GmbH",
+      "ort": "Reutlingen",
+      "mitarbeiter_ca": "ca. 130",
+      "beschreibung": "Familiengeführter Hersteller von Textilhilfsmitteln für Vorbehandlung, Färberei, Ausrüstung und Beschichtung (Geschäftsführer Dr. Friedrich Petry). Dr. Rolf Stöhr leitet den technischen Bereich.",
+      "weitere_quellen": [
+        "https://www.drpetry.de/impressum/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Manuel Heueck",
+      "position": "Vertrieb Industrie- und Gebäudetechnik, Gebiet West/Nordwest",
+      "email": "manuel.heueck@judo.eu",
+      "email_quelle": "https://judo.eu/ansprechpartner",
+      "email_beleg": "manuel.heueck@judo.eu",
+      "telefon": "+49 7195 692-146",
+      "telefon_quelle": "https://judo.eu/ansprechpartner",
+      "firma": "JUDO Wasseraufbereitung GmbH",
+      "ort": "Winnenden",
+      "mitarbeiter_ca": "ca. 400",
+      "beschreibung": "Familiengeführter Hersteller von Wasseraufbereitungstechnik und -chemie (Enthärtung, Filtration, Dosiermittel) seit 1936. Manuel Heueck betreut den Bereich Industrie- und Gebäudetechnik im Gebiet West/Nordwest.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Manuel Ströhl",
+      "position": "Leitung WEBAC Mitteldeutschland (Vertrieb/Beratung)",
+      "email": "stroehl@webac.de",
+      "email_quelle": "https://webac.de/ueber-webac/standorte-partner/",
+      "email_beleg": "stroehl@webac.de",
+      "telefon": "+49 177 7670571",
+      "telefon_quelle": "https://webac.de/ueber-webac/standorte-partner/",
+      "firma": "WEBAC-Chemie GmbH",
+      "ort": "Barsbüttel/Hamburg",
+      "mitarbeiter_ca": "ca. 60",
+      "beschreibung": "Inhabergeführter Spezialchemie-Hersteller für Injektionsharze und Bauwerksabdichtung (Geschäftsführung Gudrun Schencking, Dr. Meik Weickenmeier). Manuel Ströhl verantwortet die Region Mitteldeutschland.",
+      "weitere_quellen": [
+        "https://webac.de/impressum/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "Zeller+Gmelin GmbH & Co. KG",
+      "ort": "Eislingen",
+      "grund": "Nur info@ und ausländische Händler-Adressen auf Team-/Kontaktseiten gefunden; keine persönliche E-Mail wörtlich belegbar"
+    },
+    {
+      "firma": "Rhenus Lub GmbH & Co KG",
+      "ort": "Mönchengladbach",
+      "grund": "Nur vertrieb@rhenusweb.de sowie Auslandsvertretungen; keine persönliche E-Mail auf der Website"
+    },
+    {
+      "firma": "Dr.-Ing. Max Schlötter GmbH & Co. KG",
+      "ort": "Geislingen a. d. Steige",
+      "grund": "Auf /ansprechpartner nur Auslandsvertretungen mit persönlichen Adressen; deutsche Bezirksvertreter ohne E-Mail"
+    },
+    {
+      "firma": "Carl Bechem GmbH",
+      "ort": "Hagen",
+      "grund": "Nur bechem@bechem.de; keine Personenkarten mit E-Mail"
+    },
+    {
+      "firma": "Fragol AG",
+      "ort": "Mülheim an der Ruhr",
+      "grund": "Team-Seite nur mit Funktionsadressen (lubes@, htf@, rewe@)"
+    },
+    {
+      "firma": "Hermann Bantleon GmbH",
+      "ort": "Ulm",
+      "grund": "Ansprechpartner namentlich genannt, aber ausschließlich Funktionspostfächer (forum@, nachhaltigkeit@)"
+    },
+    {
+      "firma": "oelheld GmbH",
+      "ort": "Stuttgart",
+      "grund": "Nur Funktionsadressen (hutec@, info@) im Impressum"
+    },
+    {
+      "firma": "PETROFER Chemie H.R. Fischer GmbH + Co. KG",
+      "ort": "Hildesheim",
+      "grund": "Persönliche Adressen nur für Auslandsgesellschaften; deutsche Entscheider ohne belegbare E-Mail"
+    },
+    {
+      "firma": "ADDINOL Lube Oil GmbH",
+      "ort": "Leuna",
+      "grund": "Keine persönlichen E-Mail-Adressen auf Kontakt-/Teamseiten"
+    },
+    {
+      "firma": "OEST Group",
+      "ort": "Freudenstadt",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "TUNAP GmbH & Co. KG",
+      "ort": "Wolfratshausen",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "OKS Spezialschmierstoffe GmbH",
+      "ort": "Maisach",
+      "grund": "Nur Funktionsadressen; inzwischen Teil der Klüber/Freudenberg-Gruppe"
+    },
+    {
+      "firma": "KAJO Chemie GmbH",
+      "ort": "Erwitte",
+      "grund": "Nur schmierstoffe@kajo.de (Funktionspostfach)"
+    },
+    {
+      "firma": "RAVENOL / Ravensberger Schmierstoffvertrieb GmbH",
+      "ort": "Werther",
+      "grund": "Nur eine Karriere-Kontaktadresse, kein Entscheidungsträger"
+    },
+    {
+      "firma": "ARDEX GmbH",
+      "ort": "Witten",
+      "grund": "Nur Presse-/Fachfunktionsadressen; kein Entscheidungsträger mit persönlicher E-Mail"
+    },
+    {
+      "firma": "Sopro Bauchemie GmbH",
+      "ort": "Wiesbaden",
+      "grund": "Ausschließlich Funktionsadressen (verkauf.nord@, objektberatung@ usw.)"
+    },
+    {
+      "firma": "MC-Bauchemie Müller GmbH & Co. KG",
+      "ort": "Bottrop",
+      "grund": "Keine persönlichen E-Mail-Adressen auf Kontakt-/Teamseiten"
+    },
+    {
+      "firma": "Kiesel Bauchemie GmbH & Co. KG",
+      "ort": "Esslingen",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "SAKRET Trockenbaustoffe",
+      "ort": "Baunatal",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Franken Maxit GmbH & Co.",
+      "ort": "Kasendorf",
+      "grund": "Website per Crawl nicht erreichbar (Bot-Schutz), Nachfassen erfolglos"
+    },
+    {
+      "firma": "Triflex GmbH & Co. KG",
+      "ort": "Minden",
+      "grund": "Nur Datenschutz-/Funktionsadressen"
+    },
+    {
+      "firma": "Sievert SE",
+      "ort": "Osnabrück",
+      "grund": "Personenadressen vorhanden, aber Positionen nur Planungsberatung/Backoffice; Domain leitet auf sievert-international.com um – zugunsten klarerer Entscheiderprofile zurückgestellt"
+    },
+    {
+      "firma": "Uzin Utz SE",
+      "ort": "Ulm",
+      "grund": "Börsennotiert; nur Funktionsadressen"
+    },
+    {
+      "firma": "PROFI Baustoffe GmbH",
+      "ort": "Ernstbrunn (AT)",
+      "grund": "Sehr gute Ansprechpartnerseite, aber österreichisches Unternehmen – außerhalb des bundesweit-deutschen Fokus"
+    },
+    {
+      "firma": "Chemische Werke Kluthe GmbH",
+      "ort": "Heidelberg",
+      "grund": "Nur Funktionsadressen (ps-sales@, pt-sales@, mc-sales@)"
+    },
+    {
+      "firma": "Dörken GmbH & Co. KG",
+      "ort": "Herdecke",
+      "grund": "Keine persönlichen E-Mail-Adressen auf Kontakt-/Teamseiten"
+    },
+    {
+      "firma": "POLIGRAT GmbH",
+      "ort": "München",
+      "grund": "Nur Niederlassungs-Sammeladressen (ndl-nord@, ndl-west@ usw.)"
+    },
+    {
+      "firma": "Holzapfel Group",
+      "ort": "Sinn",
+      "grund": "Nur oberflaechenspezialist@holzapfel-group.com (Funktionspostfach)"
+    },
+    {
+      "firma": "SurTec Deutschland GmbH",
+      "ort": "Bad Bergzabern",
+      "grund": "Keine persönlichen E-Mail-Adressen; zudem Teil der Freudenberg-Gruppe"
+    },
+    {
+      "firma": "Gramm Technik GmbH",
+      "ort": "Ditzingen",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "CHT Germany GmbH",
+      "ort": "Tübingen",
+      "grund": "Keine persönlichen E-Mail-Adressen auf Kontakt-/Teamseiten"
+    },
+    {
+      "firma": "Zschimmer & Schwarz GmbH & Co KG",
+      "ort": "Lahnstein",
+      "grund": "Nur corpcom@ und info@; keine Personenkarten"
+    },
+    {
+      "firma": "Follmann Chemie GmbH",
+      "ort": "Minden",
+      "grund": "Persönliche Adresse nur für US-Standort; kein deutscher Entscheider belegbar"
+    },
+    {
+      "firma": "Pulcra Chemicals GmbH",
+      "ort": "Geretsried",
+      "grund": "Persönliche Adressen nur für Auslandsgesellschaften"
+    },
+    {
+      "firma": "Münzing Chemie GmbH",
+      "ort": "Heilbronn",
+      "grund": "Website per Crawl wiederholt nicht erreichbar"
+    },
+    {
+      "firma": "Rudolf GmbH",
+      "ort": "Geretsried",
+      "grund": "Website blockiert automatisierte Abrufe (Connection reset)"
+    },
+    {
+      "firma": "Schill+Seilacher GmbH",
+      "ort": "Böblingen",
+      "grund": "Website per Crawl nicht erreichbar"
+    },
+    {
+      "firma": "Kelheim Fibres GmbH",
+      "ort": "Kelheim",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "MIAVIT GmbH",
+      "ort": "Essen (Oldenburg)",
+      "grund": "Keine persönlichen E-Mail-Adressen auf Kontakt-/Teamseiten"
+    },
+    {
+      "firma": "H. Wilhelm Schaumann GmbH",
+      "ort": "Pinneberg",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "BEWITAL GmbH & Co. KG",
+      "ort": "Südlohn",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Josera GmbH & Co. KG",
+      "ort": "Kleinheubach",
+      "grund": "Nur kundenbetreuung@josera.de"
+    },
+    {
+      "firma": "Leiber GmbH",
+      "ort": "Bramsche",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Sano – Moderne Tierernährung GmbH",
+      "ort": "Loiching",
+      "grund": "Nur Funktionsadressen; Personenadresse ausschließlich im Jobportal (Recruiting)"
+    },
+    {
+      "firma": "Deutsche Tiernahrung Cremer GmbH & Co. KG",
+      "ort": "Düsseldorf",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "SternVitamin GmbH / Hydrosol GmbH (Stern-Wywiol Gruppe)",
+      "ort": "Ahrensburg / Hamburg",
+      "grund": "Nur Sammeladressen (saleslatam@, salesmena@); kein Entscheidungsträger belegbar"
+    },
+    {
+      "firma": "Herbstreith & Fox GmbH & Co. KG",
+      "ort": "Neuenbürg",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Dr. Eckel Animal Nutrition GmbH & Co. KG",
+      "ort": "Niederzissen",
+      "grund": "Teamseite bildbasiert, keine wörtlich auslesbaren persönlichen E-Mail-Adressen"
+    },
+    {
+      "firma": "Rottendorf Pharma GmbH",
+      "ort": "Ennigerloh",
+      "grund": "Nur Funktionsadressen; kein Ansprechpartner mit persönlicher E-Mail"
+    },
+    {
+      "firma": "Losan Pharma GmbH",
+      "ort": "Neuenburg am Rhein",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "mibe GmbH Arzneimittel",
+      "ort": "Brehna",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "URSAPHARM Arzneimittel GmbH",
+      "ort": "Saarbrücken",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Hermes Arzneimittel GmbH",
+      "ort": "Großhesselohe",
+      "grund": "Nur Funktionsadressen (pv@, qs@, medservice-anfragen@)"
+    },
+    {
+      "firma": "MIP Pharma GmbH",
+      "ort": "Blieskastel",
+      "grund": "Ansprechpartner Dr. Friedrich Sernetz genannt, aber nur Funktionsadresse cooperation@mip-pharma.de"
+    },
+    {
+      "firma": "InfectoPharm Arzneimittel und Consilium GmbH",
+      "ort": "Heppenheim",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Queisser Pharma GmbH & Co. KG",
+      "ort": "Flensburg",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Biologische Heilmittel Heel GmbH",
+      "ort": "Baden-Baden",
+      "grund": "Nur Funktionsadressen (humanmed@, vetmed@)"
+    },
+    {
+      "firma": "Bionorica SE",
+      "ort": "Neumarkt i.d.OPf.",
+      "grund": "Nur Funktionsadressen (unternehmenskommunikation@, ausbildung@)"
+    },
+    {
+      "firma": "Klocke Gruppe",
+      "ort": "Appenweier",
+      "grund": "Website per Crawl nicht erreichbar, Nachfassen erfolglos"
+    },
+    {
+      "firma": "LTS Lohmann Therapie-Systeme AG",
+      "ort": "Andernach",
+      "grund": "Website per Crawl nicht erreichbar"
+    },
+    {
+      "firma": "Carl Roth GmbH + Co. KG",
+      "ort": "Karlsruhe",
+      "grund": "Keine persönlichen E-Mail-Adressen auf Kontakt-/Teamseiten"
+    },
+    {
+      "firma": "abcr GmbH",
+      "ort": "Karlsruhe",
+      "grund": "Teamseite nur mit Abteilungspostfächern (management@, procurement@, logistic@)"
+    },
+    {
+      "firma": "neoLab Migge GmbH",
+      "ort": "Heidelberg",
+      "grund": "Personenadressen vorhanden, aber ausschließlich Außendienstmitarbeiter – keine Entscheidungsträgerfunktion"
+    },
+    {
+      "firma": "AnalytiChem / Bernd Kraft GmbH",
+      "ort": "Duisburg",
+      "grund": "Website per Crawl nicht erreichbar; zudem Teil der internationalen AnalytiChem Group"
+    },
+    {
+      "firma": "Th. Geyer GmbH & Co. KG",
+      "ort": "Renningen",
+      "grund": "Website blockiert automatisierte Abrufe (TLS-Reset)"
+    },
+    {
+      "firma": "Grüssing GmbH",
+      "ort": "Filsum",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Chempur / Karl Hedinger KG",
+      "ort": "Karlsruhe / Stuttgart",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Grünbeck Wasseraufbereitung GmbH",
+      "ort": "Höchstädt a.d. Donau",
+      "grund": "Nur Niederlassungs-Sammeladressen (berlin@, westfalen@ usw.)"
+    },
+    {
+      "firma": "EnviroChemie GmbH",
+      "ort": "Roßdorf",
+      "grund": "Persönliche Adresse nur in einer Pressemitteilung, nicht auf einer Kontakt-/Teamseite belegbar"
+    },
+    {
+      "firma": "Cornelsen Umwelttechnologie GmbH",
+      "ort": "Essen",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Chemische Fabrik Dr. Weigert GmbH & Co. KG",
+      "ort": "Hamburg",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "perma-trade Wassertechnik GmbH",
+      "ort": "Ditzingen",
+      "grund": "Nur kundenservice@perma-trade.de"
+    },
+    {
+      "firma": "aquagroup AG",
+      "ort": "Bad Aibling",
+      "grund": "Nur competence@aquagroup.com"
+    },
+    {
+      "firma": "Hydro-Elektrik GmbH",
+      "ort": "Ravensburg",
+      "grund": "Website per Crawl nicht erreichbar"
+    },
+    {
+      "firma": "Gebrüder Heyl Analysentechnik GmbH & Co. KG",
+      "ort": "Hildesheim",
+      "grund": "Website per Crawl nicht erreichbar"
+    },
+    {
+      "firma": "VMP Chemiekontor GmbH",
+      "ort": "Siegburg",
+      "grund": "Personenadressen vorhanden, Unternehmen aber deutlich unter 50 Mitarbeitern und reiner Handel"
+    },
+    {
+      "firma": "Nordmann, Rassmann GmbH",
+      "ort": "Hamburg",
+      "grund": "Personenadressen nur für Nachhaltigkeits-/Kommunikationsfunktionen, keine Entscheidungsträger im Zielprofil"
+    },
+    {
+      "firma": "Chemische Fabrik Budenheim KG",
+      "ort": "Budenheim",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Steierl-Pharma GmbH",
+      "ort": "Herrsching",
+      "grund": "Nur eine Personenadresse ohne erkennbare Entscheidungsträgerfunktion"
+    }
+  ]
+}

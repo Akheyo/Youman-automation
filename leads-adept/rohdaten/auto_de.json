@@ -1,0 +1,388 @@
+{
+  "branche": "Automobil & Zulieferer",
+  "fokus": "Deutschland ohne NRW",
+  "leads": [
+    {
+      "name": "Volkmar Sauer",
+      "position": "Geschäftsleitung (Inhaberfamilie)",
+      "email": "volkmar.sauer@susa-sauer.de",
+      "email_quelle": "https://www.susa-sauer.de/de/kontakt",
+      "email_beleg": "Volkmar Sauer – Geschäftsleitung – volkmar.sauer@susa-sauer.de",
+      "telefon": "+49 3529 50106-0",
+      "telefon_quelle": "https://www.susa-sauer.de/de/kontakt",
+      "firma": "SUSA S. Sauer GmbH & Co. KG",
+      "ort": "Heidenau (Sachsen)",
+      "mitarbeiter_ca": "ca. 110-150",
+      "beschreibung": "Familiengeführter Hersteller von Präzisionsdrehteilen und Zerspanungsteilen für die Automobil- und Zulieferindustrie. Standorte Heidenau und Dresden-Lockwitz, Wachstum von 20 auf über 110 Mitarbeiter laut Firmenchronik.",
+      "weitere_quellen": [
+        "https://susa-sauer.de/kontakt",
+        "https://www.plattform-zerspanungstechnik.de/unternehmen/susa-s-sauer-gmbh-und-co-kg"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Stefan Tilke",
+      "position": "Kaufmännischer Geschäftsführer",
+      "email": "Tilke@saxonia-galvanik.de",
+      "email_quelle": "https://saxonia-galvanik.de/kontakt/",
+      "email_beleg": "Stefan Tilke – Kaufmännischer Geschäftsführer – Tilke@saxonia-galvanik.de",
+      "telefon": "+49 3731 782-884",
+      "telefon_quelle": "https://saxonia-galvanik.de/kontakt/",
+      "firma": "SAXONIA Galvanik GmbH",
+      "ort": "Halsbrücke, zweiter Standort Nossen/Heynitz (Sachsen)",
+      "mitarbeiter_ca": "über 330",
+      "beschreibung": "Galvanische Oberflächenveredelung mit Großserienfertigung für Automotive-Anwendungen; laut eigener Website 'über 330 Beschäftigte' und Großserien für Automobilhersteller seit 2022.",
+      "weitere_quellen": [
+        "https://saxonia-galvanik.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Hans-Jürgen Hemrich",
+      "position": "Geschäftsführer",
+      "email": "hj.hemrich@vialas.de",
+      "email_quelle": "https://vialas.de/",
+      "email_beleg": "Hans-Jürgen Hemrich – Geschäftsführer – hj.hemrich@vialas.de",
+      "telefon": "+49 3681 80319-0",
+      "telefon_quelle": "https://vialas.de/",
+      "firma": "VIA LASER & Systemtechnik GmbH + Co. KG",
+      "ort": "Suhl (Thüringen)",
+      "mitarbeiter_ca": "ca. 50",
+      "beschreibung": "Laser- und CNC-basierte Blech- und Rohrbearbeitung, Schweißen, Umformen und Baugruppenfertigung für Automobilindustrie und Maschinenbau. Mitglied im Netzwerk automotive thüringen.",
+      "weitere_quellen": [
+        "https://www.automotive-thueringen.de/mitgliedsunternehmen"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Markus Baier",
+      "position": "Geschäftsführer",
+      "email": "m.baier@baier-drehteile.de",
+      "email_quelle": "https://baier-drehteile.de/kontakt/",
+      "email_beleg": "Markus Baier, Geschäftsführer – mailto:m.baier@baier-drehteile.de",
+      "telefon": "+49 7424 9553-0",
+      "telefon_quelle": "https://baier-drehteile.de/kontakt/",
+      "firma": "Baier Drehteile GmbH & Co. KG",
+      "ort": "Gunningen (Baden-Württemberg)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführter Hersteller von Präzisions-Automotive-Drehteilen (u.a. Lenkungstechnik, Standheizungen, Sitzverbindungen) für Automobilhersteller und deren Zulieferer, IATF-zertifiziert.",
+      "weitere_quellen": [
+        "https://baier-drehteile.de/unternehmen/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Matthias Weinmann",
+      "position": "Geschäftsführer",
+      "email": "matthias.weinmann@konradweinmann.de",
+      "email_quelle": "https://konradweinmann.de/kontakt",
+      "email_beleg": "Matthias Weinmann – Geschäftsführer – matthias.weinmann@konradweinmann.de",
+      "telefon": "+49 7426 94768-11",
+      "telefon_quelle": "https://konradweinmann.de/kontakt",
+      "firma": "K. Weinmann GmbH & Co. KG Präzisions-Drehteile",
+      "ort": "Gosheim (Baden-Württemberg)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführter Hersteller von Präzisionsdrehteilen; belieferte Branchen laut Website u.a. Automotive, Elektronik, Hydraulik, Medizintechnik.",
+      "weitere_quellen": [
+        "https://www.plattform-zerspanungstechnik.de/unternehmen/k-weinmann-gmbh-co-kg-prazisions-drehteile"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Elke Lillich",
+      "position": "Geschäftsleitung (Inhaberin)",
+      "email": "elke.lillich@lillich-gmbh.de",
+      "email_quelle": "https://lillich-gmbh.de/kontakt_kontakt.htm",
+      "email_beleg": "Elke Lillich – Geschäftsleitung – mailto:elke.lillich@lillich-gmbh.de",
+      "telefon": "+49 7082 9454-20",
+      "telefon_quelle": "https://lillich-gmbh.de/kontakt_kontakt.htm",
+      "firma": "Willy Lillich GmbH Präzisions-Schleiferei",
+      "ort": "Straubenhardt-Schwann (Baden-Württemberg)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführte Präzisions-Schleiferei mit Drehen/Fräsen; eigene Anwendungsseite für die Branche Automotiv (Komponenten für Automobilzulieferer).",
+      "weitere_quellen": [
+        "https://www.lillich-gmbh.de/anwendungen_branchen_automotiv.htm"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Torsten Moebes",
+      "position": "Geschäftsführung / Vertrieb",
+      "email": "torsten.moebes@elprog.de",
+      "email_quelle": "https://www.elprog.de/kontakt/",
+      "email_beleg": "Torsten Moebes – Geschäftsführung/Vertrieb – torsten.moebes@elprog.de",
+      "telefon": "+49 8857 6928-15",
+      "telefon_quelle": "https://www.elprog.de/kontakt/",
+      "firma": "ELPROG GmbH",
+      "ort": "Benediktbeuern (Bayern)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "EMS-Dienstleister für Industrieelektronik; fertigt elektronische Baugruppen unter anderem für Verkehrstechnik und Automotive.",
+      "weitere_quellen": [
+        "https://www.elprog.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Hans Dreher",
+      "position": "Geschäftsführer",
+      "email": "hans.dreher@gebrueder-dreher.de",
+      "email_quelle": "https://gebrueder-dreher.de/ueber-uns/",
+      "email_beleg": "Hans Dreher – Geschäftsführer – hans.dreher@gebrueder-dreher.de",
+      "telefon": "+49 7429 9311-20",
+      "telefon_quelle": "https://gebrueder-dreher.de/ueber-uns/",
+      "firma": "Gebrüder Dreher GmbH & Co. KG",
+      "ort": "Egesheim (Baden-Württemberg)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familienunternehmen (seit 1936, mehrere Dreher-Geschäftsführer) für hochpräzise Dreh- und Frästeile sowie Gasfedern; Teile gehen laut Website in die Automobil- und Armaturenindustrie.",
+      "weitere_quellen": [
+        "https://gebrueder-dreher.de/kontakt/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Torsten Herrmann",
+      "position": "Geschäftsführer",
+      "email": "t.herrmann@hehnke.de",
+      "email_quelle": "https://hehnke.de/kontakt.html",
+      "email_beleg": "Torsten Herrmann – Geschäftsführer – t.herrmann@hehnke.de",
+      "telefon": "+49 36847 439-16",
+      "telefon_quelle": "https://hehnke.de/kontakt.html",
+      "firma": "Hehnke GmbH & Co. KG",
+      "ort": "Steinbach-Hallenberg (Thüringen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Zulieferer für Spritzguss, Stanztechnologie, Hybridbauteile und Formenbau; beliefert laut Website u.a. die Automobilindustrie inkl. E-Mobility-Antriebstechnik für einen deutschen Automobilhersteller.",
+      "weitere_quellen": [
+        "https://www.automotive-thueringen.de/mitgliedsunternehmen"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Kay-Guido Jäger",
+      "position": "Geschäftsführer & Vertrieb",
+      "email": "kg.jaeger@tkf-germany.de",
+      "email_quelle": "https://tkf-germany.de/d-kontakt.htm",
+      "email_beleg": "Kay-Guido Jäger – Geschäftsführer & Vertrieb – kg.jaeger@tkf-germany.de",
+      "telefon": "+49 160 7024341",
+      "telefon_quelle": "https://tkf-germany.de/d-kontakt.htm",
+      "firma": "TKF Thüringer Kugellagerfabrik GmbH",
+      "ort": "Zella-Mehlis (Thüringen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Hersteller von Kugellagern und Drehteilen; laut eigener Darstellung verlässlicher Lieferant für die Automobilindustrie und für Windkraftanlagen.",
+      "weitere_quellen": [
+        "https://www.automotive-thueringen.de/mitgliedsunternehmen"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Marco Jobst",
+      "position": "Geschäftsführer",
+      "email": "Marco.Jobst@metob.de",
+      "email_quelle": "https://www.metob.de/kontakt/ansprechpartner/",
+      "email_beleg": "Marco Jobst (Geschäftsführer) – mailto:Marco.Jobst@metob.de",
+      "telefon": "+49 9571 898-22",
+      "telefon_quelle": "https://www.metob.de/kontakt/ansprechpartner/",
+      "firma": "Metob Beschichtungen GmbH",
+      "ort": "Michelau in Oberfranken (Bayern), Werk Hildburghausen (Thüringen)",
+      "mitarbeiter_ca": "ca. 240",
+      "beschreibung": "Inhabergeführter Spezialist (Familie Krämer) für KTL- und Pulverbeschichtung von Metallteilen; erfüllt laut Website die Anforderungen der Automobilhersteller und deren Zulieferunternehmen, Anlage für Premium-Automobilhersteller.",
+      "weitere_quellen": [
+        "https://www.metob.de/kontakt/",
+        "https://die-deutsche-wirtschaft.de/familienunternehmen/kraemer-familie-metob-beschichtungen-gmbh-michelau-in-oberfranken-inhaber/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Simone Sauer",
+      "position": "Geschäftsleitung (Inhaberfamilie)",
+      "email": "simone.sauer@susa-sauer.de",
+      "email_quelle": "https://www.susa-sauer.de/de/kontakt",
+      "email_beleg": "Simone Sauer – Geschäftsleitung – simone.sauer@susa-sauer.de",
+      "telefon": "+49 3529 50106-0",
+      "telefon_quelle": "https://www.susa-sauer.de/de/kontakt",
+      "firma": "SUSA S. Sauer GmbH & Co. KG",
+      "ort": "Heidenau (Sachsen)",
+      "mitarbeiter_ca": "ca. 110-150",
+      "beschreibung": "Zweite Person der Geschäftsleitung des familiengeführten Zerspanungs-/Drehteileherstellers für die Automobilzulieferindustrie.",
+      "weitere_quellen": [
+        "https://susa-sauer.de/kontakt"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "BB Zerspanungstechnik GmbH",
+      "ort": "Königsbach-Stein (BW)",
+      "grund": "GF-E-Mail vorhanden (b.braun@bbz-technik.de), aber laut Produktseite nur Medizintechnik/Schmuckbranche – kein belegter Automotive-Bezug"
+    },
+    {
+      "firma": "Kunststofftechnik Breitungen GmbH & Co. KG",
+      "ort": "Breitungen/Werra (TH)",
+      "grund": "GF-E-Mails vorhanden, Website weist aber ausdrücklich darauf hin, dass man nicht für Automobilhersteller und deren Zulieferfirmen tätig ist"
+    },
+    {
+      "firma": "SEDLBAUER AG",
+      "ort": "Grafenau (BY)",
+      "grund": "CEO-E-Mail t.feilmeier@sedlbauer.de vorhanden, aber kein belegter Automotive-Zulieferbezug (nur Ladeinfrastruktur/E-Mobility)"
+    },
+    {
+      "firma": "TQ-Systems GmbH",
+      "ort": "Seefeld (BY)",
+      "grund": "GF-E-Mails im Impressum, Unternehmen aber deutlich über 1.000 Mitarbeiter"
+    },
+    {
+      "firma": "JOPP Group",
+      "ort": "Bad Neustadt/Saale (BY)",
+      "grund": "Nur Vertriebs- und Einkaufsansprechpartner mit E-Mail, kein Entscheidungsträger (GF/Prokurist)"
+    },
+    {
+      "firma": "GRAFE GmbH & Co. KG",
+      "ort": "Blankenhain (TH)",
+      "grund": "Nur Länder-Vertriebskontakte mit persönlicher E-Mail, keine Geschäftsführung"
+    },
+    {
+      "firma": "NEHER Group",
+      "ort": "Ostrach (BW)",
+      "grund": "Management (Gerd Neher) ohne E-Mail gelistet; persönliche E-Mails nur für Vertrieb"
+    },
+    {
+      "firma": "KOMOS GmbH",
+      "ort": "Bürgel (TH)",
+      "grund": "Persönliche E-Mails nur für Vertriebsleitung/Qualität/Buchhaltung, keine Geschäftsführung"
+    },
+    {
+      "firma": "Kurt Breuning IRCO Maschinenbau GmbH",
+      "ort": "Steinenbronn (BW)",
+      "grund": "Maschinenbauer statt Teile-Zulieferer; persönliche E-Mails nur Vertriebsgebiete"
+    },
+    {
+      "firma": "Wilhelm Herm. Müller GmbH & Co. KG",
+      "ort": "Garbsen (NI)",
+      "grund": "Technischer Handel/Antriebstechnik, persönliche E-Mails nur Vertriebsleiter"
+    },
+    {
+      "firma": "Scheerer Zerspanung GmbH",
+      "ort": "Leutkirch im Allgäu (BW)",
+      "grund": "GF-E-Mail vorhanden, Firma aber ausdrücklich 'kleines, familiäres Unternehmen' (< 50 MA), kein Automotive-Bezug belegt"
+    },
+    {
+      "firma": "Härterei Gerster / haerterei.com",
+      "ort": "Brackenheim, Chemnitz, Weimar",
+      "grund": "Einzige persönliche E-Mail gehört einem externen Handelsvertreter, nicht der Geschäftsführung"
+    },
+    {
+      "firma": "GÜNTHER Heisskanaltechnik GmbH",
+      "ort": "Frankenberg/Eder (HE)",
+      "grund": "Auf der Kontaktseite nur abgekürzte Sammel-E-Mails im Quelltext; GF-Adresse nicht wörtlich verifizierbar"
+    },
+    {
+      "firma": "Böhm Plast-Technology GmbH",
+      "ort": "Neuenrade",
+      "grund": "Standort in NRW – außerhalb des Suchgebiets"
+    },
+    {
+      "firma": "E&G Kunststofftechnik GmbH & Co. KG / August Schmits (asmetal)",
+      "ort": "NRW",
+      "grund": "Standorte in NRW – außerhalb des Suchgebiets"
+    },
+    {
+      "firma": "plasma Kunststofftechnik GmbH",
+      "ort": "Bad Oeynhausen",
+      "grund": "Standort in NRW – außerhalb des Suchgebiets"
+    },
+    {
+      "firma": "Bader Network GmbH",
+      "ort": "Steinbach-Hallenberg (TH)",
+      "grund": "Branche Postbearbeitungssysteme, kein Automobilzulieferer"
+    },
+    {
+      "firma": "Anton Häring KG",
+      "ort": "Bubsheim (BW)",
+      "grund": "Nur info@-Adressen auf Kontaktseite, keine persönliche E-Mail"
+    },
+    {
+      "firma": "Erdrich Umformtechnik GmbH",
+      "ort": "Renchen (BW)",
+      "grund": "Nur info@erdrich.de, keine persönliche E-Mail auffindbar"
+    },
+    {
+      "firma": "Pöppelmann GmbH & Co. KG",
+      "ort": "Lohne (NI)",
+      "grund": "Persönliche E-Mail nur für Fachvertrieb, keine Geschäftsführung; zudem > 1.000 MA"
+    },
+    {
+      "firma": "Stegherr Kunststofftechnik GmbH",
+      "ort": "Kammlach (BY)",
+      "grund": "Geschäftsführer namentlich genannt, aber nur sales@/info@-Adressen"
+    },
+    {
+      "firma": "Klaus Kunststofftechnik GmbH",
+      "ort": "Aitrach (BW)",
+      "grund": "Nur info@klaku.de"
+    },
+    {
+      "firma": "HALLER-JAUCH GmbH",
+      "ort": "Villingen-Schwenningen (BW)",
+      "grund": "Nur info@haller-jauch.com"
+    },
+    {
+      "firma": "Helmuth Müller GmbH",
+      "ort": "Wellendingen (BW)",
+      "grund": "Nur info@mueller-wellendingen.de"
+    },
+    {
+      "firma": "M. Seeber Kunststofftechnik GmbH",
+      "ort": "Gräfenthal (TH)",
+      "grund": "E-Mail-Adressen per JavaScript verschleiert, nicht wörtlich lesbar"
+    },
+    {
+      "firma": "Oederaner Stanztechnik (OSUT)",
+      "ort": "Oederan (SN)",
+      "grund": "Ansprechpartner genannt, E-Mail-Adressen aber JavaScript-verschleiert"
+    },
+    {
+      "firma": "Rudolf Michael GmbH (MICHAEL Kunststofftechnik)",
+      "ort": "Eppingen (BW)",
+      "grund": "E-Mail-Adressen verschlüsselt/nicht im Klartext"
+    },
+    {
+      "firma": "RAPA (Rausch & Pausch SE)",
+      "ort": "Selb (BY)",
+      "grund": "Persönliche E-Mails vorhanden, Positionen aber nicht als Entscheidungsträger belegt"
+    },
+    {
+      "firma": "Müller Kunststofftechnik GmbH",
+      "ort": "Hagenow (MV)",
+      "grund": "GF-E-Mail vorhanden, aber außerhalb der Zielregionen und deutlich unter 50 Mitarbeitern"
+    },
+    {
+      "firma": "Feinguss Blank, Läpple, Albert Weber, Weber Fibertech, fischer group, Martin Stanz- und Umformtechnik, PWO, Sixt GmbH, Allgaier, ALFING, SHW, stoba, HÄRTER, SBS Feintechnik, ruhlamat, Auto-Kabel, KE Elektronik, Küster, COHLINE",
+      "ort": "BW/BY/TH/HE",
+      "grund": "Keine persönlichen E-Mail-Adressen von Entscheidungsträgern auf Website auffindbar (nur Formulare oder info@)"
+    }
+  ]
+}

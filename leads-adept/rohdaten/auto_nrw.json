@@ -193,8 +193,8 @@
       "weitere_quellen": [
         "https://www.oth-hagen.de/"
       ],
-      "_verifiziert": false,
-      "_verifiziert_status": "HTTP 500 – Adresse nicht auf Seite gefunden",
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
       "_verifiziert_am": "2026-07-29"
     },
     {
