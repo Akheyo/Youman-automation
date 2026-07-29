@@ -31,6 +31,41 @@ GENERISCHE_PRAEFIXE = {
 
 EMAIL_RE = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 
+# Positionen, die nach aussen verkaufen. Fuer ein Prozess-/Softwareprojekt ist
+# das die falsche Seite des Tisches: entschieden wird in Geschaeftsfuehrung,
+# IT, Produktion, Logistik oder Supply Chain.
+VERTRIEBSROLLEN = re.compile(
+    r"key\s*account|vertrieb|sales|aussendienst|außendienst|gebietsleit|"
+    r"handelsvertret|kundenberat|account\s*manager",
+    re.IGNORECASE,
+)
+# Wer zusaetzlich eine dieser Rollen traegt, bleibt trotz Vertriebstitel drin.
+ENTSCHEIDER_ROLLEN = re.compile(
+    r"geschäftsführ|geschaeftsfuehr|geschäftsleitung|geschaeftsleitung|inhaber|"
+    r"prokurist|gesellschafter|vorstand|eigentümer|eigentuemer|\bceo\b|\bcto\b|"
+    r"\bcoo\b|\bcfo\b|managing\s*director|betriebsleit|werkleit|produktionsleit|"
+    r"logistikleit|it-leit|supply\s*chain",
+    re.IGNORECASE,
+)
+
+
+def ist_entscheidungstraeger(position: str) -> bool:
+    """Sortiert reine Vertriebsrollen aus, behaelt Doppelrollen mit Leitung."""
+    if not position:
+        return False
+    if ENTSCHEIDER_ROLLEN.search(position):
+        return True
+    return not VERTRIEBSROLLEN.search(position)
+
+
+def groesse_ueber_korridor(text: str) -> bool:
+    """Erkennt Angaben deutlich oberhalb von 1000 Mitarbeitern."""
+    if not text:
+        return False
+    zahlen = [int(z.replace(".", "").replace(" ", "")) for z in re.findall(r"\d[\d. ]*\d|\d", text)]
+    zahlen = [z for z in zahlen if 0 < z < 500_000]
+    return bool(zahlen) and max(zahlen) > 1000
+
 SPALTEN = [
     "Name", "Position", "E-Mail", "Telefon", "Firmenname", "Branche", "Ort",
     "Beschreibung", "Quelle",
@@ -75,6 +110,7 @@ def pruefe_und_dedupliziere(leads):
     """Filtert Leads ohne persoenliche E-Mail bzw. ohne Quelle und entfernt Dubletten."""
     behalten, aussortiert = [], []
     gesehen = {}
+    gesehen_personen = set()
     for lead in leads:
         email = (lead.get("email") or "").strip()
         quelle = (lead.get("email_quelle") or "").strip()
@@ -92,11 +128,27 @@ def pruefe_und_dedupliziere(leads):
             grund = lead.get("_verifiziert_status", "noch nicht gegen die Quelle geprueft")
             aussortiert.append((firma, f"{email} nicht bestaetigt ({grund})"))
             continue
+        position = lead.get("position") or ""
+        if not ist_entscheidungstraeger(position):
+            aussortiert.append((firma, f"{lead.get('name','?')} ist Vertriebsrolle, "
+                                       f"kein Entscheidungstraeger: {position}"))
+            continue
+        if groesse_ueber_korridor(lead.get("mitarbeiter_ca", "")):
+            aussortiert.append((firma, f"ueber dem Zielkorridor: {lead.get('mitarbeiter_ca')}"))
+            continue
+
         schluessel = email.lower()
         if schluessel in gesehen:
             aussortiert.append((firma, f"Dublette zu {gesehen[schluessel]}"))
             continue
+        # Dieselbe Person taucht mitunter mit zwei Adressen auf verschiedenen
+        # Seiten auf; ein Kontakt pro Person und Firma genuegt.
+        person = (firma.lower().strip(), (lead.get("name") or "").lower().strip())
+        if person in gesehen_personen:
+            aussortiert.append((firma, f"{lead.get('name','?')} bereits mit anderer Adresse erfasst"))
+            continue
         gesehen[schluessel] = firma
+        gesehen_personen.add(person)
         behalten.append(lead)
     return behalten, aussortiert
 
