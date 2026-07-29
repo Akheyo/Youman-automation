@@ -1,0 +1,600 @@
+{
+  "branche": "Maschinenbau & Fertigung",
+  "fokus": "Rheinland/Ruhr/Norddeutschland",
+  "leads": [
+    {
+      "name": "Ulf Kleineidam",
+      "position": "Geschäftsführer",
+      "email": "ulf.kleineidam@boerger-anlagenbau.de",
+      "email_quelle": "https://boerger-anlagenbau.de/ansprechpartner/",
+      "email_beleg": "Ulf Kleineidam Geschäftsführer ulf.kleineidam@boerger-anlagenbau.de",
+      "telefon": "04121 - 472 50",
+      "telefon_quelle": "https://boerger-anlagenbau.de/ansprechpartner/",
+      "firma": "BÖRGER Anlagenbau GmbH",
+      "ort": "Elmshorn (Schleswig-Holstein)",
+      "mitarbeiter_ca": "ca. 50",
+      "beschreibung": "Familiengeführter Anlagen- und Sondermaschinenbauer (Fördertechnik, Stahl-/Schweißkonstruktionen, eigene Pulverbeschichtung) mit kompletter Kette von Konstruktion über Fertigung bis Montage. Projektfertigung mit eigener Konstruktion, Fertigung und Pulverbeschichtung: hoher Nutzen aus durchgängiger Auftrags-/Projektsteuerung, PPS-/ERP-Anbindung an CAD-Stücklisten und digitaler Fertigungsrückmeldung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Kleineidam",
+      "position": "Prokurist, Konstruktions- und Entwicklungsleitung",
+      "email": "andreas.kleineidam@boerger-anlagenbau.de",
+      "email_quelle": "https://boerger-anlagenbau.de/ansprechpartner/",
+      "email_beleg": "Andreas Kleineidam Prokurist Konstruktions- u. Entwicklungsleitung andreas.kleineidam@boerger-anlagenbau.de",
+      "telefon": "04121 - 472 50",
+      "telefon_quelle": "https://boerger-anlagenbau.de/ansprechpartner/",
+      "firma": "BÖRGER Anlagenbau GmbH",
+      "ort": "Elmshorn (Schleswig-Holstein)",
+      "mitarbeiter_ca": "ca. 50",
+      "beschreibung": "Familiengeführter Anlagen-/Sondermaschinenbauer mit eigener Konstruktion, Mechatronik/Programmierung und Fertigung. Als Prokurist und Konstruktionsleiter zentraler Entscheider für CAD/PDM-Durchgängigkeit, Stücklistenübergabe an ERP und digitale Änderungs-/Projektprozesse.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Klaus Senske",
+      "position": "Geschäftsführer",
+      "email": "k.senske@lta-lufttechnik.de",
+      "email_quelle": "https://lta-lufttechnik.de/ueber-uns/kontakt/",
+      "email_beleg": "Klaus Senske Geschäftsführer k.senske@lta-lufttechnik.de",
+      "telefon": "0 25 65 - 40 47 0",
+      "telefon_quelle": "https://lta-lufttechnik.de/ueber-uns/kontakt/",
+      "firma": "LTA Lufttechnische Anlagen GmbH",
+      "ort": "Gronau-Epe (NRW)",
+      "mitarbeiter_ca": "ca. 100",
+      "beschreibung": "Inhabergeführter Hersteller lufttechnischer Anlagen (Absaug-, Filter- und Entstaubungstechnik) im Anlagen-/Sondermaschinenbau, projektbezogene Fertigung mit Montage und Service beim Kunden. Fit für Prozessdigitalisierung: Angebots-/Projektkalkulation, Serviceeinsatzplanung und Ersatzteilwesen lassen sich über ERP-Anbindung und mobile Serviceerfassung durchgängig abbilden.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Christian Drewes",
+      "position": "Geschäftsführer",
+      "email": "c.drewes@lta-lufttechnik.de",
+      "email_quelle": "https://lta-lufttechnik.de/ueber-uns/kontakt/",
+      "email_beleg": "Christian Drewes Geschäftsführer c.drewes@lta-lufttechnik.de",
+      "telefon": "0 25 65 - 40 47 0",
+      "telefon_quelle": "https://lta-lufttechnik.de/ueber-uns/kontakt/",
+      "firma": "LTA Lufttechnische Anlagen GmbH",
+      "ort": "Gronau-Epe (NRW)",
+      "mitarbeiter_ca": "ca. 100",
+      "beschreibung": "Zweiter Geschäftsführer des inhabergeführten Herstellers von Absaug- und Filteranlagen für die industrielle Fertigung. Entscheider für Digitalisierung von Projektabwicklung, Servicedisposition und ERP-/CRM-Integration.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Beatrix Badura-Yilmaz",
+      "position": "Geschäftsführerin und Gesellschafterin (Managing director / Shareholder)",
+      "email": "beatrix.badura-yilmaz@elektrophysik.com",
+      "email_quelle": "https://elektrophysik.com/en/about-elektrophysik",
+      "email_beleg": "Beatrix Badura-Yilmaz Managing director / Shareholder beatrix.badura-yilmaz@elektrophysik.com",
+      "telefon": "+49 221 75204-0",
+      "telefon_quelle": "https://elektrophysik.com/en/about-elektrophysik",
+      "firma": "ElektroPhysik Dr. Steingroever GmbH & Co. KG",
+      "ort": "Köln (NRW)",
+      "mitarbeiter_ca": "ca. 80",
+      "beschreibung": "Inhaber-/familiengeführter Hersteller von Mess- und Prüftechnik (Schichtdickenmessung, Werkstoffprüfgeräte) mit eigener Entwicklung und Fertigung in Köln. Fit für Prozessdigitalisierung: Serien- und Variantenfertigung von Messgeräten mit Kalibrier-/Prüfdokumentation, Reparatur- und Serviceabwicklung — starker Case für ERP-Anbindung, digitale Prüfprotokolle und Geräte-Lebenslaufakten.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dr. Gang Zhang",
+      "position": "Technischer Leiter (Technical director)",
+      "email": "gang.zhang@elektrophysik.com",
+      "email_quelle": "https://elektrophysik.com/en/about-elektrophysik",
+      "email_beleg": "Dr. Gang Zhang Technical director gang.zhang@elektrophysik.com",
+      "telefon": "+49 221 75204-39",
+      "telefon_quelle": "https://elektrophysik.com/en/about-elektrophysik",
+      "firma": "ElektroPhysik Dr. Steingroever GmbH & Co. KG",
+      "ort": "Köln (NRW)",
+      "mitarbeiter_ca": "ca. 80",
+      "beschreibung": "Technische Leitung des Kölner Mess-/Prüftechnikherstellers, verantwortlich für Entwicklung und Produkttechnik. Entscheider für PLM/PDM, Stücklisten- und Änderungsmanagement sowie Anbindung von Entwicklung an ERP/Fertigung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Glissmann",
+      "position": "Produktionsleiter (Head of production)",
+      "email": "andreas.glissmann@elektrophysik.com",
+      "email_quelle": "https://elektrophysik.com/en/about-elektrophysik",
+      "email_beleg": "Andreas Glissmann Head of production andreas.glissmann@elektrophysik.com",
+      "telefon": "+49 221 75204-59",
+      "telefon_quelle": "https://elektrophysik.com/en/about-elektrophysik",
+      "firma": "ElektroPhysik Dr. Steingroever GmbH & Co. KG",
+      "ort": "Köln (NRW)",
+      "mitarbeiter_ca": "ca. 80",
+      "beschreibung": "Produktionsleiter beim inhabergeführten Hersteller von Schichtdicken- und Werkstoffprüfgeräten. Zuständig für Fertigungssteuerung, Montage und Kalibrierung — direkter Bedarfsträger für MES-/BDE-Erfassung, Materialdisposition und ERP-gestützte Fertigungsaufträge.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dr.-Ing. Lutz-Stefan Henrich",
+      "position": "Geschäftsführer (Vertreten durch)",
+      "email": "l.henrich@schnutz.com",
+      "email_quelle": "https://schnutz.com/kontakt/impressum/",
+      "email_beleg": "Redaktionell Verantwortlicher Dr.-Ing. Lutz-Stefan Henrich Tel.: +49 271 25062-0 E-Mail: l.henrich@schnutz.com",
+      "telefon": "+49 271 25062-0",
+      "telefon_quelle": "https://schnutz.com/kontakt/impressum/",
+      "firma": "Schnutz GmbH",
+      "ort": "Siegen (NRW)",
+      "mitarbeiter_ca": "ca. 150",
+      "beschreibung": "Inhabergeführter Anlagen- und Sondermaschinenbauer für Coil-Processing/Bandbearbeitungsanlagen (Richt-, Schneid- und Bandanlagen) inkl. Retrofit und Modernisierung bestehender Linien. Fit für Prozessdigitalisierung: kundenspezifische Großprojekte mit langer Durchlaufzeit, Retrofit-Service und Ersatzteilgeschäft — ideal für ERP-/PLM-Anbindung, Projektcontrolling und digitale Anlagendokumentation.",
+      "weitere_quellen": [
+        "https://schnutz.com/kontakt/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Ralf Wallmeyer",
+      "position": "Geschäftsführung / Vertrieb (Doppelrolle Geschäftsführung)",
+      "email": "r.wallmeyer@kuhlmeyer.de",
+      "email_quelle": "https://kuhlmeyer.de/unternehmen/ansprechpartner/",
+      "email_beleg": "Geschäftsführung / Vertrieb Ralf Wallmeyer r.wallmeyer@kuhlmeyer.de",
+      "telefon": "+49 (0) 57 31 / 53 04-0",
+      "telefon_quelle": "https://kuhlmeyer.de/unternehmen/ansprechpartner/",
+      "firma": "Kuhlmeyer Maschinenbau GmbH",
+      "ort": "Bad Oeynhausen (NRW)",
+      "mitarbeiter_ca": "ca. 60",
+      "beschreibung": "Familiengeführter Sondermaschinenbauer für Schleif-, Bürst- und Oberflächenbearbeitungsmaschinen inkl. Service und Retrofit. Einzel-/Kleinserienfertigung mit hohem Projektanteil: klarer Fit für ERP-gestützte Auftragsabwicklung, Serviceplanung und digitale Ersatzteil-/Maschinenakte.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Bäumler",
+      "position": "Geschäftsführer",
+      "email": "andreas.baeumler@iwa-maschinenbau.de",
+      "email_quelle": "https://iwa-maschinenbau.de/kontakt/ansprechpartner",
+      "email_beleg": "Geschäftsführer Andreas Bäumler Tel.: +49 5244 / 97305-0 E-mail: andreas.baeumler@iwa-maschinenbau.de",
+      "telefon": "+49 5244 / 97305-0",
+      "telefon_quelle": "https://iwa-maschinenbau.de/kontakt/ansprechpartner",
+      "firma": "IWA Maschinenbau GmbH",
+      "ort": "Rietberg (NRW)",
+      "mitarbeiter_ca": "ca. 50",
+      "beschreibung": "Familiengeführter Sondermaschinen- und Anlagenbauer (Fördertechnik, Schweiß-/Blechkonstruktionen, Automatisierung) mit eigener Konstruktion, Fertigung und Montage. Fit für Prozessdigitalisierung: Projektfertigung mit Konstruktion, technischem Einkauf und Montage — Nutzen aus ERP-Anbindung von CAD-Stücklisten, Einkauf und Betriebsdatenerfassung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Birgit Bäumler",
+      "position": "Kaufmännische Geschäftsleitung",
+      "email": "birgit.baeumler@iwa-maschinenbau.de",
+      "email_quelle": "https://iwa-maschinenbau.de/kontakt/ansprechpartner",
+      "email_beleg": "Kaufmännische Geschäftsleitung Birgit Bäumler Tel.: +49 5244 / 97305-21 E-mail: birgit.baeumler@iwa-maschinenbau.de",
+      "telefon": "+49 5244 / 97305-21",
+      "telefon_quelle": "https://iwa-maschinenbau.de/kontakt/ansprechpartner",
+      "firma": "IWA Maschinenbau GmbH",
+      "ort": "Rietberg (NRW)",
+      "mitarbeiter_ca": "ca. 50",
+      "beschreibung": "Kaufmännische Geschäftsleitung des familiengeführten Sondermaschinenbauers. Entscheiderin für ERP-Einführung/-Ablösung, Kalkulation, Auftrags- und Rechnungsprozesse sowie Digitalisierung der Verwaltung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Thorsten Kube",
+      "position": "Technischer Geschäftsführer (Geschäftsführer Technik, Anlagenbau, Hydrauliksysteme)",
+      "email": "kube@lippold.de",
+      "email_quelle": "https://lippold.de/kontakt/",
+      "email_beleg": "Thorsten Kube Technischer Geschäftsführer +49 (0) 40 85180 267 kube@lippold.de",
+      "telefon": "+49 (0) 40 85180 267",
+      "telefon_quelle": "https://lippold.de/kontakt/",
+      "firma": "Lippold GmbH (Lippold Group)",
+      "ort": "Hamburg",
+      "mitarbeiter_ca": "ca. 200",
+      "beschreibung": "Familiengeführtes Traditionsunternehmen (seit 1932) für Sondermaschinenbau, Anlagenbau, Hydrauliksysteme und Hydraulikzylinder inkl. Fieldservice, Pumpen- und Komponentenreparatur. Fit für Prozessdigitalisierung: Kombination aus Projektfertigung, Handel/Komponenten und Reparaturservice — hoher Nutzen aus ERP-/Lager- und Serviceauftrags-Integration und mobiler Instandhaltungserfassung.",
+      "weitere_quellen": [
+        "https://lippold.de/kompetenzen/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Volker aus dem Spring",
+      "position": "Leiter Qualitätsmanagement und Logistik (Head of QM and logistic)",
+      "email": "v.ausdemspring@schauenburg-mab.com",
+      "email_quelle": "https://schauenburg-mab.com/team/",
+      "email_beleg": "Volker aus dem Spring Head of QM and logistic v.ausdemspring@schauenburg-mab.com",
+      "telefon": "",
+      "telefon_quelle": "",
+      "firma": "Schauenburg Maschinen- und Anlagenbau GmbH (Schauenburg MAB)",
+      "ort": "Mülheim an der Ruhr (NRW/Ruhrgebiet)",
+      "mitarbeiter_ca": "ca. 120",
+      "beschreibung": "Familiengeführter Anlagen- und Sondermaschinenbauer der Schauenburg-Gruppe: Schüttgut-/Separationstechnik, Aufbereitungs- und Recyclinganlagen sowie Elastomertechnik, mit weltweiter Projektabwicklung. Fit für Prozessdigitalisierung: als Leiter QM und Logistik direkter Bedarfsträger für digitale Prüf-/Qualitätsdokumentation, Lieferantenmanagement und ERP-gestützte Material- und Versandprozesse.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Niklas Kalthoff",
+      "position": "Leiter Technisches Büro (Head of Technical Department)",
+      "email": "n.kalthoff@schauenburg-mab.com",
+      "email_quelle": "https://schauenburg-mab.com/team/",
+      "email_beleg": "Niklas Kalthoff Head of Technical Department n.kalthoff@schauenburg-mab.com",
+      "telefon": "",
+      "telefon_quelle": "",
+      "firma": "Schauenburg Maschinen- und Anlagenbau GmbH (Schauenburg MAB)",
+      "ort": "Mülheim an der Ruhr (NRW/Ruhrgebiet)",
+      "mitarbeiter_ca": "ca. 120",
+      "beschreibung": "Leiter des Technischen Büros beim familiengeführten Anlagenbauer für Schüttgut-, Separations- und Recyclingtechnik. Entscheider für CAD/PDM, Stücklisten- und Änderungsmanagement sowie die Anbindung von Konstruktion an ERP und Fertigung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "KARL DEUTSCH Prüf- und Messgerätebau",
+      "ort": "Wuppertal (NRW)",
+      "grund": "Geschäftsführung/Prokuristen nur über management@ erreichbar; persönliche Adressen ausschließlich reine Vertriebs-/Beratungsrollen"
+    },
+    {
+      "firma": "J. Engelsmann AG",
+      "ort": "Ludwigshafen am Rhein (RLP)",
+      "grund": "Personenkarten nur für Außendienst-/Kundenberater (Vertrieb); Vorstand ohne persönliche E-Mail"
+    },
+    {
+      "firma": "Meiser (Gitterroste/Umformtechnik)",
+      "ort": "Schmelz (Saarland)",
+      "grund": "Region außerhalb Fokus; Ansprechpartner-Seite listet nur Vertrieb/Service, Geschäftsführung ohne persönliche E-Mail"
+    },
+    {
+      "firma": "SMS Elotherm GmbH",
+      "ort": "Solingen (NRW)",
+      "grund": "Teil des SMS-group-Konzerns – kein familien-/inhabergeführter Mittelstand"
+    },
+    {
+      "firma": "STRACK NORMA GmbH & Co. KG",
+      "ort": "Lüdenscheid (NRW)",
+      "grund": "Persönliche Adressen ausschließlich Gebiets-/Vertriebsansprechpartner"
+    },
+    {
+      "firma": "Wichelhaus Maschinenfabrik",
+      "ort": "Solingen (NRW)",
+      "grund": "Team-/Ansprechpartnerseite nutzt ausschließlich Funktionsadressen (pm@, fertigung@, konstruktion5@, finanzen@) – keine persönlichen E-Mails"
+    },
+    {
+      "firma": "Wemhöner Surface Technologies",
+      "ort": "Herford (NRW)",
+      "grund": "Nur Auslandsvertretungen/Handelspartner mit persönlichen Adressen, keine eigenen Entscheidungsträger"
+    },
+    {
+      "firma": "Gebr. Lödige Maschinenbau",
+      "ort": "Paderborn (NRW)",
+      "grund": "Kontaktseite listet nur internationale Vertretungen; keine persönlichen Adressen eigener Entscheidungsträger"
+    },
+    {
+      "firma": "GREIF-VELOX Maschinenfabrik",
+      "ort": "Lübeck (SH)",
+      "grund": "Nur wenige persönliche Adressen, ausschließlich Vertriebs-/Servicerollen; Geschäftsführung ohne persönliche E-Mail"
+    },
+    {
+      "firma": "Röders GmbH",
+      "ort": "Soltau (Niedersachsen)",
+      "grund": "Kontaktseiten nur Funktionsadressen (hsc@, maschinen@, mold@) bzw. Auslandsvertretungen"
+    },
+    {
+      "firma": "Wolf Anlagenbau GmbH",
+      "ort": "Kinding/Bayern",
+      "grund": "Region außerhalb Fokus (Bayern)"
+    },
+    {
+      "firma": "Maschinenbau Wüst GmbH",
+      "ort": "Montabaur (RLP)",
+      "grund": "Zu klein (ca. 40 Mitarbeiter) – unter Zielgröße 50 MA; Personenkarten wären vorhanden"
+    },
+    {
+      "firma": "AMI Förder- und Lagertechnik",
+      "ort": "Luckenbach (RLP)",
+      "grund": "Nur eine persönliche Adresse (Assistenz/Ordermanagement), keine Entscheidungsträger"
+    },
+    {
+      "firma": "REMBE GmbH Safety+Control",
+      "ort": "Brilon (NRW)",
+      "grund": "Website ausschließlich mit Sammeladresse hello@rembe.de"
+    },
+    {
+      "firma": "Achenbach Buschhütten GmbH & Co. KG",
+      "ort": "Kreuztal (NRW)",
+      "grund": "Kontaktseite nur Funktionsadressen (fertigung@)"
+    },
+    {
+      "firma": "EMDE Industrie-Technik",
+      "ort": "Nassau (RLP)",
+      "grund": "Persönliche Adressen nur von ausländischen Vertretungen"
+    },
+    {
+      "firma": "Schmidt + Clemens",
+      "ort": "Lindlar (NRW)",
+      "grund": "Keine persönlichen Adressen von Entscheidungsträgern auffindbar; Konzernstruktur mit Auslandsgesellschaften"
+    },
+    {
+      "firma": "IMS Messsysteme GmbH",
+      "ort": "Heiligenhaus (NRW)",
+      "grund": "Nur eine persönliche Adresse (Assistenz), keine Entscheidungsträger"
+    },
+    {
+      "firma": "ERICHSEN GmbH & Co. KG",
+      "ort": "Hemer (NRW)",
+      "grund": "Nur Funktions-/Compliance-Adressen"
+    },
+    {
+      "firma": "Helling GmbH",
+      "ort": "Heidgraben (SH)",
+      "grund": "Personenkarten nur im Vertrieb/Auslandsvertretungen, Geschäftsführung ohne persönliche E-Mail"
+    },
+    {
+      "firma": "Neuman & Esser Group",
+      "ort": "Übach-Palenberg (NRW)",
+      "grund": "Persönliche Adressen nur US-Vertriebsmitarbeiter; deutsche Entscheidungsträger ohne persönliche E-Mail"
+    },
+    {
+      "firma": "BAADER (Nordischer Maschinenbau Rud. Baader)",
+      "ort": "Lübeck (SH)",
+      "grund": "Nur Länder-/Funktionsadressen (ba-xx@baader.com)"
+    },
+    {
+      "firma": "Fooke GmbH",
+      "ort": "Borken (NRW)",
+      "grund": "Keine persönlichen Adressen eigener Mitarbeiter, nur asiatische Handelspartner"
+    },
+    {
+      "firma": "Josef Fröhling GmbH & Co. KG",
+      "ort": "Meinerzhagen (NRW)",
+      "grund": "Nur Funktionsadresse verwaltung@"
+    },
+    {
+      "firma": "Hübers Verfahrenstechnik",
+      "ort": "Bocholt (NRW)",
+      "grund": "Nur Funktionsadresse spareparts@"
+    },
+    {
+      "firma": "Kolbus GmbH & Co. KG",
+      "ort": "Rahden (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten (JS-gerendert)"
+    },
+    {
+      "firma": "JÖST GmbH + Co. KG",
+      "ort": "Dülmen (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontaktseiten gefunden"
+    },
+    {
+      "firma": "RHEWUM GmbH",
+      "ort": "Remscheid (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontaktseiten gefunden"
+    },
+    {
+      "firma": "Spaleck GmbH & Co. KG",
+      "ort": "Bocholt (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontaktseiten gefunden"
+    },
+    {
+      "firma": "Körting Hannover AG",
+      "ort": "Hannover (Niedersachsen)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Werth Messtechnik GmbH",
+      "ort": "Gießen (Hessen)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Steute Technologies",
+      "ort": "Löhne (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Küttner GmbH & Co. KG",
+      "ort": "Essen (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "HUBTEX Maschinenbau GmbH & Co. KG",
+      "ort": "Fulda (Hessen)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Schulz Systemtechnik GmbH",
+      "ort": "Visbek (Niedersachsen)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Amixon GmbH",
+      "ort": "Paderborn (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Lenord, Bauer & Co. GmbH",
+      "ort": "Oberhausen (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "AUMUND Fördertechnik GmbH",
+      "ort": "Rheinberg (Niederrhein/NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Kampf Schneid- und Wickeltechnik",
+      "ort": "Wiehl (Bergisches Land/NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Amandus Kahl GmbH & Co. KG",
+      "ort": "Reinbek (SH)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Carl Cloos Schweisstechnik GmbH",
+      "ort": "Haiger (Hessen)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "HASCO Hasenclever GmbH + Co KG",
+      "ort": "Lüdenscheid (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Krallmann Gruppe",
+      "ort": "Hiddenhausen (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "SIEBTECHNIK TEMA GmbH",
+      "ort": "Mülheim an der Ruhr (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Steinhaus GmbH",
+      "ort": "Mülheim an der Ruhr (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Rohmann GmbH",
+      "ort": "Frankenthal (RLP)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Mahr GmbH",
+      "ort": "Göttingen (Niedersachsen)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Otto Junker GmbH",
+      "ort": "Simmerath (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Neuenhauser Maschinenbau GmbH",
+      "ort": "Neuenhaus (Niedersachsen)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "HAZEMAG & EPR GmbH",
+      "ort": "Dülmen (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Bochumer Eisenhütte Heintzmann",
+      "ort": "Bochum (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "GKD Gebr. Kufferath AG",
+      "ort": "Düren (NRW)",
+      "grund": "Website nicht crawlbar / keine persönlichen Adressen"
+    },
+    {
+      "firma": "Heinrich Georg Maschinenfabrik",
+      "ort": "Kreuztal (NRW)",
+      "grund": "Website nicht crawlbar / keine persönlichen Adressen"
+    },
+    {
+      "firma": "Standardkessel Baumgarte",
+      "ort": "Duisburg/Bielefeld (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "PTR Germany GmbH",
+      "ort": "Remscheid (NRW)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten gefunden"
+    },
+    {
+      "firma": "Middeldorf SG GmbH",
+      "ort": "Solingen (NRW)",
+      "grund": "Zu klein; Kontaktseite nur mit Platzhalter-Adresse"
+    },
+    {
+      "firma": "Keil Anlagenbau GmbH",
+      "ort": "Bohmte-Hunteburg (Niedersachsen)",
+      "grund": "Nur eine persönliche Adresse (Personal/Karriere), keine Entscheidungsträger"
+    },
+    {
+      "firma": "MFV Maschinenbau GmbH",
+      "ort": "Niedersachsen",
+      "grund": "Keine persönlichen Adressen auf Ansprechpartner-Seite gefunden"
+    },
+    {
+      "firma": "Müssel Maschinenbau GmbH",
+      "ort": "Niedersachsen",
+      "grund": "Keine persönlichen Adressen auf Ansprechpartner-Seite gefunden"
+    },
+    {
+      "firma": "BWS Anlagenbau GmbH",
+      "ort": "Baden-Württemberg",
+      "grund": "Region außerhalb Fokus"
+    },
+    {
+      "firma": "Kluge Maschinenbau",
+      "ort": "-",
+      "grund": "Nur eine Inhaberadresse, Unternehmen deutlich unter Zielgröße"
+    },
+    {
+      "firma": "Schmidt & Heinzmann GmbH",
+      "ort": "Bruchsal (BW)",
+      "grund": "Region außerhalb Fokus, Teil der Dieffenbacher-Gruppe"
+    },
+    {
+      "firma": "Lauffer Pressen GmbH",
+      "ort": "Horb (BW)",
+      "grund": "Region außerhalb Fokus; nur Funktionsadresse"
+    },
+    {
+      "firma": "Grenzebach Maschinenbau GmbH",
+      "ort": "Asbach-Bäumenheim (Bayern)",
+      "grund": "Region außerhalb Fokus; nur Funktionsadressen"
+    },
+    {
+      "firma": "AZO GmbH + Co. KG",
+      "ort": "Osterburken (BW)",
+      "grund": "Region außerhalb Fokus; nur Funktionsadresse"
+    },
+    {
+      "firma": "Allgaier Process Technology",
+      "ort": "Uhingen (BW)",
+      "grund": "Region außerhalb Fokus; nur Funktionsadresse"
+    },
+    {
+      "firma": "RUD Maschinenbau",
+      "ort": "Aalen (BW)",
+      "grund": "Region außerhalb Fokus; nur Vertriebs-Funktionsadresse"
+    },
+    {
+      "firma": "WICKERT Maschinenbau GmbH",
+      "ort": "Landau in der Pfalz (RLP)",
+      "grund": "Einzige persönliche Adresse ohne erkennbare Entscheidungsträger-Position (kein Titel angegeben)"
+    },
+    {
+      "firma": "Kettner GmbH",
+      "ort": "Österreich",
+      "grund": "Region außerhalb Fokus; nur Standort-Funktionsadressen"
+    },
+    {
+      "firma": "LTA Lufttechnische Anlagen GmbH (Matthias Senske, Kaufm. Leiter)",
+      "ort": "Gronau-Epe (NRW)",
+      "grund": "Gültiger Kontakt vorhanden, aber wegen Lead-Obergrenze nicht aufgenommen (zwei Geschäftsführer derselben Firma bereits erfasst)"
+    }
+  ]
+}
