@@ -1,0 +1,458 @@
+{
+  "branche": "Automobil & Zulieferer",
+  "fokus": "NRW",
+  "leads": [
+    {
+      "name": "Ken Börner",
+      "position": "Geschäftsführender Gesellschafter",
+      "email": "k.boerner@wilhelm-manz.de",
+      "email_quelle": "https://wilhelm-manz.de/kontakt/",
+      "email_beleg": "k.boerner@wilhelm-manz.de – Ken Börner, Geschäftsführender Gesellschafter",
+      "telefon": "+49 2355 9087-0 (Zentrale)",
+      "telefon_quelle": "https://wilhelm-manz.de/kontakt/",
+      "firma": "Wilhelm Manz GmbH & Co. KG",
+      "ort": "Schalksmühle",
+      "mitarbeiter_ca": "120",
+      "beschreibung": "Familienunternehmen seit 1876 für Stanz- und Umformtechnik mit Transfer- und Servopressen (300–8000 kN) und eigenem Werkzeugbau, beliefert weltweit Industriekunden inkl. Automotive. Fertigungssteuerung, Werkzeugbau und Versand sind als eigene Bereiche organisiert – klarer Fit für ERP-Anbindung, MES/BDE-Kopplung und durchgängige Auftrags-/Abrufdigitalisierung.",
+      "weitere_quellen": [
+        "https://wilhelm-manz.de/unternehmen/",
+        "https://expertise-sauerland.com/der-unternehmensverbund/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Bernd Jannack",
+      "position": "Geschäftsführung",
+      "email": "jannack@mayweg-gmbh.de",
+      "email_quelle": "https://www.mayweg-gmbh.de/team/",
+      "email_beleg": "jannack@mayweg-gmbh.de – Bernd Jannack, Geschäftsführung",
+      "telefon": "+49 2353 91880",
+      "telefon_quelle": "https://www.mayweg-gmbh.de/team/",
+      "firma": "Werkzeugbau und Kunststoffverarbeitung Mayweg GmbH",
+      "ort": "Halver",
+      "mitarbeiter_ca": "230",
+      "beschreibung": "Kunststoff-Spritzguss und eigener Werkzeugbau mit 77 Spritzgussmaschinen für Automotive, Elektro-, Medizin- und Sanitärtechnik. Eigene Abteilungen für Projektmanagement, Arbeitsvorbereitung, Qualitäts- und Reklamationsmanagement – hoher Fit für ERP-/MES-Integration, Maschinendatenerfassung und digitale Reklamations- und Abrufprozesse.",
+      "weitere_quellen": [
+        "https://www.mayweg-gmbh.de/kontakt/",
+        "https://www.regiomanager.de/ranking/produktion/kunststoffverarbeiter/maerkischer-kreis/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jan Schriever",
+      "position": "Geschäftsführer",
+      "email": "jschriever@schriever-schrauben.de",
+      "email_quelle": "https://www.schriever-schrauben.de/wir-ueber-uns",
+      "email_beleg": "Jan Schriever – jschriever@schriever-schrauben.de – Geschäftsführer",
+      "telefon": "+49 2351 9783-30",
+      "telefon_quelle": "https://www.schriever-schrauben.de/wir-ueber-uns",
+      "firma": "Hans Schriever GmbH & Co. KG",
+      "ort": "Lüdenscheid",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Hersteller gewindefurchender Schrauben für Kunststoffe, Leichtmetalle und Dünnbleche sowie Mikroschrauben – klassische Verbindungstechnik für Automotive-Anwendungen. Eigene Rollen für Supply Chain Management, Fertigungssteuerung, Qualitätssicherung und Versand zeigen Bedarf an ERP-Anbindung, Lieferabruf-Automatisierung und digitaler Bestands-/Kanban-Steuerung.",
+      "weitere_quellen": [
+        "https://www.schriever-schrauben.de/kontakt/",
+        "https://expertise-sauerland.com/der-unternehmensverbund/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Patrick Ferber",
+      "position": "Geschäftsführer",
+      "email": "pferber@megatec-gmbh.de",
+      "email_quelle": "https://www.megatec-kunststofftechnik.de/kontakt/",
+      "email_beleg": "pferber@megatec-gmbh.de – Patrick Ferber (Geschäftsführer)",
+      "telefon": "+49 2351 379335-220",
+      "telefon_quelle": "https://www.megatec-kunststofftechnik.de/kontakt/",
+      "firma": "Megatec Kunststofftechnik GmbH",
+      "ort": "Lüdenscheid",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Kunststoff-Spritzguss mit eigener Konstruktion und Werkzeugbau am Standort Lüdenscheid (Römerweg 25), typischer Zulieferer der südwestfälischen Automotive-Kette. Ausgewiesene Leitungsfunktionen für Logistik, Auftragssteuerung und Qualitätssicherung – guter Ansatzpunkt für ERP-Anbindung, digitale Auftragssteuerung und Rückverfolgbarkeit.",
+      "weitere_quellen": [
+        "https://www.megatec-kunststofftechnik.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Tim Kaldeuer",
+      "position": "Geschäftsführer, Kaufmännischer Vertrieb",
+      "email": "tim.kaldeuer@asmetal.de",
+      "email_quelle": "https://www.asmetal.de/kontakt/",
+      "email_beleg": "Tim Kaldeuer (Geschäftsführer, Kaufmännischer Vertrieb): tim.kaldeuer@asmetal.de",
+      "telefon": "+49 2104 9298-24",
+      "telefon_quelle": "https://www.asmetal.de/kontakt/",
+      "firma": "August Schmits GmbH & Co. KG (ASMetal)",
+      "ort": "Mettmann",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Seit 1929 in Mettmann ansässiger Hersteller von Stanz-, Biege-, Tiefzieh-, Präge- und Montageteilen aus Stahl, Edelstahl, Aluminium, Kupfer und Messing; Automotive ist ausgewiesene Kernbranche. Kleine Führungsmannschaft mit Technischer Leitung, QM und Einkauf – Prozessdigitalisierung von Angebot bis Lieferabruf und ERP-Anbindung an OEM-/Tier-1-Kunden sind naheliegende Themen.",
+      "weitere_quellen": [
+        "https://www.asmetal.de/unternehmen/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Manuel Prentler",
+      "position": "Geschäftsführender Gesellschafter",
+      "email": "manuel.prentler@eckel-federn.de",
+      "email_quelle": "https://www.eckel-federn.de/unternehmen/ansprechpartner",
+      "email_beleg": "Manuel Prentler – Geschäftsführender Gesellschafter – manuel.prentler@eckel-federn.de",
+      "telefon": "+49 2721 9425-0",
+      "telefon_quelle": "https://www.eckel-federn.de/unternehmen/ansprechpartner",
+      "firma": "Rudolf Eckel Federnfabrik GmbH",
+      "ort": "Lennestadt",
+      "mitarbeiter_ca": "125",
+      "beschreibung": "Hersteller technischer Federn, Draht- und Biegeteile (Druck-, Zug-, Schenkelfedern) für Automotive und Industrie, inhabergeführt mit drei Prokuristen in Vertrieb, QM und Technik. Getrennte Rollen für Logistik/Versand und Produktionsplanung sprechen für Bedarf an ERP-Integration, digitaler Feinplanung und automatisierten Lieferabrufen.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/suedwestfalen/ranking/produktion/automotiv-metall/kreis-olpe/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Patrick Sperling",
+      "position": "Geschäftsführer",
+      "email": "patrick.sperling@schumacher-federn.de",
+      "email_quelle": "https://www.schumacher-federn.de/de/kontakt",
+      "email_beleg": "Patrick Sperling – Geschäftsführer – patrick.sperling@schumacher-federn.de",
+      "telefon": "nicht öffentlich",
+      "telefon_quelle": "",
+      "firma": "Schumacher GmbH Federn- und Stanztechnik",
+      "ort": "Attendorn",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familienbetrieb seit 1953 für technische Federn, Stanzteile und Drahtbiegeteile; Automotive und Nutzfahrzeuge sind ausgewiesene Zielbranchen. Eigene Logistikleitung, Qualitätsleitung und Arbeitsvorbereitung – guter Fit für ERP-Anbindung, digitale Arbeitsvorbereitung/Disposition und Rückverfolgbarkeit in der Serienfertigung.",
+      "weitere_quellen": [
+        "https://schumacher-federn.de/drahtbiegeteile/",
+        "https://www.regiomanager.de/unternehmen/schumacher-gmbh-federn-und-stanztechnik/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Rolf Cramer",
+      "position": "Geschäftsführer",
+      "email": "rcramer@dwgroup.de",
+      "email_quelle": "https://www.dw-alu.de/kontakt",
+      "email_beleg": "Rolf Cramer – Geschäftsführer – E-Mail: rcramer@dwgroup.de",
+      "telefon": "+49 2942 9703-25",
+      "telefon_quelle": "https://www.dw-alu.de/kontakt",
+      "firma": "Druckguss Westfalen GmbH & Co. KG",
+      "ort": "Geseke",
+      "mitarbeiter_ca": "300",
+      "beschreibung": "Aluminium-Druckgießerei mit eigener Bearbeitung, gelistet unter den größten Automotive-Zulieferern (Metall) im Kreis Soest. Druckguss-Serienfertigung mit hoher Teilevielfalt ist ein klassischer Kandidat für ERP-/MES-Kopplung, Maschinendatenerfassung und digitale Qualitäts- und Abrufprozesse.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/ranking/produktion/automotiv-metall/kreis-soest/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Hans Böhl",
+      "position": "Geschäftsführer (Dipl.-Wirt. Ing.)",
+      "email": "h.boehl@boehl-kunststofftechnik.com",
+      "email_quelle": "https://boehl-kunststofftechnik.com/kontakt",
+      "email_beleg": "h.boehl@boehl-kunststofftechnik.com (Hans Böhl)",
+      "telefon": "+49 2759 251",
+      "telefon_quelle": "https://boehl-kunststofftechnik.com/impressum",
+      "firma": "BÖHL Kunststofftechnik",
+      "ort": "Bad Berleburg-Aue",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Kunststofftechnik-Betrieb in Südwestfalen mit ausgewiesenem Branchenschwerpunkt Automobilindustrie. Inhabergeführt mit direktem Entscheidungsweg – gut adressierbar für schlanke Prozessdigitalisierung (Auftrags-, Werkzeug- und Chargenverwaltung) und Anbindung an Kunden-ERP/EDI.",
+      "weitere_quellen": [
+        "https://boehl-kunststofftechnik.com/branchen/automobilindustrie",
+        "https://boehl-kunststofftechnik.com/impressum"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Udo Gensowski",
+      "position": "Geschäftsführer",
+      "email": "gensowski@oth-hagen.de",
+      "email_quelle": "https://www.oth-hagen.de/kontakt",
+      "email_beleg": "Ansprechpartner: Geschäftsführer / Udo Gensowski / gensowski@oth-hagen.de",
+      "telefon": "+49 2331 71455",
+      "telefon_quelle": "https://www.oth-hagen.de/kontakt",
+      "firma": "OTH Oberflächentechnik Hagen",
+      "ort": "Hagen",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familienbetrieb für Oberflächentechnik (Verzinken, Beizen, Phosphatieren, thermische Nachbehandlung) mit eigener Qualitätssicherung und Prüfnormen für Zulieferteile. Lohnveredler mit hohem Auftrags- und Chargendurchsatz – Fit für digitale Auftragsannahme, Chargenrückverfolgung und ERP-/Kunden-EDI-Anbindung.",
+      "weitere_quellen": [
+        "https://www.oth-hagen.de/"
+      ],
+      "_verifiziert": false,
+      "_verifiziert_status": "HTTP 500 – Adresse nicht auf Seite gefunden",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Ernst Thomas",
+      "position": "Geschäftsführer / Betriebsleitung",
+      "email": "e.thomas@peotec.com",
+      "email_quelle": "https://www.peotec.com/kontakt.php",
+      "email_beleg": "Ernst Thomas – Geschäftsführer / Betriebsleitung – E-Mail: e.thomas [at] peotec.com (mailto-Link: e.thomas@peotec.com)",
+      "telefon": "+49 2173 2004080",
+      "telefon_quelle": "https://www.peotec.com/kontakt.php",
+      "firma": "PEOTEC GmbH",
+      "ort": "Langenfeld (Werk Solingen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführter Lohnbeschichter (KTL, Pulverbeschichtung, Nass-/Tauchlackierung) mit Traditionsstandort Solingen im Bergischen Land, beliefert metallverarbeitende und Fahrzeug-Zulieferer. Termindisposition und Auftragsdurchlauf sind eigene Rollen – Ansatzpunkt für digitale Auftragssteuerung, Barcode-/Chargenverfolgung und ERP-Anbindung an Kunden.",
+      "weitere_quellen": [
+        "https://www.peotec.com/standort-solingen.php",
+        "https://www.peotec.com/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Kai Wasmund",
+      "position": "Betriebsleiter",
+      "email": "k.wasmund@willy-remscheid.de",
+      "email_quelle": "https://willy-remscheid.de/kontakt/",
+      "email_beleg": "k.wasmund@willy-remscheid.de – Kai Wasmund (Betriebsleiter)",
+      "telefon": "+49 212 24841-15",
+      "telefon_quelle": "https://willy-remscheid.de/kontakt/",
+      "firma": "Willy Remscheid Galvanische Anstalt GmbH",
+      "ort": "Solingen",
+      "mitarbeiter_ca": "89",
+      "beschreibung": "Inhabergeführte Galvanik seit 1911 mit Kunden aus Automobil-, Sanitär- und Möbelindustrie; übernahm 2012 die ausgegliederte Galvanik von WITTE Automotive. Als Lohnveredler mit hohem Chargenaufkommen guter Fit für Produktionsdigitalisierung, Prozessdatenerfassung und ERP-/EDI-Anbindung an Automotive-Kunden.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/ranking/produktion/oberflaechentechnik/rhein-wupper/",
+        "https://www.witte-automotive.de/WITTE-Niederberg--gliedert-Galvanik-aus_200.aspx"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "André Pingel",
+      "position": "Leitung Logistik",
+      "email": "ap@kaiser-ot.com",
+      "email_quelle": "https://kaiser-ot.com/kontakt/",
+      "email_beleg": "ap@kaiser-ot.com – André Pingel, Leitung Logistik",
+      "telefon": "+49 2753 5947-32",
+      "telefon_quelle": "https://kaiser-ot.com/kontakt/",
+      "firma": "KAISER GmbH Oberflächentechnik",
+      "ort": "Erndtebrück-Schameder",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familienunternehmen seit 1976, Lohnbeschichter für KTL, Pulverbeschichtung und Zinklamellen – typische Korrosionsschutz-Prozesse für Automotive-Bauteile. Hinweis: Die Geschäftsführung (Sascha Paduch) ist nur über die Funktionsadresse gf@kaiser-ot.com erreichbar; als Entscheidungsträger für Logistik-/Prozessdigitalisierung (Abruf-, Transport- und Chargensteuerung, ERP-Anbindung) ist die Logistikleitung der belastbare persönliche Kontakt.",
+      "weitere_quellen": [
+        "https://www.kaiser-oberflaechentechnik.de/unternehmen/",
+        "https://www.kaiser-oberflaechentechnik.de/ktl-pulverbeschichtung/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "Bruse GmbH & Co. KG",
+      "ort": "Attendorn",
+      "grund": "Auf /kontakt nur Vertriebsmitarbeiter mit persönlicher E-Mail; GF Christian Bruse im Impressum ohne persönliche Adresse (nur info@bruse.de)"
+    },
+    {
+      "firma": "Josef Fleckner GmbH & Co. KG",
+      "ort": "Plettenberg",
+      "grund": "Nur Funktionsadressen (info@, verkauf@, versand@, bewerbungen@)"
+    },
+    {
+      "firma": "Vogt Stanzteile GmbH",
+      "ort": "Seewald-Besenfeld",
+      "grund": "Sitz in Baden-Württemberg, außerhalb NRW"
+    },
+    {
+      "firma": "Hömberg GmbH Kunststofftechnik",
+      "ort": "Lüdenscheid",
+      "grund": "Geschäftsleitung namentlich genannt, aber nur info@hoemberg-kunststofftechnik.de"
+    },
+    {
+      "firma": "BROCKHAUS Group",
+      "ort": "Plettenberg",
+      "grund": "Keine E-Mail-Adressen auf der Kontaktseite, nur Formular"
+    },
+    {
+      "firma": "SEISSENSCHMIDT",
+      "ort": "Plettenberg",
+      "grund": "HTTP 503; curl-Nachfassen ohne E-Mail-Treffer"
+    },
+    {
+      "firma": "Sitec Stanztechnik GmbH",
+      "ort": "Siegen",
+      "grund": "HTTP 503; curl-Nachfassen ohne E-Mail-Treffer"
+    },
+    {
+      "firma": "J.D. von Hagen AG",
+      "ort": "Iserlohn",
+      "grund": "Nur info(at)jdeha.de, keine Personen auf der Kontaktseite"
+    },
+    {
+      "firma": "Steinbach & Vollmann GmbH",
+      "ort": "Heiligenhaus",
+      "grund": "Nur sales@stuv.de und info@stuv.de"
+    },
+    {
+      "firma": "KOHLHAGE Gruppe",
+      "ort": "Neuenrade",
+      "grund": "GF Maximilian Schreiber namentlich genannt, aber nur Funktionsadressen (info@, vertrieb@, einkauf@, personal@)"
+    },
+    {
+      "firma": "Gerhardi Kunststofftechnik GmbH",
+      "ort": "Lüdenscheid",
+      "grund": "Nur Funktionsadressen (info@, beschwerden@, managementorganisation@); zudem 1.500 MA über Zielkorridor"
+    },
+    {
+      "firma": "HUEHOCO Metalloberflächenveredelung GmbH",
+      "ort": "Wuppertal",
+      "grund": "Persönliche E-Mails nur für Verkauf und QS-Leitung – kein Geschäftsführer/Prokurist bzw. zulässige Ersatzfunktion"
+    },
+    {
+      "firma": "Tillmann Gruppe (Tillmann Profil / TWP)",
+      "ort": "Sundern / Arnsberg",
+      "grund": "Geschäftsführer ohne persönliche E-Mail; Prokurist-Adresse gehört zum Standort Arnsdorf (Sachsen)"
+    },
+    {
+      "firma": "KÖNIG + CO. GmbH",
+      "ort": "Netphen",
+      "grund": "GF-E-Mail vorhanden, aber Zielbranchen Anlagenbau/Öl & Gas/Energie – kein Automotive-Bezug"
+    },
+    {
+      "firma": "DELBROUCK GmbH",
+      "ort": "Menden",
+      "grund": "Persönliche E-Mails vorhanden, aber Produkt sind Getränkekästen – kein Automotive"
+    },
+    {
+      "firma": "Slawinski & Co. GmbH",
+      "ort": "Siegen",
+      "grund": "Persönliche E-Mails vorhanden, aber Behälterböden/Apparatebau statt Automotive"
+    },
+    {
+      "firma": "KPS Kunststofftechnik",
+      "ort": "Scheibenberg (Sachsen)",
+      "grund": "Sitz außerhalb NRW"
+    },
+    {
+      "firma": "HMT Heldener Metalltechnik GmbH & Co. KG",
+      "ort": "Attendorn",
+      "grund": "Nur Funktionsadressen (geschaeftsleitung@, VertriebHMT@, qualitaetssicherung@)"
+    },
+    {
+      "firma": "Pickhardt & Gerlach GmbH & Co. KG",
+      "ort": "Finnentrop",
+      "grund": "Nur Funktionsadressen (Geschaeftsfuehrung@, Einkauf@); zudem Konzerntochter der GESCO SE"
+    },
+    {
+      "firma": "Hurst + Schröder GmbH",
+      "ort": "Werdohl",
+      "grund": "Nur info@hurst-schroeder.de"
+    },
+    {
+      "firma": "Muhr Metalltechnik GmbH & Co. KG",
+      "ort": "Wenden",
+      "grund": "Nur info@muhr-metalltechnik.de"
+    },
+    {
+      "firma": "Römer Stanz- und Umformtechnik GmbH",
+      "ort": "Plettenberg",
+      "grund": "Nur info@ und bewerbung@roemer-gmbh.com"
+    },
+    {
+      "firma": "SCHROTH Safety Products GmbH",
+      "ort": "Arnsberg",
+      "grund": "Nur Funktionsadressen (germany@eu.schroth.com)"
+    },
+    {
+      "firma": "Kauth GmbH & Co. KG",
+      "ort": "Finnentrop",
+      "grund": "Nur Funktionsadresse finnentrop@kauth.de"
+    },
+    {
+      "firma": "Eibach Industries",
+      "ort": "Finnentrop",
+      "grund": "Keine E-Mail-Adressen auf Website/Impressum auffindbar"
+    },
+    {
+      "firma": "Schürholz GmbH & Co. KG",
+      "ort": "Plettenberg",
+      "grund": "Nur eine Funktionsadresse (hof@schuerholz.de)"
+    },
+    {
+      "firma": "Carl Aug. Picard GmbH",
+      "ort": "Remscheid",
+      "grund": "Sehr große Personenliste ohne Positionsangaben – Entscheidungsträger nicht eindeutig zuordenbar"
+    },
+    {
+      "firma": "Dahmen Umformtechnik",
+      "ort": "Iserlohn",
+      "grund": "Nur info@dahmen-umformtechnik.de"
+    },
+    {
+      "firma": "Lahme GmbH & Co. KG",
+      "ort": "Kierspe",
+      "grund": "Nur info@lahme.de"
+    },
+    {
+      "firma": "Mitex GmbH",
+      "ort": "Erkrath",
+      "grund": "Kein Geschäftsführer genannt; persönliche Adressen nur Einkauf/Auftragsbearbeitung; Schwerpunkt Walzentechnik statt Automotive"
+    },
+    {
+      "firma": "Friedr. Ischebeck GmbH",
+      "ort": "Ennepetal",
+      "grund": "Persönliche E-Mails vorhanden, aber Bau-/Geotechnik statt Automotive"
+    },
+    {
+      "firma": "KettenWulf Betriebs GmbH",
+      "ort": "Eslohe",
+      "grund": "Website/Kontaktseiten lieferten keine E-Mail-Adressen"
+    },
+    {
+      "firma": "Lübke & Vogt GmbH & Co. KG",
+      "ort": "Sundern",
+      "grund": "Website/Kontaktseiten lieferten keine E-Mail-Adressen"
+    },
+    {
+      "firma": "Sundwiger Drehtechnik GmbH",
+      "ort": "Hemer-Sundwig",
+      "grund": "Kontakt-/Impressumsseiten lieferten keine E-Mail-Adressen"
+    },
+    {
+      "firma": "VDF FEDERN GmbH",
+      "ort": "Sauerland",
+      "grund": "Kontakt-/Impressumsseiten lieferten keine E-Mail-Adressen"
+    },
+    {
+      "firma": "Hans Holzhauer GmbH & Co. KG",
+      "ort": "Iserlohn",
+      "grund": "Keine erreichbare Website mit E-Mail-Adressen gefunden"
+    },
+    {
+      "firma": "Emil Hembeck GmbH & Co. KG / Kreutzer GmbH & Co. KG",
+      "ort": "Lüdenscheid",
+      "grund": "Keine erreichbaren Kontaktseiten mit E-Mail-Adressen gefunden"
+    },
+    {
+      "firma": "HEICO Befestigungstechnik GmbH",
+      "ort": "Ense",
+      "grund": "Kontaktseite ohne auslesbare E-Mail-Adressen"
+    },
+    {
+      "firma": "Leopold Kostal, KIRCHHOFF Automotive, OTTO FUCHS, Mubea, Borbet, Martinrea Honsel, Forvia Hella, BIA Group",
+      "ort": "diverse NRW",
+      "grund": "Konzerne bzw. Konzerntöchter oder deutlich über 1.000 Mitarbeiter – außerhalb Zielprofil"
+    }
+  ]
+}
