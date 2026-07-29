@@ -1,0 +1,391 @@
+{
+  "branche": "Logistik & Supply Chain",
+  "fokus": "Ruhrgebiet/Rheinland",
+  "leads": [
+    {
+      "name": "Leo Mathew jun.",
+      "position": "Geschäftsführer",
+      "email": "leo.mathew@eft-logistik.de",
+      "email_quelle": "https://www.eft-logistik.de/ansprechpartner",
+      "email_beleg": "Leo Mathew, jun. – Geschäftsführer – leo.mathew@eft-logistik.de",
+      "telefon": "+49 201 536778-25",
+      "telefon_quelle": "https://www.eft-logistik.de/ansprechpartner",
+      "firma": "EFT Logistik GmbH (Essener Fuhr- und Transportgesellschaft)",
+      "ort": "Essen",
+      "mitarbeiter_ca": "ca. 70",
+      "beschreibung": "Traditionsreiche, familiengeführte Spedition aus Essen (über 85 Jahre, Familie Mathew) mit eigenem Fuhrpark, Nah-/Fernverkehr und Ladungsverkehren. Geschäftsführung in zweiter/dritter Generation, komplette Ansprechpartner-Liste mit Direkt-E-Mails öffentlich.",
+      "weitere_quellen": [
+        "https://www.eft-logistik.de/ansprechpartner"
+      ],
+      "_verifiziert": false,
+      "_verifiziert_status": "HTTP 200 – Adresse nicht auf Seite gefunden",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Klaus Hüttemann",
+      "position": "Geschäftsführer / geschäftsführender Gesellschafter (2. Generation)",
+      "email": "k.huettemann@huelog.de",
+      "email_quelle": "https://www.huettemann-logistik.de/unternehmensgruppe/management/",
+      "email_beleg": "Klaus Hüttemann – Geschäftsführer – k.huettemann@huelog.de",
+      "telefon": "+49 2065 909116",
+      "telefon_quelle": "https://www.huettemann-logistik.de/unternehmensgruppe/management/",
+      "firma": "HUETTEMANN Logistik GmbH (HUETTEMANN Group)",
+      "ort": "Duisburg",
+      "mitarbeiter_ca": "ca. 176 (Einzelgesellschaft), Gruppe größer",
+      "beschreibung": "Inhabergeführte Logistikgruppe aus Duisburg mit Kontraktlogistik, Lagerlogistik, Hafenumschlag und Transport. Klaus Hüttemann führt die Gruppe in zweiter Generation als geschäftsführender Gesellschafter.",
+      "weitere_quellen": [
+        "https://www.huettemann-logistik.de/unternehmensgruppe/management/",
+        "https://www.regiomanager.de/revier/ranking/mobilitaet-logistik/spedition-und-logistik/duisburg/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Sandra Fündgens",
+      "position": "Geschäftsleitung",
+      "email": "s.fuendgens@fuendgens.de",
+      "email_quelle": "https://www.fuendgens.de/",
+      "email_beleg": "wörtlich auf der Seite: \"s.fuendgens[at]fuendgens.de\" (Geschäftsleitung Sandra Fündgens)",
+      "telefon": "",
+      "telefon_quelle": "nicht öffentlich",
+      "firma": "Fündgens GmbH & Co. KG",
+      "ort": "Duisburg",
+      "mitarbeiter_ca": "ca. 80",
+      "beschreibung": "Familienspedition seit 1932 im Duisburger Hafen, Schwerpunkt Containertransport und Hafenlogistik. Geführt von Vater und Tochter (Achim und Sandra Fündgens).",
+      "weitere_quellen": [
+        "https://www.fuendgens.de/",
+        "https://www.regiomanager.de/revier/ranking/mobilitaet-logistik/spedition-und-logistik/duisburg/"
+      ],
+      "_verifiziert": false,
+      "_verifiziert_status": "HTTP 200 – Adresse nicht auf Seite gefunden",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Tim Bönders",
+      "position": "Geschäftsführender Gesellschafter (4. Generation)",
+      "email": "tboenders@bk-group.de",
+      "email_quelle": "https://www.boenders.de/about/management/",
+      "email_beleg": "Tim Bönders – Geschäftsführender Gesellschafter – tboenders@bk-group.de",
+      "telefon": "",
+      "telefon_quelle": "nicht öffentlich",
+      "firma": "Bönders GmbH (B+K Group)",
+      "ort": "Krefeld",
+      "mitarbeiter_ca": "ca. 450",
+      "beschreibung": "Inhabergeführter Logistikdienstleister aus Krefeld (seit über 70 Jahren, 4. Generation) mit Kontraktlogistik, Ersatzteillogistik, Warehousing und Distribution für ausgewählte Schlüsselbranchen.",
+      "weitere_quellen": [
+        "https://www.boenders.de/about/management/",
+        "https://www.regiomanager.de/niederrhein/ranking/mobilitaet-logistik/spedition-und-logistik/krefeld/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "René Langen",
+      "position": "Geschäftsleitung",
+      "email": "r.langen@speditionlangen.de",
+      "email_quelle": "https://www.speditionlangen.de/kontakt",
+      "email_beleg": "René Langen – Geschäftsleitung – r.langen@speditionlangen.de",
+      "telefon": "+49 2166 9539-0",
+      "telefon_quelle": "https://www.speditionlangen.de/kontakt",
+      "firma": "Paul Langen GmbH & Co. KG",
+      "ort": "Mönchengladbach",
+      "mitarbeiter_ca": "ca. 120",
+      "beschreibung": "Familienunternehmen seit 1883 mit Spedition, Lagerlogistik und Möbel-/Sperrgutlogistik, europaweite Distribution ab Mönchengladbach.",
+      "weitere_quellen": [
+        "https://www.speditionlangen.de/kontakt",
+        "https://www.regiomanager.de/ranking/mobilitaet-logistik/spedition-und-logistik/moenchengladbach/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jörg Küpper",
+      "position": "Geschäftsführer",
+      "email": "j.kuepper@d-log.de",
+      "email_quelle": "https://www.d-log.de/impressum",
+      "email_beleg": "Geschäftsführer: Jörg Küpper – j.kuepper@d-log.de",
+      "telefon": "+49 201 2897960",
+      "telefon_quelle": "https://www.d-log.de/impressum",
+      "firma": "d-log GmbH",
+      "ort": "Essen",
+      "mitarbeiter_ca": "ca. 80",
+      "beschreibung": "Inhabergeführter Logistikdienstleister aus Essen (Schacht Neu-Cöln) mit Transport-, Lager- und Distributionslogistik im Ruhrgebiet.",
+      "weitere_quellen": [
+        "https://www.d-log.de/impressum",
+        "https://www.regiomanager.de/ranking/mobilitaet-logistik/spedition-und-logistik/essen/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Benjamin Peelen",
+      "position": "Geschäftsführer (Peelen Logistik GmbH)",
+      "email": "benjamin.peelen@peelen.de",
+      "email_quelle": "https://www.peelen.de/kontakt",
+      "email_beleg": "Benjamin Peelen – Geschäftsführer – benjamin.peelen@peelen.de",
+      "telefon": "+49 2843 9597-114 (Peelen Logistik GmbH, Rheinberg)",
+      "telefon_quelle": "https://www.peelen.de/kontakt",
+      "firma": "Peelen Transporte GmbH / Peelen Logistik GmbH",
+      "ort": "Duisburg (Betriebshof) / Rheinberg (Logistikzentrum Niederrhein)",
+      "mitarbeiter_ca": "ca. 93",
+      "beschreibung": "Familiengeführte Transport- und Logistikgruppe am Niederrhein mit eigenem Fuhrpark, Warehouse (LZN Rheinberg) und Kontraktlogistik.",
+      "weitere_quellen": [
+        "https://www.peelen.de/kontakt",
+        "https://www.regiomanager.de/revier/ranking/mobilitaet-logistik/spedition-und-logistik/duisburg/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Köhler",
+      "position": "Geschäftsführer",
+      "email": "a.koehler@koehler-transport.de",
+      "email_quelle": "https://www.koehler-transport.com/ansprechpartner",
+      "email_beleg": "Andreas Köhler – Geschäftsführer – a.koehler@koehler-transport.de",
+      "telefon": "+49 221 96640-10",
+      "telefon_quelle": "https://www.koehler-transport.com/ansprechpartner",
+      "firma": "KÖHLER GmbH & Co. KG",
+      "ort": "Köln",
+      "mitarbeiter_ca": "ca. 40 (laut Website: \"Unsere 40 motivierten Mitarbeiter in Transport, Lager, Werkstatt und Verwaltung\")",
+      "beschreibung": "Inhabergeführtes Familienunternehmen in Köln mit Transport, Lager und eigener Werkstatt. Etwas unterhalb der Zielgröße, aber klar mittelständisch und inhabergeführt.",
+      "weitere_quellen": [
+        "https://www.koehler-transport.com/ansprechpartner",
+        "https://www.koehler-transport.com/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Norman Lippe",
+      "position": "Geschäftsführer",
+      "email": "norman.lippe@cargotrans.de",
+      "email_quelle": "https://www.cargotrans.de/kontakt",
+      "email_beleg": "Norman Lippe – Geschäftsführer – norman.lippe@cargotrans.de",
+      "telefon": "+49 2361 3061-0 (Zentrale Recklinghausen)",
+      "telefon_quelle": "https://www.cargotrans.de/kontakt",
+      "firma": "CARGOTRANS GmbH & Co. KG",
+      "ort": "Recklinghausen (Hauptsitz), Verwaltung Dortmund, NL Hamburg",
+      "mitarbeiter_ca": "ca. 44-60",
+      "beschreibung": "Mittelständische Spedition im nördlichen Ruhrgebiet mit Road-/Intermodal-Verkehren, Warehousing und Zollservice; vollständige Ansprechpartnerliste inkl. Dispositions- und Lagerleitung öffentlich.",
+      "weitere_quellen": [
+        "https://www.cargotrans.de/kontakt",
+        "https://www.regiomanager.de/ranking/mobilitaet-logistik/spedition-und-logistik/dortmund/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Verena Wiechers",
+      "position": "Geschäftsleitung",
+      "email": "v.wiechers@wiechers-spedition.de",
+      "email_quelle": "https://www.wiechers-spedition.de/kontakt",
+      "email_beleg": "Verena Wiechers – Geschäftsleitung – v.wiechers@wiechers-spedition.de",
+      "telefon": "+49 234 94338-27",
+      "telefon_quelle": "https://www.wiechers-spedition.de/kontakt",
+      "firma": "Spedition Josef Wiechers GmbH (WIECHERS Spedition + Logistik)",
+      "ort": "Bochum (Hauptsitz), Standort Duisburg",
+      "mitarbeiter_ca": "ca. 45",
+      "beschreibung": "Familiengeführte Spedition aus Bochum mit Standort Duisburg, Schwerpunkt Transport-, Lager- und Distributionslogistik im Ruhrgebiet. Zusätzlicher Ansprechpartner: Markus Koch (Speditionsleitung, Prokurist), m.koch@wiechers-spedition.de.",
+      "weitere_quellen": [
+        "https://www.wiechers-spedition.de/kontakt",
+        "https://www.regiomanager.de/ranking/mobilitaet-logistik/spedition-und-logistik/bochum/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Hanjo Heinen",
+      "position": "Geschäftsführer",
+      "email": "hanjo.heinen@heinen-ht.de",
+      "email_quelle": "https://www.heinen-transport-gmbh.de/ansprechpartner",
+      "email_beleg": "Hanjo Heinen – Geschäftsführer – hanjo.heinen@heinen-ht.de",
+      "telefon": "",
+      "telefon_quelle": "nicht öffentlich",
+      "firma": "Heinen Transport GmbH (Heinen Gruppe: HT, HLS, HHL, HSK, HHV, HG)",
+      "ort": "Meerbusch (Hauptsitz), Logistikzentrum Duisburg",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführte Transport- und Logistikgruppe im Rheinland mit Logistikzentrum in Duisburg, Speditions-, Lager- und Kontraktlogistikgesellschaften. Weitere Entscheider: Pascal Heinen (Prokurist / Leitung Logistik, pascal.heinen@heinen-ht.de), Sabine Heinen (Prokuristin, sabine.heinen@heinen-ht.de).",
+      "weitere_quellen": [
+        "https://www.heinen-transport-gmbh.de/ansprechpartner",
+        "https://www.heinen-transport-gmbh.de/impressum"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Gregor Roes",
+      "position": "Geschäftsführer",
+      "email": "g.roes@spedition-hoevelmann.de",
+      "email_quelle": "https://www.spedition-hoevelmann.de/kontakt",
+      "email_beleg": "Geschäftsführer Gregor Roes – g.roes@spedition-hoevelmann.de – +49 (0) 2851 962-121",
+      "telefon": "+49 2851 962-121",
+      "telefon_quelle": "https://www.spedition-hoevelmann.de/kontakt",
+      "firma": "Spedition Hövelmann GmbH & Co. KG",
+      "ort": "Rees (Niederrhein)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführte Niederrhein-Spedition mit Transport-, Lager- und Kontraktlogistik. Weitere Entscheider: Markus Hövelmann (Gesellschafter, m.hoevelmann@spedition-hoevelmann.de), Ricarda Hövelmann (Gesellschafterin, r.hoevelmann@spedition-hoevelmann.de), Jörg Möllenbeck (Prokurist, j.moellenbeck@spedition-hoevelmann.de).",
+      "weitere_quellen": [
+        "https://www.spedition-hoevelmann.de/kontakt"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "TEAM Logistic GmbH",
+      "ort": "Raum Montabaur (Vorwahl 02602)",
+      "grund": "Persönliche E-Mails vorhanden, aber Standort außerhalb Ruhrgebiet/Rheinland/Niederrhein"
+    },
+    {
+      "firma": "Spedition Schiffers GmbH",
+      "ort": "Mönchengladbach",
+      "grund": "Website nicht erreichbar (DNS-Fehler, auch per curl); E-Mails nicht auf einer gecrawlten Seite verifizierbar"
+    },
+    {
+      "firma": "meta4log GmbH",
+      "ort": "Essen",
+      "grund": "Nur info@meta4log.de auf der Website; keine persönliche E-Mail des Geschäftsführers (Bernd Jungclaus)"
+    },
+    {
+      "firma": "Rheinkraft International GmbH (RKI)",
+      "ort": "Duisburg",
+      "grund": "Nur info@rki-logistics.com, keine Personen auf Kontaktseite"
+    },
+    {
+      "firma": "Windgätter u. Sohn GmbH",
+      "ort": "Dortmund",
+      "grund": "Ansprechpartner mit Durchwahl, aber nur Sammeladresse dispo@windgaetter-transporte.de"
+    },
+    {
+      "firma": "Hoff Transport und Logistik GmbH & Co. KG",
+      "ort": "Krefeld",
+      "grund": "Nur info@/order@/karriere@; keine Personen genannt"
+    },
+    {
+      "firma": "AXTRA GmbH & Co. KG",
+      "ort": "Essen",
+      "grund": "Nur info@axtra.de, keine Ansprechpartnerseite"
+    },
+    {
+      "firma": "Meinolf Jacobi Spedition GmbH",
+      "ort": "Bochum",
+      "grund": "Keine E-Mail-Adresse auf der Website auffindbar"
+    },
+    {
+      "firma": "Johs. Stelten GmbH & Co. KG",
+      "ort": "Krefeld",
+      "grund": "Nur info@steltenkg.de; keine persönliche E-Mail der Geschäftsführung"
+    },
+    {
+      "firma": "Spedition Minor GmbH",
+      "ort": "Gelsenkirchen",
+      "grund": "Nur info@spedition-minor.de"
+    },
+    {
+      "firma": "Hubert Kläsener GmbH & Co. KG",
+      "ort": "Gelsenkirchen",
+      "grund": "Keine persönliche E-Mail auf Website/Kontaktseite"
+    },
+    {
+      "firma": "Scheren Logistik GmbH",
+      "ort": "Düsseldorf",
+      "grund": "Team-Seite nennt Personen nur mit Vornamen/Initial, nur info@scheren.de"
+    },
+    {
+      "firma": "MSG Speditionsgesellschaft mbH",
+      "ort": "Mönchengladbach",
+      "grund": "Nur Funktionsadressen (Management@, National@, Sea@ etc.), keine Personenzuordnung"
+    },
+    {
+      "firma": "Graf-Transporte Internationale Spedition GmbH",
+      "ort": "Bochum",
+      "grund": "Keine E-Mail-Adressen auf der Website auffindbar"
+    },
+    {
+      "firma": "Curt Richter SE",
+      "ort": "Köln",
+      "grund": "Keine persönlichen E-Mails auf gecrawlten Seiten"
+    },
+    {
+      "firma": "Deußen Logistik GmbH",
+      "ort": "Köln",
+      "grund": "Keine erreichbare Firmenwebsite mit persönlichen E-Mails gefunden"
+    },
+    {
+      "firma": "HEUEL LOGISTICS",
+      "ort": "Dortmund/Arnsberg",
+      "grund": "Nur Funktionsadressen (angebot@, info@)"
+    },
+    {
+      "firma": "LOXX Logistics",
+      "ort": "Duisburg",
+      "grund": "Persönliche E-Mails vorhanden, aber inzwischen Teil der Rhenus-Gruppe (Konzern) – ausgeschlossen"
+    },
+    {
+      "firma": "Hendricks Unternehmensgruppe",
+      "ort": "Neuss",
+      "grund": "Nur Funktionsadressen (automotive@hendricks.group)"
+    },
+    {
+      "firma": "TechnoCargo Logistik GmbH u. Co. KG",
+      "ort": "Neuss",
+      "grund": "Nur bewerbung@technocargo.de; Konzernstruktur (Bertschi-nahe Geschäftsführung)"
+    },
+    {
+      "firma": "NEUFRA Speditions-Gesellschaft mbH",
+      "ort": "Neuss",
+      "grund": "Keine persönlichen E-Mails auffindbar"
+    },
+    {
+      "firma": "Bodenheim Spedition GmbH",
+      "ort": "Krefeld",
+      "grund": "Kontaktseite enthält nur Platzhalter (email@example.org)"
+    },
+    {
+      "firma": "Spedition Kronenberg GmbH",
+      "ort": "Bochum",
+      "grund": "Nur Sammeladresse DispoKronenberg@aol.com; zudem unter 50 MA"
+    },
+    {
+      "firma": "GATE 41 Logistics GmbH & Co. KG",
+      "ort": "Mönchengladbach",
+      "grund": "Website enthält nur Platzhalter-Adresse, keine echten E-Mails"
+    },
+    {
+      "firma": "Die Richrath's GmbH",
+      "ort": "Düsseldorf",
+      "grund": "Nur support@die-richraths.de"
+    },
+    {
+      "firma": "Sägewerk Transporte GmbH",
+      "ort": "Düsseldorf",
+      "grund": "Keine persönlichen E-Mails auf der Website"
+    },
+    {
+      "firma": "Wilhelm Rotthege",
+      "ort": "Essen/Düsseldorf",
+      "grund": "Nur Standort-Sammeladressen (essen@, duesseldorf@)"
+    },
+    {
+      "firma": "Spedition Buerhaus / GDS Logistik / OFL Olympia Food Logistics / BM Spedition / A. Siepmann / Joachim Schultz / LOGIFLEX / P+M Logistik / Rosenbaum / Guckuk / ABC-Logistik / VCK Logistics",
+      "ort": "diverse (Dortmund, Bochum, Duisburg, MG, Köln, Düsseldorf)",
+      "grund": "Sammelposten: keine erreichbare Website mit persönlichen E-Mails der Entscheidungsträger gefunden"
+    },
+    {
+      "firma": "Emons, DSV, DB Schenker, Rhenus, Kühne+Nagel, Dachser, DHL, BLG, Yusen, Kintetsu",
+      "ort": "diverse",
+      "grund": "Konzerne bzw. laut Vorgabe ausgeschlossen"
+    }
+  ]
+}

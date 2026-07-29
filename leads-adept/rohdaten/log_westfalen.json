@@ -1,0 +1,479 @@
+{
+  "branche": "Logistik & Supply Chain",
+  "fokus": "Münsterland/OWL/Sauerland",
+  "leads": [
+    {
+      "name": "Ferdinand Menn",
+      "position": "Geschäftsführung",
+      "email": "f.menn@spedition-menn.de",
+      "email_quelle": "https://www.spedition-menn.de/index.php/ansprechpartner.html",
+      "email_beleg": "Ansprech­partner Geschäfts­leitung/Personal Ferdinand Menn Geschäftsführung 02732 5923-14 f.menn@spedition-menn.de",
+      "telefon": "02732 5923-14",
+      "telefon_quelle": "https://www.spedition-menn.de/index.php/ansprechpartner.html",
+      "firma": "Spedition Menn GmbH",
+      "ort": "Kreuztal (Siegen-Wittgenstein)",
+      "mitarbeiter_ca": "52",
+      "beschreibung": "Inhabergeführte Spedition mit internationalem Speditionsgeschäft, Lagerlogistik und eigener Werkstatt für die Regionen Siegen, Olpe, Siegerland und Sauerland. Mehrere Familienmitglieder (Ferdinand, Claudia, Sebastian Menn) in Führung und Disposition.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/suedwestfalen/ranking/mobilitaet-logistik/spedition-und-logistik/kreis-siegen-wittgenstein/"
+      ],
+      "_verifiziert": false,
+      "_verifiziert_status": "HTTP 200 – Adresse nicht auf Seite gefunden",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jakob Riesen",
+      "position": "Geschäftsführer",
+      "email": "j.riesen@mbi-spedition.de",
+      "email_quelle": "https://www.mbi-spedition.de/unser-team/",
+      "email_beleg": "Geschäftsführung Jakob Riesen Position Geschäftsführer Telefon +49 (521) 93 803 - 0 Fax +49 (521) 93 803 - 19 E-Mail: j.riesen@mbi-spedition.de",
+      "telefon": "+49 (521) 93 803 - 0",
+      "telefon_quelle": "https://www.mbi-spedition.de/unser-team/",
+      "firma": "MBI Internationale Spedition GmbH",
+      "ort": "Bielefeld",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführte internationale Spedition mit Kontraktlogistik, Lagerung, Kommissionierung und Zollabwicklung. Zwei Geschäftsführer aus der Familie Riesen (Jakob und Peter Riesen).",
+      "weitere_quellen": [
+        "https://www.mbi-spedition.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Christof Mielke",
+      "position": "Geschäftsführung",
+      "email": "mielke@mielke-logistik.de",
+      "email_quelle": "https://www.mielke-logistik.de/ansprechpartner",
+      "email_beleg": "Geschäftsführung Christof Mielke Geschäftsführung E-Mail: mielke@mielke-logistik.de",
+      "telefon": "0271 / 37514-0",
+      "telefon_quelle": "https://www.mielke-logistik.de/ansprechpartner",
+      "firma": "Mielke Logistik GmbH",
+      "ort": "Freudenberg (Siegerland)",
+      "mitarbeiter_ca": "55",
+      "beschreibung": "Familiengeführte Spedition mit Schwer-/Spezialtransport, Disposition national und international sowie Lagerstandorten (u. a. Außenlager Netphen). Zweite Generation (Tim Christopher Mielke) bereits in der Geschäftsführung.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/suedwestfalen/ranking/mobilitaet-logistik/spedition-und-logistik/kreis-siegen-wittgenstein/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Christoph Dahlmann",
+      "position": "Geschäftsführung",
+      "email": "c.dahlmann@als-arnsberg.de",
+      "email_quelle": "https://www.als-arnsberg.de/ansprechpartner",
+      "email_beleg": "Geschäftsführung Christoph Dahlmann Geschäftsführung Telefon 02932 9306-15 c.dahlmann@als-arnsberg.de",
+      "telefon": "02932 9306-15",
+      "telefon_quelle": "https://www.als-arnsberg.de/ansprechpartner",
+      "firma": "A.L.S. Allgemeine Land- und Seespedition GmbH",
+      "ort": "Arnsberg (Sauerland)",
+      "mitarbeiter_ca": "44 (Umsatz ca. 16 Mio. €)",
+      "beschreibung": "Mittelständische Spedition mit nationalen und internationalen Verkehren, Überseeverkehr, Zollabwicklung und Logistikzentrum. Klare Leitungsstruktur mit vier Prokuristen (Vertrieb, Disposition, Marketing, kaufmännische Logistikleitung).",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/suedwestfalen/ranking/mobilitaet-logistik/spedition-und-logistik/hochsauerlandkreis/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Ludger Henke",
+      "position": "Geschäftsführung",
+      "email": "l.henke@henke-spedition.de",
+      "email_quelle": "https://www.henke-spedition.de/kontakt",
+      "email_beleg": "Ansprechpartner Ludger henke Geschäftsführung [mailto-Link: l.henke@henke-spedition.de]",
+      "telefon": "+49 5250 9850-0",
+      "telefon_quelle": "https://www.henke-spedition.de/kontakt",
+      "firma": "Heinrich Henke Güterfernverkehr und Spedition GmbH & Co.",
+      "ort": "Delbrück (Kreis Paderborn)",
+      "mitarbeiter_ca": "110",
+      "beschreibung": "Familienspedition in dritter Generation mit Fernverkehr, Disposition und Lagerlogistik im Raum Paderborn. Mehrere Familienmitglieder (Ludger, Ludgerus, Regina Henke) im Unternehmen tätig.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/ostwestfalen/ranking/mobilitaet-logistik/spedition-und-logistik/kreis-paderborn/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Udo Feldmann",
+      "position": "Leitung Disposition Landmaschinen & Prokurist",
+      "email": "feldmann@reiling-logistik.de",
+      "email_quelle": "https://www.reiling-logistik.de",
+      "email_beleg": "Leitung Disposition Landmaschinen & Prokurist Udo Feldmann Tel: 05247/9837-14 Fax: 05247/9837-20 E-Mail: feldmann@reiling-logistik.de",
+      "telefon": "05247/9837-14",
+      "telefon_quelle": "https://www.reiling-logistik.de",
+      "firma": "Reiling Logistik GmbH & Co. KG",
+      "ort": "Harsewinkel (Kreis Gütersloh)",
+      "mitarbeiter_ca": "90",
+      "beschreibung": "Inhabergeführte Logistikgruppe (Geschäftsführer Christian Reiling und Carsten Mannefeld) mit Schüttgut-, Landmaschinen- und Kommunallogistik. Persönliche E-Mail der Geschäftsführer nicht eindeutig belegt, daher Prokurist als Ansprechpartner.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/ostwestfalen/ranking/mobilitaet-logistik/spedition-und-logistik/kreis-guetersloh/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jan Feldberg",
+      "position": "Geschäftsführer",
+      "email": "jan.feldberg@btg-feldberg.de",
+      "email_quelle": "https://www.btg-feldberg.de/ansprechpartner",
+      "email_beleg": "Geschäftsführer Jan Feldberg Tel: +49 (0) 2871 9970 260 E-Mail [mailto-Link: jan.feldberg@btg-feldberg.de]",
+      "telefon": "+49 (0) 2871 9970 260",
+      "telefon_quelle": "https://www.btg-feldberg.de/ansprechpartner",
+      "firma": "BTG Feldberg & Sohn GmbH & Co. KG",
+      "ort": "Bocholt (Westmünsterland)",
+      "mitarbeiter_ca": "268",
+      "beschreibung": "Familiengeführte Spedition (Geschäftsführer Jan und Jörg Feldberg) mit Stückgut, Luft- und Seefracht, Logistikzentrum, Umzugslogistik sowie eigenem Projektmanagement und QM.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/ranking/mobilitaet-logistik/spedition-und-logistik/muensterland/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Bernd Stratkötter",
+      "position": "Geschäftsführer, Auftragsmanagement & Disposition",
+      "email": "bs@stratkoetter.de",
+      "email_quelle": "https://www.stratkoetter.de/ansprechpartner",
+      "email_beleg": "Bernd Stratkötter Geschäftsführer Auftragsmanagement & Disposition ☎ 02523 - 9200-12 ✉ bs@stratkoetter.de",
+      "telefon": "02523 / 9200-12",
+      "telefon_quelle": "https://www.stratkoetter.de/ansprechpartner",
+      "firma": "Stratkötter Logistik + Transport GmbH & Co. KG",
+      "ort": "Wadersloh (Kreis Warendorf)",
+      "mitarbeiter_ca": "45",
+      "beschreibung": "Familienbetrieb mit drei Geschäftsführern aus der Familie Stratkötter (Werner, Bernd, Thomas), Schwerpunkt Auftragsmanagement, Disposition und Lagerlogistik im Münsterland.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/muensterland/ranking/mobilitaet-logistik/spedition-und-logistik/kreis-warendorf/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "David Liedhegener",
+      "position": "Geschäftsführender Gesellschafter",
+      "email": "d.liedhegener@liedhegener-logistik.de",
+      "email_quelle": "https://www.liedhegener-logistik.de/kontakt",
+      "email_beleg": "David Liedhegener Geschäftsführender Gesellschafter Tel. 02933 -9 22 22 10 Mobil 0163 - 414 00 01 d.liedhegener@liedhegener-logistik.de",
+      "telefon": "02933 - 9 22 22 10",
+      "telefon_quelle": "https://www.liedhegener-logistik.de/kontakt",
+      "firma": "Liedhegener-Logistik GmbH & Co. KG",
+      "ort": "Sundern (Sauerland)",
+      "mitarbeiter_ca": "69",
+      "beschreibung": "Inhabergeführter Logistikdienstleister mit Transport, Verladung und Lagerlogistik im Sauerland. Familie Liedhegener (David und Sandra Liedhegener) in Geschäftsführung und Verwaltung.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/suedwestfalen/ranking/mobilitaet-logistik/spedition-und-logistik/hochsauerlandkreis/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Oliver Hüer",
+      "position": "Geschäftsführer",
+      "email": "oliver@hueer.com",
+      "email_quelle": "https://www.hueer.com/kontakt",
+      "email_beleg": "Geschäftsführer Oliver Hüer oliver@hueer.com 0251 87189-130",
+      "telefon": "0251 87189-130",
+      "telefon_quelle": "https://www.hueer.com/kontakt",
+      "firma": "Hüer Transport und Logistik GmbH",
+      "ort": "Münster",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführte Spedition in Münster mit Nahverkehr, Kurierdienst und Logistikdienstleistungen. Familienstruktur: Oliver Hüer (GF) und Patrycja Hüer (Prokuristin).",
+      "weitere_quellen": [
+        "https://www.hueer.com/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Christian Messing",
+      "position": "Geschäftsführer",
+      "email": "c.messing@spedition-messing.de",
+      "email_quelle": "https://www.spedition-messing.de/ansprechpartner",
+      "email_beleg": "Ansprechpartner Geschäftsführung Christian Messing Geschäftsführer Telefon: 02541 9487-10 Fax: 02541 9487-69 Mobil: 01743 22 28 26 E-Mail: c.messing@spedition-messing.de",
+      "telefon": "02541 9487-10",
+      "telefon_quelle": "https://www.spedition-messing.de/ansprechpartner",
+      "firma": "Bernhard Messing GmbH & Co. KG (Spedition Messing)",
+      "ort": "Coesfeld",
+      "mitarbeiter_ca": "180",
+      "beschreibung": "Familiengeführte Spedition mit Sammelgut, Fernverkehr, Tourendisposition, eigener Lagerlogistik und Bereich Bio & Frische (Lebensmittellogistik). Mehrere Familienmitglieder (Christian, Andreas, Esther Meßing) im Unternehmen.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/ranking/mobilitaet-logistik/spedition-und-logistik/kreis-coesfeld/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dirk Schröder",
+      "position": "Geschäftsführer",
+      "email": "dirk.schroeder@westfalia-intralog.com",
+      "email_quelle": "https://www.westfalia-intralog.de/kontakt",
+      "email_beleg": "Geschäftsführer Dirk Schröder +49 (0) 5221 – 1809 – 690 dirk.schroeder@westfalia-intralog.com",
+      "telefon": "+49 (0) 5221 - 1809 - 690",
+      "telefon_quelle": "https://www.westfalia-intralog.de/kontakt",
+      "firma": "WESTFALIA intralog GmbH",
+      "ort": "Herford (OWL)",
+      "mitarbeiter_ca": "90",
+      "beschreibung": "Kontraktlogistiker mit Standorten in Herford und Bremerhaven, Schwerpunkt Lager- und Value-Added-Services für Industriekunden.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/ostwestfalen-lippe/ranking/mobilitaet-logistik/spedition-und-logistik/kreis-herford/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Bernd Specht",
+      "position": "Geschäftsführer",
+      "email": "b.specht@wichmann-transporte.de",
+      "email_quelle": "https://www.wichmann-transporte.de/kontakt",
+      "email_beleg": "Bernd Specht Geschäftsführer Tel.: +49 5481/808-51 Fax: +49 5481/808-53 b.specht@wichmann-transporte.de",
+      "telefon": "+49 5481/808-51",
+      "telefon_quelle": "https://www.wichmann-transporte.de/kontakt",
+      "firma": "Heinrich Wichmann Transporte GmbH",
+      "ort": "Lengerich (Kreis Steinfurt)",
+      "mitarbeiter_ca": "75",
+      "beschreibung": "Mittelständisches Transportunternehmen mit eigener Werkstatt, Disposition und Fuhrparkmanagement im nördlichen Münsterland.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/muensterland/ranking/mobilitaet-logistik/spedition-und-logistik/kreis-steinfurt/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dirk Valerius",
+      "position": "Geschäftsführender Gesellschafter",
+      "email": "d.valerius@werneke.de",
+      "email_quelle": "https://www.werneke.de/ansprechpartner",
+      "email_beleg": "Geschäftsführung geschäftsführender Gesellschafter Dirk Valerius Fon 02922 / 8060 – 260 E-Mail: d.valerius@werneke.de",
+      "telefon": "02922 / 8060 - 260",
+      "telefon_quelle": "https://www.werneke.de/ansprechpartner",
+      "firma": "Werneke Logistic GmbH & Co. KG",
+      "ort": "Werl (Kreis Soest / Südwestfalen)",
+      "mitarbeiter_ca": "220",
+      "beschreibung": "Inhabergeführter Logistikdienstleister mit Stückgut, Sammelgut, Charterverkehr und vier Lagerstandorten (Kontraktlogistik). Familie Werneke weiterhin im Unternehmen aktiv.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/suedwestfalen/ranking/mobilitaet-logistik/spedition-und-logistik/kreis-soest/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "Watzlawek Logistik",
+      "ort": "Hamm/Ahlen",
+      "grund": "Geschäftsleitung Lukas Watzlawek nur über info@watzlawek-trans.com erreichbar, keine persönliche E-Mail"
+    },
+    {
+      "firma": "H. Gautzsch Spedition GmbH & Co. KG",
+      "ort": "Münster",
+      "grund": "Ansprechpartnerliste nennt für alle Personen nur info@gautzsch-spedition.de"
+    },
+    {
+      "firma": "KÜHN Transport- und Lagerungsgesellschaft mbH",
+      "ort": "Ostbevern",
+      "grund": "nur info@kuehn-transporte.com auffindbar"
+    },
+    {
+      "firma": "Feldmann Spedition GmbH",
+      "ort": "Gütersloh",
+      "grund": "nur dispo@feldmann-spedition.de"
+    },
+    {
+      "firma": "WLS Spedition GmbH",
+      "ort": "Steinhagen",
+      "grund": "nur kontakt@wls-spedition.de"
+    },
+    {
+      "firma": "Hartmann International GmbH & Co. KG",
+      "ort": "Paderborn",
+      "grund": "Team-/Kontaktseiten nennen nur info@ bzw. standortbezogene Sammeladressen"
+    },
+    {
+      "firma": "Loeber-Lehnhof GmbH",
+      "ort": "Siegen",
+      "grund": "Geschäftsführer Roman Mayer ohne persönliche E-Mail; gefundene Adresse gehört zum Webseitenbetreuer"
+    },
+    {
+      "firma": "Schröder Logistik GmbH",
+      "ort": "Kirchlengern",
+      "grund": "Teamseite zeigt Geschäftsführer ohne E-Mail, nur faktura@schroeder-logistik.de"
+    },
+    {
+      "firma": "Loewe Logistics & Care GmbH & Co. KG",
+      "ort": "Herford",
+      "grund": "keine E-Mail-Adressen auf gecrawlten Seiten auffindbar"
+    },
+    {
+      "firma": "Spedition Gerhard Siebel GmbH",
+      "ort": "Kreuztal",
+      "grund": "nur info@siebel-spedition.de"
+    },
+    {
+      "firma": "Gössling Spedition GmbH",
+      "ort": "Arnsberg",
+      "grund": "nur gs@goessling-spedition.de (Funktionsadresse ohne Personenzuordnung)"
+    },
+    {
+      "firma": "Kerber Transporte GmbH",
+      "ort": "Brilon",
+      "grund": "nur info@kerber-transporte.de"
+    },
+    {
+      "firma": "Spedition Mikus GmbH & Co. KG",
+      "ort": "Meschede",
+      "grund": "nur info@spedition-mikus.de"
+    },
+    {
+      "firma": "Glexx GmbH",
+      "ort": "Meschede",
+      "grund": "nur post@glexx-logistik.de"
+    },
+    {
+      "firma": "Kleinwächter GmbH & Co. Spedition",
+      "ort": "Hallenberg",
+      "grund": "keine erreichbare Website/keine E-Mails über getestete Domains"
+    },
+    {
+      "firma": "Alfons Brass Spedition und Lagerei",
+      "ort": "Medebach",
+      "grund": "keine E-Mails über getestete Domains auffindbar"
+    },
+    {
+      "firma": "Mönig Spedition Meschede GmbH",
+      "ort": "Meschede",
+      "grund": "keine E-Mails über getestete Domains auffindbar"
+    },
+    {
+      "firma": "Schulte-Lindhorst GmbH & Co.",
+      "ort": "Rietberg",
+      "grund": "nur info@schulte-lindhorst.de"
+    },
+    {
+      "firma": "Thermotraffic GmbH",
+      "ort": "Versmold",
+      "grund": "nur info@/sales@thermotraffic.de; zudem Konzernstruktur"
+    },
+    {
+      "firma": "Tevex Logistics GmbH",
+      "ort": "Rheda-Wiedenbrück",
+      "grund": "nur info@tevex.de"
+    },
+    {
+      "firma": "Greiwing logistics for you GmbH",
+      "ort": "Greven",
+      "grund": "nur info@greiwing.de"
+    },
+    {
+      "firma": "Sievert Logistik SE",
+      "ort": "Lengerich",
+      "grund": "nur info.logistik@sievert.de; Teil der Sievert-Gruppe"
+    },
+    {
+      "firma": "MP Logistik GmbH",
+      "ort": "Rheine",
+      "grund": "nur info@/warehouse@mplogistik.com"
+    },
+    {
+      "firma": "Wetralog GmbH",
+      "ort": "Münster",
+      "grund": "nur schadenservice@wetralog.de"
+    },
+    {
+      "firma": "Hövener Spedition GmbH",
+      "ort": "Rheine",
+      "grund": "nur info@hoevener-spedition.de"
+    },
+    {
+      "firma": "Spedition Karl Kerkeling GmbH",
+      "ort": "Coesfeld",
+      "grund": "nur info@spedition-kerkeling.de"
+    },
+    {
+      "firma": "MAX-Logistik GmbH",
+      "ort": "Senden",
+      "grund": "nur info@max-logistik.de"
+    },
+    {
+      "firma": "Lipperland Logistik GmbH / Möbelspedition Lipperland",
+      "ort": "Oelde",
+      "grund": "gefundene Adressen ohne Positionszuordnung (Datenschutz-/Impressumskontext), kein belegter Entscheidungsträger"
+    },
+    {
+      "firma": "Rosner Logistik GmbH",
+      "ort": "Oelde",
+      "grund": "keine E-Mails auf gecrawlten Seiten"
+    },
+    {
+      "firma": "Dingwerth Logistik GmbH",
+      "ort": "Beelen",
+      "grund": "keine E-Mails auf gecrawlten Seiten"
+    },
+    {
+      "firma": "TEDO Logistik GmbH & Co. KG",
+      "ort": "Ibbenbüren",
+      "grund": "nur info@tedo-logistik.de"
+    },
+    {
+      "firma": "Richter Express OHG",
+      "ort": "Saerbeck",
+      "grund": "nur info@richter-express.de"
+    },
+    {
+      "firma": "Schöpper Transport GmbH",
+      "ort": "Greven",
+      "grund": "nur info@ bzw. eine Adresse ohne belegte Positionszuordnung"
+    },
+    {
+      "firma": "Spedition Kockel GmbH & Co. KG",
+      "ort": "Soest",
+      "grund": "nur info@spedition-kockel.de"
+    },
+    {
+      "firma": "Mimberg Spedition - Baustoffe GmbH & Co. KG",
+      "ort": "Werl",
+      "grund": "nur Funktions-/Beispieladressen, keine Entscheidungsträger-E-Mail"
+    },
+    {
+      "firma": "Artur Kossack Spedition",
+      "ort": "Hiddenhausen",
+      "grund": "nur info@kossack.de"
+    },
+    {
+      "firma": "Westfalen-Lippe Speditions- und Lagerhausgesellschaft mbH",
+      "ort": "Herford",
+      "grund": "nur info@wl-spedition.de"
+    },
+    {
+      "firma": "Martin Oelrich GmbH & Co. KG",
+      "ort": "Ladbergen",
+      "grund": "gehört zur pfenning logistics group (Konzern), keine persönliche E-Mail"
+    },
+    {
+      "firma": "FIEGE / Nagel-Group / Duvenbeck",
+      "ort": "Greven / Versmold / Bocholt",
+      "grund": "Konzerne mit >5.000 Mitarbeitern, außerhalb Zielprofil"
+    },
+    {
+      "firma": "Heinrich Kottmann Spedition GmbH & Co. KG",
+      "ort": "Büren",
+      "grund": "Website ohne verwertbare E-Mail-Adressen"
+    },
+    {
+      "firma": "Würfel-Massong Logistik GmbH",
+      "ort": "Paderborn",
+      "grund": "keine E-Mails auf gecrawlten Seiten"
+    }
+  ]
+}

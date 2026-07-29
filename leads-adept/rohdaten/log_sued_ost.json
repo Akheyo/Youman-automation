@@ -1,0 +1,419 @@
+{
+  "branche": "Logistik & Supply Chain",
+  "fokus": "Süd-/Ostdeutschland",
+  "leads": [
+    {
+      "name": "Markus Baur",
+      "position": "Geschäftsführer / Leiter Finanz- und Lohnbuchhaltung",
+      "email": "m.baur@spedition-baur.de",
+      "email_quelle": "https://www.spedition-baur.de/team",
+      "email_beleg": "Markus Baur | Geschäftsführer | +49 7371 9515 20 | m.baur@spedition-baur.de",
+      "telefon": "+49 7371 9515 20",
+      "telefon_quelle": "https://www.spedition-baur.de/team",
+      "firma": "Spedition Anton Baur GmbH",
+      "ort": "Ertingen (Baden-Württemberg)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführte Spedition in 88521 Ertingen mit Niederlassung Stuttgart (A. Baur Mineralöl-Abfertigungsspedition). Schwerpunkte Fernverkehr, Schüttgut-/Kipper-/Schubbodentransporte, Kran- und Baustofflogistik sowie Mineralöltransporte.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Thomas Baur",
+      "position": "Geschäftsführer / Abrechnung Baustoff- und Holztransporte",
+      "email": "t.baur@spedition-baur.de",
+      "email_quelle": "https://www.spedition-baur.de/team",
+      "email_beleg": "Thomas Baur | Geschäftsführer | +49 7371 9515 10 | t.baur@spedition-baur.de",
+      "telefon": "+49 7371 9515 10",
+      "telefon_quelle": "https://www.spedition-baur.de/team",
+      "firma": "Spedition Anton Baur GmbH",
+      "ort": "Ertingen (Baden-Württemberg)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Zweiter Geschäftsführer des inhabergeführten Familienbetriebs (Zentrale Industriestraße 8, 88521 Ertingen). Zusätzlich Prokuristen Adrian und Tobias Baur im Unternehmen.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Walter Müller",
+      "position": "Geschäftsführer (CEO), seit 1978",
+      "email": "walter.mueller@mm-logistik.com",
+      "email_quelle": "https://www.mm-logistik.com/kontakt/ansprechpartner/",
+      "email_beleg": "walter.mueller(at)mm-logistik.com — auf der Seite in der (at)-Schreibweise beim Eintrag 'Walter Müller, Geschäftsführer'",
+      "telefon": "+49 8385 9210-13",
+      "telefon_quelle": "https://www.mm-logistik.com/kontakt/ansprechpartner/",
+      "firma": "Max Müller Spedition GmbH (Max Müller Logistik & Spedition)",
+      "ort": "Opfenbach (Bayern, Allgäu)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführtes Speditions- und Logistikunternehmen mit Sitz Gewerbestraße 2, 88145 Opfenbach und weiteren Standorten (Amtzell, Immenstaad, Markdorf, Tettnang). Transport, Lagerlogistik, Umzugslogistik.",
+      "weitere_quellen": [],
+      "_verifiziert": false,
+      "_verifiziert_status": "HTTP 200 – Adresse nicht auf Seite gefunden",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Oliver Groten",
+      "position": "Geschäftsführer (CEO), seit 2009",
+      "email": "oliver.groten@mm-logistik.com",
+      "email_quelle": "https://www.mm-logistik.com/kontakt/ansprechpartner/",
+      "email_beleg": "oliver.groten(at)mm-logistik.com — auf der Seite in der (at)-Schreibweise beim Eintrag 'Oliver Groten, Geschäftsführer'",
+      "telefon": "+49 8385 9210-82",
+      "telefon_quelle": "https://www.mm-logistik.com/kontakt/ansprechpartner/",
+      "firma": "Max Müller Spedition GmbH (Max Müller Logistik & Spedition)",
+      "ort": "Opfenbach (Bayern, Allgäu)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Zweiter Geschäftsführer neben Walter Müller. Prokuristin Stefanie Müller (stefanie.mueller(at)mm-logistik.com) ebenfalls auf der Ansprechpartnerseite gelistet.",
+      "weitere_quellen": [],
+      "_verifiziert": false,
+      "_verifiziert_status": "HTTP 200 – Adresse nicht auf Seite gefunden",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Mike Forker",
+      "position": "Geschäftsführender Gesellschafter",
+      "email": "forker@sachsenland-gmbh.de",
+      "email_quelle": "https://www.sachsenland-gmbh.de/kontakt-dresden/",
+      "email_beleg": "Mike Forker Geschäftsführender Gesellschafter (DE/RU/EN) Telefon: +49 351 799010 Telefax: +49 351 79901587 ... E-Mail: forker(at)sachsenland-gmbh.de",
+      "telefon": "+49 351 799010",
+      "telefon_quelle": "https://www.sachsenland-gmbh.de/kontakt-dresden/",
+      "firma": "Sachsenland Transport & Logistik GmbH",
+      "ort": "Dresden (Sachsen)",
+      "mitarbeiter_ca": "nicht öffentlich (ca. 40+ namentlich gelistete Mitarbeitende)",
+      "beschreibung": "Selbstbeschreibung: 'Wir sind ein mittelständisches, inhabergeführtes Transport- und Logistikunternehmen'. Sitz Magdeburger Straße 58, 01067 Dresden, weitere Standorte Duisburg, Vilnius, Kiew; Transport, Lager, Zoll, Air & Sea.",
+      "weitere_quellen": [
+        "https://www.sachsenland-gmbh.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Grimmeißen",
+      "position": "CEO – Geschäftsführer",
+      "email": "andreas.grimmeissen@ewo-logistics.com",
+      "email_quelle": "https://www.ewo-logistics.com/ewo-logistics-backnang-stuttgart-badenwuerttemberg-deutschland/",
+      "email_beleg": "CEO – Geschäftsführer Tel. +49 7191 – 969 93 10 andreas.grimmeissen@ewo-logistics.com",
+      "telefon": "+49 7191 969 93 10",
+      "telefon_quelle": "https://www.ewo-logistics.com/ewo-logistics-backnang-stuttgart-badenwuerttemberg-deutschland/",
+      "firma": "E.W.O Logistics GmbH",
+      "ort": "Backnang bei Stuttgart (Baden-Württemberg)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführte Speditions- und Logistikgesellschaft im Raum Stuttgart/Backnang, Familienunternehmen (Geschäftsführung, Verkaufs- und Dispositionsleitung sämtlich Familie Grimmeißen).",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Doris Grimmeißen",
+      "position": "CEO – Geschäftsführerin",
+      "email": "doris.grimmeissen@ewo-logistics.com",
+      "email_quelle": "https://www.ewo-logistics.com/ewo-logistics-backnang-stuttgart-badenwuerttemberg-deutschland/",
+      "email_beleg": "CEO – Geschäftsführerin Tel. +49 7191 – 969 93 20 doris.grimmeissen@ewo-logistics.com",
+      "telefon": "+49 7191 969 93 20",
+      "telefon_quelle": "https://www.ewo-logistics.com/ewo-logistics-backnang-stuttgart-badenwuerttemberg-deutschland/",
+      "firma": "E.W.O Logistics GmbH",
+      "ort": "Backnang bei Stuttgart (Baden-Württemberg)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Zweite Geschäftsführerin des inhabergeführten Logistikunternehmens im Rems-Murr-Kreis.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Stephan Voigt",
+      "position": "Geschäftsführer",
+      "email": "s.voigt@lkt-thiele.com",
+      "email_quelle": "https://www.lkt-thiele.com/unternehmen/team/",
+      "email_beleg": "Stephan Voigt – Geschäftsführer – +49 (0) 36373 129831-13 / +49 (0) 173 858 00 88 – s.voigt@lkt-thiele.com",
+      "telefon": "+49 36373 129831-13",
+      "telefon_quelle": "https://www.lkt-thiele.com/unternehmen/team/",
+      "firma": "LOGISTIK KONTOR GmbH (LKT Thiele)",
+      "ort": "Buttstädt (Thüringen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Seit 2004 tätige mittelständische Spedition mit Sitz Vor dem Lohe 5, 99628 Buttstädt und Niederlassung Wiebelsheim; nationale/internationale Transporte, Lagerung, Charterverkehr.",
+      "weitere_quellen": [
+        "https://www.lkt-thiele.com/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Alexander Schwarz",
+      "position": "Business Development Manager & Lager Management",
+      "email": "a.schwarz@lkt-thiele.com",
+      "email_quelle": "https://www.lkt-thiele.com/unternehmen/team/",
+      "email_beleg": "Alexander Schwarz – Business Development Manager & Lager Management – +49 (0) 36373 129831-20 – a.schwarz@lkt-thiele.com",
+      "telefon": "+49 36373 129831-20",
+      "telefon_quelle": "https://www.lkt-thiele.com/unternehmen/team/",
+      "firma": "LOGISTIK KONTOR GmbH (LKT Thiele)",
+      "ort": "Buttstädt (Thüringen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Verantwortlich für Geschäftsentwicklung und Lagermanagement – Bereichsleiter-Ebene für Lager-/Distributionslogistik bei der Thüringer Spedition.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Ludwig Kollmannsberger",
+      "position": "Geschäftsleitung / Geschäftsführer",
+      "email": "L.Kollmannsberger@spedition-kollmannsberger.de",
+      "email_quelle": "https://www.spedition-kollmannsberger.de/spedition-ansprechpartner",
+      "email_beleg": "Ludwig Kollmannsberger – Geschäftsleitung – +49 (0) 8456 966-211 – L.Kollmannsberger@spedition-kollmannsberger.de",
+      "telefon": "+49 8456 966-211",
+      "telefon_quelle": "https://www.spedition-kollmannsberger.de/spedition-ansprechpartner",
+      "firma": "Spedition Kollmannsberger KG",
+      "ort": "Großmehring bei Ingolstadt (Bayern)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführte Spedition im InTerPark Ingolstadt (Dieselstraße 6, 85098 Großmehring) mit Transport-, Lager- und Distributionslogistik für den Raum Ingolstadt/Oberbayern.",
+      "weitere_quellen": [
+        "https://www.spedition-kollmannsberger.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dr. Christine Kollmannsberger",
+      "position": "Geschäftsleitung / Geschäftsführerin",
+      "email": "C.Kollmannsberger@spedition-kollmannsberger.de",
+      "email_quelle": "https://www.spedition-kollmannsberger.de/spedition-ansprechpartner",
+      "email_beleg": "Dr. Christine Kollmannsberger – Geschäftsleitung – +49 (0) 8456 966-212 – C.Kollmannsberger@spedition-kollmannsberger.de",
+      "telefon": "+49 8456 966-212",
+      "telefon_quelle": "https://www.spedition-kollmannsberger.de/spedition-ansprechpartner",
+      "firma": "Spedition Kollmannsberger KG",
+      "ort": "Großmehring bei Ingolstadt (Bayern)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Zweite Person der Geschäftsleitung des Familienunternehmens; Dispositionsleitung Helmut Atzmüller ebenfalls mit persönlicher Adresse gelistet.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jürgen Frömberg",
+      "position": "Geschäftsführer",
+      "email": "jFroemberg@spedition-maier.de",
+      "email_quelle": "https://www.spedition-maier.de/team/",
+      "email_beleg": "Geschäftsleitung – Geschäftsführer Jürgen Frömberg +49 (0)7731 828- 201 E-Mail (mailto: jFroemberg@spedition-maier.de)",
+      "telefon": "+49 7731 828-201",
+      "telefon_quelle": "https://www.spedition-maier.de/team/",
+      "firma": "Spedition Maier GmbH",
+      "ort": "Singen (Hohentwiel), Baden-Württemberg",
+      "mitarbeiter_ca": "nicht öffentlich (ca. 80 namentlich gelistete Mitarbeitende)",
+      "beschreibung": "Mittelständische Spedition mit Standorten Singen, Pfullendorf und Ramsen (CH). Sammelgut, Charterverkehr, Zollabwicklung sowie eigene Lagerlogistik mit mehreren Betriebs- und Standortleitern.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Thomas Marizzi",
+      "position": "Geschäftsleitung – Speditionsleitung",
+      "email": "tMarizzi@spedition-maier.de",
+      "email_quelle": "https://www.spedition-maier.de/team/",
+      "email_beleg": "Geschäftsleitung – Speditionsleitung Thomas Marizzi +49 (0)7731 828- 188 E-Mail (mailto: tMarizzi@spedition-maier.de)",
+      "telefon": "+49 7731 828-188",
+      "telefon_quelle": "https://www.spedition-maier.de/team/",
+      "firma": "Spedition Maier GmbH",
+      "ort": "Singen (Hohentwiel), Baden-Württemberg",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Mitglied der Geschäftsleitung mit Verantwortung für den Speditionsbereich; kaufmännische Leitung Jochen Sigg (jsigg@spedition-maier.de) ebenfalls auf derselben Seite belegt.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Mathias Ronneberger",
+      "position": "Geschäftsführer (Shipping – Chartering & Brokerage), Mitinhaber",
+      "email": "ronneberger@balticlloyd.com",
+      "email_quelle": "https://balticlloyd.com/dasteam/",
+      "email_beleg": "Mathias Ronneberger Geschäftsführer +49 (0)381 666 139 14 ronneberger@balticlloyd.com",
+      "telefon": "+49 381 666 139 14",
+      "telefon_quelle": "https://balticlloyd.com/dasteam/",
+      "firma": "Baltic Lloyd Schiffahrt-Spedition-Logistik GmbH",
+      "ort": "Rostock (Mecklenburg-Vorpommern)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Im Rostocker Überseehafen (Am Skandinavienkai 2-3) ansässige Spedition für Schifffahrt, Hafenumschlag, Lagerung und Landverkehre; seit einer Nachfolgeregelung inhabergeführt durch drei langjährige Mitarbeiter.",
+      "weitere_quellen": [
+        "https://www.mbg-mv.de/rostocker-logistikunternehmen-auf-erfolgskurs-dreifache-nachfolgeregelung-sichert-zukunft"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Ronny Oldag",
+      "position": "Geschäftsführer (Cargo Handling, Storage), Mitinhaber",
+      "email": "oldag@balticlloyd.com",
+      "email_quelle": "https://balticlloyd.com/dasteam/",
+      "email_beleg": "Ronny Oldag Geschäftsführer +49 (0)381 666 139 12 oldag@balticlloyd.com",
+      "telefon": "+49 381 666 139 12",
+      "telefon_quelle": "https://balticlloyd.com/dasteam/",
+      "firma": "Baltic Lloyd Schiffahrt-Spedition-Logistik GmbH",
+      "ort": "Rostock (Mecklenburg-Vorpommern)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Geschäftsführer mit Zuständigkeit für Umschlag und Lagerung im Rostocker Überseehafen; dritter Geschäftsführer Wolfgang Nuß.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "René Fröhlich",
+      "position": "Geschäftsführer",
+      "email": "r.froehlich@lrp24.de",
+      "email_quelle": "https://aln-logistik.de/logistik-experten/ansprechpartner/",
+      "email_beleg": "René Fröhlich – Geschäftsführer – r.froehlich@lrp24.de",
+      "telefon": "+49 341 222 8 66 55 (Zentrale)",
+      "telefon_quelle": "https://aln-logistik.de/logistik-experten/ansprechpartner/",
+      "firma": "ALN Logistik GmbH",
+      "ort": "Leipzig (Sachsen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Spedition für Transport-, Sonder- und Lagerlogistik mit Sitz Brahestraße 10, 04347 Leipzig und Lagerstandorten in Leipzig und Berlin.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Manuel Keller",
+      "position": "Bereichsleiter / Mitglied der Geschäftsleitung",
+      "email": "Manuel.Keller@teamlog.de",
+      "email_quelle": "https://teamlog.de/kontakt/",
+      "email_beleg": "Manuel Keller – Bereichsleiter / Mitglied der Geschäftsleitung – +49 6021 1507-121 – Manuel.Keller@teamlog.de",
+      "telefon": "+49 6021 1507-121",
+      "telefon_quelle": "https://teamlog.de/kontakt/",
+      "firma": "TEAMLOG (Team Log GmbH & Co. KG)",
+      "ort": "Aschaffenburg (Bayern)",
+      "mitarbeiter_ca": "550+",
+      "beschreibung": "Inhabergeführter Kontrakt- und Lagerlogistiker mit Zentrale Germanenstraße 30, 63741 Aschaffenburg und 15 Standorten im Rhein-Main-Gebiet.",
+      "weitere_quellen": [
+        "https://teamlog.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Lena Milde",
+      "position": "Standort-/Niederlassungsleitung Magdeburg",
+      "email": "lena.milde@krage-gerloff.de",
+      "email_quelle": "https://www.krage-gerloff.de/magdeburg",
+      "email_beleg": "Lena Milde – Standortleitung Magdeburg – lena.milde@krage-gerloff.de",
+      "telefon": "+49 39424 951 0 (Zentrale Schwanebeck)",
+      "telefon_quelle": "https://www.krage-gerloff.de/magdeburg",
+      "firma": "Krage & Gerloff Logistik GmbH",
+      "ort": "Magdeburg (Sachsen-Anhalt)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "1995 gegründeter Logistikdienstleister mit Hauptsitz Schwanebeck und Logistikstandort Tucheimer Straße 5, 39126 Magdeburg; Lager- und Transportlogistik.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "Rüdinger Spedition GmbH",
+      "ort": "Krautheim (BW)",
+      "grund": "Ansprechpartnerseite listet Namen/Positionen/Durchwahlen, aber keine E-Mail-Adressen im Klartext (JS-verschleierte 'E-Mail schreiben'-Links); curl-Nachfassen ohne Treffer"
+    },
+    {
+      "firma": "barth Logistikgruppe",
+      "ort": "Hechingen (BW)",
+      "grund": "Ansprechpartnerseite enthält nur Telefon-/Faxnummern je Standort, keine Personen und keine E-Mail-Adressen; curl-Nachfassen ohne Treffer"
+    },
+    {
+      "firma": "Wiedmann & Winz GmbH",
+      "ort": "Geislingen an der Steige (BW)",
+      "grund": "Nur Funktionsadressen (mail@, offer@, anfrage@, bewerbung@), keine personenbezogenen E-Mails auf Kontaktseite"
+    },
+    {
+      "firma": "CL Spedition Berlin Transport- und Logistik GmbH",
+      "ort": "Berlin",
+      "grund": "Ansprechpartnerseite nennt Namen und Funktionen, aber nur Sammeladressen info@/dispo@/ber@"
+    },
+    {
+      "firma": "Spedition Kollmannsberger – Startseite",
+      "ort": "Großmehring (BY)",
+      "grund": "Homepage nur mail@ – Lead stattdessen über die separate Ansprechpartnerseite qualifiziert (siehe Leads)"
+    },
+    {
+      "firma": "Schwarzer Group / Schwarzer Spedition",
+      "ort": "Heiligenstedten (SH)",
+      "grund": "Persönliche E-Mails vorhanden, aber Hauptsitz und Standorte außerhalb des Zielgebiets Süd-/Ostdeutschland"
+    },
+    {
+      "firma": "Sachsen-Anhalt Logistik",
+      "ort": "Sachsen-Anhalt (virtuell)",
+      "grund": "Kein reales Unternehmen – virtuelle TruckersMP-Speditionsgemeinschaft (Gaming-Community); nur info@"
+    },
+    {
+      "firma": "ELOS Speditions GmbH",
+      "ort": "Zwickau (SN)",
+      "grund": "Nur zentrale Adresse info@elos-spedition.de auffindbar, keine persönlichen Ansprechpartner-Mails"
+    },
+    {
+      "firma": "Roman Mayer Logistik GmbH",
+      "ort": "Nürnberg / Gersthofen (BY)",
+      "grund": "Kontaktseite nur mit info@romanmayer-logistik.de, keine personenbezogenen E-Mails"
+    },
+    {
+      "firma": "Köhl Logistik",
+      "ort": "Pfalz",
+      "grund": "HTTP 503 beim Abruf; zudem Sitz in Rheinland-Pfalz außerhalb des Zielgebiets"
+    },
+    {
+      "firma": "Spedition Ebenroth GmbH",
+      "ort": "Döbeln (SN)",
+      "grund": "Keine Team-/Ansprechpartnerseite mit persönlichen E-Mails auffindbar"
+    },
+    {
+      "firma": "Baltic Lloyd – Startseite/Kontaktseite",
+      "ort": "Rostock (MV)",
+      "grund": "Startseite nur dispo@, /kontakt/ liefert HTTP 404 – Lead stattdessen über /dasteam/ qualifiziert (siehe Leads)"
+    },
+    {
+      "firma": "Krage & Gerloff – Ansprechpartnerseite",
+      "ort": "Schwanebeck (ST)",
+      "grund": "URL /ansprechpartner liefert HTTP 404; Geschäftsführung nicht mit persönlicher E-Mail belegbar – nur Standortleitung Magdeburg qualifiziert"
+    },
+    {
+      "firma": "Seifert Logistics Group / Noerpel-Gruppe / Karl Schmidt Spedition",
+      "ort": "Ulm bzw. Heilbronn (BW)",
+      "grund": "Konzerngröße (2.500–4.000+ Mitarbeitende, 45+ Standorte) – außerhalb des Mittelstandsprofils"
+    },
+    {
+      "firma": "LOXXESS AG",
+      "ort": "Tegernsee (BY)",
+      "grund": "Nicht weiterverfolgt – Konzernstruktur/AG, kein Ansprechpartnerverzeichnis mit persönlichen E-Mails"
+    },
+    {
+      "firma": "TML Spedition GmbH",
+      "ort": "Leipzig (SN)",
+      "grund": "Keine Ansprechpartnerseite mit namentlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Spedition Schiffers",
+      "ort": "Nettetal (NRW)",
+      "grund": "Region außerhalb des Zielgebiets Süd-/Ostdeutschland"
+    },
+    {
+      "firma": "RTC Spedition & Logistik GmbH",
+      "ort": "Berlin",
+      "grund": "Nur Zentralkontakt/Geschäftsführername belegt, keine persönliche E-Mail auf gecrawlten Seiten"
+    },
+    {
+      "firma": "Sachsenland – Startseite",
+      "ort": "Dresden (SN)",
+      "grund": "Homepage ohne E-Mail-Adressen – Leads stattdessen über /kontakt-dresden/ qualifiziert (siehe Leads)"
+    }
+  ]
+}

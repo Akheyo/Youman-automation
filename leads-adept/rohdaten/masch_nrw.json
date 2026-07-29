@@ -1,0 +1,623 @@
+{
+  "branche": "Maschinenbau & Fertigung",
+  "fokus": "NRW",
+  "leads": [
+    {
+      "name": "Olaf Clemens",
+      "position": "Geschäftsführender Gesellschafter",
+      "email": "olaf.clemens@sn-packaging.de",
+      "email_quelle": "https://sn-maschinenbau.de/service-kontakt/kontakt-sales/beratung-vertrieb",
+      "email_beleg": "SN Maschinenbau GmbH | Olaf Clemens | Geschäftsführender Gesellschafter | Tel.: +49 2267 699-0 | E-Mail: olaf.clemens@sn-packaging.de",
+      "telefon": "+49 2267 699-0",
+      "telefon_quelle": "https://sn-maschinenbau.de/service-kontakt/kontakt-sales/beratung-vertrieb",
+      "firma": "SN Maschinenbau GmbH",
+      "ort": "Wipperfürth (Bergisches Land / Rheinland)",
+      "mitarbeiter_ca": "ca. 300",
+      "beschreibung": "Familiengeführter Hersteller von Beutelverpackungsmaschinen (Form-, Füll- und Verschließmaschinen) mit Firmensitz und Entwicklung in Wipperfürth. International tätig über die Marke SN Packaging.",
+      "weitere_quellen": [
+        "https://sn-maschinenbau.de/unternehmen/ (Zitat: 'An unserem Firmensitz in Wipperfürth entwickeln täglich rund 300 Mitarbeiterinnen und Mitarbeiter führende Beutelverpackungslösung...', 51688 Wipperfürth)"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Roland Mertens",
+      "position": "Geschäftsleitung Sales (Chief Sales Officer)",
+      "email": "rmertens@schoellerwerk.de",
+      "email_quelle": "https://schoellerwerk.de/kontakt/",
+      "email_beleg": "Ansprechpartner Vertrieb Industrie | Roland Mertens | Geschäftsleitung Sales | +49 2482 81 129 | rmertens@schoellerwerk.de",
+      "telefon": "+49 2482 81 129",
+      "telefon_quelle": "https://schoellerwerk.de/kontakt/",
+      "firma": "Schoeller Werk GmbH & Co. KG",
+      "ort": "Hellenthal (Eifel, NRW)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Metallverarbeitende Fertigung: Hersteller längsnahtgeschweißter Edelstahlrohre für Industrie und Automotive. Teil der familiengeführten Schoeller-Gruppe.",
+      "weitere_quellen": [
+        "https://www.schoellerwerk.de/en/contact/ (englische Fassung derselben Ansprechpartner-Tabelle: 'Roland Mertens | Chief Sales Officer')"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Frederic Lanz",
+      "position": "CEO / Vice Chairman of the Board",
+      "email": "lanz@kemper.eu",
+      "email_quelle": "https://kemper.eu/Unternehmen/Kontakt/",
+      "email_beleg": "CEO Vice Chairman of the Board | Frederic Lanz | ph | +49 (0) 2564 68-119 | lanz@kemper.eu",
+      "telefon": "+49 (0) 2564 68-119",
+      "telefon_quelle": "https://kemper.eu/Unternehmen/Kontakt/",
+      "firma": "KEMPER GmbH",
+      "ort": "Vreden (Münsterland, NRW)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführter Hersteller von Absaug- und Filteranlagen sowie Schweißrauchabsaugung für die metallverarbeitende Fertigung. Sitz 48691 Vreden.",
+      "weitere_quellen": [
+        "https://kemper.eu/Unternehmen/ (Adresse 48691 Vreden)"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Christian Jordan",
+      "position": "Geschäftsleitung",
+      "email": "c.jordan@dreckshage.de",
+      "email_quelle": "https://dreckshage.de/de/kontakt/ansprechpartner",
+      "email_beleg": "Geschäftsleitung | Christian Jordan | E-Mail | c.jordan@dreckshage.de | Download vCard",
+      "telefon": "0521 9259-101",
+      "telefon_quelle": "https://dreckshage.de/en/contact/contact-partner",
+      "firma": "August Dreckshage GmbH & Co. KG",
+      "ort": "Bielefeld (Ostwestfalen-Lippe)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Bielefelder Familienunternehmen für Antriebs- und Lineartechnik, technische Walzen, Profile und Systeme sowie Werkstoffe – Zulieferer und Fertigungspartner des Maschinenbaus.",
+      "weitere_quellen": [
+        "https://dreckshage.de/en/contact/contact-partner (Zitat: 'Geschäftsleitung | Christian Jordan | Telefon 0521 9259-101 | E-Mail | c.jordan@dreckshage.de')"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Markus Bürger",
+      "position": "Geschäftsführung",
+      "email": "m.buerger@blechwerk.de",
+      "email_quelle": "https://blechwerk.de/unternehmen/ansprechpartner/",
+      "email_beleg": "Markus Bürger | Geschäftsführung | +49 (0) 52 22 / 91 79 3 - 0 | m.buerger@blechwerk.de",
+      "telefon": "+49 (0) 5222 / 91793-0",
+      "telefon_quelle": "https://blechwerk.de/unternehmen/ansprechpartner/",
+      "firma": "Blechwerk Bürger GmbH",
+      "ort": "Bad Salzuflen (Ostwestfalen-Lippe)",
+      "mitarbeiter_ca": "ca. 40",
+      "beschreibung": "Inhabergeführter Betrieb der metallverarbeitenden Fertigung (Blechbearbeitung, Laserschneiden, Kanten, Schweißbaugruppen) für Maschinenbau-Kunden in OWL.",
+      "weitere_quellen": [
+        "https://blechwerk.de/ (Zitat u. a.: '40 Mitarbeitern mit mehr als 20 Jahren Erfahrung in der Metall- und Blechv...', Standort 32107 Bad Salzuflen)"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Ulrich Rotte",
+      "position": "Geschäftsführender Gesellschafter",
+      "email": "rotte@ulrich-rotte.de",
+      "email_quelle": "https://www.ulrich-rotte.de/ueber-uns/",
+      "email_beleg": "Ihre Ansprechpartner | Ulrich Rotte | Geschäftsführender Gesellschafter | + 49 5258 9789-0 | rotte@ulrich-rotte.de",
+      "telefon": "+49 5258 9789-0",
+      "telefon_quelle": "https://www.ulrich-rotte.de/ueber-uns/",
+      "firma": "Ulrich Rotte Anlagenbau & Fördertechnik GmbH",
+      "ort": "Salzkotten / Kreis Paderborn (Ostwestfalen-Lippe)",
+      "mitarbeiter_ca": "ca. 90",
+      "beschreibung": "1994 gegründetes Familienunternehmen für Anlagenbau und Fördertechnik, u. a. für Holztechnik, technische Laminate und Industrieautomation.",
+      "weitere_quellen": [
+        "https://www.ulrich-rotte.de/ueber-uns/ (Zitat: 'Gegründet 1994 von Ulrich und Brigitte Rotte haben wir inzwischen 90 Mitarbeiter und einen Jahresumsatz von 16 Millionen...', 33154 Salzkotten)",
+        "Zweiter Entscheider auf derselben Seite: 'Benedikt Rotte | Geschäftsführender Gesellschafter | +49 5258 9789-0 | benedikt.rotte@ulrich-rotte.de'"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Holger Krebs",
+      "position": "Geschäftsführer",
+      "email": "krebs@ctechnik.de",
+      "email_quelle": "https://ctechnik.de/kontakt/",
+      "email_beleg": "Geschäftsleitung | Holger Krebs | Geschäftsführer | T. +49 2154 89102 – 0 | krebs@ctechnik.de",
+      "telefon": "+49 2154 89102-0",
+      "telefon_quelle": "https://ctechnik.de/kontakt/",
+      "firma": "C-Technik Maschinen- und Anlagenbau GmbH",
+      "ort": "Willich (Niederrhein); zweiter Standort Hagen",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführter Sondermaschinen- und Anlagenbauer mit Konstruktion, Kalkulation und Projektmanagement; Sitz 47877 Willich, weiterer Standort im Raum Hagen.",
+      "weitere_quellen": [
+        "https://ctechnik.de/ (Adresse 47877 Willich)",
+        "Zweiter Geschäftsführer auf derselben Seite: 'Mirko Krebs | Geschäftsführer | T. +49 2154 89102 – 211 | mkrebs@ctechnik.de'"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dr. Sascha Falkenberg",
+      "position": "Managing Director / Member of the Board (Geschäftsführer)",
+      "email": "s.falkenberg@minda.com",
+      "email_quelle": "https://minda.com/en/contact/general-management",
+      "email_beleg": "Dr. Sascha Falkenberg | Member of the board | +49 (0) 5721 / 9789-20 | s.falkenberg@minda.com",
+      "telefon": "+49 (0) 5721 / 9789-20",
+      "telefon_quelle": "https://minda.com/en/contact/general-management",
+      "firma": "MINDA Industrieanlagen GmbH",
+      "ort": "Minden (Ostwestfalen-Lippe)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Anlagenbauer für Material- und Fördertechnik in der Wellpappen-, Holzwerkstoff- und Reifenindustrie mit Hauptsitz Minden.",
+      "weitere_quellen": [
+        "https://minda.com/en/contact/management (Produktionsleitung Minden: 'Dirk Juras | Head of Production | +49 (0) 571 / 3997 - 0 | d.juras@minda.com')"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Melanie Kaliner",
+      "position": "Prokuristin, Assistentin der Geschäftsleitung",
+      "email": "melanie.kaliner@hafoe.de",
+      "email_quelle": "https://hafoe.de/kontakt",
+      "email_beleg": "Melanie Kaliner | Prokuristin, Assistentin der Geschäftsleitung | melanie.kaliner@hafoe.de",
+      "telefon": "",
+      "telefon_quelle": "nicht öffentlich",
+      "firma": "Hagener Fördertechnik GmbH (HAFÖ)",
+      "ort": "Hagen (Ruhrgebiet / Südwestfalen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "1980 gegründetes, inhabergeführtes Unternehmen für Fördertechnik, Kranservice und Pumpentechnik mit Sitz 58135 Hagen.",
+      "weitere_quellen": [
+        "https://hafoe.de/kontakt (technische Bereichsleitung: 'Lothar Bonsen | Technischer Leiter | Leiter Dienstleistung | lothar.bonsen@hafoe.de')",
+        "https://hafoe.de/ueber-uns (Standort 58135 Hagen)"
+      ],
+      "_verifiziert": false,
+      "_verifiziert_status": "HTTP 200 – Adresse nicht auf Seite gefunden",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Sommer",
+      "position": "Geschäftsführer (Werkzeugmachermeister)",
+      "email": "asommer@oelfke.de",
+      "email_quelle": "https://oelfke.de/kontakt/",
+      "email_beleg": "Andreas Sommer | Geschäftsführer | Werkzeugmachermeister | Telefon: +49 2351 – 676950 | E-Mail: asommer@oelfke.de",
+      "telefon": "+49 2351 676950",
+      "telefon_quelle": "https://oelfke.de/kontakt/",
+      "firma": "Ulrich Oelfke Formenbau GmbH & Co. KG",
+      "ort": "Lüdenscheid (Sauerland / Märkischer Kreis)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführter Werkzeug- und Formenbaubetrieb für Spritzgießwerkzeuge in Lüdenscheid, Kerkhagen 15.",
+      "weitere_quellen": [
+        "https://oelfke.de/impressum/ (Zitat: 'Ulrich Oelfke | Formenbau GmbH & Co. KG | Geschäftsführer | Andreas Sommer | Kerkhagen 15 | 58513 Lüdenscheid')",
+        "Weiterer Entscheider: 'Julian Sommer | Geschäftsleitung | Feinwerkmechanikermeister | jsommer@oelfke.de' (https://oelfke.de/kontakt/)"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dominic Scheumann",
+      "position": "Geschäftsführer",
+      "email": "d.scheumann@wibra-formenbau.de",
+      "email_quelle": "https://wibraformenbau.de/kontakt/",
+      "email_beleg": "Geschäftsführung | Dominic Scheumann | Geschäftsführer | Telefon: +49 (0) 23 51 / 36824 10 | E-Mail: d.scheumann@wibra-formenbau.de",
+      "telefon": "+49 (0) 2351 / 36824-10",
+      "telefon_quelle": "https://wibraformenbau.de/kontakt/",
+      "firma": "WIBRA Formenbau GmbH",
+      "ort": "Lüdenscheid (Sauerland / Märkischer Kreis)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Werkzeug- und Formenbauer in Lüdenscheid (58511) mit eigener Konstruktion und Betriebsleitung; zwei geschäftsführende Gesellschafter.",
+      "weitere_quellen": [
+        "https://wibraformenbau.de/kontakt/ (zweiter Geschäftsführer: 'Sebastian Scholz | Geschäftsführer | Telefon: +49 (0) 23 51 / 36824 12 | E-Mail: s.scholz@wibra-formenbau.de'; Betriebsleiter: 'Jürgen Manz | Betriebsleiter | j.manz@wibra-formenbau.de')"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dipl.-Ing. Norbert Felder",
+      "position": "Geschäftsführer / Konstruktion & Entwicklung",
+      "email": "felder@weidmann-mb.de",
+      "email_quelle": "https://weidmann-maschinenbau.de/ansprechpartner.php",
+      "email_beleg": "Ihr Kontakt zu WEIDMANN Maschinenbau | Dipl.-Ing. Norbert Felder | Geschäftsführer / K&E | Tel. 0 22 41 - 2014 101 | E-Mail felder@weidmann-mb.de",
+      "telefon": "+49 2241 2014101",
+      "telefon_quelle": "https://weidmann-maschinenbau.de/ansprechpartner.php",
+      "firma": "WEIDMANN Maschinenbau GmbH",
+      "ort": "Troisdorf (Raum Köln/Bonn, Rheinland)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Sondermaschinenbauer für automatisierte Produktions- und Montageanlagen (u. a. Montageautomaten) mit Sitz 53842 Troisdorf.",
+      "weitere_quellen": [
+        "https://weidmann-maschinenbau.de/unternehmen.php (Standort 53842 Troisdorf)"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Gerhard Pelzl",
+      "position": "Geschäftsführung",
+      "email": "g.pelzl@ls-oberflaechentechnik.de",
+      "email_quelle": "https://www.ls-oberflaechentechnik.de/kontakt/",
+      "email_beleg": "Geschäftsführung | Gerhard Pelzl | Tel.: 05207 9195-0 | g.pelzl@ls-oberflaechentechnik.de",
+      "telefon": "05207 9195-0",
+      "telefon_quelle": "https://www.ls-oberflaechentechnik.de/kontakt/",
+      "firma": "LS Oberflächentechnik GmbH",
+      "ort": "Schloß Holte-Stukenbrock (Ostwestfalen-Lippe)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Lohnbeschichter und Dienstleister der metallverarbeitenden Fertigung (Pulver- und Nasslackbeschichtung) mit eigenem Technologie- und Ausbildungszentrum, Grenzweg 14b, 33758 Schloß Holte-Stukenbrock.",
+      "weitere_quellen": [
+        "https://www.ls-oberflaechentechnik.de/unternehmen/ (Standort 33758 Schloß Holte-Stukenbrock)"
+      ],
+      "_verifiziert": false,
+      "_verifiziert_status": "HTTP 200 – Adresse nicht auf Seite gefunden",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dirk Haßmann",
+      "position": "Leiter Einkauf (Bereichsleiter Einkauf/Supply Chain)",
+      "email": "Dirk.Hassmann@flaco.de",
+      "email_quelle": "https://flaco.de/de/kontakt-beratung.html",
+      "email_beleg": "Einkauf & Arbeitsvorbereitung | Dirk Haßmann | Leiter Einkauf | Tel. +49 (0) 5241 - 603 - 62 | E-Mail | Dirk.Hassmann@flaco.de",
+      "telefon": "+49 (0) 5241 603-62",
+      "telefon_quelle": "https://flaco.de/de/kontakt-beratung.html",
+      "firma": "FLACO-Geräte GmbH",
+      "ort": "Gütersloh (Ostwestfalen-Lippe)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Hersteller von Fluid-, Tank- und Werkstatttechnik sowie Fluidsystemen für Fertigungsbetriebe. Geschäftsführer Thomas Voigt ist auf der Kontaktseite genannt, jedoch ohne persönliche E-Mail – daher der Einkaufsleiter als Entscheider hinterlegt.",
+      "weitere_quellen": [
+        "https://flaco.de/de/kontakt-beratung.html (Zitat zur Geschäftsführung ohne E-Mail: 'Thomas Voigt | Geschäftsführer | Tel. +49 (0) 5241 - 603 - 0')"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "Wilhelm Altendorf GmbH & Co. KG",
+      "ort": "Minden",
+      "grund": "Zahlreiche personenbezogene E-Mails auf der Website, aber keine davon einem Geschäftsführer/Prokuristen oder zulässigen Bereichsleiter zugeordnet"
+    },
+    {
+      "firma": "Kolbus GmbH & Co. KG",
+      "ort": "Rahden",
+      "grund": "Keine persönliche Entscheider-E-Mail auf Website/Impressum/Kontakt gefunden"
+    },
+    {
+      "firma": "AUMUND Fördertechnik GmbH",
+      "ort": "Rheinberg",
+      "grund": "Nur Kontaktformulare, keine persönliche E-Mail"
+    },
+    {
+      "firma": "THIELE GmbH & Co. KG",
+      "ort": "Iserlohn",
+      "grund": "Nur Sammeladressen (hebetechnik@) – keine persönliche Entscheider-E-Mail"
+    },
+    {
+      "firma": "HASCO Hasenclever GmbH + Co KG",
+      "ort": "Lüdenscheid",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Gebr. Eickhoff Maschinenfabrik",
+      "ort": "Bochum",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Herbert Kannegiesser GmbH",
+      "ort": "Vlotho",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "HAVER & BOECKER OHG",
+      "ort": "Oelde",
+      "grund": "Personenbezogene Mails nur im Vertriebs-/Auslandsnetz, kein Entscheider mit Rolle belegt"
+    },
+    {
+      "firma": "Reifenhäuser GmbH & Co. KG",
+      "ort": "Troisdorf",
+      "grund": "Nur Fachbereichs-/Recruiting-Mails, keine Geschäftsführung"
+    },
+    {
+      "firma": "battenfeld-cincinnati Germany GmbH",
+      "ort": "Bad Oeynhausen",
+      "grund": "Nur Vertriebs-/Länderkontakte, keine Entscheider-E-Mail"
+    },
+    {
+      "firma": "Hanning Elektro-Werke GmbH & Co. KG",
+      "ort": "Oerlinghausen",
+      "grund": "Nur Vertriebspartner-Mails; Impressum-Mail gehört zum externen Datenschutzbeauftragten"
+    },
+    {
+      "firma": "Dürkopp Adler GmbH",
+      "ort": "Bielefeld",
+      "grund": "Nur Vertriebspartner-Adressen; zudem Konzernstruktur"
+    },
+    {
+      "firma": "Klingelnberg GmbH",
+      "ort": "Hückeswagen",
+      "grund": "Nur Funktionspostfächer (kegelrad@, seminar@ etc.)"
+    },
+    {
+      "firma": "Kampf Schneid- und Wickeltechnik GmbH & Co. KG",
+      "ort": "Wiehl",
+      "grund": "Nur weltweite Vertriebs-/Agenturkontakte, keine Geschäftsführung"
+    },
+    {
+      "firma": "Achenbach Buschhütten GmbH & Co. KG",
+      "ort": "Kreuztal",
+      "grund": "Nur Funktionspostfach fertigung@"
+    },
+    {
+      "firma": "Gebr. Becker GmbH",
+      "ort": "Wuppertal",
+      "grund": "Personenbezogene Mails nur im Vertriebsinnendienst/Service ohne Entscheiderrolle"
+    },
+    {
+      "firma": "KettenWulf Betriebs GmbH",
+      "ort": "Eslohe",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "ELHA-MASCHINENBAU Liemke KG",
+      "ort": "Halle (Westf.)",
+      "grund": "Nur ausländische Vertriebspartner-Mails"
+    },
+    {
+      "firma": "G. Siempelkamp GmbH & Co. KG",
+      "ort": "Krefeld",
+      "grund": "Keine persönliche Entscheider-E-Mail öffentlich"
+    },
+    {
+      "firma": "Hennecke GmbH",
+      "ort": "Sankt Augustin",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Kautex Maschinenbau GmbH",
+      "ort": "Bonn",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Lödige Industries GmbH",
+      "ort": "Warburg/Paderborn",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Schmidt + Clemens GmbH & Co. KG",
+      "ort": "Lindlar",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "MSK Verpackungs-Systeme GmbH",
+      "ort": "Kleve",
+      "grund": "Nur Kontaktformulare, keine persönliche E-Mail"
+    },
+    {
+      "firma": "SPALECK GmbH & Co. KG",
+      "ort": "Bocholt",
+      "grund": "Keine persönliche Entscheider-E-Mail auffindbar"
+    },
+    {
+      "firma": "Rhein-Nadel Automation GmbH",
+      "ort": "Aachen",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "STRACK NORMA GmbH & Co. KG",
+      "ort": "Lüdenscheid",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "TRACTO-TECHNIK GmbH & Co. KG",
+      "ort": "Lennestadt",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Albrecht Bäumer GmbH & Co. KG",
+      "ort": "Freudenberg",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Düchting Pumpen Maschinenfabrik GmbH & Co. KG",
+      "ort": "Wetter (Ruhr)",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "A. Monforts Textilmaschinen GmbH & Co. KG",
+      "ort": "Mönchengladbach",
+      "grund": "Einziger belegter Entscheider (Betriebsleiter) sitzt in der österreichischen Niederlassung – außerhalb NRW"
+    },
+    {
+      "firma": "Murtfeldt Kunststoffe GmbH & Co. KG",
+      "ort": "Dortmund",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "DENIOS SE",
+      "ort": "Bad Oeynhausen",
+      "grund": "Keine persönliche Entscheider-E-Mail öffentlich"
+    },
+    {
+      "firma": "Venjakob Maschinenbau GmbH & Co. KG",
+      "ort": "Rheda-Wiedenbrück",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Remmert GmbH",
+      "ort": "Löhne",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Rippert GmbH & Co. KG",
+      "ort": "Herzebrock-Clarholz",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Ohrmann GmbH Montagetechnik",
+      "ort": "Rheda-Wiedenbrück",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Sollich KG",
+      "ort": "Bad Salzuflen",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "steute Technologies GmbH & Co. KG",
+      "ort": "Löhne",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Torwegge GmbH & Co. KG",
+      "ort": "Bielefeld",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Wemhöner Surface Technologies GmbH & Co. KG",
+      "ort": "Herford",
+      "grund": "Nur internationale Handelsvertreter-Mails, keine Geschäftsführung"
+    },
+    {
+      "firma": "RK Rose+Krieger GmbH",
+      "ort": "Minden",
+      "grund": "Nur Funktions-/Auslandspostfächer; zudem Konzernzugehörigkeit (Phoenix Mecano)"
+    },
+    {
+      "firma": "Carl Werthenbach Konstruktionsteile GmbH & Co. KG",
+      "ort": "Bielefeld",
+      "grund": "Geschäftsführer im Impressum genannt, aber nur info@/industrietechnik@ – keine persönliche E-Mail"
+    },
+    {
+      "firma": "Seppeler Holding und Verwaltungs GmbH & Co. KG",
+      "ort": "Rietberg",
+      "grund": "Geschäftsführer im Impressum genannt, aber nur info-holding@ – keine persönliche E-Mail"
+    },
+    {
+      "firma": "MIT Moderne Industrietechnik GmbH & Co. KG",
+      "ort": "Vlotho",
+      "grund": "Geschäftsführung genannt, E-Mail nur als Sammeladresse mit@systemarmaturen.de"
+    },
+    {
+      "firma": "Schubert & Salzer / ventiltechnik.de (Vlotho)",
+      "ort": "Vlotho",
+      "grund": "Persönliche Mails nur für Vertriebsleitung/Sales Director – keine Geschäftsführung, Vertrieb zählt laut Vorgabe nicht"
+    },
+    {
+      "firma": "Heilig Maschinenbau GmbH",
+      "ort": "Bad Salzuflen",
+      "grund": "Impressum nennt GF Sascha Heilig, die angegebene Adresse heilig@heilig-maschinenbau.de ist jedoch nicht eindeutig persönlich (Firmenname = Nachname) – bei Unsicherheit verworfen"
+    },
+    {
+      "firma": "ATL Luhden GmbH",
+      "ort": "Luhden",
+      "grund": "Betriebsleiter/Prokurist mit persönlicher Mail belegt, Standort liegt jedoch in Niedersachsen (nicht NRW)"
+    },
+    {
+      "firma": "DUBOR Groneweg GmbH & Co. KG",
+      "ort": "Bad Salzuflen",
+      "grund": "Ansprechpartnerseite mit Entscheidern vorhanden, aber Branche Backmittel/Lebensmittel – kein Maschinenbau; GF-Adressen zudem nur info@"
+    },
+    {
+      "firma": "AMR-Engineering GmbH",
+      "ort": "Essen",
+      "grund": "Geschäftsführer im Impressum genannt, aber nur Sammeladresse amr@amr.de"
+    },
+    {
+      "firma": "SIEBTECHNIK TEMA GmbH",
+      "ort": "Mülheim an der Ruhr",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "HAZEMAG & EPR GmbH",
+      "ort": "Dülmen",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "BOGE KOMPRESSOREN Otto Boge GmbH & Co. KG",
+      "ort": "Bielefeld",
+      "grund": "Nur Länder-Sammelpostfächer"
+    },
+    {
+      "firma": "PROBAT SE",
+      "ort": "Emmerich am Rhein",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Otto Junker GmbH",
+      "ort": "Simmerath",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "REMBE GmbH Safety+Control",
+      "ort": "Brilon",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "OVENTROP GmbH & Co. KG",
+      "ort": "Olsberg",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "BJB GmbH & Co. KG",
+      "ort": "Arnsberg",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Ruhrpumpen GmbH",
+      "ort": "Witten",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Winkelmann Group GmbH + Co. KG",
+      "ort": "Ahlen",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "GERSTUNG Sondermaschinen GmbH",
+      "ort": "Mönchengladbach",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "AUMAT Maschinenbau GmbH",
+      "ort": "NRW",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Maschinen- und Industriebau Feld GmbH",
+      "ort": "NRW",
+      "grund": "Ansprechpartnerseite vorhanden, aber ohne persönliche E-Mail-Adressen"
+    },
+    {
+      "firma": "VGS Automatisierungstechnik GmbH & Co. KG",
+      "ort": "Schloß Holte-Stukenbrock",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Ebert Maschinenbau GmbH",
+      "ort": "Minden",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "BELU GmbH",
+      "ort": "Bielefeld",
+      "grund": "Keine persönliche E-Mail öffentlich"
+    },
+    {
+      "firma": "Pfister Fertigungstechnik / GMM mbH / MB Klich",
+      "ort": "NRW",
+      "grund": "CNC-Lohnfertiger ohne persönliche Entscheider-E-Mail auf der Website"
+    },
+    {
+      "firma": "Selzer Formenbau GmbH / Dietrich Formenbau / KM Formenbau / Jedig & Heyns / Wilfrid Humme",
+      "ort": "Lüdenscheid",
+      "grund": "Werkzeug-/Formenbauer ohne persönliche Entscheider-E-Mail auf der Website"
+    },
+    {
+      "firma": "Hagener Fördertechnik – Stefan Maschmeier (Prokurist)",
+      "ort": "Hagen",
+      "grund": "Als zweiter Entscheider geprüft, aber nur info@hafoe.de hinterlegt – daher nicht verwendet"
+    }
+  ]
+}
