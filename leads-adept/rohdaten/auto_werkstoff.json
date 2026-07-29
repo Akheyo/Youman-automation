@@ -1,0 +1,589 @@
+{
+  "branche": "Automobil & Zulieferer",
+  "fokus": "Werkstoff-/Komponentenzulieferer",
+  "leads": [
+    {
+      "name": "Patrick Sperling",
+      "position": "Geschäftsführer",
+      "email": "patrick.sperling@schumacher-federn.de",
+      "email_quelle": "https://schumacher-federn.de/kontakt/",
+      "email_beleg": "Patrick Sperling – Geschäftsführer – patrick.sperling@schumacher-federn.de",
+      "telefon": "+49 2722 9542-0",
+      "telefon_quelle": "https://schumacher-federn.de/kontakt/",
+      "firma": "Schumacher GmbH Federn- und Stanztechnik",
+      "ort": "Attendorn",
+      "mitarbeiter_ca": "50-100",
+      "beschreibung": "Familiengeführter Hersteller technischer Federn, Stanz- und Drahtbiegeteile seit 1953. Beliefert u. a. Automobil-, Nutzfahrzeug- und Elektroindustrie.",
+      "weitere_quellen": [
+        "https://schumacher-federn.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Michael Kinle",
+      "position": "Logistikleitung",
+      "email": "michael.kinle@schumacher-federn.de",
+      "email_quelle": "https://schumacher-federn.de/kontakt/",
+      "email_beleg": "Michael Kinle – Logistikleitung – michael.kinle@schumacher-federn.de",
+      "telefon": "+49 2722 9542-11",
+      "telefon_quelle": "https://schumacher-federn.de/kontakt/",
+      "firma": "Schumacher GmbH Federn- und Stanztechnik",
+      "ort": "Attendorn",
+      "mitarbeiter_ca": "50-100",
+      "beschreibung": "Familiengeführter Hersteller technischer Federn, Stanz- und Drahtbiegeteile. Logistikleitung als Entscheider für Supply-Chain-Themen.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jochen Holder",
+      "position": "Geschäftsleitung / Mitinhaber",
+      "email": "j.holder@holder-oft.de",
+      "email_quelle": "https://holder-oft.de/kontakt/ansprechpartner/",
+      "email_beleg": "Jochen Holder – Geschäftsleitung – j.holder@holder-oft.de",
+      "telefon": "+49 7021 5704-0",
+      "telefon_quelle": "https://holder-oft.de/kontakt/ansprechpartner/",
+      "firma": "Holder GmbH Oberflächentechnik",
+      "ort": "Kirchheim/Teck",
+      "mitarbeiter_ca": "200-400",
+      "beschreibung": "Inhabergeführter Lohnbeschichter (Lackierung/Oberflächenveredelung) von Metall- und Kunststoffteilen, stark automotive-orientiert (IMDS-Beauftragter im Team).",
+      "weitere_quellen": [
+        "https://holder-oft.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Christof Waibel",
+      "position": "Leiter Logistik und Einkauf",
+      "email": "c.waibel@holder-oft.de",
+      "email_quelle": "https://holder-oft.de/kontakt/ansprechpartner/",
+      "email_beleg": "Christof Waibel – Leitung Logistik & Einkauf – c.waibel@holder-oft.de",
+      "telefon": "+49 7021 5704-220",
+      "telefon_quelle": "https://holder-oft.de/kontakt/ansprechpartner/",
+      "firma": "Holder GmbH Oberflächentechnik",
+      "ort": "Kirchheim/Teck",
+      "mitarbeiter_ca": "200-400",
+      "beschreibung": "Beschichtung und Lackierung von Fahrzeug- und Industrieteilen. Bereichsleiter Logistik/Einkauf als Entscheider für Prozess- und Supply-Chain-Themen.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Kai Lechner",
+      "position": "Geschäftsführer",
+      "email": "k.lechner@via-offtec.de",
+      "email_quelle": "https://via-oberflaechentechnik.de/unternehmen/ansprechpartner/",
+      "email_beleg": "Dipl.-Ing.(FH) Kai Lechner – Geschäftsführer – k.lechner@via-offtec.de",
+      "telefon": "02721-71890-10",
+      "telefon_quelle": "https://via-oberflaechentechnik.de/unternehmen/ansprechpartner/",
+      "firma": "VIA Oberflächentechnik GmbH",
+      "ort": "Plettenberg",
+      "mitarbeiter_ca": "100-250",
+      "beschreibung": "Dienstleister für industrielle Teilereinigung, Entfettung und Gleitschleifen von Metallkomponenten, u. a. für Automobilzulieferer im Sauerland.",
+      "weitere_quellen": [
+        "https://via-oberflaechentechnik.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Sascha Kreis",
+      "position": "Prokurist / Mitglied der Geschäftsleitung",
+      "email": "s.kreis@via-offtec.de",
+      "email_quelle": "https://via-oberflaechentechnik.de/unternehmen/ansprechpartner/",
+      "email_beleg": "Dipl.-Wirt.-Ing. Sascha Kreis – Prokurist, Geschäftsleitung – s.kreis@via-offtec.de",
+      "telefon": "02721-71890-17",
+      "telefon_quelle": "https://via-oberflaechentechnik.de/unternehmen/ansprechpartner/",
+      "firma": "VIA Oberflächentechnik GmbH",
+      "ort": "Plettenberg",
+      "mitarbeiter_ca": "100-250",
+      "beschreibung": "Oberflächentechnik/Teilereinigung für Metallkomponenten. Prokurist mit Verantwortung in der Geschäftsleitung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Wolf Maximilian Schmidthaus",
+      "position": "Geschäftsführer",
+      "email": "womax@schmidthaus.de",
+      "email_quelle": "https://haerterei-schmidthaus.de/mitarbeiter/",
+      "email_beleg": "Wolf Maximilian Schmidthaus – Geschäftsführung – womax@schmidthaus.de",
+      "telefon": "+49 2338 8008-35",
+      "telefon_quelle": "https://haerterei-schmidthaus.de/mitarbeiter/",
+      "firma": "Härterei Schmidthaus GmbH",
+      "ort": "Breckerfeld",
+      "mitarbeiter_ca": "50-100",
+      "beschreibung": "Familiengeführte Lohnhärterei in zweiter/dritter Generation, Wärmebehandlung von Stahlteilen für Automobil- und Maschinenbauzulieferer.",
+      "weitere_quellen": [
+        "https://haerterei-schmidthaus.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Michael Rauer",
+      "position": "Geschäftsführer",
+      "email": "m.rauer@hto-haerterei.de",
+      "email_quelle": "https://www.hto-haerterei.de/ansprechpartner.html",
+      "email_beleg": "Michael Rauer – Geschäftsführer / Qualitätsmanagement – m.rauer@hto-haerterei.de",
+      "telefon": "07821-920869-11",
+      "telefon_quelle": "https://www.hto-haerterei.de/ansprechpartner.html",
+      "firma": "HTO Härtetechnik & Oberflächenbehandlung GmbH",
+      "ort": "Friesenheim",
+      "mitarbeiter_ca": "50-100",
+      "beschreibung": "Inhabergeführte Härterei und Oberflächenbehandlung im Lohnauftrag (Familie Rauer) für Zulieferer der Automobil- und Metallindustrie in Baden.",
+      "weitere_quellen": [
+        "https://www.hto-haerterei.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jan Wurth",
+      "position": "Vertriebsleiter",
+      "email": "j.wurth@hto-haerterei.de",
+      "email_quelle": "https://www.hto-haerterei.de/ansprechpartner.html",
+      "email_beleg": "Jan Wurth – Leitung Vertrieb – j.wurth@hto-haerterei.de",
+      "telefon": "07821-920869-18",
+      "telefon_quelle": "https://www.hto-haerterei.de/ansprechpartner.html",
+      "firma": "HTO Härtetechnik & Oberflächenbehandlung GmbH",
+      "ort": "Friesenheim",
+      "mitarbeiter_ca": "50-100",
+      "beschreibung": "Lohnhärterei mit Wärmebehandlung und Oberflächenbehandlung. Vertriebsleitung als Ansprechpartner für Neukunden-/Prozessthemen.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Alexander Jahn",
+      "position": "Geschäftsführer",
+      "email": "alexander.jahn@ogw-polenz.de",
+      "email_quelle": "https://ogw-polenz.de/kontakt/",
+      "email_beleg": "Alexander Jahn – Geschäftsführer – alexander.jahn@ogw-polenz.de",
+      "telefon": "+49 3596 50991-0",
+      "telefon_quelle": "https://ogw-polenz.de/kontakt/",
+      "firma": "OGW Ostsächsisches Gummiwerk Polenz GmbH",
+      "ort": "Neustadt in Sachsen / Polenz",
+      "mitarbeiter_ca": "80-150",
+      "beschreibung": "Hersteller kundenspezifischer Dichtungen und Gummiformteile aus Elastomeren, u. a. für die Automobilindustrie.",
+      "weitere_quellen": [
+        "https://ogw-polenz.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Katharina Leisner",
+      "position": "Geschäftsführerin",
+      "email": "katharina.leisner@ogw-polenz.de",
+      "email_quelle": "https://ogw-polenz.de/kontakt/",
+      "email_beleg": "Katharina Leisner – Geschäftsführerin – katharina.leisner@ogw-polenz.de",
+      "telefon": "+49 3596 50991-0",
+      "telefon_quelle": "https://ogw-polenz.de/kontakt/",
+      "firma": "OGW Ostsächsisches Gummiwerk Polenz GmbH",
+      "ort": "Neustadt in Sachsen / Polenz",
+      "mitarbeiter_ca": "80-150",
+      "beschreibung": "Elastomer-/Gummiformteile und Dichtungen nach Kundenzeichnung für Automotive und Lebensmittelkontakt.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Georg Bamberger",
+      "position": "Geschäftsführer (Entwicklung & Vertrieb)",
+      "email": "gbamberger@bamberger-elastomere.de",
+      "email_quelle": "https://bamberger-elastomere.de/kontakt/",
+      "email_beleg": "Georg Bamberger – Geschäftsführer Entwicklung & Vertrieb – gbamberger@bamberger-elastomere.de",
+      "telefon": "+49 9073 92104-60",
+      "telefon_quelle": "https://bamberger-elastomere.de/kontakt/",
+      "firma": "Bamberger Elastomere GmbH",
+      "ort": "Gundelfingen a. d. Donau",
+      "mitarbeiter_ca": "50-150",
+      "beschreibung": "Inhabergeführter Hersteller von Präzisionsteilen aus Gummi und Silikon (Elastomertechnik) für technische Anwendungen inkl. Fahrzeugbau.",
+      "weitere_quellen": [
+        "https://bamberger-elastomere.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Kathrin Grimminger",
+      "position": "Geschäftsführerin (Finanzen & Verwaltung)",
+      "email": "kgrimminger@bamberger-elastomere.de",
+      "email_quelle": "https://bamberger-elastomere.de/kontakt/",
+      "email_beleg": "Kathrin Grimminger – Geschäftsführerin Finanzen & Verwaltung – kgrimminger@bamberger-elastomere.de",
+      "telefon": "+49 9073 9216-27",
+      "telefon_quelle": "https://bamberger-elastomere.de/kontakt/",
+      "firma": "Bamberger Elastomere GmbH",
+      "ort": "Gundelfingen a. d. Donau",
+      "mitarbeiter_ca": "50-150",
+      "beschreibung": "Gummi- und Silikon-Präzisionsteile. Geschäftsführerin mit Verantwortung für Finanzen, Verwaltung und IT-nahe Investitionen.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Cinderella Haidl",
+      "position": "Geschäftsführerin Administration",
+      "email": "cinderella.haidl@eug-gmbh.de",
+      "email_quelle": "https://eug-gmbh.de/ansprechpartner/",
+      "email_beleg": "Cinderella Haidl – Geschäftsführerin Administration – cinderella.haidl@eug-gmbh.de",
+      "telefon": "+49 6204 9727 20",
+      "telefon_quelle": "https://eug-gmbh.de/ansprechpartner/",
+      "firma": "EUG Extrusions- und Gummitechnik GmbH",
+      "ort": "Viernheim",
+      "mitarbeiter_ca": "50-100",
+      "beschreibung": "Hersteller von Extrusions- und Gummiprofilen sowie Elastomer-Formteilen für Industrie- und Fahrzeuganwendungen.",
+      "weitere_quellen": [
+        "https://eug-gmbh.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Kevin Klaus",
+      "position": "Geschäftsführer Technik",
+      "email": "kevin.klaus@eug-gmbh.de",
+      "email_quelle": "https://eug-gmbh.de/ansprechpartner/",
+      "email_beleg": "Kevin Klaus – Geschäftsführer Technik – kevin.klaus@eug-gmbh.de",
+      "telefon": "+49 6204 9727 13",
+      "telefon_quelle": "https://eug-gmbh.de/ansprechpartner/",
+      "firma": "EUG Extrusions- und Gummitechnik GmbH",
+      "ort": "Viernheim",
+      "mitarbeiter_ca": "50-100",
+      "beschreibung": "Extrusions- und Gummitechnik. Technischer Geschäftsführer als Entscheider für Produktion und Prozesstechnik.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Heiko Dannecker",
+      "position": "Leitung Vertrieb",
+      "email": "heiko.dannecker@hema-umformtechnik.com",
+      "email_quelle": "https://www.hema-umformtechnik.de/kontakt/",
+      "email_beleg": "Heiko Dannecker – Leitung Vertrieb – heiko.dannecker@hema-umformtechnik.com",
+      "telefon": "+49 7427 9476-10",
+      "telefon_quelle": "https://www.hema-umformtechnik.de/kontakt/",
+      "firma": "HEMA Umformtechnik GmbH & Co. KG",
+      "ort": "Schömberg-Schörzingen",
+      "mitarbeiter_ca": "50-150",
+      "beschreibung": "Spezialist für Kaltmassivumformung: Verschlussschrauben, Spannschrauben und Umformteile als Verbindungselemente, u. a. für die Automobilindustrie.",
+      "weitere_quellen": [
+        "https://www.hema-umformtechnik.de/en/company/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Horst Staiger",
+      "position": "IT-Leitung",
+      "email": "horst.staiger@hema-umformtechnik.com",
+      "email_quelle": "https://www.hema-umformtechnik.de/kontakt/",
+      "email_beleg": "Horst Staiger – IT-Leitung – horst.staiger@hema-umformtechnik.com",
+      "telefon": "+49 7427 9476-15",
+      "telefon_quelle": "https://www.hema-umformtechnik.de/kontakt/",
+      "firma": "HEMA Umformtechnik GmbH & Co. KG",
+      "ort": "Schömberg-Schörzingen",
+      "mitarbeiter_ca": "50-150",
+      "beschreibung": "Kaltumformer von Verbindungselementen. IT-Leitung als Entscheider für Digitalisierungs- und Systemthemen.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Nina Kamm",
+      "position": "Geschäftsführerin",
+      "email": "n.kamm@vbe-ems.com",
+      "email_quelle": "https://www.vbe-ems.com/de/kontakt",
+      "email_beleg": "Nina Kamm – Geschäftsführerin – n.kamm@vbe-ems.com",
+      "telefon": "07243/577710",
+      "telefon_quelle": "https://www.vbe-ems.com/de/kontakt",
+      "firma": "vbe Kamm GmbH (vbe Elektronik)",
+      "ort": "Ettlingen",
+      "mitarbeiter_ca": "50-150",
+      "beschreibung": "Familiengeführter EMS-Dienstleister für Entwicklung, Elektronikfertigung und Baugruppenmontage inkl. Beschaffung und Lagerung.",
+      "weitere_quellen": [
+        "https://www.vbe-ems.com/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "Adolf Föhl GmbH + Co KG",
+      "ort": "Rudersberg",
+      "grund": "Kontaktseite nennt nur info@foehl.de, keine personenbezogenen Adressen"
+    },
+    {
+      "firma": "Groß Druckguss GmbH",
+      "ort": "Heilbad Heiligenstadt",
+      "grund": "nur info@ und Handelsvertreter-Sammeladressen, keine Personen-Mails"
+    },
+    {
+      "firma": "Lohnhärterei Faulhaber GmbH & Co. KG",
+      "ort": "Zella-Mehlis",
+      "grund": "keine E-Mail-Adresse auf der Seite auffindbar"
+    },
+    {
+      "firma": "Härterei Kutz & Schulze",
+      "ort": "Hamburg",
+      "grund": "nur Sammeladresse haerterei@kutz-und-schulze.de"
+    },
+    {
+      "firma": "EMDE Solingen GmbH (EMDE Stanztechnik)",
+      "ort": "Solingen",
+      "grund": "Ansprechpartner mit Namen genannt, aber nur info@emde-sg.de auf der Seite"
+    },
+    {
+      "firma": "Ruhrdeichgruppe",
+      "ort": "Duisburg",
+      "grund": "Autohandel, kein Werkstoff-/Komponentenzulieferer; nur info@-Adressen"
+    },
+    {
+      "firma": "REINER GmbH & Co. KG",
+      "ort": "Furtwangen",
+      "grund": "nur reiner@reiner.de und repair@ – keine Personen-Mails"
+    },
+    {
+      "firma": "GERHARDI Kunststofftechnik",
+      "ort": "Altena",
+      "grund": "nur Funktionsadressen (beschwerden@, bewerber@), zudem Konzerngröße"
+    },
+    {
+      "firma": "Christian Zang GmbH",
+      "ort": "Kevelaer",
+      "grund": "Personen-Mails vorhanden, aber Hersteller von Lackier-Abdeckelementen – kein Werkstoff-/Komponentenzulieferer im Zielsegment"
+    },
+    {
+      "firma": "INTEG GmbH",
+      "ort": "Bad Driburg",
+      "grund": "Werkstatt/Inklusionsbetrieb mit EMS-Anteil, kein Automotive-Zulieferer im engeren Sinn"
+    },
+    {
+      "firma": "IT-Electronic Service GmbH",
+      "ort": "Bad Wurzach",
+      "grund": "EMS-Dienstleister, aber deutlich unter 50 Mitarbeitern"
+    },
+    {
+      "firma": "VKF Spritzgusstechnik GmbH",
+      "ort": "Eisfeld",
+      "grund": "Personen-Mails vorhanden, aber Mitarbeiterzahl deutlich unter 50 und kein belegter Automotive-Fokus"
+    },
+    {
+      "firma": "druckguss service deutschland GmbH",
+      "ort": "Lübeck",
+      "grund": "Personen-Mails vorhanden, aber Druckguss-Dienstleister/Reparatur statt Serienzulieferer, Größe unter 50 MA"
+    },
+    {
+      "firma": "Sintertechnik GmbH",
+      "ort": "Pretzfeld",
+      "grund": "nur verwaltung@sintertechnik.com"
+    },
+    {
+      "firma": "sit sintertechnik GmbH",
+      "ort": "Ehrenfriedersdorf",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Wallstabe & Schneider",
+      "ort": "Niederwinkling",
+      "grund": "keine personenbezogenen E-Mail-Adressen auf der Kontaktseite"
+    },
+    {
+      "firma": "L&S Oberflächentechnik",
+      "ort": "Bad Salzuflen",
+      "grund": "Seite liefert HTTP 404, Adresse nicht verifizierbar"
+    },
+    {
+      "firma": "Härtewerk Chemnitz GmbH",
+      "ort": "Chemnitz",
+      "grund": "Team-Seite nicht abrufbar (404), Adressen nicht wörtlich verifizierbar"
+    },
+    {
+      "firma": "Härterei Tandler",
+      "ort": "Bremen",
+      "grund": "keine personenbezogenen Adressen im HTML auffindbar"
+    },
+    {
+      "firma": "Härterei Kirchhoff GmbH",
+      "ort": "Iserlohn",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Gutekunst Federn",
+      "ort": "Metzingen",
+      "grund": "nur Funktionsadressen order@ und tqm@"
+    },
+    {
+      "firma": "Stumpp + Schüle GmbH",
+      "ort": "Beuren",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Vogt Stanzteile",
+      "ort": "Bösingen",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "PEKA Spritzguss GmbH",
+      "ort": "Velbert",
+      "grund": "nur info@peka-spritzguss.de"
+    },
+    {
+      "firma": "Böhm Plasttec GmbH",
+      "ort": "Rottendorf",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Pakulla GmbH",
+      "ort": "Hückeswagen",
+      "grund": "nur eine Personen-Mail ohne Entscheider-Position, Werkzeugbau statt Serienzulieferer"
+    },
+    {
+      "firma": "Claus Groth GmbH",
+      "ort": "Hamburg",
+      "grund": "nur eine Personen-Mail ohne belegte Entscheider-Position"
+    },
+    {
+      "firma": "Schmitz Technik GmbH",
+      "ort": "Wermelskirchen",
+      "grund": "keine E-Mail-Adressen im HTML"
+    },
+    {
+      "firma": "Südbadische Gummiwerke GmbH",
+      "ort": "Donaueschingen",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "ELASTAM GmbH",
+      "ort": "Neuenstein",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "GTK Gummitechnik",
+      "ort": "Kirchheimbolanden",
+      "grund": "nur eine Personen-Mail, Firma deutlich unter 50 MA"
+    },
+    {
+      "firma": "esw electronic service willms GmbH",
+      "ort": "Stolberg",
+      "grund": "nur ems@esw-gmbh.de"
+    },
+    {
+      "firma": "BMK Group GmbH & Co. KG",
+      "ort": "Augsburg",
+      "grund": "nur eine Marketing-Personen-Mail, keine Entscheiderzuordnung belegbar"
+    },
+    {
+      "firma": "GEVAG Verbindungselemente",
+      "ort": "Neuenrade",
+      "grund": "keine Firmen-E-Mail-Adressen auf der Kontaktseite"
+    },
+    {
+      "firma": "Tigges GmbH & Co. KG",
+      "ort": "Wuppertal",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Gottschalk Umformtechnik GmbH",
+      "ort": "Wenden",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Zismann Druckguss GmbH",
+      "ort": "Bergneustadt",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Kuwertz Systemguss GmbH & Co. KG",
+      "ort": "Nettetal",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Marian Druckguss GmbH",
+      "ort": "Fürth",
+      "grund": "Ansprechpartner-Seite ohne auslesbare E-Mail-Adressen"
+    },
+    {
+      "firma": "Matthies Druckguss GmbH & Co. KG",
+      "ort": "Rendsburg",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Aluminiumguss Sauerland GmbH",
+      "ort": "Meschede",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Lausitz Elaste GmbH",
+      "ort": "Lauchhammer",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Hoffner GmbH Spritzguss",
+      "ort": "Kirchentellinsfurt",
+      "grund": "keine personenbezogenen Adressen im HTML auffindbar"
+    },
+    {
+      "firma": "Unger Kunststoff GmbH",
+      "ort": "Kaufbeuren",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "plasma Kunststofftechnik GmbH",
+      "ort": "Selb",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Spritzguss Müller GmbH",
+      "ort": "Buchbach",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Umformtechnik Stendal",
+      "ort": "Stendal",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "ABC Umformtechnik GmbH & Co. KG",
+      "ort": "Gevelsberg",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Heinen Elektronik GmbH",
+      "ort": "Gummersbach",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "HW-Systemtechnik GmbH",
+      "ort": "Bad Säckingen",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    },
+    {
+      "firma": "Limtronik GmbH",
+      "ort": "Limburg",
+      "grund": "keine personenbezogenen Adressen auffindbar"
+    }
+  ]
+}
