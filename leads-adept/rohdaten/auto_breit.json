@@ -1,0 +1,467 @@
+{
+  "branche": "Automobil & Zulieferer",
+  "fokus": "Zulieferindustrie bundesweit",
+  "leads": [
+    {
+      "name": "Arndt Kreutzer",
+      "position": "Geschäftsführer",
+      "email": "arndt.kreutzer@gergen-kipper.com",
+      "email_quelle": "https://gergen-kipper.de/mitarbeiter/",
+      "email_beleg": "Arndt Kreutzer – Geschäftsführer – arndt.kreutzer@gergen-kipper.com",
+      "telefon": "+49 6894 9203-102",
+      "telefon_quelle": "https://gergen-kipper.de/mitarbeiter/",
+      "firma": "GERGEN Kipper und Fahrzeugbau GmbH",
+      "ort": "Heusweiler (Saarland)",
+      "mitarbeiter_ca": "ca. 180-220",
+      "beschreibung": "Familiengeführter Hersteller von Kipperaufbauten, Absetz- und Abrollkippern sowie Sonderfahrzeugaufbauten für Nutzfahrzeuge. Eigene Konstruktion, Fertigung und bundesweiter Service.",
+      "weitere_quellen": [
+        "https://gergen-kipper.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Max Kreutzer",
+      "position": "Geschäftsführer",
+      "email": "max.kreutzer@gergen-kipper.com",
+      "email_quelle": "https://gergen-kipper.de/mitarbeiter/",
+      "email_beleg": "Max Kreutzer – Geschäftsführer – max.kreutzer@gergen-kipper.com",
+      "telefon": "+49 6894 9203-108",
+      "telefon_quelle": "https://gergen-kipper.de/mitarbeiter/",
+      "firma": "GERGEN Kipper und Fahrzeugbau GmbH",
+      "ort": "Heusweiler (Saarland)",
+      "mitarbeiter_ca": "ca. 180-220",
+      "beschreibung": "Zweiter Geschäftsführer des familiengeführten Nutzfahrzeugaufbau-Herstellers, zuständig neben Arndt Kreutzer für die Gesamtleitung des Unternehmens.",
+      "weitere_quellen": [
+        "https://gergen-kipper.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Bernd Hardt",
+      "position": "Vertriebsleitung",
+      "email": "bernd.hardt@gergen-kipper.com",
+      "email_quelle": "https://gergen-kipper.de/mitarbeiter/",
+      "email_beleg": "Bernd Hardt – Vertriebsleitung – bernd.hardt@gergen-kipper.com",
+      "telefon": "+49 6894 9203-113",
+      "telefon_quelle": "https://gergen-kipper.de/mitarbeiter/",
+      "firma": "GERGEN Kipper und Fahrzeugbau GmbH",
+      "ort": "Heusweiler (Saarland)",
+      "mitarbeiter_ca": "ca. 180-220",
+      "beschreibung": "Leitet den Gesamtvertrieb des Kipper- und Fahrzeugbauers mit mehreren Regionalverkaufsleitern in DE, CH und PL. Entscheider für Vertriebsprozesse und -tools.",
+      "weitere_quellen": [
+        "https://gergen-kipper.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Elmar Hilbing",
+      "position": "Geschäftsführer",
+      "email": "elmar.hilbing@hundw-nutzfahrzeuge.de",
+      "email_quelle": "https://hundw-nutzfahrzeuge.de/kontakt/",
+      "email_beleg": "Elmar Hilbing – Geschäftsführer – elmar.hilbing@hundw-nutzfahrzeuge.de",
+      "telefon": "+49 2564 95095-13",
+      "telefon_quelle": "https://hundw-nutzfahrzeuge.de/kontakt/",
+      "firma": "H&W Nutzfahrzeugtechnik GmbH",
+      "ort": "Gronau/Epe (NRW)",
+      "mitarbeiter_ca": "ca. 50-80",
+      "beschreibung": "Inhabergeführter Hersteller von Nutzfahrzeugaufbauten, Kofferaufbauten und Sonderfahrzeugen inkl. Endmontage und Service.",
+      "weitere_quellen": [
+        "https://hundw-nutzfahrzeuge.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Steffen Scharffe",
+      "position": "Geschäftsführer",
+      "email": "steffen.scharffe@hundw-nutzfahrzeuge.de",
+      "email_quelle": "https://hundw-nutzfahrzeuge.de/kontakt/",
+      "email_beleg": "Steffen Scharffe – Geschäftsführer – steffen.scharffe@hundw-nutzfahrzeuge.de",
+      "telefon": "+49 2564 95095-23",
+      "telefon_quelle": "https://hundw-nutzfahrzeuge.de/kontakt/",
+      "firma": "H&W Nutzfahrzeugtechnik GmbH",
+      "ort": "Gronau/Epe (NRW)",
+      "mitarbeiter_ca": "ca. 50-80",
+      "beschreibung": "Zweiter Geschäftsführer des Nutzfahrzeugtechnik-Spezialisten; verantwortlich zusammen mit Elmar Hilbing für Unternehmensführung und Investitionsentscheidungen.",
+      "weitere_quellen": [
+        "https://hundw-nutzfahrzeuge.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jens Schutz",
+      "position": "Geschäftsleitung (Inhaberfamilie)",
+      "email": "jens.schutz@schutz-fahrzeugbau.de",
+      "email_quelle": "https://www.schutz-fahrzeugbau.de/schutz-fahrzeugbau/ansprechpartner-bei-schutz-fahrzeugbau-in-kirchlinteln.html",
+      "email_beleg": "Jens Schutz – Geschäftsleitung – jens.schutz@schutz-fahrzeugbau.de",
+      "telefon": "+49 4237 9311-0",
+      "telefon_quelle": "https://www.schutz-fahrzeugbau.de/schutz-fahrzeugbau/ansprechpartner-bei-schutz-fahrzeugbau-in-kirchlinteln.html",
+      "firma": "SCHUTZ Fahrzeugbau GmbH & Co. KG",
+      "ort": "Kirchlinteln (Niedersachsen)",
+      "mitarbeiter_ca": "ca. 200-250",
+      "beschreibung": "Familiengeführter Hersteller von Pritschen-, Kipper- und Kofferaufbauten sowie Transporter-Branchenlösungen mit eigener Fertigung und bundesweitem Vertrieb.",
+      "weitere_quellen": [
+        "https://www.schutz-fahrzeugbau.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Birgit Schutz",
+      "position": "Geschäftsleitung (Inhaberfamilie)",
+      "email": "birgit.schutz@schutz-fahrzeugbau.de",
+      "email_quelle": "https://www.schutz-fahrzeugbau.de/schutz-fahrzeugbau/ansprechpartner-bei-schutz-fahrzeugbau-in-kirchlinteln.html",
+      "email_beleg": "Birgit Schutz – Geschäftsleitung – birgit.schutz@schutz-fahrzeugbau.de",
+      "telefon": "+49 4237 9311-0",
+      "telefon_quelle": "https://www.schutz-fahrzeugbau.de/schutz-fahrzeugbau/ansprechpartner-bei-schutz-fahrzeugbau-in-kirchlinteln.html",
+      "firma": "SCHUTZ Fahrzeugbau GmbH & Co. KG",
+      "ort": "Kirchlinteln (Niedersachsen)",
+      "mitarbeiter_ca": "ca. 200-250",
+      "beschreibung": "Teil der Geschäftsleitung des familiengeführten Fahrzeugaufbauten-Herstellers; Entscheiderin für kaufmännische und organisatorische Themen.",
+      "weitere_quellen": [
+        "https://www.schutz-fahrzeugbau.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jürgen Spier",
+      "position": "Geschäftsführender Gesellschafter",
+      "email": "juergen.spier@spier.de",
+      "email_quelle": "https://www.spier.de/de/ansprechpartner",
+      "email_beleg": "Jürgen Spier – Geschäftsführender Gesellschafter – juergen.spier@spier.de",
+      "telefon": "+49 5233 945-112",
+      "telefon_quelle": "https://www.spier.de/de/ansprechpartner",
+      "firma": "SPIER GmbH & Co. Fahrzeugwerk KG",
+      "ort": "Steinheim (NRW)",
+      "mitarbeiter_ca": "ca. 400-500",
+      "beschreibung": "Familiengeführtes Fahrzeugwerk für Sattelauflieger, Anhänger und Wechselbrücken. Inhabergeführt in dritter Generation mit eigener Entwicklung und Serienfertigung.",
+      "weitere_quellen": [
+        "https://www.spier.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Fast",
+      "position": "Leiter Vertrieb und Marketing",
+      "email": "andreas.fast@spier.de",
+      "email_quelle": "https://www.spier.de/de/ansprechpartner",
+      "email_beleg": "Andreas Fast – Leiter Vertrieb und Marketing – andreas.fast@spier.de",
+      "telefon": "+49 5233 945-106",
+      "telefon_quelle": "https://www.spier.de/de/ansprechpartner",
+      "firma": "SPIER GmbH & Co. Fahrzeugwerk KG",
+      "ort": "Steinheim (NRW)",
+      "mitarbeiter_ca": "ca. 400-500",
+      "beschreibung": "Verantwortet Vertrieb und Marketing des Trailer- und Aufbautenherstellers inklusive der Regionalverkaufsleiter-Organisation in DE/AT/CH/NL.",
+      "weitere_quellen": [
+        "https://www.spier.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Daniel Hemker",
+      "position": "Kaufmännische Geschäftsleitung",
+      "email": "daniel.hemker@wecon.de",
+      "email_quelle": "https://www.wecon.de/kontakt",
+      "email_beleg": "Daniel Hemker – Kaufmännische Geschäftsleitung – daniel.hemker@wecon.de",
+      "telefon": "+49 2593 921-53",
+      "telefon_quelle": "https://www.wecon.de/kontakt",
+      "firma": "WECON GmbH",
+      "ort": "Altenberge (NRW)",
+      "mitarbeiter_ca": "ca. 150-250",
+      "beschreibung": "Hersteller von Wechselbrücken, Wechselkoffern und Nutzfahrzeugaufbauten mit eigener Fertigung; mittelständisch und inhabergeprägt.",
+      "weitere_quellen": [
+        "https://www.wecon.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Christian Huber",
+      "position": "Leiter Vertrieb",
+      "email": "c.huber@paul.group",
+      "email_quelle": "https://www.paul-nutzfahrzeuge.de/ansprechpartner",
+      "email_beleg": "Christian Huber – Leiter Vertrieb – c.huber@paul.group",
+      "telefon": "+49 8541 9030-120",
+      "telefon_quelle": "https://www.paul-nutzfahrzeuge.de/ansprechpartner",
+      "firma": "PAUL Nutzfahrzeuge GmbH (PAUL Group)",
+      "ort": "Vilshofen an der Donau (Bayern)",
+      "mitarbeiter_ca": "ca. 400-700",
+      "beschreibung": "Familiengeführter Spezialist für Nutzfahrzeugumbauten, Achsumbauten und E-Lkw-Umrüstungen sowie Fahrzeugbau-Baugruppen für OEMs.",
+      "weitere_quellen": [
+        "https://www.paul-nutzfahrzeuge.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Sabrina Lösl",
+      "position": "Kaufmännische Leitung, Prokuristin",
+      "email": "s.loesl@paul.group",
+      "email_quelle": "https://www.paul-nutzfahrzeuge.de/ansprechpartner",
+      "email_beleg": "Sabrina Lösl – Kaufm. Leitung, Prokuristin – s.loesl@paul.group",
+      "telefon": "+49 8541 969688-300",
+      "telefon_quelle": "https://www.paul-nutzfahrzeuge.de/ansprechpartner",
+      "firma": "PAUL Nutzfahrzeuge GmbH (PAUL Group)",
+      "ort": "Vilshofen an der Donau (Bayern)",
+      "mitarbeiter_ca": "ca. 400-700",
+      "beschreibung": "Prokuristin und kaufmännische Leiterin der PAUL Group; Entscheiderin für kaufmännische Prozesse, IT-nahe Verwaltung und Investitionen.",
+      "weitere_quellen": [
+        "https://www.paul-nutzfahrzeuge.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Sebastian Kaufmann",
+      "position": "Geschäftsführer / Verkaufsleitung",
+      "email": "skaufmann@weka.nrw",
+      "email_quelle": "https://www.weka-fahrzeugbau.de/ansprechpartner/kontakt-fahrzeugbau/",
+      "email_beleg": "Sebastian Kaufmann – Geschäftsführer, Verkaufsleitung – skaufmann@weka.nrw",
+      "telefon": "+49 5242 5909-24",
+      "telefon_quelle": "https://www.weka-fahrzeugbau.de/ansprechpartner/kontakt-fahrzeugbau/",
+      "firma": "WEKA Fahrzeugbau GmbH",
+      "ort": "Rheda-Wiedenbrück (NRW)",
+      "mitarbeiter_ca": "ca. 50-80",
+      "beschreibung": "Inhabergeführter Fahrzeugbauer für Spezialaufbauten und Anhänger mit eigener Konstruktion und Produktion.",
+      "weitere_quellen": [
+        "https://www.weka-fahrzeugbau.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Warnk",
+      "position": "Geschäftsführung",
+      "email": "awarnk@fahrzeugfedern.de",
+      "email_quelle": "https://www.fahrzeugfedern.de/kontakt/ihr-ansprechpartner/",
+      "email_beleg": "Geschäftsführung – Andreas Warnk – awarnk@fahrzeugfedern.de",
+      "telefon": "+49 3874 4241-11",
+      "telefon_quelle": "https://www.fahrzeugfedern.de/kontakt/ihr-ansprechpartner/",
+      "firma": "FM Fahrzeugfedern GmbH Mecklenburg",
+      "ort": "Ludwigslust (Mecklenburg-Vorpommern)",
+      "mitarbeiter_ca": "ca. 100-150",
+      "beschreibung": "Hersteller von Blatt- und Parabelfedern für Nutzfahrzeuge und Anhänger; mittelständischer Zulieferer mit eigener Federnfertigung.",
+      "weitere_quellen": [
+        "https://www.fahrzeugfedern.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Patrick Sperling",
+      "position": "Geschäftsführer",
+      "email": "patrick.sperling@schumacher-federn.de",
+      "email_quelle": "https://schumacher-federn.de/kontakt/",
+      "email_beleg": "Patrick Sperling – Geschäftsführer – patrick.sperling@schumacher-federn.de",
+      "telefon": "+49 2722 9542-0",
+      "telefon_quelle": "https://schumacher-federn.de/kontakt/",
+      "firma": "Schumacher GmbH – Federn- und Stanztechnik",
+      "ort": "Attendorn (NRW)",
+      "mitarbeiter_ca": "ca. 60-120",
+      "beschreibung": "Familiengeführter Hersteller technischer Federn, Stanz- und Drahtbiegeteile, u. a. für die Automobil- und Zulieferindustrie.",
+      "weitere_quellen": [
+        "https://schumacher-federn.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Stefan Zimmermann",
+      "position": "Geschäftsführender Gesellschafter",
+      "email": "sz@heinz-zimmermann.de",
+      "email_quelle": "https://heinz-zimmermann.de/kontakt/",
+      "email_beleg": "Stefan Zimmermann – Geschäftsführender Gesellschafter – sz@heinz-zimmermann.de",
+      "telefon": "+49 2391 917939-0",
+      "telefon_quelle": "https://heinz-zimmermann.de/kontakt/",
+      "firma": "Heinz Zimmermann GmbH & Co. KG Stanztechnik",
+      "ort": "Herscheid / Sauerland (NRW)",
+      "mitarbeiter_ca": "ca. 60-120",
+      "beschreibung": "Familiengeführter Stanztechnik-Zulieferer für Stanz-, Zieh- und Biegeteile sowie einbaufertige Baugruppen, u. a. für Automotive-Kunden.",
+      "weitere_quellen": [
+        "https://heinz-zimmermann.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "Kunath Fahrzeugbau GmbH",
+      "ort": "Roßwein",
+      "grund": "Ansprechpartner-Seite enthält nur info@fahrzeugbau-kunath.de, keine persönlichen Adressen"
+    },
+    {
+      "firma": "Jännert Planen und Fahrzeugbau GmbH",
+      "ort": "München",
+      "grund": "Ansprechpartner mit Namen/Positionen gelistet, aber nur Sammeladresse verkauf@jaennert-gmbh.de"
+    },
+    {
+      "firma": "Zimmermann Technische Federn GmbH",
+      "ort": "Leutersdorf",
+      "grund": "nur info@zimmermann-federn.de auf Kontaktseite"
+    },
+    {
+      "firma": "Ruhrdeich Gruppe",
+      "ort": "Duisburg",
+      "grund": "Autohandels-/Werkstattgruppe, kein Automobilzulieferer – Branche passt nicht"
+    },
+    {
+      "firma": "Mezger Group / Mezger AG",
+      "ort": "Lyss (Schweiz)",
+      "grund": "Giesserei mit vielen Personenadressen, aber Schweiz – Fokus ist bundesweit Deutschland"
+    },
+    {
+      "firma": "Dossmann Eisengiesserei",
+      "ort": "Osterburken",
+      "grund": "nur info@dossmann.de"
+    },
+    {
+      "firma": "Ernst W. Velleuer GmbH & Co. KG (Federnfabrik)",
+      "ort": "Velbert",
+      "grund": "nur Funktionsadressen info@/einkauf@/qm@"
+    },
+    {
+      "firma": "ORTEN Fahrzeugbau",
+      "ort": "Bernkastel-Kues",
+      "grund": "Ansprechpartner-Seite lieferte beim Crawl keine E-Mail-Adressen im HTML"
+    },
+    {
+      "firma": "Kröger Nutzfahrzeuge",
+      "ort": "Bevern",
+      "grund": "Ansprechpartner-Seite lieferte beim Crawl keine E-Mail-Adressen im HTML"
+    },
+    {
+      "firma": "Willbrandt Gummitechnik",
+      "ort": "Hamburg",
+      "grund": "nur info@ und stellenmarkt@"
+    },
+    {
+      "firma": "Kremer Kautschuk Kunststoff",
+      "ort": "Nettetal",
+      "grund": "nur team@/anfrage@ – keine Personenadressen"
+    },
+    {
+      "firma": "REIFF Technische Produkte",
+      "ort": "Reutlingen",
+      "grund": "nur kundenservice@reiff-gruppe.de"
+    },
+    {
+      "firma": "SCHNORR GmbH",
+      "ort": "Ludwigsburg",
+      "grund": "nur automotive@schnorr.de (Funktionsadresse)"
+    },
+    {
+      "firma": "Eggers Fahrzeugbau GmbH",
+      "ort": "Bassum",
+      "grund": "nur efa@eggers-fahrzeugbau.com"
+    },
+    {
+      "firma": "Kögel Trailer GmbH",
+      "ort": "Burtenbach",
+      "grund": "nur Funktionsadressen (parts@, aftersales@); zudem Grossunternehmen"
+    },
+    {
+      "firma": "Gontermann-Peipers GmbH",
+      "ort": "Siegen",
+      "grund": "Giesserei, aber Produktfokus Walzwerkswalzen/Nuklearbehälter – kein Automotive-Zulieferer"
+    },
+    {
+      "firma": "ProMESTA Prüftechnik GmbH & Co. KG",
+      "ort": "Büchenbach",
+      "grund": "persönliche Adressen vorhanden, aber deutlich unter Zielgrösse (< 50 Mitarbeiter)"
+    },
+    {
+      "firma": "CAMAKON GmbH (Prüftechnik)",
+      "ort": "Kirchheim/Teck",
+      "grund": "nur eine Personenadresse ohne Positions-/Namenszuordnung auf der Seite; Firmengrösse unter Zielkorridor"
+    },
+    {
+      "firma": "ARS Altmann AG",
+      "ort": "Wolnzach",
+      "grund": "nur Standort-Sammeladressen (eitting@, krefeld@ etc.), keine Personenadressen"
+    },
+    {
+      "firma": "MOSOLF Group",
+      "ort": "Kirchheim unter Teck",
+      "grund": "nur mosolf@mosolf.com"
+    },
+    {
+      "firma": "CSM GmbH (Messtechnik)",
+      "ort": "Filderstadt",
+      "grund": "keine Personenadressen auf Kontaktseite"
+    },
+    {
+      "firma": "KACO GmbH + Co. KG (Dichtungen)",
+      "ort": "Kirchardt",
+      "grund": "nur Funktionsadressen (purchasing@, sm@)"
+    },
+    {
+      "firma": "SIGG Fahrzeugbau",
+      "ort": "Sigmaringen",
+      "grund": "nur showroom@sigg-fahrzeugbau.de"
+    },
+    {
+      "firma": "Dichtungstechnik Bensheim",
+      "ort": "Bensheim",
+      "grund": "nur Funktionsadresse nverkauf@"
+    },
+    {
+      "firma": "Käuferle GmbH & Co. KG",
+      "ort": "Bopfingen",
+      "grund": "nur ausschreibungen@kaeuferle.de"
+    },
+    {
+      "firma": "Schweiger Group (Kabelkonfektion)",
+      "ort": "Wartenberg",
+      "grund": "nur montage@schweiger-group.de"
+    },
+    {
+      "firma": "TTV GmbH Dichtungstechnik",
+      "ort": "Weilheim",
+      "grund": "Adresse spaeth@ttv-gmbh.de ohne Namens-/Positionszuordnung auf der Seite"
+    },
+    {
+      "firma": "Eisengiesserei Baumgarte GmbH",
+      "ort": "Bielefeld",
+      "grund": "nur info@eisengiesserei-baumgarte.de (als info{at} obfuskiert)"
+    },
+    {
+      "firma": "Hohl Logistik",
+      "ort": "Schrozberg",
+      "grund": "Personenadressen vorhanden, aber allgemeine Spedition ohne Automotive-Schwerpunkt"
+    },
+    {
+      "firma": "Schumacher/Velleuer Vergleichskandidaten diverse Kabelkonfektionäre (Kabelform, Distrona, Powertune, KBF)",
+      "ort": "diverse",
+      "grund": "Kontaktseiten ohne persönliche E-Mail-Adressen (nur Formular/Sammeladressen)"
+    },
+    {
+      "firma": "SPIER GmbH & Co. Fahrzeugwerk KG / Heinz Zimmermann Stanztechnik",
+      "ort": "Steinheim / Herscheid",
+      "grund": "weitere gueltige Personenkontakte (Kai Degner, Leiter Einkauf und Logistik; Christian Barth, Vertriebsleiter) vorhanden, aus Kontingentgruenden nicht in die Lead-Liste uebernommen"
+    }
+  ]
+}
