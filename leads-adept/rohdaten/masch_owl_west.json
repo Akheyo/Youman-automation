@@ -1,0 +1,580 @@
+{
+  "branche": "Maschinenbau & Fertigung",
+  "fokus": "OWL/Münsterland/Sauerland",
+  "leads": [
+    {
+      "name": "Burkhard Rüssmann",
+      "position": "Geschäftsführer (CEO)",
+      "email": "b.ruessmann@lr-kaelte.de",
+      "email_quelle": "https://www.lr-kaelte.de/team-2/",
+      "email_beleg": "BURKHARD RÜSSMANN | GESCHÄFTSFÜHRER (CEO) | Tel. +49 2935 965-20 | b.ruessmann@lr-kaelte.de",
+      "telefon": "+49 2935 965-20",
+      "telefon_quelle": "https://www.lr-kaelte.de/team-2/",
+      "firma": "L&R Kältetechnik GmbH & Co. KG",
+      "ort": "Sundern (Sauerland)",
+      "mitarbeiter_ca": "155",
+      "beschreibung": "Inhabergeführter Hersteller von Industriekälteanlagen und kältetechnischem Sonderanlagenbau; in zweiter/dritter Generation von der Familie Rüssmann geführt.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/suedwestfalen/ranking/produktion/maschinenbau/suedwestfalen/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "André Rüssmann",
+      "position": "Geschäftsführer (CTO)",
+      "email": "a.ruessmann@lr-kaelte.de",
+      "email_quelle": "https://www.lr-kaelte.de/team-2/",
+      "email_beleg": "ANDRÉ RÜSSMANN | GESCHÄFTSFÜHRER (CTO) | Tel. +49 2935 965-20 | a.ruessmann@lr-kaelte.de",
+      "telefon": "+49 2935 965-20",
+      "telefon_quelle": "https://www.lr-kaelte.de/team-2/",
+      "firma": "L&R Kältetechnik GmbH & Co. KG",
+      "ort": "Sundern (Sauerland)",
+      "mitarbeiter_ca": "155",
+      "beschreibung": "Technischer Geschäftsführer des familiengeführten Sonderanlagenbauers für Industriekälte; verantwortet Technik/Entwicklung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Markus Baumeister",
+      "position": "Leitung IT & Organisation",
+      "email": "m.baumeister@lr-kaelte.de",
+      "email_quelle": "https://www.lr-kaelte.de/team-2/",
+      "email_beleg": "MARKUS BAUMEISTER | LEITUNG IT & ORGANISATION | Tel.+49 2935 9652-580 | m.baumeister@lr-kaelte.de",
+      "telefon": "+49 2935 9652-580",
+      "telefon_quelle": "https://www.lr-kaelte.de/team-2/",
+      "firma": "L&R Kältetechnik GmbH & Co. KG",
+      "ort": "Sundern (Sauerland)",
+      "mitarbeiter_ca": "155",
+      "beschreibung": "Bereichsleiter IT und Organisation; Entscheider für IT-/Digitalisierungsthemen im familiengeführten Anlagenbau.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Petra Bültmann-Steffin",
+      "position": "Geschäftsleitung (Inhaberfamilie)",
+      "email": "pb@bueltmann.com",
+      "email_quelle": "https://www.bueltmann.com/kontakt-direkter-draht",
+      "email_beleg": "Petra Bültmann-Steffin | Geschäftsleitung | Telefon: +49 2394 18-0 | E-Mail: pb@bueltmann.com",
+      "telefon": "+49 2394 18-0",
+      "telefon_quelle": "https://www.bueltmann.com/kontakt-direkter-draht",
+      "firma": "Bültmann GmbH",
+      "ort": "Neuenrade (Sauerland/Märkischer Kreis)",
+      "mitarbeiter_ca": "125",
+      "beschreibung": "Familienunternehmen für Ziehanlagen, Rohr- und Stangenbearbeitungsanlagen sowie Sondermaschinen für die Metallindustrie.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/suedwestfalen/ranking/produktion/maschinenbau/suedwestfalen/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Bültmann",
+      "position": "Geschäftsleitung (Inhaberfamilie)",
+      "email": "ab@bueltmann.com",
+      "email_quelle": "https://www.bueltmann.com/kontakt-direkter-draht",
+      "email_beleg": "Andreas Bültmann | Geschäftsleitung | Telefon: +49 2394 18-0 | E-Mail: ab@bueltmann.com",
+      "telefon": "+49 2394 18-0",
+      "telefon_quelle": "https://www.bueltmann.com/kontakt-direkter-draht",
+      "firma": "Bültmann GmbH",
+      "ort": "Neuenrade (Sauerland/Märkischer Kreis)",
+      "mitarbeiter_ca": "125",
+      "beschreibung": "Mitglied der Geschäftsleitung des inhabergeführten Maschinen- und Anlagenbauers für Metall-Ziehtechnik.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Zimball",
+      "position": "Vertriebsleiter / Prokurist",
+      "email": "az@bueltmann.com",
+      "email_quelle": "https://www.bueltmann.com/kontakt-direkter-draht",
+      "email_beleg": "Andreas Zimball | Vertriebsleiter / Prokurist | Telefon: +49 2394 18-253 | E-Mail: az@bueltmann.com",
+      "telefon": "+49 2394 18-253",
+      "telefon_quelle": "https://www.bueltmann.com/kontakt-direkter-draht",
+      "firma": "Bültmann GmbH",
+      "ort": "Neuenrade (Sauerland/Märkischer Kreis)",
+      "mitarbeiter_ca": "125",
+      "beschreibung": "Prokurist und Vertriebsleiter, damit zeichnungsberechtigter Entscheidungsträger im Familienunternehmen.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Stefanie Flaeper",
+      "position": "Geschäftsführerin Vertrieb/Marketing",
+      "email": "sflaeper@transfluid.de",
+      "email_quelle": "https://www.transfluid.de/unternehmen/vertrieb/leitung",
+      "email_beleg": "Stefanie Flaeper Geschäftsführerin Vertrieb/Marketing +49 29 72 / 97 15 10 MAIL (mailto sflaeper@transfluid.de)",
+      "telefon": "+49 2972 9715 10",
+      "telefon_quelle": "https://www.transfluid.de/unternehmen/vertrieb/leitung",
+      "firma": "transfluid Maschinenbau GmbH",
+      "ort": "Schmallenberg (Sauerland)",
+      "mitarbeiter_ca": "225",
+      "beschreibung": "Inhabergeführter Hersteller von Rohrbiege-, Rohrbearbeitungs- und Automationsanlagen; Geschäftsführerin aus der Eigentümerfamilie.",
+      "weitere_quellen": [
+        "https://www.regiomanager.de/suedwestfalen/ranking/produktion/maschinenbau/suedwestfalen/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Frederic Lanz",
+      "position": "CEO / Vice Chairman of the Board",
+      "email": "lanz@kemper.eu",
+      "email_quelle": "https://www.kemper.eu/Unternehmen/Kontakt/",
+      "email_beleg": "CEO Vice Chairman of the Board | Frederic Lanz | ph +49 (0) 2564 68-119 | lanz@kemper.eu",
+      "telefon": "+49 2564 68-119",
+      "telefon_quelle": "https://www.kemper.eu/Unternehmen/Kontakt/",
+      "firma": "KEMPER GmbH",
+      "ort": "Vreden (Westmünsterland)",
+      "mitarbeiter_ca": "300-400",
+      "beschreibung": "Familiengeführter Hersteller von Absaug- und Filteranlagen (Schweißrauchabsaugung, Hallenlüftung) mit eigener Fertigung in Vreden.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jochen Kemper",
+      "position": "Vice President Sales (Inhaberfamilie)",
+      "email": "jkemper@kemper.eu",
+      "email_quelle": "https://www.kemper.eu/Unternehmen/Kontakt/",
+      "email_beleg": "Vice President Sales | Jochen Kemper | ph +49 (0) 2564 68-138 | jkemper@kemper.eu",
+      "telefon": "+49 2564 68-138",
+      "telefon_quelle": "https://www.kemper.eu/Unternehmen/Kontakt/",
+      "firma": "KEMPER GmbH",
+      "ort": "Vreden (Westmünsterland)",
+      "mitarbeiter_ca": "300-400",
+      "beschreibung": "Mitglied der Gründer-/Inhaberfamilie Kemper, verantwortet den weltweiten Vertrieb des Absaugtechnik-Herstellers.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dirk Juras",
+      "position": "Produktionsleitung",
+      "email": "d.juras@minda.com",
+      "email_quelle": "https://www.minda.com/de/kontakt/management",
+      "email_beleg": "Dirk Juras | Produktionsleitung | +49 (0) 571 / 3997 - 0 | d.juras@minda.com",
+      "telefon": "+49 571 3997-0",
+      "telefon_quelle": "https://www.minda.com/de/kontakt/management",
+      "firma": "MINDA Industrieanlagen GmbH",
+      "ort": "Minden (OWL)",
+      "mitarbeiter_ca": "400-500 (Gruppe)",
+      "beschreibung": "Familiengeführter Anlagenbauer (Gesellschafter Falch) für Intralogistik, Fördertechnik und Hochregallager in Holz-, Wellpappen- und Reifenindustrie.",
+      "weitere_quellen": [
+        "https://www.minda.com/de/kontakt/geschaeftsfuehrung"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Matthias Droste",
+      "position": "Serviceleitung",
+      "email": "m.droste@minda.com",
+      "email_quelle": "https://www.minda.com/de/kontakt/management",
+      "email_beleg": "Matthias Droste | Serviceleitung | +49 (0) 571 / 3997 - 540 | m.droste@minda.com",
+      "telefon": "+49 571 3997-540",
+      "telefon_quelle": "https://www.minda.com/de/kontakt/management",
+      "firma": "MINDA Industrieanlagen GmbH",
+      "ort": "Minden (OWL)",
+      "mitarbeiter_ca": "400-500 (Gruppe)",
+      "beschreibung": "Bereichsleiter Service des familiengeführten Fördertechnik- und Anlagenbauers; verantwortet Instandhaltung und Serviceorganisation.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Kurt Griese",
+      "position": "Geschäftsführer (Gründer/Inhaber)",
+      "email": "griese@griesotec.de",
+      "email_quelle": "https://www.griesotec.de/ansprechpartner.html",
+      "email_beleg": "Kurt Griese | Geschäftsführer | Tel.: 0 25 72 / 96 734 10 | griese@griesotec.de",
+      "telefon": "+49 2572 96734-10",
+      "telefon_quelle": "https://www.griesotec.de/ansprechpartner.html",
+      "firma": "GriesoTec Maschinenbau GmbH",
+      "ort": "Emsdetten (Münsterland)",
+      "mitarbeiter_ca": "50",
+      "beschreibung": "Familienbetrieb für Sondermaschinenbau, Lohnfertigung und Industriemontage; 1991 gegründet, seit 2018 als GriesoTec firmierend.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Henning Griese",
+      "position": "Geschäftsführer (2. Generation)",
+      "email": "h.griese@griesotec.de",
+      "email_quelle": "https://www.griesotec.de/ansprechpartner.html",
+      "email_beleg": "Henning Griese | Geschäftsführer | Tel.: 0 25 72 / 96 734 14 | h.griese@griesotec.de",
+      "telefon": "+49 2572 96734-14",
+      "telefon_quelle": "https://www.griesotec.de/ansprechpartner.html",
+      "firma": "GriesoTec Maschinenbau GmbH",
+      "ort": "Emsdetten (Münsterland)",
+      "mitarbeiter_ca": "50",
+      "beschreibung": "Geschäftsführer der zweiten Generation im Familienbetrieb für komplexe Sondermaschinen und Baugruppenfertigung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Paul Horstmann",
+      "position": "CEO / Geschäftsführer",
+      "email": "paul.horstmann@iq-sps.de",
+      "email_quelle": "https://www.iq-sps.de/unternehmen/kontakt-anfahrt/",
+      "email_beleg": "Ihre Ansprechpartner | CEO | Paul Horstmann | (mailto-Link mit title=\"paul.horstmann@iq-sps.de\")",
+      "telefon": "+49 2557 928 53 25",
+      "telefon_quelle": "https://www.iq-sps.de/unternehmen/kontakt-anfahrt/",
+      "firma": "IQ-SPS GmbH",
+      "ort": "Wettringen (Kreis Steinfurt, Münsterland)",
+      "mitarbeiter_ca": "50",
+      "beschreibung": "Inhabergeführter Hersteller von Webmaschinen (Draht-/Robustwebmaschinen) mit Vorrichtungsbau, Sondermaschinenbau und Maschinenüberholung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Arne Strohdiek",
+      "position": "Bereichsleiter / Vertrieb Maschinenbau",
+      "email": "arne.strohdiek@spilker.de",
+      "email_quelle": "https://www.spilker.de/kontakt/ansprechpartner/vertrieb-maschinenbau/",
+      "email_beleg": "Arne Strohdiek | Bereichsleiter/Vertrieb | +49 5202 9100-806 | arne.strohdiek@spilker.de",
+      "telefon": "+49 5202 9100-806",
+      "telefon_quelle": "https://www.spilker.de/kontakt/ansprechpartner/vertrieb-maschinenbau/",
+      "firma": "Spilker GmbH",
+      "ort": "Steinhagen (Kreis Gütersloh, OWL)",
+      "mitarbeiter_ca": "150-250",
+      "beschreibung": "Familiengeführter Hersteller von Rotationsstanzwerkzeugen, Stanzblechen und eigenem Maschinenbau für die Etiketten- und Verpackungsindustrie.",
+      "weitere_quellen": [
+        "https://www.spilker.de/kontakt/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Thomas Scholz",
+      "position": "Ansprechpartner/Leitung Sondermaschinenlösungen",
+      "email": "t.scholz@grunewald.de",
+      "email_quelle": "https://www.grunewald.de/kontakt/",
+      "email_beleg": "Thomas Scholz | Ansprechpartner für Sondermaschinenlösungen | +49-2871-2507241 | t.scholz@grunewald.de",
+      "telefon": "+49 2871 2507241",
+      "telefon_quelle": "https://www.grunewald.de/kontakt/",
+      "firma": "Grunewald GmbH & Co. KG",
+      "ort": "Bocholt (Westmünsterland)",
+      "mitarbeiter_ca": "300-400",
+      "beschreibung": "Familienunternehmen (GF Ulrich und Philipp Grunewald) für Werkzeugbau, Modellbau, Aluminiumguss und Sondermaschinenbau.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "Wemhöner Surface Technologies GmbH & Co. KG",
+      "ort": "Herford",
+      "grund": "Auf Homepage, /kontakt und /ueber-uns/vertrieb nur info@-Adressen bzw. E-Mails ausländischer Handelsvertreter – keine persönliche Adresse eines deutschen Entscheiders"
+    },
+    {
+      "firma": "KOLBUS GmbH & Co. KG",
+      "ort": "Rahden",
+      "grund": "Kontaktseite listet nur Regional Sales Manager / Area Service Manager, keine Geschäftsführung oder Bereichsleitung Produktion/IT/Logistik"
+    },
+    {
+      "firma": "Gebrüder Lödige Maschinenbau GmbH",
+      "ort": "Paderborn",
+      "grund": "Nur eine persönliche Adresse (Backoffice Sales Frankreich), kein Entscheidungsträger"
+    },
+    {
+      "firma": "Achenbach Buschhüttten GmbH",
+      "ort": "Kreuztal",
+      "grund": "Kontaktseite ausschließlich Funktionspostfächer (einkauf@, personal@, sales@, fertigung@)"
+    },
+    {
+      "firma": "HAVER & BOECKER OHG",
+      "ort": "Oelde",
+      "grund": "Persönliche Adressen vorhanden, aber nur Geschäftsbereichs-/Vertriebsansprechpartner ohne Leitungstitel; Gruppe zudem >1000 MA"
+    },
+    {
+      "firma": "Herbert Kannegiesser GmbH",
+      "ort": "Vlotho",
+      "grund": "Website liefert nur Splash-/Weiterleitungsseite (14 KB), keine Team- oder Ansprechpartnerseite crawlbar"
+    },
+    {
+      "firma": "DENIOS SE",
+      "ort": "Bad Oeynhausen",
+      "grund": "Nur Personalreferent:innen (HR) mit persönlicher Adresse, keine Zielrolle"
+    },
+    {
+      "firma": "MENNEKES Elektrotechnik GmbH & Co. KG",
+      "ort": "Kirchhundem",
+      "grund": "Persönliche Adressen nur von Presse-/Marketing-Mitarbeitenden"
+    },
+    {
+      "firma": "EJOT SE & Co. KG",
+      "ort": "Bad Laasphe",
+      "grund": "Persönliche Adressen ausschließlich Recruiting/Ausbildung"
+    },
+    {
+      "firma": "SCHÄFER Werke GmbH",
+      "ort": "Neunkirchen (Siegerland)",
+      "grund": "Einzige persönliche Adresse ist der Leiter Personalwesen – keine Zielrolle"
+    },
+    {
+      "firma": "BOGE KOMPRESSOREN Otto Boge GmbH & Co. KG",
+      "ort": "Bielefeld",
+      "grund": "Einzige persönliche Adresse ist Leiter Marketing (Pressekontakt), keine Zielrolle"
+    },
+    {
+      "firma": "Bernhard Hohage GmbH & Co. KG",
+      "ort": "Kierspe",
+      "grund": "Kontaktseite listet nur Teamleiter Vertrieb und Key-Account-Manager, keine Geschäftsführung"
+    },
+    {
+      "firma": "Dango & Dienenthal Maschinenbau GmbH",
+      "ort": "Siegen",
+      "grund": "Ansprechpartnerseite enthält nur Auslandsvertretungen (UK/USA) und career@"
+    },
+    {
+      "firma": "SKS metaplast Scheffer-Klute GmbH",
+      "ort": "Sundern",
+      "grund": "Persönliche Adresse nur für Praktikumsanfragen; übrige Kontakte sind Auslandsvertriebe"
+    },
+    {
+      "firma": "Isringhausen (isringhausen.com)",
+      "ort": "Lemgo",
+      "grund": "Domain gehört einem gleichnamigen US-Autohaus – Fehltreffer, keine Relevanz"
+    },
+    {
+      "firma": "technotrans SE",
+      "ort": "Sassenberg",
+      "grund": "Börsennotierte SE, kein familien-/inhabergeführtes Unternehmen (Ausschlusskriterium Konzern)"
+    },
+    {
+      "firma": "Paul Craemer GmbH",
+      "ort": "Herzebrock-Clarholz",
+      "grund": "Persönliche Adressen nur in der Routing-Konfiguration des Kontaktformulars, ohne Namens-/Positionszuordnung auf der Seite"
+    },
+    {
+      "firma": "JÖST GmbH + Co. KG",
+      "ort": "Dülmen",
+      "grund": "Persönliche Adressen nur von Verkaufsingenieuren an auswärtigen Standorten, keine Leitungsfunktion"
+    },
+    {
+      "firma": "OBO Bettermann Holding GmbH & Co. KG",
+      "ort": "Menden",
+      "grund": "Nur Funktionspostfächer (info@, digital@); zudem Konzerngröße"
+    },
+    {
+      "firma": "TRILUX GmbH & Co. KG",
+      "ort": "Arnsberg",
+      "grund": "Nur Funktionspostfächer (lms@, career@)"
+    },
+    {
+      "firma": "ERCO GmbH",
+      "ort": "Lüdenscheid",
+      "grund": "Nur Hinweisgebersystem-Adresse (speakup@), keine Personenkontakte"
+    },
+    {
+      "firma": "Hueck-Gruppe",
+      "ort": "Lüdenscheid",
+      "grund": "Persönliche Adresse nur im Personalwesen-Kontext, Bewerbungen an jobs@"
+    },
+    {
+      "firma": "SIEGENIA-AUBI KG",
+      "ort": "Siegen",
+      "grund": "Nur eine persönliche Adresse ohne Namens-/Positionskontext im HTML"
+    },
+    {
+      "firma": "Spaleck GmbH & Co. KG",
+      "ort": "Bocholt",
+      "grund": "Ansprechpartnerseite (960 KB) enthält keine E-Mail-Adressen, nur Formular"
+    },
+    {
+      "firma": "ELHA-MASCHINENBAU Liemke KG",
+      "ort": "Hövelhof",
+      "grund": "Team- und Kontaktseite ohne E-Mail-Adressen"
+    },
+    {
+      "firma": "Remmert GmbH",
+      "ort": "Löhne",
+      "grund": "Nur Funktionspostfächer (info@, sales@, hotline@)"
+    },
+    {
+      "firma": "Sollich KG",
+      "ort": "Bad Salzuflen",
+      "grund": "Persönliche Adressen nur bei Auslandsvertretungen"
+    },
+    {
+      "firma": "ROSE Systemtechnik GmbH",
+      "ort": "Porta Westfalica",
+      "grund": "Kontaktseiten national/international ohne persönliche E-Mail-Adressen"
+    },
+    {
+      "firma": "Börger GmbH",
+      "ort": "Borken",
+      "grund": "Keine persönlichen E-Mail-Adressen auf Kontakt-/Unternehmensseiten"
+    },
+    {
+      "firma": "L.B. Bohle Maschinen + Verfahren GmbH",
+      "ort": "Ennigerloh",
+      "grund": "Nur inquiry@ sowie eine Adresse der indischen Tochter"
+    },
+    {
+      "firma": "Wilhelm Severt Maschinenbau GmbH",
+      "ort": "Vreden",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Othmerding Maschinenbau GmbH & Co. KG",
+      "ort": "Ascheberg-Davensberg",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Strothmann Machines & Handling GmbH",
+      "ort": "Schloß Holte-Stukenbrock",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Venjakob Maschinenbau GmbH & Co. KG",
+      "ort": "Rheda-Wiedenbrück",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "KRACHT GmbH",
+      "ort": "Werdohl",
+      "grund": "Persönliche Adressen nur im Karrierebereich (Recruiting)"
+    },
+    {
+      "firma": "Klemm Bohrtechnik GmbH",
+      "ort": "Drolshagen",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Rickmeier GmbH",
+      "ort": "Balve",
+      "grund": "E-Mail-Adressen base64-verschleiert und nur Funktionspostfächer (products-a@, products-e@)"
+    },
+    {
+      "firma": "HST Systemtechnik GmbH & Co. KG",
+      "ort": "Meschede",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Ohrmann GmbH",
+      "ort": "Möhnesee",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "OPS-Ingersoll Funkenerosion GmbH",
+      "ort": "Burbach",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Gräbener Maschinentechnik GmbH & Co. KG",
+      "ort": "Netphen",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Pekrun Getriebebau GmbH",
+      "ort": "Iserlohn",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Paul Köster GmbH",
+      "ort": "Medebach",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Bilsing Automation GmbH",
+      "ort": "Attendorn",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Krampe Werkzeuge GmbH & Co. KG",
+      "ort": "Arnsberg",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Garthe & Stoltenhoff GmbH & Co. KG",
+      "ort": "Arnsberg",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "saritec GmbH",
+      "ort": "Lüdenscheid",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Arning Edelstahl & Sondermaschinenbau GmbH & Co. KG",
+      "ort": "Münsterland",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "KMB Maschinenbau",
+      "ort": "OWL",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "BELU GmbH",
+      "ort": "Bielefeld",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "TEKAWE GmbH",
+      "ort": "OWL",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Becker Sonder-Maschinenbau GmbH",
+      "ort": "OWL",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "AVENTUS GmbH & Co. KG",
+      "ort": "Warendorf",
+      "grund": "Nur Funktionspostfächer (info@, hotline@, purchasing@, ana@)"
+    },
+    {
+      "firma": "KORDEL Antriebstechnik GmbH",
+      "ort": "Dülmen",
+      "grund": "Nur Länder-Funktionspostfächer (china@, france@, usa@)"
+    },
+    {
+      "firma": "MGK Maschinenbau / ihs Industrie Handling + Fördertechnik GmbH",
+      "ort": "Freudenberg u.a.",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Metzen Industries GmbH (Standorte außerhalb der Zielregion)",
+      "ort": "Hamburg/Bitburg/Sonsbeck",
+      "grund": "Nur der Standort Beckum liegt in der Zielregion; übrige Entscheider außerhalb NRW-Zielraum"
+    },
+    {
+      "firma": "Hanning & Kahl GmbH & Co. KG",
+      "ort": "Oerlinghausen",
+      "grund": "Website nicht crawlbar (nur 1,7 KB Shell), keine Inhalte abrufbar"
+    },
+    {
+      "firma": "Böcker AG / Möller Werke / Dürkopp Fördertechnik / BSG Sondermaschinenbau / HKS Konstruktion",
+      "ort": "Werne / Bielefeld",
+      "grund": "HTTP-Fehler bzw. nicht erreichbar, auch mit Browser-User-Agent"
+    }
+  ]
+}
