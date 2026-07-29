@@ -1,0 +1,454 @@
+{
+  "branche": "Chemie & Prozessindustrie",
+  "fokus": "NRW",
+  "leads": [
+    {
+      "name": "Daniel Neubner",
+      "position": "Managing Director (Geschäftsführer)",
+      "email": "dn@harke.com",
+      "email_quelle": "https://www.harke.com/contact/",
+      "email_beleg": "Daniel Neubner | Managing Director | dn@harke.com | +49 (0) 208 3069-1050",
+      "telefon": "+49 208 3069-1050",
+      "telefon_quelle": "https://www.harke.com/contact/",
+      "firma": "HARKE GROUP / HARKE Chemicals GmbH",
+      "ort": "Mülheim an der Ruhr",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführte Unternehmensgruppe für Spezialchemikalien, Distribution, Lohnabfüllung/CoPacking und Eigenprodukte (u.a. SOLUBLON). Sitz Xantener Straße 1, Mülheim an der Ruhr.",
+      "weitere_quellen": [
+        "https://www.harke.com/harke-group/about-us/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Benjamin Wrobel",
+      "position": "COO (Chief Operating Officer)",
+      "email": "b.wrobel@wocklum.de",
+      "email_quelle": "https://wocklum-chemie.de/kontakt/",
+      "email_beleg": "Benjamin Wrobel – COO – Tel: +49 2375 925 291 – Mobil: +49 160 606 08 10 – b.wrobel@wocklum.de",
+      "telefon": "+49 2375 925 291",
+      "telefon_quelle": "https://wocklum-chemie.de/kontakt/",
+      "firma": "Chemische Fabrik Wocklum (Wocklum Chemie)",
+      "ort": "Balve (Sauerland/Westfalen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführte Chemiegruppe mit Lohnfertigung/Contract Manufacturing, Bulk-Handel sowie Recycling und Entsorgung chemischer Produkte. Geschäftsführer laut Seite: Gero Hertin (nur Sammeladresse geschaeftsfuehrung@wocklum-gruppe.de).",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jochen Obermeier",
+      "position": "CEO / Geschäftsleitung (Inhaberfamilie)",
+      "email": "jochen.obermeier@obermeier.de",
+      "email_quelle": "https://www.obermeier.de/kontakt/ansprechpartner/",
+      "email_beleg": "Geschäftsleitung – Jochen Obermeier – CEO – Tel: +49 2751 524-0 – jochen.obermeier@obermeier.de",
+      "telefon": "+49 2751 524-0",
+      "telefon_quelle": "https://www.obermeier.de/kontakt/ansprechpartner/",
+      "firma": "Kurt Obermeier GmbH & Co. KG",
+      "ort": "Bad Berleburg (Wittgenstein/Westfalen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familienunternehmen der Spezialchemie: Silikone, Trennmittel, Metallbearbeitungs- und Spezialchemikalien mit eigenem Vertrieb und Anwendungstechnik/F&E.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Gerd Kleemeyer",
+      "position": "Geschäftsführer",
+      "email": "gerd.kleemeyer@gera-chemie.de",
+      "email_quelle": "https://www.gera-chemie.de/team/",
+      "email_beleg": "Geschäftsführung – Gerd Kleemeyer – Geschäftsführer – Tel. +49 208 802080 – gerd.kleemeyer@gera-chemie.de",
+      "telefon": "+49 208 802080",
+      "telefon_quelle": "https://www.gera-chemie.de/team/",
+      "firma": "GERA Chemie GmbH",
+      "ort": "Mülheim an der Ruhr",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführter Hersteller/Konfektionierer chemischer Spezialitäten mit eigener Produktion und Labor im Ruhrgebiet.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Dr. Sabrina Mondrzyk",
+      "position": "Kaufmännische Leitung",
+      "email": "sabrina.mondrzyk@dhc-solvent.de",
+      "email_quelle": "https://dhc-solvent.de/vertrieb/",
+      "email_beleg": "Dr. Sabrina Mondrzyk – Kaufmännische Leitung – +49 208 9940-161 / +49 160 6168943 – sabrina.mondrzyk@dhc-solvent.de",
+      "telefon": "+49 208 9940-161",
+      "telefon_quelle": "https://dhc-solvent.de/vertrieb/",
+      "firma": "DHC Solvent Chemie GmbH",
+      "ort": "Mülheim an der Ruhr",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Hersteller und Aufbereiter von Lösemitteln und Lösemittelrecycling für Lack-, Klebstoff- und Prozessindustrie. Geschäftsführer laut Impressum: Thomas Schreiber, Michaela Hodyas (nur info@-Adresse veröffentlicht).",
+      "weitere_quellen": [
+        "https://dhc-solvent.de/impressum/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Senol Topcu",
+      "position": "Geschäftsführer",
+      "email": "s.topcu@chemopur.info",
+      "email_quelle": "https://chemopur.de/kontakt/",
+      "email_beleg": "Geschäftsführung – Senol Topcu (Geschäftsführer) – Telefon: +49 2323 98797-0 – E-Mail: s.topcu@chemopur.info",
+      "telefon": "+49 2323 98797-0",
+      "telefon_quelle": "https://chemopur.de/kontakt/",
+      "firma": "CHEMOPUR H. Brand GmbH",
+      "ort": "Herne (Baukauer Str. 125, 44653 Herne)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Mittelständischer Hersteller von Polyurethan- und Reaktionsharzsystemen sowie Beschichtungs-/Bauchemieprodukten mit eigener Anwendungstechnik und F&E.",
+      "weitere_quellen": [
+        "https://chemopur.de/impressum/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Martin Polczyk",
+      "position": "Managing Director / CEO",
+      "email": "polczyk@cofermin.de",
+      "email_quelle": "https://cofermin.de/ansprechpartner/",
+      "email_beleg": "Martin Polczyk – Managing Director / CEO – polczyk@cofermin.de – +49 201-43878-35",
+      "telefon": "+49 201 43878-35",
+      "telefon_quelle": "https://cofermin.de/ansprechpartner/",
+      "firma": "COFERMIN Group / Cofermin Chemicals GmbH & Co. KG",
+      "ort": "Essen",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführte Essener Gruppe für Chemikalien- und Mineralstoffhandel, Feuerfest und chemische Spezialitäten mit mehreren Produktions- und Handelsgesellschaften.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Julian Cirkel",
+      "position": "Geschäftsführer (Managing Director), Inhaberfamilie",
+      "email": "julian.cirkel@cirkel.de",
+      "email_quelle": "https://www.cirkel.de/kontakt",
+      "email_beleg": "Julian Cirkel – Geschäftsführer – julian.cirkel@cirkel.de – +49 2364 938124",
+      "telefon": "+49 2364 938124",
+      "telefon_quelle": "https://www.cirkel.de/kontakt",
+      "firma": "Cirkel GmbH & Co. KG",
+      "ort": "Haltern am See (Werk Wickede, Standort Emsdetten)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführter Hersteller mineralischer Bau- und Prozessstoffe (Baustoffe, multifunktionale Mineralien) mit mehreren Produktionsstandorten in NRW.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Marko Sonnemann",
+      "position": "Geschäftsführer",
+      "email": "ms@pentacarbon.de",
+      "email_quelle": "https://www.pentacarbon.de/unternehmen/",
+      "email_beleg": "Geschäftsführung – Marko Sonnemann – Geschäftsführer – ms@pentacarbon.de – +49 2364 899 79-70",
+      "telefon": "+49 2364 89979-70",
+      "telefon_quelle": "https://www.pentacarbon.de/unternehmen/",
+      "firma": "PentaCarbon GmbH",
+      "ort": "Haltern am See",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführter Spezialist für Kohlenstoff-/Graphitprodukte und technische Rohstoffe für die Prozessindustrie mit eigener Materialwirtschaft und Standorten in Polen und der Ukraine.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Benjamin Hille",
+      "position": "Leiter Logistik",
+      "email": "benjamin.hille@harold-scholz.de",
+      "email_quelle": "https://www.harold-scholz.de/uber-uns/unser-team",
+      "email_beleg": "<h4 class=\"team-item-name\">Benjamin Hille</h4> ... <div class=\"team-item-job-title\">Leiter Logistik</div> ... <a title=\"benjamin.hille@harold-scholz.de\" href=\"mailto:benjamin.hille@harold-scholz.de?subject=Nachricht an Benjamin Hille\">",
+      "telefon": "+49 2361 98880",
+      "telefon_quelle": "https://www.harold-scholz.de/uber-uns/unser-team",
+      "firma": "Harold Scholz & Co. GmbH (Scholz Farbpigmente)",
+      "ort": "Recklinghausen (Suderwich)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführter Hersteller von Farbpigmenten und Pigmentpräparationen für Bau, Farbe & Lack sowie Kunststoff, mit Tochtergesellschaften in AT, CH und BeNeLux.",
+      "weitere_quellen": [
+        "https://www.harold-scholz.de/impressum"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Tobias Adamczyk",
+      "position": "Supply Chain Manager",
+      "email": "tobias.adamczyk@orontec.com",
+      "email_quelle": "https://orontec.com/kontakt/",
+      "email_beleg": "Tobias Adamczyk – Supply Chain Manager – +49 202 527 463 18 – tobias.adamczyk@orontec.com",
+      "telefon": "+49 202 52746318",
+      "telefon_quelle": "https://orontec.com/kontakt/",
+      "firma": "ORONTEC GmbH & Co. KG",
+      "ort": "Dortmund (Hauptsitz), Niederlassung Wuppertal",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Mittelständischer Anbieter chemisch-technischer Spezialprodukte und Prozesschemikalien für Industrieanwendungen mit internationalen Partnerstandorten.",
+      "weitere_quellen": [
+        "https://orontec.com/unternehmen/standorte/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Oliver Sentek",
+      "position": "Geschäftsführer",
+      "email": "sentek@technifol.de",
+      "email_quelle": "https://technifol.de/ansprechpartner/",
+      "email_beleg": "Oliver Sentek – Geschäftsführer – Tel. +49 (0) 2368 87962-22 – sentek@technifol.de",
+      "telefon": "+49 2368 87962-22",
+      "telefon_quelle": "https://technifol.de/ansprechpartner/",
+      "firma": "Technifol Verpackungsfolien GmbH",
+      "ort": "Oer-Erkenschwick (Karlstr. 1, 45739)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Anbieter von Kunststoff-Verpackungsfolien und Verpackungsmaschinen inkl. eigenem Service; zweiter Geschäftsführer Manuel Zielke (zielke@technifol.de).",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Olaf Fresdorf",
+      "position": "Leitung Produktion sowie Leitung Beratung und Verkauf",
+      "email": "fresdorf@eurotech-kunststofftechnik.de",
+      "email_quelle": "https://www.eurotech.nrw/unternehmen",
+      "email_beleg": "Olaf Fresdorf – Leitung Beratung und Verkauf; Leitung Produktion – Telefon 0208 62 09 220 – fresdorf@eurotech-kunststofftechnik.de",
+      "telefon": "+49 208 6209220",
+      "telefon_quelle": "https://www.eurotech.nrw/unternehmen",
+      "firma": "Eurotech Kunststofftechnik GmbH",
+      "ort": "Oberhausen (Otto-Roelen-Straße 1, 46147)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Kunststoffverarbeitender Betrieb im Ruhrgebiet (Halbzeuge, Zuschnitt, Fertigteile) mit eigener Produktion und technischer Beratung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "HUELSEMANN Coatings GmbH (Hülsemann Lacke)",
+      "ort": "Wuppertal",
+      "grund": "Nur info@huelsemann.com auf Unternehmens-/Kontaktseite; keine persönliche E-Mail der Geschäftsführer Philipp/Thomas Hülsemann auffindbar"
+    },
+    {
+      "firma": "Schwerter Lackfabrik (SL-Lacke)",
+      "ort": "Wuppertal/Schwerte",
+      "grund": "Nur info@sl-lacke.de; keine Personen mit E-Mail genannt"
+    },
+    {
+      "firma": "Rach GmbH (Rachlacke)",
+      "ort": "Oberhausen",
+      "grund": "Ansprechpartner-Seite ohne wörtliche E-Mail-Adressen"
+    },
+    {
+      "firma": "Swd Lubricants GmbH & Co. KG (Schmierstoffwerk Duisburg)",
+      "ort": "Duisburg",
+      "grund": "Seite liefert keinen crawlbaren Inhalt/keine E-Mail-Adressen"
+    },
+    {
+      "firma": "Assindia Chemie GmbH",
+      "ort": "Bottrop",
+      "grund": "Nur info[at]assindia.de, keine Personen mit E-Mail"
+    },
+    {
+      "firma": "ERKOL FILL GmbH",
+      "ort": "Solingen",
+      "grund": "Geschäftsführende Gesellschafter (Gökhan/Ahmet/Yusuf Erkol) genannt, aber nur info@erkolfill.de"
+    },
+    {
+      "firma": "FRAGOL GmbH & Co. KG",
+      "ort": "Mülheim an der Ruhr",
+      "grund": "Nur Funktionspostfächer (htf@, lubes@, rewe@), keine persönlichen Adressen"
+    },
+    {
+      "firma": "MOLYDUVAL GmbH",
+      "ort": "Ratingen",
+      "grund": "Impressum nennt GF Carsten und Tobias Wunsch sowie twunsch@molyduval.com, aber ohne wörtliche Zuordnung zu einer Person – Zuordnung wäre Vermutung"
+    },
+    {
+      "firma": "certoplast Technische Klebebänder GmbH",
+      "ort": "Wuppertal",
+      "grund": "GF Dr. Andreas Hohmann und Dr. René Rambusch genannt, aber nur Abteilungspostfächer (automotive@, verkauf@, einkauf@, ps@)"
+    },
+    {
+      "firma": "MR Chemie GmbH",
+      "ort": "Unna",
+      "grund": "Geschäftsführer Carsten Renzing-Krahe und Sandra Jüngling nur mit post@mr-chemie.de; personalisierte Adressen nur für Vertrieb/Customer Service"
+    },
+    {
+      "firma": "BIW Isolierstoffe GmbH",
+      "ort": "Ennepetal",
+      "grund": "Nur Sales Manager/Key Account mit persönlicher E-Mail, keine Geschäftsführung oder Bereichsleitung Produktion/IT/Logistik"
+    },
+    {
+      "firma": "Murtfeldt Kunststoffe GmbH & Co. KG",
+      "ort": "Dortmund",
+      "grund": "Kontaktseite listet nur Außendienst und Channel Management, keine Geschäftsführung/Bereichsleitung mit E-Mail"
+    },
+    {
+      "firma": "Peter Greven GmbH & Co. KG",
+      "ort": "Bad Münstereifel",
+      "grund": "Viele persönliche E-Mails, aber ausschließlich Account-/Product-Manager – keine Geschäftsführung/Prokura oder Leitung IT/Produktion/Logistik"
+    },
+    {
+      "firma": "Grillo-Werke AG",
+      "ort": "Duisburg",
+      "grund": "Persönliche E-Mails nur für Produkt-/Vertriebsansprechpartner, kein Vorstand/GF/Prokurist mit E-Mail"
+    },
+    {
+      "firma": "Enke-Werk Johannes Enke GmbH & Co. KG",
+      "ort": "Düsseldorf",
+      "grund": "Persönliche E-Mails nur für Innen-/Außendienst und Anwendungstechnik; Geschäftsleitung ohne E-Mail"
+    },
+    {
+      "firma": "WEICON GmbH & Co. KG",
+      "ort": "Münster",
+      "grund": "Persönliche E-Mails nur für E-Commerce und Presse; Geschäftsführung (Familie Weidling) ohne veröffentlichte Adresse"
+    },
+    {
+      "firma": "Carl Bechem GmbH",
+      "ort": "Hagen",
+      "grund": "Nur bechem@bechem.de und marketing@bechem.de"
+    },
+    {
+      "firma": "Rhenus Lub GmbH & Co KG",
+      "ort": "Mönchengladbach",
+      "grund": "Website liefert nur Händler-/Distributoren-Adressen im Ausland, keine eigenen Entscheider-Adressen"
+    },
+    {
+      "firma": "Ewald Dörken AG / DÖRKEN Coatings",
+      "ort": "Herdecke",
+      "grund": "Nur Bereichspostfächer (coatings@, membranes@)"
+    },
+    {
+      "firma": "Jowat SE",
+      "ort": "Detmold",
+      "grund": "Keine persönlichen E-Mail-Adressen auf Kontakt-/Impressumsseiten"
+    },
+    {
+      "firma": "Follmann Chemie GmbH",
+      "ort": "Minden",
+      "grund": "Nur zwei ausländische Vertriebsadressen, keine Entscheider im NRW-Stammhaus"
+    },
+    {
+      "firma": "STOCKMEIER Gruppe",
+      "ort": "Bielefeld",
+      "grund": "Nur Standort-Sammeladressen; persönliche Adressen nur als Messekontakte ohne Positionsangabe"
+    },
+    {
+      "firma": "Schomburg GmbH",
+      "ort": "Detmold",
+      "grund": "Nur zwei Objektmanager-Adressen, keine Entscheider"
+    },
+    {
+      "firma": "Heinrich Hahne GmbH & Co. KG",
+      "ort": "Heiligenhaus",
+      "grund": "Vertriebskontakte laufen über Konzernadressen @sievert.de (Sievert-Gruppe, Osnabrück) – kein NRW-Mittelständler mehr"
+    },
+    {
+      "firma": "Klöber GmbH",
+      "ort": "Ennepetal",
+      "grund": "Adressen laufen über BMI Group (@bmigroup.com), Konzernzugehörigkeit"
+    },
+    {
+      "firma": "Dr. Kurt Wolff GmbH & Co. KG",
+      "ort": "Bielefeld",
+      "grund": "ewolff@drwolffgroup.com steht nur als Impressums-Kontakt ohne Personenzuordnung"
+    },
+    {
+      "firma": "Gerhardi Kunststofftechnik GmbH",
+      "ort": "Lüdenscheid",
+      "grund": "Nur Funktionspostfächer (beschwerden@, managementorganisation@)"
+    },
+    {
+      "firma": "BIA Kunststoff- und Galvanotechnik GmbH",
+      "ort": "Solingen",
+      "grund": "Nur Funktions- und Auslandsadressen"
+    },
+    {
+      "firma": "Bollig & Kemper GmbH & Co. KG",
+      "ort": "Köln",
+      "grund": "Keine E-Mail-Adressen auf den erreichbaren Seiten"
+    },
+    {
+      "firma": "Hesse GmbH & Co. KG (Hesse Lignal)",
+      "ort": "Hamm",
+      "grund": "Nur bestellingen@hesse-lignal.com (Funktionsadresse)"
+    },
+    {
+      "firma": "HERCUTEC Chemie GmbH",
+      "ort": "Bottrop",
+      "grund": "Keine E-Mail-Adressen crawlbar"
+    },
+    {
+      "firma": "Gremmler Bauchemie GmbH",
+      "ort": "Gelsenkirchen",
+      "grund": "Nur externe Kanzleiadresse für Hinweisgeberverfahren"
+    },
+    {
+      "firma": "RAVENOL / Ravensberger Schmierstoffvertrieb GmbH",
+      "ort": "Werther (Westf.)",
+      "grund": "Persönliche Adresse nur im Karrierebereich (Recruiting), kein Entscheidungsträger"
+    },
+    {
+      "firma": "Triflex GmbH & Co. KG",
+      "ort": "Minden",
+      "grund": "Nur datenschutzbeauftragter@triflex.de"
+    },
+    {
+      "firma": "Masterflex SE",
+      "ort": "Gelsenkirchen",
+      "grund": "Nur info.masterflex@masterflexgroup.com"
+    },
+    {
+      "firma": "Bio-Circle Surface Technology GmbH",
+      "ort": "Gütersloh",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Osmo Holz und Color GmbH & Co. KG",
+      "ort": "Warendorf",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "SysKem Chemie GmbH",
+      "ort": "Wuppertal",
+      "grund": "Keine E-Mail-Adressen crawlbar"
+    },
+    {
+      "firma": "Linker Chemie-Group",
+      "ort": "Wuppertal",
+      "grund": "Keine persönlichen E-Mail-Adressen auffindbar"
+    },
+    {
+      "firma": "Traxit International GmbH",
+      "ort": "Schwelm",
+      "grund": "Persönliche Adressen nur für Auslandsvertretungen, keine Entscheider am Stammsitz"
+    },
+    {
+      "firma": "AB-Pulverlacke",
+      "ort": "NRW",
+      "grund": "Nur GMX-Sammeladresse, keine Personenzuordnung"
+    },
+    {
+      "firma": "IDEALCHEMIE GmbH",
+      "ort": "Gelsenkirchen",
+      "grund": "Nur Platzhalter-/Fremdadressen im Quelltext"
+    },
+    {
+      "firma": "Assortierte Kleinkandidaten (Bonalin, Reckli, Säkaphen, PAGEL, Deitermann, Königswarter & Ebell, Deutsche NovoChem, Robotchemie, Speform, wefa Westdeutsche Farben, ultrament, Reinex, Oel-Chemie Tüllmann, Reininghaus-Chemie, Peter Lacke, Metaflux, Renia, brocolor, Zowo-Lacke, Graichen, Eggen, Wefapress, Barlog, Coroplast, Botament, MC-Bauchemie, Jaeger Lacke, Wibarco, Overlack, Stüwe, Bostik, Lubcon)",
+      "ort": "NRW",
+      "grund": "Keine wörtlich veröffentlichten persönlichen E-Mail-Adressen von Entscheidungsträgern auf Homepage/Impressum/Kontakt/Team gefunden"
+    }
+  ]
+}
