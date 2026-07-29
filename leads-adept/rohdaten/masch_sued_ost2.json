@@ -1,0 +1,715 @@
+{
+  "branche": "Maschinenbau & Fertigung",
+  "fokus": "Süd-/Ostdeutschland",
+  "leads": [
+    {
+      "name": "Stefan Dürr",
+      "position": "Geschäftsführung",
+      "email": "s.duerr@muehlbeyer.de",
+      "email_quelle": "https://www.muehlbeyer.de/de/allgemein/kontakt/ansprechpartner/",
+      "email_beleg": "Stefan Dürr – Geschäftsführung – s.duerr@muehlbeyer.de",
+      "telefon": "+49 7136 9460-156",
+      "telefon_quelle": "https://www.muehlbeyer.de/de/allgemein/kontakt/ansprechpartner/",
+      "firma": "Mühlbeyer Werkzeug- und Formenbau GmbH",
+      "ort": "Bad Friedrichshall (Baden-Württemberg)",
+      "mitarbeiter_ca": "ca. 100",
+      "beschreibung": "Inhabergeführter Werkzeug- und Formenbauer für Spritzgießwerkzeuge inkl. Konstruktion, Zerspanung und Bemusterung. Einzel- und Kleinserienfertigung mit vielen Prozessschritten pro Werkzeug – hoher Nutzen durch durchgängige Auftrags-/Projektsteuerung, BDE/MDE und ERP-Anbindung an CAD/CAM.",
+      "weitere_quellen": [
+        "https://www.muehlbeyer.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Bettina Weiss",
+      "position": "Geschäftsführerin",
+      "email": "bettina.weiss@swo-formenbau.de",
+      "email_quelle": "https://www.swo-formenbau.de/team/",
+      "email_beleg": "Bettina Weiss – Geschäftsführerin – bettina.weiss@swo-formenbau.de",
+      "telefon": "+49 (0) 8824 913 80 13",
+      "telefon_quelle": "https://www.swo-formenbau.de/team/",
+      "firma": "SWO Werkzeug und Formenbau GmbH & Co Stanztechnik KG",
+      "ort": "Oberau (Bayern)",
+      "mitarbeiter_ca": "ca. 30 (Familienbetrieb, gegründet 1971)",
+      "beschreibung": "Familiengeführter Werkzeug-/Formenbau mit Stanztechnik, Entwicklung/Konstruktion, 5-Achs-Fräsen und Hydraulikpressen. Klassischer Einzelteil-/Kleinserienfertiger mit CAD/CAM-Kette – Fit für digitale Auftragssteuerung, Kalkulation und Maschinendatenerfassung.",
+      "weitere_quellen": [
+        "https://www.swo-formenbau.de/kontakt/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Klaus Pietsch",
+      "position": "Leiter Werkzeugbau",
+      "email": "klaus.pietsch@swo-formenbau.de",
+      "email_quelle": "https://www.swo-formenbau.de/team/",
+      "email_beleg": "Klaus Pietsch – Leiter Werkzeugbau – klaus.pietsch@swo-formenbau.de",
+      "telefon": "+49 (0) 8824 913 80 13",
+      "telefon_quelle": "https://www.swo-formenbau.de/team/",
+      "firma": "SWO Werkzeug und Formenbau GmbH & Co Stanztechnik KG",
+      "ort": "Oberau (Bayern)",
+      "mitarbeiter_ca": "ca. 30",
+      "beschreibung": "Produktionsverantwortlicher für den Werkzeugbau (Fräsen, Erodieren, Montage). Direkter Ansprechpartner für Fertigungssteuerung, Rückmeldung von Arbeitsgängen und Anbindung der CNC-/CAM-Prozesse an ein ERP.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Tobias Bach",
+      "position": "Geschäftsführender Gesellschafter",
+      "email": "tobias.bach@kontec-gmbh.com",
+      "email_quelle": "https://kontec-gmbh.com/team/tobias-bach/",
+      "email_beleg": "Tobias Bach – Geschäftsführender Gesellschafter – tobias.bach@kontec-gmbh.com",
+      "telefon": "",
+      "telefon_quelle": "",
+      "firma": "KonTec Maschinenbau GmbH",
+      "ort": "Sonthofen (Bayern)",
+      "mitarbeiter_ca": "ca. 25–30",
+      "beschreibung": "Inhabergeführter Sondermaschinenbauer (Konstruktion, Automation/Robotik, Montage) mit eigener Dreherei/Fräserei und Einzelteilfertigung. Projektgeschäft mit Stücklisten, Fremdvergabe und Montage – klarer Fit für ERP/PPS mit CAD-Stücklistenübernahme und Projektzeiterfassung.",
+      "weitere_quellen": [
+        "https://kontec-gmbh.com/team/",
+        "https://kontec-gmbh.com/sondermaschinenbau/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Michael Veit",
+      "position": "Betriebsleiter, Prokurist",
+      "email": "michael.veit@kontec-gmbh.com",
+      "email_quelle": "https://kontec-gmbh.com/team/michael-veit/",
+      "email_beleg": "Michael Veit – Betriebsleiter, Prokurist – michael.veit@kontec-gmbh.com",
+      "telefon": "",
+      "telefon_quelle": "",
+      "firma": "KonTec Maschinenbau GmbH",
+      "ort": "Sonthofen (Bayern)",
+      "mitarbeiter_ca": "ca. 25–30",
+      "beschreibung": "Betriebsleiter und Prokurist – verantwortet Fertigungsorganisation und Kapazitätsplanung im Sondermaschinenbau. Zentrale Rolle bei Einführung von Fertigungsplanung, BDE und digitaler Materialwirtschaft.",
+      "weitere_quellen": [
+        "https://kontec-gmbh.com/team/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Tobias Heger",
+      "position": "Leiter QM / Montage",
+      "email": "tobias.heger@kontec-gmbh.com",
+      "email_quelle": "https://kontec-gmbh.com/team/tobias-heger/",
+      "email_beleg": "Tobias Heger – Leiter QM / Montage – tobias.heger@kontec-gmbh.com",
+      "telefon": "",
+      "telefon_quelle": "",
+      "firma": "KonTec Maschinenbau GmbH",
+      "ort": "Sonthofen (Bayern)",
+      "mitarbeiter_ca": "ca. 25–30",
+      "beschreibung": "Leitet Qualitätsmanagement und Montage. Ansprechpartner für digitale Prüfprotokolle, Dokumentenlenkung und Rückverfolgbarkeit – typische Einstiegsthemen einer Prozessdigitalisierung.",
+      "weitere_quellen": [
+        "https://kontec-gmbh.com/team/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Richard Schumann",
+      "position": "Geschäftsführung",
+      "email": "r.schumann@mt-vogtland.com",
+      "email_quelle": "https://www.mt-vogtland.com/",
+      "email_beleg": "mailto:r.schumann@mt-vogtland.com",
+      "telefon": "0 37 41 / 41 31 05",
+      "telefon_quelle": "https://www.mt-vogtland.com/",
+      "firma": "Maschinen-Technik-Vogtland GmbH",
+      "ort": "Plauen / Neuensalz (Sachsen)",
+      "mitarbeiter_ca": "46",
+      "beschreibung": "Unabhängiger mittelständischer Lohnfertiger: Schweißkonstruktionen bis 40 t für Maschinen-, Anlagen- und Fahrzeugbau, Laser-/Plasmaschneiden, mechanische Bearbeitung. Auftragsbezogene Einzelfertigung mit vielen Arbeitsgängen – guter Fit für ERP, Materialverfolgung und digitale Fertigungspapiere.",
+      "weitere_quellen": [
+        "https://www.mt-vogtland.com/impressum.html"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Michael Jakusch",
+      "position": "Betriebstechnische Leitung (Produktion)",
+      "email": "m.jakusch@drehtechnik-jakusch.de",
+      "email_quelle": "https://www.drehtechnik-jakusch.de/kontakt/ansprechpartner",
+      "email_beleg": "Michael Jakusch – Betriebstechnische Leitung – m.jakusch@drehtechnik-jakusch.de",
+      "telefon": "03671 458277",
+      "telefon_quelle": "https://www.drehtechnik-jakusch.de/kontakt/ansprechpartner",
+      "firma": "Drehtechnik Jakusch GmbH",
+      "ort": "Saalfeld (Thüringen)",
+      "mitarbeiter_ca": "ca. 50",
+      "beschreibung": "Familiengeführter Zerspanungsbetrieb (CNC-Drehen/Fräsen, Serien- und Lohnfertigung) in zweiter Generation. Produktionsleitung mit Verantwortung für Maschinenbelegung und Auftragsdurchlauf – Fit für MDE/BDE, Werkzeugverwaltung und ERP-gestützte Feinplanung.",
+      "weitere_quellen": [
+        "https://www.drehtechnik-jakusch.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Steps",
+      "position": "Chief Executive Officer (Vorstand/Geschäftsführung)",
+      "email": "a.steps@somag-ag.de",
+      "email_quelle": "https://www.somag-ag.de/company/about/",
+      "email_beleg": "Andreas Steps – Chief Executive Officer – a.steps@somag-ag.de",
+      "telefon": "",
+      "telefon_quelle": "",
+      "firma": "SOMAG AG Jena",
+      "ort": "Jena (Thüringen)",
+      "mitarbeiter_ca": "ca. 60",
+      "beschreibung": "Inhabergeführter Hersteller hochpräziser Kreiselstabilisierungs- und Gimbal-Systeme für Luftbild-/Vermessungssysteme; Fertigung, Montage und Kalibrierung im Haus, Export in über 50 Länder. Fit für ERP mit Seriennummern-/Chargenverfolgung und Serviceprozess-Digitalisierung.",
+      "weitere_quellen": [
+        "https://www.somag-ag.de/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Sebastian Schreiber",
+      "position": "Chief Technology Officer",
+      "email": "s.schreiber@somag-ag.de",
+      "email_quelle": "https://www.somag-ag.de/company/about/",
+      "email_beleg": "Sebastian Schreiber – Chief Technology Officer – s.schreiber@somag-ag.de",
+      "telefon": "",
+      "telefon_quelle": "",
+      "firma": "SOMAG AG Jena",
+      "ort": "Jena (Thüringen)",
+      "mitarbeiter_ca": "ca. 60",
+      "beschreibung": "Technikvorstand mit Verantwortung für Entwicklung und Technologie der Stabilisierungssysteme. Entscheider für PLM/PDM-Anbindung, Änderungsmanagement und Schnittstellen zwischen Konstruktion und Fertigung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Lukas-Maximilian Graf",
+      "position": "Operations Manager (Betriebsleitung)",
+      "email": "l-m.graf@somag-ag.de",
+      "email_quelle": "https://www.somag-ag.de/company/about/",
+      "email_beleg": "Lukas-Maximilian Graf – Operations Manager – l-m.graf@somag-ag.de",
+      "telefon": "",
+      "telefon_quelle": "",
+      "firma": "SOMAG AG Jena",
+      "ort": "Jena (Thüringen)",
+      "mitarbeiter_ca": "ca. 60",
+      "beschreibung": "Verantwortlich für Produktion, Beschaffung und Logistik. Direkter Bedarfsträger für Materialdisposition, Lagerverwaltung und durchgängige ERP-Prozesse vom Auftrag bis zum Versand.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Alexander Milde",
+      "position": "Geschäftsführer",
+      "email": "alexmilde@ratiotechnik-milde.de",
+      "email_quelle": "https://www.ratiotechnik-milde.de/unternehmen/",
+      "email_beleg": "Alexander Milde | Geschäftsführer | 0173 8779785 | alexmilde@ratiotechnik-milde.de",
+      "telefon": "0173 8779785",
+      "telefon_quelle": "https://www.ratiotechnik-milde.de/unternehmen/",
+      "firma": "Ratiotechnik Milde GmbH (RTM)",
+      "ort": "Pulsnitz (Sachsen)",
+      "mitarbeiter_ca": "ca. 50",
+      "beschreibung": "Familiengeführter Sondermaschinen- und Automationsbauer mit eigener CNC-Präzisionsteilefertigung, Steuerungstechnik und Montage. Zwei Geschäftsfelder (Projektgeschäft + Lohnfertigung) unter einem Dach – hoher Fit für ERP mit Projekt- und Teilefertigungsabbildung.",
+      "weitere_quellen": [
+        "https://www.ratiotechnik-milde.de/sondermaschinenbau/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Jan Hänsel",
+      "position": "Gruppenleiter CNC Fertigung",
+      "email": "janhaensel@ratiotechnik-milde.de",
+      "email_quelle": "https://www.ratiotechnik-milde.de/unternehmen/",
+      "email_beleg": "Jan Hänsel | Gruppenleiter CNC Fertigung | 035955 7177 401 | janhaensel@ratiotechnik-milde.de",
+      "telefon": "035955 7177 401",
+      "telefon_quelle": "https://www.ratiotechnik-milde.de/unternehmen/",
+      "firma": "Ratiotechnik Milde GmbH (RTM)",
+      "ort": "Pulsnitz (Sachsen)",
+      "mitarbeiter_ca": "ca. 50",
+      "beschreibung": "Leitet die CNC-Präzisionsteilefertigung. Entscheidungsnaher Ansprechpartner für Maschinendatenerfassung, Rüst-/Werkzeugmanagement und die Anbindung der Fertigung an Arbeitsvorbereitung und ERP.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Raik Freudenberg",
+      "position": "Gruppenleiter Steuerungstechnik / Softwareentwicklung",
+      "email": "raikfreudenberg@ratiotechnik-milde.de",
+      "email_quelle": "https://www.ratiotechnik-milde.de/unternehmen/",
+      "email_beleg": "Raik Freudenberg | Gruppenleiter Steuerungstechnik/ Softwareentwicklung | 0152 23467512 | raikfreudenberg@ratiotechnik-milde.de",
+      "telefon": "0152 23467512",
+      "telefon_quelle": "https://www.ratiotechnik-milde.de/unternehmen/",
+      "firma": "Ratiotechnik Milde GmbH (RTM)",
+      "ort": "Pulsnitz (Sachsen)",
+      "mitarbeiter_ca": "ca. 50",
+      "beschreibung": "Verantwortet Steuerungstechnik und Softwareentwicklung – die interne IT-/Digitalisierungskompetenz des Hauses. Technischer Entscheider für Maschinen-/IT-Schnittstellen (OPC UA, MES-/ERP-Anbindung).",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "ACTech GmbH",
+      "ort": "Freiberg (SN)",
+      "grund": "Umfangreiche /kontakt/ansprechpartner-Seite mit persönlichen Adressen, aber ausschließlich Vertriebsrollen (Leiter Vertrieb, Technischer Vertrieb, Business Development) sowie HR – keine Geschäftsführung/Produktionsleitung mit eigener Adresse"
+    },
+    {
+      "firma": "MAFELL AG",
+      "ort": "Oberndorf a. N. (BW)",
+      "grund": "/kontakt/ansprechpartner liefert persönliche Adressen, aber nur Vertriebsleiter DE und Vertriebsmitarbeiter – reine Vertriebsrollen"
+    },
+    {
+      "firma": "Harro Höfliger Verpackungsmaschinen GmbH",
+      "ort": "Allmersbach im Tal (BW)",
+      "grund": "Viele persönliche Adressen auf /kontakt, jedoch durchgehend Sales-Ansprechpartner der Ländergesellschaften; keine Geschäftsführung/Betriebsleitung"
+    },
+    {
+      "firma": "Klinkhammer Intralogistics GmbH",
+      "ort": "Nürnberg (BY)",
+      "grund": "Geschäftsführung nur als 'hagen.schumann[at]klinkhammer.com' obfuskiert – nicht wörtlich im HTML; einzige literale Adresse gehört dem polnischen Standortleiter ohne Funktionsangabe"
+    },
+    {
+      "firma": "RAPA Rausch & Pausch SE",
+      "ort": "Selb (BY)",
+      "grund": "Persönliche Adressen auf /kontakt nur für Executive Assistance und Corporate Communication – keine Entscheider"
+    },
+    {
+      "firma": "Eppinger Group",
+      "ort": "Denkendorf (BW)",
+      "grund": "Persönliche Adressen vorhanden, aber ausschließlich Gebietsvertriebsmitarbeiter"
+    },
+    {
+      "firma": "IWK Verpackungstechnik GmbH",
+      "ort": "Stutensee (BW)",
+      "grund": "Einzige persönliche Adresse gehört dem VP Marketing Communications; restliche Kontakte internationaler Vertrieb"
+    },
+    {
+      "firma": "Heidenia Anlagenbau GmbH",
+      "ort": "Pirna (SN)",
+      "grund": "Persönliche Adressen vorhanden, aber nur Projektleiter; Geschäftsführer Christoph Richers ohne eigene E-Mail"
+    },
+    {
+      "firma": "HARTUNG GmbH (Stahl-/Behälter-/Rohrleitungsbau)",
+      "ort": "n/a",
+      "grund": "Seite heißt explizit 'Ansprechpartner Vertrieb' – nur Vertriebsrollen"
+    },
+    {
+      "firma": "Schäfer Zerspanungstechnik GmbH",
+      "ort": "Ennepetal/Hagen (NRW)",
+      "grund": "Persönliche Adresse vorhanden, Firma liegt jedoch außerhalb des Zielgebiets (NRW)"
+    },
+    {
+      "firma": "Bernhard Mehler Anlagenbau GmbH & Co. KG",
+      "ort": "Hessen",
+      "grund": "Persönliche Adresse auf /unser-team, aber außerhalb des Zielgebiets"
+    },
+    {
+      "firma": "Felss Group GmbH",
+      "ort": "Königsbach-Stein (BW)",
+      "grund": "Persönliche Adressen nur für internationale Vertriebsmitarbeiter"
+    },
+    {
+      "firma": "Otto Bihler Maschinenfabrik GmbH & Co. KG",
+      "ort": "Halblech (BY)",
+      "grund": "Nur eine persönliche Adresse auf einer Produktseite, keine Funktionsangabe eines Entscheiders; Kontaktseiten ohne Personenkarten"
+    },
+    {
+      "firma": "Leistritz AG",
+      "ort": "Nürnberg (BY)",
+      "grund": "Nur Kürzel-Adressen ohne zuordenbare Person/Funktion auf der Kontaktseite"
+    },
+    {
+      "firma": "KESSLER + Co GmbH & Co. KG",
+      "ort": "Abtsgmünd (BW)",
+      "grund": "Nur Funktionsadressen (servicehotline@, info.usa@) – keine Personenkarten"
+    },
+    {
+      "firma": "XENON Automatisierungstechnik GmbH",
+      "ort": "Dresden (SN)",
+      "grund": "Kontakt-/Teamseiten ohne persönliche Adressen (nur Standort-Sammeladressen)"
+    },
+    {
+      "firma": "SITEC Industrietechnologie GmbH",
+      "ort": "Chemnitz (SN)",
+      "grund": "Keine persönlichen Adressen auffindbar, nur sales.china@ / Fremddomains"
+    },
+    {
+      "firma": "NILES-SIMMONS Industrieanlagen GmbH",
+      "ort": "Chemnitz (SN)",
+      "grund": "Nur Sammeladressen (sales.nsi@nshgroup.com)"
+    },
+    {
+      "firma": "WEGRA Anlagenbau GmbH",
+      "ort": "Hildburghausen (TH)",
+      "grund": "Geschäftsführer im Impressum genannt, aber keine persönliche E-Mail auf der Website"
+    },
+    {
+      "firma": "SAMAG Saalfelder Werkzeugmaschinen GmbH",
+      "ort": "Saalfeld (TH)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten"
+    },
+    {
+      "firma": "IMOSI GmbH",
+      "ort": "Thüringen",
+      "grund": "Nur invoice@/info@ – keine Personenkarten"
+    },
+    {
+      "firma": "ruhlamat GmbH",
+      "ort": "Marksuhl (TH)",
+      "grund": "Website nicht crawlbar (kein Homepage-Abruf), keine persönlichen Adressen verifizierbar"
+    },
+    {
+      "firma": "Häcker Automation GmbH",
+      "ort": "Meiningen (TH)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten"
+    },
+    {
+      "firma": "VACOM Vakuum Komponenten & Messtechnik GmbH",
+      "ort": "Großlöbichau (TH)",
+      "grund": "Keine persönlichen Adressen im HTML"
+    },
+    {
+      "firma": "Feinguss Blank/Feinguss Lobenstein GmbH",
+      "ort": "Bad Lobenstein (TH)",
+      "grund": "Keine persönlichen Adressen auffindbar"
+    },
+    {
+      "firma": "Kern-Liebers / Kern-Technik GmbH",
+      "ort": "Schleiz (TH)",
+      "grund": "Keine persönlichen Adressen auffindbar"
+    },
+    {
+      "firma": "3D-Schilling GmbH",
+      "ort": "Sonneberg (TH)",
+      "grund": "Keine persönlichen Adressen auffindbar"
+    },
+    {
+      "firma": "LEMUTH GmbH",
+      "ort": "Thüringen",
+      "grund": "Nur Sammeladresse lemuth@lemuth.com"
+    },
+    {
+      "firma": "Kinkele GmbH & Co. KG",
+      "ort": "Ochsenfurt (BY)",
+      "grund": "Keine persönlichen Adressen auf der Website"
+    },
+    {
+      "firma": "Hunger Group / Gebr. Reinfurt (GRW)",
+      "ort": "Würzburg (BY)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten"
+    },
+    {
+      "firma": "DORST Technologies GmbH & Co. KG",
+      "ort": "Kochel am See (BY)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Maschinenfabrik Gustav Eirich GmbH & Co KG",
+      "ort": "Hardheim (BW)",
+      "grund": "Nur Sammeladresse eirich@eirich.de auf allen Seiten"
+    },
+    {
+      "firma": "Schuster Maschinenbau GmbH",
+      "ort": "Denklingen (BY)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "OTT-JAKOB Spanntechnik GmbH",
+      "ort": "Lengenwang (BY)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "SPN Schwaben Präzision",
+      "ort": "Nördlingen (BY)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Erhardt+Leimer GmbH",
+      "ort": "Augsburg (BY)",
+      "grund": "Nur digitalmarketing@ – keine Personenkarten"
+    },
+    {
+      "firma": "WEISS GmbH",
+      "ort": "Buchen (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "WAFIOS AG",
+      "ort": "Reutlingen (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "teamtechnik Group",
+      "ort": "Freiberg a. N. (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "groninger & co. gmbh",
+      "ort": "Crailsheim (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "HAINBUCH GmbH",
+      "ort": "Marbach (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "KALTENBACH Solutions/Maschinenbau",
+      "ort": "Lörrach (BW)",
+      "grund": "Nur Funktionsadressen (group-hr@, spareparts@)"
+    },
+    {
+      "firma": "Braunform GmbH",
+      "ort": "Bahlingen (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Framo Morat GmbH & Co. KG",
+      "ort": "Eisenbach (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Neugart GmbH",
+      "ort": "Kippenheim (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "GEBHARDT Intralogistics Group",
+      "ort": "Sinsheim (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Schubert & Salzer",
+      "ort": "Ingolstadt (BY)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "KERN Microtechnik GmbH",
+      "ort": "Eschenlohe (BY)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "KNOLL Maschinenbau GmbH",
+      "ort": "Bad Saulgau (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "DEPRAG SCHULZ GMBH u. CO.",
+      "ort": "Amberg (BY)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "HEMA Maschinen- und Apparateschutz GmbH",
+      "ort": "Seligenstadt/Standorte",
+      "grund": "Nur office.romania@ – keine Personenkarten"
+    },
+    {
+      "firma": "Bausch + Ströbel SE & Co. KG",
+      "ort": "Ilshofen (BW)",
+      "grund": "Nur Länder-Sammeladressen"
+    },
+    {
+      "firma": "FIBRO GmbH",
+      "ort": "Weinsberg (BW)",
+      "grund": "Nur webshop@ – keine Personenkarten"
+    },
+    {
+      "firma": "RAMPF Group",
+      "ort": "Grafenberg (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Schnaithmann Maschinenbau GmbH",
+      "ort": "Remshalden (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "LANG Technik GmbH",
+      "ort": "Holzmaden (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Eisele GmbH",
+      "ort": "Waiblingen (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Mink Bürsten (August Mink KG)",
+      "ort": "Göppingen (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "SCHWER FITTINGS GmbH",
+      "ort": "Denkingen (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Maier GmbH",
+      "ort": "Heidenheim (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Rieger Behälterbau GmbH",
+      "ort": "Sinsheim (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "LOESCH Verpackungstechnik",
+      "ort": "Altendorf (BY)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Lauffer Pressen",
+      "ort": "Horb a. N. (BW)",
+      "grund": "Nur lauffer.pressen@ Sammeladresse"
+    },
+    {
+      "firma": "Dieffenbacher GmbH",
+      "ort": "Eppingen (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "MESUTRONIC Gerätebau GmbH",
+      "ort": "Kirchberg i. Wald (BY)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Gebr. SCHMID GmbH",
+      "ort": "Freudenstadt (BW)",
+      "grund": "Nur info.stl@ Sammeladresse"
+    },
+    {
+      "firma": "EMUGE-FRANKEN",
+      "ort": "Lauf a. d. Pegnitz (BY)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "ELABO GmbH",
+      "ort": "Crailsheim (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "ARBURG GmbH + Co KG",
+      "ort": "Loßburg (BW)",
+      "grund": "Nur Funktionsadressen; zudem Großunternehmen"
+    },
+    {
+      "firma": "Wanzl GmbH & Co. KGaA",
+      "ort": "Leipheim (BY)",
+      "grund": "Nur Sammeladressen; Großunternehmen"
+    },
+    {
+      "firma": "Grünbeck Wasseraufbereitung GmbH",
+      "ort": "Höchstädt (BY)",
+      "grund": "Nur Regional-Sammeladressen"
+    },
+    {
+      "firma": "BHS Corrugated",
+      "ort": "Weiherhammer (BY)",
+      "grund": "Nur Länder-Sammeladressen"
+    },
+    {
+      "firma": "GK Sondermaschinenbau GmbH",
+      "ort": "Arnsdorf b. Dresden (SN)",
+      "grund": "Website nicht abrufbar/kein Crawl möglich"
+    },
+    {
+      "firma": "Automation Bloxx",
+      "ort": "Dresden (SN)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "MS Anlagenbau / Köhler GmbH / BSS Sichelstiel",
+      "ort": "SN/BY",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten"
+    },
+    {
+      "firma": "SAB Stahl- und Anlagenbau GmbH",
+      "ort": "Hinterhermsdorf (SN)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "ASTRA Industrieanlagen GmbH",
+      "ort": "Dresden/Chemnitz (SN)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "S&F Maschinen- und Werkzeugbau GmbH",
+      "ort": "Chemnitz (SN)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "MSL GmbH",
+      "ort": "Chemnitz (SN)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "WEMA Glauchau / Auerbach Maschinenfabrik",
+      "ort": "SN",
+      "grund": "Keine persönlichen Adressen bzw. Seite nicht crawlbar"
+    },
+    {
+      "firma": "HEMAtec-Werkzeugbau / Roth Werkzeugbau / Zechmayer",
+      "ort": "SN/TH/BY",
+      "grund": "Keine persönlichen Adressen (nur anfragen@/info@)"
+    },
+    {
+      "firma": "MFV Maschinenbau GmbH",
+      "ort": "SN",
+      "grund": "Ansprechpartner-Seite ohne persönliche E-Mail-Adressen"
+    },
+    {
+      "firma": "SFA Aichstetten / Heidelberger & Sohn / Neumann & Würzer",
+      "ort": "Allgäu (BW/BY)",
+      "grund": "Keine persönlichen Adressen auf Kontakt-/Teamseiten"
+    },
+    {
+      "firma": "DFS Montageautomation GmbH",
+      "ort": "Schwetzingen (BW)",
+      "grund": "Keine persönlichen Adressen im HTML (nur über Drittanbieter-Datenbanken)"
+    },
+    {
+      "firma": "Hager Sondermaschinenbau / BPI Geräte / Gritzbach",
+      "ort": "BW",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "AFS Fördertechnik",
+      "ort": "n/a",
+      "grund": "Nur Vornamen-Adressen ohne Funktionsangabe, keine Entscheider erkennbar"
+    },
+    {
+      "firma": "Lutz Pumpen / ViscoTec / Wilhelm Keller",
+      "ort": "BY/BW",
+      "grund": "Keine persönlichen Adressen bzw. Seite nicht abrufbar"
+    },
+    {
+      "firma": "HAWE Hydraulik / HOERBIGER / FEIN",
+      "ort": "BY/BW",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Kieselmann GmbH",
+      "ort": "Knittlingen (BW)",
+      "grund": "Keine persönlichen Adressen"
+    },
+    {
+      "firma": "Gehring Technologies / SW Schwäbische Werkzeugmaschinen",
+      "ort": "BW",
+      "grund": "Keine persönlichen Adressen bzw. Seite nicht crawlbar"
+    }
+  ]
+}

@@ -52,8 +52,10 @@ def groesse_auffaellig(text: str) -> str:
     """Liest die Mitarbeiterangabe und meldet Werte ausserhalb 50-1000."""
     if not text:
         return ""
-    zahlen = [int(z.replace(".", "")) for z in re.findall(r"\d[\d.]*", text)]
-    zahlen = [z for z in zahlen if z < 500_000]
+    ohne_jahre = re.sub(r"(gegründet|gegruendet|seit|est\.?|anno)\s*\d{4}", " ", text, flags=re.IGNORECASE)
+    zahlen = [int(z.replace(".", "")) for z in re.findall(r"\d[\d.]*", ohne_jahre)]
+    # Vierstellige Werte im Jahresbereich sind hier fast immer Jahreszahlen.
+    zahlen = [z for z in zahlen if z < 500_000 and not 1800 <= z <= 2100]
     if not zahlen:
         return ""
     hoechst = max(zahlen)

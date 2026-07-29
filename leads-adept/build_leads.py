@@ -58,12 +58,32 @@ def ist_entscheidungstraeger(position: str) -> bool:
     return not VERTRIEBSROLLEN.search(position)
 
 
+def mitarbeiterzahlen(text: str) -> list[int]:
+    """Liest Mitarbeiterangaben und ignoriert dabei Jahreszahlen.
+
+    In den Angaben stehen oft Gruendungsjahre ("ca. 30, gegruendet 1971") oder
+    Umsatzzahlen; beide duerfen nicht als Belegschaftsgroesse durchgehen.
+    """
+    if not text:
+        return []
+    ohne_jahre = re.sub(r"(gegründet|gegruendet|seit|est\.?|anno)\s*\d{4}", " ", text, flags=re.IGNORECASE)
+    zahlen = []
+    for treffer in re.findall(r"\d[\d.]*", ohne_jahre):
+        try:
+            wert = int(treffer.replace(".", ""))
+        except ValueError:
+            continue
+        # Vierstellige Werte im Jahresbereich sind hier fast immer Jahreszahlen.
+        if 1800 <= wert <= 2100:
+            continue
+        if 0 < wert < 500_000:
+            zahlen.append(wert)
+    return zahlen
+
+
 def groesse_ueber_korridor(text: str) -> bool:
     """Erkennt Angaben deutlich oberhalb von 1000 Mitarbeitern."""
-    if not text:
-        return False
-    zahlen = [int(z.replace(".", "").replace(" ", "")) for z in re.findall(r"\d[\d. ]*\d|\d", text)]
-    zahlen = [z for z in zahlen if 0 < z < 500_000]
+    zahlen = mitarbeiterzahlen(text)
     return bool(zahlen) and max(zahlen) > 1000
 
 SPALTEN = [
