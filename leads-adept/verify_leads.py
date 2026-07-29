@@ -14,6 +14,7 @@ import json
 import re
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.request
 from datetime import date
@@ -26,21 +27,33 @@ BROWSER_HEADER = {
     "Accept-Language": "de-DE,de;q=0.9",
 }
 ZEITLIMIT = 30
+# Mit "--erneut" werden auch bereits bestaetigte Adressen noch einmal geprueft.
+ERNEUT_PRUEFEN = "--erneut" in sys.argv
 
 
-def hole_seite(url: str) -> tuple[str, str]:
-    """Liefert (seiteninhalt, status). Bei Fehlern ist der Inhalt leer."""
+def hole_seite(url: str, versuche: int = 3) -> tuple[str, str]:
+    """Liefert (seiteninhalt, status). Bei Fehlern ist der Inhalt leer.
+
+    Netzwerkfehler (DNS, TLS, Timeout) werden wiederholt, damit ein einmaliger
+    Aussetzer keinen bereits belegten Lead aus der Liste wirft.
+    """
     kontext = ssl.create_default_context()
-    anfrage = urllib.request.Request(url, headers=BROWSER_HEADER)
-    try:
-        with urllib.request.urlopen(anfrage, timeout=ZEITLIMIT, context=kontext) as antwort:
-            rohdaten = antwort.read()
-            zeichensatz = antwort.headers.get_content_charset() or "utf-8"
-            return rohdaten.decode(zeichensatz, errors="replace"), f"HTTP {antwort.status}"
-    except urllib.error.HTTPError as fehler:
-        return "", f"HTTP {fehler.code}"
-    except Exception as fehler:  # DNS, TLS, Timeout
-        return "", f"Fehler: {type(fehler).__name__}"
+    letzter_status = "unbekannt"
+    for versuch in range(versuche):
+        anfrage = urllib.request.Request(url, headers=BROWSER_HEADER)
+        try:
+            with urllib.request.urlopen(anfrage, timeout=ZEITLIMIT, context=kontext) as antwort:
+                rohdaten = antwort.read()
+                zeichensatz = antwort.headers.get_content_charset() or "utf-8"
+                return rohdaten.decode(zeichensatz, errors="replace"), f"HTTP {antwort.status}"
+        except urllib.error.HTTPError as fehler:
+            # Ein echter HTTP-Status ist eine Antwort, keine Stoerung: nicht wiederholen.
+            return "", f"HTTP {fehler.code}"
+        except Exception as fehler:  # DNS, TLS, Timeout
+            letzter_status = f"Netzwerkfehler: {type(fehler).__name__}"
+            if versuch + 1 < versuche:
+                time.sleep(2 * (versuch + 1))
+    return "", letzter_status
 
 
 def entschluessele_cloudflare(seite: str) -> str:
@@ -57,6 +70,11 @@ def entschluessele_cloudflare(seite: str) -> str:
 
 
 def pruefe_lead(lead: dict) -> dict:
+    # Einmal belegte Adressen nicht erneut anfassen: die Quellseite kann sich
+    # aendern oder zeitweise ausfallen, der Beleg von damals bleibt gueltig.
+    if lead.get("_verifiziert") is True and not ERNEUT_PRUEFEN:
+        return lead
+
     email = (lead.get("email") or "").strip()
     url = (lead.get("email_quelle") or "").strip()
     if not email or not url.startswith("http"):
@@ -80,7 +98,8 @@ def pruefe_lead(lead: dict) -> dict:
 
 
 def main():
-    verzeichnis = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent / "rohdaten"
+    argumente = [a for a in sys.argv[1:] if not a.startswith("--")]
+    verzeichnis = Path(argumente[0]) if argumente else Path(__file__).resolve().parent / "rohdaten"
     dateien = sorted(verzeichnis.glob("*.json"))
     if not dateien:
         print(f"Keine JSON-Dateien in {verzeichnis}", file=sys.stderr)

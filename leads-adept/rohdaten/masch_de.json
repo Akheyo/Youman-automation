@@ -1,0 +1,439 @@
+{
+  "branche": "Maschinenbau & Fertigung",
+  "fokus": "Deutschland ohne NRW",
+  "leads": [
+    {
+      "name": "Mario Taenzler",
+      "position": "Geschäftsführer",
+      "email": "m.taenzler@tma-sachsen.de",
+      "email_quelle": "https://tma-sachsen.de/kontakt/",
+      "email_beleg": "Mario Taenzler | Geschäftsführer | +49 (0)35795-2891-0 | m.taenzler@tma-sachsen.de",
+      "telefon": "+49 35795 2891-0",
+      "telefon_quelle": "https://tma-sachsen.de/kontakt/",
+      "firma": "Taenzler Maschinen- und Anlagenbau GmbH",
+      "ort": "Laußnitz (Sachsen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführter Maschinen- und Anlagenbauer mit eigener CNC-Fertigung; Anlagenbau u. a. für die Automobilindustrie sowie Elektrotechnik/SPS und Konstruktion im Haus.",
+      "weitere_quellen": [
+        "https://tma-sachsen.de/impressum/ (Impressum: 'Taenzler Maschinen- und Anlagenbau GmbH, Grenzstraße 13, 01936 Laußnitz ... Geschäftsführer: Herr Mario Taenzler')"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Diana Reich",
+      "position": "Geschäftsführung",
+      "email": "diana.reich@msr-chemnitz.de",
+      "email_quelle": "https://www.msr-chemnitz.de/kontakt/",
+      "email_beleg": "Diana Reich | Geschäftsführung | +49 (0)371 81495-21 | diana.reich@msr-chemnitz.de",
+      "telefon": "+49 371 81495-21",
+      "telefon_quelle": "https://www.msr-chemnitz.de/kontakt/",
+      "firma": "MSR Elektro- und Anlagenbau GmbH",
+      "ort": "Chemnitz (Sachsen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Mittelständischer Elektro- und Anlagenbauer aus Chemnitz mit Projektierung, Schaltanlagenbau und Automatisierung für Industrieanlagen. Zweiter Geschäftsführer: Sven Mehnert (sven.mehnert@msr-chemnitz.de, gleiche Quelle).",
+      "weitere_quellen": [
+        "https://www.msr-chemnitz.de/ueber-uns/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Andreas Schneider",
+      "position": "Geschäftsführer (Dipl.-Wirt.-Ing.)",
+      "email": "a.schneider@icmgmbh-chemnitz.de",
+      "email_quelle": "https://www.icmgmbh-chemnitz.de/kontakt",
+      "email_beleg": "Dipl.-Wirt.-Ing. Andreas Schneider – Geschäftsführer – +49 (0) 371 27836 450 – a.schneider@icmgmbh-chemnitz.de",
+      "telefon": "+49 371 27836 450",
+      "telefon_quelle": "https://www.icmgmbh-chemnitz.de/kontakt",
+      "firma": "ICM GmbH – Innovation + Cooperation für den Maschinenbau",
+      "ort": "Chemnitz (Sachsen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Chemnitzer Entwicklungs- und Engineering-Dienstleister für den Maschinen- und Anlagenbau (Produktentwicklung, Konstruktion, Automation).",
+      "weitere_quellen": [
+        "https://www.icmgmbh-chemnitz.de/impressum ('Geschäftsführer: Herr Dipl.-Wirt.-Ing. Andreas Schneider')",
+        "https://www.icmgmbh-chemnitz.de/leistungen/anlagenbau-und-automation"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Florian Meierhöfer",
+      "position": "Geschäftsführer",
+      "email": "florian.meierhoefer@am-maschinenbau.de",
+      "email_quelle": "https://www.am-maschinenbau.de/infos-kontakt/ansprechpartner/",
+      "email_beleg": "Florian Meierhöfer – Geschäftsführer – +49 (0) 9682 89491-28 – florian.meierhoefer@am-maschinenbau.de",
+      "telefon": "+49 9682 89491-28",
+      "telefon_quelle": "https://www.am-maschinenbau.de/infos-kontakt/ansprechpartner/",
+      "firma": "AM Maschinenbau GmbH & Co. KG",
+      "ort": "Erbendorf (Bayern, Oberpfalz)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführter Maschinenbau- und Fertigungsbetrieb (Inhaber & Geschäftsführer Alfons Meierhöfer, Geschäftsführer Florian Meierhöfer) mit Konstruktion, Zerspanung und Baugruppenfertigung.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Michael Binder",
+      "position": "Geschäftsführer",
+      "email": "mbinder@binder-foerdertechnik.de",
+      "email_quelle": "https://www.binder-foerdertechnik.de/unternehmen/ansprechpartner/",
+      "email_beleg": "Michael Binder – Geschäftsführer – +49 7191 327017 – mbinder@binder-foerdertechnik.de",
+      "telefon": "+49 7191 327017",
+      "telefon_quelle": "https://www.binder-foerdertechnik.de/unternehmen/ansprechpartner/",
+      "firma": "BINDER GmbH Fördertechnik",
+      "ort": "Burgstetten (Baden-Württemberg)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführter Hersteller von Fördertechnik und Intralogistik-Anlagen (Sondermaschinen- und Anlagenbau). Zweiter Geschäftsführer: Stephan Binder (sbinder@binder-foerdertechnik.de, gleiche Quelle).",
+      "weitere_quellen": [
+        "https://www.intralogistik-bw.de/mitglieder/intralogistik-anbieter/binder/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Susanne Wolf",
+      "position": "Geschäftsführende Gesellschafterin",
+      "email": "susanne.wolf@sme-leipzig.de",
+      "email_quelle": "https://www.sme-leipzig.de/",
+      "email_beleg": "Susanne Wolf – Geschäftsführende Gesellschafterin – +49 (0) 341 / 2574 616 – susanne.wolf@sme-leipzig.de",
+      "telefon": "+49 341 2574 616",
+      "telefon_quelle": "https://www.sme-leipzig.de/",
+      "firma": "SME Sondermaschinenbau Engelsdorf GmbH",
+      "ort": "Leipzig (Sachsen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführter Sondermaschinenbauer für Förder-, Handling- und Montagetechnik sowie Roboterzellen (Automotive, Baustoffe, Konsumgüter). Zweiter Geschäftsführender Gesellschafter (Vertrieb): Jan Wolf (jan.wolf@sme-leipzig.de, gleiche Quelle).",
+      "weitere_quellen": [
+        "https://www.sme-leipzig.de/industriezweige/automotive/"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Johannes Rehm",
+      "position": "Geschäftsführer / CEO",
+      "email": "j.rehm@rehm-group.com",
+      "email_quelle": "https://www.rehm-group.com/unternehmen.html",
+      "email_beleg": "Johannes Rehm – CEO – j.rehm@rehm-group.com",
+      "telefon": "+49 7344 9606-0",
+      "telefon_quelle": "https://www.rehm-group.com/unternehmen.html",
+      "firma": "Rehm Thermal Systems GmbH",
+      "ort": "Blaubeuren-Seissen (Baden-Württemberg)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführter Sondermaschinenbauer für thermische Systemlösungen und Fertigungsanlagen der Elektronik- und Leistungselektronikproduktion.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Johann Liebl",
+      "position": "Geschäftsführer",
+      "email": "johann.liebl@lieblmetall.de",
+      "email_quelle": "https://www.lieblmetall.de/de/kontakt",
+      "email_beleg": "Johann Liebl – Geschäftsführer – johann.liebl@lieblmetall.de",
+      "telefon": "+49 9438 90091",
+      "telefon_quelle": "https://www.lieblmetall.de/de/kontakt",
+      "firma": "Lieblmetall GmbH",
+      "ort": "Ebermannsdorf (Bayern, Oberpfalz)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführter Fertigungsbetrieb für Blechbearbeitung und Lohnfertigung (Laserschneiden, CNC-Biegen, Schweißbaugruppen) für den Maschinenbau. Betriebsleitung & Gesellschafter: Martin Liebl (martin.liebl@lieblmetall.de, gleiche Quelle).",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Rainer Grimm",
+      "position": "Geschäftsführer (Dipl.-Ing. TU)",
+      "email": "grimm@fm-control.de",
+      "email_quelle": "https://www.fm-control.de/kontakt/",
+      "email_beleg": "Dipl.-Ing. (TU) Rainer Grimm – Geschäftsführer – +49 3741 1702-0 – grimm@fm-control.de",
+      "telefon": "+49 3741 1702-0",
+      "telefon_quelle": "https://www.fm-control.de/kontakt/",
+      "firma": "fm control GmbH",
+      "ort": "Plauen (Sachsen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführtes Unternehmen für Automatisierungs- und Materialflusssteuerung (Steuerungstechnik, Softwareentwicklung) für Produktions- und Förderanlagen.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Volker Rößner",
+      "position": "Geschäftsführer, Vertrieb",
+      "email": "v.roessner@roessner-maschinenbau.de",
+      "email_quelle": "https://www.roessner-maschinenbau.de/kontakt/",
+      "email_beleg": "Volker Rößner – Geschäftsführer, Vertrieb – +49 6631-9622 24 – v.roessner@roessner-maschinenbau.de",
+      "telefon": "+49 6631 9622-24",
+      "telefon_quelle": "https://www.roessner-maschinenbau.de/kontakt/",
+      "firma": "Rößner Maschinenbau GmbH",
+      "ort": "Alsfeld (Hessen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführter Maschinenbau- und Lohnfertigungsbetrieb (Schweiß- und Stahlbaugruppen, Brikettierpressen) mit eigener Konstruktion.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Bernd Fischer",
+      "position": "Geschäftsführer Vertrieb",
+      "email": "b.fischer@btd-gmbh.de",
+      "email_quelle": "https://www.btd-gmbh.de/ansprechpartner",
+      "email_beleg": "Bernd Fischer – Geschäftsführer Vertrieb – +49 (0) 7157 562-100 – b.fischer@btd-gmbh.de",
+      "telefon": "+49 7157 562-100",
+      "telefon_quelle": "https://www.btd-gmbh.de/ansprechpartner",
+      "firma": "BTD Behälter- und Speichertechnik Dettenhausen GmbH",
+      "ort": "Dettenhausen (Baden-Württemberg)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Mittelständischer Fertigungsbetrieb für Behälter- und Speichertechnik (Druckbehälter, Pufferspeicher) mit eigener Konstruktion und Serienfertigung. Technischer Leiter: Benjamin Dörlemann (b.doerlemann@btd-gmbh.de, gleiche Quelle).",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Holger Fries",
+      "position": "Geschäftsführung",
+      "email": "h.fries@fries-gmbh.de",
+      "email_quelle": "https://www.fries-gmbh.de/kontakt",
+      "email_beleg": "Holger Fries – Geschäftsführung – +49 2743 9223 13 – h.fries@fries-gmbh.de",
+      "telefon": "+49 2743 9223-13",
+      "telefon_quelle": "https://www.fries-gmbh.de/kontakt",
+      "firma": "Fries Maschinen- und Anlagenbau GmbH",
+      "ort": "Derschen (Rheinland-Pfalz, Westerwald)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Familiengeführter Maschinen- und Anlagenbauer seit 1980 mit Zerspanung, Schweißtechnik, Montage und eigener Konstruktion.",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Heiko Müller",
+      "position": "Geschäftsführer (lt. Impressum vertretungsberechtigt), Technik und Vertrieb",
+      "email": "heiko.mueller@mueller-sut.de",
+      "email_quelle": "https://mueller-sut.de/kontakt/ansprechpartner/",
+      "email_beleg": "Dipl.-Ing. Heiko Müller – Technik und Vertrieb – 0049 9254 7913 – heiko.mueller@mueller-sut.de",
+      "telefon": "+49 9254 7913",
+      "telefon_quelle": "https://mueller-sut.de/kontakt/ansprechpartner/",
+      "firma": "Müller Maschinen und Anlagen GmbH & Co. KG (MÜLLER Gefrees)",
+      "ort": "Gefrees (Bayern, Oberfranken)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Inhabergeführter Hersteller von Pressen und Sondermaschinen (C-Gestell-Pressen, Stanzautomaten, CNC-Stanzanlagen) inkl. Kundendienst und Retrofit.",
+      "weitere_quellen": [
+        "https://mueller-sut.de/impressum/ ('Müller Maschinen und Anlagen GmbH & Co. KG ... Vertreten durch Herr Heiko Müller')"
+      ],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    },
+    {
+      "name": "Maik Vogtt",
+      "position": "Fertigung (Ansprechpartner Produktion)",
+      "email": "mavog@emsland-metallbau.de",
+      "email_quelle": "https://www.emsland-metallbau.de/kontakt/kontakt-zu-uns/",
+      "email_beleg": "Maik Vogtt – Fertigung – +49 5971 8004 156 – mavog@emsland-metallbau.de",
+      "telefon": "+49 5971 8004-156",
+      "telefon_quelle": "https://www.emsland-metallbau.de/kontakt/kontakt-zu-uns/",
+      "firma": "Emsland Metallbau GmbH",
+      "ort": "Salzbergen (Niedersachsen)",
+      "mitarbeiter_ca": "nicht öffentlich",
+      "beschreibung": "Mittelständischer Metall- und Stahlbau-/Fertigungsbetrieb mit Blechbearbeitung, Schweißbaugruppen und Auftragsfertigung für den Maschinen- und Anlagenbau. Einkauf/Supply Chain: André Hülsmann (anhue@emsland-metallbau.de, gleiche Quelle).",
+      "weitere_quellen": [],
+      "_verifiziert": true,
+      "_verifiziert_status": "HTTP 200",
+      "_verifiziert_am": "2026-07-29"
+    }
+  ],
+  "verworfen": [
+    {
+      "firma": "Enns Maschinenbau GmbH",
+      "ort": "Bad Oeynhausen",
+      "grund": "Liegt in NRW – außerhalb des Fokusgebiets (persönliche E-Mail andreas@enns-mb.de wäre vorhanden)"
+    },
+    {
+      "firma": "KASTO Maschinenbau GmbH & Co. KG",
+      "ort": "Achern (BW)",
+      "grund": "Auf allen gecrawlten Seiten nur Sammeladressen (kasto@kasto.com) – keine persönliche E-Mail"
+    },
+    {
+      "firma": "Heldele GmbH",
+      "ort": "Salach (BW)",
+      "grund": "Nur Standort-Sammeladresse salach@heldele.de – keine persönliche E-Mail"
+    },
+    {
+      "firma": "ASP Automation GmbH",
+      "ort": "Treuchtlingen (BY)",
+      "grund": "Nur info@asp-automation.de; Inhaber Werner Schramm ohne persönliche E-Mail"
+    },
+    {
+      "firma": "Neumüller GmbH",
+      "ort": "Thyrnau (BY)",
+      "grund": "Persönliche E-Mails nur für Kran-Service und Einkauf/Buchhaltung – kein Entscheidungsträger belegbar"
+    },
+    {
+      "firma": "XENON Automatisierungstechnik GmbH",
+      "ort": "Dresden (SN)",
+      "grund": "Nur Standort-Sammeladressen, keine persönliche E-Mail auf gecrawlten Seiten"
+    },
+    {
+      "firma": "SITEC Industrietechnologie GmbH",
+      "ort": "Chemnitz (SN)",
+      "grund": "Keine persönliche E-Mail auffindbar"
+    },
+    {
+      "firma": "NILES-SIMMONS Industrieanlagen GmbH",
+      "ort": "Chemnitz (SN)",
+      "grund": "Nur sales-Sammeladresse; zudem Konzernverbund NSH Group"
+    },
+    {
+      "firma": "Schnaithmann Maschinenbau GmbH",
+      "ort": "Remshalden (BW)",
+      "grund": "Keine E-Mail-Adressen im Quelltext (nur Formular)"
+    },
+    {
+      "firma": "ZELTWANGER Gruppe",
+      "ort": "Tübingen (BW)",
+      "grund": "Nur funktionale Adressen (holding@, vertrieb.mb@, service@)"
+    },
+    {
+      "firma": "Eckerle Technologies GmbH",
+      "ort": "Malsch (BW)",
+      "grund": "Persönliche E-Mails nur für Vertrieb/Auftragsabwicklung; kein Geschäftsführer/Prokurist mit E-Mail"
+    },
+    {
+      "firma": "Höfelmeyer Waagen GmbH",
+      "ort": "Georgsmarienhütte (NI)",
+      "grund": "Einzige persönliche E-Mail gehört Marketing – kein Entscheidungsträger"
+    },
+    {
+      "firma": "Haupt Hydraulik & Pneumatik (Inh. Thomas Zander e.K.)",
+      "ort": "Riesa (SN)",
+      "grund": "Inhaber Thomas Zander ohne persönliche E-Mail; nur Vertriebs-/Technikmitarbeiter"
+    },
+    {
+      "firma": "indusa GmbH",
+      "ort": "Waldems (HE)",
+      "grund": "Geschäftsleitung Dirk Schnieders ohne E-Mail; gelistete Adressen sind Gebiets-/Handelsvertretungen"
+    },
+    {
+      "firma": "Papierverarbeitung Golzern GmbH",
+      "ort": "Grimma (SN)",
+      "grund": "Falsche Branche (Papierverarbeitung), kein Maschinen-/Anlagenbau"
+    },
+    {
+      "firma": "Kampfer (Formen- und Sondermaschinenbau)",
+      "ort": "Betzenstein (BY)",
+      "grund": "Deutlich unter 50 Mitarbeiter – außerhalb des ICP (E-Mail des Inhabers wäre vorhanden)"
+    },
+    {
+      "firma": "ESMO AG / esmo automation",
+      "ort": "Rosenheim (BY)",
+      "grund": "Nur Funktionsadressen (sales.automation@, service.automation@); l.ingenhag ohne Positionsbeleg"
+    },
+    {
+      "firma": "Grenzebach Maschinenbau GmbH",
+      "ort": "Asbach-Bäumenheim (BY)",
+      "grund": "Nur Standort-Sammeladressen; zudem Konzerngröße"
+    },
+    {
+      "firma": "teamtechnik / BBS Automation",
+      "ort": "Freiberg a.N. (BW)",
+      "grund": "Konzernstruktur, nur info-Adressen je Standort"
+    },
+    {
+      "firma": "SCHMID Group",
+      "ort": "Freudenstadt (BW)",
+      "grund": "Keine persönlichen E-Mails, nur Sammeladressen"
+    },
+    {
+      "firma": "HEDELIUS Maschinenfabrik GmbH",
+      "ort": "Meppen (NI)",
+      "grund": "Nur Funktions-/Händleradressen, keine persönliche E-Mail"
+    },
+    {
+      "firma": "WENZEL Group GmbH & Co. KG",
+      "ort": "Wiesthal (BY)",
+      "grund": "Nur sales-Sammeladressen je Land"
+    },
+    {
+      "firma": "Maschinenfabrik EIRICH GmbH & Co KG",
+      "ort": "Hardheim (BW)",
+      "grund": "Nur eirich@eirich.de bzw. Auslandsgesellschaften"
+    },
+    {
+      "firma": "PSB intralogistics GmbH",
+      "ort": "Pirmasens (RP)",
+      "grund": "Keine persönlichen E-Mails auf gecrawlten Seiten"
+    },
+    {
+      "firma": "Langhammer GmbH",
+      "ort": "Eisenberg (RP)",
+      "grund": "Keine E-Mail-Adressen im Quelltext"
+    },
+    {
+      "firma": "ROEMHELD Gruppe",
+      "ort": "Laubach (HE)",
+      "grund": "Keine persönlichen E-Mails auffindbar"
+    },
+    {
+      "firma": "HEMA Maschinen- und Apparateschutz GmbH",
+      "ort": "Seligenstadt (HE)",
+      "grund": "Keine E-Mail-Adressen im Quelltext"
+    },
+    {
+      "firma": "Sielaff GmbH & Co. KG",
+      "ort": "Herrieden (BY)",
+      "grund": "Nur Standort-Sammeladressen"
+    },
+    {
+      "firma": "MAFAC – E. Schwarz GmbH & Co. KG",
+      "ort": "Alpirsbach (BW)",
+      "grund": "Nur Adressen von Auslandsvertretungen, keine eigene Führungskraft"
+    },
+    {
+      "firma": "IMSTec GmbH",
+      "ort": "Heidelberg (BW)",
+      "grund": "Nur Team-Sammeladresse und US-Tochter"
+    },
+    {
+      "firma": "Pahnke Engineering GmbH & Co. KG",
+      "ort": "Hamburg",
+      "grund": "Standort außerhalb der Zielbundesländer"
+    },
+    {
+      "firma": "SMB Sondermaschinenbau GmbH",
+      "ort": "Uplengen (NI)",
+      "grund": "Nur info@smb-sondermaschinen.de; GF Wolfgang Blank ohne persönliche E-Mail"
+    },
+    {
+      "firma": "DMV Sondermaschinenbau GmbH",
+      "ort": "Bad Wünnenberg",
+      "grund": "Nur dmv@dmv-sondermaschinenbau.de; zudem NRW"
+    },
+    {
+      "firma": "Knecht Maschinenbau GmbH",
+      "ort": "Bergatreute (BW)",
+      "grund": "Keine persönliche E-Mail auf Website auffindbar"
+    },
+    {
+      "firma": "Rühle & Co. Maschinenbau GmbH",
+      "ort": "Walzbachtal (BW)",
+      "grund": "Keine E-Mail-Adressen der Geschäftsführung veröffentlicht"
+    },
+    {
+      "firma": "Emsland Metallbau GmbH – Arnd Brinkmann (Vertrieb)",
+      "ort": "Salzbergen (NI)",
+      "grund": "Für Vertriebskontakt keine E-Mail wörtlich gelistet (nur Sammeladresse Anfragen_Vertrieb@)"
+    }
+  ]
+}
