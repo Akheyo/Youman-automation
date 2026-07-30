@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus } from "@nestjs/common";
+import { ZodError } from "zod";
 import { ERROR_CODES } from "@youman/shared";
 
 /** Ergebnis der zentralen Fehlerklassifikation für den ExceptionFilter. */
@@ -59,6 +60,20 @@ export function mapExceptionToApiError(exception: unknown, correlationId: string
   // 1) Bewusst geworfene HTTP-Fehler (Validierung, Auth, Business) durchreichen.
   if (exception instanceof HttpException) {
     return mapHttpException(exception);
+  }
+
+  // 1b) Rohe Zod-Validierungsfehler (Controller rufen z.B. XSchema.parse(body)
+  // direkt auf) sind ein normaler 400-Eingabefehler, kein Serverfehler.
+  if (exception instanceof ZodError) {
+    const fields = exception.flatten().fieldErrors as Record<string, string[]>;
+    return {
+      status: HttpStatus.BAD_REQUEST,
+      code: ERROR_CODES.VALIDATION_FAILED,
+      message: "Eingaben ungültig. Bitte die markierten Felder prüfen.",
+      fields,
+      internal: exception.message,
+      logAsError: false,
+    };
   }
 
   const code = errorCode(exception);

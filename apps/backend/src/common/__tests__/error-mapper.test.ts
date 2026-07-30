@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BadRequestException, UnauthorizedException } from "@nestjs/common";
+import { z } from "zod";
 import { AuthError, NotFoundError, RateLimitError, ValidationError, NotSupportedError } from "@youman/connector-plenty";
 import { mapExceptionToApiError } from "../errors/error-mapper";
 
@@ -87,5 +88,26 @@ describe("mapExceptionToApiError", () => {
     const mapped = mapExceptionToApiError(new UnauthorizedException("Ungültige Zugangsdaten"), CID);
     expect(mapped.status).toBe(401);
     expect(mapped.code).toBe("AUTH_FAILED");
+  });
+
+  /**
+   * Beweis für den Platform-Admin-500-Bug: Controller rufen Zod-Schemas
+   * direkt per XSchema.parse(body) auf (z.B. CreateTenantRequestSchema).
+   * Eine rohe ZodError fiel bisher durch alle Zweige und landete im
+   * generischen 500-INTERNAL_ERROR-Fallback, obwohl es ein normaler
+   * 400-Eingabefehler ist ("Feld X fehlt").
+   */
+  it("maps a raw ZodError (Controller ruft Schema.parse(body) auf) to 400 statt 500", () => {
+    const schema = z.object({ slug: z.string().min(2), adminEmail: z.string().email() });
+    const result = schema.safeParse({ adminEmail: "keine-email" });
+    expect(result.success).toBe(false);
+    if (result.success) throw new Error("unreachable");
+
+    const mapped = mapExceptionToApiError(result.error, CID);
+    expect(mapped.status).toBe(400);
+    expect(mapped.code).toBe("VALIDATION_FAILED");
+    expect(mapped.fields).toHaveProperty("slug");
+    expect(mapped.fields).toHaveProperty("adminEmail");
+    expect(mapped.logAsError).toBe(false);
   });
 });
