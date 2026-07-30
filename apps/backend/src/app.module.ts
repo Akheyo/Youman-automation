@@ -12,6 +12,7 @@ import { ConnectorsModule } from "./modules/connectors/connectors.module";
 import { BrandingModule } from "./modules/branding/branding.module";
 import { TemplatesModule } from "./modules/templates/templates.module";
 import { HealthModule } from "./modules/health/health.module";
+import { PlatformAdminModule } from "./modules/platform-admin/platform-admin.module";
 import { DatabaseModule } from "./database/database.module";
 import appConfig from "./config/app.config";
 import jwtConfig from "./config/jwt.config";
@@ -36,6 +37,7 @@ import jwtConfig from "./config/jwt.config";
     BrandingModule,
     TemplatesModule,
     HealthModule,
+    PlatformAdminModule,
   ],
 })
 export class AppModule {}

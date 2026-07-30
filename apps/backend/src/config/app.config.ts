@@ -5,4 +5,6 @@ export default registerAs("app", () => ({
   nodeEnv: process.env.NODE_ENV ?? "development",
   allowedOrigins: process.env.ALLOWED_ORIGINS?.split(",") ?? ["http://localhost:5173"],
   apiPrefix: "api/v1",
+  /** Schlüssel für plattformweite Mandanten-Provisionierung (nicht gesetzt = Endpunkt deaktiviert). */
+  platformAdminKey: process.env.PLATFORM_ADMIN_KEY,
 }));
