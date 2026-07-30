@@ -7,6 +7,7 @@ import { AppModule } from "./app.module";
 import { GlobalExceptionFilter } from "./common/filters/global-exception.filter";
 import { AuditInterceptor } from "./common/interceptors/audit.interceptor";
 import { correlationIdMiddleware } from "./common/middleware/correlation-id.middleware";
+import { buildAllowedOrigins } from "./common/cors-origins";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -25,7 +26,7 @@ async function bootstrap() {
   app.use(helmet());
   app.use(cookieParser());
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(",") ?? ["http://localhost:5173"],
+    origin: buildAllowedOrigins(process.env.ALLOWED_ORIGINS),
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   });
