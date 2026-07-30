@@ -76,10 +76,13 @@ describe("Nutzerweg 1: Login → Dashboard → Aktion öffnen", () => {
 
   /**
    * Beweis für den gemeldeten Bug: Render-Free-Tier schläft ein, der
-   * allererste Login eines neuen Kunden trifft einen kalten Server. Vor dem
-   * Fix wurde Login (POST) NIE automatisch wiederholt (nur GET) – die App
-   * zeigte fälschlich "falsches Passwort", obwohl die Zugangsdaten korrekt
-   * waren. Login hat keine Nebenwirkung, ein Retry ist also gefahrlos.
+   * allererste Login eines neuen Kunden trifft einen kalten Server (real
+   * beobachtete Aufwachzeiten bis zu ~158s). Vor dem Fix wurde Login (POST)
+   * NIE automatisch wiederholt – die App zeigte fälschlich "falsches
+   * Passwort", obwohl die Zugangsdaten korrekt waren. Die Wiederholungs-
+   * schleife lebt in LoginScreen.tsx (nicht im generischen API-Interceptor),
+   * weil sie deutlich länger durchhalten und den Nutzer sichtbar informieren
+   * muss ("Server wird gestartet …") statt still zu warten.
    */
   it("Kaltstart beim Login: erster Versuch scheitert am schlafenden Server, automatischer zweiter Versuch meldet an", async () => {
     let calls = 0;
@@ -99,10 +102,39 @@ describe("Nutzerweg 1: Login → Dashboard → Aktion öffnen", () => {
     await u.type(screen.getByPlaceholderText("••••••••"), "Admin123!");
     await u.click(screen.getByRole("button", { name: /^Anmelden$/ }));
 
+    // Sichtbare Rückmeldung statt stillem Warten:
+    await waitFor(() => expect(screen.getAllByText(/Server wird gestartet/).length).toBeGreaterThanOrEqual(1), {
+      timeout: 3000,
+    });
     // Trotz gescheitertem ersten Versuch: Login gelingt automatisch beim zweiten.
     await screen.findByRole("combobox", undefined, { timeout: 10_000 });
     expect(calls).toBeGreaterThanOrEqual(2);
   }, 15_000);
+
+  it("Echtes falsches Passwort (401 vom wachen Server) wird NICHT wiederholt, sofort sichtbare Meldung", async () => {
+    let calls = 0;
+    server.use(
+      http.post(`${API}/auth/login`, () => {
+        calls += 1;
+        return HttpResponse.json(
+          { error: { code: "AUTH_FAILED", message: "Ungültige E-Mail oder Passwort" } },
+          { status: 401 }
+        );
+      })
+    );
+    window.location.hash = "#/login";
+    renderApp();
+    const u = user();
+
+    await u.type(await screen.findByPlaceholderText("z.B. mein-unternehmen"), "demo");
+    await u.type(screen.getByPlaceholderText("name@firma.de"), "admin@demo.adept.de");
+    await u.type(screen.getByPlaceholderText("••••••••"), "falsches-passwort");
+    await u.click(screen.getByRole("button", { name: /^Anmelden$/ }));
+
+    await waitFor(() => expect(screen.getAllByText("Ungültige E-Mail oder Passwort").length).toBeGreaterThanOrEqual(1));
+    // Kein Kaltstart-Retry bei einer ECHTEN Serverantwort – genau EIN Aufruf:
+    expect(calls).toBe(1);
+  });
 });
 
 describe("Nutzerweg 2: Angebot erstellen", () => {

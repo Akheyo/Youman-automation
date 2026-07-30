@@ -11,6 +11,22 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/useToast";
 import type { LoginResponse } from "@youman/shared";
 
+/**
+ * Render-Free-Tier schläft nach Inaktivität ein; das Aufwachen dauert
+ * beobachtet bis zu ~2-3 Minuten. Ein einzelner kurzer Retry reicht dafür
+ * nicht – deshalb hier eine eigene, sichtbare Wiederholungsschleife statt
+ * eines stillen Timeouts, der fälschlich "falsches Passwort" vortäuschen
+ * würde (Login hat keine Nebenwirkung, Wiederholen ist gefahrlos).
+ */
+const COLD_START_RETRY_DELAYS_MS = [5_000, 15_000, 30_000];
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** true = Netzwerkfehler (kein Response vom Server) statt einer echten Server-Antwort. */
+function isNetworkError(err: unknown): boolean {
+  return !(err as { response?: unknown } | null)?.response;
+}
+
 export function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,13 +59,38 @@ export function LoginScreen() {
   const onSubmit = async (data: LoginRequestDto) => {
     setIsLoading(true);
     try {
-      const res = await apiClient.post<LoginResponse>("/auth/login", data);
-      const { user, tenant, accessToken, refreshToken } = res.data;
-      setAuth(user, tenant, accessToken, refreshToken);
-      // Nach Session-Ablauf: zurück an die Stelle, an der der Nutzer war –
-      // Formulareingaben liegen dort als Entwurf bereit (kein Datenverlust).
-      navigate(consumePostLoginRedirect() ?? "/dashboard", { replace: true });
-      toast({ title: `Willkommen, ${user.firstName}!`, variant: "success" });
+      let lastErr: unknown;
+      // Bis zu COLD_START_RETRY_DELAYS_MS.length + 1 Versuche insgesamt.
+      for (let attempt = 0; attempt <= COLD_START_RETRY_DELAYS_MS.length; attempt++) {
+        try {
+          const res = await apiClient.post<LoginResponse>("/auth/login", data);
+          const { user, tenant, accessToken, refreshToken } = res.data;
+          setAuth(user, tenant, accessToken, refreshToken);
+          // Nach Session-Ablauf: zurück an die Stelle, an der der Nutzer war –
+          // Formulareingaben liegen dort als Entwurf bereit (kein Datenverlust).
+          navigate(consumePostLoginRedirect() ?? "/dashboard", { replace: true });
+          toast({ title: `Willkommen, ${user.firstName}!`, variant: "success" });
+          return;
+        } catch (err) {
+          lastErr = err;
+          // Eine echte Server-Antwort (z.B. 401 falsches Passwort) ist kein
+          // Kaltstart – sofort anzeigen statt sinnlos zu wiederholen.
+          if (!isNetworkError(err)) throw err;
+
+          if (attempt === 0) {
+            toast({
+              title: "Server wird gestartet",
+              description: "Kann bei Inaktivität bis zu 2 Minuten dauern. Wird automatisch erneut versucht …",
+              variant: "warning",
+              duration: 10_000,
+            });
+          }
+          if (attempt < COLD_START_RETRY_DELAYS_MS.length) {
+            await sleep(COLD_START_RETRY_DELAYS_MS[attempt]!);
+          }
+        }
+      }
+      throw lastErr;
     } catch (err) {
       const msg =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ??

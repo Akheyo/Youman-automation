@@ -105,19 +105,15 @@ apiClient.interceptors.response.use(
     const original = err.config as InternalAxiosRequestConfig & { _retry?: boolean; _coldRetry?: boolean };
 
     // Render-Free-Tier schläft ein: Der erste Request nach Inaktivität kann
-    // scheitern, während der Server hochfährt (beobachtet: bis zu ~2-3 Minuten
-    // Aufwachzeit, deutlich länger als die 30s Client-Timeout + ein einzelner
-    // Retry hier abdecken). Lesende Requests werden einmal automatisch nach
-    // kurzer Wartezeit wiederholt (kein fachlicher Fehler). Schreibende
-    // Requests werden NICHT blind wiederholt – dort entscheidet der Aufrufer
-    // (Idempotenz-ID vorausgesetzt) – AUSSER Login: ein Login-Versuch hat
-    // keine Nebenwirkung, ein Wiederholen ist also gefahrlos. Ohne diese
-    // Ausnahme schlägt der allererste Login eines neuen Kunden gegen einen
-    // eingeschlafenen Server fehl und zeigt fälschlich "falsches Passwort".
+    // scheitern, während der Server hochfährt. Lesende Requests werden einmal
+    // automatisch nach kurzer Wartezeit wiederholt (kein fachlicher Fehler).
+    // Schreibende Requests werden NICHT blind wiederholt – dort entscheidet
+    // der Aufrufer (Idempotenz-ID vorausgesetzt). Login ist ein Sonderfall
+    // mit eigener, längerer Retry-Schleife direkt in LoginScreen.tsx (siehe
+    // dort) – die dortige Schleife braucht diesen generischen Retry nicht.
     if (!err.response && original && !original._coldRetry) {
       const method = (original.method ?? "get").toUpperCase();
-      const isSafeToRetry = method === "GET" || (method === "POST" && original.url === "/auth/login");
-      if (isSafeToRetry) {
+      if (method === "GET") {
         original._coldRetry = true;
         await sleep(2_500);
         return apiClient(original);
