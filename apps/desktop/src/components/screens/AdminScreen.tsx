@@ -10,6 +10,17 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/useToast";
 import { LoadErrorNotice } from "@/components/ui/load-error";
 import { cn } from "@/utils/cn";
+import { QUOTE_TEXT_DEFAULTS } from "@youman/shared";
+
+/** Frei einstellbare Standardtexte, die auf jedem Angebot erscheinen. */
+type QuoteTextKey = keyof typeof QUOTE_TEXT_DEFAULTS;
+const QUOTE_TEXT_FIELDS: { key: QuoteTextKey; label: string }[] = [
+  { key: "quoteSalutation", label: "Anrede" },
+  { key: "quoteDeliveryDate", label: "Lieferdatum (Standard)" },
+  { key: "quotePaymentMethod", label: "Zahlungsart" },
+  { key: "quotePaymentTerms", label: "Zahlungsziel" },
+  { key: "quoteShippingMethod", label: "Versandart" },
+];
 
 type AdminTab = "general" | "branding" | "connector" | "documents" | "users";
 
@@ -88,12 +99,29 @@ function GeneralSettings() {
 
   const [quoteNext, setQuoteNext] = useState("");
   const [quoteStep, setQuoteStep] = useState("");
+  /** Frei einstellbare Standardtexte, die auf jedem Angebot erscheinen. */
+  const [texts, setTexts] = useState<Record<string, string>>({});
   useEffect(() => {
     if (data) {
       setQuoteNext(String(data["quoteNumberNext"] ?? 1000));
       setQuoteStep(String(data["quoteNumberStep"] ?? 1));
+      setTexts(
+        Object.fromEntries(
+          QUOTE_TEXT_FIELDS.map((f) => [f.key, String(data[f.key] ?? QUOTE_TEXT_DEFAULTS[f.key] ?? "")])
+        )
+      );
     }
   }, [data]);
+
+  const saveTexts = useMutation({
+    mutationFn: () => apiClient.patch("/tenants/settings", texts),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant-settings"] });
+      toast({ title: "Angebotstexte gespeichert", variant: "success" });
+    },
+    onError: (err) =>
+      toast({ title: "Speichern fehlgeschlagen", description: getApiError(err), variant: "error" }),
+  });
 
   const saveQuote = useMutation({
     mutationFn: () =>
@@ -147,6 +175,31 @@ function GeneralSettings() {
           loading={saveQuote.isPending}
           disabled={quoteNext === "" || quoteStep === ""}
         >
+          Speichern
+        </Button>
+      </div>
+
+      {/* Standardtexte auf dem Angebot – editierbar */}
+      <div className="rounded-lg border border-border bg-card p-4 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">Texte auf dem Angebot</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Diese Angaben erscheinen auf jedem Angebot. Leer lassen setzt den Standardwert wieder ein.
+          </p>
+        </div>
+        <div className="space-y-3">
+          {QUOTE_TEXT_FIELDS.map((f) => (
+            <div key={f.key} className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">{f.label}</label>
+              <Input
+                value={texts[f.key] ?? ""}
+                placeholder={QUOTE_TEXT_DEFAULTS[f.key]}
+                onChange={(e) => setTexts((prev) => ({ ...prev, [f.key]: e.target.value }))}
+              />
+            </div>
+          ))}
+        </div>
+        <Button size="sm" onClick={() => saveTexts.mutate()} loading={saveTexts.isPending}>
           Speichern
         </Button>
       </div>

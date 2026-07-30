@@ -16,6 +16,7 @@ function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 import { PrismaService } from "../../database/prisma.service";
+import { QUOTE_TEXT_DEFAULTS } from "@youman/shared";
 import type { LoginRequest, LoginResponse, AuthTokenPayload, UserRole } from "@youman/shared";
 
 @Injectable()
@@ -111,6 +112,11 @@ export class AuthService {
               retryBackoffMs: tenant.settings.retryBackoffMs,
               quoteNumberNext: tenant.settings.quoteNumberNext,
               quoteNumberStep: tenant.settings.quoteNumberStep,
+              quoteSalutation: tenant.settings.quoteSalutation,
+              quoteDeliveryDate: tenant.settings.quoteDeliveryDate,
+              quotePaymentMethod: tenant.settings.quotePaymentMethod,
+              quotePaymentTerms: tenant.settings.quotePaymentTerms,
+              quoteShippingMethod: tenant.settings.quoteShippingMethod,
             }
           : {
               tenantId: tenant.id,
@@ -122,6 +128,7 @@ export class AuthService {
               sessionTimeoutMinutes: 480,
               quoteNumberNext: 1000,
               quoteNumberStep: 1,
+              ...QUOTE_TEXT_DEFAULTS,
               maxRetryAttempts: 3,
               retryBackoffMs: 2000,
             },

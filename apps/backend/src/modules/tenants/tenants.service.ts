@@ -26,8 +26,19 @@ export class TenantsService {
     // Whitelist statt rohem Body: nur bekannte Felder, korrekt typisiert –
     // verhindert, dass beliebige Settings-Spalten überschrieben werden.
     const patch: Record<string, unknown> = {};
-    for (const f of ["defaultLocale", "defaultCurrency", "timezone", "dateFormat"]) {
-      if (typeof data[f] === "string") patch[f] = data[f];
+    for (const f of [
+      "defaultLocale",
+      "defaultCurrency",
+      "timezone",
+      "dateFormat",
+      // Frei einstellbare Standardtexte auf dem Angebot.
+      "quoteSalutation",
+      "quoteDeliveryDate",
+      "quotePaymentMethod",
+      "quotePaymentTerms",
+      "quoteShippingMethod",
+    ]) {
+      if (typeof data[f] === "string") patch[f] = (data[f] as string).slice(0, 200);
     }
     if (typeof data["enableOfflineMode"] === "boolean") patch["enableOfflineMode"] = data["enableOfflineMode"];
     for (const f of ["sessionTimeoutMinutes", "maxRetryAttempts", "retryBackoffMs", "quoteNumberNext", "quoteNumberStep"]) {

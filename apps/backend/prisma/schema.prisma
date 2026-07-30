@@ -60,6 +60,14 @@ model TenantSettings {
   // Nummer, quoteNumberStep die Schrittweite. Beide im Admin konfigurierbar.
   quoteNumberNext       Int     @default(1000)
   quoteNumberStep       Int     @default(1)
+  // Standardtexte auf dem Angebot – bisher fest im Code, jetzt je Mandant
+  // einstellbar. Die Defaults entsprechen exakt den früheren Festwerten,
+  // damit sich ohne Umstellung nichts am Dokument ändert.
+  quoteSalutation       String  @default("Sehr geehrte Damen und Herren,")
+  quoteDeliveryDate     String  @default("ab sofort")
+  quotePaymentMethod    String  @default("Rechnung")
+  quotePaymentTerms     String  @default("7 Tage netto")
+  quoteShippingMethod   String  @default("Spedition oder Selbstabholung")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 

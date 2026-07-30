@@ -28,6 +28,16 @@ export interface TenantSettings {
   quoteNumberNext: number;
   /** Schrittweite, um die die Angebotsnummer je Angebot hochzählt. */
   quoteNumberStep: number;
+  /** Anrede auf dem Angebot, z.B. "Sehr geehrte Damen und Herren,". */
+  quoteSalutation: string;
+  /** Standard-Lieferdatum, wenn keine Position ein eigenes trägt. */
+  quoteDeliveryDate: string;
+  /** Zahlungsart auf dem Angebot, z.B. "Rechnung". */
+  quotePaymentMethod: string;
+  /** Zahlungsziel auf dem Angebot, z.B. "7 Tage netto". */
+  quotePaymentTerms: string;
+  /** Versandart auf dem Angebot, z.B. "Spedition oder Selbstabholung". */
+  quoteShippingMethod: string;
 }
 
 export interface TenantBranding {

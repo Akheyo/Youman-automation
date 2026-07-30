@@ -48,3 +48,16 @@ export const HTTP_STATUS = {
 // Fehlercodes: siehe types/error-codes.ts (ERROR_CODES) – die frühere,
 // ungenutzte Tabelle mit kryptischen Codes (AUTH_001, SYS_001, …) wurde durch
 // sprechende Codes ersetzt, die Backend-Filter und Client-Meldungs-Mapping teilen.
+
+/**
+ * Standardtexte auf dem Angebot. Entsprechen exakt den Werten, die früher
+ * fest im Code standen – damit sich am erzeugten Dokument nichts ändert,
+ * solange ein Mandant sie nicht in den Einstellungen anpasst.
+ */
+export const QUOTE_TEXT_DEFAULTS = {
+  quoteSalutation: "Sehr geehrte Damen und Herren,",
+  quoteDeliveryDate: "ab sofort",
+  quotePaymentMethod: "Rechnung",
+  quotePaymentTerms: "7 Tage netto",
+  quoteShippingMethod: "Spedition oder Selbstabholung",
+} as const;

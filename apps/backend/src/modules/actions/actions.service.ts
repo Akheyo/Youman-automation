@@ -7,6 +7,7 @@ import { AuditService } from "../audit/audit.service";
 import { TemplatesService } from "../templates/templates.service";
 import { resolveFieldMapping } from "../templates/document-mapper";
 import { formatGermanNumber } from "../templates/formatters";
+import { QUOTE_TEXT_DEFAULTS } from "@youman/shared";
 import type {
   ActionExecutionRequest,
   ActionExecution,
@@ -387,6 +388,41 @@ export class ActionsService {
   }
 
   /**
+   * Standardtexte des Mandanten für das Angebot (Admin » Einstellungen).
+   * Jeder nicht gesetzte Wert fällt auf den früheren Festwert zurück, damit
+   * bestehende Angebote unverändert aussehen. Schlägt der Zugriff fehl,
+   * werden ebenfalls die Standardwerte benutzt – ein Angebot darf niemals
+   * an einem fehlenden Einstellungstext scheitern.
+   */
+  private async quoteTexts(tenantId: string): Promise<Record<keyof typeof QUOTE_TEXT_DEFAULTS, string>> {
+    try {
+      const s = await this.prisma.tenantSettings.findUnique({
+        where: { tenantId },
+        select: {
+          quoteSalutation: true,
+          quoteDeliveryDate: true,
+          quotePaymentMethod: true,
+          quotePaymentTerms: true,
+          quoteShippingMethod: true,
+        },
+      });
+      if (!s) return QUOTE_TEXT_DEFAULTS;
+      const pick = (value: string | null | undefined, fallback: string) =>
+        typeof value === "string" && value.trim() !== "" ? value : fallback;
+      return {
+        quoteSalutation: pick(s.quoteSalutation, QUOTE_TEXT_DEFAULTS.quoteSalutation),
+        quoteDeliveryDate: pick(s.quoteDeliveryDate, QUOTE_TEXT_DEFAULTS.quoteDeliveryDate),
+        quotePaymentMethod: pick(s.quotePaymentMethod, QUOTE_TEXT_DEFAULTS.quotePaymentMethod),
+        quotePaymentTerms: pick(s.quotePaymentTerms, QUOTE_TEXT_DEFAULTS.quotePaymentTerms),
+        quoteShippingMethod: pick(s.quoteShippingMethod, QUOTE_TEXT_DEFAULTS.quoteShippingMethod),
+      };
+    } catch (err) {
+      this.logger.warn(`Angebotstexte nicht ladbar, Standardwerte greifen: ${err instanceof Error ? err.message : err}`);
+      return QUOTE_TEXT_DEFAULTS;
+    }
+  }
+
+  /**
    * Fortlaufende Angebotsnummer pro Mandant im Format JJJJ-NNNN, abgeleitet aus
    * der Zahl bereits erstellter Angebote. Rein lokal – es entsteht kein
    * ERP-Auftrag; die Vorlage setzt "An-" davor ("Angebot Nr. An-2026-0001").
@@ -454,10 +490,16 @@ export class ActionsService {
     }
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    // Standardtexte des Mandanten (Admin » Einstellungen). Fehlt der Datensatz
+    // oder ein Feld, greifen exakt die früheren Festwerte – das Dokument sieht
+    // dann unverändert aus.
+    const texts = await this.quoteTexts(tenantId);
+
     const data: Record<string, unknown> = {
       angebotsnummer: quoteNumber,
       datum: new Date().toISOString().slice(0, 10),
-      anrede: "Sehr geehrte Damen und Herren,",
+      anrede: texts.quoteSalutation,
       ansprechpartner: user ? `${user.firstName} ${user.lastName}`.trim() : "",
       kunde_name: kundeName,
       kunde_adresse: kundeAdresse,
@@ -471,10 +513,10 @@ export class ActionsService {
       zwischensumme: formatGermanNumber(zwischensumme),
       rabatt: formatGermanNumber(zwischensumme - endbetrag),
       endbetrag: formatGermanNumber(endbetrag),
-      lieferdatum: dto.lineItems.find((i) => i.deliveryDate)?.deliveryDate ?? "ab sofort",
-      zahlungsart: "Rechnung",
-      zahlungsziel: "7 Tage netto",
-      versandart: "Spedition oder Selbstabholung",
+      lieferdatum: dto.lineItems.find((i) => i.deliveryDate)?.deliveryDate ?? texts.quoteDeliveryDate,
+      zahlungsart: texts.quotePaymentMethod,
+      zahlungsziel: texts.quotePaymentTerms,
+      versandart: texts.quoteShippingMethod,
     };
 
     const template = await this.templates.findDefault(tenantId, "OFFER");
