@@ -6,6 +6,7 @@ import { Eye, EyeOff, Building2, Mail, Lock, Loader2, Server, ChevronRight } fro
 import { LoginRequestSchema, type LoginRequestDto } from "@youman/shared";
 import { useAuthStore } from "@/stores/authStore";
 import { apiClient, getApiBaseUrl, setApiBaseUrl, isCustomApiBaseUrl, consumePostLoginRedirect } from "@/services/api";
+import { describeApiError } from "@/services/errorMessages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/useToast";
@@ -22,16 +23,13 @@ const COLD_START_RETRY_DELAYS_MS = [5_000, 15_000, 30_000];
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** true = Netzwerkfehler (kein Response vom Server) statt einer echten Server-Antwort. */
-function isNetworkError(err: unknown): boolean {
-  return !(err as { response?: unknown } | null)?.response;
-}
-
 export function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showServer, setShowServer] = useState(false);
   const [serverUrl, setServerUrl] = useState(() => (isCustomApiBaseUrl() ? getApiBaseUrl() : ""));
+  /** Verbindungsproblem (kein fachlicher Login-Fehler) – getrennt angezeigt. */
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const applyServerUrl = () => {
     const applied = setApiBaseUrl(serverUrl);
@@ -58,6 +56,7 @@ export function LoginScreen() {
 
   const onSubmit = async (data: LoginRequestDto) => {
     setIsLoading(true);
+    setConnectionError(null);
     try {
       let lastErr: unknown;
       // Bis zu COLD_START_RETRY_DELAYS_MS.length + 1 Versuche insgesamt.
@@ -75,7 +74,7 @@ export function LoginScreen() {
           lastErr = err;
           // Eine echte Server-Antwort (z.B. 401 falsches Passwort) ist kein
           // Kaltstart – sofort anzeigen statt sinnlos zu wiederholen.
-          if (!isNetworkError(err)) throw err;
+          if (!describeApiError(err).backendUnreachable) throw err;
 
           if (attempt === 0) {
             toast({
@@ -92,11 +91,24 @@ export function LoginScreen() {
       }
       throw lastErr;
     } catch (err) {
-      const msg =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message ??
-        "Login fehlgeschlagen. Bitte prüfen Sie Ihre Zugangsdaten.";
-      setError("password", { message: msg });
-      toast({ title: "Login fehlgeschlagen", description: msg, variant: "error" });
+      // Zentrale Fehlerübersetzung statt eigener Ad-hoc-Meldung: Ein
+      // Verbindungsproblem darf NIEMALS als "Zugangsdaten prüfen" erscheinen –
+      // genau diese Falschaussage hat einen CORS-Ausfall als Passwortfehler
+      // getarnt und die Fehlersuche in die Irre geführt.
+      const described = describeApiError(err);
+      if (described.backendUnreachable) {
+        setConnectionError(described.message);
+        toast({ title: "Server nicht erreichbar", description: described.message, variant: "error" });
+      } else {
+        // Auf dem Login-Bildschirm ist die Servermeldung präziser als der
+        // Katalogtext ("Ungültige E-Mail oder Passwort" statt des allgemeinen
+        // "Sitzung abgelaufen … bitte erneut anmelden"). Katalog bleibt Fallback.
+        const serverMessage = (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data
+          ?.error?.message;
+        const msg = serverMessage ?? described.message;
+        setError("password", { message: msg });
+        toast({ title: "Login fehlgeschlagen", description: msg, variant: "error" });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -173,6 +185,19 @@ export function LoginScreen() {
               </div>
             </div>
           </div>
+
+          {connectionError && (
+            <div
+              role="alert"
+              className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+            >
+              <p className="font-medium">Server nicht erreichbar</p>
+              <p className="mt-0.5 text-xs">{connectionError}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Serveradresse prüfen unter „Server-Einstellungen“.
+              </p>
+            </div>
+          )}
 
           <Button type="submit" className="w-full" size="lg" loading={isLoading}>
             {isLoading ? "Anmelden..." : "Anmelden"}

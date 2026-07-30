@@ -111,6 +111,29 @@ describe("Nutzerweg 1: Login → Dashboard → Aktion öffnen", () => {
     expect(calls).toBeGreaterThanOrEqual(2);
   }, 15_000);
 
+  /**
+   * Beweis für die irreführende Meldung, die den CORS-Ausfall als
+   * Passwortfehler getarnt hat: Bei einem Verbindungsproblem behauptete der
+   * Login-Screen "Bitte prüfen Sie Ihre Zugangsdaten" – eine Falschaussage,
+   * die die Fehlersuche massiv in die Irre geführt hat.
+   */
+  it("Verbindungsproblem wird als solches benannt – NIE als Zugangsdaten-Fehler", async () => {
+    server.use(http.post(`${API}/auth/login`, () => HttpResponse.error()));
+    window.location.hash = "#/login";
+    renderApp();
+    const u = user();
+
+    await u.type(await screen.findByPlaceholderText("z.B. mein-unternehmen"), "demo");
+    await u.type(screen.getByPlaceholderText("name@firma.de"), "admin@demo.adept.de");
+    await u.type(screen.getByPlaceholderText("••••••••"), "Admin123!");
+    await u.click(screen.getByRole("button", { name: /^Anmelden$/ }));
+
+    const alert = await screen.findByRole("alert", undefined, { timeout: 90_000 });
+    expect(alert).toHaveTextContent(/Server nicht erreichbar/);
+    // Die Falschaussage darf nirgends mehr auftauchen:
+    expect(screen.queryByText(/prüfen Sie Ihre Zugangsdaten/)).toBeNull();
+  }, 100_000);
+
   it("Echtes falsches Passwort (401 vom wachen Server) wird NICHT wiederholt, sofort sichtbare Meldung", async () => {
     let calls = 0;
     server.use(

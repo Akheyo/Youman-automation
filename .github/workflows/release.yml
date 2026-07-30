@@ -112,3 +112,9 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Ohne diese Variable fällt der Build auf http://localhost:3001
+          # zurück – jede Neuinstallation zeigte damit auf den Rechner des
+          # Kunden statt auf den Server, und die Adresse musste von Hand
+          # eingetragen werden. Über "Server-Einstellungen" bleibt sie
+          # weiterhin pro Installation überschreibbar.
+          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://adept-backend-2w20.onrender.com/api/v1' }}
