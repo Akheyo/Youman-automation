@@ -1,19 +1,24 @@
 # Render Blueprint: adept& Backend
-# Deploy: render.com → New → Blueprint → dieses Repo + Branch wählen.
-# Die drei secret-Variablen werden beim ersten Deploy im Render-UI abgefragt.
+# Deploy: render.com → New → Blueprint → dieses Repo + Branch 'adept-main'.
+# Die secret-Variablen (sync: false) werden beim ersten Deploy im Render-UI
+# abgefragt und sind dort zu hinterlegen.
 services:
   - type: web
     name: adept-backend
     runtime: docker
-    plan: free
+    plan: starter
+    # WICHTIG – Region Frankfurt (EU):
+    # 1. Plentymarkets (deutscher Anbieter) hat Verbindungen aus der früheren
+    #    US-Region (Oregon) auf Netzwerkebene abgewiesen (ECONNRESET, noch vor
+    #    jeder Anmeldung; Gegenprobe example.com aus derselben Umgebung: 200).
+    # 2. Es werden Kundendaten deutscher Firmen verarbeitet – die gehören in
+    #    ein EU-Rechenzentrum.
+    # Die Region lässt sich bei einem bestehenden Service NICHT ändern; ein
+    # Wechsel erfordert einen neuen Service (+ neue Datenbank in derselben
+    # Region, sonst ist keine private Netzwerkverbindung möglich).
+    region: frankfurt
     dockerfilePath: ./Dockerfile
-    # ACHTUNG Deploy-Kette (Stand Analyse): 'main' enthält ein ANDERES
-    # Produkt (Next.js "Youman Automation") mit konkurrierendem Repo-Root –
-    # adept& kann dort nicht hineingemergt werden, ohne eines der beiden
-    # Produkte zu zerlegen. Bis zur Struktur-Entscheidung (eigener
-    # Produktionsbranch 'adept-main' ODER eigenes Repo) deployt Render den
-    # im Render-UI konfigurierten Branch. Sobald entschieden: hier
-    # 'branch: <produktionsbranch>' eintragen.
+    branch: adept-main
     autoDeploy: true
     envVars:
       - key: NODE_ENV
@@ -29,4 +34,8 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: JWT_REFRESH_SECRET
+        sync: false
+      # Schlüssel für die Mandanten-Provisionierung (POST /platform/tenants).
+      # Nicht gesetzt = Endpunkt deaktiviert (fail-closed).
+      - key: PLATFORM_ADMIN_KEY
         sync: false
