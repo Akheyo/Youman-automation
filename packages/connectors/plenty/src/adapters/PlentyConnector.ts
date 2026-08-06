@@ -303,6 +303,7 @@ export class PlentyConnector implements IErpConnector {
       mapVariationToProduct(v, this.tenantId, {
         currency: this.cfg.defaultCurrency ?? "EUR",
         ...(this.cfg.defaultWarehouseId !== undefined ? { defaultWarehouseId: this.cfg.defaultWarehouseId } : {}),
+        ...(this.cfg.salesPriceId !== undefined ? { salesPriceId: this.cfg.salesPriceId } : {}),
       })
     );
     return {
@@ -320,6 +321,7 @@ export class PlentyConnector implements IErpConnector {
     return mapVariationToProduct(variation, this.tenantId, {
       currency: this.cfg.defaultCurrency ?? "EUR",
       ...(this.cfg.defaultWarehouseId !== undefined ? { defaultWarehouseId: this.cfg.defaultWarehouseId } : {}),
+      ...(this.cfg.salesPriceId !== undefined ? { salesPriceId: this.cfg.salesPriceId } : {}),
     });
   }
 
@@ -360,7 +362,7 @@ export class PlentyConnector implements IErpConnector {
 
   async getProductPrice(productId: string, _customerId?: string, quantity = 1): Promise<PriceInfo> {
     const variation = await this.getVariation(productId);
-    const net = pickDefaultSalesPrice(variation) ?? 0;
+    const net = pickDefaultSalesPrice(variation, this.cfg.salesPriceId) ?? 0;
     return {
       productId,
       quantity,

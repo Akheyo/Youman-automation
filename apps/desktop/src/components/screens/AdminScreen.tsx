@@ -310,6 +310,8 @@ interface ConnectorFormState {
   plentyWarehouseId: string;
   plentyCurrency: string;
   plentyReferrerId: string;
+  /** Verkaufspreis-ID aus Plenty, die im Angebot verwendet wird (leer = niedrigste ID). */
+  plentySalesPriceId: string;
 }
 
 const DEFAULTS: ConnectorFormState = {
@@ -319,7 +321,7 @@ const DEFAULTS: ConnectorFormState = {
   epCustomers: "/customers", epProducts: "/products", epQuotes: "/quotes",
   epTasks: "/tasks", epAppointments: "/appointments", epNotes: "/notes",
   searchParam: "q",
-  plentyId: "", plentyWarehouseId: "", plentyCurrency: "EUR", plentyReferrerId: "",
+  plentyId: "", plentyWarehouseId: "", plentyCurrency: "EUR", plentyReferrerId: "", plentySalesPriceId: "",
 };
 
 function ConnectorSettings() {
@@ -360,6 +362,7 @@ function ConnectorSettings() {
         plentyWarehouseId: cfg?.["defaultWarehouseId"] != null ? String(cfg["defaultWarehouseId"]) : "",
         plentyCurrency: String(cfg?.["defaultCurrency"] ?? "EUR"),
         plentyReferrerId: cfg?.["defaultReferrerId"] != null ? String(cfg["defaultReferrerId"]) : "",
+        plentySalesPriceId: cfg?.["salesPriceId"] != null ? String(cfg["salesPriceId"]) : "",
       });
       return d;
     },
@@ -381,6 +384,7 @@ function ConnectorSettings() {
         ...(f.plentyWarehouseId ? { defaultWarehouseId: Number(f.plentyWarehouseId) } : {}),
         defaultCurrency: f.plentyCurrency || "EUR",
         ...(f.plentyReferrerId ? { defaultReferrerId: Number(f.plentyReferrerId) } : {}),
+        ...(f.plentySalesPriceId ? { salesPriceId: Number(f.plentySalesPriceId) } : {}),
       } : {
         baseUrl: f.baseUrl,
         searchParam: f.searchParam || "q",
@@ -509,6 +513,15 @@ function ConnectorSettings() {
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-muted-foreground">Referrer-ID (optional)</label>
                     <Input value={form.plentyReferrerId} onChange={(e) => set("plentyReferrerId", e.target.value)} placeholder="1" className="font-mono text-sm" />
+                  </div>
+                  <div className="space-y-1.5 col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground">Verkaufspreis-ID für Angebote (optional)</label>
+                    <Input value={form.plentySalesPriceId} onChange={(e) => set("plentySalesPriceId", e.target.value)} placeholder="z.B. 35 für den Nettopreis" className="font-mono text-sm" />
+                    <p className="text-xs text-muted-foreground">
+                      Bestimmt, welcher Verkaufspreis aus Plenty im Angebot steht. Leer = Preis mit der
+                      niedrigsten ID. Ist der gewählte Preis an einem Artikel nicht gepflegt, wird
+                      ersatzweise dieser Standardpreis genommen.
+                    </p>
                   </div>
                 </div>
               </>

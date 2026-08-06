@@ -249,3 +249,27 @@ describe("toValidationError", () => {
     expect(err.fieldErrors).toEqual({});
   });
 });
+
+describe("pickDefaultSalesPrice – wählbarer Verkaufspreis", () => {
+  const withPrices = (prices: Array<{ salesPriceId: number; price: number }>) =>
+    ({ id: 1, itemId: 1, variationSalesPrices: prices }) as Parameters<typeof pickDefaultSalesPrice>[0];
+
+  it("nimmt ohne Angabe den Preis mit der niedrigsten ID (bisheriges Verhalten)", () => {
+    expect(pickDefaultSalesPrice(withPrices([{ salesPriceId: 35, price: 100 }, { salesPriceId: 1, price: 119 }]))).toBe(119);
+  });
+
+  it("nimmt den ausdrücklich gewünschten Verkaufspreis (z.B. Nettopreis 35)", () => {
+    expect(
+      pickDefaultSalesPrice(withPrices([{ salesPriceId: 1, price: 119 }, { salesPriceId: 35, price: 100 }]), 35)
+    ).toBe(100);
+  });
+
+  it("fällt auf den Standardpreis zurück, wenn der gewünschte am Artikel fehlt", () => {
+    // Genau der beobachtete Fall: ID 35 ist definiert, aber nicht gepflegt.
+    expect(pickDefaultSalesPrice(withPrices([{ salesPriceId: 1, price: 16.9 }]), 35)).toBe(16.9);
+  });
+
+  it("liefert undefined, wenn gar kein Preis gepflegt ist", () => {
+    expect(pickDefaultSalesPrice(withPrices([]), 35)).toBeUndefined();
+  });
+});
