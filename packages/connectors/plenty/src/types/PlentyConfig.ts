@@ -8,6 +8,15 @@ export interface PlentyConfig {
   /** Plenty client (Mandant) id, required for order creation. */
   plentyId: number;
   defaultWarehouseId?: number;
+  /**
+   * ID des Verkaufspreises, der als NETTO-Preis für Angebote gilt.
+   * In Plenty existieren meist mehrere Verkaufspreise (z.B. ID 1 = Shop-Preis
+   * brutto, ID 2 = Netto/B2B). Ohne Angabe wird der Preis mit der NIEDRIGSTEN
+   * salesPriceId genommen – das ist Plentys Standardpreis und je nach
+   * Einrichtung ein Bruttopreis. Für B2B-Angebote gehört hier die ID des
+   * Nettopreises hinein.
+   */
+  salesPriceId?: number;
   /** Defaults to EUR. */
   defaultCurrency?: string;
   defaultReferrerId?: number;

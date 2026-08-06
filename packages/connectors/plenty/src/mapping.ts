@@ -95,7 +95,7 @@ export function mapPlentyAddress(addr: PlentyAddress): Address {
 export function mapVariationToProduct(
   variation: PlentyVariation,
   tenantId: string,
-  opts: { currency?: string; defaultWarehouseId?: number } = {}
+  opts: { currency?: string; defaultWarehouseId?: number; salesPriceId?: number } = {}
 ): Product {
   const currency = opts.currency ?? "EUR";
   // Item names arrive via with=itemTexts (field "name"); prefer German texts.
@@ -104,7 +104,7 @@ export function mapVariationToProduct(
   const designation =
     variation.name || itemText?.name || itemText?.name1 || `Variante ${variation.id}`;
   const ean = variation.variationBarcodes?.[0]?.code;
-  const price = pickDefaultSalesPrice(variation);
+  const price = pickDefaultSalesPrice(variation, opts.salesPriceId);
   const stockInfos = mapVariationStock(variation.stock ?? [], String(variation.id));
   const preferredStock =
     (opts.defaultWarehouseId !== undefined
@@ -135,9 +135,27 @@ export function mapVariationToProduct(
   };
 }
 
-/** Lowest salesPriceId wins – in Plenty the default sales price is id 1. */
-export function pickDefaultSalesPrice(variation: PlentyVariation): number | undefined {
+/**
+ * Liefert den Verkaufspreis der Variante.
+ *
+ * Mit `preferredSalesPriceId` wird GENAU dieser Verkaufspreis genommen – so
+ * stellt ein Mandant sicher, dass im Angebot der NETTO-Preis steht und nicht
+ * Plentys Standardpreis (der je nach Einrichtung brutto ist).
+ *
+ * Ohne Angabe – oder wenn die gewünschte ID an der Variante nicht gepflegt
+ * ist – gilt wie bisher: niedrigste salesPriceId gewinnt. Der Fallback ist
+ * bewusst: Ein Angebot soll nicht daran scheitern, dass an einem einzelnen
+ * Artikel der Netto-Preis fehlt.
+ */
+export function pickDefaultSalesPrice(
+  variation: PlentyVariation,
+  preferredSalesPriceId?: number
+): number | undefined {
   const prices = [...(variation.variationSalesPrices ?? [])].sort((a, b) => a.salesPriceId - b.salesPriceId);
+  if (preferredSalesPriceId !== undefined) {
+    const preferred = prices.find((p) => p.salesPriceId === preferredSalesPriceId);
+    if (preferred) return preferred.price;
+  }
   return prices[0]?.price;
 }
 
