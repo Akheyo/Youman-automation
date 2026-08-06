@@ -28,6 +28,11 @@ export interface TenantSettings {
   quoteNumberNext: number;
   /** Schrittweite, um die die Angebotsnummer je Angebot hochzählt. */
   quoteNumberStep: number;
+  /**
+   * true = Angebot wird im ERP angelegt, dessen Belegnummer wird verwendet.
+   * false = lokale, lückenlose Nummer aus quoteNumberNext/-Step.
+   */
+  createQuoteInErp: boolean;
   /** Anrede auf dem Angebot, z.B. "Sehr geehrte Damen und Herren,". */
   quoteSalutation: string;
   /** Standard-Lieferdatum, wenn keine Position ein eigenes trägt. */

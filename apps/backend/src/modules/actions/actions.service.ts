@@ -19,6 +19,7 @@ import type {
   CreateFollowUpDto,
   CreateAppointmentDto,
   CreateNoteDto,
+  QuoteDraft,
 } from "@youman/shared";
 import {
   CreateCustomerSchema,
@@ -251,7 +252,7 @@ export class ActionsService {
         // werden nur (lesend) die Kundendaten für Name/Adresse geholt. Die
         // Dokument-Info wird hier DIREKT angehängt – unabhängig von einer
         // documentOutput-Config in der DB (die sonst per Seed gepflegt wäre).
-        const quoteNumber = await this.nextQuoteNumber(req.tenantId);
+        const quoteNumber = await this.quoteNumberFor(req.tenantId, dto, connector);
         const document = await this.buildQuoteDocument(req.tenantId, req.userId, dto, quoteNumber);
         return {
           erpQuoteId: quoteNumber,
@@ -385,6 +386,78 @@ export class ActionsService {
       }
       throw err;
     }
+  }
+
+  /**
+   * Liefert die Angebotsnummer – je nach Mandanten-Einstellung.
+   *
+   * createQuoteInErp = true: Das Angebot wird im ERP angelegt (Plenty: Beleg
+   * vom Typ "Angebot"), dessen Belegnummer ist die Angebotsnummer. Damit ist
+   * das Angebot im ERP sichtbar und dort weiterverarbeitbar.
+   * Bewusst KEIN stiller Rückfall auf eine lokale Nummer, wenn das ERP nicht
+   * erreichbar ist: Ein Dokument mit einer Nummer, zu der es im ERP keinen
+   * Beleg gibt, wäre schlimmer als ein sichtbarer Fehler – die Nummer würde
+   * später an einen anderen Beleg vergeben.
+   *
+   * createQuoteInErp = false (Standard): lokale, lückenlose Nummer.
+   */
+  private async quoteNumberFor(
+    tenantId: string,
+    dto: CreateQuoteDto,
+    connector: Awaited<ReturnType<ConnectorsService["getConnector"]>>
+  ): Promise<string> {
+    const settings = await this.prisma.tenantSettings.findUnique({
+      where: { tenantId },
+      select: { createQuoteInErp: true },
+    });
+    if (!settings?.createQuoteInErp) {
+      return this.nextQuoteNumber(tenantId);
+    }
+
+    const result = await connector.createQuote(this.toQuoteDraft(tenantId, dto));
+    this.logger.log(`Angebot im ERP angelegt: Beleg ${result.erpQuoteNumber}`);
+    return result.erpQuoteNumber;
+  }
+
+  /** Baut aus dem Formular-DTO den ERP-Entwurf für die Angebotsanlage. */
+  private toQuoteDraft(tenantId: string, dto: CreateQuoteDto): QuoteDraft {
+    const lineNet = (item: CreateQuoteDto["lineItems"][number]) =>
+      item.quantity * item.pricePerUnit * (1 - (item.discount ?? 0) / 100);
+    const totalNet = dto.lineItems.reduce((sum, item) => sum + lineNet(item), 0);
+    const now = new Date().toISOString();
+
+    return {
+      id: uuid(),
+      tenantId,
+      userId: "",
+      customerId: dto.customerId,
+      customerNumber: dto.customerNumber ?? "",
+      customerName: dto.customerName ?? "",
+      ...(dto.deliveryAddressId ? { deliveryAddressId: dto.deliveryAddressId } : {}),
+      currency: dto.currency,
+      ...(dto.validUntil ? { validUntil: dto.validUntil } : {}),
+      lineItems: dto.lineItems.map((item, idx) => ({
+        position: idx + 1,
+        productId: item.productId,
+        articleNumber: item.articleNumber ?? "",
+        designation: item.designation ?? "",
+        quantity: item.quantity,
+        unit: item.unit,
+        pricePerUnit: item.pricePerUnit,
+        ...(item.discount !== undefined ? { discount: item.discount } : {}),
+        netTotal: lineNet(item),
+        grossTotal: Math.round(lineNet(item) * 1.19 * 100) / 100,
+        currency: dto.currency,
+        ...(item.deliveryDate ? { deliveryDate: item.deliveryDate } : {}),
+        ...(item.notes ? { notes: item.notes } : {}),
+      })),
+      ...(dto.notes ? { notes: dto.notes } : {}),
+      totalNet,
+      totalGross: Math.round(totalNet * 1.19 * 100) / 100,
+      status: "draft",
+      createdAt: now,
+      updatedAt: now,
+    };
   }
 
   /**

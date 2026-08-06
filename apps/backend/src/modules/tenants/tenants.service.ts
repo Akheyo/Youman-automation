@@ -41,6 +41,7 @@ export class TenantsService {
       if (typeof data[f] === "string") patch[f] = (data[f] as string).slice(0, 200);
     }
     if (typeof data["enableOfflineMode"] === "boolean") patch["enableOfflineMode"] = data["enableOfflineMode"];
+    if (typeof data["createQuoteInErp"] === "boolean") patch["createQuoteInErp"] = data["createQuoteInErp"];
     for (const f of ["sessionTimeoutMinutes", "maxRetryAttempts", "retryBackoffMs", "quoteNumberNext", "quoteNumberStep"]) {
       if (data[f] !== undefined && data[f] !== null) {
         const n = Number(data[f]);

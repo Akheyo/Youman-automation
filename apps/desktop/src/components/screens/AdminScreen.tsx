@@ -99,12 +99,15 @@ function GeneralSettings() {
 
   const [quoteNext, setQuoteNext] = useState("");
   const [quoteStep, setQuoteStep] = useState("");
+  /** true = Angebotsnummer kommt aus dem ERP (Angebot wird dort angelegt). */
+  const [erpQuotes, setErpQuotes] = useState(false);
   /** Frei einstellbare Standardtexte, die auf jedem Angebot erscheinen. */
   const [texts, setTexts] = useState<Record<string, string>>({});
   useEffect(() => {
     if (data) {
       setQuoteNext(String(data["quoteNumberNext"] ?? 1000));
       setQuoteStep(String(data["quoteNumberStep"] ?? 1));
+      setErpQuotes(data["createQuoteInErp"] === true);
       setTexts(
         Object.fromEntries(
           QUOTE_TEXT_FIELDS.map((f) => [f.key, String(data[f.key] ?? QUOTE_TEXT_DEFAULTS[f.key] ?? "")])
@@ -128,6 +131,7 @@ function GeneralSettings() {
       apiClient.patch("/tenants/settings", {
         quoteNumberNext: Number(quoteNext),
         quoteNumberStep: Number(quoteStep),
+        createQuoteInErp: erpQuotes,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenant-settings"] });
@@ -168,7 +172,26 @@ function GeneralSettings() {
             <Input type="number" min={1} value={quoteStep} onChange={(e) => setQuoteStep(e.target.value)} />
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">Vorschau: {preview}</p>
+        <p className="text-xs text-muted-foreground">
+          {erpQuotes ? "Die Nummer vergibt das ERP – Start und Schrittweite sind dann ohne Wirkung." : `Vorschau: ${preview}`}
+        </p>
+
+        <label className="flex items-start gap-2.5 rounded-md border border-border p-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={erpQuotes}
+            onChange={(e) => setErpQuotes(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0"
+          />
+          <span className="text-xs">
+            <span className="font-medium text-foreground">Angebot im ERP anlegen und dessen Nummer verwenden</span>
+            <span className="block text-muted-foreground mt-0.5">
+              Das Angebot ist dann im ERP sichtbar und dort weiterverarbeitbar. Achtung: Die Nummern
+              springen (das ERP zählt alle Belegarten gemeinsam), und ohne erreichbares ERP lässt sich
+              kein Angebot mehr erstellen.
+            </span>
+          </span>
+        </label>
         <Button
           size="sm"
           onClick={() => saveQuote.mutate()}

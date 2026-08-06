@@ -60,6 +60,13 @@ model TenantSettings {
   // Nummer, quoteNumberStep die Schrittweite. Beide im Admin konfigurierbar.
   quoteNumberNext       Int     @default(1000)
   quoteNumberStep       Int     @default(1)
+  // true = Das Angebot wird im ERP angelegt und dessen Belegnummer verwendet
+  // (Angebot ist damit im ERP sichtbar und dort weiterverarbeitbar).
+  // false (Standard) = rein lokale, lückenlose Nummer aus quoteNumberNext.
+  // Bewusst pro Mandant: Bei aktivem ERP-Modus springen die Nummern (Plenty
+  // zählt Aufträge, Angebote und Gutschriften gemeinsam) und ohne erreichbares
+  // ERP entsteht gar kein Angebot mehr.
+  createQuoteInErp      Boolean @default(false)
   // Standardtexte auf dem Angebot – bisher fest im Code, jetzt je Mandant
   // einstellbar. Die Defaults entsprechen exakt den früheren Festwerten,
   // damit sich ohne Umstellung nichts am Dokument ändert.
