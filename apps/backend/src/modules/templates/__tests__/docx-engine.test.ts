@@ -108,6 +108,35 @@ describe("renderDocx", () => {
     for (let i = 0; i < 5; i++) expect(extractDocumentText(many)).toContain(`Artikel ${i}`);
   });
 
+  it("produces an OPC-conform package that Word accepts", () => {
+    // Regression: PizZip legte beim Zurückschreiben Verzeichniseinträge an und
+    // schob [Content_Types].xml aus Position 1. Word lehnte die Datei dann ab
+    // ("Fehler beim Öffnen der Datei in Word"), LibreOffice nicht – deshalb war
+    // nur der DOCX-Download kaputt, die PDF-Ausgabe aber in Ordnung.
+    const zip = new PizZip(renderDocx(TEMPLATE, FULL_DATA));
+    const names = Object.keys(zip.files);
+    expect(names.filter((n) => zip.files[n]!.dir)).toEqual([]);
+    expect(names.filter((n) => n.endsWith("/"))).toEqual([]);
+    expect(names[0]).toBe("[Content_Types].xml");
+
+    // Jeder Part muss einen Content-Type haben (Default über Endung oder Override).
+    const contentTypes = zip.file("[Content_Types].xml")!.asText();
+    const defaults = new Set(
+      [...contentTypes.matchAll(/Extension="([^"]+)"/g)].map((m) => m[1]!.toLowerCase())
+    );
+    const overrides = new Set([...contentTypes.matchAll(/PartName="\/([^"]+)"/g)].map((m) => m[1]!));
+    for (const name of names.filter((n) => n !== "[Content_Types].xml")) {
+      const ext = name.split(".").pop()!.toLowerCase();
+      expect(overrides.has(name) || defaults.has(ext), `kein Content-Type für ${name}`).toBe(true);
+    }
+
+    // Keine Parts der Ausgangsdatei verloren.
+    const source = new PizZip(TEMPLATE);
+    for (const name of Object.keys(source.files).filter((n) => !source.files[n]!.dir)) {
+      expect(names).toContain(name);
+    }
+  });
+
   it("refuses to render with missing fields and lists them", () => {
     const { endbetrag: _e, ...data } = FULL_DATA;
     try {

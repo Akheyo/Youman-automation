@@ -125,8 +125,34 @@ export function renderDocx(fileData: Buffer, data: Record<string, unknown>): Buf
   } catch (err) {
     throw new RenderError(describeDocxtemplaterError(err), { cause: err });
   }
-  return doc.getZip().generate({ type: "nodebuffer", compression: "DEFLATE" }) as Buffer;
+  return packageDocx(doc.getZip());
 }
+
+/**
+ * Repackt das gerenderte Archiv OPC-konform.
+ *
+ * PizZip legt beim Zurückschreiben der Parts Verzeichniseinträge an ("word/",
+ * "docProps/") und schiebt "[Content_Types].xml" aus der ersten Position. Beides
+ * verletzt OPC: Part-Namen dürfen nicht auf "/" enden, und ein solcher Eintrag
+ * hat damit keinen Content-Type. Word verweigert die Datei dann mit "Fehler beim
+ * Öffnen der Datei in Word"; LibreOffice toleriert es, weshalb die PDF-Ausgabe
+ * immer funktionierte und nur der DOCX-Download unbrauchbar war.
+ */
+function packageDocx(zip: PizZip): Buffer {
+  const out = new PizZip();
+  const parts = Object.keys(zip.files).filter((name) => !zip.files[name]?.dir);
+  const ordered = [
+    ...parts.filter((name) => name === CONTENT_TYPES_PART),
+    ...parts.filter((name) => name !== CONTENT_TYPES_PART),
+  ];
+  for (const name of ordered) {
+    out.file(name, zip.files[name]!.asNodeBuffer(), { createFolders: false });
+  }
+  return out.generate({ type: "nodebuffer", compression: "DEFLATE" }) as Buffer;
+}
+
+/** Muss laut OPC der erste Eintrag im Archiv sein. */
+const CONTENT_TYPES_PART = "[Content_Types].xml";
 
 /** LibreOffice binary; overridable for tests/odd installs. */
 const SOFFICE_BIN = process.env["SOFFICE_BIN"] ?? "soffice";
