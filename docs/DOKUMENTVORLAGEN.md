@@ -112,7 +112,24 @@ LibreOffice im Headless-Modus:
   `soffice.exe` über die Umgebungsvariable `SOFFICE_BIN` setzen. Ohne LibreOffice liefert
   die PDF-Ausgabe eine klare Fehlermeldung; DOCX funktioniert weiterhin.
 
-## 6. Sicherheit & Mandantentrennung
+## 6. AGB-Anhang bei Angeboten
+
+Dokumente vom Typ **Angebot** bekommen die festen AGB automatisch angehängt – in beiden
+Formaten, ohne dass sie in der Vorlage stehen müssen:
+
+- **PDF:** `configs/templates/agb-b2b.pdf` wird 1:1 hinter das Angebot gehängt (pdf-lib).
+- **DOCX:** `configs/templates/agb-b2b.docx` kommt als eigener Abschnitt dahinter. Der
+  Abschnitt bekommt leere Kopf-/Fußzeilen, damit der Briefbogen des Angebots nicht über
+  die AGB-Seiten läuft (Abschnitte erben Kopf-/Fußzeilen sonst vom vorherigen).
+
+Beide Pfade sind best-effort: Fehlt oder scheitert der Anhang, wird das Angebot ohne AGB
+ausgeliefert und der Fehler protokolliert – die Angebotserstellung schlägt nie deswegen fehl.
+Pfade überschreibbar per `AGB_PDF_PATH` bzw. `AGB_DOCX_PATH`.
+
+Wichtig: Die PDF-Wandlung läuft auf dem Angebot **ohne** DOCX-Anhang, sonst kämen die
+AGB-Seiten doppelt.
+
+## 7. Sicherheit & Mandantentrennung
 
 - Vorlagen sind strikt pro Mandant gespeichert (Row-Level-Isolation über `tenantId`);
   Mandant A kann Vorlagen von Mandant B weder sehen noch rendern (durch Tests abgesichert).

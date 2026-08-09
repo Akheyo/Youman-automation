@@ -4,6 +4,7 @@ import { PrismaService } from "../../database/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { convertDocxToPdf, extractTemplateStructure, renderDocx } from "./docx-engine";
 import { appendAgb } from "./pdf-appendix";
+import { appendAgbDocx } from "./docx-appendix";
 import { TemplateParseError } from "./errors";
 
 const MAX_TEMPLATE_BYTES = 10 * 1024 * 1024;
@@ -171,9 +172,12 @@ export class TemplatesService {
       metadata: { format, documentType: row.documentType },
     });
 
+    // Angebote tragen die AGB in beiden Formaten. Wichtig: Die PDF-Wandlung
+    // läuft auf dem Angebot OHNE AGB, sonst kämen die Seiten doppelt – einmal
+    // aus dem DOCX-Anhang, einmal aus dem PDF-Anhang.
     if (format === "pdf") {
       let pdf = await convertDocxToPdf(docx);
-      // Angebote bekommen die festen AGB-Seiten 1:1 ans PDF gehängt
+      // Die festen AGB-Seiten kommen 1:1 aus dem Original-PDF ans Angebot
       // (best-effort – ein AGB-Problem verhindert nie das Angebot).
       if (row.documentType === "OFFER") {
         pdf = await appendAgb(pdf);
@@ -181,7 +185,7 @@ export class TemplatesService {
       return { content: pdf, fileName: `${baseName}.pdf`, contentType: "application/pdf" };
     }
     return {
-      content: docx,
+      content: row.documentType === "OFFER" ? appendAgbDocx(docx) : docx,
       fileName: `${baseName}.docx`,
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     };

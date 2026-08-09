@@ -138,7 +138,7 @@ export function renderDocx(fileData: Buffer, data: Record<string, unknown>): Buf
  * Öffnen der Datei in Word"; LibreOffice toleriert es, weshalb die PDF-Ausgabe
  * immer funktionierte und nur der DOCX-Download unbrauchbar war.
  */
-function packageDocx(zip: PizZip): Buffer {
+export function packageDocx(zip: PizZip): Buffer {
   const out = new PizZip();
   const parts = Object.keys(zip.files).filter((name) => !zip.files[name]?.dir);
   const ordered = [
