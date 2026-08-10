@@ -95,7 +95,13 @@ export function mapPlentyAddress(addr: PlentyAddress): Address {
 export function mapVariationToProduct(
   variation: PlentyVariation,
   tenantId: string,
-  opts: { currency?: string; defaultWarehouseId?: number; salesPriceId?: number } = {}
+  opts: {
+    currency?: string;
+    defaultWarehouseId?: number;
+    salesPriceId?: number;
+    salesPriceIsGross?: boolean;
+    vatRate?: number;
+  } = {}
 ): Product {
   const currency = opts.currency ?? "EUR";
   // Item names arrive via with=itemTexts (field "name"); prefer German texts.
@@ -104,7 +110,11 @@ export function mapVariationToProduct(
   const designation =
     variation.name || itemText?.name || itemText?.name1 || `Variante ${variation.id}`;
   const ean = variation.variationBarcodes?.[0]?.code;
-  const price = pickDefaultSalesPrice(variation, opts.salesPriceId);
+  const price = toNetPrice(
+    pickDefaultSalesPrice(variation, opts.salesPriceId),
+    opts.salesPriceIsGross ?? false,
+    opts.vatRate
+  );
   const stockInfos = mapVariationStock(variation.stock ?? [], String(variation.id));
   const preferredStock =
     (opts.defaultWarehouseId !== undefined
@@ -157,6 +167,34 @@ export function pickDefaultSalesPrice(
     if (preferred) return preferred.price;
   }
   return prices[0]?.price;
+}
+
+/** Steuersatz, wenn der Mandant keinen eigenen hinterlegt hat. */
+export const DEFAULT_VAT_RATE = 19;
+
+/**
+ * Rechnet einen Bruttopreis in den Nettopreis um, der ins Angebot gehört.
+ *
+ * In Plenty ist je nach Einrichtung nicht klar, ob ein Verkaufspreis brutto
+ * oder netto gepflegt ist – deshalb entscheidet das der Mandant über
+ * `salesPriceIsGross`. Ist der Preis bereits netto (Standard), bleibt er
+ * unverändert. Gerundet wird auf zwei Nachkommastellen, damit die Summen im
+ * Angebot aufgehen.
+ *
+ * Unplausible Steuersätze (nicht endlich, negativ oder ab 100 %) fallen auf
+ * den Standardsatz zurück: Lieber ein nachvollziehbarer Preis als eine
+ * Division durch null.
+ */
+export function toNetPrice(
+  price: number | undefined,
+  isGross: boolean,
+  vatRate?: number
+): number | undefined {
+  if (price === undefined || !isGross) return price;
+  const rate = vatRate !== undefined && Number.isFinite(vatRate) && vatRate >= 0 && vatRate < 100
+    ? vatRate
+    : DEFAULT_VAT_RATE;
+  return Math.round((price / (1 + rate / 100)) * 100) / 100;
 }
 
 export function mapVariationStock(entries: PlentyVariationStock[], productId: string): StockInfo[] {

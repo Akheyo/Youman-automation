@@ -304,6 +304,8 @@ export class PlentyConnector implements IErpConnector {
         currency: this.cfg.defaultCurrency ?? "EUR",
         ...(this.cfg.defaultWarehouseId !== undefined ? { defaultWarehouseId: this.cfg.defaultWarehouseId } : {}),
         ...(this.cfg.salesPriceId !== undefined ? { salesPriceId: this.cfg.salesPriceId } : {}),
+        ...(this.cfg.salesPriceIsGross !== undefined ? { salesPriceIsGross: this.cfg.salesPriceIsGross } : {}),
+        ...(this.cfg.vatRate !== undefined ? { vatRate: this.cfg.vatRate } : {}),
       })
     );
     return {
@@ -322,6 +324,8 @@ export class PlentyConnector implements IErpConnector {
       currency: this.cfg.defaultCurrency ?? "EUR",
       ...(this.cfg.defaultWarehouseId !== undefined ? { defaultWarehouseId: this.cfg.defaultWarehouseId } : {}),
       ...(this.cfg.salesPriceId !== undefined ? { salesPriceId: this.cfg.salesPriceId } : {}),
+      ...(this.cfg.salesPriceIsGross !== undefined ? { salesPriceIsGross: this.cfg.salesPriceIsGross } : {}),
+      ...(this.cfg.vatRate !== undefined ? { vatRate: this.cfg.vatRate } : {}),
     });
   }
 

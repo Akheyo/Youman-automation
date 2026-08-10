@@ -17,6 +17,18 @@ export interface PlentyConfig {
    * Nettopreises hinein.
    */
   salesPriceId?: number;
+  /**
+   * Ist der gewählte Verkaufspreis ein BRUTTO-Preis? Dann wird er für das
+   * Angebot in einen Nettopreis umgerechnet (Preis / (1 + vatRate/100)).
+   * Standard: false – der Preis gilt als Nettopreis und wird unverändert
+   * übernommen.
+   */
+  salesPriceIsGross?: boolean;
+  /**
+   * Steuersatz in Prozent für die Brutto→Netto-Umrechnung. Standard 19.
+   * Nur relevant, wenn salesPriceIsGross gesetzt ist.
+   */
+  vatRate?: number;
   /** Defaults to EUR. */
   defaultCurrency?: string;
   defaultReferrerId?: number;

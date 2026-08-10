@@ -7,6 +7,7 @@ import {
   mapPlentyAddress,
   mapVariationToProduct,
   pickDefaultSalesPrice,
+  toNetPrice,
   ORDER_TYPE_OFFER,
 } from "../mapping";
 import { toValidationError } from "../errors";
@@ -92,6 +93,55 @@ describe("mapVariationToProduct", () => {
 describe("pickDefaultSalesPrice", () => {
   it("returns undefined without prices", () => {
     expect(pickDefaultSalesPrice({ id: 1, itemId: 1 })).toBeUndefined();
+  });
+});
+
+describe("toNetPrice", () => {
+  it("keeps the price untouched when it is already net", () => {
+    expect(toNetPrice(100, false)).toBe(100);
+    expect(toNetPrice(100, false, 19)).toBe(100);
+  });
+
+  it("converts gross to net with 19 % by default", () => {
+    expect(toNetPrice(119, true)).toBe(100);
+    expect(toNetPrice(11.9, true)).toBe(10);
+  });
+
+  it("uses the configured rate", () => {
+    expect(toNetPrice(107, true, 7)).toBe(100);
+    expect(toNetPrice(100, true, 0)).toBe(100);
+  });
+
+  it("falls back to 19 % for implausible rates", () => {
+    for (const rate of [-5, 100, 250, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(toNetPrice(119, true, rate)).toBe(100);
+    }
+  });
+
+  it("rounds to two decimals so the quote totals add up", () => {
+    expect(toNetPrice(9.99, true)).toBe(8.39);
+  });
+
+  it("passes through a missing price", () => {
+    expect(toNetPrice(undefined, true)).toBeUndefined();
+  });
+});
+
+describe("mapVariationToProduct price handling", () => {
+  const variation = {
+    id: 5,
+    itemId: 42,
+    name: "Testartikel",
+    variationSalesPrices: [{ salesPriceId: 1, price: 119 }],
+  };
+
+  it("takes the price as net by default", () => {
+    expect(mapVariationToProduct(variation, TENANT).basePrice).toBe(119);
+  });
+
+  it("converts to net when the price is marked gross", () => {
+    expect(mapVariationToProduct(variation, TENANT, { salesPriceIsGross: true }).basePrice).toBe(100);
+    expect(mapVariationToProduct(variation, TENANT, { salesPriceIsGross: true, vatRate: 7 }).basePrice).toBe(111.21);
   });
 });
 

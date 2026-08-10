@@ -335,6 +335,10 @@ interface ConnectorFormState {
   plentyReferrerId: string;
   /** Verkaufspreis-ID aus Plenty, die im Angebot verwendet wird (leer = niedrigste ID). */
   plentySalesPriceId: string;
+  /** Ist der gewählte Verkaufspreis brutto? Dann wird er fürs Angebot in netto umgerechnet. */
+  plentySalesPriceIsGross: boolean;
+  /** Steuersatz in Prozent für die Brutto→Netto-Umrechnung (leer = 19). */
+  plentyVatRate: string;
 }
 
 const DEFAULTS: ConnectorFormState = {
@@ -345,6 +349,7 @@ const DEFAULTS: ConnectorFormState = {
   epTasks: "/tasks", epAppointments: "/appointments", epNotes: "/notes",
   searchParam: "q",
   plentyId: "", plentyWarehouseId: "", plentyCurrency: "EUR", plentyReferrerId: "", plentySalesPriceId: "",
+  plentySalesPriceIsGross: false, plentyVatRate: "",
 };
 
 function ConnectorSettings() {
@@ -386,6 +391,8 @@ function ConnectorSettings() {
         plentyCurrency: String(cfg?.["defaultCurrency"] ?? "EUR"),
         plentyReferrerId: cfg?.["defaultReferrerId"] != null ? String(cfg["defaultReferrerId"]) : "",
         plentySalesPriceId: cfg?.["salesPriceId"] != null ? String(cfg["salesPriceId"]) : "",
+        plentySalesPriceIsGross: Boolean(cfg?.["salesPriceIsGross"] ?? false),
+        plentyVatRate: cfg?.["vatRate"] != null ? String(cfg["vatRate"]) : "",
       });
       return d;
     },
@@ -408,6 +415,8 @@ function ConnectorSettings() {
         defaultCurrency: f.plentyCurrency || "EUR",
         ...(f.plentyReferrerId ? { defaultReferrerId: Number(f.plentyReferrerId) } : {}),
         ...(f.plentySalesPriceId ? { salesPriceId: Number(f.plentySalesPriceId) } : {}),
+        salesPriceIsGross: f.plentySalesPriceIsGross,
+        ...(f.plentyVatRate ? { vatRate: Number(f.plentyVatRate) } : {}),
       } : {
         baseUrl: f.baseUrl,
         searchParam: f.searchParam || "q",
@@ -546,6 +555,38 @@ function ConnectorSettings() {
                       ersatzweise dieser Standardpreis genommen.
                     </p>
                   </div>
+                  <div className="space-y-1.5 col-span-2">
+                    <label className="flex items-start gap-2.5 rounded-md border border-border p-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.plentySalesPriceIsGross}
+                        onChange={(e) => set("plentySalesPriceIsGross", e.target.checked)}
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                      />
+                      <span className="text-xs">
+                        <span className="font-medium text-foreground">Dieser Preis ist ein Bruttopreis</span>
+                        <span className="block text-muted-foreground">
+                          Im Angebot stehen immer Nettopreise. Ist der gewählte Verkaufspreis in Plenty
+                          brutto gepflegt, wird er hiermit umgerechnet. Aus lassen, wenn der Preis
+                          bereits netto ist – dann wird er unverändert übernommen.
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                  {form.plentySalesPriceIsGross && (
+                    <div className="space-y-1.5 col-span-2">
+                      <label className="text-xs font-medium text-muted-foreground">Steuersatz in % (optional)</label>
+                      <Input
+                        value={form.plentyVatRate}
+                        onChange={(e) => set("plentyVatRate", e.target.value)}
+                        placeholder="19"
+                        className="font-mono text-sm"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Wird für die Umrechnung brutto → netto verwendet. Leer = 19 %.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </>
             )}
