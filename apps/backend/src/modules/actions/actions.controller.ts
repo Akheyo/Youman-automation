@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards, HttpCode, HttpStatus } from "@nestjs/common";
+import { Controller, Post, Get, Body, Query, UseGuards, HttpCode, HttpStatus } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 import { ActionsService } from "./actions.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
@@ -17,6 +17,24 @@ export class ActionsController {
   @Get("definitions")
   getDefinitions(@CurrentUser() user: JwtUser) {
     return this.actionsService.getActionDefinitions(user.tenantId);
+  }
+
+  /**
+   * Verlauf der ausgeführten Aktionen, neueste zuerst. Ohne `actionId` kommen
+   * alle Aktionen, mit z.B. `?actionId=action-create-quote` nur die Angebote.
+   */
+  @Get("history")
+  getHistory(
+    @CurrentUser() user: JwtUser,
+    @Query("actionId") actionId?: string,
+    @Query("page") page?: string,
+    @Query("pageSize") pageSize?: string
+  ) {
+    return this.actionsService.getHistory(user.tenantId, {
+      ...(actionId ? { actionId } : {}),
+      ...(page ? { page: Number(page) } : {}),
+      ...(pageSize ? { pageSize: Number(pageSize) } : {}),
+    });
   }
 
   @Post("execute")

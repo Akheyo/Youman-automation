@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
-  LayoutDashboard, Clock, FileText, Shield, Settings,
+  LayoutDashboard, Clock, FileText, FileStack, Shield, Settings,
   LogOut, Wifi, WifiOff, Loader2, Download, RefreshCw
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
@@ -16,6 +16,7 @@ import { API_CONTRACT_VERSION } from "@youman/shared";
 
 const NAV_ITEMS = [
   { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/history", icon: FileStack, label: "Angebote" },
   { to: "/queue", icon: Clock, label: "Warteschlange" },
   { to: "/audit", icon: FileText, label: "Protokoll" },
   { to: "/admin", icon: Settings, label: "Administration" },

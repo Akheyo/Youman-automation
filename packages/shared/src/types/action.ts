@@ -176,6 +176,34 @@ export interface ExecutionDocumentInfo {
   hint?: string;
 }
 
+/**
+ * Ein Eintrag im Verlauf der ausgeführten Aktionen.
+ *
+ * Die Felder `referenceNumber`, `customerName` und `totalNet` sind aus
+ * Nutzlast und Ergebnis der Ausführung gezogen, damit der Verlauf ohne
+ * Nachladen lesbar ist. Sie fehlen, wenn die Aktion sie nicht liefert –
+ * etwa bei fehlgeschlagenen Ausführungen.
+ */
+export interface ActionHistoryEntry {
+  id: string;
+  actionId: string;
+  actionName: string;
+  status: "pending" | "running" | "success" | "failed" | "cancelled";
+  executedAt: string;
+  durationMs: number | null;
+  error: string | null;
+  /** Angebots- bzw. Belegnummer, sofern die Aktion eine erzeugt hat. */
+  referenceNumber: string | null;
+  customerName: string | null;
+  /** Nettosumme der Positionen, in der Währung der Ausführung. */
+  totalNet: number | null;
+  currency: string | null;
+  positionCount: number | null;
+  userName: string;
+  /** Vorhanden, wenn sich das Dokument erneut erzeugen lässt. */
+  document: ExecutionDocumentInfo | null;
+}
+
 export interface ActionDefinition {
   id: string;
   tenantId: string | null;

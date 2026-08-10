@@ -3,6 +3,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { LoginScreen } from "./components/screens/LoginScreen";
 import { DashboardScreen } from "./components/screens/DashboardScreen";
 import { ActionScreen } from "./components/screens/ActionScreen";
+import { HistoryScreen } from "./components/screens/HistoryScreen";
 import { QueueScreen } from "./components/screens/QueueScreen";
 import { AuditScreen } from "./components/screens/AuditScreen";
 import { AdminScreen } from "./components/screens/AdminScreen";
@@ -32,6 +33,7 @@ export function createAppRouter(): ReturnType<typeof createHashRouter> {
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: bounded("Dashboard", <DashboardScreen />) },
       { path: "action/:actionId", element: bounded("Aktionsformular", <ActionScreen />) },
+      { path: "history", element: bounded("Angebote", <HistoryScreen />) },
       { path: "queue", element: bounded("Warteschlange", <QueueScreen />) },
       { path: "audit", element: bounded("Protokoll", <AuditScreen />) },
       { path: "admin", element: bounded("Administration", <AdminScreen />) },

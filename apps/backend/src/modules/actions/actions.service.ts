@@ -9,6 +9,7 @@ import { resolveFieldMapping } from "../templates/document-mapper";
 import { formatGermanNumber } from "../templates/formatters";
 import { QUOTE_TEXT_DEFAULTS } from "@youman/shared";
 import type {
+  ActionHistoryEntry,
   ActionExecutionRequest,
   ActionExecution,
   ActionDefinition,
@@ -135,6 +136,43 @@ export class ActionsService {
         `Idempotenz-Ergebnis konnte nicht gespeichert werden (key=${req.idempotencyKey}): ${err instanceof Error ? err.message : err}`
       );
     }
+  }
+
+  /**
+   * Verlauf der ausgeführten Aktionen eines Mandanten, neueste zuerst.
+   *
+   * Liest die ohnehin protokollierten ActionExecutions – der Verlauf ist damit
+   * immer vollständig und braucht keine zweite Datenhaltung. Mit `actionId`
+   * lässt sich auf eine Aktion einschränken, z.B. nur Angebote.
+   */
+  async getHistory(
+    tenantId: string,
+    opts: { actionId?: string; page?: number; pageSize?: number } = {}
+  ): Promise<{ items: ActionHistoryEntry[]; total: number; page: number; totalPages: number }> {
+    const page = Math.max(1, Math.trunc(opts.page ?? 1));
+    const pageSize = Math.min(100, Math.max(1, Math.trunc(opts.pageSize ?? 25)));
+    const where = {
+      tenantId,
+      ...(opts.actionId ? { actionId: opts.actionId } : {}),
+    };
+
+    const [total, rows] = await Promise.all([
+      this.prisma.actionExecution.count({ where }),
+      this.prisma.actionExecution.findMany({
+        where,
+        orderBy: { executedAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: { user: { select: { firstName: true, lastName: true, email: true } } },
+      }),
+    ]);
+
+    return {
+      items: rows.map((row) => toHistoryEntry(row)),
+      total,
+      page,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    };
   }
 
   private async releaseIdempotencyKey(req: ActionExecutionRequest): Promise<void> {
@@ -647,4 +685,81 @@ export class ActionsService {
     });
     return defs.map((d) => d.configJson);
   }
+}
+
+/** Rohdaten einer Ausführung, wie sie aus Prisma kommen. */
+interface ExecutionRow {
+  id: string;
+  actionId: string;
+  actionName: string;
+  status: string;
+  executedAt: Date;
+  durationMs: number | null;
+  error: string | null;
+  payload: unknown;
+  result: unknown;
+  user: { firstName: string | null; lastName: string | null; email: string } | null;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asNumber(value: unknown): number | null {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Verdichtet eine Ausführung auf die Angaben, die im Verlauf sichtbar sind.
+ *
+ * Die Nettosumme wird aus den Positionen der Nutzlast neu gerechnet statt aus
+ * dem Ergebnis gelesen: Das Ergebnis enthält je nach Aktion keine Summe, die
+ * Positionen aber immer. Rabatte werden dabei wie bei der Angebotserstellung
+ * berücksichtigt.
+ */
+export function toHistoryEntry(row: ExecutionRow): ActionHistoryEntry {
+  const payload = asRecord(row.payload);
+  const result = asRecord(row.result);
+  const lineItems = Array.isArray(payload["lineItems"]) ? (payload["lineItems"] as unknown[]) : [];
+
+  let totalNet: number | null = null;
+  if (lineItems.length > 0) {
+    const sum = lineItems.reduce<number>((acc, raw) => {
+      const item = asRecord(raw);
+      const qty = asNumber(item["quantity"]) ?? 0;
+      const price = asNumber(item["pricePerUnit"]) ?? 0;
+      const discount = asNumber(item["discount"]) ?? 0;
+      return acc + qty * price * (1 - discount / 100);
+    }, 0);
+    totalNet = Math.round(sum * 100) / 100;
+  }
+
+  const document = asRecord(result["document"]);
+  const user = row.user;
+  const userName =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || user?.email || "–";
+
+  return {
+    id: row.id,
+    actionId: row.actionId,
+    actionName: row.actionName,
+    status: row.status.toLowerCase() as ActionHistoryEntry["status"],
+    executedAt: row.executedAt.toISOString(),
+    durationMs: row.durationMs,
+    error: row.error,
+    referenceNumber:
+      (result["erpQuoteNumber"] as string | undefined) ??
+      (result["erpOrderNumber"] as string | undefined) ??
+      (result["erpCustomerNumber"] as string | undefined) ??
+      null,
+    customerName: (payload["customerName"] as string | undefined) ?? null,
+    totalNet,
+    currency: (payload["currency"] as string | undefined) ?? null,
+    positionCount: lineItems.length > 0 ? lineItems.length : null,
+    userName,
+    document: "templateId" in document ? (document as unknown as ActionHistoryEntry["document"]) : null,
+  };
 }
