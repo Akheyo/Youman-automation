@@ -49,9 +49,16 @@ export function mapContactToCustomer(contact: PlentyContact, tenantId: string): 
   const phone = phoneOptions.find((o) => o.subTypeId !== CONTACT_OPTION_SUBTYPE_MOBILE)?.value;
   const mobile = phoneOptions.find((o) => o.subTypeId === CONTACT_OPTION_SUBTYPE_MOBILE)?.value;
 
-  const name =
+  const personName =
     contact.fullName ??
     [contact.firstName, contact.lastName].filter(Boolean).join(" ").trim();
+
+  // Der Plenty-KONTAKT hat kein Firmenfeld – firstName/lastName sind bei einer
+  // Firma der Ansprechpartner. Der Firmenname steht in der Rechnungsadresse
+  // als name1 (so schreibt ihn auch buildPlentyNames beim Anlegen). Ohne das
+  // stünde auf dem Angebot der Privatname statt der Firma.
+  const company = companyNameFrom(contact.addresses ?? []);
+  const name = company || personName;
 
   return {
     id: String(contact.id),
@@ -59,6 +66,9 @@ export function mapContactToCustomer(contact: PlentyContact, tenantId: string): 
     tenantId,
     customerNumber: contact.number ?? String(contact.id),
     name: name || `Kontakt ${contact.id}`,
+    ...(company ? { isCompany: true } : {}),
+    ...(contact.firstName ? { firstName: contact.firstName } : {}),
+    ...(contact.lastName ? { lastName: contact.lastName } : {}),
     ...(email ? { email } : {}),
     ...(phone ? { phone } : {}),
     ...(mobile ? { mobile } : {}),
@@ -69,6 +79,23 @@ export function mapContactToCustomer(contact: PlentyContact, tenantId: string): 
     createdAt: contact.createdAt ?? new Date().toISOString(),
     updatedAt: contact.updatedAt ?? new Date().toISOString(),
   };
+}
+
+/**
+ * Firmenname eines Kontakts, sofern vorhanden.
+ *
+ * Bevorzugt die Standard-Rechnungsadresse, dann irgendeine Rechnungsadresse,
+ * dann die erste Adresse überhaupt – Plenty pflegt den Firmennamen dort als
+ * name1. Adressen ohne name1 (Privatpersonen: Name steht in name2/name3)
+ * liefern nichts zurück.
+ */
+export function companyNameFrom(addresses: PlentyAddress[]): string {
+  const billing = addresses.filter((a) => a.pivot?.typeId !== ADDRESS_TYPE_SHIPPING);
+  const candidate =
+    billing.find((a) => a.isDefault && a.name1) ??
+    billing.find((a) => a.name1) ??
+    addresses.find((a) => a.name1);
+  return candidate?.name1?.trim() ?? "";
 }
 
 export function mapPlentyAddress(addr: PlentyAddress): Address {

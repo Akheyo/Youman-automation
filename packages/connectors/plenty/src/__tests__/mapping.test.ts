@@ -7,6 +7,7 @@ import {
   mapPlentyAddress,
   mapVariationToProduct,
   pickDefaultSalesPrice,
+  companyNameFrom,
   toNetPrice,
   ORDER_TYPE_OFFER,
 } from "../mapping";
@@ -93,6 +94,53 @@ describe("mapVariationToProduct", () => {
 describe("pickDefaultSalesPrice", () => {
   it("returns undefined without prices", () => {
     expect(pickDefaultSalesPrice({ id: 1, itemId: 1 })).toBeUndefined();
+  });
+});
+
+describe("company name from the billing address", () => {
+  // Der Plenty-Kontakt hat kein Firmenfeld: firstName/lastName sind bei einer
+  // Firma der Ansprechpartner, der Firmenname steht als name1 in der Adresse.
+  const contact = {
+    id: 4711,
+    firstName: "Max",
+    lastName: "Mustermann",
+    fullName: "Max Mustermann",
+    addresses: [
+      { id: 1, name1: "Tesla Germany GmbH", address1: "Tesla-Straße", address2: "1", postalCode: "14641", town: "Grünheide", isDefault: true, pivot: { typeId: 1 } },
+    ],
+  };
+
+  it("uses the company for the customer name, not the contact person", () => {
+    const customer = mapContactToCustomer(contact, TENANT);
+    expect(customer.name).toBe("Tesla Germany GmbH");
+    expect(customer.isCompany).toBe(true);
+    // Die Person bleibt erhalten – sie ist der Ansprechpartner beim Kunden.
+    expect(customer.firstName).toBe("Max");
+    expect(customer.lastName).toBe("Mustermann");
+  });
+
+  it("keeps the person's name when no company is set", () => {
+    const customer = mapContactToCustomer(
+      { ...contact, addresses: [{ id: 1, address1: "Musterweg", postalCode: "50667", town: "Köln", isDefault: true, pivot: { typeId: 1 } }] },
+      TENANT
+    );
+    expect(customer.name).toBe("Max Mustermann");
+    expect(customer.isCompany).toBeUndefined();
+  });
+
+  it("prefers the default billing address over shipping", () => {
+    expect(
+      companyNameFrom([
+        { id: 2, name1: "Falsche Firma – Lager", isDefault: false, pivot: { typeId: 2 } },
+        { id: 1, name1: "Tesla Germany GmbH", isDefault: true, pivot: { typeId: 1 } },
+      ])
+    ).toBe("Tesla Germany GmbH");
+  });
+
+  it("falls back to any address carrying a company", () => {
+    expect(companyNameFrom([{ id: 2, name1: "Nur Lieferadresse", pivot: { typeId: 2 } }])).toBe("Nur Lieferadresse");
+    expect(companyNameFrom([])).toBe("");
+    expect(companyNameFrom([{ id: 3, name1: "   " }])).toBe("");
   });
 });
 
