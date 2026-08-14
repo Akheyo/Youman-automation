@@ -28,7 +28,7 @@ EMPFAENGER = "Info@youman-automation.com"
 
 # Plain-Text-Fassung. Bewusst von Hand gepflegt statt aus dem HTML generiert -
 # im Text traegt die Struktur der Zeilenumbruch, nicht das Markup.
-PLAIN = """Guten Tag Frau Berger,
+PLAIN = """Guten Tag {{anrede}},
 
 viele Produktionsunternehmen arbeiten heute mit soliden ERP- oder
 SAP-Systemen, und trotzdem laufen einzelne operative Prozesse im Alltag noch
@@ -89,6 +89,7 @@ def main() -> None:
     builder = load_builder()
 
     html = builder.fill(builder.variant(SOURCE.read_text(encoding="utf-8"), "ind"))
+    plain = builder.fill(PLAIN)
     subject = re.search(r"<title>(.*?)</title>", html, re.S).group(1).strip()
 
     msg = EmailMessage()
@@ -97,7 +98,7 @@ def main() -> None:
     msg["To"] = empfaenger
     msg["Date"] = formatdate(localtime=True)
     msg["Message-ID"] = make_msgid(domain="adeptandpartners.de")
-    msg.set_content(PLAIN)
+    msg.set_content(plain)
     msg.add_alternative(html, subtype="html")
 
     TARGET.write_bytes(msg.as_bytes())
