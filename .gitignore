@@ -46,3 +46,5 @@ scripts/lod2-pipeline/__pycache__/
 
 # generiert von scripts/build-mail-preview.py
 marketing/preview-cold-email-adept.html
+marketing/test-cold-email-adept.eml
+__pycache__/
