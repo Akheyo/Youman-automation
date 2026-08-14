@@ -58,6 +58,8 @@
     .t-strong { color:#FFFFFF !important; }
     .rule    { border-color:#3A342C !important; }
     .rule-v  { background-color:#3A342C !important; }
+    .logo-hell   { display:none !important; }
+    .logo-invers { display:block !important; }
     .btn     { background-color:#EDE7E0 !important; }
     .btn a   { color:#221E19 !important; }
     .link    { color:#C9BFB4 !important; }
@@ -86,14 +88,25 @@
       <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
 
         <!-- ===================== LOGO =====================
-             Wortmarke als Bild. Falls der Empfaenger Bilder blockiert, traegt der
-             alt-Text die Marke - deshalb steht dort die Wortmarke und nicht "Logo".
+             Zwei Dateien, weil eine dunkle Wortmarke auf dunklem Grund verschwindet:
+             adept-logo@2x.png (Marke in #574F4B) fuer helle Clients,
+             adept-logo-invers@2x.png (Marke in #EDE7E0) fuer Dark Mode.
+
+             Beide liegen in marketing/assets/ und muessen unter den unten
+             eingetragenen URLs erreichbar sein. Clients ohne Dark-Mode-Support
+             (u.a. Gmail) ignorieren die Media Query und zeigen die helle Fassung -
+             deshalb steht display:none inline bei der inversen.
+
+             Bei blockierten Bildern traegt der alt-Text die Marke, gesetzt in der
+             Marken-Typografie.
         ================================================== -->
         <tr>
           <td class="px" style="padding:0 44px 26px 44px;">
             <a href="https://www.adeptandpartners.de" target="_blank" style="text-decoration:none;">
-              <img src="https://www.adeptandpartners.de/logo.png" width="140" alt="adept&amp;"
-                   style="display:block; width:140px; max-width:140px; height:auto; border:0; font-family:Arial, Helvetica, sans-serif; font-size:26px; font-weight:bold; letter-spacing:-0.03em; color:#574F4B; text-decoration:none;" />
+              <img class="logo-hell" src="https://www.adeptandpartners.de/mail/adept-logo@2x.png" width="150" height="45" alt="adept&amp;"
+                   style="display:block; width:150px; max-width:150px; height:auto; border:0; font-family:Arial, Helvetica, sans-serif; font-size:26px; font-weight:bold; letter-spacing:-0.03em; color:#574F4B; text-decoration:none;" />
+              <img class="logo-invers" src="https://www.adeptandpartners.de/mail/adept-logo-invers@2x.png" width="150" height="45" alt="adept&amp;"
+                   style="display:none; width:150px; max-width:150px; height:auto; border:0; font-family:Arial, Helvetica, sans-serif; font-size:26px; font-weight:bold; letter-spacing:-0.03em; color:#EDE7E0; text-decoration:none;" />
             </a>
             <div class="t-muted" style="padding-top:10px; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; font-weight:400; letter-spacing:0.09em; text-transform:uppercase; color:#8A837F;">Beratung. Software. Integration.</div>
           </td>

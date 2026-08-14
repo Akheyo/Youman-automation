@@ -16,6 +16,7 @@ beide Fassungen in Desktop/Mobil und Hell/Dunkel zeigt.
 
 from __future__ import annotations
 
+import base64
 import json
 import re
 from pathlib import Path
@@ -38,15 +39,20 @@ DEMO = {
     "aufhaenger": "Ihr Beitrag zur neuen Fertigungslinie in Ense",
 }
 
-# Das echte Logo liegt auf adeptandpartners.de. Die Vorschau laeuft unter einer
-# CSP, die externe Hosts blockt - deshalb steht dort ein Platzhalter in der
-# Wortmarke. In der verschickten Mail wird das echte PNG geladen.
-PREVIEW_LOGO = (
-    "data:image/svg+xml;utf8,"
-    "%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='44' viewBox='0 0 140 44'%3E"
-    "%3Ctext x='0' y='32' font-family='Helvetica,Arial,sans-serif' font-size='34' "
-    "font-weight='bold' letter-spacing='-1.2' fill='%23574F4B'%3Eadept%26amp;%3C/text%3E%3C/svg%3E"
-)
+# Die Vorschau laeuft unter einer CSP, die externe Hosts blockt. Die beiden
+# Logo-Dateien werden deshalb aus marketing/assets/ als data-URI eingebettet.
+LOGOS = {
+    "https://www.adeptandpartners.de/mail/adept-logo@2x.png": ROOT / "marketing" / "assets" / "adept-logo@2x.png",
+    "https://www.adeptandpartners.de/mail/adept-logo-invers@2x.png": ROOT / "marketing" / "assets" / "adept-logo-invers@2x.png",
+}
+
+
+def inline_logos(html: str) -> str:
+    for url, path in LOGOS.items():
+        data = base64.b64encode(path.read_bytes()).decode("ascii")
+        html = html.replace(url, f"data:image/png;base64,{data}")
+    return html
+
 
 # Meldet die Hoehe an die Vorschau-Seite. Steckt nur in der Vorschau-Kopie,
 # nie in der Mail, die verschickt wird.
@@ -113,7 +119,7 @@ def main() -> None:
             "bytes": len(mail.encode("utf-8")),
         }
         preview = fill(mail).replace("</body>", HEIGHT_REPORTER + "</body>")
-        preview = preview.replace("https://www.adeptandpartners.de/logo.png", PREVIEW_LOGO)
+        preview = inline_logos(preview)
         frames[f"{key}-hell"] = preview
         frames[f"{key}-dunkel"] = force_dark(preview)
 
