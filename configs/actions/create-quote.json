@@ -101,6 +101,7 @@
             "pageSize": 20
           }
         },
+        { "key": "designation", "label": "Bezeichnung", "type": "text", "required": false, "width": 260 },
         { "key": "quantity", "label": "Menge", "type": "number", "required": true, "width": 90 },
         { "key": "unit", "label": "Einheit", "type": "text", "required": false, "width": 70 },
         { "key": "pricePerUnit", "label": "Einzelpreis", "type": "number", "required": true, "width": 110 },
