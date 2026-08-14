@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { CheckCircle2, Clock, Download, FileText, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, Copy, Download, FileText, Loader2, XCircle } from "lucide-react";
 import { apiClient, getApiError } from "@/services/api";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/useToast";
@@ -88,6 +89,49 @@ function DownloadButtons({ entry }: { entry: ActionHistoryEntry }) {
   );
 }
 
+/**
+ * Übernimmt ein früheres Angebot als Ausgangspunkt für ein neues.
+ *
+ * Es wird bewusst nichts überschrieben: Das alte Angebot bleibt im Verlauf
+ * stehen, die Übernahme öffnet nur das Formular mit denselben Werten. Beim
+ * Speichern entsteht ein neuer Vorgang mit neuer Angebotsnummer.
+ */
+function ReuseButton({ entry }: { entry: ActionHistoryEntry }) {
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+
+  const handle = async () => {
+    setBusy(true);
+    try {
+      const res = await apiClient.get<{ actionId: string; payload: Record<string, unknown> }>(
+        `/actions/history/${entry.id}`
+      );
+      const { actionId, payload } = res.data as unknown as {
+        actionId: string;
+        payload: Record<string, unknown>;
+      };
+      navigate(`/action/${actionId}`, { state: { prefill: payload } });
+    } catch (err) {
+      toast({ title: "Übernehmen fehlgeschlagen", description: getApiError(err), variant: "error" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => void handle()}
+      disabled={busy}
+      title="Als Grundlage für ein neues Angebot öffnen"
+      className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-secondary disabled:opacity-50"
+    >
+      {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Copy className="h-3 w-3" />}
+      Übernehmen
+    </button>
+  );
+}
+
 export function HistoryScreen() {
   const [page, setPage] = useState(1);
 
@@ -131,6 +175,7 @@ export function HistoryScreen() {
                 <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wide">Pos.</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Bearbeiter</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Dokument</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Weiterarbeiten</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -167,6 +212,9 @@ export function HistoryScreen() {
                       ) : (
                         <DownloadButtons entry={entry} />
                       )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <ReuseButton entry={entry} />
                     </td>
                   </tr>
                 );

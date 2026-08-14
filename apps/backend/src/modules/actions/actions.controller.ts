@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Query, UseGuards, HttpCode, HttpStatus } from "@nestjs/common";
+import { Controller, Post, Get, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 import { ActionsService } from "./actions.service";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
@@ -35,6 +35,12 @@ export class ActionsController {
       ...(page ? { page: Number(page) } : {}),
       ...(pageSize ? { pageSize: Number(pageSize) } : {}),
     });
+  }
+
+  /** Nutzlast eines Vorgangs – Grundlage, um ihn als neuen Vorgang zu übernehmen. */
+  @Get("history/:id")
+  getExecutionPayload(@CurrentUser() user: JwtUser, @Param("id") id: string) {
+    return this.actionsService.getExecutionPayload(user.tenantId, id);
   }
 
   @Post("execute")

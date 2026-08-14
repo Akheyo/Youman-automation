@@ -175,6 +175,25 @@ export class ActionsService {
     };
   }
 
+  /**
+   * Nutzlast einer Ausführung, um sie als Vorlage für eine neue zu übernehmen.
+   *
+   * Bewusst ein eigener Aufruf statt eines Feldes in der Verlaufsliste: Die
+   * Nutzlast enthält alle Positionen und wird nur gebraucht, wenn jemand
+   * tatsächlich weiterarbeitet.
+   */
+  async getExecutionPayload(
+    tenantId: string,
+    id: string
+  ): Promise<{ id: string; actionId: string; payload: unknown }> {
+    const row = await this.prisma.actionExecution.findFirst({
+      where: { id, tenantId },
+      select: { id: true, actionId: true, payload: true },
+    });
+    if (!row) throw new BadRequestException("Vorgang nicht gefunden");
+    return row;
+  }
+
   private async releaseIdempotencyKey(req: ActionExecutionRequest): Promise<void> {
     await this.prisma.idempotencyKey.delete({
       where: { tenantId_key: { tenantId: req.tenantId, key: req.idempotencyKey! } },

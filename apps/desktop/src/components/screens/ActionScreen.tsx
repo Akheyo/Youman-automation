@@ -1,4 +1,4 @@
-import { useParams, useNavigate, useBlocker } from "react-router-dom";
+import { useParams, useNavigate, useLocation, useBlocker } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, Download, FileText, Info, Loader2, Trash2, WifiOff } from "lucide-react";
@@ -75,6 +75,12 @@ interface SuccessState {
 export function ActionScreen() {
   const { actionId } = useParams<{ actionId: string }>();
   const navigate = useNavigate();
+  // Aus dem Angebotsverlauf übernommene Werte ("noch einmal wie dieses").
+  // Kommen über die Navigation statt über den Entwurfsspeicher, damit sie den
+  // laufenden Entwurf nicht überschreiben und eine FRISCHE Idempotenz-ID
+  // bekommen – sonst würde das Backend die Wiederholung als Doppel-Absenden
+  // erkennen und dasselbe Angebot samt alter Nummer zurückgeben.
+  const prefill = (useLocation().state as { prefill?: Record<string, unknown> } | null)?.prefill;
   const { isOnline } = useOfflineStore();
   const { user } = useAuthStore();
   const [successState, setSuccessState] = useState<SuccessState | null>(null);
@@ -115,6 +121,16 @@ export function ActionScreen() {
   useEffect(() => {
     if (!action || draftRestoredRef.current) return;
     draftRestoredRef.current = true;
+    if (prefill) {
+      methods.reset({ ...initialValues, ...prefill });
+      idempotencyKeyRef.current = null;
+      toast({
+        title: "Angebot übernommen",
+        description: "Die Positionen wurden übernommen. Beim Speichern entsteht eine neue Angebotsnummer.",
+        variant: "info",
+      });
+      return;
+    }
     const draft = loadDraft(action.id);
     if (draft) {
       methods.reset({ ...initialValues, ...draft.values });
