@@ -36,22 +36,17 @@ DEMO = {
     "vorname": "Frau Berger",
     "firma": "Meridian Fertigung",
     "aufhaenger": "Ihr Beitrag zur neuen Fertigungslinie in Ense",
-    "absender": "Jonas Kremer",
-    "position": "Geschäftsführer",
-    "telefon": "+49 231 99 84 41 0",
-    "telefon_e164": "+492319984410",
-    "abmelde_link": "#",
-    "website": "#",
-    "website_text": "adept-und.de",
-    "datenschutz_link": "#",
-    "firmierung": "adept& GmbH",
-    "strasse": "Musterstraße 1",
-    "plz_ort": "44135 Dortmund",
-    "vertretung": "Jonas Kremer",
-    "registergericht": "Amtsgericht Dortmund",
-    "hrb": "HRB 00000",
-    "ust_id": "DE000000000",
 }
+
+# Das echte Logo liegt auf adeptandpartners.de. Die Vorschau laeuft unter einer
+# CSP, die externe Hosts blockt - deshalb steht dort ein Platzhalter in der
+# Wortmarke. In der verschickten Mail wird das echte PNG geladen.
+PREVIEW_LOGO = (
+    "data:image/svg+xml;utf8,"
+    "%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='44' viewBox='0 0 140 44'%3E"
+    "%3Ctext x='0' y='32' font-family='Helvetica,Arial,sans-serif' font-size='34' "
+    "font-weight='bold' letter-spacing='-1.2' fill='%23574F4B'%3Eadept%26amp;%3C/text%3E%3C/svg%3E"
+)
 
 # Meldet die Hoehe an die Vorschau-Seite. Steckt nur in der Vorschau-Kopie,
 # nie in der Mail, die verschickt wird.
@@ -118,6 +113,7 @@ def main() -> None:
             "bytes": len(mail.encode("utf-8")),
         }
         preview = fill(mail).replace("</body>", HEIGHT_REPORTER + "</body>")
+        preview = preview.replace("https://www.adeptandpartners.de/logo.png", PREVIEW_LOGO)
         frames[f"{key}-hell"] = preview
         frames[f"{key}-dunkel"] = force_dark(preview)
 

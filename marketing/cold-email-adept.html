@@ -57,6 +57,7 @@
     .t-logo  { color:#EDE7E0 !important; }
     .t-strong { color:#FFFFFF !important; }
     .rule    { border-color:#3A342C !important; }
+    .rule-v  { background-color:#3A342C !important; }
     .btn     { background-color:#EDE7E0 !important; }
     .btn a   { color:#221E19 !important; }
     .link    { color:#C9BFB4 !important; }
@@ -85,36 +86,34 @@
       <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
 
         <!-- ===================== LOGO =====================
-             Wortmarke als Text: kein Bild-Blocker, kein Nachladen, gestochen scharf
-             auf Retina. Sobald eine gehostete PNG-Datei existiert (2x, ~360x110 px,
-             transparent), stattdessen den auskommentierten Block darunter nutzen.
+             Wortmarke als Bild. Falls der Empfaenger Bilder blockiert, traegt der
+             alt-Text die Marke - deshalb steht dort die Wortmarke und nicht "Logo".
         ================================================== -->
         <tr>
           <td class="px" style="padding:0 44px 26px 44px;">
-            <div class="logo t-logo" style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:31px; line-height:38px; font-weight:600; letter-spacing:-0.035em; color:#574D49;">adept&amp;</div>
-            <div class="t-muted" style="padding-top:7px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:12px; line-height:18px; font-weight:400; letter-spacing:0.09em; text-transform:uppercase; color:#8A817C;">Beratung. Software. Integration.</div>
-            <!--
-            <img src="https://adept-und.de/mail/adept-logo@2x.png" width="150" height="46" alt="adept&amp;"
-                 style="display:block; width:150px; max-width:150px; height:auto; border:0;" />
-            -->
+            <a href="https://www.adeptandpartners.de" target="_blank" style="text-decoration:none;">
+              <img src="https://www.adeptandpartners.de/logo.png" width="140" alt="adept&amp;"
+                   style="display:block; width:140px; max-width:140px; height:auto; border:0; font-family:Arial, Helvetica, sans-serif; font-size:26px; font-weight:bold; letter-spacing:-0.03em; color:#574F4B; text-decoration:none;" />
+            </a>
+            <div class="t-muted" style="padding-top:10px; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; font-weight:400; letter-spacing:0.09em; text-transform:uppercase; color:#8A837F;">Beratung. Software. Integration.</div>
           </td>
         </tr>
 
         <!-- ===================== KARTE ===================== -->
         <tr>
-          <td class="bg-card" style="background-color:#FFFFFF; border-radius:4px; border:1px solid #E7E2DC;">
+          <td class="bg-card" style="background-color:#FFFFFF; border-radius:4px; border:1px solid #DCD8D5;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 
               <tr>
                 <td class="px" style="padding:40px 44px 0 44px;">
-                  <h1 class="h1 t-head" style="margin:0; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:23px; line-height:32px; font-weight:600; color:#2E2A28; letter-spacing:-0.012em;">
+                  <h1 class="h1 t-head" style="margin:0; font-family:Arial, Helvetica, sans-serif; font-size:23px; line-height:32px; font-weight:600; color:#574F4B; letter-spacing:-0.012em;">
                     Hallo {{vorname}},
                   </h1>
                 </td>
               </tr>
 
               <tr>
-                <td class="px t-body" style="padding:18px 44px 0 44px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; line-height:27px; color:#413B37;">
+                <td class="px t-body" style="padding:18px 44px 0 44px; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:27px; color:#3D3A38;">
                   <p style="margin:0 0 17px 0;">
                     {{aufhaenger}} &ndash; deshalb schreibe ich Ihnen.
                   </p>
@@ -128,7 +127,7 @@
                   </p>
                   <p style="margin:0 0 17px 0;">
                     Bei einem Gitterdraht-Hersteller waren es
-                    <strong class="t-strong" style="font-weight:600; color:#2E2A28;">2.556 verschiedene Palettentypen</strong>,
+                    <strong class="t-strong" style="font-weight:600; color:#574F4B;">2.556 verschiedene Palettentypen</strong>,
                     jede Kalkulation von Hand. Wir haben ein Modul gebaut, das die Auftragsdaten
                     per API aus dem ERP zieht, Standard- und Sonderpaletten automatisch klassifiziert
                     und die Variantenzahl massiv reduziert hat.
@@ -143,7 +142,7 @@
                   </p>
                   <p style="margin:0 0 17px 0;">
                     Wir bauen genau diese fehlende Schicht: eine Oberfl&auml;che, die per API auf Shop
-                    und ERP zugreift, <strong class="t-strong" style="font-weight:600; color:#2E2A28;">Auftr&auml;ge und Best&auml;nde in Echtzeit synchron h&auml;lt</strong>
+                    und ERP zugreift, <strong class="t-strong" style="font-weight:600; color:#574F4B;">Auftr&auml;ge und Best&auml;nde in Echtzeit synchron h&auml;lt</strong>
                     und die Regeln abbildet, die heute im Kopf einzelner Mitarbeiter stecken &ndash;
                     Priorisierung, Teillieferungen, Retourenlogik.
                   </p>
@@ -163,15 +162,15 @@
                       <td style="padding:20px 24px;">
                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td class="t-muted" style="padding:0 0 11px 0; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:11px; line-height:16px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#8A817C;">
+                            <td class="t-muted" style="padding:0 0 11px 0; font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:16px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#8A837F;">
                               Was wir machen
                             </td>
                           </tr>
                           <tr>
-                            <td class="t-body" style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:15px; line-height:25px; color:#413B37;">
+                            <td class="t-body" style="font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:25px; color:#3D3A38;">
                               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
-                                  <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A817C;">&#8212;</td>
+                                  <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A837F;">&#8212;</td>
                                   <!--@ind:start-->
                                   <td style="padding-left:8px; font-size:15px; line-height:25px;">Prozessberatung von der Produktionsplanung bis zur Logistik</td>
                                   <!--@ind:end-->
@@ -180,11 +179,11 @@
                                   @ecom:end-->
                                 </tr>
                                 <tr>
-                                  <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A817C;">&#8212;</td>
+                                  <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A837F;">&#8212;</td>
                                   <td style="padding-left:8px; font-size:15px; line-height:25px;">Ma&szlig;geschneiderte Software, eingebettet in adept&amp;</td>
                                 </tr>
                                 <tr>
-                                  <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A817C;">&#8212;</td>
+                                  <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A837F;">&#8212;</td>
                                   <!--@ind:start-->
                                   <td style="padding-left:8px; font-size:15px; line-height:25px;">Integration in SAP, Microsoft&nbsp;Dynamics, infor &amp; Co.</td>
                                   <!--@ind:end-->
@@ -193,7 +192,7 @@
                                   @ecom:end-->
                                 </tr>
                                 <tr>
-                                  <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A817C;">&#8212;</td>
+                                  <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A837F;">&#8212;</td>
                                   <td style="padding-left:8px; font-size:15px; line-height:25px;">Rollout im Betrieb, inklusive Schulung der Mitarbeiter</td>
                                 </tr>
                               </table>
@@ -207,14 +206,14 @@
                     <tr>
                       <td style="padding:0 24px 20px 24px;">
                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                          <tr><td class="rule" style="border-top:1px solid #E7E2DC; font-size:0; line-height:0; padding-bottom:14px;">&nbsp;</td></tr>
+                          <tr><td class="rule" style="border-top:1px solid #DCD8D5; font-size:0; line-height:0; padding-bottom:14px;">&nbsp;</td></tr>
                           <tr>
-                            <td class="t-muted" style="padding:0 0 7px 0; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:11px; line-height:16px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#8A817C;">
+                            <td class="t-muted" style="padding:0 0 7px 0; font-family:Arial, Helvetica, sans-serif; font-size:11px; line-height:16px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#8A837F;">
                               F&uuml;r wen
                             </td>
                           </tr>
                           <tr>
-                            <td class="t-body" style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:14px; line-height:23px; color:#413B37;">
+                            <td class="t-body" style="font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:23px; color:#3D3A38;">
                               Automobil &amp; Zulieferer &middot; Maschinenbau &amp; Fertigung &middot;
                               Logistik &amp; Supply&nbsp;Chain &middot; Chemie &amp; Prozessindustrie &middot;
                               E&#8209;Commerce
@@ -228,7 +227,7 @@
               </tr>
 
               <tr>
-                <td class="px t-body" style="padding:22px 44px 0 44px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; line-height:27px; color:#413B37;">
+                <td class="px t-body" style="padding:22px 44px 0 44px; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:27px; color:#3D3A38;">
                   <p style="margin:0;">
                     Ob so etwas bei {{firma}} &uuml;berhaupt passt, wei&szlig; ich nicht &ndash; daf&uuml;r kenne ich
                     Ihre Prozesse zu wenig. 15&nbsp;Minuten w&uuml;rden reichen, um genau das zu kl&auml;ren.
@@ -242,7 +241,7 @@
               <tr>
                 <td class="px" style="padding:28px 44px 0 44px;">
                   <!--[if mso]>
-                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://calendar.app.google/1EqR2m9HM2mKRmLT6" style="height:46px; v-text-anchor:middle; width:240px;" arcsize="8%" stroke="f" fillcolor="#574D49">
+                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://calendar.app.google/1EqR2m9HM2mKRmLT6" style="height:46px; v-text-anchor:middle; width:240px;" arcsize="8%" stroke="f" fillcolor="#574F4B">
                     <w:anchorlock/>
                     <center style="color:#ffffff; font-family:Arial,sans-serif; font-size:15px; font-weight:bold;">15 Minuten aussuchen</center>
                   </v:roundrect>
@@ -250,8 +249,8 @@
                   <!--[if !mso]><!-- -->
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td class="btn" align="center" style="background-color:#574D49; border-radius:3px;">
-                        <a href="https://calendar.app.google/1EqR2m9HM2mKRmLT6" target="_blank" style="display:inline-block; padding:14px 30px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:15px; line-height:20px; font-weight:600; color:#FFFFFF; text-decoration:none; border-radius:3px; letter-spacing:0.01em;">
+                      <td class="btn" align="center" style="background-color:#574F4B; border-radius:3px;">
+                        <a href="https://calendar.app.google/1EqR2m9HM2mKRmLT6" target="_blank" style="display:inline-block; padding:14px 30px; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:20px; font-weight:600; color:#FFFFFF; text-decoration:none; border-radius:3px; letter-spacing:0.01em;">
                           15&nbsp;Minuten aussuchen
                         </a>
                       </td>
@@ -261,15 +260,38 @@
                 </td>
               </tr>
 
-              <!-- Signatur -->
+              <!-- Signatur =====================================================
+                   Aufbau wie die Kanzlei-Signatur: Trennlinie, Name, Rolle,
+                   Kontakt, Anschrift. Das Logo sitzt bereits im Kopf der Mail und
+                   wird hier bewusst nicht wiederholt.
+              ============================================================= -->
               <tr>
-                <td class="px t-body" style="padding:30px 44px 40px 44px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; line-height:27px; color:#413B37;">
-                  <p style="margin:0 0 5px 0;">Viele Gr&uuml;&szlig;e</p>
-                  <p class="t-strong" style="margin:0; font-weight:600; color:#2E2A28;">{{absender}}</p>
-                  <p class="t-muted" style="margin:2px 0 0 0; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:14px; line-height:22px; color:#8A817C;">
-                    {{position}} &middot; adept&amp;<br />
-                    <a class="link" href="tel:{{telefon_e164}}" style="color:#574D49; text-decoration:none;">{{telefon}}</a>
-                  </p>
+                <td class="px t-body" style="padding:30px 44px 40px 44px; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:27px; color:#3D3A38;">
+                  <p style="margin:0 0 22px 0;">Viele Gr&uuml;&szlig;e</p>
+
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                    <tr>
+                      <td class="rule-v" style="width:1px; background-color:#DCD8D5; font-size:0; line-height:0;">&nbsp;</td>
+                      <td style="vertical-align:top; padding:0 0 0 20px;">
+                        <div class="t-strong" style="font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:22px; font-weight:bold; color:#574F4B; letter-spacing:0.2px;">
+                          Amanuel Kheyo
+                        </div>
+                        <div class="t-muted" style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:19px; color:#8A837F; padding-bottom:12px;">
+                          CEO &amp; CTO
+                        </div>
+                        <div class="t-body" style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#3D3A38;">
+                          <a class="link" href="tel:+4915567541365" style="color:#3D3A38; text-decoration:none;">+49 155 67541365</a><br />
+                          <a class="link" href="mailto:kheyo@adeptandpartners.de" style="color:#3D3A38; text-decoration:none;">kheyo@adeptandpartners.de</a><br />
+                          <a class="link" href="https://www.adeptandpartners.de" style="color:#574F4B; text-decoration:none; font-weight:bold;">www.adeptandpartners.de</a>
+                        </div>
+                        <div class="t-muted" style="font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:21px; color:#8A837F; padding-top:12px;">
+                          adept&amp; GbR<br />
+                          D&uuml;lmener Weg 86a<br />
+                          46325 Borken
+                        </div>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
 
@@ -281,23 +303,23 @@
         <tr>
           <td class="px" style="padding:24px 44px 0 44px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr><td class="rule" style="border-top:1px solid #E2DCD5; font-size:0; line-height:0;">&nbsp;</td></tr>
+              <tr><td class="rule" style="border-top:1px solid #DCD8D5; font-size:0; line-height:0;">&nbsp;</td></tr>
             </table>
           </td>
         </tr>
         <tr>
-          <td class="px t-muted unstyle-auto-detected-links" style="padding:16px 44px 0 44px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:12px; line-height:19px; color:#8A817C;">
-            {{firmierung}} &middot; {{strasse}} &middot; {{plz_ort}}<br />
-            Vertretungsberechtigt: {{vertretung}} &middot; {{registergericht}}, {{hrb}} &middot; USt-IdNr.: {{ust_id}}<br />
-            <a href="{{website}}" style="color:#8A817C; text-decoration:underline;">{{website_text}}</a>
+          <td class="px t-muted unstyle-auto-detected-links" style="padding:16px 44px 0 44px; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:19px; color:#8A837F;">
+            adept&amp; GbR &middot; D&uuml;lmener Weg 86a &middot; 46325 Borken<br />
+            Vertreten durch Amanuel Kheyo<!-- USt-IdNr. ergaenzen, sobald vergeben: &middot; USt-IdNr.: DE... --><br />
+            <a href="https://www.adeptandpartners.de" style="color:#8A837F; text-decoration:underline;">www.adeptandpartners.de</a>
             &middot;
-            <a href="{{datenschutz_link}}" style="color:#8A817C; text-decoration:underline;">Datenschutz</a>
+            <a href="https://www.adeptandpartners.de/datenschutz" style="color:#8A837F; text-decoration:underline;">Datenschutz</a>
           </td>
         </tr>
         <tr>
-          <td class="px t-muted" style="padding:12px 44px 0 44px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:12px; line-height:19px; color:#8A817C;">
+          <td class="px t-muted" style="padding:12px 44px 0 44px; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:19px; color:#8A837F;">
             Keine weiteren Mails von mir?
-            <a href="{{abmelde_link}}" style="color:#8A817C; text-decoration:underline;">Hier abmelden</a>
+            <a href="mailto:kheyo@adeptandpartners.de?subject=Keine%20weiteren%20Mails" style="color:#8A837F; text-decoration:underline;">Hier abmelden</a>
             &ndash; oder einfach &bdquo;stop&ldquo; antworten.
           </td>
         </tr>
