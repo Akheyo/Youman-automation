@@ -389,12 +389,16 @@ model DocumentTemplate {
   fileData     Bytes
   placeholders Json         @default("[]")
   isDefault    Boolean      @default(false)
+  // Sprache des Dokuments ("de"/"en"). Bestimmt, welche Vorlage ein Angebot
+  // bekommt: Deutsch und Englisch haben unterschiedliche Spaltenüberschriften
+  // und Anschreiben, das lässt sich nicht über Platzhalter lösen.
+  language     String       @default("de")
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  @@index([tenantId, documentType])
+  @@index([tenantId, documentType, language])
   @@map("document_templates")
 }
 

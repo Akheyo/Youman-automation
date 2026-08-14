@@ -61,3 +61,23 @@ export const QUOTE_TEXT_DEFAULTS = {
   quotePaymentTerms: "7 Tage netto",
   quoteShippingMethod: "Spedition oder Selbstabholung",
 } as const;
+
+/** Sprachen, in denen ein Angebot erzeugt werden kann. */
+export const QUOTE_LANGUAGES = ["de", "en"] as const;
+export type QuoteLanguage = (typeof QUOTE_LANGUAGES)[number];
+
+/**
+ * Englische Entsprechungen der Standardtexte.
+ *
+ * Bewusst fest hinterlegt und nicht pro Mandant einstellbar: Die deutschen
+ * Texte sind einstellbar, weil sie zum Briefbogen passen müssen. Für die
+ * englische Fassung gibt es bisher keinen Bedarf an Abweichungen – kommt er,
+ * wird daraus dieselbe Mechanik wie bei den deutschen Texten.
+ */
+export const QUOTE_TEXT_DEFAULTS_EN: Record<keyof typeof QUOTE_TEXT_DEFAULTS, string> = {
+  quoteSalutation: "Dear Sir or Madam,",
+  quoteDeliveryDate: "immediately",
+  quotePaymentMethod: "Invoice",
+  quotePaymentTerms: "7 days net",
+  quoteShippingMethod: "Forwarding agent or collection",
+};

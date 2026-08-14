@@ -1,3 +1,4 @@
+import type { QuoteLanguage } from "../utils/constants";
 import type { UserRole } from "./auth";
 
 export type FieldType =
@@ -162,6 +163,8 @@ export interface DocumentTemplateInfo {
   fileName: string;
   placeholders: string[];
   isDefault: boolean;
+  /** Sprache des Dokuments – bestimmt, für welche Angebote die Vorlage gilt. */
+  language: QuoteLanguage;
   createdAt: string;
   updatedAt: string;
 }
@@ -172,6 +175,8 @@ export interface ExecutionDocumentInfo {
   documentType: DocumentType;
   /** Placeholder data ready to POST to /templates/:id/render. */
   data: Record<string, unknown>;
+  /** Sprache des Dokuments – muss beim Rendern mitgeschickt werden. */
+  language?: QuoteLanguage;
   /** Set when no template is configured for the documentType. */
   hint?: string;
 }

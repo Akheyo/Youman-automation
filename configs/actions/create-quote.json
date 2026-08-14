@@ -120,6 +120,23 @@
       ]
     },
     {
+      "id": "f-language",
+      "actionId": "action-create-quote",
+      "key": "language",
+      "label": "Sprache des Angebots",
+      "type": "dropdown",
+      "required": true,
+      "defaultValue": "de",
+      "order": 4,
+      "groupId": "details",
+      "width": "third",
+      "helpText": "Bestimmt Vorlage, Texte sowie Zahlen- und Datumsformat des Dokuments.",
+      "options": [
+        { "value": "de", "label": "Deutsch" },
+        { "value": "en", "label": "English" }
+      ]
+    },
+    {
       "id": "f-currency",
       "actionId": "action-create-quote",
       "key": "currency",

@@ -1,3 +1,4 @@
+import { QUOTE_LANGUAGES } from "../utils/constants";
 import { z } from "zod";
 
 export const ActionExecutionSchema = z.object({
@@ -100,6 +101,8 @@ export const CreateQuoteSchema = z.object({
   customerName: optionalString(),
   deliveryAddressId: optionalString(),
   currency: z.string().length(3).default("EUR"),
+  /** Sprache des erzeugten Dokuments – wählt Vorlage, Texte und Zahlenformat. */
+  language: z.enum(QUOTE_LANGUAGES).default("de"),
   validUntil: optionalDate,
   lineItems: z
     .array(

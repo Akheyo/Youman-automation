@@ -7,6 +7,7 @@ import Docxtemplater from "docxtemplater";
 import InspectModule from "docxtemplater/js/inspect-module.js";
 import { MissingFieldsError, RenderError, TemplateParseError } from "./errors";
 import { formatValue } from "./formatters";
+import type { QuoteLanguage } from "@youman/shared";
 
 /** Placeholder syntax used in customer templates: {{feld}} / {{#loop}}…{{/loop}}. */
 const DELIMITERS = { start: "{{", end: "}}" };
@@ -93,17 +94,18 @@ export function findMissingFields(structure: TemplateStructure, data: Record<str
 /** Applies German formatting (numbers, dates) to all scalar values and loop items. */
 export function formatTemplateData(
   structure: TemplateStructure,
-  data: Record<string, unknown>
+  data: Record<string, unknown>,
+  language: QuoteLanguage = "de"
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const tag of structure.scalars) {
-    out[tag] = formatValue(data[tag]) ?? "";
+    out[tag] = formatValue(data[tag], language) ?? "";
   }
   for (const [loop, children] of Object.entries(structure.loops)) {
     const rows = Array.isArray(data[loop]) ? (data[loop] as Record<string, unknown>[]) : [];
     out[loop] = rows.map((item) => {
       const row: Record<string, unknown> = {};
-      for (const child of children) row[child] = formatValue(item[child]) ?? "";
+      for (const child of children) row[child] = formatValue(item[child], language) ?? "";
       return row;
     });
   }
@@ -114,14 +116,18 @@ export function formatTemplateData(
  * Fills the template with the given data and returns the resulting DOCX.
  * Validates coverage first – incomplete data throws MissingFieldsError.
  */
-export function renderDocx(fileData: Buffer, data: Record<string, unknown>): Buffer {
+export function renderDocx(
+  fileData: Buffer,
+  data: Record<string, unknown>,
+  language: QuoteLanguage = "de"
+): Buffer {
   const structure = extractTemplateStructure(fileData);
   const missing = findMissingFields(structure, data);
   if (missing.length > 0) throw new MissingFieldsError(missing);
 
   const doc = newDoc(fileData);
   try {
-    doc.render(formatTemplateData(structure, data));
+    doc.render(formatTemplateData(structure, data, language));
   } catch (err) {
     throw new RenderError(describeDocxtemplaterError(err), { cause: err });
   }

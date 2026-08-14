@@ -4,6 +4,7 @@ import { PrismaService } from "../../database/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { convertDocxToPdf, extractTemplateStructure, renderDocx } from "./docx-engine";
 import { appendAgb } from "./pdf-appendix";
+import type { QuoteLanguage } from "@youman/shared";
 import { appendAgbDocx } from "./docx-appendix";
 import { TemplateParseError } from "./errors";
 
@@ -17,6 +18,7 @@ interface TemplateRow {
   fileName: string;
   placeholders: unknown;
   isDefault: boolean;
+  language: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,6 +32,7 @@ function toInfo(row: TemplateRow): DocumentTemplateInfo {
     fileName: row.fileName,
     placeholders: Array.isArray(row.placeholders) ? (row.placeholders as string[]) : [],
     isDefault: row.isDefault,
+    language: (row.language === "en" ? "en" : "de") as QuoteLanguage,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -56,7 +59,13 @@ export class TemplatesService {
   async upload(
     tenantId: string,
     userId: string,
-    params: { name: string; documentType: DocumentType; fileName: string; fileData: Buffer }
+    params: {
+      name: string;
+      documentType: DocumentType;
+      fileName: string;
+      fileData: Buffer;
+      language?: QuoteLanguage;
+    }
   ): Promise<DocumentTemplateInfo> {
     if (params.fileData.length === 0) {
       throw new TemplateParseError("Die hochgeladene Datei ist leer.");
@@ -69,8 +78,12 @@ export class TemplatesService {
 
     const created = await this.prisma.$transaction(async (tx) => {
       // First template of its type automatically becomes the default.
+      // Erste Vorlage IHRER SPRACHE wird automatisch Standard – sonst hätte
+      // eine neu hochgeladene englische Vorlage nie einen Standard, weil für
+      // den Dokumenttyp bereits eine deutsche existiert.
+      const language = params.language ?? "de";
       const existing = await tx.documentTemplate.count({
-        where: { tenantId, documentType: params.documentType },
+        where: { tenantId, documentType: params.documentType, language },
       });
       return tx.documentTemplate.create({
         data: {
@@ -81,6 +94,7 @@ export class TemplatesService {
           fileData: params.fileData,
           placeholders: structure.placeholders,
           isDefault: existing === 0,
+          language,
         },
         select: TEMPLATE_INFO_SELECT,
       });
@@ -111,8 +125,16 @@ export class TemplatesService {
   async setDefault(tenantId: string, id: string): Promise<DocumentTemplateInfo> {
     const target = await this.getOwned(tenantId, id);
     const updated = await this.prisma.$transaction(async (tx) => {
+      // Nur innerhalb DERSELBEN Sprache zurücksetzen: Sonst nähme eine
+      // englische Standardvorlage der deutschen den Standard weg und Angebote
+      // auf Deutsch fänden keine Vorlage mehr.
       await tx.documentTemplate.updateMany({
-        where: { tenantId, documentType: target.documentType as DocumentType, isDefault: true },
+        where: {
+          tenantId,
+          documentType: target.documentType as DocumentType,
+          language: target.language,
+          isDefault: true,
+        },
         data: { isDefault: false },
       });
       return tx.documentTemplate.update({
@@ -137,11 +159,31 @@ export class TemplatesService {
     });
   }
 
-  async findDefault(tenantId: string, documentType: DocumentType): Promise<DocumentTemplateInfo | null> {
-    const row = await this.prisma.documentTemplate.findFirst({
-      where: { tenantId, documentType, isDefault: true },
-      select: TEMPLATE_INFO_SELECT,
-    });
+  /**
+   * Standardvorlage eines Dokumenttyps in der gewünschten Sprache.
+   *
+   * Ohne passende Sprachvorlage wird auf die deutsche zurückgefallen: Lieber
+   * ein deutsches Angebot als gar keins – der Aufrufer erfährt über die
+   * gelieferte Vorlage, welche Sprache tatsächlich verwendet wurde.
+   */
+  async findDefault(
+    tenantId: string,
+    documentType: DocumentType,
+    language: QuoteLanguage = "de"
+  ): Promise<DocumentTemplateInfo | null> {
+    const row =
+      (await this.prisma.documentTemplate.findFirst({
+        where: { tenantId, documentType, language, isDefault: true },
+        select: TEMPLATE_INFO_SELECT,
+      })) ??
+      (await this.prisma.documentTemplate.findFirst({
+        where: { tenantId, documentType, language },
+        select: TEMPLATE_INFO_SELECT,
+      })) ??
+      (await this.prisma.documentTemplate.findFirst({
+        where: { tenantId, documentType, isDefault: true },
+        select: TEMPLATE_INFO_SELECT,
+      }));
     return row ? toInfo(row) : null;
   }
 
@@ -154,12 +196,13 @@ export class TemplatesService {
     userId: string,
     id: string,
     data: Record<string, unknown>,
-    format: "docx" | "pdf"
+    format: "docx" | "pdf",
+    language: QuoteLanguage = "de"
   ): Promise<{ content: Buffer; fileName: string; contentType: string }> {
     const row = await this.prisma.documentTemplate.findFirst({ where: { id, tenantId } });
     if (!row) throw new NotFoundException("Vorlage nicht gefunden");
 
-    const docx = renderDocx(Buffer.from(row.fileData), data);
+    const docx = renderDocx(Buffer.from(row.fileData), data, language);
     const baseName = row.fileName.replace(/\.docx$/i, "");
 
     void this.audit.log({
@@ -209,6 +252,7 @@ const TEMPLATE_INFO_SELECT = {
   fileName: true,
   placeholders: true,
   isDefault: true,
+  language: true,
   createdAt: true,
   updatedAt: true,
 } as const;

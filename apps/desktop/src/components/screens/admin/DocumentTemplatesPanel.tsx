@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/useToast";
 import { LoadErrorNotice } from "@/components/ui/load-error";
-import type { ActionDefinition, DocumentTemplateInfo, DocumentType } from "@youman/shared";
+import type { ActionDefinition, DocumentTemplateInfo, DocumentType , QuoteLanguage } from "@youman/shared";
 
 const DOC_TYPES: { value: DocumentType; label: string }[] = [
   { value: "OFFER", label: "Angebot" },
@@ -24,6 +24,8 @@ export function DocumentTemplatesPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadType, setUploadType] = useState<DocumentType>("OFFER");
   const [uploadName, setUploadName] = useState("");
+  /** Sprache der Vorlage – Deutsch und Englisch sind eigene Dateien. */
+  const [uploadLanguage, setUploadLanguage] = useState<QuoteLanguage>("de");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export function DocumentTemplatesPanel() {
       form.append("file", file);
       form.append("name", uploadName.trim() || file.name.replace(/\.docx$/i, ""));
       form.append("documentType", uploadType);
+      form.append("language", uploadLanguage);
       return (await apiClient.post<DocumentTemplateInfo>("/templates", form, {
         headers: { "Content-Type": "multipart/form-data" },
       })).data;
@@ -137,6 +140,17 @@ export function DocumentTemplatesPanel() {
               ))}
             </select>
           </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Sprache</label>
+            <select
+              value={uploadLanguage}
+              onChange={(e) => setUploadLanguage(e.target.value as QuoteLanguage)}
+              className="h-9 rounded-md border border-input bg-input px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="de">Deutsch</option>
+              <option value="en">English</option>
+            </select>
+          </div>
           <div className="space-y-1 flex-1 min-w-40">
             <label className="text-xs text-muted-foreground">Anzeigename (optional)</label>
             <Input value={uploadName} onChange={(e) => setUploadName(e.target.value)} placeholder="z.B. Angebot Standard" />
@@ -196,6 +210,7 @@ export function DocumentTemplatesPanel() {
                         <p className="font-medium text-foreground truncate">{tpl.name}</p>
                         <Badge variant="secondary">{typeLabel(tpl.documentType)}</Badge>
                         {tpl.isDefault && <Badge>Standard</Badge>}
+                        <Badge variant="muted">{tpl.language === "en" ? "English" : "Deutsch"}</Badge>
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground mt-0.5 truncate">{tpl.fileName}</p>

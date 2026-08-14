@@ -44,7 +44,7 @@ export async function downloadDocument(
   try {
     const res = await apiClient.post<ArrayBuffer>(
       `/templates/${info.templateId}/render`,
-      { data: info.data },
+      { data: info.data, language: info.language ?? "de" },
       { params: { format }, responseType: "arraybuffer", timeout: 120_000 }
     );
     content = res.data;

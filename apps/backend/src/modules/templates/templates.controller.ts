@@ -19,6 +19,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiTags } from "@nestjs/swagger";
 import type { Response } from "express";
 import { z } from "zod";
+import { QUOTE_LANGUAGES } from "@youman/shared";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { Roles } from "../../common/decorators/roles.decorator";
@@ -37,11 +38,15 @@ const DOCUMENT_TYPES = ["OFFER", "INVOICE", "ORDER_CONFIRMATION", "DELIVERY_NOTE
 const UploadMetaSchema = z.object({
   name: z.string().min(1, "Name ist erforderlich").max(120),
   documentType: z.enum(DOCUMENT_TYPES),
+  language: z.enum(QUOTE_LANGUAGES).default("de"),
 });
 
 const RenameSchema = z.object({ name: z.string().min(1).max(120) });
 
-const RenderSchema = z.object({ data: z.record(z.unknown()) });
+const RenderSchema = z.object({
+  data: z.record(z.unknown()),
+  language: z.enum(QUOTE_LANGUAGES).default("de"),
+});
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
@@ -78,6 +83,7 @@ export class TemplatesController {
         documentType: meta.documentType,
         fileName: file.originalname,
         fileData: file.buffer,
+        language: meta.language,
       })
     );
   }
@@ -114,9 +120,9 @@ export class TemplatesController {
     @Res() res: Response
   ) {
     const fmt = format === "pdf" ? "pdf" : "docx";
-    const { data } = RenderSchema.parse(body);
+    const { data, language } = RenderSchema.parse(body);
     const rendered = await this.wrapTemplateErrors(() =>
-      this.templates.render(user.tenantId, user.sub, id, data, fmt)
+      this.templates.render(user.tenantId, user.sub, id, data, fmt, language)
     );
     res
       .setHeader("Content-Type", rendered.contentType)

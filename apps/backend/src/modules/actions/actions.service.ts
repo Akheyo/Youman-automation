@@ -6,10 +6,11 @@ import { ConnectorsService } from "../connectors/connectors.service";
 import { AuditService } from "../audit/audit.service";
 import { TemplatesService } from "../templates/templates.service";
 import { resolveFieldMapping } from "../templates/document-mapper";
-import { formatGermanNumber } from "../templates/formatters";
-import { QUOTE_TEXT_DEFAULTS } from "@youman/shared";
+import { formatNumber } from "../templates/formatters";
+import { QUOTE_TEXT_DEFAULTS, QUOTE_TEXT_DEFAULTS_EN } from "@youman/shared";
 import type {
   ActionHistoryEntry,
+  QuoteLanguage,
   ActionExecutionRequest,
   ActionExecution,
   ActionDefinition,
@@ -524,7 +525,12 @@ export class ActionsService {
    * werden ebenfalls die Standardwerte benutzt – ein Angebot darf niemals
    * an einem fehlenden Einstellungstext scheitern.
    */
-  private async quoteTexts(tenantId: string): Promise<Record<keyof typeof QUOTE_TEXT_DEFAULTS, string>> {
+  private async quoteTexts(tenantId: string, language: QuoteLanguage = "de"): Promise<Record<keyof typeof QUOTE_TEXT_DEFAULTS, string>> {
+    // Englische Angebote nutzen feste englische Texte. Die einstellbaren
+    // Mandantentexte sind deutsch formuliert und passen zum deutschen
+    // Briefbogen – sie in ein englisches Dokument zu übernehmen ergäbe eine
+    // Mischsprache.
+    if (language === "en") return QUOTE_TEXT_DEFAULTS_EN;
     try {
       const s = await this.prisma.tenantSettings.findUnique({
         where: { tenantId },
@@ -624,7 +630,7 @@ export class ActionsService {
     // Standardtexte des Mandanten (Admin » Einstellungen). Fehlt der Datensatz
     // oder ein Feld, greifen exakt die früheren Festwerte – das Dokument sieht
     // dann unverändert aus.
-    const texts = await this.quoteTexts(tenantId);
+    const texts = await this.quoteTexts(tenantId, dto.language);
 
     const data: Record<string, unknown> = {
       angebotsnummer: quoteNumber,
@@ -638,27 +644,28 @@ export class ActionsService {
         menge: item.quantity,
         artikel_id: item.articleNumber ?? item.productId,
         bezeichnung: item.designation ?? "",
-        nettopreis: formatGermanNumber(lineNet(item)),
+        nettopreis: formatNumber(lineNet(item), dto.language),
       })),
-      zwischensumme: formatGermanNumber(zwischensumme),
-      rabatt: formatGermanNumber(zwischensumme - endbetrag),
-      endbetrag: formatGermanNumber(endbetrag),
+      zwischensumme: formatNumber(zwischensumme, dto.language),
+      rabatt: formatNumber(zwischensumme - endbetrag, dto.language),
+      endbetrag: formatNumber(endbetrag, dto.language),
       lieferdatum: dto.lineItems.find((i) => i.deliveryDate)?.deliveryDate ?? texts.quoteDeliveryDate,
       zahlungsart: texts.quotePaymentMethod,
       zahlungsziel: texts.quotePaymentTerms,
       versandart: texts.quoteShippingMethod,
     };
 
-    const template = await this.templates.findDefault(tenantId, "OFFER");
+    const template = await this.templates.findDefault(tenantId, "OFFER", dto.language);
     if (!template) {
       return {
         templateId: null,
         documentType: "OFFER",
         data,
+        language: dto.language,
         hint: "Keine Vorlage hinterlegt – unter Administration » Dokumentvorlagen können Sie eine .docx-Vorlage hochladen.",
       };
     }
-    return { templateId: template.id, documentType: "OFFER", data };
+    return { templateId: template.id, documentType: "OFFER", data, language: dto.language };
   }
 
   /**
