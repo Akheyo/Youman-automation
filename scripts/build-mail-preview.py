@@ -34,9 +34,8 @@ PAIR = re.compile(
 
 # Beispieldaten nur fuer die Vorschau - die Mail selbst behaelt die Platzhalter.
 DEMO = {
-    "vorname": "Frau Berger",
+    "anrede": "Frau Berger",
     "firma": "Meridian Fertigung",
-    "aufhaenger": "Ihr Beitrag zur neuen Fertigungslinie in Ense",
 }
 
 # Die Vorschau laeuft unter einer CSP, die externe Hosts blockt. Die beiden

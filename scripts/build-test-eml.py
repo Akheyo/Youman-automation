@@ -28,21 +28,21 @@ EMPFAENGER = "Info@youman-automation.com"
 
 # Plain-Text-Fassung. Bewusst von Hand gepflegt statt aus dem HTML generiert -
 # im Text traegt die Struktur der Zeilenumbruch, nicht das Markup.
-PLAIN = """Hallo Frau Berger,
+PLAIN = """Guten Tag Frau Berger,
 
-Ihr Beitrag zur neuen Fertigungslinie in Ense - deshalb schreibe ich Ihnen.
+viele Produktionsunternehmen arbeiten heute mit soliden ERP- oder
+SAP-Systemen, und trotzdem laufen einzelne operative Prozesse im Alltag noch
+manuell, etwa bei Sonderfaellen in der Auftragsabwicklung, bei
+wiederkehrenden Planungsschritten oder bei der Abstimmung zwischen Fertigung
+und Logistik.
 
-In Produktion, Logistik und Supply Chain sehen wir fast immer dasselbe
-Muster: Das ERP verwaltet die Auftraege sauber, aber die eigentliche Planung
-laeuft daneben - in Excel, im Kopf einzelner Mitarbeiter, per Zuruf. Jede
-Abweichung kostet Handarbeit, und niemand sieht sie im System.
+Genau an solchen Stellen setzt adept& an. Wir entwickeln kundenspezifische
+Workflow-Module, die direkt in bestehende Systeme integriert werden, ohne
+diese zu ersetzen.
 
-Bei einem Gitterdraht-Hersteller waren es 2.556 verschiedene Palettentypen,
-jede Kalkulation von Hand. Wir haben ein Modul gebaut, das die Auftragsdaten
-per API aus dem ERP zieht, Standard- und Sonderpaletten automatisch
-klassifiziert und die Variantenzahl massiv reduziert hat.
-
-Kein Systemwechsel. Keine Medienbrueche. Eine Oberflaeche.
+So lassen sich Variantenkomplexitaet reduzieren, Durchlaufzeiten verkuerzen
+und wiederkehrende manuelle Schritte automatisieren, ohne dass ein
+Systemwechsel notwendig wird.
 
 Was wir machen:
 - Prozessberatung von der Produktionsplanung bis zur Logistik
@@ -53,14 +53,13 @@ Was wir machen:
 Fuer wen: Automobil & Zulieferer, Maschinenbau & Fertigung,
 Logistik & Supply Chain, Chemie & Prozessindustrie, E-Commerce
 
-Ob so etwas bei Meridian Fertigung ueberhaupt passt, weiss ich nicht - dafuer
-kenne ich Ihre Prozesse zu wenig. 15 Minuten wuerden reichen, um genau das zu
-klaeren. Falls das Thema bei Ihnen keine Rolle spielt, sagen Sie kurz
-Bescheid - dann melde ich mich nicht wieder.
+Falls das fuer Ihr Unternehmen relevant sein koennte, wuerde ich mich ueber
+einen kurzen Austausch freuen, um zu verstehen, wo bei Ihnen aktuell die
+groessten operativen Reibungspunkte liegen.
 
 Termin waehlen: https://calendar.app.google/1EqR2m9HM2mKRmLT6
 
-Viele Gruesse
+Beste Gruesse
 Amanuel Kheyo
 CEO & CTO, adept&
 +49 155 67541365 | kheyo@adeptandpartners.de
