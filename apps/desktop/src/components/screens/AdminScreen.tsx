@@ -101,6 +101,8 @@ function GeneralSettings() {
   const [quoteStep, setQuoteStep] = useState("");
   /** true = Angebotsnummer kommt aus dem ERP (Angebot wird dort angelegt). */
   const [erpQuotes, setErpQuotes] = useState(false);
+  /** false = keine Rabattspalte in den Positionen (Rabatt läuft als eigene Position). */
+  const [lineDiscount, setLineDiscount] = useState(true);
   /** Frei einstellbare Standardtexte, die auf jedem Angebot erscheinen. */
   const [texts, setTexts] = useState<Record<string, string>>({});
   useEffect(() => {
@@ -108,6 +110,7 @@ function GeneralSettings() {
       setQuoteNext(String(data["quoteNumberNext"] ?? 1000));
       setQuoteStep(String(data["quoteNumberStep"] ?? 1));
       setErpQuotes(data["createQuoteInErp"] === true);
+      setLineDiscount(data["quoteLineDiscount"] !== false);
       setTexts(
         Object.fromEntries(
           QUOTE_TEXT_FIELDS.map((f) => [f.key, String(data[f.key] ?? QUOTE_TEXT_DEFAULTS[f.key] ?? "")])
@@ -132,6 +135,7 @@ function GeneralSettings() {
         quoteNumberNext: Number(quoteNext),
         quoteNumberStep: Number(quoteStep),
         createQuoteInErp: erpQuotes,
+        quoteLineDiscount: lineDiscount,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenant-settings"] });
@@ -189,6 +193,22 @@ function GeneralSettings() {
               Das Angebot ist dann im ERP sichtbar und dort weiterverarbeitbar. Achtung: Die Nummern
               springen (das ERP zählt alle Belegarten gemeinsam), und ohne erreichbares ERP lässt sich
               kein Angebot mehr erstellen.
+            </span>
+          </span>
+        </label>
+        <label className="flex items-start gap-2.5 rounded-md border border-border p-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!lineDiscount}
+            onChange={(e) => setLineDiscount(!e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0"
+          />
+          <span className="text-xs">
+            <span className="font-medium text-foreground">Rabatt als eigene Position statt als Spalte</span>
+            <span className="block text-muted-foreground mt-0.5">
+              Blendet die Spalte „Rabatt %" in den Positionen aus. Der Rabatt wird dann als eigene
+              Artikelposition mit negativem Einzelpreis erfasst. Ohne diese Einstellung würde beides
+              zusammen doppelt abziehen.
             </span>
           </span>
         </label>

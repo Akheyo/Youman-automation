@@ -679,11 +679,18 @@ export class ActionsService {
   }
 
   async getActionDefinitions(tenantId: string) {
-    const defs = await this.prisma.actionDefinition.findMany({
-      where: { OR: [{ tenantId }, { tenantId: null }], enabled: true },
-      orderBy: { sortOrder: "asc" },
-    });
-    return defs.map((d) => d.configJson);
+    const [defs, settings] = await Promise.all([
+      this.prisma.actionDefinition.findMany({
+        where: { OR: [{ tenantId }, { tenantId: null }], enabled: true },
+        orderBy: { sortOrder: "asc" },
+      }),
+      this.prisma.tenantSettings.findUnique({
+        where: { tenantId },
+        select: { quoteLineDiscount: true },
+      }),
+    ]);
+    const configs = defs.map((d) => d.configJson);
+    return settings?.quoteLineDiscount === false ? configs.map(withoutLineDiscount) : configs;
   }
 }
 
@@ -762,4 +769,30 @@ export function toHistoryEntry(row: ExecutionRow): ActionHistoryEntry {
     userName,
     document: "templateId" in document ? (document as unknown as ActionHistoryEntry["document"]) : null,
   };
+}
+
+/**
+ * Entfernt die Rabattspalte aus den Positionen einer Aktionsdefinition.
+ *
+ * Für Mandanten, die den Rabatt als eigene Artikelposition mit negativem
+ * Preis führen: Eine zusätzliche Prozentspalte wäre dort doppelt gemoppelt
+ * und würde am Ende zweimal Rabatt abziehen. Die Definition wird kopiert, nie
+ * verändert – sie stammt aus der Datenbank und gilt für alle Mandanten.
+ */
+export function withoutLineDiscount(config: unknown): unknown {
+  if (!config || typeof config !== "object") return config;
+  const def = config as Record<string, unknown>;
+  if (!Array.isArray(def["fields"])) return config;
+
+  let touched = false;
+  const fields = (def["fields"] as unknown[]).map((raw) => {
+    const field = asRecord(raw);
+    const columns = field["lineItemColumns"];
+    if (!Array.isArray(columns)) return raw;
+    const kept = columns.filter((column) => asRecord(column)["key"] !== "discount");
+    if (kept.length === columns.length) return raw;
+    touched = true;
+    return { ...field, lineItemColumns: kept };
+  });
+  return touched ? { ...def, fields } : config;
 }

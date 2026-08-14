@@ -109,7 +109,9 @@ export const CreateQuoteSchema = z.object({
         designation: optionalString(),
         quantity: z.number().positive("Menge muss größer als 0 sein"),
         unit: z.string().default("ST"),
-        pricePerUnit: z.number().min(0),
+        // Negative Preise sind zulässig: Manche Mandanten führen den Rabatt
+        // als eigene Artikelposition mit Minusbetrag statt als Prozentspalte.
+        pricePerUnit: z.number().finite(),
         discount: z.number().min(0).max(100).optional(),
         deliveryDate: optionalDate,
         notes: optionalString(z.string().max(2000)),

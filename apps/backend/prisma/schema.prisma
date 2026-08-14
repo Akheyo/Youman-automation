@@ -75,6 +75,10 @@ model TenantSettings {
   quotePaymentMethod    String  @default("Rechnung")
   quotePaymentTerms     String  @default("7 Tage netto")
   quoteShippingMethod   String  @default("Spedition oder Selbstabholung")
+  // Rabattspalte in den Angebotspositionen. Manche Mandanten führen den
+  // Rabatt stattdessen als eigene Artikelposition mit negativem Preis – dort
+  // wäre eine zusätzliche Prozentspalte doppelt gemoppelt und fehleranfällig.
+  quoteLineDiscount     Boolean @default(true)
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 

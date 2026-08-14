@@ -118,6 +118,7 @@ export class AuthService {
               quotePaymentMethod: tenant.settings.quotePaymentMethod,
               quotePaymentTerms: tenant.settings.quotePaymentTerms,
               quoteShippingMethod: tenant.settings.quoteShippingMethod,
+              quoteLineDiscount: tenant.settings.quoteLineDiscount,
             }
           : {
               tenantId: tenant.id,
@@ -130,6 +131,7 @@ export class AuthService {
               quoteNumberNext: 1000,
               quoteNumberStep: 1,
               createQuoteInErp: false,
+              quoteLineDiscount: true,
               ...QUOTE_TEXT_DEFAULTS,
               maxRetryAttempts: 3,
               retryBackoffMs: 2000,

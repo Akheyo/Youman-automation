@@ -43,6 +43,8 @@ export interface TenantSettings {
   quotePaymentTerms: string;
   /** Versandart auf dem Angebot, z.B. "Spedition oder Selbstabholung". */
   quoteShippingMethod: string;
+  /** false = keine Rabattspalte in den Angebotspositionen. */
+  quoteLineDiscount: boolean;
 }
 
 export interface TenantBranding {
