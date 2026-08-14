@@ -8,6 +8,7 @@ import {
   mapVariationToProduct,
   pickDefaultSalesPrice,
   companyNameFrom,
+  dedupeAddresses,
   toNetPrice,
   ORDER_TYPE_OFFER,
 } from "../mapping";
@@ -141,6 +142,51 @@ describe("company name from the billing address", () => {
     expect(companyNameFrom([{ id: 2, name1: "Nur Lieferadresse", pivot: { typeId: 2 } }])).toBe("Nur Lieferadresse");
     expect(companyNameFrom([])).toBe("");
     expect(companyNameFrom([{ id: 3, name1: "   " }])).toBe("");
+  });
+});
+
+describe("real Plenty company contact (Tesla Engineering Germany GmbH)", () => {
+  // Echte Struktur aus dem Plenty des Kunden: kein Ansprechpartner, fullName
+  // ist ein einzelnes Leerzeichen, und jede Adresse kommt doppelt – einmal je
+  // Adresstyp – mit identischer id.
+  const contact = {
+    id: 17968,
+    firstName: "",
+    lastName: "",
+    fullName: " ",
+    addresses: [
+      { id: 46100, name1: "Tesla Engineering Germany GmbH", address1: "Werkstraße", address2: "1", postalCode: "14641", town: "Grünheide", pivot: { typeId: 1 } },
+      { id: 46475, name1: "Tesla Engineering Germany GmbH", address1: "Lagerweg", address2: "3", postalCode: "14641", town: "Grünheide", pivot: { typeId: 1 } },
+      { id: 46100, name1: "Tesla Engineering Germany GmbH", address1: "Werkstraße", address2: "1", postalCode: "14641", town: "Grünheide", pivot: { typeId: 2 } },
+      { id: 46475, name1: "Tesla Engineering Germany GmbH", address1: "Lagerweg", address2: "3", postalCode: "14641", town: "Grünheide", pivot: { typeId: 2 } },
+    ],
+  };
+
+  it("shows the company instead of a blank name", () => {
+    const customer = mapContactToCustomer(contact, TENANT);
+    expect(customer.name).toBe("Tesla Engineering Germany GmbH");
+    expect(customer.isCompany).toBe(true);
+  });
+
+  it("lists every address only once", () => {
+    const customer = mapContactToCustomer(contact, TENANT);
+    expect(customer.addresses.map((a) => a.id)).toEqual(["46100", "46475"]);
+    // Die Rechnungsvariante gewinnt – das Angebot geht an die Rechnungsanschrift.
+    expect(customer.addresses.every((a) => a.type === "billing")).toBe(true);
+  });
+
+  it("never turns a whitespace-only fullName into the customer name", () => {
+    const customer = mapContactToCustomer({ id: 5, fullName: " ", addresses: [] }, TENANT);
+    expect(customer.name).toBe("Kontakt 5");
+  });
+
+  it("keeps the billing variant when shipping comes first", () => {
+    const result = dedupeAddresses([
+      { id: 1, pivot: { typeId: 2 } },
+      { id: 1, pivot: { typeId: 1 } },
+    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.pivot!.typeId).toBe(1);
   });
 });
 

@@ -49,9 +49,12 @@ export function mapContactToCustomer(contact: PlentyContact, tenantId: string): 
   const phone = phoneOptions.find((o) => o.subTypeId !== CONTACT_OPTION_SUBTYPE_MOBILE)?.value;
   const mobile = phoneOptions.find((o) => o.subTypeId === CONTACT_OPTION_SUBTYPE_MOBILE)?.value;
 
-  const personName =
-    contact.fullName ??
-    [contact.firstName, contact.lastName].filter(Boolean).join(" ").trim();
+  // fullName kommt bei Firmenkontakten ohne Ansprechpartner als " " (ein
+  // Leerzeichen) zurück – ungetrimmt wäre das ein "gültiger" Name und der
+  // Kunde hätte in der Liste gar keine Bezeichnung.
+  const personName = (
+    contact.fullName ?? [contact.firstName, contact.lastName].filter(Boolean).join(" ")
+  ).trim();
 
   // Der Plenty-KONTAKT hat kein Firmenfeld – firstName/lastName sind bei einer
   // Firma der Ansprechpartner. Der Firmenname steht in der Rechnungsadresse
@@ -75,7 +78,7 @@ export function mapContactToCustomer(contact: PlentyContact, tenantId: string): 
     currency: "EUR",
     isActive: true,
     source: "PLENTY",
-    addresses: (contact.addresses ?? []).map((a) => mapPlentyAddress(a)),
+    addresses: dedupeAddresses(contact.addresses ?? []).map((a) => mapPlentyAddress(a)),
     createdAt: contact.createdAt ?? new Date().toISOString(),
     updatedAt: contact.updatedAt ?? new Date().toISOString(),
   };
@@ -96,6 +99,25 @@ export function companyNameFrom(addresses: PlentyAddress[]): string {
     billing.find((a) => a.name1) ??
     addresses.find((a) => a.name1);
   return candidate?.name1?.trim() ?? "";
+}
+
+/**
+ * Entfernt Mehrfachnennungen derselben Adresse.
+ *
+ * Plenty liefert eine Adresse einmal pro Adresstyp aus – dieselbe id also
+ * sowohl als Rechnungs- als auch als Lieferadresse. Ungefiltert stünde jede
+ * Anschrift doppelt in der Auswahl. Die Rechnungsvariante gewinnt, weil das
+ * Angebot an die Rechnungsanschrift geht.
+ */
+export function dedupeAddresses(addresses: PlentyAddress[]): PlentyAddress[] {
+  const byId = new Map<number, PlentyAddress>();
+  for (const address of addresses) {
+    const existing = byId.get(address.id);
+    if (!existing || (existing.pivot?.typeId === ADDRESS_TYPE_SHIPPING && address.pivot?.typeId !== ADDRESS_TYPE_SHIPPING)) {
+      byId.set(address.id, address);
+    }
+  }
+  return [...byId.values()];
 }
 
 export function mapPlentyAddress(addr: PlentyAddress): Address {
