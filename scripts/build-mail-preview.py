@@ -40,7 +40,6 @@ DEMO = {
     "position": "Geschäftsführer",
     "telefon": "+49 231 99 84 41 0",
     "telefon_e164": "+492319984410",
-    "kalender_link": "#",
     "abmelde_link": "#",
     "website": "#",
     "website_text": "adept-und.de",
