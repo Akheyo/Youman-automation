@@ -70,6 +70,16 @@ HEIGHT_REPORTER = """
 """
 
 
+def js(value) -> str:
+    """JSON fuer ein inline <script>.
+
+    Die Frames enthalten selbst ein </script>. Ohne Maskierung beendet der
+    HTML-Parser dort das Skript und der Rest der Seite landet als Text im
+    Browser. \/ ist in JSON-Strings gleichbedeutend mit /.
+    """
+    return json.dumps(value).replace("</", "<\\/")
+
+
 def variant(html: str, which: str) -> str:
     """Loest die Marker fuer 'ind' oder 'ecom' auf."""
     return PAIR.sub(lambda m: m.group(which), html)
@@ -126,9 +136,9 @@ def main() -> None:
     placeholders = sorted(set(re.findall(r"\{\{(\w+)\}\}", source)))
 
     TARGET.write_text(
-        PAGE.replace("__FRAMES__", json.dumps(frames))
-        .replace("__META__", json.dumps(meta))
-        .replace("__PLACEHOLDERS__", json.dumps(placeholders)),
+        PAGE.replace("__FRAMES__", js(frames))
+        .replace("__META__", js(meta))
+        .replace("__PLACEHOLDERS__", js(placeholders)),
         encoding="utf-8",
     )
     print(f"geschrieben: {TARGET.relative_to(ROOT)}")
