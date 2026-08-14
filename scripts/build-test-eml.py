@@ -25,7 +25,6 @@ TARGET = ROOT / "marketing" / "test-cold-email-adept.eml"
 
 ABSENDER = "Amanuel Kheyo <kheyo@adeptandpartners.de>"
 EMPFAENGER = "Info@youman-automation.com"
-ABMELDUNG = "<mailto:kheyo@adeptandpartners.de?subject=Keine%20weiteren%20Mails>"
 
 # Plain-Text-Fassung. Bewusst von Hand gepflegt statt aus dem HTML generiert -
 # im Text traegt die Struktur der Zeilenumbruch, nicht das Markup.
@@ -70,7 +69,9 @@ www.adeptandpartners.de
 --
 adept& GbR, Duelmener Weg 86a, 46325 Borken
 Vertreten durch Amanuel Kheyo
-Keine weiteren Mails? Antworten Sie mit "stop".
+Ihre geschaeftlichen Kontaktdaten stammen aus oeffentlich zugaenglichen
+Quellen. Sie koennen der Verwendung jederzeit widersprechen - eine kurze
+Antwort genuegt, dann hoeren Sie nichts mehr von uns.
 """
 
 
@@ -97,7 +98,6 @@ def main() -> None:
     msg["To"] = empfaenger
     msg["Date"] = formatdate(localtime=True)
     msg["Message-ID"] = make_msgid(domain="adeptandpartners.de")
-    msg["List-Unsubscribe"] = ABMELDUNG
     msg.set_content(PLAIN)
     msg.add_alternative(html, subtype="html")
 
