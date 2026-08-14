@@ -6,8 +6,28 @@
 <meta name="x-apple-disable-message-reformatting" />
 <meta name="color-scheme" content="light dark" />
 <meta name="supported-color-schemes" content="light dark" />
+<!--
+  ===========================================================================
+  Cold Mail adept&
+  ---------------------------------------------------------------------------
+  Zwei Fassungen in einer Datei. Sichtbar ist immer die Industrie-Fassung
+  (Produktion, Logistik, Supply Chain). Die E-Commerce-Fassung liegt jeweils
+  direkt daneben in einem Kommentar.
+
+  Umschalten von Hand: Inhalt zwischen @ind:start / @ind:end durch den Inhalt
+  zwischen @ecom:start / @ecom:end ersetzen. Fuenf Stellen: Betreff, Preheader,
+  die zwei Kernabsaetze, zwei Zeilen im Leistungsblock.
+
+  Automatisch: `python3 scripts/build-mail-preview.py` erzeugt beide Fassungen
+  plus die Vorschau-Seite.
+  ===========================================================================
+-->
+<!--@ind:start-->
 <title>Frage zu den Planungsprozessen bei {{firma}}</title>
-<!-- Betreff-Alternative E-Commerce: Frage zur Auftragsabwicklung bei {{firma}} -->
+<!--@ind:end-->
+<!--@ecom:start
+<title>Frage zur Auftragsabwicklung bei {{firma}}</title>
+@ecom:end-->
 <!--[if mso]>
 <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
 <![endif]-->
@@ -29,15 +49,17 @@
   }
   @media (prefers-color-scheme: dark) {
     .bg-page { background-color:#17140F !important; }
-    .bg-card { background-color:#221E19 !important; }
+    .bg-card { background-color:#221E19 !important; border-color:#332C25 !important; }
     .bg-soft { background-color:#2B2620 !important; }
     .t-body  { color:#DDD6CD !important; }
     .t-head  { color:#FFFFFF !important; }
     .t-muted { color:#9C9188 !important; }
     .t-logo  { color:#EDE7E0 !important; }
+    .t-strong { color:#FFFFFF !important; }
     .rule    { border-color:#3A342C !important; }
     .btn     { background-color:#EDE7E0 !important; }
     .btn a   { color:#221E19 !important; }
+    .link    { color:#C9BFB4 !important; }
   }
 </style>
 </head>
@@ -46,8 +68,12 @@
 
 <!-- Preheader: Inbox-Vorschau, in der Mail selbst unsichtbar -->
 <div style="display:none; font-size:1px; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; mso-hide:all;">
+  <!--@ind:start-->
   Wie ein Hersteller 2.556 Palettentypen auf eine handhabbare Zahl gebracht hat - ohne Systemwechsel.
-  <!-- Alternative E-Commerce: Shop, Lager und ERP reden nicht miteinander - so schliesst man die Luecke. -->
+  <!--@ind:end-->
+  <!--@ecom:start
+  Shop, Lager und ERP kennen jeweils nur einen Teil der Wahrheit - so schliessen Sie die Luecke.
+  @ecom:end-->
   &#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;
 </div>
 
@@ -92,6 +118,8 @@
                   <p style="margin:0 0 17px 0;">
                     {{aufhaenger}} &ndash; deshalb schreibe ich Ihnen.
                   </p>
+
+                  <!--@ind:start-->
                   <p style="margin:0 0 17px 0;">
                     In Produktion, Logistik und Supply Chain sehen wir fast immer dasselbe Muster:
                     Das ERP verwaltet die Auftr&auml;ge sauber, aber die eigentliche Planung l&auml;uft
@@ -100,17 +128,13 @@
                   </p>
                   <p style="margin:0 0 17px 0;">
                     Bei einem Gitterdraht-Hersteller waren es
-                    <strong style="font-weight:600; color:#2E2A28;">2.556 verschiedene Palettentypen</strong>,
+                    <strong class="t-strong" style="font-weight:600; color:#2E2A28;">2.556 verschiedene Palettentypen</strong>,
                     jede Kalkulation von Hand. Wir haben ein Modul gebaut, das die Auftragsdaten
                     per API aus dem ERP zieht, Standard- und Sonderpaletten automatisch klassifiziert
                     und die Variantenzahl massiv reduziert hat.
                   </p>
-                  <!-- ============================================================
-                       VARIANTE E-COMMERCE
-                       Die beiden Absaetze oben (Muster + Case Study) gegen diese
-                       beiden tauschen, wenn der Empfaenger ein Onlinehaendler ist.
-                       Alles davor und danach bleibt unveraendert.
-
+                  <!--@ind:end-->
+                  <!--@ecom:start
                   <p style="margin:0 0 17px 0;">
                     Bei Onlineh&auml;ndlern ab einer gewissen Gr&ouml;&szlig;e sehen wir fast immer dasselbe
                     Muster: Shop, Lager und ERP kennen jeweils einen Teil der Wahrheit &ndash; und
@@ -118,12 +142,13 @@
                     zusammenf&uuml;hrt. Es funktioniert, bis das Volumen steigt.
                   </p>
                   <p style="margin:0 0 17px 0;">
-                    Wir bauen genau diese fehlende Schicht: eine Oberfl&auml;che, die per API auf
-                    Shop und ERP zugreift, Auftr&auml;ge und Best&auml;nde in Echtzeit synchron h&auml;lt
+                    Wir bauen genau diese fehlende Schicht: eine Oberfl&auml;che, die per API auf Shop
+                    und ERP zugreift, <strong class="t-strong" style="font-weight:600; color:#2E2A28;">Auftr&auml;ge und Best&auml;nde in Echtzeit synchron h&auml;lt</strong>
                     und die Regeln abbildet, die heute im Kopf einzelner Mitarbeiter stecken &ndash;
                     Priorisierung, Teillieferungen, Retourenlogik.
                   </p>
-                  ============================================================ -->
+                  @ecom:end-->
+
                   <p style="margin:0 0 22px 0;">
                     Kein Systemwechsel. Keine Medienbr&uuml;che. Eine Oberfl&auml;che.
                   </p>
@@ -147,8 +172,12 @@
                               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
                                   <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A817C;">&#8212;</td>
-                                  <!-- E-Commerce-Variante dieser Zeile: Prozessberatung von der Bestellung bis zur Retoure -->
+                                  <!--@ind:start-->
                                   <td style="padding-left:8px; font-size:15px; line-height:25px;">Prozessberatung von der Produktionsplanung bis zur Logistik</td>
+                                  <!--@ind:end-->
+                                  <!--@ecom:start
+                                  <td style="padding-left:8px; font-size:15px; line-height:25px;">Prozessberatung von der Bestellung bis zur Retoure</td>
+                                  @ecom:end-->
                                 </tr>
                                 <tr>
                                   <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A817C;">&#8212;</td>
@@ -156,8 +185,12 @@
                                 </tr>
                                 <tr>
                                   <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A817C;">&#8212;</td>
-                                  <!-- E-Commerce-Variante dieser Zeile: Integration in ERP, Shop- und Lagersysteme (SAP, Dynamics, Shopware, Shopify) -->
+                                  <!--@ind:start-->
                                   <td style="padding-left:8px; font-size:15px; line-height:25px;">Integration in SAP, Microsoft&nbsp;Dynamics, infor &amp; Co.</td>
+                                  <!--@ind:end-->
+                                  <!--@ecom:start
+                                  <td style="padding-left:8px; font-size:15px; line-height:25px;">Integration in ERP, Shop- und Lagersysteme (SAP, Dynamics, Shopware, Shopify)</td>
+                                  @ecom:end-->
                                 </tr>
                                 <tr>
                                   <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A817C;">&#8212;</td>
@@ -232,10 +265,10 @@
               <tr>
                 <td class="px t-body" style="padding:30px 44px 40px 44px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; line-height:27px; color:#413B37;">
                   <p style="margin:0 0 5px 0;">Viele Gr&uuml;&szlig;e</p>
-                  <p style="margin:0; font-weight:600; color:#2E2A28;">{{absender}}</p>
+                  <p class="t-strong" style="margin:0; font-weight:600; color:#2E2A28;">{{absender}}</p>
                   <p class="t-muted" style="margin:2px 0 0 0; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:14px; line-height:22px; color:#8A817C;">
                     {{position}} &middot; adept&amp;<br />
-                    <a href="tel:{{telefon_e164}}" style="color:#574D49; text-decoration:none;">{{telefon}}</a>
+                    <a class="link" href="tel:{{telefon_e164}}" style="color:#574D49; text-decoration:none;">{{telefon}}</a>
                   </p>
                 </td>
               </tr>
