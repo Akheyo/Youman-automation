@@ -6,7 +6,7 @@
 <meta name="x-apple-disable-message-reformatting" />
 <meta name="color-scheme" content="light dark" />
 <meta name="supported-color-schemes" content="light dark" />
-<title>Frage zu {{firma}}</title>
+<title>Frage zu den Planungsprozessen bei {{firma}}</title>
 <!--[if mso]>
 <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
 <![endif]-->
@@ -15,8 +15,6 @@
   body { margin:0 !important; padding:0 !important; width:100% !important; }
   table { border-collapse:collapse !important; }
   img { border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic; }
-  a { color:#4f46e5; }
-  /* Outlook.com / Gmail Link-Auto-Styling neutralisieren */
   a[x-apple-data-detectors], .unstyle-auto-detected-links a, .aBn {
     color:inherit !important; text-decoration:none !important; font-size:inherit !important;
     font-family:inherit !important; font-weight:inherit !important; line-height:inherit !important;
@@ -24,96 +22,126 @@
   }
   @media screen and (max-width:620px) {
     .wrap { width:100% !important; }
-    .px { padding-left:24px !important; padding-right:24px !important; }
-    .h1 { font-size:22px !important; line-height:30px !important; }
+    .px { padding-left:26px !important; padding-right:26px !important; }
+    .h1 { font-size:21px !important; line-height:29px !important; }
+    .logo { font-size:27px !important; }
   }
   @media (prefers-color-scheme: dark) {
-    .bg-page { background-color:#0d0f1a !important; }
-    .bg-card { background-color:#1a1e30 !important; }
-    .t-body { color:#d7dbe8 !important; }
-    .t-head { color:#ffffff !important; }
-    .t-muted { color:#8b91a7 !important; }
-    .rule { border-color:#2b3049 !important; }
+    .bg-page { background-color:#17140F !important; }
+    .bg-card { background-color:#221E19 !important; }
+    .bg-soft { background-color:#2B2620 !important; }
+    .t-body  { color:#DDD6CD !important; }
+    .t-head  { color:#FFFFFF !important; }
+    .t-muted { color:#9C9188 !important; }
+    .t-logo  { color:#EDE7E0 !important; }
+    .rule    { border-color:#3A342C !important; }
+    .btn     { background-color:#EDE7E0 !important; }
+    .btn a   { color:#221E19 !important; }
   }
 </style>
 </head>
 
-<body class="bg-page" style="margin:0; padding:0; background-color:#f0f2ff;">
+<body class="bg-page" style="margin:0; padding:0; background-color:#F4F2EF;">
 
-<!-- Preheader: erscheint in der Inbox-Vorschau, nicht in der Mail selbst -->
+<!-- Preheader: Inbox-Vorschau, in der Mail selbst unsichtbar -->
 <div style="display:none; font-size:1px; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; mso-hide:all;">
-  Kurze Frage zu den Anfragen bei {{firma}} - 15 Minuten, dann wissen Sie, ob es passt.
+  Wie ein Hersteller 2.556 Palettentypen auf eine handhabbare Zahl gebracht hat - ohne Systemwechsel.
   &#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;
 </div>
 
-<table role="presentation" class="bg-page" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f2ff;">
+<table role="presentation" class="bg-page" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F4F2EF;">
   <tr>
-    <td align="center" style="padding:32px 12px;">
+    <td align="center" style="padding:36px 12px;">
 
       <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
       <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px;">
 
-        <!-- Absender-Zeile -->
+        <!-- ===================== LOGO =====================
+             Wortmarke als Text: kein Bild-Blocker, kein Nachladen, gestochen scharf
+             auf Retina. Sobald eine gehostete PNG-Datei existiert (2x, ~360x110 px,
+             transparent), stattdessen den auskommentierten Block darunter nutzen.
+        ================================================== -->
         <tr>
-          <td class="px" style="padding:0 40px 14px 40px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:13px; line-height:18px; color:#6b7280; letter-spacing:0.02em;">
-            <span class="t-muted" style="color:#6b7280;">Youman&nbsp;Automation</span>
+          <td class="px" style="padding:0 44px 26px 44px;">
+            <div class="logo t-logo" style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:31px; line-height:38px; font-weight:600; letter-spacing:-0.035em; color:#574D49;">adept&amp;</div>
+            <div class="t-muted" style="padding-top:7px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:12px; line-height:18px; font-weight:400; letter-spacing:0.09em; text-transform:uppercase; color:#8A817C;">Beratung. Software. Integration.</div>
+            <!--
+            <img src="https://adept-und.de/mail/adept-logo@2x.png" width="150" height="46" alt="adept&amp;"
+                 style="display:block; width:150px; max-width:150px; height:auto; border:0;" />
+            -->
           </td>
         </tr>
 
-        <!-- Karte -->
+        <!-- ===================== KARTE ===================== -->
         <tr>
-          <td class="bg-card" style="background-color:#ffffff; border-radius:14px;">
+          <td class="bg-card" style="background-color:#FFFFFF; border-radius:4px; border:1px solid #E7E2DC;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 
-              <!-- Akzentlinie oben -->
               <tr>
-                <td style="height:4px; line-height:4px; font-size:0; background-color:#6366f1; border-radius:14px 14px 0 0;">&nbsp;</td>
-              </tr>
-
-              <tr>
-                <td class="px" style="padding:36px 40px 8px 40px;">
-                  <h1 class="h1 t-head" style="margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:24px; line-height:32px; font-weight:600; color:#111827; letter-spacing:-0.01em;">
+                <td class="px" style="padding:40px 44px 0 44px;">
+                  <h1 class="h1 t-head" style="margin:0; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:23px; line-height:32px; font-weight:600; color:#2E2A28; letter-spacing:-0.012em;">
                     Hallo {{vorname}},
                   </h1>
                 </td>
               </tr>
 
               <tr>
-                <td class="px t-body" style="padding:16px 40px 0 40px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:16px; line-height:26px; color:#374151;">
-                  <p style="margin:0 0 16px 0;">
-                    mir ist {{aufhaenger}} aufgefallen &ndash; deshalb schreibe ich.
+                <td class="px t-body" style="padding:18px 44px 0 44px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; line-height:27px; color:#413B37;">
+                  <p style="margin:0 0 17px 0;">
+                    {{aufhaenger}} &ndash; deshalb schreibe ich Ihnen.
                   </p>
-                  <p style="margin:0 0 16px 0;">
-                    Bei den meisten {{branche}}-Betrieben, mit denen wir arbeiten, war der teuerste
-                    Punkt nicht die Werbung, sondern die Zeit zwischen Anfrage und R&uuml;ckruf. Wer nach
-                    20&nbsp;Minuten zur&uuml;ckruft, redet oft schon mit dem Zweitplatzierten.
+                  <p style="margin:0 0 17px 0;">
+                    Bei Herstellern mit hoher Variantenvielfalt sehen wir fast immer dasselbe Muster:
+                    Das ERP verwaltet die Auftr&auml;ge sauber, aber die eigentliche Planung l&auml;uft
+                    daneben &ndash; in Excel, im Kopf einzelner Mitarbeiter, per Zuruf. Jede Abweichung
+                    kostet Handarbeit, und niemand sieht sie im System.
                   </p>
-                  <p style="margin:0 0 20px 0;">
-                    Wir haben daf&uuml;r <strong style="font-weight:600; color:#111827;">Lina</strong> gebaut:
-                    eine KI, die neue Anfragen in unter 60&nbsp;Sekunden anruft, auf Deutsch qualifiziert
-                    und den Termin direkt in Ihren Kalender legt.
+                  <p style="margin:0 0 17px 0;">
+                    Bei einem Gitterdraht-Hersteller waren es
+                    <strong style="font-weight:600; color:#2E2A28;">2.556 verschiedene Palettentypen</strong>,
+                    jede Kalkulation von Hand. Wir haben ein Modul gebaut, das die Auftragsdaten
+                    per API aus dem ERP zieht, Standard- und Sonderpaletten automatisch klassifiziert
+                    und die Variantenzahl massiv reduziert hat.
+                  </p>
+                  <p style="margin:0 0 22px 0;">
+                    Kein Systemwechsel. Keine Medienbr&uuml;che. Eine Oberfl&auml;che.
                   </p>
                 </td>
               </tr>
 
-              <!-- Drei Punkte -->
+              <!-- Leistungsblock -->
               <tr>
-                <td class="px" style="padding:0 40px;">
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f7f8ff; border-radius:10px;">
+                <td class="px" style="padding:0 44px;">
+                  <table role="presentation" class="bg-soft" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F7F5F2; border-radius:3px;">
                     <tr>
-                      <td class="t-body" style="padding:18px 22px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; line-height:24px; color:#374151;">
+                      <td style="padding:20px 24px;">
                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td width="18" valign="top" style="font-size:15px; line-height:24px; color:#6366f1;">&bull;</td>
-                            <td style="font-size:15px; line-height:24px;">R&uuml;ckruf in unter 60&nbsp;Sekunden, rund um die Uhr</td>
+                            <td class="t-muted" style="padding:0 0 11px 0; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:11px; line-height:16px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#8A817C;">
+                              Was wir machen
+                            </td>
                           </tr>
                           <tr>
-                            <td width="18" valign="top" style="font-size:15px; line-height:24px; color:#6366f1;">&bull;</td>
-                            <td style="font-size:15px; line-height:24px;">Termin landet automatisch im Google&nbsp;Kalender</td>
-                          </tr>
-                          <tr>
-                            <td width="18" valign="top" style="font-size:15px; line-height:24px; color:#6366f1;">&bull;</td>
-                            <td style="font-size:15px; line-height:24px;">Transkript und Zusammenfassung nach jedem Anruf</td>
+                            <td class="t-body" style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:15px; line-height:25px; color:#413B37;">
+                              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                  <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A817C;">&#8212;</td>
+                                  <td style="padding-left:8px; font-size:15px; line-height:25px;">Prozessberatung von der Produktionsplanung bis zur Logistik</td>
+                                </tr>
+                                <tr>
+                                  <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A817C;">&#8212;</td>
+                                  <td style="padding-left:8px; font-size:15px; line-height:25px;">Ma&szlig;geschneiderte Software, eingebettet in adept&amp;</td>
+                                </tr>
+                                <tr>
+                                  <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A817C;">&#8212;</td>
+                                  <td style="padding-left:8px; font-size:15px; line-height:25px;">Integration in SAP, Microsoft&nbsp;Dynamics, infor &amp; Co.</td>
+                                </tr>
+                                <tr>
+                                  <td width="16" valign="top" style="font-size:15px; line-height:25px; color:#8A817C;">&#8212;</td>
+                                  <td style="padding-left:8px; font-size:15px; line-height:25px;">Rollout im Betrieb, inklusive Schulung der Mitarbeiter</td>
+                                </tr>
+                              </table>
+                            </td>
                           </tr>
                         </table>
                       </td>
@@ -123,20 +151,21 @@
               </tr>
 
               <tr>
-                <td class="px t-body" style="padding:20px 40px 0 40px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:16px; line-height:26px; color:#374151;">
+                <td class="px t-body" style="padding:22px 44px 0 44px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; line-height:27px; color:#413B37;">
                   <p style="margin:0;">
-                    Lohnt sich ein 15-Minuten-Call n&auml;chste Woche, um zu schauen, ob das bei
-                    {{firma}} &uuml;berhaupt passt? Wenn nicht, sagen Sie einfach kurz Bescheid &ndash;
-                    dann melde ich mich nicht wieder.
+                    Ob so etwas bei {{firma}} &uuml;berhaupt passt, wei&szlig; ich nicht &ndash; daf&uuml;r kenne ich
+                    Ihre Prozesse zu wenig. 15&nbsp;Minuten w&uuml;rden reichen, um genau das zu kl&auml;ren.
+                    Falls das Thema bei Ihnen keine Rolle spielt, sagen Sie kurz Bescheid &ndash; dann
+                    melde ich mich nicht wieder.
                   </p>
                 </td>
               </tr>
 
               <!-- CTA -->
               <tr>
-                <td class="px" style="padding:26px 40px 0 40px;">
+                <td class="px" style="padding:28px 44px 0 44px;">
                   <!--[if mso]>
-                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{kalender_link}}" style="height:46px; v-text-anchor:middle; width:230px;" arcsize="20%" stroke="f" fillcolor="#6366f1">
+                  <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{kalender_link}}" style="height:46px; v-text-anchor:middle; width:240px;" arcsize="8%" stroke="f" fillcolor="#574D49">
                     <w:anchorlock/>
                     <center style="color:#ffffff; font-family:Arial,sans-serif; font-size:15px; font-weight:bold;">15 Minuten aussuchen</center>
                   </v:roundrect>
@@ -144,8 +173,8 @@
                   <!--[if !mso]><!-- -->
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td align="center" style="background-color:#6366f1; border-radius:8px;">
-                        <a href="{{kalender_link}}" target="_blank" style="display:inline-block; padding:13px 28px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:15px; line-height:20px; font-weight:600; color:#ffffff; text-decoration:none; border-radius:8px;">
+                      <td class="btn" align="center" style="background-color:#574D49; border-radius:3px;">
+                        <a href="{{kalender_link}}" target="_blank" style="display:inline-block; padding:14px 30px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:15px; line-height:20px; font-weight:600; color:#FFFFFF; text-decoration:none; border-radius:3px; letter-spacing:0.01em;">
                           15&nbsp;Minuten aussuchen
                         </a>
                       </td>
@@ -157,12 +186,12 @@
 
               <!-- Signatur -->
               <tr>
-                <td class="px t-body" style="padding:28px 40px 36px 40px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:16px; line-height:26px; color:#374151;">
-                  <p style="margin:0 0 4px 0;">Viele Gr&uuml;&szlig;e</p>
-                  <p style="margin:0; font-weight:600; color:#111827;">{{absender}}</p>
-                  <p class="t-muted" style="margin:2px 0 0 0; font-size:14px; line-height:22px; color:#6b7280;">
-                    Youman Automation &middot;
-                    <a href="tel:{{telefon_e164}}" style="color:#4f46e5; text-decoration:none;">{{telefon}}</a>
+                <td class="px t-body" style="padding:30px 44px 40px 44px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:16px; line-height:27px; color:#413B37;">
+                  <p style="margin:0 0 5px 0;">Viele Gr&uuml;&szlig;e</p>
+                  <p style="margin:0; font-weight:600; color:#2E2A28;">{{absender}}</p>
+                  <p class="t-muted" style="margin:2px 0 0 0; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:14px; line-height:22px; color:#8A817C;">
+                    {{position}} &middot; adept&amp;<br />
+                    <a href="tel:{{telefon_e164}}" style="color:#574D49; text-decoration:none;">{{telefon}}</a>
                   </p>
                 </td>
               </tr>
@@ -171,29 +200,27 @@
           </td>
         </tr>
 
-        <!-- Footer: Impressum + Abmeldung -->
+        <!-- ===================== FOOTER ===================== -->
         <tr>
-          <td class="px" style="padding:22px 40px 0 40px;">
+          <td class="px" style="padding:24px 44px 0 44px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td class="rule" style="border-top:1px solid #dfe3f5; font-size:0; line-height:0;">&nbsp;</td>
-              </tr>
+              <tr><td class="rule" style="border-top:1px solid #E2DCD5; font-size:0; line-height:0;">&nbsp;</td></tr>
             </table>
           </td>
         </tr>
         <tr>
-          <td class="px t-muted unstyle-auto-detected-links" style="padding:16px 40px 0 40px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:12px; line-height:19px; color:#6b7280;">
+          <td class="px t-muted unstyle-auto-detected-links" style="padding:16px 44px 0 44px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:12px; line-height:19px; color:#8A817C;">
             {{firmierung}} &middot; {{strasse}} &middot; {{plz_ort}}<br />
             Vertretungsberechtigt: {{vertretung}} &middot; {{registergericht}}, {{hrb}} &middot; USt-IdNr.: {{ust_id}}<br />
-            <a href="https://youman-automation.com" style="color:#6b7280; text-decoration:underline;">youman-automation.com</a>
+            <a href="{{website}}" style="color:#8A817C; text-decoration:underline;">{{website_text}}</a>
             &middot;
-            <a href="https://youman-automation.com/datenschutz" style="color:#6b7280; text-decoration:underline;">Datenschutz</a>
+            <a href="{{datenschutz_link}}" style="color:#8A817C; text-decoration:underline;">Datenschutz</a>
           </td>
         </tr>
         <tr>
-          <td class="px t-muted" style="padding:12px 40px 0 40px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; font-size:12px; line-height:19px; color:#6b7280;">
+          <td class="px t-muted" style="padding:12px 44px 0 44px; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; font-size:12px; line-height:19px; color:#8A817C;">
             Keine weiteren Mails von mir?
-            <a href="{{abmelde_link}}" style="color:#6b7280; text-decoration:underline;">Hier abmelden</a>
+            <a href="{{abmelde_link}}" style="color:#8A817C; text-decoration:underline;">Hier abmelden</a>
             &ndash; oder einfach &bdquo;stop&ldquo; antworten.
           </td>
         </tr>
