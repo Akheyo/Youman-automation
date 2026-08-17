@@ -54,6 +54,46 @@ const EMPTY_FOOTER =
 const AGB_HEADER_PART = "word/headerAgb.xml";
 const AGB_FOOTER_PART = "word/footerAgb.xml";
 
+/**
+ * NUMPAGES zählt das ganze Dokument – hinter einem Angebot stünde in den AGB
+ * also "Seite 1 von 5" statt "Seite 1 von 4". SECTIONPAGES zählt nur den
+ * eigenen Abschnitt und liefert damit dieselbe Zählung wie die AGB-PDF.
+ *
+ * Das zwischengespeicherte Feldergebnis der Vorlage bleibt stehen: Ein Programm,
+ * das SECTIONPAGES nicht kennt, zeigt weiterhin die zuletzt berechnete Zahl.
+ */
+function scopePageCountToSection(footerXml: string): string {
+  return footerXml.replace(
+    /(<w:instrText[^>]*>[^<]*?)NUMPAGES([^<]*<\/w:instrText>)/g,
+    "$1SECTIONPAGES$2"
+  );
+}
+
+/** Erstes Vorkommen eines Tags, tolerant gegenüber der Attributreihenfolge. */
+function refId(sectPr: string, tag: "headerReference" | "footerReference", type: string): string | null {
+  for (const [, attrs] of sectPr.matchAll(new RegExp(`<w:${tag}([^>]*)/>`, "g"))) {
+    if (!attrs!.includes(`w:type="${type}"`)) continue;
+    const id = /r:id="(rId\d+)"/.exec(attrs!)?.[1];
+    if (id) return id;
+  }
+  return null;
+}
+
+/**
+ * Lässt die Seitenzählung im AGB-Abschnitt wieder bei 1 beginnen.
+ *
+ * Ohne das zählte PAGE über das Angebot hinweg weiter ("Seite 2 von 4").
+ * Reihenfolge laut Schema: pgNumType steht hinter pgMar.
+ */
+function restartPageNumbers(sectPr: string): string {
+  if (sectPr.includes("<w:pgNumType")) return sectPr;
+  const start = '<w:pgNumType w:start="1"/>';
+  const pgMar = /<w:pgMar[^>]*\/>/.exec(sectPr);
+  return pgMar
+    ? sectPr.replace(pgMar[0], pgMar[0] + start)
+    : sectPr.replace("</w:sectPr>", `${start}</w:sectPr>`);
+}
+
 const REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 const CT_NS = "application/vnd.openxmlformats-officedocument.wordprocessingml";
 
@@ -167,30 +207,61 @@ function merge(offerDocx: Buffer, agbBytes: Buffer): Buffer {
     .replace(/<wp:docPr id="\d+"/g, () => `<wp:docPr id="${objectId++}"`)
     .replace(/<pic:cNvPr id="\d+"/g, () => `<pic:cNvPr id="${objectId++}"`);
 
-  // 3. Leere Kopf-/Fußzeile für den AGB-Abschnitt, damit der Briefbogen des
-  //    Angebots nicht auf den AGB-Seiten weiterläuft (Abschnitte erben sonst).
+  // 3. Kopf-/Fußzeile des AGB-Abschnitts.
+  //
+  //    Kopfzeile: immer leer, damit der Briefbogen des Angebots nicht auf den
+  //    AGB-Seiten weiterläuft (Abschnitte erben ihn sonst vom vorherigen).
+  //
+  //    Fußzeile: die der AGB selbst, damit die Seitenzählung "Seite X von 4"
+  //    erhalten bleibt – im PDF steht sie ja auch, weil dort die Original-Seiten
+  //    angehängt werden. Nur wenn die AGB gar keine Fußzeile mitbringen, kommt
+  //    eine leere, denn die des Angebots wäre hier falsch.
+  const addOverride = (part: string, kind: "header" | "footer"): void => {
+    if (contentTypes.includes(`PartName="/${part}"`)) return;
+    contentTypes = contentTypes.replace(
+      "</Types>",
+      `<Override PartName="/${part}" ContentType="${CT_NS}.${kind}+xml"/></Types>`
+    );
+  };
+
   if (!target.file(AGB_HEADER_PART)) target.file(AGB_HEADER_PART, EMPTY_HEADER);
-  if (!target.file(AGB_FOOTER_PART)) target.file(AGB_FOOTER_PART, EMPTY_FOOTER);
   const headerId = `rId${relCounter++}`;
-  const footerId = `rId${relCounter++}`;
   targetRels = addRel(targetRels, headerId, `${REL_NS}/header`, "headerAgb.xml");
-  targetRels = addRel(targetRels, footerId, `${REL_NS}/footer`, "footerAgb.xml");
-  for (const [part, kind] of [
-    [AGB_HEADER_PART, "header"],
-    [AGB_FOOTER_PART, "footer"],
-  ] as const) {
-    if (!contentTypes.includes(`PartName="/${part}"`)) {
-      contentTypes = contentTypes.replace(
-        "</Types>",
-        `<Override PartName="/${part}" ContentType="${CT_NS}.${kind}+xml"/></Types>`
-      );
-    }
+  addOverride(AGB_HEADER_PART, "header");
+
+  // Fußzeilen-Parts der AGB übernehmen; ihre Beziehungs-IDs gelten nur in der
+  // AGB-Datei und zeigen im Angebot sonst auf eine ganz andere Datei.
+  const footerIds = new Map<string, string>();
+  for (const [, oldId, source] of agbRels.matchAll(
+    /Id="(rId\d+)"[^>]*Type="[^"]*\/footer"[^>]*Target="([^"]+)"/g
+  )) {
+    const file = agb.file(`word/${source}`);
+    if (!file) continue;
+    const name = `agb-${source!.split("/").pop()}`;
+    target.file(`word/${name}`, scopePageCountToSection(file.asText()));
+    const newId = `rId${relCounter++}`;
+    footerIds.set(oldId!, newId);
+    targetRels = addRel(targetRels, newId, `${REL_NS}/footer`, name);
+    addOverride(`word/${name}`, "footer");
   }
-  // headerReference/footerReference müssen die ersten Kinder von sectPr sein.
+
+  let footerId = footerIds.get(refId(agbSect, "footerReference", "default") ?? "") ?? null;
+  if (!footerId) {
+    if (!target.file(AGB_FOOTER_PART)) target.file(AGB_FOOTER_PART, EMPTY_FOOTER);
+    footerId = `rId${relCounter++}`;
+    targetRels = addRel(targetRels, footerId, `${REL_NS}/footer`, "footerAgb.xml");
+    addOverride(AGB_FOOTER_PART, "footer");
+  }
+
+  // Die mitgebrachten Verweise fliegen raus – sie zeigen ins AGB-Archiv –, die
+  // eigenen kommen an den Anfang: headerReference/footerReference müssen laut
+  // Schema die ersten Kinder von sectPr sein.
   const refs = `<w:headerReference w:type="default" r:id="${headerId}"/><w:footerReference w:type="default" r:id="${footerId}"/>`;
+  agbSect = agbSect.replace(/<w:(?:header|footer)Reference[^>]*\/>/g, "");
   agbSect = agbSect
     ? agbSect.replace(/^<w:sectPr([^>]*)>/, (_m, attrs: string) => `<w:sectPr${attrs}>${refs}`)
     : `<w:sectPr>${refs}</w:sectPr>`;
+  agbSect = restartPageNumbers(agbSect);
 
   // 4. Zusammensetzen: Angebotsinhalt, dessen Abschnittseigenschaften als
   //    Absatz-sectPr (beendet den ersten Abschnitt), dann die AGB.

@@ -62,19 +62,34 @@ describe("appendAgbDocx", () => {
     expect(document).toContain("Bergmann Handels GmbH");
   });
 
+  const lastSect = document.slice(document.lastIndexOf("<w:sectPr"));
+
   it("puts the AGB into their own section without the letterhead", () => {
     // Zwei sectPr: eines beendet das Angebot, das letzte gehört zu den AGB.
     expect((document.match(/<w:sectPr/g) ?? []).length).toBe(2);
-    const lastSect = document.slice(document.lastIndexOf("<w:sectPr"));
     const headerId = /<w:headerReference[^>]*r:id="(rId\d+)"/.exec(lastSect)?.[1];
-    const footerId = /<w:footerReference[^>]*r:id="(rId\d+)"/.exec(lastSect)?.[1];
     expect(headerId).toBeTruthy();
-    expect(footerId).toBeTruthy();
     expect(rels).toContain(`Id="${headerId}" Type="${"http://schemas.openxmlformats.org/officeDocument/2006/relationships/header"}" Target="headerAgb.xml"`);
-    expect(rels).toContain(`Id="${footerId}" Type="${"http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"}" Target="footerAgb.xml"`);
-    // Die leeren Kopf-/Fußzeilen tragen keinen Briefbogen.
+    // Die leere Kopfzeile trägt keinen Briefbogen.
     expect(text(result, "word/headerAgb.xml")).not.toContain("<w:t");
-    expect(text(result, "word/footerAgb.xml")).not.toContain("<w:t");
+  });
+
+  it("keeps the page numbering of the AGB", () => {
+    // Genau ein Verweis je Art: Die AGB bringen einen eigenen mit, der nach dem
+    // Zusammenbau ins Leere zeigte.
+    expect((lastSect.match(/<w:headerReference/g) ?? []).length).toBe(1);
+    expect((lastSect.match(/<w:footerReference/g) ?? []).length).toBe(1);
+
+    const footerId = /<w:footerReference[^>]*r:id="(rId\d+)"/.exec(lastSect)![1];
+    const targetPart = new RegExp(`Id="${footerId}"[^>]*Target="([^"]+)"`).exec(rels)![1];
+    const footer = text(result, `word/${targetPart}`);
+    expect(footer).toContain("Seite ");
+    expect(footer).toContain(" PAGE ");
+    // SECTIONPAGES statt NUMPAGES: sonst zählte die Fußzeile das Angebot mit.
+    expect(footer).toContain(" SECTIONPAGES ");
+    expect(footer).not.toContain(" NUMPAGES ");
+    // Und die Zählung beginnt in den AGB wieder bei 1.
+    expect(lastSect).toContain('<w:pgNumType w:start="1"/>');
   });
 
   it("rewrites ids so nothing collides with the template", () => {
