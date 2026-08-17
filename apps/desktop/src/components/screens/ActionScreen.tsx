@@ -465,8 +465,18 @@ const LINE_ITEM_LABELS: Record<string, string> = {
   pricePerUnit: "Einzelpreis",
 };
 
+/**
+ * Zahlenspalten, die zwingend größer als 0 sein müssen.
+ *
+ * Bewusst NICHT alle: Der Einzelpreis darf negativ sein, weil manche Mandanten
+ * den Rabatt als eigene Artikelposition mit Minusbetrag führen. Die Regeln
+ * entsprechen genau denen des Servers (Menge positiv, Preis endlich) – eine
+ * strengere Prüfung hier würde Angebote abweisen, die das Backend annimmt.
+ */
+const POSITIVE_ONLY_COLUMNS = new Set(["quantity"]);
+
 /** Returns a German error message when a line-item table has invalid rows, else null. */
-function validateLineItems(action: ActionDefinition, payload: Record<string, unknown>): string | null {
+export function validateLineItems(action: ActionDefinition, payload: Record<string, unknown>): string | null {
   for (const field of action.fields) {
     if (field.type !== "table_line_items") continue;
     const rows = payload[field.key];
@@ -480,7 +490,10 @@ function validateLineItems(action: ActionDefinition, payload: Record<string, unk
         const value = row[col.key];
         const label = LINE_ITEM_LABELS[col.key] ?? col.label;
         if (col.type === "number") {
-          if (typeof value !== "number" || Number.isNaN(value) || value <= 0) {
+          if (typeof value !== "number" || !Number.isFinite(value)) {
+            return `Position ${i + 1}: ${label} fehlt oder ist keine Zahl.`;
+          }
+          if (POSITIVE_ONLY_COLUMNS.has(col.key) && value <= 0) {
             return `Position ${i + 1}: ${label} muss größer als 0 sein.`;
           }
         } else if (value === undefined || value === null || String(value).trim() === "") {
