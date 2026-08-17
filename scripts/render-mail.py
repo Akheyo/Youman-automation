@@ -35,8 +35,11 @@ LOG = ROOT / "marketing" / "versand-log.csv"
 ABSENDER = "Amanuel Kheyo <kheyo@adeptandpartners.de>"
 
 # Rechtsformen und Klammerzusaetze kosten im Betreff nur Platz.
+# Das \b vor der Gruppe ist wesentlich: ohne es greift die Alternative mitten
+# im Wort und macht aus "EUG Extrusions..." ein "E Extrusions...", aus
+# "SOMAG AG Jena" ein "SOM Jena". Nur freistehende Rechtsformen entfernen.
 RECHTSFORM = re.compile(
-    r"\s*(GmbH\s*&\s*Co\.?\s*KGaA|GmbH\s*&\s*Co\.?\s*KG|AG\s*&\s*Co\.?\s*KG|gGmbH|GmbH"
+    r"\s*\b(GmbH\s*&\s*Co\.?\s*KGaA|GmbH\s*&\s*Co\.?\s*KG|AG\s*&\s*Co\.?\s*KG|gGmbH|GmbH"
     r"|AG|KGaA|KG|OHG|SE|e\.\s*K\.?|mbH|UG\s*\(haftungsbeschr[aä]nkt\)|UG)\b\.?",
     re.I,
 )
