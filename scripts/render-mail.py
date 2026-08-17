@@ -43,6 +43,31 @@ RECHTSFORM = re.compile(
 KLAMMERZUSATZ = re.compile(r"\s*\([^)]*\)")
 ECOM = re.compile(r"e-?commerce|handel|shop|versand", re.I)
 
+# Der individuelle Einstiegsabsatz. Ohne Text faellt er ersatzlos weg.
+HOOK = re.compile(r"<!--@hook:start-->(.*?)<!--@hook:end-->", re.S)
+
+# Drei Betreffzeilen je Fassung. Immer dieselbe Zeile an alle 233 Empfaenger
+# ist das auffaelligste Muster einer Serienmail - die Rotation bricht es.
+# Gewaehlt wird stabil ueber die Adresse, damit derselbe Lead beim erneuten
+# Rendern denselben Betreff bekommt.
+BETREFFE = {
+    "ind": [
+        "Frage zu den Planungsprozessen bei {firma}",
+        "Kurze Frage zu {firma}",
+        "{firma}: manuelle Schritte trotz ERP?",
+    ],
+    "ecom": [
+        "Frage zur Auftragsabwicklung bei {firma}",
+        "Kurze Frage zu {firma}",
+        "{firma}: Shop, Lager und ERP",
+    ],
+}
+
+
+def betreff(art: str, firma: str, adresse: str) -> str:
+    zeilen = BETREFFE[art]
+    return zeilen[sum(adresse.lower().encode()) % len(zeilen)].format(firma=firma)
+
 
 def load(name: str):
     """Laedt ein Nachbarskript (Bindestrich im Dateinamen, kein Modulname)."""
@@ -72,25 +97,38 @@ def versendet() -> dict[str, str]:
         return {r["E-Mail"].lower(): r["Zeitpunkt"] for r in csv.DictReader(f, delimiter=";")}
 
 
-def rendern(lead: dict, fassungen: dict[str, str], plain: str) -> dict:
+def rendern(lead: dict, fassungen: dict[str, str], plain: str, aufhaenger: str = "") -> dict:
+    aufhaenger = (aufhaenger or "").strip()
     werte = {
         "anrede": (lead.get("Anrede") or "").strip() or lead["Name"].strip(),
         "firma": kurzname(lead.get("Firmenname", "")),
+        "aufhaenger": aufhaenger,
     }
     art = "ecom" if ECOM.search(lead.get("Branche") or "") else "ind"
 
     def setze(vorlage: str) -> str:
         return re.sub(r"\{\{(\w+)\}\}", lambda m: werte.get(m.group(1), m.group(0)), vorlage)
 
-    html = setze(fassungen[art])
+    # Ohne Einstiegssatz verschwindet der Absatz, statt leer stehen zu bleiben.
+    roh = fassungen[art]
+    roh = HOOK.sub(lambda m: m.group(1) if aufhaenger else "", roh)
+    html = setze(roh)
+    text = re.sub(r"\n{3,}", "\n\n", setze(plain))
+
+    adresse = lead["E-Mail"].strip()
     return {
-        "an": lead["E-Mail"].strip(),
+        "an": adresse,
         "name": lead["Name"].strip(),
         "firma": lead.get("Firmenname", "").strip(),
+        "position": (lead.get("Position") or "").strip(),
+        "branche": (lead.get("Branche") or "").strip(),
+        "ort": (lead.get("Ort") or "").strip(),
+        "beschreibung": (lead.get("Beschreibung") or "").strip(),
+        "aufhaenger": aufhaenger,
         "von": ABSENDER,
-        "betreff": re.search(r"<title>(.*?)</title>", html, re.S).group(1).strip(),
+        "betreff": betreff(art, werte["firma"], adresse),
         "html": html,
-        "text": setze(plain),
+        "text": text,
         "fassung": art,
     }
 
@@ -117,6 +155,7 @@ def main() -> None:
     p.add_argument("--email", help="einen bestimmten Lead rendern")
     p.add_argument("--mark", nargs="+", metavar="ADRESSE", help="Adressen als versendet eintragen")
     p.add_argument("--status", action="store_true", help="Zaehlstand ausgeben")
+    p.add_argument("--aufhaenger", default="", help="individueller Einstiegssatz (nur mit --email)")
     args = p.parse_args()
 
     if args.mark:
@@ -142,7 +181,7 @@ def main() -> None:
         treffer = [l for l in alle if l["E-Mail"].strip().lower() == args.email.strip().lower()]
         if not treffer:
             raise SystemExit(f"kein Lead mit der Adresse {args.email}")
-        ausgabe = [rendern(treffer[0], fassungen, eml.PLAIN)]
+        ausgabe = [rendern(treffer[0], fassungen, eml.PLAIN, args.aufhaenger)]
     else:
         ausgabe = [rendern(l, fassungen, eml.PLAIN) for l in offen[: args.next]]
 

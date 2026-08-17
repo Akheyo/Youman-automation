@@ -21,6 +21,7 @@ Nur zwei, beide werden aus der Lead-Liste gefüllt:
 |---|---|---|
 | `{{anrede}}` | Spalte `Anrede`, sonst `Name` | `Tim Kaldeuer` |
 | `{{firma}}` | `Firmenname`, ohne Rechtsform | `August Schmits` |
+| `{{aufhaenger}}` | **du schreibst ihn**, aus Spalte `Beschreibung` | siehe unten |
 
 `{{firma}}` steht nur im Betreff. Rechtsform und Klammerzusätze werden
 entfernt — aus `August Schmits GmbH & Co. KG (ASMetal)` wird `August Schmits`,
@@ -33,6 +34,67 @@ schließen wäre geraten — bei 233 Kontakten geht das zwangsläufig ein paar M
 daneben, und eine falsche Anrede kostet mehr als eine neutrale. Wer „Guten Tag
 Herr Kaldeuer" will, ergänzt in der CSV eine Spalte `Anrede`; die hat Vorrang.
 
+## Der individuelle Einstiegssatz
+
+Das ist der einzige Teil, den kein Skript füllt. Alles andere ist bei allen
+233 Empfängern gleich — dieser eine Satz ist der Unterschied zwischen einer
+Serienmail und einer, die jemand geschrieben hat.
+
+Er steht als erster Absatz über dem Haupttext. Die Quelle ist die Spalte
+`Beschreibung` in der Lead-Liste, die zu jeder Firma zwei bis drei Sätze
+enthält: was sie herstellt, seit wann, für welche Branchen, wie das Unternehmen
+geführt wird.
+
+**Regeln:**
+
+- ein Satz, höchstens zwei, kleingeschrieben beginnen (er folgt auf das Komma
+  der Anrede)
+- etwas Konkretes aus der Beschreibung nennen — Produkt, Gründungsjahr, Standort,
+  Zertifizierung, Kundenkreis
+- daraus eine Brücke zum Thema bauen: Variantenvielfalt, Schnittstellen,
+  Sonderfälle, Abstimmung zwischen Bereichen
+- nichts behaupten, was nicht in der Beschreibung steht — keine erfundenen
+  Kennzahlen, keine vermuteten Probleme als Tatsache
+- nicht schleimen. „Ihr beeindruckendes Unternehmen" liest sich wie ein Serienbrief
+
+**Gut:**
+
+> seit 1929 fertigen Sie in Mettmann Stanz- und Tiefziehteile für
+> Automotive-Kunden – bei Lieferabrufen von OEMs und Tier-1 hängt viel an
+> sauberen Schnittstellen.
+
+> als IATF-zertifizierter Hersteller von Präzisionsdrehteilen für Lenkungstechnik
+> haben Sie vermutlich eine hohe Teilevielfalt bei enger Toleranz.
+
+**Schlecht:**
+
+> ich bin auf Ihr Unternehmen aufmerksam geworden.  (sagt nichts)
+
+> Sie verlieren sicher viel Zeit durch manuelle Prozesse.  (Behauptung ins Blaue)
+
+So wird er eingesetzt:
+
+```bash
+python3 scripts/render-mail.py --email tim.kaldeuer@asmetal.de \
+  --aufhaenger "seit 1929 fertigen Sie in Mettmann Stanz- und Tiefziehteile ..."
+```
+
+Ohne `--aufhaenger` fällt der Absatz ersatzlos weg — die Mail funktioniert auch
+so, ist dann aber für alle gleich.
+
+## Betreffzeilen
+
+Drei Varianten je Fassung, verteilt über die Liste. Immer derselbe Betreff an
+233 Empfänger ist das auffälligste Muster einer Serienmail. Welche Zeile ein
+Lead bekommt, entscheidet seine Adresse — beim erneuten Rendern bleibt es
+dieselbe.
+
+| | Industrie |
+|---|---|
+| 1 | Frage zu den Planungsprozessen bei {firma} |
+| 2 | Kurze Frage zu {firma} |
+| 3 | {firma}: manuelle Schritte trotz ERP? |
+
 ## Ablauf
 
 ```bash
@@ -40,8 +102,15 @@ python3 scripts/render-mail.py --status     # Zählstand: gesamt / versendet / o
 python3 scripts/render-mail.py --next 5     # nächste 5 offene Leads als JSON
 ```
 
-Pro Lead kommt zurück: `an`, `name`, `firma`, `von`, `betreff`, `html`, `text`,
-`fassung`. Damit über den Gmail-Connector senden — **HTML und Plain Text
+Pro Lead kommt zurück: `an`, `name`, `firma`, `position`, `branche`, `ort`,
+`beschreibung`, `von`, `betreff`, `html`, `text`, `fassung`.
+
+`--next` liefert die Mail **ohne** Einstiegssatz. Der richtige Ablauf ist
+deshalb zweistufig: mit `--next 5` die Leads samt `beschreibung` holen, für
+jeden den Satz schreiben, dann jede Mail einzeln mit `--email … --aufhaenger …`
+final rendern. Erst dieses Ergebnis wird verschickt.
+
+Damit über den Gmail-Connector senden — **HTML und Plain Text
 zusammen** als `multipart/alternative`. Eine reine HTML-Mail ohne Textteil
 wird von Spamfiltern abgewertet.
 

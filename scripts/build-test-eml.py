@@ -30,6 +30,8 @@ EMPFAENGER = "Info@youman-automation.com"
 # im Text traegt die Struktur der Zeilenumbruch, nicht das Markup.
 PLAIN = """Guten Tag {{anrede}},
 
+{{aufhaenger}}
+
 viele Produktionsunternehmen arbeiten heute mit soliden ERP- oder
 SAP-Systemen, und trotzdem laufen einzelne operative Prozesse im Alltag noch
 manuell, etwa bei Sonderfaellen in der Auftragsabwicklung, bei
