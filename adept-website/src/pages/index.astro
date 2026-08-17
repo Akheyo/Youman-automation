@@ -1,0 +1,97 @@
+---
+import Base from '../layouts/Base.astro';
+import HeroVideo from '../components/HeroVideo.astro';
+import Section from '../components/Section.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import TeaserCard from '../components/TeaserCard.astro';
+import { news } from '../data/news';
+import { site } from '../data/site';
+import { withBase } from '../lib/url';
+
+/**
+ * Scroll-Reihenfolge laut Briefing:
+ * 1. Hero (Video, adept& / Deutschland)
+ * 2. Aktuelle Themen (4 Kacheln)
+ * 3. Über adept& (nur Geschichte und Werte)
+ * 4. Abschluss-/Footer-Sektion (in Footer.astro, ohne Newsletter)
+ */
+
+// Inhalte für "Geschichte" und "Werte" liegen noch nicht vor.
+const ueberKacheln = [
+  {
+    title: 'Geschichte',
+    href: '/ueber-uns#geschichte',
+    flaeche: 'from-ink-deep to-[#0a3350]',
+  },
+  {
+    title: 'Werte',
+    href: '/ueber-uns#werte',
+    flaeche: 'from-[#0a3350] to-accent',
+  },
+];
+---
+
+<Base title={site.name} description={site.description}>
+  <HeroVideo title={site.name} subtitle={site.region} />
+
+  <Section tone="light">
+    <SectionHeading kicker="Aktuelles" title="Aktuelle Themen" align="center" />
+    <ul class="mt-14 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        news.map((item, index) => (
+          <li>
+            <TeaserCard
+              title={item.title}
+              href={item.href}
+              kicker={item.kicker}
+              date={item.date}
+              excerpt={item.excerpt}
+              index={index}
+              platzhalter={item.platzhalter}
+            />
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section tone="canvas">
+    <SectionHeading
+      title="Über adept&"
+      lead="Wir sind kein reines Beratungshaus, das Empfehlungen ausspricht. Und kein klassisches Softwareunternehmen, das ein Standardprodukt verkauft. Wir tun beides: Wir analysieren das Problem und wir bauen die Lösung."
+      align="center"
+    />
+
+    <ul class="mt-14 grid gap-6 sm:grid-cols-2">
+      {
+        ueberKacheln.map((kachel) => (
+          <li>
+            <a
+              href={withBase(kachel.href)}
+              class="group relative block aspect-4/3 sm:aspect-16/10 overflow-hidden"
+            >
+              <div
+                class:list={[
+                  'absolute inset-0 bg-gradient-to-br transition-transform duration-500 group-hover:scale-105',
+                  kachel.flaeche,
+                ]}
+                aria-hidden="true"
+              />
+              <div class="absolute inset-0 bg-ink-deep/35" aria-hidden="true" />
+              <span class="absolute left-3 top-3 border border-white/50 bg-black/60 px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-widest text-white">
+                Platzhalter
+              </span>
+              <span class="absolute bottom-6 left-6 font-display text-2xl md:text-3xl font-semibold text-white">
+                {kachel.title}
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="mt-8 text-center text-sm text-muted-fg">
+      Texte für „Geschichte“ und „Werte“ liegen noch nicht vor.
+    </p>
+  </Section>
+</Base>

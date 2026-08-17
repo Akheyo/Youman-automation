@@ -1,0 +1,227 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import Section from '../../components/Section.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import Button from '../../components/Button.astro';
+
+/**
+ * Quelle: "Case Study Draht Müller.adept.pdf" und "Überblick wer wir sind.pdf".
+ * Bewusst NICHT enthalten: Einsparungs- oder Prozentangaben und Kundenstimmen –
+ * dafür liegt bislang nichts Freigegebenes vor.
+ */
+
+const folgen = [
+  'Hoher Planungsaufwand bei jeder neuen Auftragssituation.',
+  'Fehlende Standardisierung bei wiederkehrenden Palettenmaßen.',
+  'Hohe Komplexität in Beschaffung und Disposition durch 2.556 aktive Palettentypen.',
+  'Keine direkte Verbindung zwischen Auftragseingang und Palettenplanung im ERP-System.',
+];
+
+const berechnung = [
+  'Welche Standardpaletten verwendet werden können.',
+  'Welche Sonderpaletten gefertigt werden müssen.',
+  'Wie viele Einheiten pro Typ benötigt werden.',
+];
+
+const vorgehen = [
+  {
+    step: '01',
+    title: 'Analyse',
+    text: 'Der bestehende Prozess vom Auftragseingang bis zur Palettenentscheidung wurde detailliert aufgenommen: Auftragsdaten, Entscheidungsregeln, Maßlogiken und Schnittstellen im operativen Ablauf.',
+  },
+  {
+    step: '02',
+    title: 'Konzept',
+    text: 'Darauf aufbauend entstand ein Lösungsdesign, das sowohl die fachliche Logik für Standard- und Sonderpaletten als auch die technische Integration in die bestehende ERP-Landschaft berücksichtigt.',
+  },
+  {
+    step: '03',
+    title: 'Entwicklung',
+    text: 'Das kundenspezifische Modul wurde innerhalb des adept&-Gerüsts entwickelt. Im Fokus stand nicht eine allgemeine Standardfunktion, sondern die präzise digitale Abbildung des tatsächlichen Fachprozesses.',
+  },
+  {
+    step: '04',
+    title: 'Integration',
+    text: 'Anschließend wurde das Modul an das ERP-System angebunden, sodass relevante Auftragsdaten automatisiert übernommen, verarbeitet und in den bestehenden Prozess zurückgeführt werden.',
+  },
+];
+---
+
+<Base
+  title="Palettenoptimierung bei der Drahtmüller GmbH"
+  description="2.556 aktive Palettentypen, jede Entscheidung ein Einzelfall: Wie ein Modul im adept&-Gerüst die Palettenlogik an das ERP-System anbindet – ohne Systemablösung."
+>
+  <PageHeader
+    kicker="Case Study"
+    title="Palettenoptimierung bei der Drahtmüller GmbH"
+    lead="Drahtmüller GmbH / Lichtgitter-Gruppe – Palettenoptimierung & Logistiksoftware via adept&"
+    breadcrumb={[
+      { label: 'Home', href: '/' },
+      { label: 'News', href: '/news' },
+    ]}
+  />
+
+  <Section>
+    <div class="grid gap-12 lg:grid-cols-[2fr_1fr] lg:gap-20">
+      <div class="prose-measure space-y-5 text-lg text-ink-soft">
+        <p>
+          Drahtmüller produziert Gitterdrähte nach kundenindividuellen Maßen. Dadurch entstehen auch
+          bei den Versandpaletten stark variierende Anforderungen, da Paletten passgenau zur
+          jeweiligen Produktion gefertigt oder beschafft werden müssen.
+        </p>
+        <p>
+          adept& entwickelte für diesen Engpass ein kundenspezifisches Palettenoptimierungs-Modul,
+          das direkt an das vorhandene ERP-System angebunden ist und relevante Auftragsdaten
+          automatisiert verarbeitet. Die Case Study zeigt exemplarisch, wie sich operative
+          Sonderlogik digital abbilden lässt, ohne die bestehende Systemlandschaft abzulösen.
+        </p>
+      </div>
+
+      <aside class="border-t-2 border-accent bg-canvas p-8">
+        <p class="font-display text-5xl font-semibold text-ink">2.556</p>
+        <p class="mt-2 text-sm text-ink-soft">
+          verschiedene Palettentypen waren im aktiven Einsatz.
+        </p>
+        <dl class="mt-8 space-y-4 border-t border-line pt-6 text-sm">
+          <div>
+            <dt class="font-semibold text-ink">Branche</dt>
+            <dd class="text-ink-soft">Fertigung und Logistik</dd>
+          </div>
+          <div>
+            <dt class="font-semibold text-ink">Lösung</dt>
+            <dd class="text-ink-soft">Palettenoptimierungs-Modul im adept&amp;-Gerüst</dd>
+          </div>
+          <div>
+            <dt class="font-semibold text-ink">Anbindung</dt>
+            <dd class="text-ink-soft">API-Schnittstelle zum bestehenden ERP-System</dd>
+          </div>
+        </dl>
+      </aside>
+    </div>
+  </Section>
+
+  <Section tone="canvas">
+    <SectionHeading
+      kicker="Ausgangssituation"
+      title="Jeder Auftrag ein Einzelfall"
+      lead="Bei Drahtmüller musste für viele Kundenaufträge individuell entschieden werden, welche Paletten benötigt werden und ob bestehende Varianten wiederverwendet werden können. Da jeder Auftrag andere Abmessungen aufweist, entstand eine hohe Zahl an Sonderfällen, die im Tagesgeschäft manuell bewertet und eingeplant werden mussten."
+    />
+    <ul class="mt-12 grid gap-px bg-line md:grid-cols-2">
+      {
+        folgen.map((folge) => (
+          <li class="bg-canvas p-6 text-ink-soft">{folge}</li>
+        ))
+      }
+    </ul>
+    <p class="prose-measure mt-10 text-ink-soft">
+      Gerade in einem variantengetriebenen Produktions- und Logistikumfeld führt eine solche Struktur
+      schnell dazu, dass operative Entscheidungen unnötig aufwendig, fehleranfällig und schwer
+      skalierbar werden.
+    </p>
+  </Section>
+
+  <Section>
+    <SectionHeading kicker="Herausforderung" title="Nicht das ERP fehlte, sondern die Logik davor" />
+    <div class="prose-measure mt-8 space-y-5 text-lg text-ink-soft">
+      <p>
+        Die zentrale Herausforderung bestand nicht im Fehlen eines ERP-Systems, sondern in der
+        fehlenden operativen Logik zwischen Auftragseingang und Palettenentscheidung. Wiederkehrende
+        Maße wurden nicht systematisch als Standardfälle erkannt, sodass viele Vorgänge immer wieder
+        als Einzelfall behandelt werden mussten.
+      </p>
+      <p>
+        Gesucht war deshalb keine zusätzliche Inselsoftware, sondern eine Lösung, die sich in die
+        bestehende Systemlandschaft einfügt und genau den Prozess digitalisiert, der im Tagesgeschäft
+        den größten Engpass verursacht.
+      </p>
+    </div>
+  </Section>
+
+  <Section tone="dark">
+    <SectionHeading
+      kicker="Lösung"
+      title="Ein Modul im adept&-Gerüst, angebunden per API"
+      lead="Das Modul liest alle relevanten Auftragsdaten automatisiert aus und verarbeitet sie unmittelbar nach Auftragseingang."
+      tone="dark"
+    />
+
+    <div class="mt-14 grid gap-12 lg:grid-cols-2 lg:gap-20">
+      <div>
+        <h3 class="text-lg font-semibold text-white">Die Kernfunktion berechnet automatisch:</h3>
+        <ul class="mt-6 space-y-4">
+          {
+            berechnung.map((punkt) => (
+              <li class="flex items-start gap-4 border-t border-white/20 pt-4 text-white/85">
+                <svg
+                  class="mt-1 size-5 shrink-0 text-accent-on-dark"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m5 13 4 4L19 7" />
+                </svg>
+                <span>{punkt}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div class="border-l-2 border-accent-on-dark pl-8">
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent-on-dark">
+          Die entscheidende Logik
+        </p>
+        <p class="mt-4 font-display text-2xl leading-snug text-white">
+          Ab einer Mindestbestellmenge von fünf identischen Maßen klassifiziert die Software eine
+          Palette automatisch als Standardpalette und führt sie dauerhaft im Sortiment.
+        </p>
+        <p class="mt-5 text-white/80">
+          Seltener auftretende Maße werden weiterhin als Sonderpaletten behandelt, durch die neue
+          Systematik jedoch deutlich strukturierter abgebildet.
+        </p>
+      </div>
+    </div>
+  </Section>
+
+  <Section>
+    <SectionHeading
+      kicker="Vorgehen"
+      title="In klaren Schritten umgesetzt"
+      lead="Das Projekt folgte dem allgemeinen Vorgehensmodell von adept&."
+    />
+    <ol class="mt-12 grid gap-px bg-line md:grid-cols-2 xl:grid-cols-4">
+      {
+        vorgehen.map((schritt) => (
+          <li class="bg-surface p-8">
+            <p class="font-display text-3xl font-semibold text-accent">{schritt.step}</p>
+            <h3 class="mt-3 text-lg font-semibold text-ink">{schritt.title}</h3>
+            <p class="mt-3 text-sm text-ink-soft">{schritt.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <Section tone="canvas">
+    <SectionHeading kicker="Ergebnis" title="Aus manueller Bewertung wird ein strukturierter Prozess" />
+    <div class="prose-measure mt-8 space-y-5 text-lg text-ink-soft">
+      <p>
+        Mit dem neuen Modul wurde die zuvor manuelle Palettenlogik in einen klar strukturierten,
+        systemisch unterstützten Prozess überführt. Wiederkehrende Maße können automatisiert erkannt
+        und als Standardfälle behandelt werden, während Sonderfälle gezielter und nachvollziehbarer
+        gesteuert werden.
+      </p>
+    </div>
+    <div class="mt-10 flex flex-wrap gap-3">
+      <Button href="/kontakt" variant="primary">Ähnlichen Fall besprechen</Button>
+      <Button href="/funktionen/logistik-und-versandsteuerung" variant="secondary">
+        Logistik &amp; Versandsteuerung
+      </Button>
+    </div>
+  </Section>
+</Base>

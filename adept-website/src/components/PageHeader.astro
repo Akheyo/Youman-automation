@@ -1,0 +1,43 @@
+---
+import { withBase } from '../lib/url';
+
+interface Props {
+  kicker?: string;
+  title: string;
+  lead?: string;
+  breadcrumb?: { label: string; href: string }[];
+}
+
+const { kicker, title, lead, breadcrumb = [] } = Astro.props;
+---
+
+<div class="on-dark bg-ink-deep text-white">
+  <div class="container-page py-16 md:py-24">
+    {
+      breadcrumb.length > 0 && (
+        <nav aria-label="Brotkrumennavigation" class="mb-6">
+          <ol class="flex flex-wrap items-center gap-x-2 text-sm text-white/70">
+            {breadcrumb.map((crumb, index) => (
+              <li class="flex items-center gap-2">
+                {index > 0 && <span aria-hidden="true">/</span>}
+                <a
+                  href={withBase(crumb.href)}
+                  class="inline-flex min-h-11 items-center hover:text-white transition-colors duration-200"
+                >
+                  {crumb.label}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+    {
+      kicker && (
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent-on-dark">{kicker}</p>
+      )
+    }
+    <h1 class="mt-3 text-4xl sm:text-5xl lg:text-6xl">{title}</h1>
+    {lead && <p class="prose-measure mt-6 text-lg text-white/80">{lead}</p>}
+  </div>
+</div>

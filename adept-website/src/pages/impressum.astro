@@ -1,0 +1,43 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Section from '../components/Section.astro';
+import PlaceholderNote from '../components/PlaceholderNote.astro';
+
+/**
+ * Bewusst ohne Inhalt: Es werden keine Rechtstexte, Adressen, Vertretungs-
+ * berechtigten, Handelsregister- oder Umsatzsteuer-Nummern erfunden.
+ * Der Text muss vor dem Livegang von der Rechtsberatung geliefert werden.
+ */
+const pflichtangaben = [
+  'Name und Anschrift des Unternehmens (§ 5 DDG)',
+  'Vertretungsberechtigte Person(en)',
+  'Kontaktdaten: Telefon und E-Mail-Adresse',
+  'Registergericht und Handelsregisternummer',
+  'Umsatzsteuer-Identifikationsnummer (§ 27 a UStG), sofern vorhanden',
+  'Verantwortlich für den Inhalt',
+  'Hinweis zur EU-Streitschlichtungsplattform und zur Verbraucherschlichtungsstelle',
+];
+---
+
+<Base title="Impressum" description="Impressum von adept&." noindex={true}>
+  <PageHeader title="Impressum" breadcrumb={[{ label: 'Home', href: '/' }]} />
+
+  <Section>
+    <PlaceholderNote title="Platzhalter – Impressum fehlt noch">
+      <p>
+        Diese Seite enthält bewusst keinen Text. Impressumsangaben sind rechtlich verbindlich und
+        werden nicht generiert – sie müssen vollständig und geprüft von adept& bzw. der
+        Rechtsberatung geliefert werden.
+      </p>
+      <p class="mt-3">Für ein Impressum nach deutschem Recht werden typischerweise benötigt:</p>
+      <ul class="mt-3 list-disc space-y-1 pl-5">
+        {pflichtangaben.map((angabe) => <li>{angabe}</li>)}
+      </ul>
+      <p class="mt-4">
+        Der fertige Text wird in <code class="px-1">src/pages/impressum.astro</code> eingesetzt und
+        ersetzt diesen Block.
+      </p>
+    </PlaceholderNote>
+  </Section>
+</Base>

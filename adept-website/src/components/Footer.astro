@@ -1,0 +1,110 @@
+---
+import Logo from './Logo.astro';
+import Button from './Button.astro';
+import { mainNav, footerLegalNav } from '../data/navigation';
+import { withBase } from '../lib/url';
+import { site } from '../data/site';
+
+const jahr = new Date().getFullYear();
+const bereiche = mainNav.filter((item) => item.children);
+---
+
+<!--
+  Aufbau wie in der Referenz, jedoch OHNE Newsletter-Block:
+  kein "Subscribe", kein E-Mail-Feld, kein Submit-Button.
+-->
+<footer class="mt-auto">
+  <!-- Abschluss-Sektion mit Name und Kontakt-CTA -->
+  <div class="bg-canvas border-t border-line">
+    <div
+      class="container-page flex flex-col gap-8 py-14 md:flex-row md:items-center md:justify-between"
+    >
+      <p class="font-display text-2xl md:text-3xl text-ink">
+        {site.name} in {site.region}
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <Button href="/kontakt" variant="primary">Kontakt aufnehmen</Button>
+        <Button href="/ueber-uns" variant="secondary">Über adept&amp;</Button>
+      </div>
+    </div>
+  </div>
+
+  <div class="border-t border-line bg-surface">
+    <div class="container-page py-14">
+      <div class="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <a href={withBase('/')} class="inline-flex min-h-11 items-center rounded-sm" aria-label="adept& – zur Startseite">
+            <Logo class="text-3xl" />
+          </a>
+          <p class="prose-measure mt-4 text-sm text-muted-fg">
+            {site.claim}<br />{site.subclaim}
+          </p>
+        </div>
+
+        {
+          bereiche.map((bereich) => (
+            <nav aria-label={bereich.label}>
+              <h2 class="text-sm font-semibold text-ink">
+                <a href={withBase(bereich.href)} class="inline-flex min-h-11 items-center hover:text-accent transition-colors duration-200">
+                  {bereich.label}
+                </a>
+              </h2>
+              <ul class="mt-4 space-y-2">
+                {bereich.children?.map((child) => (
+                  <li>
+                    <a
+                      href={withBase(child.href)}
+                      class="inline-flex min-h-11 items-center text-sm text-muted-fg hover:text-accent transition-colors duration-200"
+                    >
+                      {child.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))
+        }
+
+        <nav aria-label="Unternehmen">
+          <h2 class="text-sm font-semibold text-ink">Unternehmen</h2>
+          <ul class="mt-4 space-y-2">
+            {
+              mainNav
+                .filter((item) => !item.children && item.href !== '/')
+                .map((item) => (
+                  <li>
+                    <a
+                      href={withBase(item.href)}
+                      class="inline-flex min-h-11 items-center text-sm text-muted-fg hover:text-accent transition-colors duration-200"
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                ))
+            }
+          </ul>
+        </nav>
+      </div>
+
+      <div
+        class="mt-12 flex flex-col gap-4 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <p class="text-sm text-muted-fg">© {jahr} adept&amp;</p>
+        <ul class="flex flex-wrap gap-x-6 gap-y-1">
+          {
+            footerLegalNav.map((item) => (
+              <li>
+                <a
+                  href={withBase(item.href)}
+                  class="inline-flex min-h-11 items-center text-sm text-muted-fg hover:text-accent transition-colors duration-200"
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</footer>

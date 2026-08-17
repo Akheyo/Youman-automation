@@ -1,0 +1,123 @@
+@import 'tailwindcss';
+
+/* Selbst gehostete Fonts (DSGVO: kein Google-Fonts-CDN) */
+@import '@fontsource-variable/lexend';
+@import '@fontsource-variable/source-sans-3';
+
+/*
+  Design-System adept&
+  Hergeleitet mit dem Skill `ui-ux-pro-max`
+  (Pattern "Trust & Authority + Conversion", Stil "Accessible & Ethical",
+  Typo-Pairing "Lexend / Source Sans 3").
+  Abweichung vom Skill-Vorschlag: --color-destructive (#DC2626) ist nicht
+  Teil der Palette, da Rot laut Briefing komplett entfällt.
+*/
+@theme {
+  /* Neutrale Basis: Anthrazit/Navy */
+  --color-ink: #0f172a; /* Fließtext-Dunkel, Überschriften */
+  --color-ink-deep: #051c2c; /* Navigations-Panels, dunkle Sektionen */
+  --color-ink-soft: #334155; /* Sekundärtext auf Hell */
+
+  /* Eine Akzentfarbe, sparsam eingesetzt. Kontrast auf Weiß: 5.1:1 */
+  --color-accent: #0369a1;
+  --color-accent-hover: #075985;
+  --color-accent-on-dark: #7cc4ec; /* Kontrast auf --color-ink-deep: 7.4:1 */
+
+  --color-surface: #ffffff;
+  --color-canvas: #f8fafc;
+  --color-muted: #e8ecf1;
+  --color-muted-fg: #475569; /* Kontrast auf Weiß: 7.4:1 */
+  --color-line: #e2e8f0;
+
+  /* Logo-Anthrazit */
+  --color-brand: #4b5259;
+
+  --font-display: 'Lexend Variable', system-ui, sans-serif;
+  --font-sans: 'Source Sans 3 Variable', system-ui, sans-serif;
+
+  /* Spacing-Skala für Marketing-Seiten (großzügig) */
+  --spacing-section: 6rem;
+  --spacing-section-lg: 8rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    /* Kein horizontales Scrollen bei 375px */
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Sichtbarer Fokus-Ring auf allen fokussierbaren Elementen */
+  :focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Auf dunklem Grund braucht der Ring eine helle Variante */
+  .on-dark :focus-visible {
+    outline-color: #ffffff;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: #ffffff;
+  }
+}
+
+@utility container-page {
+  width: 100%;
+  max-width: 90rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+
+  @media (width >= 48rem) {
+    padding-inline: 2.5rem;
+  }
+
+  @media (width >= 90rem) {
+    padding-inline: 4rem;
+  }
+}
+
+/* Textmaß für Fließtext */
+@utility prose-measure {
+  max-width: 68ch;
+}

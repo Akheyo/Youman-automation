@@ -1,0 +1,21 @@
+---
+import Base from '../layouts/Base.astro';
+import Section from '../components/Section.astro';
+import Button from '../components/Button.astro';
+---
+
+<Base title="Seite nicht gefunden" noindex={true}>
+  <Section class="min-h-[60svh] flex items-center">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Fehler 404</p>
+      <h1 class="mt-3 text-4xl sm:text-5xl">Diese Seite gibt es nicht</h1>
+      <p class="prose-measure mt-6 text-lg text-ink-soft">
+        Möglicherweise wurde die Adresse geändert oder es hat sich ein Tippfehler eingeschlichen.
+      </p>
+      <div class="mt-10 flex flex-wrap gap-3">
+        <Button href="/" variant="primary">Zur Startseite</Button>
+        <Button href="/kontakt" variant="secondary">Kontakt</Button>
+      </div>
+    </div>
+  </Section>
+</Base>

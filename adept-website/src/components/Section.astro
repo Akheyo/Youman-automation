@@ -1,0 +1,22 @@
+---
+interface Props {
+  id?: string;
+  /** "light" = weiß, "canvas" = sehr helles Grau, "dark" = Anthrazit/Navy */
+  tone?: 'light' | 'canvas' | 'dark';
+  class?: string;
+}
+
+const { id, tone = 'light', class: className = '' } = Astro.props;
+
+const tones = {
+  light: 'bg-surface text-ink',
+  canvas: 'bg-canvas text-ink',
+  dark: 'on-dark bg-ink-deep text-white',
+} as const;
+---
+
+<section id={id} class:list={['py-20 md:py-28', tones[tone], className]}>
+  <div class="container-page">
+    <slot />
+  </div>
+</section>

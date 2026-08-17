@@ -1,0 +1,57 @@
+---
+interface Props {
+  /** Kleine Zeile über der Überschrift, gesperrt und in Versalien. */
+  kicker?: string;
+  title: string;
+  lead?: string;
+  align?: 'left' | 'center';
+  as?: 'h2' | 'h3';
+  tone?: 'light' | 'dark';
+}
+
+const {
+  kicker,
+  title,
+  lead,
+  align = 'left',
+  as: Tag = 'h2',
+  tone = 'light',
+}: Props = Astro.props;
+---
+
+<div class:list={[align === 'center' && 'text-center']}>
+  {
+    kicker && (
+      <p
+        class:list={[
+          'text-xs font-semibold uppercase tracking-[0.18em]',
+          tone === 'dark' ? 'text-accent-on-dark' : 'text-accent',
+        ]}
+      >
+        {kicker}
+      </p>
+    )
+  }
+  <Tag
+    class:list={[
+      'text-3xl sm:text-4xl lg:text-5xl',
+      kicker && 'mt-3',
+      tone === 'dark' ? 'text-white' : 'text-ink',
+    ]}
+  >
+    {title}
+  </Tag>
+  {
+    lead && (
+      <p
+        class:list={[
+          'mt-5 text-lg prose-measure',
+          align === 'center' && 'mx-auto',
+          tone === 'dark' ? 'text-white/80' : 'text-ink-soft',
+        ]}
+      >
+        {lead}
+      </p>
+    )
+  }
+</div>

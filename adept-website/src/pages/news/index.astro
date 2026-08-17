@@ -1,0 +1,52 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import Section from '../../components/Section.astro';
+import TeaserCard from '../../components/TeaserCard.astro';
+import PlaceholderNote from '../../components/PlaceholderNote.astro';
+import { news } from '../../data/news';
+
+const veroeffentlicht = news.filter((item) => !item.platzhalter);
+const offen = news.filter((item) => item.platzhalter);
+---
+
+<Base
+  title="News"
+  description="Aktuelle Themen und Referenzprojekte von adept&."
+>
+  <PageHeader kicker="News" title="Aktuelle Themen" breadcrumb={[{ label: 'Home', href: '/' }]} />
+
+  <Section>
+    <ul class="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        veroeffentlicht.map((item, index) => (
+          <li>
+            <TeaserCard
+              title={item.title}
+              href={item.href}
+              kicker={item.kicker}
+              date={item.date}
+              excerpt={item.excerpt}
+              index={index}
+            />
+          </li>
+        ))
+      }
+    </ul>
+
+    {
+      offen.length > 0 && (
+        <div class="mt-16">
+          <PlaceholderNote title={`Platzhalter – ${offen.length} weitere Beiträge offen`}>
+            <p>
+              Auf der Startseite sind vier Kacheln für „Aktuelle Themen“ vorgesehen. Belastbar ist
+              bislang ausschließlich die Case Study Drahtmüller. Sobald Titel, Datum, Text und Bild
+              für die übrigen Beiträge vorliegen, werden sie in
+              <code class="px-1">src/data/news.ts</code> ergänzt.
+            </p>
+          </PlaceholderNote>
+        </div>
+      )
+    }
+  </Section>
+</Base>

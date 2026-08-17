@@ -1,0 +1,60 @@
+name: Deploy auf GitHub Pages
+
+# Diese Datei greift erst, wenn dieser Ordner das Wurzelverzeichnis eines
+# eigenen Repositories ist. GitHub liest Workflows ausschließlich aus
+# .github/workflows/ im Repo-Root – innerhalb von Youman-automation bleibt
+# sie deshalb bewusst wirkungslos.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Gleichzeitige Deployments vermeiden, laufende aber nicht abbrechen.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Pages konfigurieren
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - run: npm ci
+
+      - name: Build
+        # base_path kommt von configure-pages und ist bei einer eigenen Domain "/",
+        # bei akheyo.github.io/<repo> entsprechend "/<repo>".
+        env:
+          SITE_URL: ${{ steps.pages.outputs.origin }}
+          SITE_BASE: ${{ steps.pages.outputs.base_path }}
+        run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,150 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Section from '../components/Section.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import PlaceholderNote from '../components/PlaceholderNote.astro';
+import Button from '../components/Button.astro';
+import { kernleistungen, prozess, technischeLeistungen } from '../data/site';
+---
+
+<Base
+  title="Über uns"
+  description="adept& ist ein Beratungs- und Softwareunternehmen: Managementberatung plus individuelle Softwareentwicklung aus einer Hand."
+>
+  <PageHeader
+    kicker="Über uns"
+    title="Über adept&"
+    lead="Wir beraten, wo andere nur liefern – und wir bauen, was andere nur empfehlen."
+    breadcrumb={[{ label: 'Home', href: '/' }]}
+  />
+
+  <Section>
+    <div class="prose-measure space-y-5 text-lg text-ink-soft">
+      <p>
+        adept& ist ein Beratungs- und Softwareunternehmen. Wir verbinden klassische
+        Managementberatung mit individueller Softwareentwicklung aus einer Hand, ohne Kompromisse.
+      </p>
+      <p>
+        Wir sind kein reines Beratungshaus, das Empfehlungen ausspricht. Und kein klassisches
+        Softwareunternehmen, das ein Standardprodukt verkauft. Wir tun beides:
+        <strong class="text-ink">Wir analysieren das Problem und wir bauen die Lösung.</strong>
+      </p>
+    </div>
+  </Section>
+
+  <Section tone="canvas">
+    <SectionHeading
+      kicker="Was wir tun"
+      title="Eine einzige, dedizierte Softwareoberfläche"
+      lead="Unternehmen arbeiten täglich mit einer Vielzahl an Tools, Systemen und manuellen Prozessen – und verlieren dabei Zeit, Übersicht und Effizienz."
+    />
+    <div class="prose-measure mt-8 space-y-5 text-ink-soft">
+      <p>
+        Wir analysieren zunächst das operative Problem des Kunden. Anschließend entwickeln wir eine
+        maßgeschneiderte Lösung, die direkt in adept& eingebettet wird. Das Ergebnis ist eine
+        Anwendung, die exakt auf den jeweiligen Use Case zugeschnitten ist und gleichzeitig nahtlos
+        mit dem bestehenden ERP- oder SAP-System des Kunden zusammenarbeitet.
+      </p>
+    </div>
+    <p class="mt-10 font-display text-2xl md:text-3xl text-ink">
+      Kein Systemwechsel. Keine Medienbrüche. Eine Oberfläche.
+    </p>
+  </Section>
+
+  <Section>
+    <SectionHeading
+      kicker="Was ist adept&"
+      title="Eine modulare Plattform als Arbeitsgerüst"
+      lead="Stellen Sie sich adept& wie ein Betriebssystem vor: Es bildet das stabile Gerüst. Je nach Kundenanforderung wird eine spezifische Lösung – zum Beispiel eine Logistiksoftware, eine Produktionsplanung oder ein Reporting-Tool – als Modul in dieses Gerüst eingebettet."
+    />
+    <ul class="mt-12 grid gap-x-10 gap-y-6 md:grid-cols-2">
+      {
+        technischeLeistungen.map((leistung) => (
+          <li class="flex items-start gap-4 border-t border-line pt-6">
+            <svg
+              class="mt-1 size-5 shrink-0 text-accent"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m5 13 4 4L19 7" />
+            </svg>
+            <span class="text-ink">{leistung}</span>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="prose-measure mt-10 text-ink-soft">
+      Der Mitarbeiter beim Kunden sieht nur eine Oberfläche. Was im Hintergrund passiert – Datenabruf,
+      Berechnung, Synchronisation mit dem ERP-System – geschieht vollautomatisch.
+    </p>
+  </Section>
+
+  <Section tone="dark">
+    <SectionHeading kicker="Kernleistungen" title="Vier Leistungen, ein Ansprechpartner" tone="dark" />
+    <ul class="mt-12 grid gap-px bg-white/15 md:grid-cols-2">
+      {
+        kernleistungen.map((leistung) => (
+          <li class="bg-ink-deep p-8">
+            <h3 class="text-xl font-semibold text-white">{leistung.title}</h3>
+            <p class="mt-3 text-white/80">{leistung.description}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section>
+    <SectionHeading kicker="Unser Prozess" title="Von der Analyse bis zum Rollout" />
+    <ol class="mt-12 grid gap-px bg-line md:grid-cols-3 lg:grid-cols-5">
+      {
+        prozess.map((schritt) => (
+          <li class="bg-surface p-6">
+            <p class="font-display text-3xl font-semibold text-accent">{schritt.step}</p>
+            <h3 class="mt-3 text-lg font-semibold text-ink">{schritt.title}</h3>
+            <p class="mt-2 text-sm text-ink-soft">{schritt.description}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  <Section id="geschichte" tone="canvas">
+    <SectionHeading kicker="Über adept&" title="Geschichte" />
+    <div class="mt-8">
+      <PlaceholderNote title="Platzhalter – Text „Geschichte“ fehlt noch">
+        <p>
+          Für diesen Abschnitt liegt noch kein Text vor. Sobald die Unternehmensgeschichte
+          formuliert ist, ersetzt sie diesen Block.
+        </p>
+      </PlaceholderNote>
+    </div>
+  </Section>
+
+  <Section id="werte">
+    <SectionHeading kicker="Über adept&" title="Werte" />
+    <div class="mt-8">
+      <PlaceholderNote title="Platzhalter – Text „Werte“ fehlt noch">
+        <p>
+          Für diesen Abschnitt liegt noch kein Text vor. Sobald die Werte formuliert sind, ersetzt
+          dieser Text den Platzhalter.
+        </p>
+      </PlaceholderNote>
+    </div>
+  </Section>
+
+  <Section tone="canvas">
+    <div class="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+      <SectionHeading
+        title="Sprechen wir über Ihren Engpass"
+        lead="Schildern Sie uns die Situation – wir sagen Ihnen, ob sich das als Modul abbilden lässt."
+      />
+      <Button href="/kontakt" variant="primary" class="shrink-0">Kontakt aufnehmen</Button>
+    </div>
+  </Section>
+</Base>

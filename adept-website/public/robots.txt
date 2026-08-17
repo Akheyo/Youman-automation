@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# Die Sitemap wird von @astrojs/sitemap erzeugt. Der Hostname stammt aus
+# SITE_URL/SITE_BASE (siehe astro.config.mjs und README.md).
+Sitemap: https://akheyo.github.io/sitemap-index.xml

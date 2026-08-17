@@ -1,0 +1,349 @@
+---
+import Logo from './Logo.astro';
+import { mainNav, footerLegalNav } from '../data/navigation';
+import { withBase, isActive } from '../lib/url';
+
+const currentPath = Astro.url.pathname;
+---
+
+<header
+  class="sticky top-0 z-50 bg-surface border-b border-line"
+  data-header
+>
+  <div class="container-page flex items-center gap-4 h-18 md:h-20">
+    <!-- Menü-Button: öffnet die Gesamtübersicht (auf allen Breakpoints, wie in der Referenz) -->
+    <button
+      type="button"
+      class="grid place-items-center size-11 -ml-2 shrink-0 text-ink hover:text-accent transition-colors duration-200 cursor-pointer"
+      aria-label="Menü öffnen"
+      aria-expanded="false"
+      aria-controls="site-menu"
+      data-menu-toggle
+    >
+      <svg
+        class="size-6"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        aria-hidden="true"
+      >
+        <path d="M3 6h18M3 12h18M3 18h18" data-icon-open></path>
+        <path d="M6 6l12 12M18 6L6 18" class="hidden" data-icon-close></path>
+      </svg>
+    </button>
+
+    <a
+      href={withBase('/')}
+      class="shrink-0 flex min-h-11 items-center rounded-sm"
+      aria-label="adept& – zur Startseite"
+    >
+      <Logo class="text-2xl md:text-[1.75rem]" />
+    </a>
+
+    <!-- Hauptnavigation ab lg -->
+    <nav class="hidden lg:block ml-6" aria-label="Hauptnavigation">
+      <ul class="flex items-center gap-1">
+        {
+          mainNav.map((item) => {
+            const active = isActive(currentPath, item.href);
+            const panelId = `dropdown-${item.label.toLowerCase().replace(/[^a-z]/g, '')}`;
+            return (
+              <li class="relative" data-nav-item={item.children ? 'dropdown' : 'link'}>
+                {item.children ? (
+                  <button
+                    type="button"
+                    class="group inline-flex items-center gap-1.5 px-3 h-20 text-[0.9375rem] text-ink hover:text-accent aria-expanded:text-accent transition-colors duration-200 cursor-pointer"
+                    aria-expanded="false"
+                    aria-controls={panelId}
+                    data-dropdown-toggle
+                  >
+                    <span
+                      class:list={[
+                        'relative inline-flex items-center h-20',
+                        "after:absolute after:inset-x-0 after:bottom-6 after:h-0.5 after:bg-accent after:origin-left after:transition-transform after:duration-200",
+                        active
+                          ? 'after:scale-x-100 text-accent'
+                          : 'after:scale-x-0 group-aria-expanded:after:scale-x-100',
+                      ]}
+                    >
+                      {item.label}
+                    </span>
+                    <svg
+                      class="size-4 transition-transform duration-200 group-aria-expanded:-rotate-180"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </button>
+                ) : (
+                  <a
+                    href={withBase(item.href)}
+                    class="group inline-flex items-center px-3 h-20 text-[0.9375rem] text-ink hover:text-accent transition-colors duration-200"
+                    aria-current={active ? 'page' : undefined}
+                  >
+                    <span
+                      class:list={[
+                        'relative inline-flex items-center h-20',
+                        'after:absolute after:inset-x-0 after:bottom-6 after:h-0.5 after:bg-accent after:origin-left after:transition-transform after:duration-200',
+                        active ? 'after:scale-x-100 text-accent' : 'after:scale-x-0 group-hover:after:scale-x-100',
+                      ]}
+                    >
+                      {item.label}
+                    </span>
+                  </a>
+                )}
+
+                {item.children && (
+                  <div
+                    id={panelId}
+                    class="on-dark absolute top-full left-0 hidden w-max min-w-[22rem] max-w-[min(34rem,calc(100vw-3rem))] bg-ink-deep shadow-2xl ring-1 ring-white/15"
+                    data-dropdown-panel
+                  >
+                    <ul class="py-6">
+                      {item.children.map((child) => (
+                        <li>
+                          <a
+                            href={withBase(child.href)}
+                            class="block px-8 py-3 text-[0.9375rem] text-white/90 hover:text-white hover:bg-white/10 transition-colors duration-200"
+                          >
+                            {child.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </li>
+            );
+          })
+        }
+      </ul>
+    </nav>
+
+    <div class="ml-auto"></div>
+  </div>
+
+  <!-- Vollflächiges Menü (Hamburger) -->
+  <div
+    id="site-menu"
+    class="on-dark fixed inset-x-0 top-18 md:top-20 bottom-0 z-40 hidden overflow-y-auto bg-ink-deep"
+    data-menu-panel
+  >
+    <div class="container-page py-12 md:py-16">
+      <nav aria-label="Alle Bereiche">
+        <ul class="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
+          {
+            mainNav
+              .filter((item) => item.children)
+              .map((item) => (
+                <li>
+                  <a
+                    href={withBase(item.href)}
+                    class="font-display text-xl text-white hover:text-accent-on-dark transition-colors duration-200"
+                  >
+                    {item.label}
+                  </a>
+                  <ul class="mt-4 space-y-1">
+                    {item.children?.map((child) => (
+                      <li>
+                        <a
+                          href={withBase(child.href)}
+                          class="flex min-h-11 items-center text-white/80 hover:text-white transition-colors duration-200"
+                        >
+                          {child.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))
+          }
+          <li>
+            <span class="font-display text-xl text-white">Unternehmen</span>
+            <ul class="mt-4 space-y-1">
+              {
+                mainNav
+                  .filter((item) => !item.children && item.href !== '/')
+                  .map((item) => (
+                    <li>
+                      <a
+                        href={withBase(item.href)}
+                        class="flex min-h-11 items-center text-white/80 hover:text-white transition-colors duration-200"
+                      >
+                        {item.label}
+                      </a>
+                    </li>
+                  ))
+              }
+            </ul>
+          </li>
+        </ul>
+      </nav>
+
+      <ul class="mt-14 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/20 pt-8">
+        {
+          footerLegalNav.map((item) => (
+            <li>
+              <a
+                href={withBase(item.href)}
+                class="inline-flex min-h-11 items-center text-sm text-white/70 hover:text-white transition-colors duration-200"
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</header>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  if (header) {
+    /* ---------- Dropdowns (Branchen, Funktionen) ---------- */
+    const items = Array.from(header.querySelectorAll<HTMLElement>('[data-nav-item="dropdown"]'));
+    const canHover = window.matchMedia('(hover: hover) and (pointer: fine)');
+    let hoverTimer: number | undefined;
+
+    type Dropdown = { root: HTMLElement; toggle: HTMLButtonElement; panel: HTMLElement };
+
+    const dropdowns: Dropdown[] = items.flatMap((root) => {
+      const toggle = root.querySelector<HTMLButtonElement>('[data-dropdown-toggle]');
+      const panel = root.querySelector<HTMLElement>('[data-dropdown-panel]');
+      return toggle && panel ? [{ root, toggle, panel }] : [];
+    });
+
+    /**
+     * Merkt sich, wodurch ein Panel geöffnet wurde. Ohne diese Unterscheidung
+     * würde ein Klick auf einen bereits per Hover geöffneten Eintrag das Panel
+     * sofort wieder schließen.
+     */
+    const openedBy = new WeakMap<HTMLElement, 'hover' | 'click'>();
+
+    const setOpen = (d: Dropdown, open: boolean, source: 'hover' | 'click' = 'click') => {
+      d.toggle.setAttribute('aria-expanded', String(open));
+      d.panel.classList.toggle('hidden', !open);
+      if (open) openedBy.set(d.root, source);
+      else openedBy.delete(d.root);
+    };
+
+    const closeAll = (except?: Dropdown) => {
+      for (const d of dropdowns) if (d !== except) setOpen(d, false);
+    };
+
+    const panelLinks = (d: Dropdown) =>
+      Array.from(d.panel.querySelectorAll<HTMLAnchorElement>('a'));
+
+    for (const d of dropdowns) {
+      d.toggle.addEventListener('click', () => {
+        // Ein per Hover geöffnetes Panel bleibt beim ersten Klick offen und
+        // gilt ab dann als bewusst geöffnet; erst der nächste Klick schließt es.
+        const close = openedBy.get(d.root) === 'click';
+        closeAll(d);
+        setOpen(d, !close, 'click');
+      });
+
+      // Pfeiltasten: von der Schaltfläche in die Liste
+      d.toggle.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowDown') return;
+        event.preventDefault();
+        closeAll(d);
+        setOpen(d, true, 'click');
+        panelLinks(d)[0]?.focus();
+      });
+
+      d.panel.addEventListener('keydown', (event) => {
+        const links = panelLinks(d);
+        const index = links.indexOf(document.activeElement as HTMLAnchorElement);
+        if (index === -1) return;
+
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          links[(index + 1) % links.length]?.focus();
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          links[(index - 1 + links.length) % links.length]?.focus();
+        } else if (event.key === 'Home') {
+          event.preventDefault();
+          links[0]?.focus();
+        } else if (event.key === 'End') {
+          event.preventDefault();
+          links[links.length - 1]?.focus();
+        }
+      });
+
+      // Für Maus-Nutzer wie in der Referenz: Öffnen beim Überfahren
+      d.root.addEventListener('mouseenter', () => {
+        if (!canHover.matches) return;
+        window.clearTimeout(hoverTimer);
+        if (d.toggle.getAttribute('aria-expanded') === 'true') return;
+        closeAll(d);
+        setOpen(d, true, 'hover');
+      });
+
+      d.root.addEventListener('mouseleave', () => {
+        if (!canHover.matches) return;
+        window.clearTimeout(hoverTimer);
+        // Bewusst per Klick geöffnete Panels bleiben stehen.
+        if (openedBy.get(d.root) === 'click') return;
+        hoverTimer = window.setTimeout(() => setOpen(d, false), 200);
+      });
+    }
+
+    // Escape schließt und gibt den Fokus zurück
+    header.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      const open = dropdowns.find((d) => d.toggle.getAttribute('aria-expanded') === 'true');
+      if (!open) return;
+      setOpen(open, false);
+      open.toggle.focus();
+    });
+
+    // Klick oder Fokus außerhalb schließt
+    document.addEventListener('click', (event) => {
+      if (!header.contains(event.target as Node)) closeAll();
+    });
+    document.addEventListener('focusin', (event) => {
+      if (!header.contains(event.target as Node)) closeAll();
+    });
+
+    /* ---------- Vollflächiges Menü ---------- */
+    const menuToggle = header.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+    const menuPanel = header.querySelector<HTMLElement>('[data-menu-panel]');
+    const iconOpen = header.querySelector<SVGPathElement>('[data-icon-open]');
+    const iconClose = header.querySelector<SVGPathElement>('[data-icon-close]');
+
+    if (menuToggle && menuPanel) {
+      const setMenu = (open: boolean) => {
+        menuToggle.setAttribute('aria-expanded', String(open));
+        menuToggle.setAttribute('aria-label', open ? 'Menü schließen' : 'Menü öffnen');
+        menuPanel.classList.toggle('hidden', !open);
+        iconOpen?.classList.toggle('hidden', open);
+        iconClose?.classList.toggle('hidden', !open);
+        document.body.style.overflow = open ? 'hidden' : '';
+      };
+
+      menuToggle.addEventListener('click', () => {
+        const open = menuToggle.getAttribute('aria-expanded') === 'true';
+        closeAll();
+        setMenu(!open);
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && menuToggle.getAttribute('aria-expanded') === 'true') {
+          setMenu(false);
+          menuToggle.focus();
+        }
+      });
+    }
+  }
+</script>

@@ -1,0 +1,154 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Section from '../components/Section.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import PlaceholderNote from '../components/PlaceholderNote.astro';
+
+/**
+ * GitHub Pages liefert nur statische Dateien – ein Formular braucht einen
+ * externen Endpunkt (z. B. Formspree). Sobald die Adresse feststeht, hier
+ * eintragen; das Formular unten wird dann automatisch gerendert.
+ */
+const FORMULAR_ENDPUNKT: string | null = null;
+
+/** PLATZHALTER: echte Kontaktdaten sind noch nicht freigegeben. */
+const kontaktdaten = {
+  email: null as string | null,
+  telefon: null as string | null,
+  terminlink: null as string | null,
+};
+
+const felder = [
+  { id: 'name', label: 'Name', type: 'text', autocomplete: 'name', required: true },
+  { id: 'unternehmen', label: 'Unternehmen', type: 'text', autocomplete: 'organization', required: true },
+  { id: 'email', label: 'E-Mail-Adresse', type: 'email', autocomplete: 'email', required: true },
+  { id: 'telefon', label: 'Telefon (optional)', type: 'tel', autocomplete: 'tel', required: false },
+] as const;
+---
+
+<Base
+  title="Kontakt"
+  description="Schildern Sie uns Ihren operativen Engpass – wir melden uns bei Ihnen."
+>
+  <PageHeader
+    kicker="Kontakt"
+    title="Sprechen wir über Ihren Prozess"
+    lead="Beschreiben Sie kurz, wo es im Tagesgeschäft klemmt und welches ERP-System im Einsatz ist. Wir melden uns mit einer ersten Einschätzung."
+    breadcrumb={[{ label: 'Home', href: '/' }]}
+  />
+
+  <Section>
+    <div class="grid gap-12 lg:grid-cols-2 lg:gap-20">
+      <div>
+        <SectionHeading as="h2" title="Direkter Draht" />
+        {
+          kontaktdaten.email || kontaktdaten.telefon || kontaktdaten.terminlink ? (
+            <dl class="mt-8 space-y-6">
+              {kontaktdaten.email && (
+                <div>
+                  <dt class="text-sm font-semibold text-ink">E-Mail</dt>
+                  <dd class="mt-1">
+                    <a
+                      href={`mailto:${kontaktdaten.email}`}
+                      class="inline-flex min-h-11 items-center text-accent hover:text-accent-hover transition-colors duration-200"
+                    >
+                      {kontaktdaten.email}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              {kontaktdaten.telefon && (
+                <div>
+                  <dt class="text-sm font-semibold text-ink">Telefon</dt>
+                  <dd class="mt-1">
+                    <a
+                      href={`tel:${kontaktdaten.telefon.replace(/\s/g, '')}`}
+                      class="inline-flex min-h-11 items-center text-accent hover:text-accent-hover transition-colors duration-200"
+                    >
+                      {kontaktdaten.telefon}
+                    </a>
+                  </dd>
+                </div>
+              )}
+            </dl>
+          ) : (
+            <div class="mt-8">
+              <PlaceholderNote title="Platzhalter – Kontaktdaten fehlen noch">
+                <p>
+                  E-Mail-Adresse, Telefonnummer und ein möglicher Terminbuchungs-Link sind noch
+                  nicht freigegeben. Sie werden in
+                  <code class="px-1">src/pages/kontakt.astro</code> eingetragen.
+                </p>
+              </PlaceholderNote>
+            </div>
+          )
+        }
+      </div>
+
+      <div>
+        <SectionHeading as="h2" title="Nachricht senden" />
+        {
+          FORMULAR_ENDPUNKT ? (
+            <form action={FORMULAR_ENDPUNKT} method="post" class="mt-8 space-y-6">
+              {felder.map((feld) => (
+                <div>
+                  <label for={feld.id} class="block text-sm font-semibold text-ink">
+                    {feld.label}
+                    {feld.required && <span aria-hidden="true"> *</span>}
+                  </label>
+                  <input
+                    id={feld.id}
+                    name={feld.id}
+                    type={feld.type}
+                    autocomplete={feld.autocomplete}
+                    required={feld.required}
+                    class="mt-2 block min-h-11 w-full border border-line bg-surface px-4 py-3 text-ink transition-colors duration-200 focus:border-accent"
+                  />
+                </div>
+              ))}
+              <div>
+                <label for="nachricht" class="block text-sm font-semibold text-ink">
+                  Ihre Situation <span aria-hidden="true">*</span>
+                </label>
+                <p id="nachricht-hinweis" class="mt-1 text-sm text-muted-fg">
+                  Welcher Prozess kostet aktuell die meiste Zeit? Welches ERP-System läuft?
+                </p>
+                <textarea
+                  id="nachricht"
+                  name="nachricht"
+                  rows="6"
+                  required
+                  aria-describedby="nachricht-hinweis"
+                  class="mt-2 block w-full border border-line bg-surface px-4 py-3 text-ink transition-colors duration-200 focus:border-accent"
+                />
+              </div>
+              <button
+                type="submit"
+                class="inline-flex min-h-11 items-center justify-center bg-accent px-6 py-3 font-medium text-white transition-colors duration-200 hover:bg-accent-hover cursor-pointer"
+              >
+                Nachricht senden
+              </button>
+            </form>
+          ) : (
+            <div class="mt-8">
+              <PlaceholderNote title="Platzhalter – Formular noch nicht angebunden">
+                <p>
+                  GitHub Pages liefert ausschließlich statische Dateien und kann selbst keine
+                  Formulare entgegennehmen. Offen ist, ob ein externer Dienst (z. B. Formspree)
+                  eingebunden wird oder ob E-Mail, Telefon und ein Terminbuchungs-Link genügen.
+                </p>
+                <p class="mt-3">
+                  Das vollständige, barrierefreie Formular ist bereits implementiert. Sobald die
+                  Endpunkt-URL feststeht, wird sie in
+                  <code class="px-1">FORMULAR_ENDPUNKT</code> eingetragen und das Formular erscheint
+                  an dieser Stelle.
+                </p>
+              </PlaceholderNote>
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </Section>
+</Base>

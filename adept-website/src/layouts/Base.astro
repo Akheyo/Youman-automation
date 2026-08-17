@@ -1,0 +1,82 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { withBase } from '../lib/url';
+import { site } from '../data/site';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Wenn false, wird der <h1> nicht automatisch gesetzt (z. B. auf der Startseite). */
+  noindex?: boolean;
+}
+
+const { title, description = site.description, noindex = false } = Astro.props;
+
+const seitentitel = title === site.name ? `${site.name} ${site.region}` : `${title} | ${site.name}`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
+const ogImage = new URL(withBase('/hero-poster.svg'), Astro.site ?? Astro.url.origin);
+
+const organisation = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'adept&',
+  url: canonical.origin + withBase('/'),
+  description: site.description,
+  slogan: site.claim,
+  areaServed: 'DE',
+  knowsAbout: [
+    'ERP-Integration',
+    'SAP-Integration',
+    'Prozessberatung',
+    'Individualsoftware',
+    'Produktionsplanung',
+    'Logistiksoftware',
+  ],
+};
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{seitentitel}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical.href} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <meta name="theme-color" content="#051c2c" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="adept&" />
+    <meta property="og:locale" content="de_DE" />
+    <meta property="og:title" content={seitentitel} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:image" content={ogImage.href} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="sitemap" href={withBase('/sitemap-index.xml')} />
+
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(organisation)} />
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <a
+      href="#inhalt"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-100 focus:bg-accent focus:px-4 focus:py-3 focus:text-white"
+    >
+      Zum Inhalt springen
+    </a>
+
+    <Header />
+
+    <main id="inhalt" class="flex-1">
+      <slot />
+    </main>
+
+    <Footer />
+  </body>
+</html>

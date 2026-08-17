@@ -1,0 +1,27 @@
+---
+/**
+ * Wortmarke adept&.
+ *
+ * PLATZHALTER: Die offizielle Logodatei (SVG) liegt noch nicht vor. Bis dahin
+ * wird die Wortmarke als Text in der Display-Schrift gesetzt – geometrische,
+ * kleingeschriebene Sans in Anthrazit, wie im gelieferten Logobild.
+ * Sobald das SVG da ist: diesen Block durch das <img>/Inline-SVG ersetzen,
+ * die Props (`variant`, `class`) bleiben gleich.
+ */
+interface Props {
+  /** "dark" = Anthrazit auf hellem Grund, "light" = Weiß auf dunklem Grund */
+  variant?: 'dark' | 'light';
+  class?: string;
+}
+
+const { variant = 'dark', class: className = '' } = Astro.props;
+---
+
+<span
+  class:list={[
+    'font-display font-semibold tracking-tight leading-none select-none',
+    variant === 'dark' ? 'text-brand' : 'text-white',
+    className,
+  ]}
+  aria-hidden="true">adept&amp;</span
+>

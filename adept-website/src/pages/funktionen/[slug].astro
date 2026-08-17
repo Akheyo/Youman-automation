@@ -1,0 +1,108 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import Section from '../../components/Section.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import Button from '../../components/Button.astro';
+import { funktionen } from '../../data/funktionen';
+import { branchen } from '../../data/branchen';
+import { prozess } from '../../data/site';
+import { withBase } from '../../lib/url';
+
+export function getStaticPaths() {
+  return funktionen.map((funktion) => ({
+    params: { slug: funktion.slug },
+    props: { funktion },
+  }));
+}
+
+const { funktion } = Astro.props;
+
+const passendeBranchen = branchen.filter((b) => b.funktionen.includes(funktion.slug));
+---
+
+<Base title={funktion.title} description={funktion.teaser}>
+  <PageHeader
+    kicker="Funktionen"
+    title={funktion.title}
+    lead={funktion.teaser}
+    breadcrumb={[
+      { label: 'Home', href: '/' },
+      { label: 'Funktionen', href: '/funktionen' },
+    ]}
+  />
+
+  <Section>
+    <SectionHeading
+      title="Bausteine"
+      lead="Diese Elemente setzen wir in diesem Funktionsbereich um – immer zugeschnitten auf den konkreten Prozess, nie als Standardfunktion von der Stange."
+    />
+    <ul class="mt-12 grid gap-x-10 gap-y-6 md:grid-cols-2">
+      {
+        funktion.bausteine.map((baustein) => (
+          <li class="flex items-start gap-4 border-t border-line pt-6">
+            <svg
+              class="mt-1 size-5 shrink-0 text-accent"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m5 13 4 4L19 7" />
+            </svg>
+            <span class="text-lg text-ink">{baustein}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section tone="canvas">
+    <SectionHeading kicker="Vorgehen" title="Von der Analyse bis zum Rollout" />
+    <ol class="mt-12 grid gap-px bg-line md:grid-cols-3 lg:grid-cols-5">
+      {
+        prozess.map((schritt) => (
+          <li class="bg-canvas p-6">
+            <p class="font-display text-3xl font-semibold text-accent">{schritt.step}</p>
+            <h3 class="mt-3 text-lg font-semibold text-ink">{schritt.title}</h3>
+            <p class="mt-2 text-sm text-ink-soft">{schritt.description}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  {
+    passendeBranchen.length > 0 && (
+      <Section>
+        <SectionHeading kicker="Branchen" title="Wo dieser Bereich greift" />
+        <ul class="mt-10 flex flex-wrap gap-3">
+          {passendeBranchen.map((branche) => (
+            <li>
+              <a
+                href={withBase(`/branchen/${branche.slug}`)}
+                class="inline-flex min-h-11 items-center border border-line px-5 py-2.5 text-ink hover:border-accent hover:text-accent transition-colors duration-200"
+              >
+                {branche.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </Section>
+    )
+  }
+
+  <Section tone="dark">
+    <div class="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+      <SectionHeading
+        title="Konkreten Fall besprechen"
+        lead="Wir schauen uns Ihren Prozess an und sagen Ihnen, was sich als Modul abbilden lässt."
+        tone="dark"
+      />
+      <Button href="/kontakt" variant="ghost" class="shrink-0">Kontakt aufnehmen</Button>
+    </div>
+  </Section>
+</Base>

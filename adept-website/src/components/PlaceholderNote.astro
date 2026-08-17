@@ -1,0 +1,33 @@
+---
+/**
+ * Unmissverständliche Kennzeichnung fehlender Inhalte.
+ * Bewusst auffällig – diese Blöcke sollen vor dem Livegang alle verschwinden.
+ */
+interface Props {
+  title?: string;
+}
+
+const { title = 'Platzhalter – Inhalt fehlt noch' } = Astro.props;
+---
+
+<div class="border-2 border-dashed border-muted-fg/50 bg-muted/60 p-6 md:p-8">
+  <p class="flex items-center gap-2 text-xs font-semibold tracking-widest text-muted-fg uppercase">
+    <svg
+      class="size-4 shrink-0"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+      ></path>
+    </svg>
+    {title}
+  </p>
+  <div class="prose-measure mt-3 text-ink-soft">
+    <slot />
+  </div>
+</div>

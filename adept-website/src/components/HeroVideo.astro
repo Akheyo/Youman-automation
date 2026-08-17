@@ -1,0 +1,204 @@
+---
+import { withBase } from '../lib/url';
+
+interface Props {
+  title: string;
+  subtitle?: string;
+  /**
+   * Pfad zum Hero-Video (z. B. "/hero.mp4"). Fehlt die Datei, wird nur das
+   * Poster gezeigt und die Play/Pause-Steuerung entfällt.
+   */
+  videoSrc?: string;
+  poster?: string;
+  /** Blendet den Platzhalter-Hinweis ein, solange kein echtes Video vorliegt. */
+  platzhalter?: boolean;
+}
+
+const {
+  title,
+  subtitle,
+  videoSrc,
+  poster = '/hero-poster.svg',
+  platzhalter = !videoSrc,
+} = Astro.props;
+
+const posterUrl = withBase(poster);
+---
+
+<section
+  class="on-dark relative isolate flex min-h-[calc(100svh-4.5rem)] md:min-h-[calc(100svh-5rem)] flex-col items-center justify-center overflow-hidden bg-ink-deep text-white"
+  data-hero
+>
+  <!-- Hintergrundebene. Feste Größe reserviert den Platz (CLS < 0.1). -->
+  {
+    videoSrc ? (
+      <video
+        class="absolute inset-0 -z-10 size-full object-cover"
+        poster={posterUrl}
+        width="1920"
+        height="1080"
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        aria-label={`Hintergrundvideo: ${title}`}
+        data-hero-video
+      >
+        <source src={withBase(videoSrc)} type="video/mp4" />
+      </video>
+    ) : (
+      <img
+        class="absolute inset-0 -z-10 size-full object-cover"
+        src={posterUrl}
+        width="1920"
+        height="1080"
+        alt=""
+        fetchpriority="high"
+      />
+    )
+  }
+
+  <!-- Scrim: sichert den Textkontrast auch auf einem komplett weißen Videobild.
+       Rechnerischer Worst Case (Weiß unter 65 % + 25 % #051C2C): 7,5:1. -->
+  <div class="absolute inset-0 -z-10 bg-ink-deep/65" aria-hidden="true"></div>
+  <div
+    class="absolute inset-0 -z-10 bg-gradient-to-b from-ink-deep/70 via-ink-deep/25 to-ink-deep/70"
+    aria-hidden="true"
+  >
+  </div>
+
+  <div class="container-page text-center">
+    <h1 class="font-display text-5xl sm:text-6xl lg:text-8xl font-semibold tracking-tight">
+      {title}
+    </h1>
+    {
+      subtitle && (
+        <p class="mt-3 font-display text-2xl sm:text-3xl lg:text-5xl font-light text-white/95">
+          {subtitle}
+        </p>
+      )
+    }
+  </div>
+
+  <!-- Scroll-Hinweis, wie in der Referenz unten links -->
+  <a
+    href="#inhalt"
+    class="absolute bottom-8 left-5 md:left-10 grid size-11 place-items-center rounded-full text-white/90 hover:text-white transition-colors duration-200"
+    aria-label="Zum Seiteninhalt springen"
+  >
+    <svg
+      class="size-7 motion-safe:animate-bounce"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 4v15m0 0 6-6m-6 6-6-6"></path>
+    </svg>
+  </a>
+
+  {
+    videoSrc && (
+      <button
+        type="button"
+        class="absolute bottom-8 right-5 md:right-10 grid size-11 place-items-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors duration-200 cursor-pointer"
+        aria-label="Video pausieren"
+        data-hero-playpause
+      >
+        <svg
+          class="size-5"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+          data-icon-pause
+        >
+          <path d="M8 5h3v14H8zM13 5h3v14h-3z" />
+        </svg>
+        <svg
+          class="size-5 hidden"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+          data-icon-play
+        >
+          <path d="M8 5v14l11-7z" />
+        </svg>
+      </button>
+    )
+  }
+
+  {
+    platzhalter && (
+      <p class="absolute bottom-24 sm:bottom-8 left-1/2 w-max max-w-[calc(100vw-2.5rem)] -translate-x-1/2 rounded-full border border-white/40 bg-black/50 px-4 py-1.5 text-xs tracking-wide text-white">
+        PLATZHALTER – Hero-Video folgt
+      </p>
+    )
+  }
+</section>
+
+<script>
+  const video = document.querySelector<HTMLVideoElement>('[data-hero-video]');
+  const button = document.querySelector<HTMLButtonElement>('[data-hero-playpause]');
+
+  if (video) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const iconPause = button?.querySelector('[data-icon-pause]');
+    const iconPlay = button?.querySelector('[data-icon-play]');
+
+    const syncButton = () => {
+      if (!button) return;
+      const playing = !video.paused;
+      button.setAttribute('aria-label', playing ? 'Video pausieren' : 'Video abspielen');
+      iconPause?.classList.toggle('hidden', !playing);
+      iconPlay?.classList.toggle('hidden', playing);
+    };
+
+    /** true, sobald die Person das Video bewusst pausiert hat. */
+    let pausedByUser = reduced.matches;
+
+    const tryPlay = () => {
+      if (pausedByUser || reduced.matches) return;
+      void video.play().catch(() => {
+        /* Autoplay kann vom Browser blockiert werden – Poster bleibt sichtbar. */
+      });
+    };
+
+    // Bei reduzierter Bewegung bleibt das Poster stehen, kein Autoplay.
+    if (!reduced.matches) tryPlay();
+    syncButton();
+
+    video.addEventListener('play', syncButton);
+    video.addEventListener('pause', syncButton);
+
+    button?.addEventListener('click', () => {
+      if (video.paused) {
+        pausedByUser = false;
+        tryPlay();
+      } else {
+        pausedByUser = true;
+        video.pause();
+      }
+    });
+
+    // Außerhalb des Viewports pausieren (Akku, Daten, CPU).
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        if (entry.isIntersecting) tryPlay();
+        else video.pause();
+      },
+      { threshold: 0.15 },
+    );
+    observer.observe(video);
+
+    reduced.addEventListener('change', (event) => {
+      if (event.matches) {
+        pausedByUser = true;
+        video.pause();
+      }
+    });
+  }
+</script>

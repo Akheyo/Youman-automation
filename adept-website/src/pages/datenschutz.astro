@@ -1,0 +1,42 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Section from '../components/Section.astro';
+import PlaceholderNote from '../components/PlaceholderNote.astro';
+
+/**
+ * Bewusst ohne Inhalt: keine erfundenen Rechtstexte.
+ * Die technischen Fakten unten sind belastbar und helfen beim Erstellen der
+ * Erklärung – sie ersetzen sie aber nicht.
+ */
+const technischeFakten = [
+  'Hosting über GitHub Pages (GitHub Inc.) – dabei werden serverseitig Zugriffsdaten inkl. IP-Adresse verarbeitet. Ein Auftragsverarbeitungsvertrag bzw. die Rechtsgrundlage ist zu klären.',
+  'Schriften werden selbst gehostet (@fontsource). Es besteht keine Verbindung zur Google-Fonts-CDN.',
+  'Die Website setzt keine Cookies und bindet kein Analyse- oder Tracking-Werkzeug ein.',
+  'Es sind keine externen Inhalte eingebettet (kein YouTube, keine Kartendienste, keine Social-Media-Plug-ins).',
+  'Ein Kontaktformular ist derzeit nicht angebunden. Kommt ein externer Dienst hinzu, ist er hier zu ergänzen.',
+];
+---
+
+<Base title="Datenschutzerklärung" description="Datenschutzerklärung von adept&." noindex={true}>
+  <PageHeader title="Datenschutzerklärung" breadcrumb={[{ label: 'Home', href: '/' }]} />
+
+  <Section>
+    <PlaceholderNote title="Platzhalter – Datenschutzerklärung fehlt noch">
+      <p>
+        Diese Seite enthält bewusst keinen Text. Eine Datenschutzerklärung ist rechtlich verbindlich
+        und wird nicht generiert – sie muss von adept& bzw. der Rechtsberatung geliefert werden.
+      </p>
+      <p class="mt-3">
+        Der aktuelle technische Stand der Website, der in die Erklärung einfließen muss:
+      </p>
+      <ul class="mt-3 list-disc space-y-2 pl-5">
+        {technischeFakten.map((fakt) => <li>{fakt}</li>)}
+      </ul>
+      <p class="mt-4">
+        Der fertige Text wird in <code class="px-1">src/pages/datenschutz.astro</code> eingesetzt und
+        ersetzt diesen Block.
+      </p>
+    </PlaceholderNote>
+  </Section>
+</Base>
