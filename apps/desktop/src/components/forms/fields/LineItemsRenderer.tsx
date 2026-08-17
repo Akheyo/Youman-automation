@@ -144,7 +144,12 @@ function ProductSearchCell({
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const source = col.dynamicSource;
   const currentValue = watch(fieldKey) as string;
-  const [label, setLabel] = useState("");
+  // Angezeigt wird die Artikel-ID, nicht die Bezeichnung: Die steht seit
+  // Neuestem in einer eigenen Spalte daneben, doppelt wäre sie nur breit.
+  // Aus dem Formularzustand gelesen, damit die ID auch nach dem Übernehmen
+  // eines alten Angebots oder dem Wiederherstellen eines Entwurfs dasteht –
+  // dort wurde nie etwas ausgewählt, ein lokaler Zustand bliebe leer.
+  const articleNumber = watch(`${fieldKey2}.${rowIdx}.articleNumber`) as string | undefined;
 
   const openDropdown = () => {
     setAnchorRect(anchorRef.current?.getBoundingClientRect() ?? null);
@@ -176,7 +181,6 @@ function ProductSearchCell({
     setValue(`${fieldKey2}.${rowIdx}.designation`, item.designation);
     setValue(`${fieldKey2}.${rowIdx}.unit`, item.unit);
     setValue(`${fieldKey2}.${rowIdx}.pricePerUnit`, item.basePrice);
-    setLabel(item.designation);
     setIsOpen(false);
     setQuery("");
   };
@@ -187,9 +191,9 @@ function ProductSearchCell({
         <div
           className="w-full h-8 px-2 text-sm text-foreground truncate flex items-center cursor-pointer hover:bg-input rounded"
           onClick={() => !disabled && openDropdown()}
-          title={label}
+          title={articleNumber || currentValue}
         >
-          {label || currentValue}
+          {articleNumber || currentValue}
         </div>
       ) : (
         <div className="relative">
