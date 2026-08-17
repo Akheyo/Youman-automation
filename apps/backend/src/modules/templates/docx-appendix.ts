@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import PizZip from "pizzip";
 import { Logger } from "@nestjs/common";
 import { packageDocx } from "./docx-engine";
+import type { QuoteLanguage } from "@youman/shared";
 
 const logger = new Logger("DocxAppendix");
 
@@ -11,35 +12,44 @@ const logger = new Logger("DocxAppendix");
  * Word-Dokument (configs/templates/agb-b2b.docx). Pfad per AGB_DOCX_PATH
  * überschreibbar.
  */
-function agbDocxPath(): string | null {
+function agbDocxPath(language: QuoteLanguage): string | null {
+  const file = language === "en" ? "agb-b2b-en.docx" : "agb-b2b.docx";
   const candidates = [
-    process.env["AGB_DOCX_PATH"],
-    resolve(process.cwd(), "../../configs/templates/agb-b2b.docx"),
-    resolve(process.cwd(), "configs/templates/agb-b2b.docx"),
-    resolve(__dirname, "../../../../../configs/templates/agb-b2b.docx"),
-    resolve(__dirname, "../../../../../../configs/templates/agb-b2b.docx"),
+    language === "en" ? process.env["AGB_DOCX_PATH_EN"] : process.env["AGB_DOCX_PATH"],
+    resolve(process.cwd(), `../../configs/templates/${file}`),
+    resolve(process.cwd(), `configs/templates/${file}`),
+    resolve(__dirname, `../../../../../configs/templates/${file}`),
+    resolve(__dirname, `../../../../../../configs/templates/${file}`),
   ].filter((p): p is string => !!p);
   return candidates.find((p) => existsSync(p)) ?? null;
 }
 
-let cachedAgb: Buffer | null = null;
-let agbResolved = false;
+const cache = new Map<QuoteLanguage, Buffer | null>();
 
-function loadAgb(): Buffer | null {
-  if (agbResolved) return cachedAgb;
-  agbResolved = true;
-  const path = agbDocxPath();
+/**
+ * Lädt die AGB der Sprache einmalig (best-effort). Fehlt die englische
+ * Fassung, wird die deutsche angehängt und das protokolliert – ein Angebot
+ * ohne AGB wäre schlechter als eines mit den AGB in der falschen Sprache.
+ */
+function loadAgb(language: QuoteLanguage): Buffer | null {
+  if (cache.has(language)) return cache.get(language) ?? null;
+  let path = agbDocxPath(language);
+  if (!path && language !== "de") {
+    logger.warn(`AGB-DOCX für Sprache '${language}' nicht gefunden – es werden die deutschen AGB angehängt.`);
+    path = agbDocxPath("de");
+  }
   if (!path) {
     logger.warn("AGB-DOCX (configs/templates/agb-b2b.docx) nicht gefunden – Angebote werden OHNE AGB-Anhang erzeugt.");
+    cache.set(language, null);
     return null;
   }
   try {
-    cachedAgb = readFileSync(path);
+    cache.set(language, readFileSync(path));
   } catch (err) {
     logger.error(`AGB-DOCX konnte nicht gelesen werden: ${err instanceof Error ? err.message : err}`);
-    cachedAgb = null;
+    cache.set(language, null);
   }
-  return cachedAgb;
+  return cache.get(language) ?? null;
 }
 
 /** Leere Kopf-/Fußzeile: Der Briefbogen des Angebots darf nicht über die AGB laufen. */
@@ -106,8 +116,8 @@ function mergeNamespaces(targetXml: string, sourceXml: string): string {
  * Best-effort wie beim PDF: Scheitert das Anhängen, kommt das unveränderte
  * Angebot zurück – ein AGB-Problem darf die Angebotserstellung nie verhindern.
  */
-export function appendAgbDocx(offerDocx: Buffer): Buffer {
-  const agbBytes = loadAgb();
+export function appendAgbDocx(offerDocx: Buffer, language: QuoteLanguage = "de"): Buffer {
+  const agbBytes = loadAgb(language);
   if (!agbBytes) return offerDocx;
   try {
     return merge(offerDocx, agbBytes);
