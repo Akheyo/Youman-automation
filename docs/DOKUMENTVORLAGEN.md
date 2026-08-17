@@ -126,11 +126,10 @@ Beide Pfade sind best-effort: Fehlt oder scheitert der Anhang, wird das Angebot 
 ausgeliefert und der Fehler protokolliert – die Angebotserstellung schlägt nie deswegen fehl.
 Pfade überschreibbar per `AGB_PDF_PATH` bzw. `AGB_DOCX_PATH`.
 
-**Sprache:** Für englische Angebote werden `agb-b2b-en.pdf` und `agb-b2b-en.docx`
-gesucht (überschreibbar per `AGB_PDF_PATH_EN` / `AGB_DOCX_PATH_EN`). Fehlen sie,
-werden die deutschen AGB angehängt und das protokolliert – ein Angebot ohne AGB
-wäre schlechter als eines mit den AGB in der falschen Sprache, weil der Verweis
-im Fußtext des Angebots sonst ins Leere liefe.
+**Sprache:** Die AGB hängen unabhängig von der Sprache des Angebots immer in der
+deutschen Fassung an. Sie sind ein Rechtsdokument des Verkäufers und gelten in
+der geprüften Fassung – ein englisches Angebot bekommt also eine englische
+Seite 1 und deutsche AGB dahinter.
 
 Wichtig: Die PDF-Wandlung läuft auf dem Angebot **ohne** DOCX-Anhang, sonst kämen die
 AGB-Seiten doppelt.

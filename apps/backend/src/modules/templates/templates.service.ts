@@ -223,12 +223,12 @@ export class TemplatesService {
       // Die festen AGB-Seiten kommen 1:1 aus dem Original-PDF ans Angebot
       // (best-effort – ein AGB-Problem verhindert nie das Angebot).
       if (row.documentType === "OFFER") {
-        pdf = await appendAgb(pdf, language);
+        pdf = await appendAgb(pdf);
       }
       return { content: pdf, fileName: `${baseName}.pdf`, contentType: "application/pdf" };
     }
     return {
-      content: row.documentType === "OFFER" ? appendAgbDocx(docx, language) : docx,
+      content: row.documentType === "OFFER" ? appendAgbDocx(docx) : docx,
       fileName: `${baseName}.docx`,
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     };
