@@ -43,3 +43,6 @@ scripts/lod2-pipeline/venv/
 scripts/lod2-pipeline/__pycache__/
 *.gml
 *.xml.gz
+
+# Python bytecode (u. a. ui-ux-pro-max Skill-Skripte)
+__pycache__/
