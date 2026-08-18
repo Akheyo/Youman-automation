@@ -14,8 +14,8 @@ import { withBase } from '../lib/url';
 
 /**
  * Reihenfolge der Startseite:
- * Hero > Aktuelle Themen > Was wir tun > Claim > Branchen und Funktionen
- * > Über adept&.
+ * Hero > Aktuelle Themen > Was wir tun > Claim > Über adept&
+ * > Branchen und Funktionen.
  *
  * "Aktuelle Themen" steht auf Wunsch direkt unter dem Hero und damit vor der
  * Erklärung, was adept& tut. Das entspricht dem Briefing, das "Aktuelle
@@ -195,7 +195,54 @@ const ueberKacheln = [
     </div>
   </section>
 
-  {/* ---------------------------------------------------- Branchen und Funktionen */}
+  {/*
+    ---------------------------------------------------- Über adept&
+
+    Heller Grund, nicht dunkel: der Abschnitt steht jetzt direkt unter der
+    dunklen Claim-Bahn. Zwei dunkle Bänder hintereinander verschmelzen zu
+    einem langen Block, die Kante dazwischen verschwindet.
+  */}
+  <Section tone="canvas">
+    <SectionHeading
+      title="Über adept&"
+      lead="Wir sind kein reines Beratungshaus, das Empfehlungen ausspricht. Und kein klassisches Softwareunternehmen, das ein Standardprodukt verkauft. Wir tun beides: Wir analysieren das Problem und wir bauen die Lösung."
+      align="center"
+    />
+
+    <ul class="mt-14 grid gap-6 sm:grid-cols-2" data-reveal>
+      {
+        ueberKacheln.map((kachel, i) => (
+          <li>
+            <a
+              href={withBase(kachel.href)}
+              class="hebt-sich group relative block overflow-hidden"
+            >
+              <Bild
+                name={kachel.bild}
+                index={i}
+                ratio="16/9"
+                scrim="unten"
+                zoom
+                sizes="(min-width: 640px) 50vw, 100vw"
+              >
+                <span class="absolute left-3 top-3 border border-white/40 bg-ink-deep/70 px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-widest text-white backdrop-blur-sm">
+                  Text folgt
+                </span>
+                <span class="absolute bottom-6 left-6 font-display text-2xl font-semibold text-white md:text-3xl">
+                  {kachel.title}
+                </span>
+              </Bild>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="mt-8 text-center text-sm text-muted-fg">
+      Texte für „Geschichte“ und „Werte“ liegen noch nicht vor.
+    </p>
+  </Section>
+{/* ---------------------------------------------------- Branchen und Funktionen */}
   <Section tone="light">
     <SectionHeading
       kicker="Branchen"
@@ -283,46 +330,4 @@ const ueberKacheln = [
     </div>
   </Section>
 
-  {/* ---------------------------------------------------- Über adept& */}
-  <Section tone="dark">
-    <SectionHeading
-      title="Über adept&"
-      lead="Wir sind kein reines Beratungshaus, das Empfehlungen ausspricht. Und kein klassisches Softwareunternehmen, das ein Standardprodukt verkauft. Wir tun beides: Wir analysieren das Problem und wir bauen die Lösung."
-      align="center"
-      tone="dark"
-    />
-
-    <ul class="mt-14 grid gap-6 sm:grid-cols-2" data-reveal>
-      {
-        ueberKacheln.map((kachel, i) => (
-          <li>
-            <a
-              href={withBase(kachel.href)}
-              class="hebt-sich group relative block overflow-hidden"
-            >
-              <Bild
-                name={kachel.bild}
-                index={i}
-                ratio="16/9"
-                scrim="unten"
-                zoom
-                sizes="(min-width: 640px) 50vw, 100vw"
-              >
-                <span class="absolute left-3 top-3 border border-white/40 bg-ink-deep/70 px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-widest text-white backdrop-blur-sm">
-                  Text folgt
-                </span>
-                <span class="absolute bottom-6 left-6 font-display text-2xl font-semibold text-white md:text-3xl">
-                  {kachel.title}
-                </span>
-              </Bild>
-            </a>
-          </li>
-        ))
-      }
-    </ul>
-
-    <p class="mt-8 text-center text-sm text-white/60">
-      Texte für „Geschichte“ und „Werte“ liegen noch nicht vor.
-    </p>
-  </Section>
-</Base>
+  </Base>
