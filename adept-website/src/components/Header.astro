@@ -10,7 +10,7 @@ const currentPath = Astro.url.pathname;
   class="sticky top-0 z-50 bg-surface border-b border-line"
   data-header
 >
-  <div class="container-page flex items-center gap-4 h-18 md:h-20">
+  <div class="container-page flex items-center gap-4 h-20 md:h-24">
     <!-- Menü-Button: öffnet die Gesamtübersicht (auf allen Breakpoints, wie in der Referenz) -->
     <button
       type="button"
@@ -39,7 +39,7 @@ const currentPath = Astro.url.pathname;
       class="shrink-0 flex min-h-11 items-center rounded-sm"
       aria-label="adept& – zur Startseite"
     >
-      <Logo class="text-2xl md:text-[1.75rem]" />
+      <Logo class="text-2xl md:text-3xl" />
     </a>
 
     <!-- Hauptnavigation ab lg -->
@@ -54,15 +54,15 @@ const currentPath = Astro.url.pathname;
                 {item.children ? (
                   <button
                     type="button"
-                    class="group inline-flex items-center gap-1.5 px-3 h-20 text-[0.9375rem] text-ink hover:text-accent aria-expanded:text-accent transition-colors duration-200 cursor-pointer"
+                    class="group inline-flex items-center gap-1.5 px-3.5 h-24 text-base text-ink hover:text-accent aria-expanded:text-accent transition-colors duration-200 cursor-pointer"
                     aria-expanded="false"
                     aria-controls={panelId}
                     data-dropdown-toggle
                   >
                     <span
                       class:list={[
-                        'relative inline-flex items-center h-20',
-                        "after:absolute after:inset-x-0 after:bottom-6 after:h-0.5 after:bg-accent after:origin-left after:transition-transform after:duration-200",
+                        'relative inline-flex items-center h-24',
+                        "after:absolute after:inset-x-0 after:bottom-7 after:h-0.5 after:bg-accent after:origin-left after:transition-transform after:duration-200",
                         active
                           ? 'after:scale-x-100 text-accent'
                           : 'after:scale-x-0 group-aria-expanded:after:scale-x-100',
@@ -86,13 +86,13 @@ const currentPath = Astro.url.pathname;
                 ) : (
                   <a
                     href={withBase(item.href)}
-                    class="group inline-flex items-center px-3 h-20 text-[0.9375rem] text-ink hover:text-accent transition-colors duration-200"
+                    class="group inline-flex items-center px-3.5 h-24 text-base text-ink hover:text-accent transition-colors duration-200"
                     aria-current={active ? 'page' : undefined}
                   >
                     <span
                       class:list={[
-                        'relative inline-flex items-center h-20',
-                        'after:absolute after:inset-x-0 after:bottom-6 after:h-0.5 after:bg-accent after:origin-left after:transition-transform after:duration-200',
+                        'relative inline-flex items-center h-24',
+                        'after:absolute after:inset-x-0 after:bottom-7 after:h-0.5 after:bg-accent after:origin-left after:transition-transform after:duration-200',
                         active ? 'after:scale-x-100 text-accent' : 'after:scale-x-0 group-hover:after:scale-x-100',
                       ]}
                     >
@@ -128,13 +128,40 @@ const currentPath = Astro.url.pathname;
       </ul>
     </nav>
 
-    <div class="ml-auto"></div>
+    <!--
+      Handlungsaufforderung ganz rechts. Ziel ist das Formular selbst, nicht
+      der Seitenkopf - deshalb der Anker. Die Beschriftung kuerzt sich auf
+      schmalen Geraeten, statt auf ein blosses Symbol zu schrumpfen: ein
+      unbeschrifteter Umschlag laesst offen, was passiert. Die volle
+      Hauptnavigation erscheint erst ab lg, ein Namensdoppel mit dem Eintrag
+      "Kontakt" entsteht dadurch nicht.
+    -->
+    <a
+      href={withBase('/kontakt#formular')}
+      class="druckt-sich ml-auto inline-flex min-h-11 shrink-0 items-center justify-center gap-2 bg-accent px-4 text-[0.9375rem] font-medium text-white transition-colors duration-200 hover:bg-accent-hover sm:px-6 md:min-h-12"
+    >
+      <svg
+        class="size-4.5 shrink-0"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M4 5h16v14H4z" />
+        <path d="m4 6 8 6 8-6" />
+      </svg>
+      <span class="md:hidden">Kontakt</span>
+      <span class="hidden md:inline">Kontakt aufnehmen</span>
+    </a>
   </div>
 
   <!-- Vollflächiges Menü (Hamburger) -->
   <div
     id="site-menu"
-    class="on-dark fixed inset-x-0 top-18 md:top-20 bottom-0 z-40 hidden overflow-y-auto bg-ink-deep"
+    class="on-dark fixed inset-x-0 top-20 md:top-24 bottom-0 z-40 hidden overflow-y-auto bg-ink-deep"
     data-menu-panel
   >
     <div class="container-page py-12 md:py-16">
