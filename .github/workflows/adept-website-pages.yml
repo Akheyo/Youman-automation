@@ -43,11 +43,10 @@ jobs:
 
       - name: Pages konfigurieren
         id: pages
+        # Kein enablement: das Anlegen der Pages-Site per API erfordert
+        # Adminrechte, die der Workflow-Token nicht hat. Pages muss einmalig
+        # unter Settings, Pages, Source: GitHub Actions eingeschaltet werden.
         uses: actions/configure-pages@v5
-        with:
-          # Aktiviert GitHub Pages fuer das Repo, falls noch nicht geschehen,
-          # damit dafuer kein Klick in den Einstellungen noetig ist.
-          enablement: true
 
       - run: npm ci
 
