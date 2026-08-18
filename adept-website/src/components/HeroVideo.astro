@@ -1,5 +1,6 @@
 ---
 import { withBase } from '../lib/url';
+import { bild } from '../lib/images';
 
 interface Props {
   title: string;
@@ -9,6 +10,10 @@ interface Props {
    * Poster gezeigt und die Play/Pause-Steuerung entfällt.
    */
   videoSrc?: string;
+  /**
+   * Standbild hinter dem Video. Ohne Angabe wird das Bild `halle` aus dem
+   * Register genommen, sonst die abstrakte Ersatzgrafik.
+   */
   poster?: string;
   /**
    * Abspielgeschwindigkeit. Werte < 1 verlangsamen das Video, ohne dass es
@@ -24,12 +29,16 @@ const {
   title,
   subtitle,
   videoSrc,
-  poster = '/hero-poster.svg',
+  poster,
   playbackRate = 1,
   platzhalter = !videoSrc,
 } = Astro.props;
 
-const posterUrl = withBase(poster);
+// Reihenfolge: ausdrücklich gesetztes Poster, sonst das Foto aus dem
+// Register, sonst die abstrakte Ersatzgrafik.
+const halle = bild('halle');
+const posterUrl = poster ? withBase(poster) : (halle?.src ?? withBase('/hero-poster.svg'));
+const posterAlt = halle?.alt ?? '';
 
 // MIME-Typ aus der Endung ableiten, damit neben MP4 auch WebM funktioniert.
 const mimeTypes: Record<string, string> = {
@@ -68,7 +77,7 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
         src={posterUrl}
         width="1920"
         height="1080"
-        alt=""
+        alt={posterAlt}
         fetchpriority="high"
       />
     )
