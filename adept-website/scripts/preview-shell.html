@@ -287,6 +287,21 @@
       })();
     <\/script>`;
 
+  // Aus dem Base64-Video eine Blob-URL machen. Chrome spielt eine mehrere
+  // Megabyte grosse data:-URI in einem srcdoc-Rahmen oft nicht ab, eine
+  // Blob-URL dagegen zuverlaessig.
+  let videoUrl = '';
+  if (DATA.video) {
+    try {
+      const roh = atob(DATA.video);
+      const bytes = new Uint8Array(roh.length);
+      for (let i = 0; i < roh.length; i++) bytes[i] = roh.charCodeAt(i);
+      videoUrl = URL.createObjectURL(new Blob([bytes], { type: 'video/mp4' }));
+    } catch (e) {
+      console.warn('Hero-Video konnte nicht aufbereitet werden', e);
+    }
+  }
+
   let current = null;
 
   function show(route, hash, record = true) {
@@ -297,6 +312,7 @@
 
     view.srcdoc = page
       .replace('<!--CSS-->', '<style>' + DATA.css + '</style>')
+      .replaceAll('__HERO_VIDEO__', videoUrl)
       .replace('</body>', bridge(hash) + '</body>');
 
     select.value = route;

@@ -107,8 +107,13 @@ def bilder_einbetten(html: str) -> str:
         d = data_uri(url)
         return f'{attr}="{d}"' if d else m.group(0)
 
-    return re.sub(r'\b(src|poster)="(/[^"]+\.(?:webp|avif|jpg|jpeg|png|mp4))"',
+    html = re.sub(r'\b(src|poster)="(/[^"]+\.(?:webp|avif|jpg|jpeg|png))"',
                   quelle_ersetzen, html)
+
+    # Das Video bekommt nur eine Marke. Die Huelle erzeugt daraus zur Laufzeit
+    # eine Blob-URL: eine mehrere Megabyte grosse data:-URI spielt Chrome in
+    # einem srcdoc-Rahmen haeufig nicht ab.
+    return html.replace('src="/hero.mp4"', 'src="__HERO_VIDEO__"')
 
 
 # ---------------------------------------------------------------- Seiten
@@ -128,7 +133,13 @@ for path in sorted(glob.glob(f'{DIST}/**/*.html', recursive=True)):
 
 # ---------------------------------------------------------------- Ausgabe
 shell = open(os.path.join(ROOT, 'scripts', 'preview-shell.html'), encoding='utf-8').read()
-payload = json.dumps({'css': css, 'pages': pages}, ensure_ascii=False).replace('</', '<\\/')
+video_b64 = ''
+video_pfad = os.path.join(DIST, 'hero.mp4')
+if os.path.exists(video_pfad):
+    video_b64 = _b64.b64encode(open(video_pfad, 'rb').read()).decode()
+
+payload = json.dumps({'css': css, 'pages': pages, 'video': video_b64},
+                     ensure_ascii=False).replace('</', '<\\/')
 out = shell.replace('/*__PAYLOAD__*/', payload)
 
 os.makedirs(OUT_DIR, exist_ok=True)
