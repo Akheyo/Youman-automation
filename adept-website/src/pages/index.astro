@@ -13,14 +13,16 @@ import { site, kernleistungen } from '../data/site';
 import { withBase } from '../lib/url';
 
 /**
- * Aufbau nach dem Muster "Enterprise Gateway" aus dem Skill ui-ux-pro-max:
- * Hero (Video) > Leistungen > Referenzen > Lösungen nach Branche und Funktion
- * > Über das Unternehmen > Kontakt.
+ * Reihenfolge der Startseite:
+ * Hero > Aktuelle Themen > Was wir tun > Claim > Branchen und Funktionen
+ * > Über adept&.
  *
- * Die im Briefing gesetzten Blöcke behalten ihre Reihenfolge zueinander:
- * Hero, "Aktuelle Themen", "Über adept&", Abschluss-Sektion ohne Newsletter.
- * Ergänzt sind Leistungen und Branchen – ohne sie sagt die Startseite an
- * keiner Stelle, was adept& tut.
+ * "Aktuelle Themen" steht auf Wunsch direkt unter dem Hero und damit vor der
+ * Erklärung, was adept& tut. Das entspricht dem Briefing, das "Aktuelle
+ * Themen" als ersten Block nach dem Hero führt.
+ *
+ * "Was wir tun" und "Branchen" sind Ergänzungen zum Briefing – ohne sie sagt
+ * die Startseite an keiner Stelle, womit das Unternehmen sein Geld verdient.
  */
 
 // Die Case Study ist der Aufmacher, die noch offenen Themen folgen darunter.
@@ -46,72 +48,6 @@ const ueberKacheln = [
     poster="/hero-poster.jpg"
     playbackRate={0.85}
   />
-
-  {/* ---------------------------------------------------- Was wir tun */}
-  <Section tone="light">
-    <div class="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-24" data-reveal>
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-          {site.claim}
-        </p>
-        <h2 class="mt-5 text-3xl sm:text-4xl lg:text-5xl">
-          Wir beraten, wo andere nur liefern – und wir bauen, was andere nur empfehlen.
-        </h2>
-        <p class="prose-measure mt-7 text-lg text-ink-soft">
-          adept& ist kein reines Beratungshaus, das Empfehlungen ausspricht, und kein
-          Softwareunternehmen, das ein Standardprodukt verkauft. Wir analysieren das operative
-          Problem – und wir bauen die Lösung, eingebettet in Ihr bestehendes ERP- oder SAP-System.
-        </p>
-        <div class="mt-9 border-l-2 border-accent pl-6">
-          <p class="font-display text-xl text-ink sm:text-2xl">
-            Kein Systemwechsel. Keine Medienbrüche. Eine Oberfläche.
-          </p>
-        </div>
-        <Button href="/ueber-uns" variant="secondary" class="mt-9">
-          Wie wir arbeiten
-        </Button>
-      </div>
-
-      <ol class="grid gap-px self-start bg-line sm:grid-cols-2">
-        {
-          kernleistungen.map((leistung, i) => (
-            <li class="bg-surface p-7">
-              <p class="font-display text-sm font-semibold tabular-nums text-accent">
-                {String(i + 1).padStart(2, '0')}
-              </p>
-              <h3 class="mt-3 text-lg font-semibold text-ink">{leistung.title}</h3>
-              <p class="mt-2.5 text-sm leading-relaxed text-ink-soft">{leistung.description}</p>
-            </li>
-          ))
-        }
-      </ol>
-    </div>
-  </Section>
-
-  {/* ---------------------------------------------------- Claim-Bahn */}
-  <section class="on-dark relative isolate overflow-hidden bg-ink-deep text-white">
-    <div class="absolute inset-0 -z-10">
-      <Bild name="oberflaeche" ratio="fill" parallax sizes="100vw" class="size-full" />
-      <div class="absolute inset-0 bg-ink-deep/20" aria-hidden="true"></div>
-      {/* Kraeftiger Verlauf nur ueber der linken Haelfte, wo der Text steht */}
-      <div
-        class="absolute inset-0 bg-gradient-to-r from-ink-deep from-30% via-ink-deep/90 via-55% to-transparent"
-        aria-hidden="true"
-      >
-      </div>
-    </div>
-    <div class="container-page py-24 md:py-36">
-      <p class="max-w-2xl font-display text-4xl leading-[1.05] sm:text-6xl lg:text-7xl" data-reveal>
-        Kein Systemwechsel.<br />Keine Medienbrüche.<br /><span class="text-accent-on-dark"
-          >Eine Oberfläche.</span
-        >
-      </p>
-      <p class="max-w-xl mt-8 text-lg text-white/80" data-reveal>
-        Der Mitarbeiter beim Kunden sieht nur eine Oberfläche. Datenabruf, Berechnung und
-        Synchronisation mit dem ERP-System laufen vollautomatisch im Hintergrund.
-      </p>
-    </div>
-  </section>
 
   {/* ---------------------------------------------------- Aktuelle Themen */}
   <Section tone="canvas">
@@ -192,6 +128,72 @@ const ueberKacheln = [
       }
     </ul>
   </Section>
+
+  {/* ---------------------------------------------------- Was wir tun */}
+  <Section tone="light">
+    <div class="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-24" data-reveal>
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+          {site.claim}
+        </p>
+        <h2 class="mt-5 text-3xl sm:text-4xl lg:text-5xl">
+          Wir beraten, wo andere nur liefern – und wir bauen, was andere nur empfehlen.
+        </h2>
+        <p class="prose-measure mt-7 text-lg text-ink-soft">
+          adept& ist kein reines Beratungshaus, das Empfehlungen ausspricht, und kein
+          Softwareunternehmen, das ein Standardprodukt verkauft. Wir analysieren das operative
+          Problem – und wir bauen die Lösung, eingebettet in Ihr bestehendes ERP- oder SAP-System.
+        </p>
+        <div class="mt-9 border-l-2 border-accent pl-6">
+          <p class="font-display text-xl text-ink sm:text-2xl">
+            Kein Systemwechsel. Keine Medienbrüche. Eine Oberfläche.
+          </p>
+        </div>
+        <Button href="/ueber-uns" variant="secondary" class="mt-9">
+          Wie wir arbeiten
+        </Button>
+      </div>
+
+      <ol class="grid gap-px self-start bg-line sm:grid-cols-2">
+        {
+          kernleistungen.map((leistung, i) => (
+            <li class="bg-surface p-7">
+              <p class="font-display text-sm font-semibold tabular-nums text-accent">
+                {String(i + 1).padStart(2, '0')}
+              </p>
+              <h3 class="mt-3 text-lg font-semibold text-ink">{leistung.title}</h3>
+              <p class="mt-2.5 text-sm leading-relaxed text-ink-soft">{leistung.description}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </Section>
+
+  {/* ---------------------------------------------------- Claim-Bahn */}
+  <section class="on-dark relative isolate overflow-hidden bg-ink-deep text-white">
+    <div class="absolute inset-0 -z-10">
+      <Bild name="oberflaeche" ratio="fill" parallax sizes="100vw" class="size-full" />
+      <div class="absolute inset-0 bg-ink-deep/20" aria-hidden="true"></div>
+      {/* Kraeftiger Verlauf nur ueber der linken Haelfte, wo der Text steht */}
+      <div
+        class="absolute inset-0 bg-gradient-to-r from-ink-deep from-30% via-ink-deep/90 via-55% to-transparent"
+        aria-hidden="true"
+      >
+      </div>
+    </div>
+    <div class="container-page py-24 md:py-36">
+      <p class="max-w-2xl font-display text-4xl leading-[1.05] sm:text-6xl lg:text-7xl" data-reveal>
+        Kein Systemwechsel.<br />Keine Medienbrüche.<br /><span class="text-accent-on-dark"
+          >Eine Oberfläche.</span
+        >
+      </p>
+      <p class="max-w-xl mt-8 text-lg text-white/80" data-reveal>
+        Der Mitarbeiter beim Kunden sieht nur eine Oberfläche. Datenabruf, Berechnung und
+        Synchronisation mit dem ERP-System laufen vollautomatisch im Hintergrund.
+      </p>
+    </div>
+  </section>
 
   {/* ---------------------------------------------------- Branchen und Funktionen */}
   <Section tone="light">
