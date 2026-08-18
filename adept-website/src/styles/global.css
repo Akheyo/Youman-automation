@@ -258,3 +258,171 @@
     linear-gradient(to bottom, color-mix(in oklab, var(--color-ink) 6%, transparent) 1px, transparent 1px);
   background-size: 72px 72px;
 }
+
+/* ---------------------------------------------------------------------------
+   Scrollgesteuerte Bewegung ohne JavaScript
+
+   Alles hier laeuft ueber `animation-timeline` – die Bewegung haengt an der
+   Scrollposition, nicht an einer Uhr. Kein Scroll-Listener, kein Ruckeln im
+   Haupt-Thread, und in Browsern ohne Unterstuetzung passiert schlicht nichts.
+
+   Doppelt abgesichert: `@supports` faengt fehlende Unterstuetzung ab,
+   `prefers-reduced-motion` die ausdrueckliche Ablehnung von Bewegung.
+--------------------------------------------------------------------------- */
+
+/*
+  Lesefortschritt als feine Linie unter der Kopfleiste.
+
+  Ohne Unterstuetzung oder bei reduzierter Bewegung bleibt sie ausgeblendet –
+  ein Fortschrittsbalken, der dem Scrollen nicht folgt, waere irrefuehrender
+  als gar keiner.
+*/
+@utility leseleiste {
+  display: none;
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      display: block;
+      transform-origin: left center;
+      scale: 0 1;
+      animation: leseleiste-fuellen linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+
+@keyframes leseleiste-fuellen {
+  to {
+    scale: 1 1;
+  }
+}
+
+/*
+  Die Kopfleiste liegt beim Seitenanfang flach auf und loest sich erst ab,
+  sobald gescrollt wird. Der Schatten sagt damit etwas aus: darunter liegt
+  Inhalt, der schon vorbeigelaufen ist.
+*/
+@utility haftschatten {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: scroll()) {
+      animation: haftschatten-ein linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 5rem;
+    }
+  }
+}
+
+@keyframes haftschatten-ein {
+  from {
+    box-shadow: 0 0 0 0 rgb(5 28 44 / 0);
+  }
+  to {
+    box-shadow: 0 12px 32px -20px rgb(5 28 44 / 0.5);
+  }
+}
+
+/*
+  Akzentlinie ueber einer Abschnittsueberschrift, die beim Hereinscrollen
+  aufwaechst. Sie ersetzt keine Information, sondern markiert den Anfang eines
+  Abschnitts – faellt sie aus, fehlt nichts.
+*/
+@utility linie-waechst {
+  transform-origin: left center;
+
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      scale: 0 1;
+      animation: linie-aufziehen linear both;
+      animation-timeline: view();
+      animation-range: cover 8% cover 32%;
+    }
+  }
+}
+
+@keyframes linie-aufziehen {
+  to {
+    scale: 1 1;
+  }
+}
+
+/*
+  Bilder werden beim Hereinscrollen aufgewischt statt eingeblendet. Der
+  Ausgangszustand ist bewusst nicht `opacity: 0` – bleibt die Animation aus,
+  steht das Bild einfach vollstaendig da.
+*/
+@utility wischt-auf {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      animation: bild-aufwischen linear both;
+      animation-timeline: view();
+      animation-range: cover 2% cover 30%;
+    }
+  }
+}
+
+@keyframes bild-aufwischen {
+  from {
+    clip-path: inset(0 0 42% 0);
+    opacity: 0.55;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Zustaende beim Ueberfahren
+--------------------------------------------------------------------------- */
+
+/*
+  Unterstrich, der von links einlaeuft. Als eigene Ebene ueber `background`,
+  nicht als `text-decoration`: so laesst sich die Breite animieren, ohne dass
+  der Text umbricht. Bei reduzierter Bewegung erscheint der Strich sofort in
+  voller Breite – die Rueckmeldung bleibt, nur die Bewegung faellt weg.
+*/
+@utility unterstrich {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+
+  &:hover,
+  &:focus-visible {
+    background-size: 100% 1px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    transition: background-size 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+/*
+  Ein feiner Lichtstreifen wandert einmal ueber die Kachel. Rein dekorativ und
+  deshalb an ein Pseudo-Element gebunden, das nichts ueberdeckt.
+*/
+@utility streift {
+  @media (prefers-reduced-motion: no-preference) {
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(
+        105deg,
+        transparent 38%,
+        rgb(255 255 255 / 0.16) 50%,
+        transparent 62%
+      );
+      translate: -120% 0;
+      transition: translate 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    &:hover::after {
+      translate: 120% 0;
+    }
+  }
+}

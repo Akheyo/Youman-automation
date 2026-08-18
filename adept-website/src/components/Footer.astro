@@ -33,7 +33,7 @@ const bereiche = mainNav.filter((item) => item.children);
     <div class="container-page py-14">
       <div class="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <a href={withBase('/')} class="inline-flex min-h-11 items-center rounded-sm" aria-label="adept& – zur Startseite">
+          <a href={withBase('/')} class="unterstrich inline-flex min-h-11 items-center rounded-sm" aria-label="adept& – zur Startseite">
             <Logo class="text-3xl" />
           </a>
           <p class="prose-measure mt-4 text-sm text-muted-fg">
@@ -45,7 +45,7 @@ const bereiche = mainNav.filter((item) => item.children);
           bereiche.map((bereich) => (
             <nav aria-label={bereich.label}>
               <h2 class="font-sans text-sm font-semibold text-ink">
-                <a href={withBase(bereich.href)} class="inline-flex min-h-11 items-center hover:text-accent transition-colors duration-200">
+                <a href={withBase(bereich.href)} class="unterstrich inline-flex min-h-11 items-center hover:text-accent transition-colors duration-200">
                   {bereich.label}
                 </a>
               </h2>
@@ -54,7 +54,7 @@ const bereiche = mainNav.filter((item) => item.children);
                   <li>
                     <a
                       href={withBase(child.href)}
-                      class="inline-flex min-h-11 items-center text-sm text-muted-fg hover:text-accent transition-colors duration-200"
+                      class="unterstrich inline-flex min-h-11 items-center text-sm text-muted-fg hover:text-accent transition-colors duration-200"
                     >
                       {child.label}
                     </a>
@@ -75,7 +75,7 @@ const bereiche = mainNav.filter((item) => item.children);
                   <li>
                     <a
                       href={withBase(item.href)}
-                      class="inline-flex min-h-11 items-center text-sm text-muted-fg hover:text-accent transition-colors duration-200"
+                      class="unterstrich inline-flex min-h-11 items-center text-sm text-muted-fg hover:text-accent transition-colors duration-200"
                     >
                       {item.label}
                     </a>
@@ -96,7 +96,7 @@ const bereiche = mainNav.filter((item) => item.children);
               <li>
                 <a
                   href={withBase(item.href)}
-                  class="inline-flex min-h-11 items-center text-sm text-muted-fg hover:text-accent transition-colors duration-200"
+                  class="unterstrich inline-flex min-h-11 items-center text-sm text-muted-fg hover:text-accent transition-colors duration-200"
                 >
                   {item.label}
                 </a>

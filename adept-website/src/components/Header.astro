@@ -7,9 +7,18 @@ const currentPath = Astro.url.pathname;
 ---
 
 <header
-  class="sticky top-0 z-50 bg-surface border-b border-line"
+  class="haftschatten sticky top-0 z-50 bg-surface border-b border-line"
   data-header
 >
+  {/*
+    Lesefortschritt. Liegt auf der unteren Kante der Leiste, damit er die
+    Trennlinie aufgreift statt eine zweite zu erzeugen.
+  */}
+  <div
+    class="leseleiste absolute inset-x-0 bottom-[-1px] h-0.5 bg-accent"
+    aria-hidden="true"
+  >
+  </div>
   <div class="container-page flex items-center gap-4 h-20 md:h-24">
     <!-- Menü-Button: öffnet die Gesamtübersicht (auf allen Breakpoints, wie in der Referenz) -->
     <button

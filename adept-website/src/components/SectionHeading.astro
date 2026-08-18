@@ -20,6 +20,21 @@ const {
 ---
 
 <div class:list={[align === 'center' && 'text-center']}>
+  {/*
+    Akzentlinie als Anfangsmarke des Abschnitts. Sie waechst beim
+    Hereinscrollen auf und traegt keine Information - bleibt sie stehen,
+    fehlt nichts.
+  */}
+  <span
+    class:list={[
+      'linie-waechst mb-6 block h-0.5 w-14',
+      align === 'center' && 'mx-auto',
+      // Ternaer statt zweier Klassen: bei `bg-accent bg-accent-on-dark`
+      // entschiede die Reihenfolge im Stylesheet, nicht die im Attribut.
+      tone === 'dark' ? 'bg-accent-on-dark' : 'bg-accent',
+    ]}
+    aria-hidden="true"
+  />
   {
     kicker && (
       <p
