@@ -1,3 +1,5 @@
+import type { BildKey } from './images';
+
 export type Funktion = {
   slug: string;
   title: string;
@@ -5,6 +7,8 @@ export type Funktion = {
   teaser: string;
   /** Die im Briefing genannten Bausteine. */
   bausteine: string[];
+  /** Schlüssel aus dem Bildregister. */
+  bild?: BildKey;
 };
 
 /**
@@ -15,6 +19,7 @@ export type Funktion = {
 export const funktionen: Funktion[] = [
   {
     slug: 'produktion-und-feinplanung',
+    bild: 'halle',
     title: 'Produktion & Feinplanung',
     teaser:
       'Planungsstände, die den tatsächlichen Fertigungsablauf abbilden – statt einer Planung, die im Tagesgeschäft sofort veraltet.',
@@ -28,6 +33,7 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'logistik-und-versandsteuerung',
+    bild: 'paletten',
     title: 'Logistik & Versandsteuerung',
     teaser:
       'Von der Verpackungsentscheidung bis zur Versandpriorität: operative Logik, die direkt am ERP hängt.',
@@ -41,6 +47,7 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'supply-chain-und-materialsteuerung',
+    bild: 'material',
     title: 'Supply Chain & Materialsteuerung',
     teaser:
       'Engpässe früh sichtbar machen und Materialverzüge durchrechnen, bevor sie den Plan umwerfen.',
@@ -52,6 +59,7 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'reporting-und-operative-transparenz',
+    bild: 'reporting',
     title: 'Reporting & operative Transparenz',
     teaser:
       'Kennzahlen für die Rolle, die sie braucht – mit Drill-down bis auf die einzelne Maschine.',
@@ -63,6 +71,7 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'systemintegration-und-erp-anbindung',
+    bild: 'oberflaeche',
     title: 'Systemintegration & ERP-Anbindung',
     teaser:
       'Kundenspezifische Module ohne Systemablösung – angebunden an das, was bereits läuft.',

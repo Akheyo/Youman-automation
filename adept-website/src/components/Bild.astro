@@ -1,18 +1,22 @@
 ---
+import { Image } from 'astro:assets';
 import { bild } from '../lib/images';
 import type { BildKey } from '../data/images';
 
 interface Props {
   /** Schlüssel aus dem Bildregister. Fehlt die Datei, greift die Ersatzfläche. */
   name?: BildKey;
-  /** Seitenverhältnis der Fläche. */
   ratio?: '16/9' | '4/3' | '3/2' | '21/9' | 'fill';
   /** Bestimmt die Farbstimmung der Ersatzfläche, damit Kacheln sich unterscheiden. */
   index?: number;
-  /** Über dem Bild liegender Abdunkler – nötig, wenn Text darauf steht. */
-  scrim?: 'none' | 'sanft' | 'kraeftig';
-  /** Erstes Bild im Viewport nicht lazy laden. */
+  /** Abdunkler über dem Bild – nötig, sobald Text darauf steht. */
+  scrim?: 'none' | 'sanft' | 'kraeftig' | 'unten';
+  /** Erstes Bild im Viewport nicht verzögert laden. */
   priority?: boolean;
+  /** Sichtbare Breite des Bildes, für die Auswahl der passenden Auflösung. */
+  sizes?: string;
+  /** Sanftes Heranfahren beim Überfahren der umgebenden Gruppe. */
+  zoom?: boolean;
   class?: string;
 }
 
@@ -22,6 +26,8 @@ const {
   index = 0,
   scrim = 'none',
   priority = false,
+  sizes = '(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw',
+  zoom = false,
   class: className = '',
 } = Astro.props;
 
@@ -47,25 +53,36 @@ const scrims: Record<string, string> = {
   none: '',
   sanft: 'bg-ink-deep/35',
   kraeftig: 'bg-ink-deep/60',
+  unten: 'bg-gradient-to-t from-ink-deep/85 via-ink-deep/25 to-transparent',
 };
 ---
 
 <div class:list={['relative overflow-hidden bg-ink-deep', ratios[ratio], className]}>
   {
     quelle ? (
-      <img
-        src={quelle.src}
+      <Image
+        src={quelle.quelle}
         alt={quelle.alt}
-        width="2048"
-        height="1152"
+        widths={[480, 800, 1200, 1672]}
+        sizes={sizes}
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
         fetchpriority={priority ? 'high' : 'auto'}
-        class="size-full object-cover"
+        class:list={[
+          'size-full object-cover',
+          zoom && 'transition-transform duration-700 ease-out group-hover:scale-[1.04]',
+        ]}
       />
     ) : (
       <>
-        <div class:list={['size-full bg-gradient-to-br', flaeche]} aria-hidden="true" />
+        <div
+          class:list={[
+            'size-full bg-gradient-to-br',
+            flaeche,
+            zoom && 'transition-transform duration-700 ease-out group-hover:scale-[1.04]',
+          ]}
+          aria-hidden="true"
+        />
         {/* Feines technisches Raster, damit die Fläche gestaltet wirkt und nicht leer */}
         <div
           class="pointer-events-none absolute inset-0 opacity-[0.14] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:56px_56px]"

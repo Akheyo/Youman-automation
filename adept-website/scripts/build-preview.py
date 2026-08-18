@@ -41,6 +41,73 @@ def data_svg(path):
 poster = data_svg(f'{DIST}/hero-poster.svg')
 favicon = data_svg(f'{DIST}/favicon.svg')
 
+# --- Bilder und Video einbetten ---------------------------------------------
+# Fuer die Vorschau reicht je Bild eine Aufloesung. srcset wird entfernt und
+# src auf die 800px-Variante gesetzt, sonst wuerde die Datei unnoetig gross.
+import base64 as _b64
+from functools import lru_cache
+
+MIME = {'webp': 'image/webp', 'avif': 'image/avif', 'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg', 'png': 'image/png', 'mp4': 'video/mp4'}
+
+@lru_cache(maxsize=None)
+def data_uri(rel: str) -> str | None:
+    pfad = os.path.join(DIST, rel.lstrip('/'))
+    if not os.path.exists(pfad):
+        return None
+    endung = rel.rsplit('.', 1)[-1].lower()
+    mime = MIME.get(endung)
+    if not mime:
+        return None
+    return f'data:{mime};base64,' + _b64.b64encode(open(pfad, 'rb').read()).decode()
+
+
+def variante_800(srcset: str) -> str | None:
+    """Waehlt aus einem srcset die 800w-Variante, sonst die kleinste."""
+    eintraege = []
+    for teil in srcset.split(','):
+        teil = teil.strip()
+        if not teil:
+            continue
+        stueck = teil.split()
+        if len(stueck) != 2 or not stueck[1].endswith('w'):
+            continue
+        try:
+            eintraege.append((int(stueck[1][:-1]), stueck[0]))
+        except ValueError:
+            continue
+    if not eintraege:
+        return None
+    for breite, url in sorted(eintraege):
+        if breite >= 800:
+            return url
+    return sorted(eintraege)[-1][1]
+
+
+def bilder_einbetten(html: str) -> str:
+    def img_ersetzen(m):
+        tag = m.group(0)
+        ss = re.search(r'srcset="([^"]+)"', tag)
+        if ss:
+            gewaehlt = variante_800(ss.group(1))
+            if gewaehlt:
+                tag = re.sub(r'\ssrcset="[^"]*"', '', tag)
+                tag = re.sub(r'\ssizes="[^"]*"', '', tag)
+                tag = re.sub(r'src="[^"]*"', f'src="{gewaehlt}"', tag)
+        return tag
+
+    html = re.sub(r'<img\b[^>]*>', img_ersetzen, html)
+
+    # Alle verbliebenen lokalen Verweise als Data-URI einsetzen
+    def quelle_ersetzen(m):
+        attr, url = m.group(1), m.group(2)
+        d = data_uri(url)
+        return f'{attr}="{d}"' if d else m.group(0)
+
+    return re.sub(r'\b(src|poster)="(/[^"]+\.(?:webp|avif|jpg|jpeg|png|mp4))"',
+                  quelle_ersetzen, html)
+
+
 # ---------------------------------------------------------------- Seiten
 pages = {}
 for path in sorted(glob.glob(f'{DIST}/**/*.html', recursive=True)):
@@ -51,6 +118,9 @@ for path in sorted(glob.glob(f'{DIST}/**/*.html', recursive=True)):
     # Stylesheet-Link raus – das CSS wird zur Laufzeit einmalig eingesetzt.
     html = re.sub(r'<link rel="stylesheet" href="/_astro/[^"]+"\s*/?>', '<!--CSS-->', html)
     html = html.replace('/hero-poster.svg', poster).replace('/favicon.svg', favicon)
+    # WebM entfaellt in der Vorschau, MP4 genuegt und halbiert die Dateigroesse.
+    html = re.sub(r'<source[^>]+\.webm[^>]*>', '', html)
+    html = bilder_einbetten(html)
     pages[route] = html
 
 # ---------------------------------------------------------------- Ausgabe

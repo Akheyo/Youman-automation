@@ -1,3 +1,5 @@
+import type { BildKey } from './images';
+
 export type Branche = {
   slug: string;
   title: string;
@@ -17,11 +19,14 @@ export type Branche = {
   platzhalter: boolean;
   /** Slug einer Referenz aus news.ts, falls vorhanden. */
   referenz?: string;
+  /** Schlüssel aus dem Bildregister. */
+  bild?: BildKey;
 };
 
 export const branchen: Branche[] = [
   {
     slug: 'fertigung-und-maschinenbau',
+    bild: 'maschinenbau',
     title: 'Fertigung und Maschinenbau',
     teaser: 'Variantenreiche Fertigung planbar machen – ohne das ERP zu ersetzen.',
     intro:
@@ -31,6 +36,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'logistik-und-versand',
+    bild: 'logistik',
     title: 'Logistik & Versand',
     teaser: 'Verpackungs-, Paletten- und Versandlogik direkt am Auftragseingang.',
     intro:
@@ -41,6 +47,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'konsumgueter-und-handel',
+    bild: 'handel',
     title: 'Konsumgüter und Handel',
     teaser: 'Inhalte für diese Branche werden derzeit erarbeitet.',
     intro: '',
@@ -49,6 +56,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'automobil-und-zulieferer',
+    bild: 'automobil',
     title: 'Automobil und Zulieferer',
     teaser: 'Termintreue und Materialverfügbarkeit über die gesamte Lieferkette.',
     intro:

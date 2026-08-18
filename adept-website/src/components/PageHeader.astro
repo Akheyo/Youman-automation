@@ -1,18 +1,35 @@
 ---
 import { withBase } from '../lib/url';
+import Bild from './Bild.astro';
+import type { BildKey } from '../data/images';
 
 interface Props {
   kicker?: string;
   title: string;
   lead?: string;
   breadcrumb?: { label: string; href: string }[];
+  /** Hintergrundbild. Ohne Angabe bleibt der Kopf einfarbig. */
+  bild?: BildKey;
 }
 
-const { kicker, title, lead, breadcrumb = [] } = Astro.props;
+const { kicker, title, lead, breadcrumb = [], bild } = Astro.props;
 ---
 
-<div class="on-dark bg-ink-deep text-white">
-  <div class="container-page py-16 md:py-24">
+<div class="on-dark relative isolate overflow-hidden bg-ink-deep text-white">
+  {
+    bild && (
+      <div class="absolute inset-0 -z-10">
+        <Bild name={bild} ratio="fill" priority sizes="100vw" class="size-full" />
+        {/* Doppelter Scrim: sichert den Textkontrast auf jedem Motiv */}
+        <div class="absolute inset-0 bg-ink-deep/75" aria-hidden="true" />
+        <div
+          class="absolute inset-0 bg-gradient-to-r from-ink-deep via-ink-deep/70 to-ink-deep/40"
+          aria-hidden="true"
+        />
+      </div>
+    )
+  }
+  <div class:list={['container-page py-16 md:py-24', bild && 'md:py-32']}>
     {
       breadcrumb.length > 0 && (
         <nav aria-label="Brotkrumennavigation" class="mb-6">

@@ -1,3 +1,5 @@
+import type { BildKey } from './images';
+
 export type NewsItem = {
   slug: string;
   title: string;
@@ -8,6 +10,8 @@ export type NewsItem = {
   href: string;
   /** true = Blindtext-Kachel, bis Inhalte geliefert werden. */
   platzhalter: boolean;
+  /** Schlüssel aus dem Bildregister. */
+  bild?: BildKey;
 };
 
 /**
@@ -21,6 +25,7 @@ export type NewsItem = {
 export const news: NewsItem[] = [
   {
     slug: 'drahtmueller-palettenoptimierung',
+    bild: 'paletten',
     title: 'Palettenoptimierung bei der Drahtmüller GmbH',
     date: null,
     kicker: 'Case Study',

@@ -21,6 +21,15 @@ interface Props {
    * wirkt. 0.6 heißt: 60 % der Originalgeschwindigkeit.
    */
   playbackRate?: number;
+  /**
+   * true, wenn der Titel bereits fest im Video steht.
+   *
+   * Die Überschrift wird dann nur so lange angezeigt, wie das Video nicht
+   * läuft – also beim Laden, bei reduzierter Bewegung und bei blockiertem
+   * Autoplay. Sobald die Wiedergabe beginnt, blendet sie aus, damit der Text
+   * nicht doppelt im Bild steht. Im Markup bleibt sie immer erhalten.
+   */
+  titelImVideo?: boolean;
   /** Blendet den Platzhalter-Hinweis ein, solange kein echtes Video vorliegt. */
   platzhalter?: boolean;
 }
@@ -31,13 +40,14 @@ const {
   videoSrc,
   poster,
   playbackRate = 1,
+  titelImVideo = false,
   platzhalter = !videoSrc,
 } = Astro.props;
 
 // Reihenfolge: ausdrücklich gesetztes Poster, sonst das Foto aus dem
 // Register, sonst die abstrakte Ersatzgrafik.
 const halle = bild('halle');
-const posterUrl = poster ? withBase(poster) : (halle?.src ?? withBase('/hero-poster.svg'));
+const posterUrl = poster ? withBase(poster) : (halle?.quelle.src ?? withBase('/hero-poster.svg'));
 const posterAlt = halle?.alt ?? '';
 
 // MIME-Typ aus der Endung ableiten, damit neben MP4 auch WebM funktioniert.
@@ -92,7 +102,10 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
   >
   </div>
 
-  <div class="container-page text-center">
+  <div
+    class="container-page text-center transition-opacity duration-500"
+    data-hero-titel={titelImVideo ? 'nur-pausiert' : undefined}
+  >
     <h1 class="font-display text-5xl sm:text-6xl lg:text-8xl font-semibold tracking-tight">
       {title}
     </h1>
@@ -207,6 +220,21 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
 
     video.addEventListener('play', syncButton);
     video.addEventListener('pause', syncButton);
+
+    /* Steht der Titel schon im Video, wird die Überschrift der Seite nur
+       eingeblendet, solange das Video steht. So ist immer genau ein Titel
+       sichtbar – und bei fehlendem Autoplay bleibt der Hero nicht stumm. */
+    const titel = document.querySelector<HTMLElement>('[data-hero-titel="nur-pausiert"]');
+    if (titel) {
+      const syncTitel = () => {
+        const laeuft = !video.paused && !video.ended && video.readyState >= 3;
+        titel.classList.toggle('opacity-0', laeuft);
+      };
+      syncTitel();
+      for (const ereignis of ['playing', 'pause', 'ended', 'waiting', 'emptied'] as const) {
+        video.addEventListener(ereignis, syncTitel);
+      }
+    }
 
     button?.addEventListener('click', () => {
       if (video.paused) {

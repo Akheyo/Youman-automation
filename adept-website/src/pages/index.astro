@@ -4,37 +4,83 @@ import HeroVideo from '../components/HeroVideo.astro';
 import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import TeaserCard from '../components/TeaserCard.astro';
+import Bild from '../components/Bild.astro';
+import Button from '../components/Button.astro';
 import { news } from '../data/news';
-import { site } from '../data/site';
+import { branchen } from '../data/branchen';
+import { funktionen } from '../data/funktionen';
+import { site, kernleistungen } from '../data/site';
 import { withBase } from '../lib/url';
 
 /**
- * Scroll-Reihenfolge laut Briefing:
- * 1. Hero (Video, adept& / Deutschland)
- * 2. Aktuelle Themen (4 Kacheln)
- * 3. Über adept& (nur Geschichte und Werte)
- * 4. Abschluss-/Footer-Sektion (in Footer.astro, ohne Newsletter)
+ * Aufbau nach dem Muster "Enterprise Gateway" aus dem Skill ui-ux-pro-max:
+ * Hero (Video) > Leistungen > Referenzen > Lösungen nach Branche und Funktion
+ * > Über das Unternehmen > Kontakt.
+ *
+ * Die im Briefing gesetzten Blöcke behalten ihre Reihenfolge zueinander:
+ * Hero, "Aktuelle Themen", "Über adept&", Abschluss-Sektion ohne Newsletter.
+ * Ergänzt sind Leistungen und Branchen – ohne sie sagt die Startseite an
+ * keiner Stelle, was adept& tut.
  */
 
 // Inhalte für "Geschichte" und "Werte" liegen noch nicht vor.
 const ueberKacheln = [
-  {
-    title: 'Geschichte',
-    href: '/ueber-uns#geschichte',
-    flaeche: 'from-ink-deep to-[#0a3350]',
-  },
-  {
-    title: 'Werte',
-    href: '/ueber-uns#werte',
-    flaeche: 'from-[#0a3350] to-accent',
-  },
+  { title: 'Geschichte', href: '/ueber-uns#geschichte', bild: 'architektur' as const },
+  { title: 'Werte', href: '/ueber-uns#werte', bild: 'gitter' as const },
 ];
 ---
 
 <Base title={site.name} description={site.description}>
-  <HeroVideo title={site.name} subtitle={site.region} />
+  <HeroVideo
+    title={site.name}
+    subtitle={site.region}
+    videoSrc="/hero.mp4"
+    titelImVideo={true}
+  />
 
+  {/* ---------------------------------------------------- Was wir tun */}
   <Section tone="light">
+    <div class="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-24">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+          {site.claim}
+        </p>
+        <h2 class="mt-5 text-3xl sm:text-4xl lg:text-5xl">
+          Wir beraten, wo andere nur liefern – und wir bauen, was andere nur empfehlen.
+        </h2>
+        <p class="prose-measure mt-7 text-lg text-ink-soft">
+          adept& ist kein reines Beratungshaus, das Empfehlungen ausspricht, und kein
+          Softwareunternehmen, das ein Standardprodukt verkauft. Wir analysieren das operative
+          Problem – und wir bauen die Lösung, eingebettet in Ihr bestehendes ERP- oder SAP-System.
+        </p>
+        <div class="mt-9 border-l-2 border-accent pl-6">
+          <p class="font-display text-xl text-ink sm:text-2xl">
+            Kein Systemwechsel. Keine Medienbrüche. Eine Oberfläche.
+          </p>
+        </div>
+        <Button href="/ueber-uns" variant="secondary" class="mt-9">
+          Wie wir arbeiten
+        </Button>
+      </div>
+
+      <ol class="grid gap-px self-start bg-line sm:grid-cols-2">
+        {
+          kernleistungen.map((leistung, i) => (
+            <li class="bg-surface p-7">
+              <p class="font-display text-sm font-semibold tabular-nums text-accent">
+                {String(i + 1).padStart(2, '0')}
+              </p>
+              <h3 class="mt-3 text-lg font-semibold text-ink">{leistung.title}</h3>
+              <p class="mt-2.5 text-sm leading-relaxed text-ink-soft">{leistung.description}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </Section>
+
+  {/* ---------------------------------------------------- Aktuelle Themen */}
+  <Section tone="canvas">
     <SectionHeading kicker="Aktuelles" title="Aktuelle Themen" align="center" />
     <ul class="mt-14 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
       {
@@ -46,6 +92,7 @@ const ueberKacheln = [
               kicker={item.kicker}
               date={item.date}
               excerpt={item.excerpt}
+              bild={item.bild}
               index={index}
               platzhalter={item.platzhalter}
             />
@@ -55,6 +102,95 @@ const ueberKacheln = [
     </ul>
   </Section>
 
+  {/* ---------------------------------------------------- Branchen und Funktionen */}
+  <Section tone="light">
+    <SectionHeading
+      kicker="Branchen"
+      title="Wo wir arbeiten"
+      lead="adept& arbeitet mit mittelständischen Unternehmen in produktionsnahen und logistikintensiven Branchen."
+    />
+
+    <ul class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        branchen.map((branche, i) => (
+          <li>
+            <a
+              href={withBase(`/branchen/${branche.slug}`)}
+              class="group relative block overflow-hidden"
+            >
+              <Bild
+                name={branche.bild}
+                index={i}
+                ratio="4/3"
+                scrim="unten"
+                zoom
+                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+              >
+                <div class="absolute inset-x-0 bottom-0 p-5">
+                  <h3 class="font-display text-lg font-semibold text-white">{branche.title}</h3>
+                  <span
+                    class="mt-1.5 inline-flex items-center gap-1.5 text-sm text-white/85"
+                    aria-hidden="true"
+                  >
+                    Ansehen
+                    <svg
+                      class="size-3.5 transition-transform duration-200 group-hover:translate-x-1"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="m9 18 6-6-6-6" />
+                    </svg>
+                  </span>
+                </div>
+              </Bild>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="mt-16 border-t border-line pt-10">
+      <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+        Funktionsbereiche
+      </h3>
+      <!-- Letzter Eintrag ueberspannt beide Spalten: bei fuenf Eintraegen bliebe
+           sonst eine leere Zelle im Raster stehen. -->
+      <ul class="mt-6 grid gap-px bg-line md:grid-cols-2 [&>li:last-child]:md:col-span-2">
+        {
+          funktionen.map((funktion) => (
+            <li class="bg-surface">
+              <a
+                href={withBase(`/funktionen/${funktion.slug}`)}
+                class="group flex h-full items-start justify-between gap-4 p-6 transition-colors duration-200 hover:bg-canvas"
+              >
+                <span class="font-medium text-ink transition-colors duration-200 group-hover:text-accent">
+                  {funktion.title}
+                </span>
+                <svg
+                  class="mt-1 size-4 shrink-0 text-accent transition-transform duration-200 group-hover:translate-x-1"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </Section>
+
+  {/* ---------------------------------------------------- Über adept& */}
   <Section tone="canvas">
     <SectionHeading
       title="Über adept&"
@@ -64,26 +200,27 @@ const ueberKacheln = [
 
     <ul class="mt-14 grid gap-6 sm:grid-cols-2">
       {
-        ueberKacheln.map((kachel) => (
+        ueberKacheln.map((kachel, i) => (
           <li>
             <a
               href={withBase(kachel.href)}
-              class="group relative block aspect-4/3 sm:aspect-16/10 overflow-hidden"
+              class="group relative block overflow-hidden"
             >
-              <div
-                class:list={[
-                  'absolute inset-0 bg-gradient-to-br transition-transform duration-500 group-hover:scale-105',
-                  kachel.flaeche,
-                ]}
-                aria-hidden="true"
-              />
-              <div class="absolute inset-0 bg-ink-deep/35" aria-hidden="true" />
-              <span class="absolute left-3 top-3 border border-white/50 bg-black/60 px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-widest text-white">
-                Platzhalter
-              </span>
-              <span class="absolute bottom-6 left-6 font-display text-2xl md:text-3xl font-semibold text-white">
-                {kachel.title}
-              </span>
+              <Bild
+                name={kachel.bild}
+                index={i}
+                ratio="16/9"
+                scrim="unten"
+                zoom
+                sizes="(min-width: 640px) 50vw, 100vw"
+              >
+                <span class="absolute left-3 top-3 border border-white/40 bg-ink-deep/70 px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-widest text-white backdrop-blur-sm">
+                  Text folgt
+                </span>
+                <span class="absolute bottom-6 left-6 font-display text-2xl font-semibold text-white md:text-3xl">
+                  {kachel.title}
+                </span>
+              </Bild>
             </a>
           </li>
         ))
