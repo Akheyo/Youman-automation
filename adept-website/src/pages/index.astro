@@ -35,11 +35,16 @@ const ueberKacheln = [
 ---
 
 <Base title={site.name} description={site.description}>
+  {/* Das Video ist ohne eingebrannte Schrift geliefert – "adept&" und
+      "Deutschland" stehen deshalb wieder als echter Text darüber. Die leichte
+      Verlangsamung nimmt den drei Einstellungen die Hektik, ohne dass das
+      Video neu gerendert werden muss. */}
   <HeroVideo
     title={site.name}
     subtitle={site.region}
     videoSrc="/hero.mp4"
-    titelImVideo={true}
+    poster="/hero-poster.jpg"
+    playbackRate={0.85}
   />
 
   {/* ---------------------------------------------------- Was wir tun */}

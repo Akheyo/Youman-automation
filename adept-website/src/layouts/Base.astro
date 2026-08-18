@@ -16,7 +16,7 @@ const { title, description = site.description, noindex = false } = Astro.props;
 
 const seitentitel = title === site.name ? `${site.name} ${site.region}` : `${title} | ${site.name}`;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
-const ogImage = new URL(withBase('/hero-poster.svg'), Astro.site ?? Astro.url.origin);
+const ogImage = new URL(withBase('/hero-poster.jpg'), Astro.site ?? Astro.url.origin);
 
 const organisation = {
   '@context': 'https://schema.org',

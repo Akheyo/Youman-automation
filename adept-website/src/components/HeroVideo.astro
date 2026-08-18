@@ -96,27 +96,34 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
   <!--
     Zwei Ebenen statt einer festen Abdunklung:
 
-    Grundschleier – dauerhaft, aber leicht. Er hält nur die Navigationsleiste
-    oben und die Bedienelemente unten lesbar und lässt das Bild sonst wirken.
+    Grundschleier – nur noch ein Hauch am unteren Rand. Oben braucht es keinen:
+    die Navigationsleiste steht auf einer eigenen weißen Fläche. Unten fängt er
+    den Scroll-Hinweis ab, der sonst auf hellem Hallenboden verschwindet.
 
-    Titelschleier – nur solange die Überschrift der Seite sichtbar ist, also im
-    Standbild. Sobald das Video läuft, blendet er zusammen mit der Überschrift
-    aus und das Bild steht unverdeckt.
+    Titelschleier – eine weiche Ellipse genau dort, wo die Überschrift steht.
+    Eine flächige Abdunklung über dem ganzen Bild wäre einfacher, legt aber
+    einen sichtbaren Schleier über das Motiv; die Ellipse läuft zum Rand hin
+    auf null aus, sodass die Ecken des Bildes unangetastet bleiben. Nötig ist
+    sie, weil die erste Einstellung eine fast weiße Halle zeigt – weißer Text
+    ohne Abdunklung wäre dort unlesbar.
+
+    Steht der Titel bereits fest im Video, blendet die Ellipse zusammen mit der
+    Überschrift aus, sobald die Wiedergabe läuft.
   -->
   <div
-    class="absolute inset-0 -z-10 bg-gradient-to-b from-ink-deep/45 via-ink-deep/10 to-ink-deep/45"
+    class="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-transparent to-ink-deep/30"
     aria-hidden="true"
   >
   </div>
   <div
-    class="absolute inset-0 -z-10 bg-ink-deep/50 transition-opacity duration-500"
+    class="absolute inset-0 -z-10 transition-opacity duration-500 bg-[radial-gradient(ellipse_72%_48%_at_50%_48%,rgba(5,28,44,0.74)_0%,rgba(5,28,44,0.54)_45%,rgba(5,28,44,0.17)_70%,rgba(5,28,44,0)_84%)]"
     aria-hidden="true"
     data-hero-scrim={titelImVideo ? 'nur-pausiert' : undefined}
   >
   </div>
 
   <div
-    class="container-page text-center transition-opacity duration-500"
+    class="container-page text-center transition-opacity duration-500 [text-shadow:0_2px_24px_rgba(5,28,44,0.55)]"
     data-hero-titel={titelImVideo ? 'nur-pausiert' : undefined}
   >
     <h1 class="font-display text-5xl sm:text-6xl lg:text-8xl font-semibold tracking-tight">
@@ -134,7 +141,7 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
   <!-- Scroll-Hinweis, wie in der Referenz unten links -->
   <a
     href="#inhalt"
-    class="absolute bottom-8 left-5 md:left-10 grid size-11 place-items-center rounded-full text-white/90 hover:text-white transition-colors duration-200"
+    class="absolute bottom-8 left-5 md:left-10 grid size-11 place-items-center rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors duration-200"
     aria-label="Zum Seiteninhalt springen"
   >
     <svg
