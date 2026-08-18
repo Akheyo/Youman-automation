@@ -248,15 +248,30 @@
 }
 
 /*
-  Sehr feines technisches Raster für große helle Flächen. Es soll nicht als
-  Muster auffallen, sondern der Fläche nur Struktur geben - passend zum
-  ingenieurhaften Charakter des Unternehmens.
+  Ruhiger Verlauf auf der Grundfläche statt eines Musters.
+
+  Zwei Ebenen: ein weiter Lichtschein oben links, der die Fläche von einer
+  Ecke her öffnet, und darunter ein senkrechter Verlauf, der zum unteren Rand
+  hin leicht abtaucht. Beide Farben werden aus `--color-canvas` gemischt -
+  wechselt der Grundton, wandert der Verlauf mit und muss nicht nachgeführt
+  werden.
+
+  Die Werte sind bewusst klein gehalten: der Verlauf soll die Fläche atmen
+  lassen, nicht als Farbfeld auffallen.
 */
-@utility raster {
+@utility verlauf-flaeche {
   background-image:
-    linear-gradient(to right, color-mix(in oklab, var(--color-ink) 6%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklab, var(--color-ink) 6%, transparent) 1px, transparent 1px);
-  background-size: 72px 72px;
+    radial-gradient(
+      120% 90% at 12% -10%,
+      color-mix(in oklab, var(--color-canvas) 88%, white) 0%,
+      transparent 62%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--color-canvas) 96%, white) 0%,
+      var(--color-canvas) 46%,
+      color-mix(in oklab, var(--color-canvas) 92%, black) 100%
+    );
 }
 
 /* ---------------------------------------------------------------------------

@@ -92,9 +92,12 @@ const scrims: Record<string, string> = {
           ]}
           aria-hidden="true"
         />
-        {/* Feines technisches Raster, damit die Fläche gestaltet wirkt und nicht leer */}
+        {/*
+          Ein weicher Lichtschein aus einer Ecke statt eines Rasters. Er gibt
+          der Fläche Tiefe, ohne dass ein Muster darüberliegt.
+        */}
         <div
-          class="pointer-events-none absolute inset-0 opacity-[0.14] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:56px_56px]"
+          class="pointer-events-none absolute inset-0 [background-image:radial-gradient(90%_70%_at_18%_8%,rgba(255,255,255,0.16)_0%,transparent_60%)]"
           aria-hidden="true"
         />
         <div
