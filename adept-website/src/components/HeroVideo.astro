@@ -10,6 +10,12 @@ interface Props {
    */
   videoSrc?: string;
   poster?: string;
+  /**
+   * Abspielgeschwindigkeit. Werte < 1 verlangsamen das Video, ohne dass es
+   * neu gerendert werden muss – nützlich, wenn eine Drohnenfahrt zu hektisch
+   * wirkt. 0.6 heißt: 60 % der Originalgeschwindigkeit.
+   */
+  playbackRate?: number;
   /** Blendet den Platzhalter-Hinweis ein, solange kein echtes Video vorliegt. */
   platzhalter?: boolean;
 }
@@ -19,10 +25,19 @@ const {
   subtitle,
   videoSrc,
   poster = '/hero-poster.svg',
+  playbackRate = 1,
   platzhalter = !videoSrc,
 } = Astro.props;
 
 const posterUrl = withBase(poster);
+
+// MIME-Typ aus der Endung ableiten, damit neben MP4 auch WebM funktioniert.
+const mimeTypes: Record<string, string> = {
+  mp4: 'video/mp4',
+  webm: 'video/webm',
+  ogv: 'video/ogg',
+};
+const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 'video/mp4';
 ---
 
 <section
@@ -42,9 +57,10 @@ const posterUrl = withBase(poster);
         playsinline
         preload="metadata"
         aria-label={`Hintergrundvideo: ${title}`}
+        data-playback-rate={playbackRate}
         data-hero-video
       >
-        <source src={withBase(videoSrc)} type="video/mp4" />
+        <source src={withBase(videoSrc)} type={videoType} />
       </video>
     ) : (
       <img
@@ -145,6 +161,16 @@ const posterUrl = withBase(poster);
 
   if (video) {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    // Manche Browser setzen playbackRate beim Laden bzw. beim Start zurück,
+    // deshalb an mehreren Stellen erneut anwenden.
+    const rate = Number(video.dataset.playbackRate ?? '1') || 1;
+    const applyRate = () => {
+      if (video.playbackRate !== rate) video.playbackRate = rate;
+    };
+    applyRate();
+    video.addEventListener('loadedmetadata', applyRate);
+    video.addEventListener('play', applyRate);
     const iconPause = button?.querySelector('[data-icon-pause]');
     const iconPlay = button?.querySelector('[data-icon-play]');
 
