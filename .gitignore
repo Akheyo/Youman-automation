@@ -41,5 +41,9 @@ scripts/lod2-pipeline/3dtiles/
 scripts/lod2-pipeline/.cache/
 scripts/lod2-pipeline/venv/
 scripts/lod2-pipeline/__pycache__/
+
+# Python-Bytecode: wird bei jedem Lauf neu erzeugt und gehoert nicht ins Repo
+__pycache__/
+*.pyc
 *.gml
 *.xml.gz
