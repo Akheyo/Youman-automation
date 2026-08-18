@@ -1,10 +1,15 @@
 name: adept& Website auf GitHub Pages
 
-# Zwischenlösung, bis die Seite ein eigenes Repo hat: baut den Ordner
-# adept-website/ und veröffentlicht ihn unter
+# Baut den Ordner adept-website/ und veröffentlicht ihn über GitHub Pages.
+#
+# Die Adresse ergibt sich aus den Pages-Einstellungen des Repos: mit
+# eingetragener eigener Domain läuft die Seite dort, sonst unter
 # https://akheyo.github.io/Youman-automation/
 #
-# Sobald das eigene Repo steht, greift stattdessen
+# public/CNAME bleibt bewusst im Build, damit die eingestellte eigene Domain
+# erhalten bleibt.
+#
+# Sobald die Seite ein eigenes Repo hat, greift stattdessen
 # adept-website/.github/workflows/deploy.yml und diese Datei kann weg.
 
 on:
@@ -55,11 +60,6 @@ jobs:
           SITE_URL: ${{ steps.pages.outputs.origin }}
           SITE_BASE: ${{ steps.pages.outputs.base_path }}
         run: npm run build
-
-      - name: CNAME entfernen
-        # Die Datei zeigt auf www.adeptandpartners.de. Solange dort keine DNS
-        # eingerichtet ist, wuerde GitHub Pages die Seite unerreichbar machen.
-        run: rm -f dist/CNAME
 
       - uses: actions/upload-pages-artifact@v3
         with:
