@@ -38,8 +38,15 @@ ABSENDER = "Amanuel Kheyo <kheyo@adeptandpartners.de>"
 # Das \b vor der Gruppe ist wesentlich: ohne es greift die Alternative mitten
 # im Wort und macht aus "EUG Extrusions..." ein "E Extrusions...", aus
 # "SOMAG AG Jena" ein "SOM Jena". Nur freistehende Rechtsformen entfernen.
+#
+# "GmbH & Co." steht als eigene Alternative in der Liste, sonst bleibt bei
+# "SPIER GmbH & Co. Fahrzeugwerk KG" ein "SPIER & Co. Fahrzeugwerk" stehen.
+# Sie greift nur, wenn "& Co." direkt auf die Rechtsform folgt - bei
+# "Harold Scholz & Co. GmbH" gehoert das "& Co." zum Namen und bleibt.
+# "+ Co. KG" kommt ebenfalls vor, daher [&+] statt nur &.
 RECHTSFORM = re.compile(
-    r"\s*\b(GmbH\s*&\s*Co\.?\s*KGaA|GmbH\s*&\s*Co\.?\s*KG|AG\s*&\s*Co\.?\s*KG|gGmbH|GmbH"
+    r"\s*\b(GmbH\s*[&+]\s*Co\.?\s*KGaA|GmbH\s*[&+]\s*Co\.?\s*KG|AG\s*[&+]\s*Co\.?\s*KG"
+    r"|GmbH\s*[&+]\s*Co\.?|gGmbH|GmbH"
     r"|AG|KGaA|KG|OHG|SE|e\.\s*K\.?|mbH|UG\s*\(haftungsbeschr[aä]nkt\)|UG)\b\.?",
     re.I,
 )
