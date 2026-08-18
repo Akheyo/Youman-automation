@@ -23,11 +23,17 @@
   --color-accent-hover: #075985;
   --color-accent-on-dark: #7cc4ec; /* Kontrast auf --color-ink-deep: 7.4:1 */
 
-  --color-surface: #ffffff;
-  --color-canvas: #f8fafc;
-  --color-muted: #e8ecf1;
-  --color-muted-fg: #475569; /* Kontrast auf Weiß: 7.4:1 */
-  --color-line: #e2e8f0;
+  /*
+    Grundfläche der Seite ist ein kühler Papierton, nicht reines Weiß. Weiß
+    bleibt den erhobenen Flächen vorbehalten - Karten und helle Sektionen
+    heben sich dadurch sichtbar ab, statt in einer flachen Fläche zu
+    verschwinden.
+  */
+  --color-canvas: #e4ebf2; /* Grundfläche */
+  --color-surface: #ffffff; /* erhoben: Karten, helle Sektionen */
+  --color-muted: #dde5ec;
+  --color-muted-fg: #475569; /* Kontrast auf Papier: 6.4:1 */
+  --color-line: #cfdae3; /* auf Papier sichtbar, auf Weiß dezent */
 
   /* Logo-Anthrazit */
   --color-brand: #4b5259;
@@ -60,7 +66,7 @@
   }
 
   body {
-    background-color: var(--color-surface);
+    background-color: var(--color-canvas);
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: 1rem;
@@ -225,4 +231,16 @@
     scale: 1;
     translate: 0 1.5%;
   }
+}
+
+/*
+  Sehr feines technisches Raster für große helle Flächen. Es soll nicht als
+  Muster auffallen, sondern der Fläche nur Struktur geben - passend zum
+  ingenieurhaften Charakter des Unternehmens.
+*/
+@utility raster {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--color-ink) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-ink) 6%, transparent) 1px, transparent 1px);
+  background-size: 72px 72px;
 }

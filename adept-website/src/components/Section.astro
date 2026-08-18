@@ -9,8 +9,10 @@ interface Props {
 const { id, tone = 'light', class: className = '' } = Astro.props;
 
 const tones = {
-  light: 'bg-surface text-ink',
-  canvas: 'bg-canvas text-ink',
+  // "light" ist die erhobene weisse Flaeche, "canvas" die Grundflaeche der
+  // Seite. Die feinen Trennlinien machen den Wechsel als Kante sichtbar.
+  light: 'bg-surface text-ink border-y border-line',
+  canvas: 'bg-canvas text-ink raster',
   dark: 'on-dark bg-ink-deep text-white',
 } as const;
 ---
