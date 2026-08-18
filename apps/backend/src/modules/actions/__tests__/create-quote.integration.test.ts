@@ -108,7 +108,7 @@ describe("ActionsService – create quote (minimal payload)", () => {
   });
 
   /** Derselbe Mindest-Payload, nur mit anderer Lieferadresse. */
-  const quoteWith = async (deliveryAddressId: string | null) => {
+  const quoteWith = async (deliveryAddressId: string | null, deliveryAddress?: string) => {
     const result = await service.executeAction({
       actionId: "action-create-quote",
       tenantId: "tenant-a",
@@ -116,6 +116,7 @@ describe("ActionsService – create quote (minimal payload)", () => {
       payload: {
         customerId: "118",
         deliveryAddressId,
+        deliveryAddress,
         currency: "EUR",
         validUntil: null,
         notes: null,
@@ -141,6 +142,18 @@ describe("ActionsService – create quote (minimal payload)", () => {
     const data = await quoteWith(null);
     expect(data["lieferadresse"]).toContain("Gewerbepark Süd 4a");
     expect(data["lieferadresse"]).toContain("51149 Köln");
+  });
+
+  it("prints the address edited in the form", async () => {
+    // Der Freitext gewinnt gegen den Kundenstamm, sonst waere das Bearbeiten
+    // des Feldes wirkungslos.
+    const data = await quoteWith("302", "Baustelle Nord, Tor 3\n20095 Hamburg");
+    expect(data["lieferadresse"]).toBe("Baustelle Nord, Tor 3\n20095 Hamburg");
+  });
+
+  it("ignores a blank edit and keeps the address from the customer", async () => {
+    const data = await quoteWith(null, "   ");
+    expect(data["lieferadresse"]).toContain("Gewerbepark S\u00fcd 4a");
   });
 
   it("never leaves the delivery address empty for an unknown id", async () => {

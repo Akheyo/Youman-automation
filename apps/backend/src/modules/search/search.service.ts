@@ -2,10 +2,14 @@ import { Injectable } from "@nestjs/common";
 import { ConnectorsService } from "../connectors/connectors.service";
 import type { SearchRequest, SearchResult, Customer, Product, Address } from "@youman/shared";
 
-/** Adresse mit den beiden Feldern, die die Auswahlliste anzeigt. */
+/** Adresse mit den fertigen Anzeige- und Uebernahmetexten. */
 export interface AddressOption extends Address {
+  /** Einzeilig fuer die Auswahlliste. */
   label: string;
+  /** Art der Adresse, zweite Zeile der Auswahlliste. */
   description: string;
+  /** Zweizeilig, so wie sie im Angebot steht. */
+  postalAddress: string;
 }
 
 const ADDRESS_KIND: Record<Address["type"], string> = {
@@ -30,7 +34,21 @@ function toOption(address: Address): AddressOption {
     // Ohne Strasse bliebe die Zeile leer und die Adresse waere nicht anwaehlbar.
     label: [street, place].filter(Boolean).join(", ") || `Adresse ${address.id}`,
     description: address.isDefault ? `${kind} (Standard)` : kind,
+    postalAddress: [street, place].filter(Boolean).join("\n"),
   };
+}
+
+/**
+ * Reihenfolge fuer die Lieferanschrift: Die erste Adresse wird im Formular
+ * vorgeschlagen, deshalb steht die Standard-Lieferadresse vorn, danach weitere
+ * Lieferadressen, zuletzt reine Rechnungsadressen.
+ */
+const DELIVERY_RANK: Record<Address["type"], number> = { shipping: 0, both: 1, billing: 2 };
+
+function byDeliverySuitability(a: Address, b: Address): number {
+  const rank = DELIVERY_RANK[a.type] - DELIVERY_RANK[b.type];
+  if (rank !== 0) return rank;
+  return Number(b.isDefault) - Number(a.isDefault);
 }
 
 @Injectable()
@@ -60,7 +78,10 @@ export class SearchService {
   ): Promise<SearchResult<AddressOption>> {
     const startedAt = Date.now();
     const connector = await this.connectors.getConnector(tenantId);
-    const items = (await connector.getCustomerAddresses(customerId)).map(toOption);
+    const items = (await connector.getCustomerAddresses(customerId))
+      .slice()
+      .sort(byDeliverySuitability)
+      .map(toOption);
     return {
       items,
       total: items.length,

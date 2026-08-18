@@ -9,6 +9,7 @@ import { cn } from "@/utils/cn";
 import type { FieldDefinition, Customer, Product } from "@youman/shared";
 import { SEARCH_DEBOUNCE_MS, MIN_SEARCH_CHARS } from "@youman/shared";
 import { fieldErrorMessage } from "@/utils/formErrors";
+import { extractTemplateParams, resolveEndpoint } from "./dynamicSource";
 
 type SearchItem = Customer | Product | { id: string; [key: string]: unknown };
 
@@ -18,16 +19,6 @@ function itemField(item: SearchItem, key: string): unknown {
 }
 
 interface Props { field: FieldDefinition; disabled?: boolean | undefined }
-
-// Replace {paramName} tokens in endpoint URLs with actual form values.
-function resolveEndpoint(endpoint: string, values: Record<string, string>): string {
-  return endpoint.replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
-}
-
-// Extract all {paramName} tokens from a URL template.
-function extractTemplateParams(endpoint: string): string[] {
-  return [...endpoint.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!);
-}
 
 export function SearchableSelectRenderer({ field, disabled }: Props) {
   const { setValue, formState: { errors } } = useFormContext();

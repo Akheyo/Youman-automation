@@ -1,6 +1,6 @@
 {
   "name": "@youman/desktop",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "adept& – Universal Business Process Desktop App",
   "main": "./electron/dist/main.js",
   "scripts": {

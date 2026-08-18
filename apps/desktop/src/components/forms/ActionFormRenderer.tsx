@@ -6,6 +6,7 @@ import { DropdownRenderer } from "./fields/DropdownRenderer";
 import { LineItemsRenderer } from "./fields/LineItemsRenderer";
 import { DateFieldRenderer } from "./fields/DateFieldRenderer";
 import { CheckboxRenderer } from "./fields/CheckboxRenderer";
+import { PrefilledTextRenderer } from "./fields/PrefilledTextRenderer";
 import type { ActionDefinition, FieldDefinition } from "@youman/shared";
 import { cn } from "@/utils/cn";
 
@@ -81,6 +82,11 @@ function FieldRenderer({ field, isLoading }: { field: FieldDefinition; isLoading
       return <DateFieldRenderer {...props} />;
     case "checkbox":
       return <CheckboxRenderer {...props} />;
+    case "textarea":
+      // Mit Endpunkt belegt sich das Feld aus dem ERP vor und bleibt bearbeitbar.
+      return field.dynamicSource
+        ? <PrefilledTextRenderer {...props} />
+        : <TextFieldRenderer {...props} />;
     default:
       return <TextFieldRenderer {...props} />;
   }

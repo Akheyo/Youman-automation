@@ -100,6 +100,14 @@ export const CreateQuoteSchema = z.object({
   customerNumber: optionalString(),
   customerName: optionalString(),
   deliveryAddressId: optionalString(),
+  /**
+   * Lieferanschrift als freier Text für das Dokument.
+   *
+   * Wird aus dem Kundenstamm vorbelegt und ist danach überschreibbar: Eine
+   * abweichende Lieferanschrift steht oft nicht im ERP. Der Text gewinnt gegen
+   * die nachgeschlagene Adresse, sonst wäre die Bearbeitung wirkungslos.
+   */
+  deliveryAddress: optionalString(),
   currency: z.string().length(3).default("EUR"),
   /** Sprache des erzeugten Dokuments – wählt Vorlage, Texte und Zahlenformat. */
   language: z.enum(QUOTE_LANGUAGES).default("de"),

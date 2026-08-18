@@ -652,7 +652,9 @@ export class ActionsService {
       ansprechpartner: user ? `${user.firstName} ${user.lastName}`.trim() : "",
       kunde_name: kundeName,
       kunde_adresse: kundeAdresse,
-      lieferadresse: lieferadresse || kundeAdresse,
+      // Der im Formular bearbeitete Text gewinnt gegen die nachgeschlagene
+      // Adresse – sonst bliebe die Bearbeitung ohne Wirkung.
+      lieferadresse: dto.deliveryAddress?.trim() || lieferadresse || kundeAdresse,
       positionen: dto.lineItems.map((item, idx) => ({
         pos: idx + 1,
         menge: item.quantity,

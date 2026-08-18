@@ -45,7 +45,27 @@ describe("getCustomerAddresses", () => {
       address({ id: "2", type: "both" }),
     ];
     const { items } = await serviceFor(addresses).getCustomerAddresses("t1", "c1");
-    expect(items.map((i) => i.description)).toEqual(["Rechnungsadresse", "Liefer- und Rechnungsadresse"]);
+    expect(items.map((i) => i.description).sort()).toEqual(
+      ["Liefer- und Rechnungsadresse", "Rechnungsadresse"]
+    );
+  });
+
+  it("puts the address best suited for delivery first", async () => {
+    // Das Formular übernimmt die erste Adresse, also muss dort die
+    // Standard-Lieferadresse stehen und nicht irgendeine Rechnungsadresse.
+    const addresses = [
+      address({ id: "1", type: "billing", isDefault: true }),
+      address({ id: "2", type: "both" }),
+      address({ id: "3", type: "shipping", isDefault: false }),
+      address({ id: "4", type: "shipping", isDefault: true }),
+    ];
+    const { items } = await serviceFor(addresses).getCustomerAddresses("t1", "c1");
+    expect(items.map((i) => i.id)).toEqual(["4", "3", "2", "1"]);
+  });
+
+  it("hands over the address in the two lines the quote prints", async () => {
+    const { items } = await serviceFor([address()]).getCustomerAddresses("t1", "c1");
+    expect(items[0]!.postalAddress).toBe("Berliner Stra\u00dfe 1\n15537 Gr\u00fcnheide");
   });
 
   it("stays selectable when the street is missing", async () => {
