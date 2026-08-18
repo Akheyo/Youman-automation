@@ -48,7 +48,31 @@ export const handlers = [
 
   http.get(`${API}/search/customers`, () => HttpResponse.json(CUSTOMER_SEARCH)),
   http.get(`${API}/search/products`, () => HttpResponse.json(PRODUCT_SEARCH)),
-  http.get(`${API}/search/customers/:id/addresses`, () => HttpResponse.json([])),
+  // Wie die uebrigen Suchen: Die Antwort traegt items. Das blanke Array hier
+  // sah wie ein leeres Ergebnis aus und deckte den falschen Vertrag zu.
+  http.get(`${API}/search/customers/:id/addresses`, () =>
+    HttpResponse.json({
+      items: [
+        {
+          id: "302",
+          type: "shipping",
+          street: "Gewerbepark Süd",
+          streetNumber: "4a",
+          zip: "51149",
+          city: "Köln",
+          countryCode: "DE",
+          isDefault: true,
+          label: "Gewerbepark Süd 4a, 51149 Köln",
+          description: "Lieferadresse (Standard)",
+        },
+      ],
+      total: 1,
+      page: 1,
+      pageSize: 1,
+      hasMore: false,
+      searchDurationMs: 1,
+    })
+  ),
 
   http.get(`${API}/queue/status`, () => HttpResponse.json(SYNC_STATUS)),
   http.get(`${API}/queue/items`, () => HttpResponse.json([])),

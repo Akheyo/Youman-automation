@@ -106,4 +106,47 @@ describe("ActionsService – create quote (minimal payload)", () => {
     expect(doc.data["endbetrag"]).toBe("74,90");
     expect(doc.data["zahlungsart"]).toBe("Rechnung");
   });
+
+  /** Derselbe Mindest-Payload, nur mit anderer Lieferadresse. */
+  const quoteWith = async (deliveryAddressId: string | null) => {
+    const result = await service.executeAction({
+      actionId: "action-create-quote",
+      tenantId: "tenant-a",
+      userId: "user-1",
+      payload: {
+        customerId: "118",
+        deliveryAddressId,
+        currency: "EUR",
+        validUntil: null,
+        notes: null,
+        lineItems: [
+          { productId: "1101", quantity: 1, unit: "ST", pricePerUnit: 74.9, discount: 0, deliveryDate: "", notes: "" },
+        ],
+      },
+      clientTimestamp: "2026-07-22T00:00:00Z",
+    });
+    const data = result.result as Record<string, unknown>;
+    return (data["document"] as { data: Record<string, unknown> }).data;
+  };
+
+  it("puts the chosen delivery address on the document", async () => {
+    // Kunde 118: 301 = Rechnung (Deutzer Freiheit), 302 = Lieferung (Gewerbepark).
+    const data = await quoteWith("301");
+    expect(data["lieferadresse"]).toContain("Deutzer Freiheit 72");
+    // Die Anschrift des Angebots bleibt die Rechnungsadresse.
+    expect(data["kunde_adresse"]).toContain("Deutzer Freiheit 72");
+  });
+
+  it("falls back to the default shipping address when none is chosen", async () => {
+    const data = await quoteWith(null);
+    expect(data["lieferadresse"]).toContain("Gewerbepark Süd 4a");
+    expect(data["lieferadresse"]).toContain("51149 Köln");
+  });
+
+  it("never leaves the delivery address empty for an unknown id", async () => {
+    // Ein leerer Platzhalter liesse das Rendern mit MissingFields abbrechen.
+    const data = await quoteWith("999999");
+    expect(String(data["lieferadresse"]).trim().length).toBeGreaterThan(0);
+    expect(data["lieferadresse"]).toContain("Gewerbepark Süd 4a");
+  });
 });

@@ -66,8 +66,8 @@
         "endpoint": "/api/v1/search/customers/{customerId}/addresses",
         "searchParam": "q",
         "valueField": "id",
-        "labelField": "city",
-        "descriptionField": "street",
+        "labelField": "label",
+        "descriptionField": "description",
         "minChars": 0,
         "debounceMs": 0,
         "pageSize": 50

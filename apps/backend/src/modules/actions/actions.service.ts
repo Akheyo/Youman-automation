@@ -609,6 +609,7 @@ export class ActionsService {
 
     let kundeName = dto.customerName ?? "";
     let kundeAdresse = "";
+    let lieferadresse = "";
     try {
       const connector = await this.connectors.getConnector(tenantId);
       const customer = await connector.getCustomer(dto.customerId);
@@ -616,10 +617,22 @@ export class ActionsService {
       const addr = customer.addresses.find((a) => a.type === "billing" && a.isDefault)
         ?? customer.addresses.find((a) => a.type === "billing")
         ?? customer.addresses[0];
-      if (addr) {
-        kundeAdresse = [`${addr.street} ${addr.streetNumber ?? ""}`.trim(), `${addr.zip} ${addr.city}`.trim()]
-          .filter(Boolean)
-          .join("\n");
+      if (addr) kundeAdresse = formatPostalAddress(addr);
+
+      // Ausgewählte Lieferadresse, sonst die hinterlegte Standard-Lieferadresse.
+      // Kennt der Kunde keine, gilt die Anschrift des Angebots – so bleibt der
+      // Platzhalter nie leer, was das Rendern abbrechen ließe.
+      const delivery = dto.deliveryAddressId
+        ? customer.addresses.find((a) => String(a.id) === String(dto.deliveryAddressId))
+        : undefined;
+      const fallback = customer.addresses.find((a) => a.type === "shipping" && a.isDefault)
+        ?? customer.addresses.find((a) => a.type === "shipping");
+      lieferadresse = delivery ? formatPostalAddress(delivery) : fallback ? formatPostalAddress(fallback) : kundeAdresse;
+
+      if (dto.deliveryAddressId && !delivery) {
+        this.logger.warn(
+          `Lieferadresse ${dto.deliveryAddressId} gehört nicht zu Kunde ${dto.customerId} – Standardadresse verwendet.`
+        );
       }
     } catch (err) {
       this.logger.warn(`Kundendaten für Dokument nicht ladbar: ${err instanceof Error ? err.message : err}`);
@@ -639,6 +652,7 @@ export class ActionsService {
       ansprechpartner: user ? `${user.firstName} ${user.lastName}`.trim() : "",
       kunde_name: kundeName,
       kunde_adresse: kundeAdresse,
+      lieferadresse: lieferadresse || kundeAdresse,
       positionen: dto.lineItems.map((item, idx) => ({
         pos: idx + 1,
         menge: item.quantity,
@@ -821,4 +835,16 @@ export function withoutLineDiscount(config: unknown): unknown {
     return { ...field, lineItemColumns: kept };
   });
   return touched ? { ...def, fields } : config;
+}
+
+/** Anschrift zweizeilig: Strasse mit Hausnummer, darunter PLZ und Ort. */
+function formatPostalAddress(addr: {
+  street: string;
+  streetNumber?: string | undefined;
+  zip: string;
+  city: string;
+}): string {
+  return [`${addr.street} ${addr.streetNumber ?? ""}`.trim(), `${addr.zip} ${addr.city}`.trim()]
+    .filter(Boolean)
+    .join("\n");
 }
