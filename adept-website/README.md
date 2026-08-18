@@ -137,6 +137,7 @@ Badge) und hier gesammelt:
 
 | Thema | Datei | Fehlt |
 | --- | --- | --- |
+| Bilder | `public/img/` | Fotos nach `docs/bilder.md` benennen und ablegen. Fehlt eine Datei, rendert `<Bild>` eine gestaltete Farbfläche – die Seite bleibt vollständig. |
 | Logo | `src/components/Logo.astro` | Offizielles SVG. Aktuell als Text in der Display-Schrift gesetzt. |
 | Favicon | `public/favicon.svg` | Offizielles Favicon. |
 | Hero-Video | `src/components/HeroVideo.astro` | MP4 nach `public/` legen und als `videoSrc` an die Komponente übergeben; Poster in `public/hero-poster.svg` ersetzen. Ohne `videoSrc` wird nur das Poster gezeigt. |
