@@ -4,11 +4,11 @@ import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 
 // Beide Werte kommen aus der Umgebung, damit derselbe Build sowohl unter
-// https://akheyo.github.io/<repo>/ als auch unter einer eigenen Domain läuft.
+// https://akheyo.github.io/<repo>/ als auch unter www.adeptandpartners.de läuft.
 // Siehe README.md -> "Deployment".
 // `||` statt `??`: configure-pages liefert bei einer eigenen Domain einen
 // leeren String, der hier zu "/" werden muss.
-const SITE = process.env.SITE_URL || 'https://akheyo.github.io';
+const SITE = process.env.SITE_URL || 'https://www.adeptandpartners.de';
 const BASE = process.env.SITE_BASE || '/';
 
 export default defineConfig({

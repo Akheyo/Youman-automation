@@ -28,20 +28,60 @@ Der Workflow liegt unter `.github/workflows/deploy.yml` und baut bei jedem Push 
 > damit er die Pages-Einstellung des bestehenden Repos nicht überschreibt. Sobald der Ordner das
 > Root eines eigenen Repos ist, greift er automatisch.
 
-Pfade werden nicht hart kodiert, sondern kommen aus zwei Umgebungsvariablen:
+### Zieladresse
 
-| Variable    | Bedeutung                        | Beispiel Projektseite      | Beispiel eigene Domain |
-| ----------- | -------------------------------- | -------------------------- | ---------------------- |
-| `SITE_URL`  | Origin für Canonical/OG/Sitemap  | `https://akheyo.github.io` | `https://adept-und.de` |
-| `SITE_BASE` | Unterpfad, unter dem die Seite läuft | `/adept-website`       | `/`                    |
+Die Seite ist auf **www.adeptandpartners.de** ausgelegt. `public/CNAME` enthält die Domain und
+landet bei jedem Build in `dist/`. Canonical-URLs, OpenGraph und Sitemap zeigen bereits dorthin.
 
-Im Workflow werden beide automatisch von `actions/configure-pages` gesetzt – bei Umzug auf eine
-eigene Domain ist also nichts anzupassen. Alle internen Links laufen über `withBase()` aus
-`src/lib/url.ts`.
+Pfade sind nicht hart kodiert, sondern kommen aus zwei Umgebungsvariablen:
 
-Nach dem Anlegen des Repos einmalig: **Settings → Pages → Source: GitHub Actions**.
+| Variable    | Bedeutung                            | Standard                        |
+| ----------- | ------------------------------------ | ------------------------------- |
+| `SITE_URL`  | Origin für Canonical/OG/Sitemap      | `https://www.adeptandpartners.de` |
+| `SITE_BASE` | Unterpfad, unter dem die Seite läuft | `/`                             |
+
+Im Workflow setzt `actions/configure-pages` beide automatisch. Läuft die Seite übergangsweise
+unter `akheyo.github.io/<repo>`, greift das ohne Codeänderung. Alle internen Links laufen über
+`withBase()` aus `src/lib/url.ts`.
+
+### Einmalige Schritte zum Livegang
+
+1. Repo unter dem Account `Akheyo` anlegen und diesen Ordner als Repo-Root pushen.
+2. **Settings → Pages → Source: GitHub Actions**.
+3. **Settings → Pages → Custom domain:** `www.adeptandpartners.de` eintragen.
+4. Beim Domain-Anbieter diese DNS-Einträge setzen:
+
+   | Typ   | Name  | Wert                |
+   | ----- | ----- | ------------------- |
+   | CNAME | `www` | `akheyo.github.io.` |
+
+   Damit auch `adeptandpartners.de` ohne `www` funktioniert, zusätzlich auf der Apex-Domain:
+
+   | Typ | Name | Wert              |
+   | --- | ---- | ----------------- |
+   | A   | `@`  | `185.199.108.153` |
+   | A   | `@`  | `185.199.109.153` |
+   | A   | `@`  | `185.199.110.153` |
+   | A   | `@`  | `185.199.111.153` |
+
+5. Nach der DNS-Verbreitung (Minuten bis 24 Stunden) in den Pages-Einstellungen
+   **Enforce HTTPS** aktivieren – das Zertifikat stellt GitHub automatisch aus.
 
 ---
+
+## Live-Vorschau ohne Deployment
+
+Solange die Domain noch nicht steht, erzeugt dieser Befehl eine einzige, vollständig
+eigenständige HTML-Datei mit allen 19 Seiten, eingebettetem CSS und eingebetteten Schriften:
+
+```bash
+npm run build
+python3 scripts/build-preview.py   # -> preview/adept-vorschau.html
+```
+
+Die Datei lässt sich per Doppelklick im Browser öffnen oder verschicken – sie braucht keinen
+Server. Navigation, Dropdowns und der Umschalter für 375 / 768 / 1024 px funktionieren darin.
+`preview/` ist bewusst nicht eingecheckt, die Datei wird bei Bedarf neu erzeugt.
 
 ## Design-System
 
@@ -74,16 +114,19 @@ Google-Fonts-CDN** (DSGVO).
 
 ## Geprüft
 
-- `axe-core` (WCAG 2.1 A + AA) über alle 12 Seiten sowie im geöffneten Dropdown- und Menü-Zustand:
-  **0 Verstöße**
+- `axe-core` (WCAG 2.1 A + AA) über alle **19 Seiten** sowie im geöffneten Dropdown- und
+  Menü-Zustand: **0 Verstöße**
 - Hero-Textkontrast gemessen: 16,3:1 auf dem aktuellen Poster, **7,4:1 im Worst Case** eines rein
   weißen Videobildes (gefordert: 4,5:1)
-- Kein horizontales Scrollen bei 375 / 768 / 1024 / 1440 px
+- Kein horizontales Scrollen und kein überstehendes Element – geprüft über alle 19 Seiten
+  × 4 Breiten (375 / 768 / 1024 / 1440 px)
 - Touch-Targets ≥ 44 px Höhe; Ausnahmen sind nur die Skip-Links (`sr-only`, wachsen bei Fokus) und
   Kachel-Überschriften, deren Klickfläche über `::after` die ganze Kachel abdeckt
 - Dropdowns per Maus, Klick und Tastatur (`↑` `↓` `Home` `End` `Esc`, Fokus-Rückgabe) getestet
 - `prefers-reduced-motion`: kein Autoplay, Poster bleibt stehen; Video pausiert außerhalb des
   Viewports
+- Lange deutsche Komposita („Datenschutzerklärung“, „Palettenoptimierung“) passen bei 375 px in
+  eine Zeile; `overflow-wrap` bleibt als Sicherheitsnetz für künftige längere Wörter
 
 ---
 

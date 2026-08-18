@@ -78,6 +78,10 @@
     letter-spacing: -0.02em;
     line-height: 1.15;
     text-wrap: balance;
+    /* Deutsche Komposita ("Palettenoptimierung") sprengen sonst schmale
+       Viewports. Greift nur, wenn das Wort wirklich nicht passt. */
+    overflow-wrap: break-word;
+    hyphens: auto;
   }
 
   p {
