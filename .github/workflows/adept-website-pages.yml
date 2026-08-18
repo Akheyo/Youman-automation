@@ -1,0 +1,77 @@
+name: adept& Website auf GitHub Pages
+
+# Zwischenlösung, bis die Seite ein eigenes Repo hat: baut den Ordner
+# adept-website/ und veröffentlicht ihn unter
+# https://akheyo.github.io/Youman-automation/
+#
+# Sobald das eigene Repo steht, greift stattdessen
+# adept-website/.github/workflows/deploy.yml und diese Datei kann weg.
+
+on:
+  push:
+    branches:
+      - main
+      - claude/new-session-b4oeuo
+    paths:
+      - 'adept-website/**'
+      - '.github/workflows/adept-website-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: adept-website
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: adept-website/package-lock.json
+
+      - name: Pages konfigurieren
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          # Aktiviert GitHub Pages fuer das Repo, falls noch nicht geschehen,
+          # damit dafuer kein Klick in den Einstellungen noetig ist.
+          enablement: true
+
+      - run: npm ci
+
+      - name: Build
+        env:
+          SITE_URL: ${{ steps.pages.outputs.origin }}
+          SITE_BASE: ${{ steps.pages.outputs.base_path }}
+        run: npm run build
+
+      - name: CNAME entfernen
+        # Die Datei zeigt auf www.adeptandpartners.de. Solange dort keine DNS
+        # eingerichtet ist, wuerde GitHub Pages die Seite unerreichbar machen.
+        run: rm -f dist/CNAME
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: adept-website/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
