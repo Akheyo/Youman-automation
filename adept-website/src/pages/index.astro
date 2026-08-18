@@ -87,20 +87,21 @@ const ueberKacheln = [
   <section class="on-dark relative isolate overflow-hidden bg-ink-deep text-white">
     <div class="absolute inset-0 -z-10">
       <Bild name="oberflaeche" ratio="fill" parallax sizes="100vw" class="size-full" />
-      <div class="absolute inset-0 bg-ink-deep/80" aria-hidden="true"></div>
+      <div class="absolute inset-0 bg-ink-deep/20" aria-hidden="true"></div>
+      {/* Kraeftiger Verlauf nur ueber der linken Haelfte, wo der Text steht */}
       <div
-        class="absolute inset-0 bg-gradient-to-r from-ink-deep via-ink-deep/75 to-ink-deep/35"
+        class="absolute inset-0 bg-gradient-to-r from-ink-deep from-30% via-ink-deep/90 via-55% to-transparent"
         aria-hidden="true"
       >
       </div>
     </div>
     <div class="container-page py-24 md:py-36">
-      <p class="max-w-4xl font-display text-3xl leading-tight sm:text-5xl lg:text-6xl" data-reveal>
+      <p class="max-w-2xl font-display text-4xl leading-[1.05] sm:text-6xl lg:text-7xl" data-reveal>
         Kein Systemwechsel.<br />Keine Medienbrüche.<br /><span class="text-accent-on-dark"
           >Eine Oberfläche.</span
         >
       </p>
-      <p class="prose-measure mt-8 text-lg text-white/75" data-reveal>
+      <p class="max-w-xl mt-8 text-lg text-white/80" data-reveal>
         Der Mitarbeiter beim Kunden sieht nur eine Oberfläche. Datenabruf, Berechnung und
         Synchronisation mit dem ERP-System laufen vollautomatisch im Hintergrund.
       </p>
