@@ -42,8 +42,8 @@ poster = data_svg(f'{DIST}/hero-poster.svg')
 favicon = data_svg(f'{DIST}/favicon.svg')
 
 # --- Bilder und Video einbetten ---------------------------------------------
-# Fuer die Vorschau reicht je Bild eine Aufloesung. srcset wird entfernt und
-# src auf die 800px-Variante gesetzt, sonst wuerde die Datei unnoetig gross.
+# Je Bild wird eine Aufloesung eingebettet - die groesste, damit die Vorschau
+# dieselbe Schaerfe zeigt wie die ausgelieferte Seite.
 import base64 as _b64
 from functools import lru_cache
 
@@ -62,8 +62,14 @@ def data_uri(rel: str) -> str | None:
     return f'data:{mime};base64,' + _b64.b64encode(open(pfad, 'rb').read()).decode()
 
 
-def variante_800(srcset: str) -> str | None:
-    """Waehlt aus einem srcset die 800w-Variante, sonst die kleinste."""
+def groesste_variante(srcset: str) -> str | None:
+    """Waehlt aus einem srcset die groesste Variante.
+
+    Frueher wurde hier die 800px-Fassung genommen, um die Datei klein zu
+    halten. Das hat vollflaechige Bilder in der Vorschau sichtbar unscharf
+    gemacht, weil sie dort auf 1440px hochskaliert wurden - ein Fehler, der
+    nur in der Vorschau auftrat und nicht auf der echten Seite.
+    """
     eintraege = []
     for teil in srcset.split(','):
         teil = teil.strip()
@@ -78,9 +84,6 @@ def variante_800(srcset: str) -> str | None:
             continue
     if not eintraege:
         return None
-    for breite, url in sorted(eintraege):
-        if breite >= 800:
-            return url
     return sorted(eintraege)[-1][1]
 
 
@@ -89,7 +92,7 @@ def bilder_einbetten(html: str) -> str:
         tag = m.group(0)
         ss = re.search(r'srcset="([^"]+)"', tag)
         if ss:
-            gewaehlt = variante_800(ss.group(1))
+            gewaehlt = groesste_variante(ss.group(1))
             if gewaehlt:
                 tag = re.sub(r'\ssrcset="[^"]*"', '', tag)
                 tag = re.sub(r'\ssizes="[^"]*"', '', tag)
