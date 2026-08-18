@@ -2,6 +2,7 @@
 
 /* Selbst gehostete Fonts (DSGVO: kein Google-Fonts-CDN) */
 @import '@fontsource-variable/lexend';
+@import '@fontsource-variable/newsreader';
 @import '@fontsource-variable/source-sans-3';
 
 /*
@@ -38,6 +39,12 @@
   /* Logo-Anthrazit */
   --color-brand: #4b5259;
 
+  /* Ueberschriften: redaktionelle Serife. Georgia als Ersatz, weil sie auf
+     Windows und macOS vorhanden ist und aehnliche Proportionen hat - der
+     Umbruch springt beim Nachladen dadurch kaum. */
+  --font-serif: 'Newsreader Variable', Georgia, 'Times New Roman', serif;
+  /* Wortmarke, Ziffern und Navigationsbeschriftungen bleiben in der
+     geometrischen Sans, wie im gelieferten Logobild. */
   --font-display: 'Lexend Variable', system-ui, sans-serif;
   --font-sans: 'Source Sans 3 Variable', system-ui, sans-serif;
 
@@ -82,9 +89,13 @@
   h2,
   h3,
   h4 {
-    font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-family: var(--font-serif);
+    /* 500 statt 600: eine Serife traegt bei gleicher Zahl deutlich mehr
+       Strichstaerke als eine Sans und wirkt sonst gedrungen. */
+    font-weight: 500;
+    /* Auch die Laufweite war auf die Sans abgestimmt. Serifen brauchen den
+       Platz zwischen den Buchstaben, sonst verhaken sich die Serifen. */
+    letter-spacing: -0.005em;
     line-height: 1.15;
     text-wrap: balance;
     /* Deutsche Komposita ("Palettenoptimierung") sprengen sonst schmale

@@ -149,7 +149,7 @@ const vorgehen = [
 
     <div class="mt-14 grid gap-12 lg:grid-cols-2 lg:gap-20">
       <div>
-        <h3 class="text-lg font-semibold text-white">Die Kernfunktion berechnet automatisch:</h3>
+        <h3 class="text-lg text-white">Die Kernfunktion berechnet automatisch:</h3>
         <ul class="mt-6 space-y-4">
           {
             berechnung.map((punkt) => (
@@ -177,7 +177,7 @@ const vorgehen = [
         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent-on-dark">
           Die entscheidende Logik
         </p>
-        <p class="mt-4 font-display text-2xl leading-snug text-white">
+        <p class="mt-4 font-serif text-2xl leading-snug text-white">
           Ab einer Mindestbestellmenge von fünf identischen Maßen klassifiziert die Software eine
           Palette automatisch als Standardpalette und führt sie dauerhaft im Sortiment.
         </p>
@@ -200,7 +200,7 @@ const vorgehen = [
         vorgehen.map((schritt) => (
           <li class="bg-surface p-8">
             <p class="font-display text-3xl font-semibold text-accent">{schritt.step}</p>
-            <h3 class="mt-3 text-lg font-semibold text-ink">{schritt.title}</h3>
+            <h3 class="mt-3 text-lg text-ink">{schritt.title}</h3>
             <p class="mt-3 text-sm text-ink-soft">{schritt.text}</p>
           </li>
         ))
