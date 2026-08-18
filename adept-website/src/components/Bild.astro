@@ -1,0 +1,89 @@
+---
+import { bild } from '../lib/images';
+import type { BildKey } from '../data/images';
+
+interface Props {
+  /** Schlüssel aus dem Bildregister. Fehlt die Datei, greift die Ersatzfläche. */
+  name?: BildKey;
+  /** Seitenverhältnis der Fläche. */
+  ratio?: '16/9' | '4/3' | '3/2' | '21/9' | 'fill';
+  /** Bestimmt die Farbstimmung der Ersatzfläche, damit Kacheln sich unterscheiden. */
+  index?: number;
+  /** Über dem Bild liegender Abdunkler – nötig, wenn Text darauf steht. */
+  scrim?: 'none' | 'sanft' | 'kraeftig';
+  /** Erstes Bild im Viewport nicht lazy laden. */
+  priority?: boolean;
+  class?: string;
+}
+
+const {
+  name,
+  ratio = '16/9',
+  index = 0,
+  scrim = 'none',
+  priority = false,
+  class: className = '',
+} = Astro.props;
+
+const quelle = name ? bild(name) : null;
+
+const ratios: Record<string, string> = {
+  '16/9': 'aspect-16/9',
+  '4/3': 'aspect-4/3',
+  '3/2': 'aspect-3/2',
+  '21/9': 'aspect-21/9',
+  fill: 'size-full',
+};
+
+// Ersatzflächen in der Markenpalette. Kein Rot, durchgehend kühl.
+const flaechen = [
+  'from-ink-deep via-[#0a2a3d] to-[#0a3350]',
+  'from-[#0a3350] via-[#0b3f5e] to-accent',
+  'from-ink via-ink-deep to-[#12384f]',
+];
+const flaeche = flaechen[index % flaechen.length];
+
+const scrims: Record<string, string> = {
+  none: '',
+  sanft: 'bg-ink-deep/35',
+  kraeftig: 'bg-ink-deep/60',
+};
+---
+
+<div class:list={['relative overflow-hidden bg-ink-deep', ratios[ratio], className]}>
+  {
+    quelle ? (
+      <img
+        src={quelle.src}
+        alt={quelle.alt}
+        width="2048"
+        height="1152"
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        fetchpriority={priority ? 'high' : 'auto'}
+        class="size-full object-cover"
+      />
+    ) : (
+      <>
+        <div class:list={['size-full bg-gradient-to-br', flaeche]} aria-hidden="true" />
+        {/* Feines technisches Raster, damit die Fläche gestaltet wirkt und nicht leer */}
+        <div
+          class="pointer-events-none absolute inset-0 opacity-[0.14] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:56px_56px]"
+          aria-hidden="true"
+        />
+        <div
+          class="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-deep/70 to-transparent"
+          aria-hidden="true"
+        />
+      </>
+    )
+  }
+
+  {
+    scrim !== 'none' && (
+      <div class:list={['pointer-events-none absolute inset-0', scrims[scrim]]} aria-hidden="true" />
+    )
+  }
+
+  <slot />
+</div>
