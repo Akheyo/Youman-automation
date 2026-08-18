@@ -62,6 +62,15 @@ const organisation = {
     <link rel="sitemap" href={withBase('/sitemap-index.xml')} />
 
     <script type="application/ld+json" is:inline set:html={JSON.stringify(organisation)} />
+
+    <!-- Schaltet das Einblenden beim Scrollen frei. Steht im <head>, damit
+         kein Aufblitzen entsteht, und ist bewusst inline: laeuft kein
+         JavaScript, bleibt der Inhalt schlicht sofort sichtbar. -->
+    <script is:inline>
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('reveal-aktiv');
+      }
+    </script>
   </head>
   <body class="flex min-h-screen flex-col">
     <a
@@ -78,5 +87,34 @@ const organisation = {
     </main>
 
     <Footer />
+
+    <script>
+      /* Blendet Abschnitte beim Hereinscrollen ein. Ohne JavaScript oder bei
+         reduzierter Bewegung bleibt alles sofort sichtbar – das CSS definiert
+         den Ausgangszustand nur unter no-preference. */
+      const ziele = document.querySelectorAll<HTMLElement>('[data-reveal]');
+      const zeigen = (el: Element) => el.classList.add('ist-sichtbar');
+
+      if (ziele.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (!('IntersectionObserver' in window)) {
+          // Ohne Unterstützung lieber alles sofort zeigen als etwas verstecken.
+          ziele.forEach(zeigen);
+        } else {
+          const beobachter = new IntersectionObserver(
+            (eintraege) => {
+              for (const eintrag of eintraege) {
+                if (!eintrag.isIntersecting) continue;
+                zeigen(eintrag.target);
+                beobachter.unobserve(eintrag.target);
+              }
+            },
+            // Positiver unterer Rand: der Abschnitt blendet ein, kurz bevor er
+            // ins Bild kommt. Ein negativer Wert würde ihn zu spät auslösen.
+            { rootMargin: '0px 0px 12% 0px', threshold: 0 },
+          );
+          for (const ziel of ziele) beobachter.observe(ziel);
+        }
+      }
+    </script>
   </body>
 </html>

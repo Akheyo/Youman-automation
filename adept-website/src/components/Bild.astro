@@ -17,6 +17,12 @@ interface Props {
   sizes?: string;
   /** Sanftes Heranfahren beim Überfahren der umgebenden Gruppe. */
   zoom?: boolean;
+  /**
+   * Scrollgesteuerte Bewegung. Wird auf das Bild selbst gelegt, nicht auf den
+   * Rahmen – so bleibt die Skalierung innerhalb des beschnittenen Rahmens und
+   * schiebt nichts über den Viewport hinaus.
+   */
+  parallax?: boolean;
   class?: string;
 }
 
@@ -28,6 +34,7 @@ const {
   priority = false,
   sizes = '(min-width: 1280px) 33vw, (min-width: 768px) 50vw, 100vw',
   zoom = false,
+  parallax = false,
   class: className = '',
 } = Astro.props;
 
@@ -71,6 +78,7 @@ const scrims: Record<string, string> = {
         class:list={[
           'size-full object-cover',
           zoom && 'transition-transform duration-700 ease-out group-hover:scale-[1.04]',
+          parallax && 'faehrt-heran',
         ]}
       />
     ) : (
@@ -80,6 +88,7 @@ const scrims: Record<string, string> = {
             'size-full bg-gradient-to-br',
             flaeche,
             zoom && 'transition-transform duration-700 ease-out group-hover:scale-[1.04]',
+            parallax && 'faehrt-heran',
           ]}
           aria-hidden="true"
         />

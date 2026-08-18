@@ -19,7 +19,7 @@ const { kicker, title, lead, breadcrumb = [], bild } = Astro.props;
   {
     bild && (
       <div class="absolute inset-0 -z-10">
-        <Bild name={bild} ratio="fill" priority sizes="100vw" class="size-full" />
+        <Bild name={bild} ratio="fill" priority parallax sizes="100vw" class="size-full" />
         {/* Doppelter Scrim: sichert den Textkontrast auf jedem Motiv */}
         <div class="absolute inset-0 bg-ink-deep/75" aria-hidden="true" />
         <div

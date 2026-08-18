@@ -93,12 +93,25 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
     )
   }
 
-  <!-- Scrim: sichert den Textkontrast auch auf einem komplett weißen Videobild.
-       Rechnerischer Worst Case (Weiß unter 65 % + 25 % #051C2C): 7,5:1. -->
-  <div class="absolute inset-0 -z-10 bg-ink-deep/65" aria-hidden="true"></div>
+  <!--
+    Zwei Ebenen statt einer festen Abdunklung:
+
+    Grundschleier – dauerhaft, aber leicht. Er hält nur die Navigationsleiste
+    oben und die Bedienelemente unten lesbar und lässt das Bild sonst wirken.
+
+    Titelschleier – nur solange die Überschrift der Seite sichtbar ist, also im
+    Standbild. Sobald das Video läuft, blendet er zusammen mit der Überschrift
+    aus und das Bild steht unverdeckt.
+  -->
   <div
-    class="absolute inset-0 -z-10 bg-gradient-to-b from-ink-deep/70 via-ink-deep/25 to-ink-deep/70"
+    class="absolute inset-0 -z-10 bg-gradient-to-b from-ink-deep/45 via-ink-deep/10 to-ink-deep/45"
     aria-hidden="true"
+  >
+  </div>
+  <div
+    class="absolute inset-0 -z-10 bg-ink-deep/50 transition-opacity duration-500"
+    aria-hidden="true"
+    data-hero-scrim={titelImVideo ? 'nur-pausiert' : undefined}
   >
   </div>
 
@@ -225,10 +238,12 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
        eingeblendet, solange das Video steht. So ist immer genau ein Titel
        sichtbar – und bei fehlendem Autoplay bleibt der Hero nicht stumm. */
     const titel = document.querySelector<HTMLElement>('[data-hero-titel="nur-pausiert"]');
-    if (titel) {
+    const scrim = document.querySelector<HTMLElement>('[data-hero-scrim="nur-pausiert"]');
+    if (titel || scrim) {
       const syncTitel = () => {
         const laeuft = !video.paused && !video.ended && video.readyState >= 3;
-        titel.classList.toggle('opacity-0', laeuft);
+        titel?.classList.toggle('opacity-0', laeuft);
+        scrim?.classList.toggle('opacity-0', laeuft);
       };
       syncTitel();
       for (const ereignis of ['playing', 'pause', 'ended', 'waiting', 'emptied'] as const) {

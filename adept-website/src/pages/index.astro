@@ -23,6 +23,10 @@ import { withBase } from '../lib/url';
  * keiner Stelle, was adept& tut.
  */
 
+// Die Case Study ist der Aufmacher, die noch offenen Themen folgen darunter.
+const aufmacher = news.find((n) => !n.platzhalter);
+const weitere = news.filter((n) => n !== aufmacher);
+
 // Inhalte für "Geschichte" und "Werte" liegen noch nicht vor.
 const ueberKacheln = [
   { title: 'Geschichte', href: '/ueber-uns#geschichte', bild: 'architektur' as const },
@@ -40,7 +44,7 @@ const ueberKacheln = [
 
   {/* ---------------------------------------------------- Was wir tun */}
   <Section tone="light">
-    <div class="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-24">
+    <div class="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-24" data-reveal>
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
           {site.claim}
@@ -79,13 +83,94 @@ const ueberKacheln = [
     </div>
   </Section>
 
+  {/* ---------------------------------------------------- Claim-Bahn */}
+  <section class="on-dark relative isolate overflow-hidden bg-ink-deep text-white">
+    <div class="absolute inset-0 -z-10">
+      <Bild name="oberflaeche" ratio="fill" parallax sizes="100vw" class="size-full" />
+      <div class="absolute inset-0 bg-ink-deep/80" aria-hidden="true"></div>
+      <div
+        class="absolute inset-0 bg-gradient-to-r from-ink-deep via-ink-deep/75 to-ink-deep/35"
+        aria-hidden="true"
+      >
+      </div>
+    </div>
+    <div class="container-page py-24 md:py-36">
+      <p class="max-w-4xl font-display text-3xl leading-tight sm:text-5xl lg:text-6xl" data-reveal>
+        Kein Systemwechsel.<br />Keine Medienbrüche.<br /><span class="text-accent-on-dark"
+          >Eine Oberfläche.</span
+        >
+      </p>
+      <p class="prose-measure mt-8 text-lg text-white/75" data-reveal>
+        Der Mitarbeiter beim Kunden sieht nur eine Oberfläche. Datenabruf, Berechnung und
+        Synchronisation mit dem ERP-System laufen vollautomatisch im Hintergrund.
+      </p>
+    </div>
+  </section>
+
   {/* ---------------------------------------------------- Aktuelle Themen */}
   <Section tone="canvas">
     <SectionHeading kicker="Aktuelles" title="Aktuelle Themen" align="center" />
-    <ul class="mt-14 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+
+    {/* Die Case Study ist der einzige belastbare Beleg – sie bekommt deshalb
+        das Gewicht eines Aufmachers statt einer Kachel unter vieren. */}
+    {
+      aufmacher && (
+        <a
+          href={withBase(aufmacher.href)}
+          class="hebt-sich group mt-14 grid overflow-hidden bg-surface shadow-sm ring-1 ring-line lg:grid-cols-2"
+          data-reveal
+        >
+          <Bild
+            name={aufmacher.bild}
+            ratio="4/3"
+            zoom
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            class="lg:h-full"
+          />
+          <div class="flex flex-col justify-center p-8 md:p-12 lg:p-16">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+              {aufmacher.kicker}
+            </p>
+            <h3 class="mt-4 text-2xl font-semibold text-ink transition-colors duration-200 group-hover:text-accent md:text-3xl">
+              {aufmacher.title}
+            </h3>
+            <p class="prose-measure mt-5 text-ink-soft">{aufmacher.excerpt}</p>
+
+            <div class="mt-8 flex items-end gap-5 border-t border-line pt-6">
+              <span class="font-display text-4xl font-semibold tabular-nums text-ink md:text-5xl">
+                2.556
+              </span>
+              <span class="pb-1 text-sm text-muted-fg">
+                verschiedene Palettentypen<br />waren im aktiven Einsatz
+              </span>
+            </div>
+
+            <span
+              class="mt-8 inline-flex items-center gap-2 font-medium text-accent"
+              aria-hidden="true"
+            >
+              Case Study lesen
+              <svg
+                class="size-4 transition-transform duration-200 group-hover:translate-x-1"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </span>
+          </div>
+        </a>
+      )
+    }
+
+    <ul class="mt-12 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3" data-reveal-gruppe>
       {
-        news.map((item, index) => (
-          <li>
+        weitere.map((item, index) => (
+          <li data-reveal style={`--reveal-index:${index}`}>
             <TeaserCard
               title={item.title}
               href={item.href}
@@ -93,7 +178,7 @@ const ueberKacheln = [
               date={item.date}
               excerpt={item.excerpt}
               bild={item.bild}
-              index={index}
+              index={index + 1}
               platzhalter={item.platzhalter}
             />
           </li>
@@ -110,13 +195,13 @@ const ueberKacheln = [
       lead="adept& arbeitet mit mittelständischen Unternehmen in produktionsnahen und logistikintensiven Branchen."
     />
 
-    <ul class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <ul class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4" data-reveal>
       {
         branchen.map((branche, i) => (
           <li>
             <a
               href={withBase(`/branchen/${branche.slug}`)}
-              class="group relative block overflow-hidden"
+              class="hebt-sich group relative block overflow-hidden"
             >
               <Bild
                 name={branche.bild}
@@ -198,13 +283,13 @@ const ueberKacheln = [
       align="center"
     />
 
-    <ul class="mt-14 grid gap-6 sm:grid-cols-2">
+    <ul class="mt-14 grid gap-6 sm:grid-cols-2" data-reveal>
       {
         ueberKacheln.map((kachel, i) => (
           <li>
             <a
               href={withBase(kachel.href)}
-              class="group relative block overflow-hidden"
+              class="hebt-sich group relative block overflow-hidden"
             >
               <Bild
                 name={kachel.bild}
