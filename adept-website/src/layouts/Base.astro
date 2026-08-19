@@ -56,7 +56,10 @@ const organisation = {
   '@id': absolut(withBase('/')) + '#organisation',
   name: 'adept&',
   url: absolut(withBase('/')),
-  logo: absolut(withBase('/favicon.svg')),
+  // Fuer Suchmaschinen die Wortmarke, nicht das Favicon: das Favicon ist
+  // nur das kaufmaennische Und und ausserhalb des Browser-Tabs nicht als
+  // Absender zu erkennen.
+  logo: absolut(withBase('/logo-adept.png')),
   description: site.description,
   slogan: site.claim,
   areaServed: { '@type': 'Country', name: 'Deutschland' },
