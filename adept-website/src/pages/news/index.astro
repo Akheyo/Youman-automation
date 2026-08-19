@@ -5,6 +5,7 @@ import Section from '../../components/Section.astro';
 import TeaserCard from '../../components/TeaserCard.astro';
 import PlaceholderNote from '../../components/PlaceholderNote.astro';
 import { news } from '../../data/news';
+import { withBase } from '../../lib/url';
 
 const veroeffentlicht = news.filter((item) => !item.platzhalter);
 const offen = news.filter((item) => item.platzhalter);
@@ -12,7 +13,9 @@ const offen = news.filter((item) => item.platzhalter);
 
 <Base
   title="News"
-  description="Aktuelle Themen und Referenzprojekte von adept&."
+  description="Meldungen und Beiträge von adept& zu ERP-Integration, Individualsoftware und Prozessberatung im Mittelstand."
+  bild="material"
+  breadcrumb={[{ label: 'Home', href: '/' }]}
 >
   <PageHeader kicker="News" bild="material" title="Aktuelle Themen" breadcrumb={[{ label: 'Home', href: '/' }]} />
 
@@ -39,9 +42,12 @@ const offen = news.filter((item) => item.platzhalter);
         <div class="mt-16">
           <PlaceholderNote title={`Platzhalter – ${offen.length} weitere Beiträge offen`}>
             <p>
-              Auf der Startseite sind vier Kacheln für „Aktuelle Themen“ vorgesehen. Belastbar ist
-              bislang ausschließlich die Case Study Drahtmüller. Sobald Titel, Datum, Text und Bild
-              für die übrigen Beiträge vorliegen, werden sie in
+              Hier stehen Meldungen und Beiträge. Abgeschlossene Kundenprojekte finden Sie unter
+              <a href={withBase('/case-studies')} class="text-accent">Case Studies</a>.
+            </p>
+            <p>
+              Für „Aktuelle Themen“ liegen noch keine freigegebenen Inhalte vor. Sobald Titel,
+              Datum, Text und Bild vorliegen, werden sie in
               <code class="px-1">src/data/news.ts</code> ergänzt.
             </p>
           </PlaceholderNote>

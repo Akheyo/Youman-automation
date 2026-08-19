@@ -10,9 +10,16 @@ export type NavItem = {
 };
 
 /**
- * Hauptnavigation laut Briefing:
- * Branchen · Funktionen · News · Über uns · Kontakt
+ * Hauptnavigation.
+ *
+ * Das Briefing nennt: Branchen · Funktionen · News · Über uns · Kontakt,
  * Dropdown nur bei "Branchen" und "Funktionen".
+ *
+ * Abweichung: "Case Studies" ist dazugekommen. Als das Briefing entstand, gab
+ * es einen einzigen Fall, der unter News lief. Inzwischen sind es zwei mit
+ * eigener Übersichtsseite – ohne Navigationspunkt wären sie nur über die
+ * Startseite erreichbar. Die Zeile lässt sich ersatzlos streichen, wenn die
+ * Navigation dem Briefing wortgleich folgen soll.
  */
 export const mainNav: NavItem[] = [
   { label: 'Home', href: '/' },
@@ -37,6 +44,7 @@ export const mainNav: NavItem[] = [
       { label: 'Systemintegration & ERP-Anbindung', href: '/funktionen/systemintegration-und-erp-anbindung' },
     ],
   },
+  { label: 'Case Studies', href: '/case-studies' },
   { label: 'News', href: '/news' },
   { label: 'Über uns', href: '/ueber-uns' },
   { label: 'Kontakt', href: '/kontakt' },

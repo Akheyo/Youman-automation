@@ -21,7 +21,15 @@ const { funktion } = Astro.props;
 const passendeBranchen = branchen.filter((b) => b.funktionen.includes(funktion.slug));
 ---
 
-<Base title={funktion.title} description={funktion.teaser}>
+<Base
+  title={funktion.title}
+  description={funktion.teaser}
+  bild={funktion.bild}
+  breadcrumb={[
+    { label: 'Home', href: '/' },
+    { label: 'Funktionen', href: '/funktionen' },
+  ]}
+>
   <PageHeader
     kicker="Funktionen"
     bild={funktion.bild}

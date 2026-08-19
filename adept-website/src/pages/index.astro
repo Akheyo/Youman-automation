@@ -7,6 +7,7 @@ import TeaserCard from '../components/TeaserCard.astro';
 import Bild from '../components/Bild.astro';
 import Button from '../components/Button.astro';
 import { news } from '../data/news';
+import { caseStudies } from '../data/caseStudies';
 import { branchen } from '../data/branchen';
 import { funktionen } from '../data/funktionen';
 import { site, kernleistungen } from '../data/site';
@@ -14,20 +15,17 @@ import { withBase } from '../lib/url';
 
 /**
  * Reihenfolge der Startseite:
- * Hero > Aktuelle Themen > Was wir tun > Claim > Über adept&
+ * Hero > Case Studies > Aktuelle Themen > Was wir tun > Claim > Über adept&
  * > Branchen und Funktionen.
  *
- * "Aktuelle Themen" steht auf Wunsch direkt unter dem Hero und damit vor der
- * Erklärung, was adept& tut. Das entspricht dem Briefing, das "Aktuelle
- * Themen" als ersten Block nach dem Hero führt.
+ * Case Studies und "Aktuelle Themen" sind zwei getrennte Abschnitte. Ein
+ * belegtes Kundenprojekt und eine Meldung leisten Verschiedenes; standen sie
+ * in einer Liste, ging der einzige belastbare Beleg zwischen leeren
+ * Platzhalter-Kacheln unter.
  *
  * "Was wir tun" und "Branchen" sind Ergänzungen zum Briefing – ohne sie sagt
  * die Startseite an keiner Stelle, womit das Unternehmen sein Geld verdient.
  */
-
-// Die Case Study ist der Aufmacher, die noch offenen Themen folgen darunter.
-const aufmacher = news.find((n) => !n.platzhalter);
-const weitere = news.filter((n) => n !== aufmacher);
 
 // Inhalte für "Geschichte" und "Werte" liegen noch nicht vor.
 const ueberKacheln = [
@@ -36,7 +34,7 @@ const ueberKacheln = [
 ];
 ---
 
-<Base title={site.name} description={site.description}>
+<Base title={site.name} description={site.description} bild="halle">
   {/* Das Video ist ohne eingebrannte Schrift geliefert – "adept&" und
       "Deutschland" stehen deshalb wieder als echter Text darüber. Die leichte
       Verlangsamung nimmt den drei Einstellungen die Hektik, ohne dass das
@@ -49,69 +47,99 @@ const ueberKacheln = [
     playbackRate={0.85}
   />
 
-  {/* ---------------------------------------------------- Aktuelle Themen */}
+  {/* ---------------------------------------------------- Case Studies */}
   <Section tone="canvas">
-    <SectionHeading kicker="Aktuelles" title="Aktuelle Themen" align="center" />
+    <SectionHeading
+      kicker="Case Studies"
+      title="Was wir gebaut haben"
+      lead="Abgeschlossene Kundenprojekte – vom operativen Engpass bis zur Anbindung an das bestehende System."
+      align="center"
+    />
 
-    {/* Die Case Study ist der einzige belastbare Beleg – sie bekommt deshalb
-        das Gewicht eines Aufmachers statt einer Kachel unter vieren. */}
-    {
-      aufmacher && (
-        <a
-          href={withBase(aufmacher.href)}
-          class="hebt-sich group mt-14 grid overflow-hidden bg-surface shadow-sm ring-1 ring-line lg:grid-cols-2"
-          data-reveal
-        >
-          <Bild
-            name={aufmacher.bild}
-            ratio="4/3"
-            zoom
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            class="wischt-auf lg:h-full"
-          />
-          <div class="flex flex-col justify-center p-8 md:p-12 lg:p-16">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-              {aufmacher.kicker}
-            </p>
-            <h3 class="mt-4 text-2xl text-ink transition-colors duration-200 group-hover:text-accent md:text-3xl">
-              {aufmacher.title}
-            </h3>
-            <p class="prose-measure mt-5 text-ink-soft">{aufmacher.excerpt}</p>
+    {/* Zwei gleich gewichtete Karten statt Aufmacher plus Rest: bei genau
+        zwei Faellen wirkt eine Hierarchie willkuerlich. Das Raster nimmt
+        spaeter ohne Aenderung einen dritten und vierten Fall auf.
 
-            <div class="mt-8 flex items-end gap-5 border-t border-line pt-6">
-              <span class="font-display text-4xl font-semibold tabular-nums text-ink md:text-5xl">
-                2.556
-              </span>
-              <span class="pb-1 text-sm text-muted-fg">
-                verschiedene Palettentypen<br />waren im aktiven Einsatz
-              </span>
-            </div>
-
-            <span
-              class="mt-8 inline-flex items-center gap-2 font-medium text-accent"
-              aria-hidden="true"
+        minmax(0,1fr) statt 1fr: eine Rasterspalte waechst sonst auf die
+        Mindestbreite ihres Inhalts. `overflow-wrap: break-word` erlaubt zwar
+        den Umbruch langer Woerter, senkt aber die gemeldete Mindestbreite
+        nicht - "Warenwirtschaftssystem" hat die Spalte bei 320 px deshalb
+        ueber den Rand geschoben. */}
+    <ul
+      class="mt-14 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[repeat(2,minmax(0,1fr))]"
+      data-reveal-gruppe
+    >
+      {
+        caseStudies.map((fall, index) => (
+          <li data-reveal style={`--reveal-index:${index}`}>
+            <a
+              href={withBase(fall.href)}
+              class="hebt-sich group flex h-full flex-col overflow-hidden bg-surface ring-1 ring-line"
             >
-              Case Study lesen
-              <svg
-                class="size-4 transition-transform duration-200 group-hover:translate-x-1"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </span>
-          </div>
-        </a>
-      )
-    }
+              <Bild
+                name={fall.bild}
+                index={index}
+                ratio="16/9"
+                zoom
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                class={index === 0 ? 'wischt-auf' : undefined}
+              />
+              <div class="flex flex-1 flex-col p-8 md:p-10">
+                <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                  {fall.branche}
+                </p>
+                <h3 class="mt-3 text-2xl text-ink transition-colors duration-200 group-hover:text-accent md:text-3xl">
+                  {fall.title}
+                </h3>
+                <p class="mt-2 text-sm text-muted-fg">{fall.kunde}</p>
+                <p class="prose-measure mt-5 flex-1 text-ink-soft">{fall.excerpt}</p>
+
+                {fall.kennzahl && (
+                  <p class="mt-8 flex flex-wrap items-end gap-x-5 gap-y-2 border-t border-line pt-6">
+                    <span class="font-display text-4xl font-semibold tabular-nums text-ink">
+                      {fall.kennzahl.wert}
+                    </span>
+                    <span class="min-w-0 pb-1 text-sm text-muted-fg">
+                      {fall.kennzahl.beschreibung}
+                    </span>
+                  </p>
+                )}
+
+                <span
+                  class="mt-8 inline-flex items-center gap-2 font-medium text-accent"
+                  aria-hidden="true"
+                >
+                  Case Study lesen
+                  <svg
+                    class="size-4 transition-transform duration-200 group-hover:translate-x-1"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </span>
+              </div>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  {/* ---------------------------------------------------- Aktuelle Themen */}
+  <Section tone="light">
+    <div class="flex flex-wrap items-end justify-between gap-6">
+      <SectionHeading kicker="Aktuelles" title="Aktuelle Themen" />
+      <Button href="/news" variant="secondary">Alle Beiträge</Button>
+    </div>
 
     <ul class="mt-12 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3" data-reveal-gruppe>
       {
-        weitere.map((item, index) => (
+        news.map((item, index) => (
           <li data-reveal style={`--reveal-index:${index}`}>
             <TeaserCard
               title={item.title}

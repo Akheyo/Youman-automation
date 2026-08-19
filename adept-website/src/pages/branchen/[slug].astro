@@ -7,7 +7,7 @@ import PlaceholderNote from '../../components/PlaceholderNote.astro';
 import Button from '../../components/Button.astro';
 import { branchen } from '../../data/branchen';
 import { funktionen } from '../../data/funktionen';
-import { news } from '../../data/news';
+import { caseStudyNach } from '../../data/caseStudies';
 import { withBase } from '../../lib/url';
 
 export function getStaticPaths() {
@@ -24,14 +24,19 @@ const passendeFunktionen = branche.funktionen.flatMap((slug) => {
   return treffer ? [treffer] : [];
 });
 
-const referenz = branche.referenz ? news.find((n) => n.slug === branche.referenz) : undefined;
+const referenz = branche.referenz ? caseStudyNach(branche.referenz) : undefined;
 ---
 
 <Base
   title={branche.title}
   description={branche.platzhalter
     ? `${branche.title}: Inhalte für diese Branche werden derzeit erarbeitet.`
-    : branche.teaser}
+    : `${branche.teaser} adept& baut dafür Module und bindet sie an das bestehende ERP-System an.`}
+  bild={branche.bild}
+  breadcrumb={[
+    { label: 'Home', href: '/' },
+    { label: 'Branchen', href: '/branchen' },
+  ]}
 >
   <PageHeader
     kicker="Branchen"

@@ -1,0 +1,266 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import Section from '../../components/Section.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import Button from '../../components/Button.astro';
+import { caseStudyNach } from '../../data/caseStudies';
+
+/**
+ * Quelle: "ABSolar.CaseStudy.pdf".
+ *
+ * Bewusst nicht übernommen:
+ * - Das Veröffentlichungsdatum. In der Vorlage steht dort noch der Platzhalter
+ *   "[Enter Desired Publish Date]".
+ * - Die Quellenmarke "[web:6]" hinter der Lexware-Aussage. Sie stammt aus der
+ *   Textproduktion und gehört nicht auf eine Kundenseite.
+ * - Einsparungs- oder Prozentangaben über die im Dokument genannten hinaus.
+ * Die Aussage zum Funktionsumfang von Lexware Office bleibt als das
+ * gekennzeichnet, was sie ist: eine Angabe des Herstellers.
+ */
+
+const fall = caseStudyNach('absolar-warenwirtschaft')!;
+
+const folgen = [
+  'Keine zentrale Verbindung zwischen Angebot, Auftrag, Lager und Baustelle.',
+  'Mehrfache Pflege von Kunden-, Projekt- und Materialinformationen.',
+  'Erschwerte Übersicht über verfügbare und benötigte Materialien.',
+  'Risiko von Abweichungen zwischen Datenbank und kaufmännischem System.',
+  'Manueller Abstimmungsaufwand bei der Vorbereitung von Baustellen.',
+  'Eingeschränkte Transparenz über den Materialbedarf einzelner Projekte.',
+  'Keine automatische Aktualisierung der relevanten Daten nach Angebotsannahme.',
+];
+
+const ablauf = [
+  'Ein Angebot wird für einen Kunden erstellt und über Lexware Office versendet.',
+  'Die Angebots- und Kundendaten werden im Warenwirtschaftssystem beziehungsweise über die Schnittstelle verarbeitet.',
+  'Nach der Annahme des Angebots wird aus dem Auftrag der relevante Projekt- und Materialbedarf abgeleitet.',
+  'Bei der Baustellenplanung werden die benötigten Komponenten und Mengen dem Projekt zugeordnet.',
+  'Bestände, Materialbedarf und Projektstatus werden in der Datenbank aktualisiert.',
+  'Relevante kaufmännische Informationen werden mit Lexware Office synchronisiert.',
+];
+
+const anpassungen = [
+  {
+    title: 'Zentrale Datenbasis',
+    text: 'Kunden-, Projekt-, Angebots- und Materialinformationen werden in einer verbundenen Struktur verwaltet.',
+  },
+  {
+    title: 'Lexware-Office-Anbindung',
+    text: 'Angebote, Kontakte und weitere kaufmännische Informationen werden über die Lexware-Office-Public-API ausgetauscht.',
+  },
+  {
+    title: 'Automatische Projektübernahme',
+    text: 'Wird ein Angebot angenommen oder ein Auftrag bestätigt, werden die relevanten Daten als Projekt weiterverarbeitet.',
+  },
+  {
+    title: 'Materialbedarfsplanung',
+    text: 'Die für eine geplante Baustelle benötigten Komponenten werden dem Projekt zugeordnet und in der Materialplanung berücksichtigt.',
+  },
+  {
+    title: 'Bestandsaktualisierung',
+    text: 'Änderungen am Materialbedarf, an Reservierungen oder am Projektstatus werden in der bestehenden Datenbank nachgeführt.',
+  },
+  {
+    title: 'Nachvollziehbare Projektsteuerung',
+    text: 'Mitarbeitende erhalten eine strukturierte Übersicht über Projektstatus, geplanten Materialbedarf und verfügbare Bestände.',
+  },
+];
+
+const technologien = [
+  'adept&-Workflow-Framework',
+  'Kundenspezifisches Warenwirtschaftssystem',
+  'Zentrale Datenbankanbindung',
+  'Lexware-Office-Public-API',
+  'Automatisierte Angebots- und Auftragsverarbeitung',
+  'Materialbedarfs- und Bestandslogik',
+  'Baustellen- und Projektplanung',
+  'Synchronisation von Kunden-, Angebots- und Materialdaten',
+];
+
+const brotkrumen = [
+  { label: 'Home', href: '/' },
+  { label: 'Case Studies', href: '/case-studies' },
+];
+---
+
+<Base
+  title={fall.title}
+  description="Wie adept& für A&B SolarEnergy Lager, Angebote aus Lexware Office und Baustellenplanung zu einem durchgängigen Warenwirtschaftsprozess verbunden hat."
+  bild={fall.bild}
+  breadcrumb={brotkrumen}
+  artikel={{ titel: fall.title, beschreibung: "Wie adept& für A&B SolarEnergy Lager, Angebote aus Lexware Office und Baustellenplanung zu einem durchgängigen Warenwirtschaftsprozess verbunden hat.", datum: fall.date }}
+>
+  <PageHeader
+    kicker="Case Study"
+    bild={fall.bild}
+    title="Aufbau eines integrierten Warenwirtschaftssystems für Solarprojekte"
+    lead={`${fall.kunde} – ${fall.branche}`}
+    breadcrumb={brotkrumen}
+  />
+
+  <Section>
+    <div class="grid gap-12 lg:grid-cols-[2fr_1fr] lg:gap-20">
+      <div class="prose-measure space-y-5 text-lg text-ink-soft">
+        <p>
+          A&B SolarEnergy verfügte über eine operative Datenbank zur Verwaltung von Lagerbeständen,
+          hatte jedoch noch kein durchgängiges Warenwirtschaftssystem für Angebote, Materialplanung
+          und Baustellenabwicklung. Angebote wurden unter anderem in Lexware Office erstellt,
+          während Lager- und Projektdaten separat gepflegt wurden.
+        </p>
+        <p>
+          adept& entwickelte ein kundenspezifisches Warenwirtschaftssystem, das die bestehende
+          Datenbank mit den kaufmännischen Prozessen und der Materialplanung verbindet. Sobald ein
+          Angebot erstellt, versendet und unterschrieben wurde oder eine Baustelle geplant wird,
+          werden die benötigten Materialien systematisch erfasst und die relevanten Daten in der
+          Warenwirtschaft sowie in Lexware Office aktualisiert.
+        </p>
+      </div>
+
+      <aside class="border-t-2 border-accent bg-canvas p-8">
+        <h2 class="font-sans text-sm font-semibold text-ink">Projekt im Überblick</h2>
+        <dl class="mt-6 space-y-4 border-t border-line pt-6 text-sm">
+          <div>
+            <dt class="font-semibold text-ink">Kunde</dt>
+            <dd class="text-ink-soft">{fall.kunde}</dd>
+          </div>
+          <div>
+            <dt class="font-semibold text-ink">Branche</dt>
+            <dd class="text-ink-soft">{fall.branche}</dd>
+          </div>
+          <div>
+            <dt class="font-semibold text-ink">Kern der Lösung</dt>
+            <dd class="text-ink-soft">
+              Ein System, das Lager, Angebote und Baustellenplanung zentral verbindet
+            </dd>
+          </div>
+          <div>
+            <dt class="font-semibold text-ink">Bestandssystem</dt>
+            <dd class="text-ink-soft">Vorhandene Datenbank und Lexware Office, beide bleiben</dd>
+          </div>
+        </dl>
+      </aside>
+    </div>
+  </Section>
+
+  {/* ------------------------------------------------------- Über den Kunden */}
+  <Section tone="canvas">
+    <SectionHeading kicker="Ausgangslage" title="Über den Kunden" />
+    <div class="prose-measure mt-8 space-y-5 text-lg text-ink-soft">
+      <p>
+        A&B SolarEnergy ist im Bereich Solarenergie und Photovoltaik tätig und plant sowie
+        realisiert kundenindividuelle Solarprojekte. Für die Abwicklung dieser Projekte müssen
+        Kundendaten, Angebote, Auftragsinformationen, Baustellenplanung, Materialbedarf und
+        Lagerbestände zuverlässig miteinander verbunden werden.
+      </p>
+      <p>
+        Da jedes Projekt unterschiedliche Komponenten und Mengen erfordert, ist eine aktuelle und
+        konsistente Materialübersicht ein wichtiger Bestandteil des operativen Geschäfts. Die
+        Warenwirtschaft muss dabei nicht nur Bestände abbilden, sondern auch den Zusammenhang
+        zwischen Angebot, Auftrag, Baustelle und Materialverbrauch herstellen.
+      </p>
+    </div>
+  </Section>
+
+  {/* ------------------------------------------------------ Herausforderung */}
+  <Section>
+    <SectionHeading
+      kicker="Herausforderung"
+      title="Nicht fehlende Daten, sondern fehlende Verbindungen"
+      lead="Die Informationen waren vorhanden – nur eben in getrennten Ständen. Angebote lagen in Lexware Office, Lager- und Projektdaten in eigenen Strukturen. Ein durchgängiger digitaler Prozess von der Anfrage bis zur Baustellenplanung entstand daraus nicht."
+    />
+
+    <ul class="mt-12 grid gap-px bg-line sm:grid-cols-2" data-reveal>
+      {
+        folgen.map((punkt, i) => (
+          <li class="flex gap-5 bg-surface p-7">
+            <span class="font-display text-sm font-semibold tabular-nums text-accent">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <span class="text-ink-soft">{punkt}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  {/* ---------------------------------------------------------- Die Lösung */}
+  <Section tone="canvas">
+    <SectionHeading
+      kicker="Lösung"
+      title="Ein Prozess statt sechs Ablagen"
+      lead="adept& entwickelte ein integriertes Warenwirtschaftssystem, das auf der bestehenden Datenbank aufsetzt. Die Informationen werden nicht mehr isoliert gepflegt, sondern entlang des Geschäftsprozesses miteinander verknüpft."
+    />
+
+    <ol class="mt-12 space-y-px bg-line" data-reveal>
+      {
+        ablauf.map((schritt, i) => (
+          <li class="flex gap-6 bg-surface p-7">
+            <span class="font-display text-lg font-semibold tabular-nums text-accent">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <span class="text-ink-soft">{schritt}</span>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
+  {/* -------------------------------------------------------- Integration */}
+  <Section>
+    <SectionHeading
+      kicker="Integration"
+      title="Was dabei gebaut wurde"
+      lead="Nach dem Kernsystem folgte die Anbindung an die bestehende Datenbank und an Lexware Office. Relevante Kunden-, Angebots-, Auftrags- und Materialinformationen werden im Hintergrund übernommen, verarbeitet und in den jeweiligen Prozess zurückgeführt."
+    />
+
+    <ul class="mt-12 grid gap-px bg-line md:grid-cols-2" data-reveal>
+      {
+        anpassungen.map((punkt) => (
+          <li class="bg-surface p-7">
+            <h3 class="text-lg text-ink">{punkt.title}</h3>
+            <p class="mt-2.5 text-sm leading-relaxed text-ink-soft">{punkt.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="mt-14 border-t border-line pt-10">
+      <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+        Eingesetzte Technologien
+      </h3>
+      <ul class="mt-6 flex flex-wrap gap-2">
+        {
+          technologien.map((t) => (
+            <li class="border border-line px-3 py-1.5 text-sm text-ink-soft">{t}</li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <p class="prose-measure mt-12 border-l-2 border-line pl-6 text-sm text-muted-fg">
+      Lexware Office unterstützt laut Herstellerangabe unter anderem das Lesen, Anlegen und
+      Abschließen von Angeboten, das Lesen und Anlegen von Auftragsbestätigungen sowie das Lesen,
+      Anlegen und Abschließen von Rechnungen. Die Schnittstelle ist eine REST-API und setzt einen
+      API-Zugang mit passenden Berechtigungen voraus. Welche Daten konkret synchronisiert werden,
+      hängt daher von der gebuchten Lexware-Office-Version und den freigeschalteten Funktionen ab.
+    </p>
+  </Section>
+
+  {/* ------------------------------------------------------------ Ergebnis */}
+  <Section tone="dark">
+    <SectionHeading kicker="Ergebnis" title="Ein System statt drei Ständen" tone="dark" />
+    <p class="prose-measure mt-8 text-lg text-white/80">
+      Ein kundenspezifisches Warenwirtschaftssystem, das die bestehende Datenbank als operative
+      Grundlage nutzt und gleichzeitig die kaufmännischen Abläufe in Lexware Office mit Lager- und
+      Baustellenprozessen verbindet. Lager, Angebote und Baustellenplanung sind zentral verbunden,
+      die Medienbrüche zwischen Datenbank, Warenwirtschaft und Lexware Office entfallen für die
+      definierten Kernprozesse.
+    </p>
+
+    <div class="mt-12 flex flex-wrap gap-4">
+      <Button href="/kontakt#formular" variant="ghost">Ähnlichen Fall besprechen</Button>
+      <Button href="/case-studies" variant="ghost">Alle Case Studies</Button>
+    </div>
+  </Section>
+</Base>

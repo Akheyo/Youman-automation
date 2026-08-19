@@ -15,25 +15,17 @@ export type NewsItem = {
 };
 
 /**
- * Die vier Kacheln der Sektion "Aktuelle Themen" auf der Startseite.
+ * "Aktuelle Themen" – Meldungen und Beiträge.
  *
- * Belastbar ist bislang ausschließlich die Case Study Drahtmüller. Die übrigen
- * drei Kacheln sind bewusst als Platzhalter markiert und werden auf der Seite
- * auch sichtbar als solche ausgewiesen – es werden keine Themen, Daten oder
- * Zahlen erfunden.
+ * Case Studies stehen NICHT hier, sondern in `caseStudies.ts`. Eine Case Study
+ * belegt, was das Unternehmen kann; eine Meldung berichtet, was es gerade tut.
+ * Solange beides in einer Liste stand, ging der einzige belastbare Beleg
+ * zwischen leeren Platzhalter-Kacheln unter.
+ *
+ * Es werden keine Themen, Daten oder Zahlen erfunden: was noch nicht vorliegt,
+ * bleibt ein sichtbar gekennzeichneter Platzhalter.
  */
 export const news: NewsItem[] = [
-  {
-    slug: 'drahtmueller-palettenoptimierung',
-    bild: 'paletten',
-    title: 'Palettenoptimierung bei der Drahtmüller GmbH',
-    date: null,
-    kicker: 'Case Study',
-    excerpt:
-      '2.556 aktive Palettentypen, jede Entscheidung ein Einzelfall: Wie ein Modul im adept&-Gerüst die Palettenlogik an das ERP-System anbindet – ohne Systemablösung.',
-    href: '/news/drahtmueller-palettenoptimierung',
-    platzhalter: false,
-  },
   {
     slug: 'platzhalter-2',
     title: 'Platzhalter – Thema folgt',

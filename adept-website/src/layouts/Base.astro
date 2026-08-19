@@ -3,29 +3,62 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { withBase } from '../lib/url';
+import { bild } from '../lib/images';
 import { site } from '../data/site';
+import type { BildKey } from '../data/images';
 
 interface Props {
   title: string;
   description?: string;
-  /** Wenn false, wird der <h1> nicht automatisch gesetzt (z. B. auf der Startseite). */
+  /** Wenn true, wird die Seite von Suchmaschinen ausgeschlossen. */
   noindex?: boolean;
+  /**
+   * Bild für die Vorschau beim Teilen. Ohne Angabe greift das Standbild des
+   * Hero-Videos. Ein seitenspezifisches Bild ist deutlich klickstärker als
+   * überall dasselbe.
+   */
+  bild?: BildKey;
+  /**
+   * Brotkrumenpfad ohne die aktuelle Seite. Erzeugt die BreadcrumbList für
+   * Suchmaschinen; Google zeigt daraus den Pfad statt der nackten URL an.
+   */
+  breadcrumb?: { label: string; href: string }[];
+  /**
+   * Setzen, wenn die Seite ein redaktioneller Beitrag ist. Erzeugt zusätzlich
+   * ein Article-Objekt in den strukturierten Daten.
+   */
+  artikel?: { titel: string; beschreibung: string; datum: string | null };
 }
 
-const { title, description = site.description, noindex = false } = Astro.props;
+const {
+  title,
+  description = site.description,
+  noindex = false,
+  bild: bildKey,
+  breadcrumb = [],
+  artikel,
+} = Astro.props;
 
 const seitentitel = title === site.name ? `${site.name} ${site.region}` : `${title} | ${site.name}`;
-const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin);
-const ogImage = new URL(withBase('/hero-poster.jpg'), Astro.site ?? Astro.url.origin);
+const basis = Astro.site ?? new URL(Astro.url.origin);
+const canonical = new URL(Astro.url.pathname, basis);
+
+// Absolute Adressen: relative Pfade sind in OpenGraph und in strukturierten
+// Daten nicht zulässig, manche Dienste ignorieren sie stillschweigend.
+const absolut = (pfad: string) => new URL(pfad, basis).href;
+
+const seitenbild = bildKey ? bild(bildKey) : null;
+const ogImage = absolut(seitenbild ? seitenbild.quelle.src : withBase('/hero-poster.jpg'));
 
 const organisation = {
-  '@context': 'https://schema.org',
   '@type': 'Organization',
+  '@id': absolut(withBase('/')) + '#organisation',
   name: 'adept&',
-  url: canonical.origin + withBase('/'),
+  url: absolut(withBase('/')),
+  logo: absolut(withBase('/favicon.svg')),
   description: site.description,
   slogan: site.claim,
-  areaServed: 'DE',
+  areaServed: { '@type': 'Country', name: 'Deutschland' },
   knowsAbout: [
     'ERP-Integration',
     'SAP-Integration',
@@ -33,7 +66,46 @@ const organisation = {
     'Individualsoftware',
     'Produktionsplanung',
     'Logistiksoftware',
+    'Warenwirtschaft',
   ],
+};
+
+// Der Brotkrumenpfad enthält die aktuelle Seite als letztes Glied – so
+// erwartet es Google, auch wenn sie in der Anzeige nicht verlinkt ist.
+const brotkrumenListe =
+  breadcrumb.length > 0
+    ? {
+        '@type': 'BreadcrumbList',
+        itemListElement: [...breadcrumb, { label: title, href: Astro.url.pathname }].map(
+          (glied, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            name: glied.label,
+            item: absolut(glied.href.startsWith('/') ? withBase(glied.href) : glied.href),
+          }),
+        ),
+      }
+    : null;
+
+const artikelObjekt = artikel
+  ? {
+      '@type': 'Article',
+      headline: artikel.titel,
+      description: artikel.beschreibung,
+      image: ogImage,
+      inLanguage: 'de-DE',
+      mainEntityOfPage: canonical.href,
+      author: { '@id': absolut(withBase('/')) + '#organisation' },
+      publisher: { '@id': absolut(withBase('/')) + '#organisation' },
+      // datePublished wird bewusst weggelassen, solange kein freigegebenes
+      // Datum vorliegt – ein erfundenes Datum wäre schlimmer als keines.
+      ...(artikel.datum ? { datePublished: artikel.datum } : {}),
+    }
+  : null;
+
+const strukturierteDaten = {
+  '@context': 'https://schema.org',
+  '@graph': [organisation, brotkrumenListe, artikelObjekt].filter(Boolean),
 };
 ---
 
@@ -46,22 +118,35 @@ const organisation = {
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical.href} />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {
+      !noindex && (
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+      )
+    }
 
     <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
     <meta name="theme-color" content="#000000" />
 
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={artikel ? 'article' : 'website'} />
     <meta property="og:site_name" content="adept&" />
     <meta property="og:locale" content="de_DE" />
     <meta property="og:title" content={seitentitel} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical.href} />
-    <meta property="og:image" content={ogImage.href} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content={seitenbild?.alt ?? `${site.name} ${site.region}`} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={seitentitel} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
 
     <link rel="sitemap" href={withBase('/sitemap-index.xml')} />
 
-    <script type="application/ld+json" is:inline set:html={JSON.stringify(organisation)} />
+    <script
+      type="application/ld+json"
+      is:inline
+      set:html={JSON.stringify(strukturierteDaten)}
+    />
 
     <!-- Schaltet das Einblenden beim Scrollen frei. Steht im <head>, damit
          kein Aufblitzen entsteht, und ist bewusst inline: laeuft kein

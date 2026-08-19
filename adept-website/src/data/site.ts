@@ -5,7 +5,7 @@ export const site = {
   claim: 'Beratung. Software. Integration.',
   subclaim: 'Maßgeschneiderte ERP- & SAP-Lösungen für den Mittelstand.',
   description:
-    'adept& verbindet Managementberatung mit individueller Softwareentwicklung: Wir analysieren das operative Problem und bauen die Lösung – eingebettet in Ihr bestehendes ERP- oder SAP-System.',
+    'Managementberatung und individuelle Softwareentwicklung aus einer Hand: adept& analysiert Ihr operatives Problem und baut die Lösung ins bestehende ERP-System.',
 } as const;
 
 /** Die vier Kernleistungen aus dem Unternehmensprofil. */

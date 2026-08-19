@@ -52,7 +52,14 @@ const currentPath = Astro.url.pathname;
     </a>
 
     <!-- Hauptnavigation ab lg -->
-    <nav class="hidden lg:block ml-6" aria-label="Hauptnavigation">
+    {/*
+      Die ausgeschriebene Navigation erscheint erst ab xl. Mit sechs Punkten
+      passte sie bei 1024 px nicht mehr neben Logo und Schaltflaeche und schob
+      die Leiste 47 px ueber den Rand. Zwischen 1024 und 1280 px traegt das
+      vollflaechige Menue die Navigation - der Knopf dafuer steht auf jeder
+      Breite links.
+    */}
+    <nav class="hidden xl:block ml-6" aria-label="Hauptnavigation">
       <ul class="flex items-center gap-1">
         {
           mainNav.map((item) => {
