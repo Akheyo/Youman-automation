@@ -2,7 +2,7 @@
 import Logo from './Logo.astro';
 import { mainNav, footerLegalNav } from '../data/navigation';
 import { withBase, isActive } from '../lib/url';
-import { kontakt } from '../data/kontakt';
+import { formularBereit } from '../data/kontakt';
 
 const currentPath = Astro.url.pathname;
 
@@ -12,7 +12,7 @@ const currentPath = Astro.url.pathname;
   Endpunkt gesetzt ist, zeigt die Schaltflaeche deshalb auf den Kopf der
   Kontaktseite, wo die Terminbuchung steht.
 */
-const kontaktZiel = kontakt.formularEndpunkt ? '/kontakt#formular' : '/kontakt';
+const kontaktZiel = formularBereit ? '/kontakt#formular' : '/kontakt';
 ---
 
 <header

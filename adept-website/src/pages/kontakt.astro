@@ -5,7 +5,7 @@ import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import PlaceholderNote from '../components/PlaceholderNote.astro';
 import Button from '../components/Button.astro';
-import { kontakt } from '../data/kontakt';
+import { kontakt, formularBereit } from '../data/kontakt';
 import { withBase } from '../lib/url';
 
 const felder = [
@@ -110,7 +110,7 @@ const feldKlasse =
       <div id="formular">
         <SectionHeading as="h2" title="Nachricht senden" />
         {
-          kontakt.formularEndpunkt ? (
+          formularBereit ? (
             <form
               action={kontakt.formularEndpunkt}
               method="post"

@@ -14,16 +14,25 @@ const ausUmgebung = (name: string, vorgabe: string | null = null): string | null
   return wert ? wert : vorgabe;
 };
 
-/**
- * Terminbuchung über Google Kalender. Vom Kunden geliefert und öffentlich –
- * deshalb als Vorgabe hier statt als Variable. Die Umgebungsvariable
- * KONTAKT_TERMINLINK überschreibt sie weiterhin.
+/*
+ * Freigegebene Kontaktdaten. Sie stehen ohnehin öffentlich auf der Seite und
+ * gehören später ins Impressum – als Vorgabe hier hinterlegt, damit dafür
+ * nichts eingerichtet werden muss. Die jeweilige Umgebungsvariable
+ * überschreibt sie weiterhin.
  */
+const EMAIL = 'info@adeptandpartners.de';
+const TELEFON = '+49 155 67541365';
 const TERMINLINK = 'https://calendar.app.google/y5qSCJaxnksqtutT7';
 
+/**
+ * Web3Forms nimmt die Anfrage entgegen. Die Adresse ist bei allen Konten
+ * dieselbe; unterschieden wird über den Zugangsschlüssel.
+ */
+const ENDPUNKT = 'https://api.web3forms.com/submit';
+
 export const kontakt = {
-  email: ausUmgebung('KONTAKT_EMAIL'),
-  telefon: ausUmgebung('KONTAKT_TELEFON'),
+  email: ausUmgebung('KONTAKT_EMAIL', EMAIL),
+  telefon: ausUmgebung('KONTAKT_TELEFON', TELEFON),
   terminlink: ausUmgebung('KONTAKT_TERMINLINK', TERMINLINK),
 
   /**
@@ -38,7 +47,7 @@ export const kontakt = {
    * Beide sind für kleine Mengen kostenlos und beide antworten auf einen
    * POST mit JSON, was die Rückmeldung ohne Seitenwechsel möglich macht.
    */
-  formularEndpunkt: ausUmgebung('FORMULAR_ENDPUNKT'),
+  formularEndpunkt: ausUmgebung('FORMULAR_ENDPUNKT', ENDPUNKT),
 
   /**
    * Nur für Web3Forms: der Zugangsschlüssel wandert als verstecktes Feld mit.
@@ -49,4 +58,17 @@ export const kontakt = {
 
 export const hatKontaktdaten = Boolean(
   kontakt.email || kontakt.telefon || kontakt.terminlink,
+);
+
+/**
+ * Web3Forms weist jede Anfrage ohne gültigen Zugangsschlüssel ab. Solange er
+ * fehlt, bleibt das Formular deshalb ausgeblendet: ein sichtbares Formular,
+ * dessen Absenden zuverlässig fehlschlägt, ist schlechter als ein ehrlicher
+ * Hinweis. Bei Formspree steckt die Kennung in der Adresse, dort entfällt
+ * die Prüfung.
+ */
+const brauchtSchluessel = kontakt.formularEndpunkt?.includes('web3forms.com') ?? false;
+
+export const formularBereit = Boolean(
+  kontakt.formularEndpunkt && (!brauchtSchluessel || kontakt.formularSchluessel),
 );

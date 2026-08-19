@@ -5,6 +5,7 @@ import Footer from '../components/Footer.astro';
 import { withBase } from '../lib/url';
 import { bild } from '../lib/images';
 import { site } from '../data/site';
+import { kontakt } from '../data/kontakt';
 import type { BildKey } from '../data/images';
 
 interface Props {
@@ -68,6 +69,22 @@ const organisation = {
     'Logistiksoftware',
     'Warenwirtschaft',
   ],
+  // Nur aufnehmen, was tatsächlich hinterlegt ist. Leere Felder in
+  // strukturierten Daten sind schlechter als fehlende.
+  ...(kontakt.email ? { email: kontakt.email } : {}),
+  ...(kontakt.telefon ? { telephone: kontakt.telefon } : {}),
+  ...(kontakt.email || kontakt.telefon
+    ? {
+        contactPoint: {
+          '@type': 'ContactPoint',
+          contactType: 'sales',
+          areaServed: 'DE',
+          availableLanguage: 'German',
+          ...(kontakt.email ? { email: kontakt.email } : {}),
+          ...(kontakt.telefon ? { telephone: kontakt.telefon } : {}),
+        },
+      }
+    : {}),
 };
 
 // Der Brotkrumenpfad enthält die aktuelle Seite als letztes Glied – so
