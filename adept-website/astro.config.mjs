@@ -25,7 +25,23 @@ export default defineConfig({
   base: BASE,
   trailingSlash: 'ignore',
   output: 'static',
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      /*
+       * Seiten, die auf noindex stehen, gehoeren nicht in die Sitemap. Beides
+       * zugleich ist ein Widerspruch: die Sitemap bittet um Indexierung, das
+       * robots-Meta verbietet sie. Die Google Search Console meldet das als
+       * "Uebermittelte URL als noindex gekennzeichnet".
+       *
+       * Impressum und Datenschutz stehen auf noindex, solange dort
+       * Platzhalter statt Rechtstexten steht - eine Seite mit dem Hinweis
+       * "Impressum fehlt noch" hat in der Suche nichts verloren. Sobald die
+       * Texte da sind, koennen beide hier und in der jeweiligen Seite
+       * freigegeben werden.
+       */
+      filter: (seite) => !/\/(impressum|datenschutz)\/?$/.test(seite),
+    }),
+  ],
   vite: {
     // Cast nötig: @tailwindcss/vite bündelt eigene Vite-Typen, die nicht
     // deckungsgleich mit denen von Astro sind. Zur Laufzeit unproblematisch.
