@@ -20,6 +20,7 @@ const offen = news.filter((item) => item.platzhalter);
   <PageHeader kicker="News" bild="material" title="Aktuelle Themen" breadcrumb={[{ label: 'Home', href: '/' }]} />
 
   <Section>
+    <h2 class="sr-only">Veröffentlichte Beiträge</h2>
     <ul class="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
       {
         veroeffentlicht.map((item, index) => (
@@ -30,6 +31,7 @@ const offen = news.filter((item) => item.platzhalter);
               kicker={item.kicker}
               date={item.date}
               excerpt={item.excerpt}
+              bild={item.bild}
               index={index}
             />
           </li>

@@ -27,14 +27,18 @@ export type NewsItem = {
  */
 export const news: NewsItem[] = [
   {
-    slug: 'platzhalter-2',
-    title: 'Platzhalter – Thema folgt',
-    date: null,
-    kicker: 'Platzhalter',
+    slug: 'logistik-2026-kostendruck-automatisierung',
+    title: 'Logistik 2026: Kostendruck als Treiber für pragmatische Automatisierung',
+    // Datum der Veröffentlichung auf dieser Seite, nicht das der Quellen.
+    date: '2026-08-19',
+    kicker: 'Branche',
     excerpt:
-      'Diese Kachel ist noch nicht befüllt. Inhalt, Titel und Bild werden nachgeliefert.',
-    href: '/news',
-    platzhalter: true,
+      'Nicht fehlende Technologie ist das Problem, sondern der Einsatz ohne Kosten-Nutzen-Rechnung. Was aktuelle Branchenanalysen für produktionsnahe und logistikintensive Betriebe bedeuten.',
+    href: '/news/logistik-2026-kostendruck-automatisierung',
+    platzhalter: false,
+    // Vorläufig das Lagermotiv aus dem Register. Wird gegen das gelieferte
+    // Bild getauscht, sobald es vorliegt.
+    bild: 'logistik',
   },
   {
     slug: 'platzhalter-3',
