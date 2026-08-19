@@ -59,6 +59,18 @@ jobs:
         env:
           SITE_URL: ${{ steps.pages.outputs.origin }}
           SITE_BASE: ${{ steps.pages.outputs.base_path }}
+          # Kontaktdaten und Formularanbindung kommen aus den Repository-
+          # Variablen, damit sie ohne Codeaenderung gesetzt werden koennen:
+          # Settings, Secrets and variables, Actions, Variables.
+          # Nicht gesetzte Werte sind leer; die Seite weist die Stelle dann
+          # sichtbar als Platzhalter aus.
+          KONTAKT_EMAIL: ${{ vars.KONTAKT_EMAIL }}
+          KONTAKT_TELEFON: ${{ vars.KONTAKT_TELEFON }}
+          KONTAKT_TERMINLINK: ${{ vars.KONTAKT_TERMINLINK }}
+          FORMULAR_ENDPUNKT: ${{ vars.FORMULAR_ENDPUNKT }}
+          # Als Secret, weil der Schluessel im ausgelieferten HTML steht und
+          # nicht zusaetzlich in der Protokollausgabe auftauchen soll.
+          FORMULAR_SCHLUESSEL: ${{ secrets.FORMULAR_SCHLUESSEL }}
         run: npm run build
 
       - uses: actions/upload-pages-artifact@v3

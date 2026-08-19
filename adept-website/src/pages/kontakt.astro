@@ -4,41 +4,40 @@ import PageHeader from '../components/PageHeader.astro';
 import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import PlaceholderNote from '../components/PlaceholderNote.astro';
-
-/**
- * GitHub Pages liefert nur statische Dateien – ein Formular braucht einen
- * externen Endpunkt (z. B. Formspree). Sobald die Adresse feststeht, hier
- * eintragen; das Formular unten wird dann automatisch gerendert.
- */
-const FORMULAR_ENDPUNKT: string | null = null;
-
-/** PLATZHALTER: echte Kontaktdaten sind noch nicht freigegeben. */
-const kontaktdaten = {
-  email: null as string | null,
-  telefon: null as string | null,
-  terminlink: null as string | null,
-};
+import { kontakt, hatKontaktdaten } from '../data/kontakt';
+import { withBase } from '../lib/url';
 
 const felder = [
   { id: 'name', label: 'Name', type: 'text', autocomplete: 'name', required: true },
-  { id: 'unternehmen', label: 'Unternehmen', type: 'text', autocomplete: 'organization', required: true },
+  {
+    id: 'unternehmen',
+    label: 'Unternehmen',
+    type: 'text',
+    autocomplete: 'organization',
+    required: true,
+  },
   { id: 'email', label: 'E-Mail-Adresse', type: 'email', autocomplete: 'email', required: true },
   { id: 'telefon', label: 'Telefon (optional)', type: 'tel', autocomplete: 'tel', required: false },
 ] as const;
+
+const brotkrumen = [{ label: 'Home', href: '/' }];
+
+const feldKlasse =
+  'mt-2 block min-h-11 w-full border border-line bg-surface px-4 py-3 text-ink transition-colors duration-200 focus:border-accent';
 ---
 
 <Base
   title="Kontakt"
-  description="Schildern Sie uns Ihren operativen Engpass – wir melden uns bei Ihnen."
+  description="Schildern Sie uns Ihren operativen Engpass – wir melden uns mit einer ersten Einschätzung."
   bild="buero"
-  breadcrumb={[{ label: 'Home', href: '/' }]}
+  breadcrumb={brotkrumen}
 >
   <PageHeader
     kicker="Kontakt"
     bild="buero"
     title="Sprechen wir über Ihren Prozess"
     lead="Beschreiben Sie kurz, wo es im Tagesgeschäft klemmt und welches ERP-System im Einsatz ist. Wir melden uns mit einer ersten Einschätzung."
-    breadcrumb={[{ label: 'Home', href: '/' }]}
+    breadcrumb={brotkrumen}
   />
 
   <Section>
@@ -46,30 +45,43 @@ const felder = [
       <div>
         <SectionHeading as="h2" title="Direkter Draht" />
         {
-          kontaktdaten.email || kontaktdaten.telefon || kontaktdaten.terminlink ? (
+          hatKontaktdaten ? (
             <dl class="mt-8 space-y-6">
-              {kontaktdaten.email && (
+              {kontakt.email && (
                 <div>
                   <dt class="text-sm font-semibold text-ink">E-Mail</dt>
                   <dd class="mt-1">
                     <a
-                      href={`mailto:${kontaktdaten.email}`}
+                      href={`mailto:${kontakt.email}`}
                       class="inline-flex min-h-11 items-center text-accent hover:text-accent-hover transition-colors duration-200"
                     >
-                      {kontaktdaten.email}
+                      {kontakt.email}
                     </a>
                   </dd>
                 </div>
               )}
-              {kontaktdaten.telefon && (
+              {kontakt.telefon && (
                 <div>
                   <dt class="text-sm font-semibold text-ink">Telefon</dt>
                   <dd class="mt-1">
                     <a
-                      href={`tel:${kontaktdaten.telefon.replace(/\s/g, '')}`}
+                      href={`tel:${kontakt.telefon.replace(/[^\d+]/g, '')}`}
                       class="inline-flex min-h-11 items-center text-accent hover:text-accent-hover transition-colors duration-200"
                     >
-                      {kontaktdaten.telefon}
+                      {kontakt.telefon}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              {kontakt.terminlink && (
+                <div>
+                  <dt class="text-sm font-semibold text-ink">Termin</dt>
+                  <dd class="mt-1">
+                    <a
+                      href={kontakt.terminlink}
+                      class="inline-flex min-h-11 items-center text-accent hover:text-accent-hover transition-colors duration-200"
+                    >
+                      Gespräch direkt buchen
                     </a>
                   </dd>
                 </div>
@@ -80,8 +92,11 @@ const felder = [
               <PlaceholderNote title="Platzhalter – Kontaktdaten fehlen noch">
                 <p>
                   E-Mail-Adresse, Telefonnummer und ein möglicher Terminbuchungs-Link sind noch
-                  nicht freigegeben. Sie werden in
-                  <code class="px-1">src/pages/kontakt.astro</code> eingetragen.
+                  nicht hinterlegt. Sie werden als Variablen
+                  <code class="px-1">KONTAKT_EMAIL</code>,<code class="px-1">KONTAKT_TELEFON</code>
+                  und <code class="px-1">KONTAKT_TERMINLINK</code> gesetzt – in GitHub unter
+                  Settings, Secrets and variables, Actions, Variables. Ein Codeeingriff ist dafür
+                  nicht nötig.
                 </p>
               </PlaceholderNote>
             </div>
@@ -93,8 +108,18 @@ const felder = [
       <div id="formular">
         <SectionHeading as="h2" title="Nachricht senden" />
         {
-          FORMULAR_ENDPUNKT ? (
-            <form action={FORMULAR_ENDPUNKT} method="post" class="mt-8 space-y-6">
+          kontakt.formularEndpunkt ? (
+            <form
+              action={kontakt.formularEndpunkt}
+              method="post"
+              class="mt-8 space-y-6"
+              data-kontaktformular
+            >
+              {kontakt.formularSchluessel && (
+                <input type="hidden" name="access_key" value={kontakt.formularSchluessel} />
+              )}
+              <input type="hidden" name="_subject" value="Anfrage über adeptandpartners.de" />
+
               {felder.map((feld) => (
                 <div>
                   <label for={feld.id} class="block text-sm font-semibold text-ink">
@@ -107,10 +132,11 @@ const felder = [
                     type={feld.type}
                     autocomplete={feld.autocomplete}
                     required={feld.required}
-                    class="mt-2 block min-h-11 w-full border border-line bg-surface px-4 py-3 text-ink transition-colors duration-200 focus:border-accent"
+                    class={feldKlasse}
                   />
                 </div>
               ))}
+
               <div>
                 <label for="nachricht" class="block text-sm font-semibold text-ink">
                   Ihre Situation <span aria-hidden="true">*</span>
@@ -127,26 +153,72 @@ const felder = [
                   class="mt-2 block w-full border border-line bg-surface px-4 py-3 text-ink transition-colors duration-200 focus:border-accent"
                 />
               </div>
+
+              {/*
+                Honigtopf gegen Bots. Kein `display:none`: manche Bots
+                erkennen das und lassen das Feld dann bewusst leer. Es steht
+                stattdessen ausserhalb des sichtbaren Bereichs, ist fuer
+                Screenreader ausgeblendet und aus der Tabreihenfolge genommen.
+              */}
+              <div class="absolute left-[-9999px]" aria-hidden="true">
+                <label for="webseite">Dieses Feld bitte frei lassen</label>
+                <input id="webseite" name="webseite" type="text" tabindex="-1" autocomplete="off" />
+              </div>
+
+              <div class="flex gap-3">
+                <input
+                  id="einwilligung"
+                  name="einwilligung"
+                  type="checkbox"
+                  required
+                  class="mt-1 size-5 shrink-0 border border-line accent-accent"
+                />
+                <label for="einwilligung" class="text-sm text-ink-soft">
+                  Ich habe die{' '}
+                  <a href={withBase('/datenschutz')} class="text-accent">
+                    Datenschutzerklärung
+                  </a>{' '}
+                  zur Kenntnis genommen und bin damit einverstanden, dass meine Angaben zur
+                  Bearbeitung meiner Anfrage verarbeitet werden.
+                </label>
+              </div>
+
               <button
                 type="submit"
-                class="inline-flex min-h-11 items-center justify-center bg-accent px-6 py-3 font-medium text-white transition-colors duration-200 hover:bg-accent-hover cursor-pointer"
+                class="druckt-sich inline-flex min-h-11 items-center justify-center bg-accent px-6 py-3 font-medium text-white transition-colors duration-200 hover:bg-accent-hover cursor-pointer"
+                data-absenden
               >
                 Nachricht senden
               </button>
+
+              {/*
+                Rueckmeldung ohne Seitenwechsel. Das Feld ist immer im Markup,
+                damit ein Screenreader die spaetere Aenderung ankuendigen kann -
+                ein erst dann eingefuegtes Element wird nicht zuverlaessig
+                vorgelesen.
+              */}
+              <p
+                class="hidden border-l-2 border-accent bg-canvas px-5 py-4 text-sm text-ink"
+                role="status"
+                aria-live="polite"
+                data-rueckmeldung
+              />
             </form>
           ) : (
             <div class="mt-8">
-              <PlaceholderNote title="Platzhalter – Formular noch nicht angebunden">
+              <PlaceholderNote title="Formular wartet nur noch auf eine Adresse">
                 <p>
-                  GitHub Pages liefert ausschließlich statische Dateien und kann selbst keine
-                  Formulare entgegennehmen. Offen ist, ob ein externer Dienst (z. B. Formspree)
-                  eingebunden wird oder ob E-Mail, Telefon und ein Terminbuchungs-Link genügen.
+                  Das vollständige Formular ist gebaut und geprüft – Beschriftungen, Pflichtfelder,
+                  Einwilligung, Spamschutz und Rückmeldung ohne Seitenwechsel. Es fehlt allein die
+                  Adresse, an die gesendet wird: GitHub Pages liefert nur statische Dateien und kann
+                  selbst nichts entgegennehmen.
                 </p>
                 <p class="mt-3">
-                  Das vollständige, barrierefreie Formular ist bereits implementiert. Sobald die
-                  Endpunkt-URL feststeht, wird sie in
-                  <code class="px-1">FORMULAR_ENDPUNKT</code> eingetragen und das Formular erscheint
-                  an dieser Stelle.
+                  Konto bei <strong>Formspree</strong> oder <strong>Web3Forms</strong> anlegen, die
+                  Adresse als Variable <code class="px-1">FORMULAR_ENDPUNKT</code> hinterlegen – in
+                  GitHub unter Settings, Secrets and variables, Actions, Variables. Bei Web3Forms
+                  zusätzlich <code class="px-1">FORMULAR_SCHLUESSEL</code>. Danach erscheint das
+                  Formular beim nächsten Build von selbst.
                 </p>
               </PlaceholderNote>
             </div>
@@ -156,3 +228,76 @@ const felder = [
     </div>
   </Section>
 </Base>
+
+<script>
+  /*
+    Sendet das Formular im Hintergrund, damit die Person auf der Seite bleibt
+    und die Rueckmeldung dort erscheint.
+
+    Ohne JavaScript passiert nichts davon: dann greift das normale
+    action/method des Formulars, der Dienst nimmt die Anfrage entgegen und
+    zeigt seine eigene Bestaetigungsseite. Der Weg funktioniert also in jedem
+    Fall - das Skript macht ihn nur angenehmer.
+  */
+  const formular = document.querySelector<HTMLFormElement>('[data-kontaktformular]');
+
+  if (formular) {
+    const knopf = formular.querySelector<HTMLButtonElement>('[data-absenden]');
+    const rueckmeldung = formular.querySelector<HTMLParagraphElement>('[data-rueckmeldung]');
+    const knopfText = knopf?.textContent ?? 'Nachricht senden';
+
+    const melden = (text: string) => {
+      if (!rueckmeldung) return;
+      rueckmeldung.textContent = text;
+      rueckmeldung.classList.remove('hidden');
+    };
+
+    formular.addEventListener('submit', async (ereignis) => {
+      // Der Browser hat die Pflichtfelder bereits geprueft.
+      ereignis.preventDefault();
+
+      // Wer den Honigtopf ausgefuellt hat, ist kein Mensch. Still abbrechen
+      // und Erfolg vortaeuschen - eine Fehlermeldung wuerde dem Bot verraten,
+      // woran es lag.
+      const honig = formular.querySelector<HTMLInputElement>('[name="webseite"]');
+      if (honig?.value) {
+        melden('Vielen Dank. Ihre Nachricht ist eingegangen.');
+        formular.reset();
+        return;
+      }
+
+      if (knopf) {
+        knopf.disabled = true;
+        knopf.textContent = 'Wird gesendet …';
+      }
+
+      try {
+        const antwort = await fetch(formular.action, {
+          method: 'POST',
+          body: new FormData(formular),
+          headers: { Accept: 'application/json' },
+        });
+
+        if (antwort.ok) {
+          melden(
+            'Vielen Dank. Ihre Nachricht ist eingegangen – wir melden uns in der Regel innerhalb eines Werktages.',
+          );
+          formular.reset();
+        } else {
+          melden(
+            `Das hat nicht geklappt (Fehler ${antwort.status}). Bitte versuchen Sie es erneut oder schreiben Sie uns direkt per E-Mail.`,
+          );
+        }
+      } catch {
+        melden(
+          'Die Nachricht konnte nicht gesendet werden – vermutlich ist die Verbindung unterbrochen. Bitte versuchen Sie es erneut oder schreiben Sie uns direkt per E-Mail.',
+        );
+      } finally {
+        if (knopf) {
+          knopf.disabled = false;
+          knopf.textContent = knopfText;
+        }
+      }
+    });
+  }
+</script>
