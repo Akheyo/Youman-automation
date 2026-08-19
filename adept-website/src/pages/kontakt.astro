@@ -4,7 +4,8 @@ import PageHeader from '../components/PageHeader.astro';
 import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import PlaceholderNote from '../components/PlaceholderNote.astro';
-import { kontakt, hatKontaktdaten } from '../data/kontakt';
+import Button from '../components/Button.astro';
+import { kontakt } from '../data/kontakt';
 import { withBase } from '../lib/url';
 
 const felder = [
@@ -44,8 +45,23 @@ const feldKlasse =
     <div class="grid gap-12 lg:grid-cols-2 lg:gap-20">
       <div>
         <SectionHeading as="h2" title="Direkter Draht" />
+        {kontakt.terminlink && (
+          <div class="mt-8 border-l-2 border-accent bg-canvas p-6">
+            <p class="font-serif text-xl text-ink">Am schnellsten geht es im Gespräch.</p>
+            <p class="mt-2 text-sm text-ink-soft">
+              Suchen Sie sich direkt einen freien Termin aus – 30 Minuten, unverbindlich.
+            </p>
+            <Button href={kontakt.terminlink} class="mt-5">
+              Termin auswählen
+            </Button>
+            <p class="mt-4 text-xs text-muted-fg">
+              Die Terminauswahl öffnet Google Kalender. Dabei werden Daten an Google übertragen.
+            </p>
+          </div>
+        )}
+
         {
-          hatKontaktdaten ? (
+          kontakt.email || kontakt.telefon ? (
             <dl class="mt-8 space-y-6">
               {kontakt.email && (
                 <div>
@@ -73,30 +89,16 @@ const feldKlasse =
                   </dd>
                 </div>
               )}
-              {kontakt.terminlink && (
-                <div>
-                  <dt class="text-sm font-semibold text-ink">Termin</dt>
-                  <dd class="mt-1">
-                    <a
-                      href={kontakt.terminlink}
-                      class="inline-flex min-h-11 items-center text-accent hover:text-accent-hover transition-colors duration-200"
-                    >
-                      Gespräch direkt buchen
-                    </a>
-                  </dd>
-                </div>
-              )}
             </dl>
           ) : (
             <div class="mt-8">
               <PlaceholderNote title="Platzhalter – Kontaktdaten fehlen noch">
                 <p>
-                  E-Mail-Adresse, Telefonnummer und ein möglicher Terminbuchungs-Link sind noch
-                  nicht hinterlegt. Sie werden als Variablen
-                  <code class="px-1">KONTAKT_EMAIL</code>,<code class="px-1">KONTAKT_TELEFON</code>
-                  und <code class="px-1">KONTAKT_TERMINLINK</code> gesetzt – in GitHub unter
-                  Settings, Secrets and variables, Actions, Variables. Ein Codeeingriff ist dafür
-                  nicht nötig.
+                  E-Mail-Adresse und Telefonnummer sind noch nicht hinterlegt. Sie werden als
+                  Variablen <code class="px-1">KONTAKT_EMAIL</code> und
+                  <code class="px-1">KONTAKT_TELEFON</code> gesetzt – in GitHub unter Settings,
+                  Secrets and variables, Actions, Variables. Ein Codeeingriff ist dafür nicht
+                  nötig.
                 </p>
               </PlaceholderNote>
             </div>

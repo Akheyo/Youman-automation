@@ -9,15 +9,22 @@
  * Stelle sichtbar als Platzhalter aus – es wird nichts erfunden.
  */
 
-const ausUmgebung = (name: string): string | null => {
+const ausUmgebung = (name: string, vorgabe: string | null = null): string | null => {
   const wert = process.env[name]?.trim();
-  return wert ? wert : null;
+  return wert ? wert : vorgabe;
 };
+
+/**
+ * Terminbuchung über Google Kalender. Vom Kunden geliefert und öffentlich –
+ * deshalb als Vorgabe hier statt als Variable. Die Umgebungsvariable
+ * KONTAKT_TERMINLINK überschreibt sie weiterhin.
+ */
+const TERMINLINK = 'https://calendar.app.google/y5qSCJaxnksqtutT7';
 
 export const kontakt = {
   email: ausUmgebung('KONTAKT_EMAIL'),
   telefon: ausUmgebung('KONTAKT_TELEFON'),
-  terminlink: ausUmgebung('KONTAKT_TERMINLINK'),
+  terminlink: ausUmgebung('KONTAKT_TERMINLINK', TERMINLINK),
 
   /**
    * Adresse, an die das Formular sendet.
