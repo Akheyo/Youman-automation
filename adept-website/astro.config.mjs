@@ -8,7 +8,16 @@ import tailwindcss from '@tailwindcss/vite';
 // Siehe README.md -> "Deployment".
 // `||` statt `??`: configure-pages liefert bei einer eigenen Domain einen
 // leeren String, der hier zu "/" werden muss.
-const SITE = process.env.SITE_URL || 'https://www.adeptandpartners.de';
+//
+// Solange "Enforce HTTPS" in den Pages-Einstellungen nicht aktiv ist, meldet
+// configure-pages die Adresse als http. Dieser Wert landet in den kanonischen
+// Links, in OpenGraph und in der Sitemap - Suchmaschinen bekaemen damit die
+// unverschluesselte Variante als offizielle Adresse. Das Schema wird deshalb
+// erzwungen; GitHub Pages liefert die eigene Domain ohnehin ueber https aus.
+const SITE = (process.env.SITE_URL || 'https://www.adeptandpartners.de').replace(
+  /^http:\/\//,
+  'https://',
+);
 const BASE = process.env.SITE_BASE || '/';
 
 export default defineConfig({
