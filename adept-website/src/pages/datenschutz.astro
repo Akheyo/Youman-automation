@@ -9,12 +9,23 @@ import PlaceholderNote from '../components/PlaceholderNote.astro';
  * Die technischen Fakten unten sind belastbar und helfen beim Erstellen der
  * Erklärung – sie ersetzen sie aber nicht.
  */
+/*
+ * Nachgemessen am ausgelieferten Stand, nicht aus dem Gedächtnis notiert:
+ * über alle 21 Seiten wurde jede Netzanfrage protokolliert, einschließlich
+ * der verzögert geladenen Bilder nach dem Scrollen. Ergebnis: keine einzige
+ * Anfrage an einen fremden Host, keine Cookies, kein Speicher im Browser.
+ *
+ * Diese Liste ist die Grundlage für die Erklärung, nicht die Erklärung
+ * selbst. Sie muss aktualisiert werden, sobald ein Dienst hinzukommt.
+ */
 const technischeFakten = [
-  'Hosting über GitHub Pages (GitHub Inc.) – dabei werden serverseitig Zugriffsdaten inkl. IP-Adresse verarbeitet. Ein Auftragsverarbeitungsvertrag bzw. die Rechtsgrundlage ist zu klären.',
-  'Schriften werden selbst gehostet (@fontsource). Es besteht keine Verbindung zur Google-Fonts-CDN.',
-  'Die Website setzt keine Cookies und bindet kein Analyse- oder Tracking-Werkzeug ein.',
-  'Es sind keine externen Inhalte eingebettet (kein YouTube, keine Kartendienste, keine Social-Media-Plug-ins).',
-  'Ein Kontaktformular ist derzeit nicht angebunden. Kommt ein externer Dienst hinzu, ist er hier zu ergänzen.',
+  'Hosting über GitHub Pages (GitHub Inc., USA). Serverseitig fallen dabei Zugriffsdaten einschließlich IP-Adresse an. Rechtsgrundlage und Vereinbarung zur Auftragsverarbeitung sind zu klären.',
+  'Schriften werden selbst ausgeliefert (@fontsource). Es besteht keine Verbindung zur Google-Fonts-CDN.',
+  'Die Website setzt keine Cookies und legt nichts im Browser ab – weder localStorage noch sessionStorage. Es ist kein Analyse- oder Tracking-Werkzeug eingebunden.',
+  'Beim bloßen Aufruf einer Seite wird nichts von Dritten nachgeladen: keine eingebetteten Videos, keine Kartendienste, keine Social-Media-Plug-ins, keine externen Schriften oder Skripte.',
+  'Das Kontaktformular sendet an Web3Forms (api.web3forms.com). Übertragen werden Name, Unternehmen, E-Mail-Adresse, Telefonnummer und Nachricht – und nur dann, wenn das Formular abgeschickt wird. Rechtsgrundlage, Sitz des Anbieters, Speicherdauer und Vereinbarung zur Auftragsverarbeitung sind zu klären.',
+  'Die Terminbuchung ist ein Verweis auf den Google Kalender (calendar.app.google). Der Aufruf erfolgt erst beim Klick; ab dort gelten die Bedingungen von Google. Vor dem Klick wird nichts an Google übertragen.',
+  'Angaben zu Telefon und E-Mail auf der Kontaktseite sind reine Verweise (tel: und mailto:) und lösen von sich aus keine Übertragung aus.',
 ];
 ---
 
@@ -28,7 +39,8 @@ const technischeFakten = [
         und wird nicht generiert – sie muss von adept& bzw. der Rechtsberatung geliefert werden.
       </p>
       <p class="mt-3">
-        Der aktuelle technische Stand der Website, der in die Erklärung einfließen muss:
+        Der technische Stand der Website, nachgemessen am ausgelieferten Stand. Diese Angaben
+        müssen in die Erklärung einfließen:
       </p>
       <ul class="mt-3 list-disc space-y-2 pl-5">
         {technischeFakten.map((fakt) => <li>{fakt}</li>)}
