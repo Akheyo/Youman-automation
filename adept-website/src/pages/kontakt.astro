@@ -5,7 +5,7 @@ import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import PlaceholderNote from '../components/PlaceholderNote.astro';
 import Button from '../components/Button.astro';
-import { kontakt, formularBereit } from '../data/kontakt';
+import { kontakt, formularBereit, istWeb3Forms } from '../data/kontakt';
 import { withBase } from '../lib/url';
 
 const felder = [
@@ -120,7 +120,33 @@ const feldKlasse =
               {kontakt.formularSchluessel && (
                 <input type="hidden" name="access_key" value={kontakt.formularSchluessel} />
               )}
-              <input type="hidden" name="_subject" value="Anfrage über adeptandpartners.de" />
+              {/*
+                Der Betreff heisst je nach Dienst anders: Web3Forms liest
+                `subject`, Formspree `_subject`. Das falsche Feld wuerde als
+                gewoehnliche Angabe in der Mail landen statt als Betreff.
+              */}
+              <input
+                type="hidden"
+                name={istWeb3Forms ? 'subject' : '_subject'}
+                value="Anfrage über adeptandpartners.de"
+              />
+
+              {istWeb3Forms && (
+                <>
+                  {/*
+                    Erscheint als Absendername in der Benachrichtigung, damit
+                    im Postfach nicht jede Anfrage gleich aussieht.
+                  */}
+                  <input type="hidden" name="from_name" value="adeptandpartners.de" />
+                  {/*
+                    Bot-Pruefung von Web3Forms: ein angehaktes Kaestchen laesst
+                    der Dienst serverseitig durchfallen. Wichtig, weil der
+                    eigene Honigtopf unten nur im Skript geprueft wird - ohne
+                    JavaScript greift allein diese Pruefung.
+                  */}
+                  <input type="checkbox" name="botcheck" class="hidden" tabindex="-1" aria-hidden="true" />
+                </>
+              )}
 
               {felder.map((feld) => (
                 <div>

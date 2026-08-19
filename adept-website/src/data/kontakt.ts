@@ -30,6 +30,21 @@ const TERMINLINK = 'https://calendar.app.google/y5qSCJaxnksqtutT7';
  */
 const ENDPUNKT = 'https://api.web3forms.com/submit';
 
+/**
+ * Zugangsschlüssel für Web3Forms.
+ *
+ * Er steht hier im Klartext, und das ist kein Versehen: Web3Forms arbeitet
+ * im Browser, der Schlüssel landet also ohnehin im ausgelieferten HTML und
+ * ist damit für jeden lesbar, der die Seite aufruft. Ihn in ein Secret zu
+ * legen würde daran nichts ändern – es sähe nur sicherer aus.
+ *
+ * Der wirksame Schutz liegt woanders: In den Web3Forms-Einstellungen ist die
+ * Domain hinterlegt, von der gesendet werden darf. Wird der Schlüssel
+ * missbraucht, lässt er sich dort in einer Minute austauschen; dann greift
+ * FORMULAR_SCHLUESSEL als Variable, ohne dass diese Zeile angefasst wird.
+ */
+const SCHLUESSEL = 'c069cea1-cb4a-4239-bdf7-598361f989d5';
+
 export const kontakt = {
   email: ausUmgebung('KONTAKT_EMAIL', EMAIL),
   telefon: ausUmgebung('KONTAKT_TELEFON', TELEFON),
@@ -53,7 +68,7 @@ export const kontakt = {
    * Nur für Web3Forms: der Zugangsschlüssel wandert als verstecktes Feld mit.
    * Bei Formspree leer lassen.
    */
-  formularSchluessel: ausUmgebung('FORMULAR_SCHLUESSEL'),
+  formularSchluessel: ausUmgebung('FORMULAR_SCHLUESSEL', SCHLUESSEL),
 } as const;
 
 export const hatKontaktdaten = Boolean(
@@ -67,7 +82,9 @@ export const hatKontaktdaten = Boolean(
  * Hinweis. Bei Formspree steckt die Kennung in der Adresse, dort entfällt
  * die Prüfung.
  */
-const brauchtSchluessel = kontakt.formularEndpunkt?.includes('web3forms.com') ?? false;
+export const istWeb3Forms = kontakt.formularEndpunkt?.includes('web3forms.com') ?? false;
+
+const brauchtSchluessel = istWeb3Forms;
 
 export const formularBereit = Boolean(
   kontakt.formularEndpunkt && (!brauchtSchluessel || kontakt.formularSchluessel),
