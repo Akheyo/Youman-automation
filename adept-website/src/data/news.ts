@@ -36,9 +36,7 @@ export const news: NewsItem[] = [
       'Nicht fehlende Technologie ist das Problem, sondern der Einsatz ohne Kosten-Nutzen-Rechnung. Was aktuelle Branchenanalysen für produktionsnahe und logistikintensive Betriebe bedeuten.',
     href: '/news/logistik-2026-kostendruck-automatisierung',
     platzhalter: false,
-    // Vorläufig das Lagermotiv aus dem Register. Wird gegen das gelieferte
-    // Bild getauscht, sobald es vorliegt.
-    bild: 'logistik',
+    bild: 'versandzentrum',
   },
   {
     slug: 'platzhalter-3',
