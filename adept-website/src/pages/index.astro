@@ -42,15 +42,56 @@ const ueberKacheln = [
   <HeroVideo
     title={site.name}
     subtitle={site.region}
+    claim={site.claim}
     videoSrc="/hero.mp4"
     poster="/hero-poster.jpg"
     playbackRate={0.85}
+    sprungziel="#einordnung"
   />
 
+  {/*
+    ---------------------------------------------------- Einordnung
+
+    Der erste Bildschirm zeigte bisher nur den Namen. Wer adept& nicht kennt,
+    wusste danach immer noch nicht, womit das Unternehmen sein Geld verdient –
+    die Erklaerung stand erst weit unten in "Wir beraten, wo andere nur
+    liefern". Dieses Band schliesst die Luecke: zwei Saetze, direkt unter dem
+    Hero, ohne dem ausfuehrlichen Abschnitt etwas wegzunehmen.
+
+    Kein <Section>, sondern eigenes Markup: die Standardhoehe waere fuer so
+    wenig Text zu viel. Das Band soll knapp wirken, nicht wie ein Kapitel.
+  */}
+  <section id="einordnung" class="border-y border-line bg-surface py-14 md:py-20">
+    <div class="container-page">
+      <div
+        class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-end lg:gap-20"
+        data-reveal
+      >
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Was wir machen</p>
+          <h2 class="mt-4 text-3xl sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+            Beratung und Software aus einer Hand – für den Mittelstand.
+          </h2>
+        </div>
+        <p class="prose-measure text-lg text-ink-soft lg:text-xl">
+          Wir analysieren, woran es im Betrieb hakt, und bauen die Lösung, die es behebt. Sie läuft
+          in Ihrem bestehenden ERP- oder SAP-System – nicht daneben.
+        </p>
+      </div>
+
+      {/* Die vier Leistungen als reine Wortmarke, ohne Kacheln: weiter unten
+          stehen dieselben vier Punkte ausfuehrlich. Hier genuegt der Umriss. */}
+      <ul
+        class="mt-10 flex flex-wrap gap-x-8 gap-y-3 border-t border-line pt-6 font-sans text-xs uppercase tracking-[0.16em] text-ink-soft sm:text-sm md:mt-12"
+        data-reveal
+      >
+        {kernleistungen.map((leistung) => <li>{leistung.title}</li>)}
+      </ul>
+    </div>
+  </section>
+
   {/* ---------------------------------------------------- Aktuelle Themen */}
-  {/* id: Ziel des Scroll-Pfeils im Hero. Nur als Rueckfall ohne JavaScript
-      im Einsatz, sonst scrollt das Skript ohne Anker in der Adresszeile. */}
-  <Section id="themen" tone="canvas">
+  <Section tone="canvas">
     <div class="flex flex-wrap items-end justify-between gap-6">
       <SectionHeading kicker="Aktuelles" title="Aktuelle Themen" />
       <Button href="/news" variant="secondary">Alle Beiträge</Button>

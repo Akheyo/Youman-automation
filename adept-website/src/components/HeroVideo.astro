@@ -6,6 +6,12 @@ interface Props {
   title: string;
   subtitle?: string;
   /**
+   * Eine Zeile darunter, die sagt, worum es geht. Der Name allein beantwortet
+   * das nicht – wer zum ersten Mal hier landet, sieht sonst nur eine Marke.
+   * Bewusst kurz: alles Weitere steht im Abschnitt direkt unter dem Hero.
+   */
+  claim?: string;
+  /**
    * Pfad zum Hero-Video (z. B. "/hero.mp4"). Fehlt die Datei, wird nur das
    * Poster gezeigt und die Play/Pause-Steuerung entfällt.
    */
@@ -32,16 +38,24 @@ interface Props {
   titelImVideo?: boolean;
   /** Blendet den Platzhalter-Hinweis ein, solange kein echtes Video vorliegt. */
   platzhalter?: boolean;
+  /**
+   * Ziel des Scroll-Pfeils unten links. Muss die id eines Abschnitts auf
+   * derselben Seite sein. Wird nur ohne JavaScript wirklich als Anker
+   * benutzt – sonst scrollt das Skript und laesst die Adresse in Ruhe.
+   */
+  sprungziel?: string;
 }
 
 const {
   title,
   subtitle,
+  claim,
   videoSrc,
   poster,
   playbackRate = 1,
   titelImVideo = false,
   platzhalter = !videoSrc,
+  sprungziel = '#inhalt',
 } = Astro.props;
 
 // Reihenfolge: ausdrücklich gesetztes Poster, sonst das Foto aus dem
@@ -116,7 +130,7 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
   >
   </div>
   <div
-    class="absolute inset-0 -z-10 transition-opacity duration-500 bg-[radial-gradient(ellipse_72%_48%_at_50%_48%,rgba(0,0,0,0.66)_0%,rgba(0,0,0,0.48)_45%,rgba(0,0,0,0.15)_70%,rgba(0,0,0,0)_84%)]"
+    class="absolute inset-0 -z-10 transition-opacity duration-500 bg-[radial-gradient(ellipse_76%_58%_at_50%_50%,rgba(0,0,0,0.66)_0%,rgba(0,0,0,0.50)_45%,rgba(0,0,0,0.18)_70%,rgba(0,0,0,0)_86%)]"
     aria-hidden="true"
     data-hero-scrim={titelImVideo ? 'nur-pausiert' : undefined}
   >
@@ -136,6 +150,13 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
         </p>
       )
     }
+    {
+      claim && (
+        <p class="mx-auto mt-7 max-w-2xl font-sans text-xs uppercase leading-relaxed tracking-[0.14em] text-white sm:text-sm sm:tracking-[0.22em] md:mt-9 lg:text-base">
+          {claim}
+        </p>
+      )
+    }
   </div>
 
   <!-- Scroll-Hinweis, wie in der Referenz unten links.
@@ -145,7 +166,7 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
        Ziel ist der erste Abschnitt unter dem Hero – nicht #inhalt, denn
        <main> beginnt beim Hero selbst, der Sprung liefe ins Leere. -->
   <a
-    href="#themen"
+    href={sprungziel}
     data-hero-sprung
     class="absolute bottom-8 left-5 md:left-10 grid size-11 place-items-center bg-black/50 text-white hover:bg-black/70 transition-colors duration-200"
     aria-label="Zum Seiteninhalt springen"
