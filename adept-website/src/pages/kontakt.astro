@@ -106,7 +106,9 @@ const feldKlasse =
         }
       </div>
 
-      {/* Sprungziel der Schaltflaeche in der Kopfleiste. */}
+      {/* Die Kennung bleibt: sie dient als Sprungziel fuer Verweise von
+          aussen. Innerhalb der Seite wird sie nicht mehr angesteuert, damit
+          in der Adresszeile kein Anker auftaucht. */}
       <div id="formular">
         <SectionHeading as="h2" title="Nachricht senden" />
         {

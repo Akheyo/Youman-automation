@@ -29,8 +29,8 @@ import { withBase } from '../lib/url';
 
 // Inhalte für "Geschichte" und "Werte" liegen noch nicht vor.
 const ueberKacheln = [
-  { title: 'Geschichte', href: '/ueber-uns#geschichte', bild: 'architektur' as const },
-  { title: 'Werte', href: '/ueber-uns#werte', bild: 'gitter' as const },
+  { title: 'Geschichte', href: '/ueber-uns', bild: 'architektur' as const },
+  { title: 'Werte', href: '/ueber-uns', bild: 'gitter' as const },
 ];
 ---
 
@@ -48,7 +48,9 @@ const ueberKacheln = [
   />
 
   {/* ---------------------------------------------------- Aktuelle Themen */}
-  <Section tone="canvas">
+  {/* id: Ziel des Scroll-Pfeils im Hero. Nur als Rueckfall ohne JavaScript
+      im Einsatz, sonst scrollt das Skript ohne Anker in der Adresszeile. */}
+  <Section id="themen" tone="canvas">
     <div class="flex flex-wrap items-end justify-between gap-6">
       <SectionHeading kicker="Aktuelles" title="Aktuelle Themen" />
       <Button href="/news" variant="secondary">Alle Beiträge</Button>

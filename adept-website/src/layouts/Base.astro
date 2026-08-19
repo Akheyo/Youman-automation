@@ -184,7 +184,10 @@ const strukturierteDaten = {
 
     <Header />
 
-    <main id="inhalt" class="flex-1">
+    <!-- tabindex="-1": ohne das nehmen manche Browser den Fokus beim
+         Sprung nicht mit, die Tastatur bliebe oben stehen. Der Rahmen
+         entfaellt, weil hier kein Bedienelement fokussiert wird. -->
+    <main id="inhalt" tabindex="-1" class="flex-1 focus:outline-none">
       <slot />
     </main>
 

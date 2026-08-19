@@ -138,9 +138,15 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
     }
   </div>
 
-  <!-- Scroll-Hinweis, wie in der Referenz unten links -->
+  <!-- Scroll-Hinweis, wie in der Referenz unten links.
+       href bleibt als Rueckfall stehen, damit der Sprung auch ohne
+       JavaScript funktioniert. Das Skript unten faengt den Klick ab und
+       scrollt selbst, damit kein Anker in der Adresszeile landet.
+       Ziel ist der erste Abschnitt unter dem Hero – nicht #inhalt, denn
+       <main> beginnt beim Hero selbst, der Sprung liefe ins Leere. -->
   <a
-    href="#inhalt"
+    href="#themen"
+    data-hero-sprung
     class="absolute bottom-8 left-5 md:left-10 grid size-11 place-items-center bg-black/50 text-white hover:bg-black/70 transition-colors duration-200"
     aria-label="Zum Seiteninhalt springen"
   >
@@ -284,6 +290,28 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
         pausedByUser = true;
         video.pause();
       }
+    });
+  }
+
+  /* Der Pfeil scrollt selbst, statt den Anker zu benutzen. Damit bleibt die
+     Adresse sauber (/ statt /#themen). Das Ziel wird aus dem href gelesen,
+     der Rueckfall ohne JavaScript und das Skript koennen so nicht
+     auseinanderlaufen. Der Fokus wandert mit, sonst saesse die Tastatur
+     nach dem Sprung weiter im Hero. */
+  const sprung = document.querySelector<HTMLAnchorElement>('[data-hero-sprung]');
+  const ziel = sprung && document.querySelector<HTMLElement>(sprung.getAttribute('href') ?? '');
+
+  if (sprung && ziel) {
+    sprung.addEventListener('click', (ereignis) => {
+      // Neuer Tab, Mittelklick usw. dem Browser ueberlassen.
+      if (ereignis.defaultPrevented || ereignis.metaKey || ereignis.ctrlKey) return;
+      ereignis.preventDefault();
+      const sanft = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      ziel.scrollIntoView({ behavior: sanft ? 'smooth' : 'auto', block: 'start' });
+      // Abschnitte sind nicht von Haus aus fokussierbar; ohne das bliebe die
+      // Tastatur oben stehen und tabbte erneut durch den Hero.
+      if (!ziel.hasAttribute('tabindex')) ziel.setAttribute('tabindex', '-1');
+      ziel.focus({ preventScroll: true });
     });
   }
 </script>

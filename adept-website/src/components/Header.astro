@@ -2,17 +2,12 @@
 import Logo from './Logo.astro';
 import { mainNav, footerLegalNav } from '../data/navigation';
 import { withBase, isActive } from '../lib/url';
-import { formularBereit } from '../data/kontakt';
 
 const currentPath = Astro.url.pathname;
 
-/*
-  Ohne angebundenes Formular fuehrt der Sprung auf #formular in eine
-  Sackgasse: dort steht dann nur der Platzhalterhinweis. Solange kein
-  Endpunkt gesetzt ist, zeigt die Schaltflaeche deshalb auf den Kopf der
-  Kontaktseite, wo die Terminbuchung steht.
-*/
-const kontaktZiel = formularBereit ? '/kontakt#formular' : '/kontakt';
+// Adressen bleiben ohne Anker: /kontakt statt /kontakt#formular. Die
+// Kontaktseite fuehrt mit Terminbuchung, E-Mail und Telefon ohnehin sinnvoll
+// hin, das Formular steht direkt daneben.
 ---
 
 <header
@@ -162,7 +157,7 @@ const kontaktZiel = formularBereit ? '/kontakt#formular' : '/kontakt';
       "Kontakt" entsteht dadurch nicht.
     -->
     <a
-      href={withBase(kontaktZiel)}
+      href={withBase('/kontakt')}
       class="druckt-sich ml-auto inline-flex min-h-11 shrink-0 items-center justify-center gap-2 bg-accent px-4 text-[0.9375rem] font-medium text-white transition-colors duration-200 hover:bg-accent-hover sm:px-6 md:min-h-12"
     >
       <svg
