@@ -15,7 +15,7 @@ import { withBase } from '../lib/url';
 
 /**
  * Reihenfolge der Startseite:
- * Hero > Case Studies > Aktuelle Themen > Was wir tun > Claim > Über adept&
+ * Hero > Aktuelle Themen > Case Studies > Was wir tun > Claim > Über adept&
  * > Branchen und Funktionen.
  *
  * Case Studies und "Aktuelle Themen" sind zwei getrennte Abschnitte. Ein
@@ -47,8 +47,35 @@ const ueberKacheln = [
     playbackRate={0.85}
   />
 
-  {/* ---------------------------------------------------- Case Studies */}
+  {/* ---------------------------------------------------- Aktuelle Themen */}
   <Section tone="canvas">
+    <div class="flex flex-wrap items-end justify-between gap-6">
+      <SectionHeading kicker="Aktuelles" title="Aktuelle Themen" />
+      <Button href="/news" variant="secondary">Alle Beiträge</Button>
+    </div>
+
+    <ul class="mt-12 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3" data-reveal-gruppe>
+      {
+        news.map((item, index) => (
+          <li data-reveal style={`--reveal-index:${index}`}>
+            <TeaserCard
+              title={item.title}
+              href={item.href}
+              kicker={item.kicker}
+              date={item.date}
+              excerpt={item.excerpt}
+              bild={item.bild}
+              index={index + 1}
+              platzhalter={item.platzhalter}
+            />
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  {/* ---------------------------------------------------- Case Studies */}
+  <Section tone="light">
     <SectionHeading
       kicker="Case Studies"
       title="Was wir gebaut haben"
@@ -130,35 +157,8 @@ const ueberKacheln = [
     </ul>
   </Section>
 
-  {/* ---------------------------------------------------- Aktuelle Themen */}
-  <Section tone="light">
-    <div class="flex flex-wrap items-end justify-between gap-6">
-      <SectionHeading kicker="Aktuelles" title="Aktuelle Themen" />
-      <Button href="/news" variant="secondary">Alle Beiträge</Button>
-    </div>
-
-    <ul class="mt-12 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3" data-reveal-gruppe>
-      {
-        news.map((item, index) => (
-          <li data-reveal style={`--reveal-index:${index}`}>
-            <TeaserCard
-              title={item.title}
-              href={item.href}
-              kicker={item.kicker}
-              date={item.date}
-              excerpt={item.excerpt}
-              bild={item.bild}
-              index={index + 1}
-              platzhalter={item.platzhalter}
-            />
-          </li>
-        ))
-      }
-    </ul>
-  </Section>
-
   {/* ---------------------------------------------------- Was wir tun */}
-  <Section tone="light">
+  <Section tone="canvas">
     <div class="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-24" data-reveal>
       <div>
         <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
