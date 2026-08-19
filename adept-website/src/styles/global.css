@@ -7,37 +7,48 @@
 
 /*
   Design-System adept&
-  Hergeleitet mit dem Skill `ui-ux-pro-max`
-  (Pattern "Trust & Authority + Conversion", Stil "Accessible & Ethical",
-  Typo-Pairing "Lexend / Source Sans 3").
-  Abweichung vom Skill-Vorschlag: --color-destructive (#DC2626) ist nicht
-  Teil der Palette, da Rot laut Briefing komplett entfällt.
+
+  Richtung "Monochrom Streng" – Eintrag "Minimalist Monochrome" in der
+  Stildatenbank des Skills `ui-ux-pro-max`, ausgewählt aus dreißig Entwürfen.
+
+  Nur Schwarz und Weiß, keine Akzentfarbe. Die Fotos sind damit das einzige
+  Bunte auf der Seite. Gegliedert wird durch Linie, Fläche und Weißraum,
+  nicht durch Farbe.
+
+  Abweichung vom Skill-Vorschlag: Der Eintrag paart Monochrom mit Space
+  Grotesk und Inter. Die Schriften bleiben stattdessen bei Newsreader für
+  Überschriften und Source Sans 3 für den Fließtext – so ausdrücklich
+  gewünscht. Die Serife trägt die Strenge sogar besser als eine Grotesk,
+  weil die Formen bei fehlender Farbe die ganze Arbeit machen.
+
+  Rot entfällt laut Briefing ohnehin, hier gibt es überhaupt keine Buntfarbe.
 */
 @theme {
-  /* Neutrale Basis: Anthrazit/Navy */
-  --color-ink: #0f172a; /* Fließtext-Dunkel, Überschriften */
-  --color-ink-deep: #051c2c; /* Navigations-Panels, dunkle Sektionen */
-  --color-ink-soft: #334155; /* Sekundärtext auf Hell */
-
-  /* Eine Akzentfarbe, sparsam eingesetzt. Kontrast auf Weiß: 5.1:1 */
-  --color-accent: #0369a1;
-  --color-accent-hover: #075985;
-  --color-accent-on-dark: #7cc4ec; /* Kontrast auf --color-ink-deep: 7.4:1 */
-
   /*
-    Grundfläche der Seite ist ein kühler Papierton, nicht reines Weiß. Weiß
-    bleibt den erhobenen Flächen vorbehalten - Karten und helle Sektionen
-    heben sich dadurch sichtbar ab, statt in einer flachen Fläche zu
-    verschwinden.
-  */
-  --color-canvas: #e4ebf2; /* Grundfläche */
-  --color-surface: #ffffff; /* erhoben: Karten, helle Sektionen */
-  --color-muted: #dde5ec;
-  --color-muted-fg: #475569; /* Kontrast auf Papier: 6.4:1 */
-  --color-line: #cfdae3; /* auf Papier sichtbar, auf Weiß dezent */
+    Monochrom. Nur Schwarz und Weiß, keine Akzentfarbe.
 
-  /* Logo-Anthrazit */
-  --color-brand: #4b5259;
+    Farbe entsteht ausschließlich durch die Fotos - sie sind damit das einzige
+    Bunte auf der Seite und stehen entsprechend heraus. Der Preis dafür ist,
+    dass Verweise nicht mehr über die Farbe erkennbar sind; sie tragen deshalb
+    durchgehend einen Unterstrich.
+  */
+  --color-ink: #000000; /* Fließtext, Überschriften */
+  --color-ink-deep: #000000; /* dunkle Sektionen, Navigations-Panels */
+  --color-ink-soft: #2e2e2e; /* Sekundärtext auf Weiß, Kontrast 13.9:1 */
+
+  /* Kein Akzent im eigentlichen Sinn: Schwarz führt, Grau ist der Hover. */
+  --color-accent: #000000;
+  --color-accent-hover: #3d3d3d;
+  --color-accent-on-dark: #ffffff;
+
+  --color-canvas: #ffffff; /* Grundfläche */
+  --color-surface: #ffffff; /* Karten und helle Sektionen - bewusst gleich */
+  --color-muted: #f4f4f4;
+  --color-muted-fg: #4f4f4f; /* Kontrast auf Weiß: 8.2:1 */
+  --color-line: #000000; /* Trennung durch Linie statt durch Farbfläche */
+
+  /* Wortmarke */
+  --color-brand: #000000;
 
   /* Ueberschriften: redaktionelle Serife. Georgia als Ersatz, weil sie auf
      Windows und macOS vorhanden ist und aehnliche Proportionen hat - der
@@ -120,6 +131,24 @@
     outline-color: #ffffff;
   }
 
+  /*
+    Es gibt keine Akzentfarbe mehr, an der ein Verweis zu erkennen wäre –
+    Schwarz auf Weiß ist auch die Farbe des Fließtextes. Die Form übernimmt
+    das: jeder Verweis im Text trägt einen Unterstrich, der beim Überfahren
+    dicker wird. Ohne ihn wären Verweise für Menschen mit Farbfehlsichtigkeit
+    nicht auffindbar – und hier für alle anderen ebenso wenig.
+  */
+  a[class~='text-accent'] {
+    text-decoration: underline;
+    text-underline-offset: 0.22em;
+    text-decoration-thickness: 1px;
+    transition: text-decoration-thickness 0.15s ease-out;
+  }
+
+  a[class~='text-accent']:hover {
+    text-decoration-thickness: 2px;
+  }
+
   ::selection {
     background-color: var(--color-accent);
     color: #ffffff;
@@ -196,11 +225,12 @@
       transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
       box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
+    /* Kein weicher Schatten, sondern ein harter Versatz: eine zweite Kante,
+       die hinter der Karte hervortritt. Weichzeichnung hat in einem
+       monochromen Satz keine Entsprechung. */
     &:hover {
-      transform: translateY(-4px);
-      box-shadow:
-        0 18px 40px -18px rgb(5 28 44 / 0.35),
-        0 2px 8px -4px rgb(5 28 44 / 0.2);
+      transform: translate(-3px, -3px);
+      box-shadow: 6px 6px 0 0 #000000;
     }
   }
 }
@@ -329,10 +359,10 @@
 
 @keyframes haftschatten-ein {
   from {
-    box-shadow: 0 0 0 0 rgb(5 28 44 / 0);
+    box-shadow: 0 0 0 0 rgb(0 0 0 / 0);
   }
   to {
-    box-shadow: 0 12px 32px -20px rgb(5 28 44 / 0.5);
+    box-shadow: 0 2px 0 0 #000000;
   }
 }
 
