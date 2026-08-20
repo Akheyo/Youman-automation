@@ -69,7 +69,7 @@ export const anbieter = {
 
   /**
    * Inhaltlich verantwortlich nach § 18 Abs. 2 MStV. Relevant, sobald unter
-   * "Aktuelle Themen" redaktionelle Beiträge stehen. Leer lassen, solange
+   * den Pressemitteilungen redaktionelle Beiträge stehen. Leer lassen, solange
    * dort nur Platzhalter sind.
    */
   inhaltlichVerantwortlich: null as string | null,

@@ -15,7 +15,7 @@ export type NewsItem = {
 };
 
 /**
- * "Aktuelle Themen" – Meldungen und Beiträge.
+ * Pressemitteilungen: Meldungen und Beiträge.
  *
  * Case Studies stehen NICHT hier, sondern in `caseStudies.ts`. Eine Case Study
  * belegt, was das Unternehmen kann; eine Meldung berichtet, was es gerade tut.
