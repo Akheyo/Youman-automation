@@ -20,13 +20,13 @@ import { withBase } from '../../lib/url';
   />
 
   <Section>
-    <ul class="grid gap-px bg-line sm:grid-cols-2">
+    <ul class="rasterfugen sm:grid-cols-2">
       {
         branchen.map((branche) => (
-          <li class="bg-surface">
+          <li class="hebt-sich bg-surface">
             <a
               href={withBase(`/branchen/${branche.slug}`)}
-              class="group flex h-full flex-col p-8 md:p-10 transition-colors duration-200 hover:bg-canvas"
+              class="group flex h-full flex-col p-8 transition-colors duration-200 md:p-10"
             >
               <h2 class="flex items-start gap-2 text-2xl text-ink group-hover:text-accent transition-colors duration-200">
                 <span>{branche.title}</span>

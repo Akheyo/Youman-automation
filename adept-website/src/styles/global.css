@@ -231,7 +231,37 @@
     &:hover {
       transform: translate(-3px, -3px);
       box-shadow: 6px 6px 0 0 #000000;
+      /* In den fugenlosen Rastern (gap-px auf schwarzem Grund) beruehren
+         sich die Kacheln. Ohne das schoebe sich die angehobene Kachel
+         unter ihre Nachbarn und der Schatten waere halb abgeschnitten.
+         Bei Raster- und Flex-Kindern wirkt z-index auch ohne position. */
+      z-index: 2;
     }
+  }
+}
+
+/*
+  Fugenraster.
+
+  Bisher lag ein schwarzer Grund unter dem Raster und schien in den 1px
+  breiten Fugen durch. Das funktioniert nur, solange jede Zelle besetzt
+  ist: Bleiben in der letzten Reihe Plätze frei – fünf Funktionen in drei
+  Spalten etwa –, steht dort ein schwarzer Block.
+
+  Stattdessen zieht jede Kachel ihre eigene Linie. Umrisse liegen
+  außerhalb des Kastens, zwei benachbarte überlagern sich in der Fuge zu
+  einer Linie, und eine leere Zelle zieht keine. Nebenbei bekommt das
+  Raster damit eine Außenkante, die es vorher nicht hatte.
+
+  Umriss statt Schatten ist Absicht: box-shadow würde mit `hebt-sich`
+  kollidieren, das beim Überfahren seinen eigenen Schatten setzt.
+*/
+@utility rasterfugen {
+  display: grid;
+  gap: 1px;
+
+  & > * {
+    outline: 1px solid var(--color-line);
   }
 }
 

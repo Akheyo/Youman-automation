@@ -10,6 +10,16 @@ export type Branche = {
    * aus adept&-Projekten liegen für diese Branche noch nicht vor.
    */
   intro: string;
+  /**
+   * Konkrete operative Problemstellungen dieser Branche, in der Sprache der
+   * Betroffenen. Sie sind der eigentliche Grund, warum jemand die Seite
+   * liest: Wer sein eigenes Problem wiedererkennt, liest weiter.
+   *
+   * Es werden hier keine erfunden. Fehlt die Liste, entfällt der Abschnitt
+   * ersatzlos – ein allgemein gehaltener Painpoint ist schlechter als
+   * keiner, weil er die konkreten mit entwertet.
+   */
+  painpoints?: string[];
   /** Slugs aus funktionen.ts, die für diese Branche typischerweise greifen. */
   funktionen: string[];
   /**

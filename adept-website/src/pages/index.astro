@@ -370,13 +370,13 @@ const ueberKacheln = [
       </h3>
       <!-- Letzter Eintrag ueberspannt beide Spalten: bei fuenf Eintraegen bliebe
            sonst eine leere Zelle im Raster stehen. -->
-      <ul class="mt-6 grid gap-px bg-line md:grid-cols-2 [&>li:last-child]:md:col-span-2">
+      <ul class="mt-6 rasterfugen md:grid-cols-2 [&>li:last-child]:md:col-span-2">
         {
           funktionen.map((funktion) => (
-            <li class="bg-surface">
+            <li class="hebt-sich bg-surface">
               <a
                 href={withBase(`/funktionen/${funktion.slug}`)}
-                class="group flex h-full items-start justify-between gap-4 p-6 transition-colors duration-200 hover:bg-canvas"
+                class="group flex h-full items-start justify-between gap-4 p-6 transition-colors duration-200"
               >
                 <span class="font-medium text-ink transition-colors duration-200 group-hover:text-accent">
                   {funktion.title}
