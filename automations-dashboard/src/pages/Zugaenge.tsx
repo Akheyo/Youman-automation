@@ -3,7 +3,8 @@ import { useAnmeldung } from '../lib/auth';
 import { useDaten } from '../lib/data';
 import { protokollSchreiben, rolleSetzen, zugangSetzen } from '../lib/queries';
 import { useHinweise } from '../components/Hinweise';
-import { Etikett, LeererZustand, Meldung } from '../components/Bausteine';
+import { Etikett, LeererZustand, Meldung, SkelettKarten } from '../components/Bausteine';
+import Zeichen from '../components/Icons';
 import { anzahl, namenKurz } from '../lib/format';
 import { rolleErklaerung, rolleText } from '../lib/labels';
 import type { Profil, Rolle } from '../lib/types';
@@ -74,11 +75,11 @@ function Person({ profil }: { profil: Profil }) {
 
   return (
     <tr>
-      <td>
-        <div>{namenKurz(profil.full_name, profil.email)}</div>
-        <div className="leise">{profil.email ?? 'keine E-Mail hinterlegt'}</div>
+      <td data-name="Person">
+        <div style={{ fontWeight: 600 }}>{namenKurz(profil.full_name, profil.email)}</div>
+        <div className="leise klein">{profil.email ?? 'keine E-Mail hinterlegt'}</div>
       </td>
-      <td>
+      <td data-name="Darf">
         <select
           value={profil.role}
           onChange={(ereignis) => void rolleAendern(ereignis.target.value as Rolle)}
@@ -91,14 +92,18 @@ function Person({ profil }: { profil: Profil }) {
             </option>
           ))}
         </select>
-        <div className="leise" style={{ marginTop: 4 }}>
+        <div className="leise klein" style={{ marginTop: 4 }}>
           {rolleErklaerung[profil.role]}
         </div>
       </td>
-      <td>
-        <Etikett ton={profil.active ? 'blau' : 'leise'} text={profil.active ? 'Zugang offen' : 'Zugang gesperrt'} />
+      <td data-name="Zustand">
+        <Etikett
+          ton={profil.active ? 'blau' : 'leise'}
+          text={profil.active ? 'Zugang offen' : 'Zugang gesperrt'}
+          zeichen={profil.active ? 'haken' : 'stopp'}
+        />
       </td>
-      <td>
+      <td data-name="Zugang">
         <button
           type="button"
           className={`knopf ${profil.active ? 'knopfWarnung' : 'knopfHaupt'}`}
@@ -106,6 +111,7 @@ function Person({ profil }: { profil: Profil }) {
           disabled={laeuft || selbst}
           title={selbst ? 'Den eigenen Zugang kannst du dir nicht selbst entziehen.' : undefined}
         >
+          <Zeichen name={profil.active ? 'stopp' : 'haken'} groesse={15} klasse={laeuft ? 'dreht' : undefined} />
           {profil.active ? 'Zugang entziehen' : 'Zugang geben'}
         </button>
       </td>
@@ -125,17 +131,19 @@ export default function Zugaenge() {
     );
   }
 
-  if (ersteLadung && laden) return <p className="laden">Die Zugänge werden geladen.</p>;
+  if (ersteLadung && laden) return <SkelettKarten anzahl={3} zeilen={2} />;
 
   const offen = profile.filter((eintrag) => eintrag.active).length;
 
   return (
     <>
-      <div className="karteKopf">
-        <h1>Zugänge</h1>
-        <span className="leise">
-          {anzahl(profile.length)} Personen, davon {anzahl(offen)} mit offenem Zugang
-        </span>
+      <div className="seitenkopf">
+        <div>
+          <h1>Zugänge</h1>
+          <p>
+            {anzahl(profile.length)} Personen, davon {anzahl(offen)} mit offenem Zugang
+          </p>
+        </div>
       </div>
 
       <Meldung ton="blau">
@@ -150,14 +158,14 @@ export default function Zugaenge() {
         />
       ) : (
         <section className="karte">
-          <div className="tabelleHuelle">
+          <div className="tabelleHuelle tabelleKarten">
             <table>
               <thead>
                 <tr>
-                  <th>Person</th>
-                  <th>Darf</th>
-                  <th>Zustand</th>
-                  <th>Zugang</th>
+                  <th scope="col">Person</th>
+                  <th scope="col">Darf</th>
+                  <th scope="col">Zustand</th>
+                  <th scope="col">Zugang</th>
                 </tr>
               </thead>
               <tbody>

@@ -2,19 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDaten } from '../lib/data';
 import { ladeDurchlaeufe } from '../lib/queries';
 import { anzahl, namenKurz, prozent, relativ, zeitpunkt, zeitplanText } from '../lib/format';
-import { automationText, automationTon } from '../lib/labels';
-import { Etikett, LeererZustand, Meldung, Pfeil, WertPaar } from '../components/Bausteine';
+import { automationText, automationTon, automationZeichen } from '../lib/labels';
+import { Etikett, LeererZustand, Meldung, Pfeil, QuoteBalken, SkelettKarten, WertPaar } from '../components/Bausteine';
+import Zeichen from '../components/Icons';
 import { DurchlaufListe } from '../components/Durchlaeufe';
 import { AutomationSteuerung } from '../components/Steuerung';
 import { useHinweise } from '../components/Hinweise';
-import type { AutomationUebersicht, Durchlauf } from '../lib/types';
-
-function zuverlaessigkeitTon(wert: number | null) {
-  if (wert === null) return 'leise' as const;
-  if (wert >= 95) return 'blau' as const;
-  if (wert >= 80) return 'gelb' as const;
-  return 'rot' as const;
-}
+import type { AutomationStatus, AutomationUebersicht, Durchlauf } from '../lib/types';
 
 function Aufklapper({
   automation,
@@ -46,22 +40,18 @@ function Aufklapper({
     if (offen && durchlaeufe === null && !laden) void durchlaeufeLaden();
   }, [offen, durchlaeufe, laden, durchlaeufeLaden]);
 
-  const zustaendig =
-    automation.zustaendigName ??
-    namenKurz(
-      profile.find((eintrag) => eintrag.id === automation.zustaendigId)?.full_name,
-      profile.find((eintrag) => eintrag.id === automation.zustaendigId)?.email,
-    );
-
+  const person = profile.find((eintrag) => eintrag.id === automation.zustaendigId);
+  const zustaendig = automation.zustaendigName ?? namenKurz(person?.full_name, person?.email);
   const wartend = offeneBefehle.filter((befehl) => befehl.automation_id === automation.id);
 
   return (
-    <div className="zeile" id={`automation-${automation.id}`}>
+    <div className={`zeile ${offen ? 'zeileOffen' : ''}`} id={`automation-${automation.id}`}>
       <button type="button" className="zeileKopf" onClick={umschalten} aria-expanded={offen}>
         <Etikett
           ton={automationTon[automation.status]}
           text={automationText[automation.status]}
-          pulst={automation.status === 'running'}
+          zeichen={automationZeichen[automation.status]}
+          dreht={automation.status === 'running'}
         />
         <span className="zeileTitel">
           <span className="zeileName">{automation.name}</span>
@@ -69,19 +59,17 @@ function Aufklapper({
             {automation.category ? `${automation.category}, ` : ''}
             zuletzt gelaufen {relativ(automation.lastRunAt)}
             {automation.offeneFehler > 0
-              ? `, ${anzahl(automation.offeneFehler)} ${automation.offeneFehler === 1 ? 'offener Fehler' : 'offene Fehler'}`
+              ? `, ${anzahl(automation.offeneFehler)} ${
+                  automation.offeneFehler === 1 ? 'offener Fehler' : 'offene Fehler'
+                }`
               : ''}
           </span>
         </span>
         <span className="zeileRechts">
-          <Etikett
-            ton={zuverlaessigkeitTon(automation.zuverlaessigkeit14d)}
-            text={
-              automation.zuverlaessigkeit14d === null
-                ? 'noch keine Angabe'
-                : `${prozent(automation.zuverlaessigkeit14d)} in 14 Tagen`
-            }
-          />
+          <span className="leise klein" style={{ whiteSpace: 'nowrap' }}>
+            {automation.zuverlaessigkeit14d === null ? 'keine Angabe' : prozent(automation.zuverlaessigkeit14d)}
+          </span>
+          <QuoteBalken quote={automation.zuverlaessigkeit14d} />
           <Pfeil offen={offen} />
         </span>
       </button>
@@ -89,15 +77,39 @@ function Aufklapper({
       {offen && (
         <div className="zeileInhalt">
           <div className="wertePaare">
-            <WertPaar name="Zuletzt gelaufen" wert={`${relativ(automation.lastRunAt)} (${zeitpunkt(automation.lastRunAt)})`} />
-            <WertPaar name="Das nächste Mal dran" wert={`${relativ(automation.nextRunAt)} (${zeitpunkt(automation.nextRunAt)})`} />
+            <WertPaar
+              name="Zuletzt gelaufen"
+              wert={
+                <>
+                  {relativ(automation.lastRunAt)}
+                  <span className="leise klein"> {zeitpunkt(automation.lastRunAt)}</span>
+                </>
+              }
+            />
+            <WertPaar
+              name="Das nächste Mal dran"
+              wert={
+                <>
+                  {relativ(automation.nextRunAt)}
+                  <span className="leise klein"> {zeitpunkt(automation.nextRunAt)}</span>
+                </>
+              }
+            />
             <WertPaar name="Zeitplan" wert={zeitplanText(automation.scheduleCron)} />
             <WertPaar
               name="Zuverlässigkeit 14 Tage"
-              wert={automation.zuverlaessigkeit14d === null ? 'noch keine Angabe' : prozent(automation.zuverlaessigkeit14d)}
+              wert={
+                automation.zuverlaessigkeit14d === null
+                  ? 'noch keine Angabe'
+                  : prozent(automation.zuverlaessigkeit14d)
+              }
             />
             <WertPaar name="Zuständig" wert={zustaendig} />
-            <WertPaar name="Offene Fehler" wert={anzahl(automation.offeneFehler)} />
+            <WertPaar
+              name="Offene Fehler"
+              wert={anzahl(automation.offeneFehler)}
+              leise={automation.offeneFehler === 0}
+            />
           </div>
 
           <AutomationSteuerung id={automation.id} status={automation.status} />
@@ -113,9 +125,17 @@ function Aufklapper({
           <div>
             <div className="karteKopf">
               <h3>Die letzten Durchläufe</h3>
-              <button type="button" className="knopf knopfLeise" onClick={() => void durchlaeufeLaden()} disabled={laden}>
-                Neu laden
-              </button>
+              <div className="karteKopfRechts">
+                <button
+                  type="button"
+                  className="knopf knopfLeise knopfKlein"
+                  onClick={() => void durchlaeufeLaden()}
+                  disabled={laden}
+                >
+                  <Zeichen name="neuLaden" groesse={14} klasse={laden ? 'dreht' : undefined} />
+                  Neu laden
+                </button>
+              </div>
             </div>
             <DurchlaufListe durchlaeufe={durchlaeufe ?? []} laden={laden || durchlaeufe === null} />
           </div>
@@ -130,12 +150,13 @@ export default function Automationen({ offenId }: { offenId?: string | null }) {
   const [offen, setOffen] = useState<string | null>(offenId ?? null);
   const [suche, setSuche] = useState('');
   const [kategorie, setKategorie] = useState('alle');
+  const [zustand, setZustand] = useState<'alle' | AutomationStatus>('alle');
 
   useEffect(() => {
     if (!offenId) return;
     setOffen(offenId);
     const ziel = document.getElementById(`automation-${offenId}`);
-    if (ziel) ziel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (ziel) ziel.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [offenId, automationen]);
 
   const kategorien = useMemo(() => {
@@ -147,41 +168,70 @@ export default function Automationen({ offenId }: { offenId?: string | null }) {
   }, [automationen]);
 
   const gefiltert = automationen.filter((eintrag) => {
-    const passtKategorie = kategorie === 'alle' || eintrag.category === kategorie;
     const suchtext = suche.trim().toLowerCase();
     const passtSuche =
       !suchtext ||
       eintrag.name.toLowerCase().includes(suchtext) ||
       (eintrag.category ?? '').toLowerCase().includes(suchtext);
-    return passtKategorie && passtSuche;
+    return (
+      passtSuche &&
+      (kategorie === 'alle' || eintrag.category === kategorie) &&
+      (zustand === 'alle' || eintrag.status === zustand)
+    );
   });
 
-  if (ersteLadung && laden) return <p className="laden">Die Automationen werden geladen.</p>;
+  const laufend = automationen.filter((eintrag) => eintrag.status === 'running').length;
+
+  if (ersteLadung && laden) return <SkelettKarten anzahl={4} zeilen={2} />;
 
   return (
     <>
-      <div className="karteKopf">
-        <h1>Automationen</h1>
-        <span className="leise">
-          {anzahl(automationen.length)} insgesamt, {anzahl(automationen.filter((a) => a.status === 'running').length)} laufen
-        </span>
+      <div className="seitenkopf">
+        <div>
+          <h1>Automationen</h1>
+          <p>
+            {anzahl(automationen.length)} eingetragen, {anzahl(laufend)} {laufend === 1 ? 'läuft' : 'laufen'} gerade
+          </p>
+        </div>
       </div>
 
       <div className="werkzeugleiste">
-        <input
-          type="search"
-          className="wachsen"
-          value={suche}
-          placeholder="Nach Namen suchen"
-          onChange={(ereignis) => setSuche(ereignis.target.value)}
-        />
-        <select value={kategorie} onChange={(ereignis) => setKategorie(ereignis.target.value)} style={{ width: 'auto' }}>
+        <div className="suchfeld">
+          <span className="suchfeldZeichen">
+            <Zeichen name="lupe" groesse={16} />
+          </span>
+          <input
+            type="search"
+            value={suche}
+            placeholder="Nach Namen suchen"
+            aria-label="Automationen nach Namen durchsuchen"
+            onChange={(ereignis) => setSuche(ereignis.target.value)}
+          />
+        </div>
+        <select
+          value={kategorie}
+          onChange={(ereignis) => setKategorie(ereignis.target.value)}
+          style={{ width: 'auto' }}
+          aria-label="Bereich"
+        >
           <option value="alle">Alle Bereiche</option>
           {kategorien.map((name) => (
             <option key={name} value={name}>
               {name}
             </option>
           ))}
+        </select>
+        <select
+          value={zustand}
+          onChange={(ereignis) => setZustand(ereignis.target.value as 'alle' | AutomationStatus)}
+          style={{ width: 'auto' }}
+          aria-label="Zustand"
+        >
+          <option value="alle">Jeder Zustand</option>
+          <option value="running">Läuft</option>
+          <option value="paused">Pausiert</option>
+          <option value="stopped">Angehalten</option>
+          <option value="error">Hat ein Problem</option>
         </select>
       </div>
 
@@ -190,8 +240,24 @@ export default function Automationen({ offenId }: { offenId?: string | null }) {
           titel={automationen.length === 0 ? 'Noch keine Automation eingetragen' : 'Nichts gefunden'}
           text={
             automationen.length === 0
-              ? 'Sobald die erste Automation in der Datenbank steht, siehst du sie hier.'
-              : 'Ändere die Suche oder wähle einen anderen Bereich.'
+              ? 'Sobald die erste Automation in der Datenbank steht, siehst du sie hier mit Zustand, Zeitplan und Durchläufen.'
+              : 'Ändere die Suche, den Bereich oder den Zustand.'
+          }
+          zeichen={automationen.length === 0 ? 'postfach' : 'lupe'}
+          aktion={
+            automationen.length > 0 ? (
+              <button
+                type="button"
+                className="knopf knopfKlein"
+                onClick={() => {
+                  setSuche('');
+                  setKategorie('alle');
+                  setZustand('alle');
+                }}
+              >
+                Auswahl zurücksetzen
+              </button>
+            ) : undefined
           }
         />
       ) : (

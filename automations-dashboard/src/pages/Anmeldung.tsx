@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useAnmeldung } from '../lib/auth';
 import { Meldung } from '../components/Bausteine';
+import Zeichen from '../components/Icons';
 
 export default function Anmeldung() {
   const { anmelden, passwortVergessen } = useAnmeldung();
   const [email, setEmail] = useState('');
   const [passwort, setPasswort] = useState('');
-  const [laeuft, setLaeuft] = useState(false);
+  const [laeuft, setLaeuft] = useState<'anmelden' | 'passwort' | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [hinweis, setHinweis] = useState<string | null>(null);
 
@@ -18,9 +19,9 @@ export default function Anmeldung() {
       setFehler('Bitte E-Mail und Passwort eintragen.');
       return;
     }
-    setLaeuft(true);
+    setLaeuft('anmelden');
     const meldung = await anmelden(email, passwort);
-    setLaeuft(false);
+    setLaeuft(null);
     if (meldung) setFehler(meldung);
   };
 
@@ -31,23 +32,32 @@ export default function Anmeldung() {
       setFehler('Trag zuerst deine E-Mail-Adresse ein, dann schicken wir dir einen Link.');
       return;
     }
-    setLaeuft(true);
+    setLaeuft('passwort');
     const meldung = await passwortVergessen(email);
-    setLaeuft(false);
+    setLaeuft(null);
     if (meldung) setFehler(meldung);
     else setHinweis('Wir haben dir einen Link geschickt. Schau in dein Postfach, auch im Spam-Ordner.');
   };
 
   return (
     <main className="anmeldung">
-      <form className="anmeldungKarte" onSubmit={absenden}>
-        <div>
-          <h1>Automationen</h1>
-          <p className="leise">Melde dich an, um den Zustand aller Automationen zu sehen.</p>
+      <form className="anmeldungKarte" onSubmit={absenden} noValidate>
+        <div className="anmeldungKopf">
+          <span className="markeZeichen">
+            <Zeichen name="blitz" groesse={17} />
+          </span>
+          <div>
+            <h1>Automationen</h1>
+            <p className="leise klein">Alle Automationen an einer Stelle</p>
+          </div>
         </div>
 
-        {fehler && <Meldung ton="rot">{fehler}</Meldung>}
-        {hinweis && <Meldung ton="blau">{hinweis}</Meldung>}
+        <p className="leise">Melde dich an, um den Zustand aller Automationen zu sehen.</p>
+
+        <div aria-live="polite">
+          {fehler && <Meldung ton="rot">{fehler}</Meldung>}
+          {hinweis && <Meldung ton="blau">{hinweis}</Meldung>}
+        </div>
 
         <label className="feld">
           <span className="feldName">E-Mail</span>
@@ -56,6 +66,7 @@ export default function Anmeldung() {
             value={email}
             autoComplete="email"
             autoFocus
+            inputMode="email"
             onChange={(ereignis) => setEmail(ereignis.target.value)}
             placeholder="vorname.nachname@firma.de"
           />
@@ -71,17 +82,16 @@ export default function Anmeldung() {
           />
         </label>
 
-        <button type="submit" className="knopf knopfHaupt" disabled={laeuft}>
-          {laeuft ? 'Einen Moment' : 'Anmelden'}
+        <button type="submit" className="knopf knopfHaupt" disabled={laeuft !== null}>
+          <Zeichen name={laeuft === 'anmelden' ? 'kreisel' : 'schild'} groesse={15} klasse={laeuft === 'anmelden' ? 'dreht' : undefined} />
+          {laeuft === 'anmelden' ? 'Einen Moment' : 'Anmelden'}
         </button>
 
-        <button type="button" className="knopf knopfLeise" onClick={neuesPasswort} disabled={laeuft}>
+        <button type="button" className="knopf knopfLeise" onClick={neuesPasswort} disabled={laeuft !== null}>
           Passwort vergessen
         </button>
 
-        <p className="leise">
-          Noch keinen Zugang? Amanuel Kheyo legt ihn an.
-        </p>
+        <p className="leise klein">Noch keinen Zugang? Amanuel Kheyo legt ihn an.</p>
       </form>
     </main>
   );

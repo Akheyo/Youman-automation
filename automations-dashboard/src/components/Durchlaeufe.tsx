@@ -1,8 +1,9 @@
 import { anzahl, dauer, relativ, seit, uhrzeit, zeitpunkt } from '../lib/format';
-import { ausloeser, durchlaufText, durchlaufTon } from '../lib/labels';
+import { ausloeser, durchlaufText, durchlaufTon, durchlaufZeichen } from '../lib/labels';
 import { useDaten } from '../lib/data';
 import type { Durchlauf } from '../lib/types';
-import { Etikett, LeererZustand } from './Bausteine';
+import { Etikett, LeererZustand, Pfeil, SkelettKarten } from './Bausteine';
+import Zeichen from './Icons';
 import { DurchlaufSteuerung } from './Steuerung';
 
 function Menge({ durchlauf }: { durchlauf: Durchlauf }) {
@@ -25,32 +26,44 @@ export function DurchlaufZeile({ durchlauf, mitName }: { durchlauf: Durchlauf; m
   return (
     <article className="durchlauf">
       <div className="durchlaufKopf">
-        <Etikett ton={durchlaufTon[durchlauf.status]} text={durchlaufText[durchlauf.status]} pulst={laeuft} />
-        {mitName && <span className="durchlaufZeit">{mitName}</span>}
+        <Etikett
+          ton={durchlaufTon[durchlauf.status]}
+          text={durchlaufText[durchlauf.status]}
+          zeichen={durchlaufZeichen[durchlauf.status]}
+          dreht={laeuft}
+        />
+        {mitName && <span className="durchlaufName">{mitName}</span>}
         <span className="durchlaufZeit" title={zeitpunkt(durchlauf.started_at)}>
           {laeuft ? `Start um ${uhrzeit(durchlauf.started_at)}` : `Start ${relativ(durchlauf.started_at)}`}
         </span>
-        <span className="leise">
+        <span className="leise klein">
           {laeuft ? `läuft seit ${seit(durchlauf.started_at)}` : `Dauer ${dauer(durchlauf.duration_seconds)}`}
         </span>
         <Menge durchlauf={durchlauf} />
       </div>
 
-      <div className="leise">
+      <div className="durchlaufSpur">
+        <Zeichen name="uhr" groesse={13} />
         {ausloeser(durchlauf.trigger_type)}
         {durchlauf.triggered_by ? ` von ${profilName(durchlauf.triggered_by)}` : ''}
       </div>
 
       {durchlauf.status === 'error' && (
         <div className="klartext">
-          {durchlauf.error_message_readable ??
-            'Warum es schiefgegangen ist, steht nicht im Klartext dabei. Die technische Meldung hilft weiter.'}
+          <Zeichen name="warndreieck" groesse={16} />
+          <span>
+            {durchlauf.error_message_readable ??
+              'Warum es schiefgegangen ist, steht nicht im Klartext dabei. Die technische Meldung hilft weiter.'}
+          </span>
         </div>
       )}
 
       {durchlauf.error_message_raw && (
         <details className="technisch">
-          <summary>Technische Meldung anzeigen</summary>
+          <summary>
+            <Pfeil offen={false} />
+            Technische Meldung anzeigen
+          </summary>
           <pre className="roh">{durchlauf.error_message_raw}</pre>
         </details>
       )}
@@ -58,8 +71,9 @@ export function DurchlaufZeile({ durchlauf, mitName }: { durchlauf: Durchlauf; m
       <div className="knopfReihe">
         <DurchlaufSteuerung durchlauf={durchlauf} />
         {durchlauf.raw_log_url && (
-          <a className="knopf knopfLeise" href={durchlauf.raw_log_url} target="_blank" rel="noreferrer">
-            Vollständiges Protokoll öffnen
+          <a className="knopf knopfLeise knopfKlein" href={durchlauf.raw_log_url} target="_blank" rel="noreferrer">
+            <Zeichen name="pfeilRaus" groesse={14} />
+            Vollständiges Protokoll
           </a>
         )}
       </div>
@@ -80,8 +94,8 @@ export function DurchlaufListe({
   leerText?: string;
   namen?: Map<string, string>;
 }) {
-  if (laden && durchlaeufe.length === 0) return <p className="laden">Durchläufe werden geladen.</p>;
-  if (durchlaeufe.length === 0) return <LeererZustand titel={leerTitel} text={leerText} />;
+  if (laden && durchlaeufe.length === 0) return <SkelettKarten anzahl={2} zeilen={3} />;
+  if (durchlaeufe.length === 0) return <LeererZustand titel={leerTitel} text={leerText} zeichen="uhr" />;
 
   return (
     <div className="liste">

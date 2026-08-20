@@ -8,6 +8,7 @@ import Automationen from './pages/Automationen';
 import Fehler from './pages/Fehler';
 import Protokoll from './pages/Protokoll';
 import Zugaenge from './pages/Zugaenge';
+import Zeichen, { type ZeichenName } from './components/Icons';
 import { relativ } from './lib/format';
 import { rolleText } from './lib/labels';
 
@@ -18,62 +19,104 @@ interface Ziel {
   id: string | null;
 }
 
+const seiten: Seite[] = ['uebersicht', 'automationen', 'fehler', 'protokoll', 'zugaenge'];
+
 function zielLesen(hash: string): Ziel {
   const teile = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   const seite = (teile[0] ?? 'uebersicht') as Seite;
-  const bekannt: Seite[] = ['uebersicht', 'automationen', 'fehler', 'protokoll', 'zugaenge'];
   return {
-    seite: bekannt.includes(seite) ? seite : 'uebersicht',
+    seite: seiten.includes(seite) ? seite : 'uebersicht',
     id: teile[1] ?? null,
   };
 }
+
+const titel: Record<Seite, string> = {
+  uebersicht: 'Übersicht',
+  automationen: 'Automationen',
+  fehler: 'Fehler',
+  protokoll: 'Protokoll',
+  zugaenge: 'Zugänge',
+};
+
+const navZeichen: Record<Seite, ZeichenName> = {
+  uebersicht: 'raster',
+  automationen: 'liste',
+  fehler: 'warndreieck',
+  protokoll: 'uhr',
+  zugaenge: 'menschen',
+};
 
 function Kopf({ ziel, gehZu }: { ziel: Ziel; gehZu: (pfad: string) => void }) {
   const { profil, rolle, abmelden } = useAnmeldung();
   const { fehler, laden, neuLaden } = useDaten();
 
-  const punkte: Array<{ seite: Seite; name: string; zahl?: number; nurAdmin?: boolean }> = [
-    { seite: 'uebersicht', name: 'Übersicht' },
-    { seite: 'automationen', name: 'Automationen' },
-    { seite: 'fehler', name: 'Fehler', zahl: fehler.length },
-    { seite: 'protokoll', name: 'Protokoll' },
-    { seite: 'zugaenge', name: 'Zugänge', nurAdmin: true },
-  ];
+  const sichtbar = seiten.filter((seite) => seite !== 'zugaenge' || rolle === 'admin');
 
   return (
     <header className="kopf">
       <div className="kopfInhalt">
         <div className="marke">
-          Automationen
-          <span className="markeLeise">alles an einer Stelle</span>
+          <span className="markeZeichen">
+            <Zeichen name="blitz" groesse={17} />
+          </span>
+          <span>
+            <span className="markeName">Automationen</span>
+            <span className="markeUnter">alles an einer Stelle</span>
+          </span>
         </div>
+
         <div className="kopfRechts">
-          <button type="button" className="knopf knopfLeise" onClick={() => void neuLaden()} disabled={laden}>
-            {laden ? 'Lädt' : 'Neu laden'}
+          <button
+            type="button"
+            className="knopf knopfLeise knopfKlein"
+            onClick={() => void neuLaden()}
+            disabled={laden}
+            aria-label="Zahlen neu laden"
+          >
+            <Zeichen name="neuLaden" groesse={15} klasse={laden ? 'dreht' : undefined} />
+            <span className="nurAufBreit">{laden ? 'Lädt' : 'Neu laden'}</span>
           </button>
+
           <div className="person">
             <div className="personName">{profil?.full_name ?? profil?.email ?? 'Angemeldet'}</div>
-            <div className="leise">{rolleText[rolle]}</div>
+            <div className="personRolle">{rolleText[rolle]}</div>
           </div>
-          <button type="button" className="knopf knopfLeise" onClick={() => void abmelden()}>
-            Abmelden
+
+          <button
+            type="button"
+            className="knopf knopfLeise knopfKlein"
+            onClick={() => void abmelden()}
+            aria-label="Abmelden"
+          >
+            <Zeichen name="abmelden" groesse={15} />
+            <span className="nurAufBreit">Abmelden</span>
           </button>
         </div>
       </div>
-      <nav className="navigation">
-        {punkte
-          .filter((punkt) => !punkt.nurAdmin || rolle === 'admin')
-          .map((punkt) => (
+
+      <nav className="navigation" aria-label="Bereiche">
+        {sichtbar.map((seite) => {
+          const aktiv = ziel.seite === seite;
+          return (
             <button
-              key={punkt.seite}
+              key={seite}
               type="button"
-              className={`navKnopf ${ziel.seite === punkt.seite ? 'navKnopfAktiv' : ''}`}
-              onClick={() => gehZu(`#/${punkt.seite}`)}
+              className={`navKnopf ${aktiv ? 'navKnopfAktiv' : ''}`}
+              onClick={() => gehZu(`#/${seite}`)}
+              aria-current={aktiv ? 'page' : undefined}
             >
-              {punkt.name}
-              {punkt.zahl ? <span className="navZahl">{punkt.zahl}</span> : null}
+              <span className="navZeichen">
+                <Zeichen name={navZeichen[seite]} groesse={17} />
+              </span>
+              {titel[seite]}
+              {seite === 'fehler' && fehler.length > 0 ? (
+                <span className="navZahl" aria-label={`${fehler.length} offen`}>
+                  {fehler.length}
+                </span>
+              ) : null}
             </button>
-          ))}
+          );
+        })}
       </nav>
     </header>
   );
@@ -101,6 +144,10 @@ function AngemeldeteAnsicht() {
 
   const ziel = useMemo(() => zielLesen(hash), [hash]);
 
+  useEffect(() => {
+    document.title = `${titel[ziel.seite]} · Automationen`;
+  }, [ziel.seite]);
+
   const gehZu = (pfad: string) => {
     window.location.hash = pfad;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -109,8 +156,11 @@ function AngemeldeteAnsicht() {
   return (
     <DatenProvider>
       <div className="seite">
+        <a className="springmarke" href="#inhalt">
+          Direkt zum Inhalt
+        </a>
         <Kopf ziel={ziel} gehZu={gehZu} />
-        <main className="inhalt">
+        <main className="inhalt" id="inhalt">
           {ziel.seite === 'uebersicht' && <Uebersicht gehZu={gehZu} />}
           {ziel.seite === 'automationen' && <Automationen offenId={ziel.id} />}
           {ziel.seite === 'fehler' && <Fehler gehZu={gehZu} />}
@@ -123,11 +173,24 @@ function AngemeldeteAnsicht() {
   );
 }
 
-function Hinweisseite({ titel, text, aktion }: { titel: string; text: string; aktion?: React.ReactNode }) {
+function Hinweisseite({
+  titelText,
+  text,
+  aktion,
+}: {
+  titelText: string;
+  text: string;
+  aktion?: React.ReactNode;
+}) {
   return (
     <main className="anmeldung">
       <div className="anmeldungKarte">
-        <h1>{titel}</h1>
+        <div className="anmeldungKopf">
+          <span className="markeZeichen">
+            <Zeichen name="blitz" groesse={17} />
+          </span>
+          <h1>{titelText}</h1>
+        </div>
         <p className="leise">{text}</p>
         {aktion}
       </div>
@@ -141,14 +204,14 @@ export default function App() {
   if (!supabaseEingerichtet) {
     return (
       <Hinweisseite
-        titel="Die Verbindung fehlt noch"
+        titelText="Die Verbindung fehlt noch"
         text="In der Datei .env.local müssen VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY stehen. Danach die Seite neu laden."
       />
     );
   }
 
   if (!bereit) {
-    return <Hinweisseite titel="Einen Moment" text="Deine Anmeldung wird geprüft." />;
+    return <Hinweisseite titelText="Einen Moment" text="Deine Anmeldung wird geprüft." />;
   }
 
   if (!session) return <Anmeldung />;
@@ -156,10 +219,11 @@ export default function App() {
   if (profilFehlt) {
     return (
       <Hinweisseite
-        titel="Dein Zugang ist noch nicht eingerichtet"
+        titelText="Dein Zugang ist noch nicht eingerichtet"
         text="Die Anmeldung hat geklappt, aber zu deinem Konto gibt es noch keinen Eintrag. Sag Amanuel Bescheid, er schaltet dich frei."
         aktion={
           <button type="button" className="knopf" onClick={() => void abmelden()}>
+            <Zeichen name="abmelden" groesse={15} />
             Abmelden
           </button>
         }
@@ -170,10 +234,11 @@ export default function App() {
   if (profil && !profil.active) {
     return (
       <Hinweisseite
-        titel="Dein Zugang ist gesperrt"
+        titelText="Dein Zugang ist gesperrt"
         text="Dein Konto ist vorhanden, aber im Moment nicht freigeschaltet. Amanuel kann den Zugang wieder öffnen."
         aktion={
           <button type="button" className="knopf" onClick={() => void abmelden()}>
+            <Zeichen name="abmelden" groesse={15} />
             Abmelden
           </button>
         }

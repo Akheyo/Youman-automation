@@ -1,30 +1,94 @@
-/*
- * Farben aus dem Logo abgeleitet. Bewusst kein Grün: Blau übernimmt die Rolle
- * von "in Ordnung", damit die Oberfläche in den Firmenfarben bleibt.
- */
+/* ============================================================================
+   Automations-Dashboard, Gestaltungsgrundlage
+
+   Farben aus dem Logo abgeleitet. Bewusst kein Grün: Blau übernimmt die Rolle
+   von "in Ordnung", damit die Oberfläche in den Firmenfarben bleibt.
+
+   Zustand wird nie allein über Farbe erzählt. Jede Farbe kommt zusammen mit
+   einem Zeichen und einem deutschen Wort, damit auch bei Farbschwäche oder auf
+   einem schlechten Bildschirm klar ist, was los ist.
+
+   Alle Textfarben sind gegen ihren Untergrund auf mindestens 4,5 zu 1 geprüft.
+   ========================================================================= */
+
 :root {
-  --hintergrund: #0a111e;
+  /* --- Flächen ---------------------------------------------------------- */
+  --grund: #0a111e;
   --flaeche: #121c2d;
   --flaeche-hoch: #18243a;
+  --flaeche-tief: #0d1524;
   --rand: #243247;
+  --rand-stark: #31435e;
+
+  /* --- Marke ------------------------------------------------------------ */
   --blau: #2c7be5;
   --gelb: #f5b301;
   --rot: #e23a2e;
+
+  /* --- Schriftfarben, geprüft auf Kontrast ------------------------------ */
   --text: #e9eff7;
-  --text-leise: #8698b2;
+  --text-leise: #93a5be;
+  --text-blau: #6fa8f5;
+  --text-gelb: #ffc53d;
+  --text-rot: #ff6b5e;
 
-  --blau-weich: rgba(44, 123, 229, 0.14);
-  --gelb-weich: rgba(245, 179, 1, 0.14);
-  --rot-weich: rgba(226, 58, 46, 0.14);
+  /* --- Füllungen für Zustände ------------------------------------------- */
+  --blau-weich: rgba(44, 123, 229, 0.13);
+  --gelb-weich: rgba(245, 179, 1, 0.13);
+  --rot-weich: rgba(226, 58, 46, 0.13);
+  --blau-rand: rgba(111, 168, 245, 0.38);
+  --gelb-rand: rgba(255, 197, 61, 0.38);
+  --rot-rand: rgba(255, 107, 94, 0.38);
 
-  --radius: 12px;
-  --radius-klein: 8px;
-  --schatten: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.24);
+  /* --- Knöpfe ----------------------------------------------------------- */
+  --knopf-haupt: #2670d6;
+  --knopf-haupt-hover: #1e5ab8;
+  --knopf-haupt-aktiv: #1b51a6;
+
+  /* --- Abstände, dicht wie ein Arbeitswerkzeug --------------------------- */
+  --raum-1: 4px;
+  --raum-2: 8px;
+  --raum-3: 12px;
+  --raum-4: 16px;
+  --raum-5: 24px;
+  --raum-6: 32px;
+  --raum-7: 48px;
+
+  /* --- Radien ----------------------------------------------------------- */
+  --radius-1: 6px;
+  --radius-2: 10px;
+  --radius-3: 14px;
+  --radius-rund: 999px;
+
+  /* --- Schrift ---------------------------------------------------------- */
+  --schrift: "Fira Sans", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --schrift-zahl: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --gr-micro: 11px;
+  --gr-klein: 12px;
+  --gr-neben: 13px;
+  --gr-basis: 15px;
+  --gr-gross: 17px;
+  --gr-titel: 20px;
+  --gr-zahl: 28px;
+  --gr-zustand: clamp(20px, 1.1rem + 1vw, 26px);
+
+  /* --- Tiefe ------------------------------------------------------------ */
+  --schatten-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --schatten-2: 0 2px 4px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.28);
+  --schatten-3: 0 10px 34px rgba(0, 0, 0, 0.45);
+
+  /* --- Bewegung, kurz und sachlich -------------------------------------- */
+  --zeit-schnell: 120ms;
+  --zeit: 180ms;
+  --kurve: cubic-bezier(0.2, 0, 0.2, 1);
 
   color-scheme: dark;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -34,14 +98,20 @@ body,
   min-height: 100%;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
-  background: var(--hintergrund);
+  background: var(--grund);
   color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 15px;
-  line-height: 1.55;
+  font-family: var(--schrift);
+  font-size: var(--gr-basis);
+  line-height: 1.5;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 h1,
@@ -49,19 +119,20 @@ h2,
 h3 {
   margin: 0;
   line-height: 1.25;
-  font-weight: 650;
+  letter-spacing: -0.01em;
+  font-weight: 600;
 }
 
 h1 {
-  font-size: 22px;
+  font-size: var(--gr-titel);
 }
 
 h2 {
-  font-size: 17px;
+  font-size: var(--gr-gross);
 }
 
 h3 {
-  font-size: 15px;
+  font-size: var(--gr-basis);
 }
 
 p {
@@ -69,7 +140,8 @@ p {
 }
 
 a {
-  color: var(--blau);
+  color: var(--text-blau);
+  text-underline-offset: 3px;
 }
 
 button {
@@ -77,7 +149,61 @@ button {
   color: inherit;
 }
 
-/* ---------- Grundgerüst ---------- */
+/* Zahlen laufen nicht: gleiche Breite, damit nichts springt. */
+.zahl,
+.kennzahlWert,
+td,
+th,
+.durchlaufZahlen {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.zahl {
+  font-family: var(--schrift-zahl);
+  font-variant-ligatures: none;
+}
+
+/* Ein sichtbarer Fokusrahmen ist Pflicht, nicht Zierde. */
+:focus-visible {
+  outline: 2px solid var(--text-blau);
+  outline-offset: 2px;
+  border-radius: var(--radius-1);
+}
+
+.nurVorlesen {
+  position: absolute;
+  width: 1px;
+  min-width: 0;
+  max-width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.springmarke {
+  position: absolute;
+  left: var(--raum-3);
+  top: -100px;
+  z-index: 100;
+  background: var(--flaeche-hoch);
+  border: 1px solid var(--rand-stark);
+  border-radius: var(--radius-1);
+  padding: var(--raum-2) var(--raum-3);
+  transition: top var(--zeit) var(--kurve);
+}
+
+.springmarke:focus {
+  top: var(--raum-3);
+}
+
+/* ============================================================================
+   Grundgerüst
+   ========================================================================= */
 
 .seite {
   min-height: 100dvh;
@@ -88,61 +214,93 @@ button {
 .kopf {
   position: sticky;
   top: 0;
-  z-index: 20;
-  background: rgba(10, 17, 30, 0.92);
-  backdrop-filter: blur(8px);
+  z-index: 30;
+  background: color-mix(in srgb, var(--grund) 88%, transparent);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--rand);
 }
 
 .kopfInhalt {
-  max-width: 1120px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 10px 16px;
+  padding: var(--raum-3) var(--raum-4);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--raum-3);
 }
 
 .marke {
-  font-weight: 700;
-  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  gap: var(--raum-3);
+  min-width: 0;
+}
+
+.markeZeichen {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: var(--radius-2);
+  display: grid;
+  place-items: center;
+  background: linear-gradient(140deg, var(--blau), #1b4f96);
+  color: #fff;
+  box-shadow: var(--schatten-1);
+}
+
+.markeName {
+  font-weight: 600;
+  font-size: var(--gr-gross);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
   white-space: nowrap;
 }
 
-.markeLeise {
-  color: var(--text-leise);
-  font-weight: 500;
+.markeUnter {
   display: block;
-  font-size: 12px;
+  color: var(--text-leise);
+  font-size: var(--gr-klein);
+  font-weight: 400;
+  line-height: 1.3;
 }
 
 .kopfRechts {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--raum-2);
   min-width: 0;
 }
 
 .person {
   text-align: right;
   min-width: 0;
-  overflow: hidden;
+  padding-right: var(--raum-1);
 }
 
 .personName {
-  font-size: 13px;
+  font-size: var(--gr-neben);
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 22ch;
 }
 
+.personRolle {
+  font-size: var(--gr-klein);
+  color: var(--text-leise);
+  white-space: nowrap;
+}
+
+/* --- Navigation ------------------------------------------------------- */
+
 .navigation {
-  max-width: 1120px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 0 8px 8px;
+  padding: 0 var(--raum-3) var(--raum-2);
   display: flex;
-  gap: 4px;
+  gap: var(--raum-1);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -156,11 +314,17 @@ button {
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-leise);
-  padding: 8px 12px;
-  border-radius: 999px;
+  padding: var(--raum-2) var(--raum-3);
+  border-radius: var(--radius-rund);
   cursor: pointer;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: var(--gr-neben);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--raum-2);
+  min-height: 38px;
+  transition: color var(--zeit) var(--kurve), background var(--zeit) var(--kurve);
 }
 
 .navKnopf:hover {
@@ -168,182 +332,339 @@ button {
   background: var(--flaeche);
 }
 
-.navKnopfAktiv {
+.navKnopfAktiv,
+.navKnopfAktiv:hover {
   color: var(--text);
   background: var(--flaeche-hoch);
-  border-color: var(--rand);
+  border-color: var(--rand-stark);
+}
+
+.navZeichen {
+  color: currentColor;
+  opacity: 0.85;
 }
 
 .navZahl {
-  margin-left: 6px;
-  padding: 1px 7px;
-  border-radius: 999px;
-  font-size: 12px;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-rund);
+  font-size: var(--gr-micro);
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
   background: var(--rot-weich);
-  color: var(--rot);
+  color: var(--text-rot);
+  border: 1px solid var(--rot-rand);
+  font-variant-numeric: tabular-nums;
 }
+
+/* --- Inhalt und Fuß ---------------------------------------------------- */
 
 .inhalt {
   flex: 1;
   width: 100%;
-  max-width: 1120px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 16px 16px 64px;
+  padding: var(--raum-5) var(--raum-4) var(--raum-7);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--raum-5);
 }
 
 .fuss {
   border-top: 1px solid var(--rand);
   color: var(--text-leise);
-  font-size: 12px;
-  padding: 12px 16px 24px;
+  font-size: var(--gr-klein);
+  padding: var(--raum-4);
   text-align: center;
 }
 
-/* ---------- Flächen ---------- */
+/* ============================================================================
+   Seitenkopf und Flächen
+   ========================================================================= */
+
+.seitenkopf {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--raum-3);
+  flex-wrap: wrap;
+}
+
+.seitenkopf p {
+  color: var(--text-leise);
+  font-size: var(--gr-neben);
+  margin-top: 2px;
+}
+
+.seitenkopfRechts {
+  margin-left: auto;
+  display: flex;
+  gap: var(--raum-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
 
 .karte {
   background: var(--flaeche);
   border: 1px solid var(--rand);
-  border-radius: var(--radius);
-  padding: 16px;
+  border-radius: var(--radius-3);
+  padding: var(--raum-4);
+  box-shadow: var(--schatten-1);
 }
 
 .karteKopf {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 12px;
+  align-items: center;
+  gap: var(--raum-3);
+  margin-bottom: var(--raum-4);
   flex-wrap: wrap;
 }
 
-.karteKopf .leise {
+.karteKopfRechts {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--raum-2);
 }
 
 .leise {
   color: var(--text-leise);
-  font-size: 13px;
+  font-size: var(--gr-neben);
+}
+
+.klein {
+  font-size: var(--gr-klein);
 }
 
 .trennlinie {
   height: 1px;
   background: var(--rand);
   border: 0;
-  margin: 12px 0;
+  margin: var(--raum-3) 0;
 }
 
-/* ---------- Zustandsbalken ---------- */
+/* ============================================================================
+   Zustandsbalken, das Kernstück
+   ========================================================================= */
 
 .zustand {
-  border-radius: var(--radius);
+  position: relative;
+  border-radius: var(--radius-3);
   border: 1px solid var(--rand);
-  padding: 18px 18px 16px;
+  padding: var(--raum-5);
   display: flex;
-  gap: 14px;
+  gap: var(--raum-4);
   align-items: flex-start;
+  overflow: hidden;
+  box-shadow: var(--schatten-2);
+}
+
+.zustand::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: currentColor;
 }
 
 .zustandBlau {
-  background: linear-gradient(180deg, var(--blau-weich), rgba(44, 123, 229, 0.04));
-  border-color: rgba(44, 123, 229, 0.45);
+  color: var(--blau);
+  background: linear-gradient(120deg, var(--blau-weich), rgba(44, 123, 229, 0.03) 60%), var(--flaeche);
+  border-color: var(--blau-rand);
 }
 
 .zustandGelb {
-  background: linear-gradient(180deg, var(--gelb-weich), rgba(245, 179, 1, 0.04));
-  border-color: rgba(245, 179, 1, 0.45);
+  color: var(--gelb);
+  background: linear-gradient(120deg, var(--gelb-weich), rgba(245, 179, 1, 0.03) 60%), var(--flaeche);
+  border-color: var(--gelb-rand);
 }
 
 .zustandRot {
-  background: linear-gradient(180deg, var(--rot-weich), rgba(226, 58, 46, 0.04));
-  border-color: rgba(226, 58, 46, 0.45);
+  color: var(--rot);
+  background: linear-gradient(120deg, var(--rot-weich), rgba(226, 58, 46, 0.03) 60%), var(--flaeche);
+  border-color: var(--rot-rand);
 }
 
 .zustandZeichen {
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
-  border-radius: 999px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: var(--radius-2);
   display: grid;
   place-items: center;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 34%, transparent);
+}
+
+.zustandText {
+  min-width: 0;
+  flex: 1;
 }
 
 .zustandText h1 {
-  font-size: 20px;
+  font-size: var(--gr-zustand);
+  color: var(--text);
+  letter-spacing: -0.02em;
 }
 
 .zustandText p {
   color: var(--text-leise);
-  margin-top: 4px;
-  font-size: 14px;
+  margin-top: var(--raum-1);
+  font-size: var(--gr-basis);
+  max-width: 68ch;
 }
 
-/* ---------- Kennzahlen ---------- */
+.zustandFakten {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--raum-2) var(--raum-4);
+  margin-top: var(--raum-3);
+  padding-top: var(--raum-3);
+  border-top: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.zustandFakt {
+  display: flex;
+  align-items: baseline;
+  gap: var(--raum-2);
+  font-size: var(--gr-neben);
+  color: var(--text-leise);
+}
+
+.zustandFaktWert {
+  font-family: var(--schrift-zahl);
+  font-variant-ligatures: none;
+  font-size: var(--gr-gross);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.zustandTat {
+  margin-top: var(--raum-4);
+  display: flex;
+  gap: var(--raum-2);
+  flex-wrap: wrap;
+}
+
+/* ============================================================================
+   Kennzahlen
+   ========================================================================= */
 
 .kennzahlen {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(172px, 1fr));
+  gap: var(--raum-3);
 }
 
 .kennzahl {
+  position: relative;
   background: var(--flaeche);
   border: 1px solid var(--rand);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-}
-
-.kennzahlWert {
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
+  border-radius: var(--radius-2);
+  padding: var(--raum-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--raum-1);
+  min-width: 0;
 }
 
 .kennzahlName {
   color: var(--text-leise);
-  font-size: 13px;
+  font-size: var(--gr-klein);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: var(--raum-2);
+}
+
+.kennzahlWert {
+  font-family: var(--schrift-zahl);
+  font-variant-ligatures: none;
+  font-size: var(--gr-zahl);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.kennzahlWertBlau {
+  color: var(--text-blau);
+}
+
+.kennzahlWertGelb {
+  color: var(--text-gelb);
+}
+
+.kennzahlWertRot {
+  color: var(--text-rot);
 }
 
 .kennzahlHinweis {
-  font-size: 12px;
+  font-size: var(--gr-klein);
   color: var(--text-leise);
-  margin-top: 2px;
 }
 
-/* ---------- Zustandspunkte und Etiketten ---------- */
-
-.punkt {
-  width: 9px;
-  height: 9px;
-  border-radius: 999px;
-  display: inline-block;
-  flex: 0 0 9px;
+.kennzahlBalken {
+  height: 4px;
+  border-radius: var(--radius-rund);
+  background: var(--flaeche-hoch);
+  overflow: hidden;
+  margin-top: var(--raum-1);
 }
 
-.punktBlau {
+.kennzahlBalkenFuellung {
+  height: 100%;
+  border-radius: var(--radius-rund);
   background: var(--blau);
-  box-shadow: 0 0 0 3px var(--blau-weich);
 }
 
-.punktGelb {
-  background: var(--gelb);
-  box-shadow: 0 0 0 3px var(--gelb-weich);
+/* ============================================================================
+   Etiketten und Zeichen für Zustände
+   ========================================================================= */
+
+.etikett {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border-radius: var(--radius-rund);
+  font-size: var(--gr-klein);
+  font-weight: 500;
+  border: 1px solid var(--rand-stark);
+  background: var(--flaeche-hoch);
+  color: var(--text-leise);
+  white-space: nowrap;
+  line-height: 1.6;
 }
 
-.punktRot {
-  background: var(--rot);
-  box-shadow: 0 0 0 3px var(--rot-weich);
+.etikettBlau {
+  color: var(--text-blau);
+  border-color: var(--blau-rand);
+  background: var(--blau-weich);
 }
 
-.punktLeise {
-  background: var(--text-leise);
-  box-shadow: 0 0 0 3px rgba(134, 152, 178, 0.14);
+.etikettGelb {
+  color: var(--text-gelb);
+  border-color: var(--gelb-rand);
+  background: var(--gelb-weich);
+}
+
+.etikettRot {
+  color: var(--text-rot);
+  border-color: var(--rot-rand);
+  background: var(--rot-weich);
+}
+
+.etikettZeichen {
+  display: inline-flex;
+  flex: 0 0 auto;
 }
 
 .pulst {
-  animation: pulsieren 1.6s ease-in-out infinite;
+  animation: pulsieren 1.8s ease-in-out infinite;
 }
 
 @keyframes pulsieren {
@@ -352,132 +673,163 @@ button {
     opacity: 1;
   }
   50% {
-    opacity: 0.35;
+    opacity: 0.4;
   }
 }
 
-.etikett {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  border: 1px solid var(--rand);
-  background: var(--flaeche-hoch);
-  color: var(--text-leise);
-  white-space: nowrap;
+.dreht {
+  animation: drehen 1.4s linear infinite;
+  transform-origin: 50% 50%;
 }
 
-.etikettBlau {
-  color: var(--blau);
-  border-color: rgba(44, 123, 229, 0.4);
-  background: var(--blau-weich);
+@keyframes drehen {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.etikettGelb {
-  color: var(--gelb);
-  border-color: rgba(245, 179, 1, 0.4);
-  background: var(--gelb-weich);
-}
-
-.etikettRot {
-  color: var(--rot);
-  border-color: rgba(226, 58, 46, 0.4);
-  background: var(--rot-weich);
-}
-
-/* ---------- Knöpfe ---------- */
+/* ============================================================================
+   Knöpfe
+   ========================================================================= */
 
 .knopf {
   appearance: none;
-  border: 1px solid var(--rand);
+  border: 1px solid var(--rand-stark);
   background: var(--flaeche-hoch);
   color: var(--text);
-  padding: 8px 14px;
-  border-radius: var(--radius-klein);
+  padding: var(--raum-2) var(--raum-4);
+  border-radius: var(--radius-1);
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--gr-neben);
+  font-weight: 500;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 38px;
+  justify-content: center;
+  gap: var(--raum-2);
+  min-height: 40px;
+  text-decoration: none;
+  transition: background var(--zeit) var(--kurve), border-color var(--zeit) var(--kurve),
+    transform var(--zeit-schnell) var(--kurve), box-shadow var(--zeit) var(--kurve);
 }
 
 .knopf:hover:not(:disabled) {
-  border-color: var(--blau);
+  background: color-mix(in srgb, var(--flaeche-hoch) 70%, var(--blau) 30%);
+  border-color: var(--blau-rand);
+}
+
+.knopf:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .knopf:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .knopfHaupt {
-  background: var(--blau);
-  border-color: var(--blau);
+  background: var(--knopf-haupt);
+  border-color: var(--knopf-haupt);
   color: #fff;
   font-weight: 600;
 }
 
 .knopfHaupt:hover:not(:disabled) {
-  filter: brightness(1.08);
+  background: var(--knopf-haupt-hover);
+  border-color: var(--knopf-haupt-hover);
+  box-shadow: var(--schatten-2);
+}
+
+.knopfHaupt:active:not(:disabled) {
+  background: var(--knopf-haupt-aktiv);
 }
 
 .knopfWarnung {
-  color: var(--rot);
-  border-color: rgba(226, 58, 46, 0.45);
+  color: var(--text-rot);
+  border-color: var(--rot-rand);
   background: var(--rot-weich);
+}
+
+.knopfWarnung:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--rot-weich) 60%, var(--rot) 20%);
+  border-color: var(--text-rot);
 }
 
 .knopfLeise {
   background: transparent;
+  border-color: var(--rand);
   color: var(--text-leise);
+}
+
+.knopfLeise:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--flaeche-hoch);
+}
+
+.knopfKlein {
+  min-height: 34px;
+  padding: var(--raum-1) var(--raum-3);
+  font-size: var(--gr-klein);
 }
 
 .knopfReihe {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--raum-2);
+  align-items: flex-start;
 }
 
 .knopfHuelle {
   display: inline-flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--raum-1);
 }
 
 .knopfGrund {
-  font-size: 11px;
+  font-size: var(--gr-micro);
   color: var(--text-leise);
-  max-width: 220px;
+  max-width: 26ch;
+  line-height: 1.4;
 }
 
-/* ---------- Listen ---------- */
+/* ============================================================================
+   Listen und Aufklapper
+   ========================================================================= */
 
 .liste {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--raum-2);
 }
 
 .zeile {
   background: var(--flaeche);
   border: 1px solid var(--rand);
-  border-radius: var(--radius);
+  border-radius: var(--radius-2);
   overflow: hidden;
+  transition: border-color var(--zeit) var(--kurve);
+}
+
+.zeile:hover {
+  border-color: var(--rand-stark);
+}
+
+.zeileOffen {
+  border-color: var(--rand-stark);
+  box-shadow: var(--schatten-2);
 }
 
 .zeileKopf {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: var(--raum-3);
+  padding: var(--raum-3) var(--raum-4);
   background: transparent;
   border: 0;
   cursor: pointer;
   text-align: left;
+  min-height: 56px;
+  transition: background var(--zeit) var(--kurve);
 }
 
 .zeileKopf:hover {
@@ -492,6 +844,7 @@ button {
 .zeileName {
   display: block;
   font-weight: 600;
+  font-size: var(--gr-basis);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -500,7 +853,7 @@ button {
 .zeileUnter {
   display: block;
   color: var(--text-leise);
-  font-size: 13px;
+  font-size: var(--gr-neben);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -509,13 +862,14 @@ button {
 .zeileRechts {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--raum-3);
   flex-shrink: 0;
 }
 
 .pfeil {
   color: var(--text-leise);
-  transition: transform 0.15s ease;
+  transition: transform var(--zeit) var(--kurve);
+  flex: 0 0 auto;
 }
 
 .pfeilOffen {
@@ -524,145 +878,270 @@ button {
 
 .zeileInhalt {
   border-top: 1px solid var(--rand);
-  padding: 14px 16px 16px;
-  background: rgba(10, 17, 30, 0.4);
+  padding: var(--raum-4);
+  background: var(--flaeche-tief);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--raum-4);
 }
 
 .wertePaare {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--raum-3) var(--raum-4);
 }
 
 .wertPaarName {
   color: var(--text-leise);
-  font-size: 12px;
+  font-size: var(--gr-klein);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .wertPaarWert {
-  font-size: 14px;
+  font-size: var(--gr-neben);
+  margin-top: 1px;
 }
 
-/* ---------- Durchläufe ---------- */
+.wertPaarLeise {
+  color: var(--text-leise);
+}
+
+/* Kleiner Balken, der Zuverlässigkeit auf einen Blick zeigt. */
+.quoteBalken {
+  height: 6px;
+  width: 64px;
+  border-radius: var(--radius-rund);
+  background: var(--flaeche-hoch);
+  border: 1px solid var(--rand);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.quoteFuellung {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-rund);
+}
+
+/* ============================================================================
+   Durchläufe
+   ========================================================================= */
 
 .durchlauf {
   border: 1px solid var(--rand);
-  border-radius: var(--radius-klein);
+  border-radius: var(--radius-2);
   background: var(--flaeche);
-  padding: 10px 12px;
+  padding: var(--raum-3);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--raum-2);
 }
 
 .durchlaufKopf {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--raum-3);
   flex-wrap: wrap;
 }
 
+.durchlaufName {
+  font-weight: 600;
+  font-size: var(--gr-neben);
+}
+
 .durchlaufZeit {
-  font-size: 13px;
+  font-size: var(--gr-neben);
+  color: var(--text);
 }
 
 .durchlaufZahlen {
   margin-left: auto;
   color: var(--text-leise);
-  font-size: 12px;
+  font-size: var(--gr-klein);
+  white-space: nowrap;
+}
+
+.durchlaufSpur {
+  display: flex;
+  align-items: center;
+  gap: var(--raum-2);
+  font-size: var(--gr-klein);
+  color: var(--text-leise);
 }
 
 .klartext {
   background: var(--rot-weich);
-  border: 1px solid rgba(226, 58, 46, 0.35);
-  border-radius: var(--radius-klein);
-  padding: 10px 12px;
-  font-size: 14px;
+  border: 1px solid var(--rot-rand);
+  border-radius: var(--radius-1);
+  padding: var(--raum-3);
+  font-size: var(--gr-neben);
+  display: flex;
+  gap: var(--raum-2);
+  align-items: flex-start;
+  color: var(--text);
+}
+
+.klartext svg {
+  color: var(--text-rot);
+  flex: 0 0 auto;
+  margin-top: 2px;
 }
 
 details.technisch {
-  font-size: 13px;
+  font-size: var(--gr-klein);
 }
 
 details.technisch summary {
   cursor: pointer;
   color: var(--text-leise);
   list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--raum-1) 0;
+}
+
+details.technisch summary:hover {
+  color: var(--text);
 }
 
 details.technisch summary::-webkit-details-marker {
   display: none;
 }
 
-details.technisch summary::before {
-  content: "▸ ";
-}
-
-details.technisch[open] summary::before {
-  content: "▾ ";
+details.technisch[open] summary .pfeil {
+  transform: rotate(90deg);
 }
 
 .roh {
-  margin: 8px 0 0;
-  padding: 10px 12px;
-  background: var(--hintergrund);
+  margin: var(--raum-2) 0 0;
+  padding: var(--raum-3);
+  background: var(--grund);
   border: 1px solid var(--rand);
-  border-radius: var(--radius-klein);
+  border-radius: var(--radius-1);
   color: var(--text-leise);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
+  font-family: var(--schrift-zahl);
+  font-variant-ligatures: none;
+  font-size: var(--gr-klein);
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
   max-height: 220px;
   overflow: auto;
 }
 
-/* ---------- Trend ---------- */
+/* ============================================================================
+   Verlauf, 14 Tage
+   ========================================================================= */
 
-.trend {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  height: 96px;
+.diagrammHuelle {
+  position: relative;
 }
 
-.trendTag {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  height: 100%;
-  gap: 6px;
-  min-width: 0;
-}
-
-.trendSaeule {
-  border-radius: 4px 4px 2px 2px;
-  min-height: 3px;
+.diagramm {
   width: 100%;
+  display: block;
+  touch-action: pan-y;
 }
 
-.trendTagName {
-  text-align: center;
-  font-size: 10px;
-  color: var(--text-leise);
+.diagrammGitter {
+  stroke: var(--rand);
+  stroke-width: 1;
+}
+
+.diagrammZiel {
+  stroke: var(--text-blau);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  opacity: 0.7;
+}
+
+.diagrammLinie {
+  fill: none;
+  stroke: var(--blau);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.diagrammBeschriftung {
+  fill: var(--text-leise);
+  font-size: 11px;
+  font-family: var(--schrift-zahl);
+}
+
+.diagrammFuehrung {
+  stroke: var(--rand-stark);
+  stroke-width: 1;
+}
+
+.diagrammFeld {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.diagrammFeld:focus-visible {
+  fill: rgba(111, 168, 245, 0.14);
+  outline: none;
+}
+
+.diagrammHinweis {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  background: var(--flaeche-hoch);
+  border: 1px solid var(--rand-stark);
+  border-radius: var(--radius-1);
+  padding: var(--raum-2) var(--raum-3);
+  box-shadow: var(--schatten-2);
+  font-size: var(--gr-klein);
   white-space: nowrap;
-  overflow: hidden;
+  transform: translate(-50%, -100%);
 }
 
-/* ---------- Fehler ---------- */
+.diagrammHinweisTag {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.diagrammLegende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--raum-2) var(--raum-4);
+  margin-top: var(--raum-3);
+  font-size: var(--gr-klein);
+  color: var(--text-leise);
+}
+
+.legendeStueck {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendeLinie {
+  width: 16px;
+  height: 2px;
+  background: var(--blau);
+  border-radius: 2px;
+}
+
+.legendeZiel {
+  width: 16px;
+  height: 0;
+  border-top: 2px dashed var(--text-blau);
+}
+
+/* ============================================================================
+   Fehlerkarten
+   ========================================================================= */
 
 .fehlerKarte {
   border-left: 3px solid var(--rand);
 }
 
-.fehlerKritisch {
-  border-left-color: var(--rot);
-}
-
+.fehlerKritisch,
 .fehlerHoch {
   border-left-color: var(--rot);
 }
@@ -675,17 +1154,31 @@ details.technisch[open] summary::before {
   border-left-color: var(--blau);
 }
 
-/* ---------- Formulare ---------- */
+.fehlerTitel {
+  font-size: var(--gr-gross);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.fehlerText {
+  font-size: var(--gr-basis);
+  max-width: 78ch;
+}
+
+/* ============================================================================
+   Formulare
+   ========================================================================= */
 
 .feld {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--raum-1);
 }
 
 .feldName {
-  font-size: 13px;
+  font-size: var(--gr-neben);
   color: var(--text-leise);
+  font-weight: 500;
 }
 
 input[type="text"],
@@ -695,138 +1188,299 @@ input[type="search"],
 select,
 textarea {
   width: 100%;
-  padding: 10px 12px;
-  border-radius: var(--radius-klein);
-  border: 1px solid var(--rand);
-  background: var(--hintergrund);
+  padding: var(--raum-2) var(--raum-3);
+  border-radius: var(--radius-1);
+  border: 1px solid var(--rand-stark);
+  background: var(--grund);
   color: var(--text);
   font: inherit;
-  min-height: 40px;
+  font-size: var(--gr-basis);
+  min-height: 42px;
+  transition: border-color var(--zeit) var(--kurve), box-shadow var(--zeit) var(--kurve);
 }
 
-input:focus,
-select:focus,
-textarea:focus,
-button:focus-visible,
-summary:focus-visible {
-  outline: 2px solid var(--blau);
-  outline-offset: 2px;
+input::placeholder {
+  color: var(--text-leise);
+  opacity: 0.85;
 }
 
-/* ---------- Anmeldung ---------- */
+input:hover,
+select:hover {
+  border-color: var(--blau-rand);
+}
+
+select {
+  cursor: pointer;
+}
+
+.suchfeld {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+}
+
+.suchfeld input {
+  padding-left: 38px;
+}
+
+.suchfeldZeichen {
+  position: absolute;
+  left: var(--raum-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-leise);
+  pointer-events: none;
+}
+
+.werkzeugleiste {
+  display: flex;
+  gap: var(--raum-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ============================================================================
+   Anmeldung
+   ========================================================================= */
 
 .anmeldung {
   min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 24px 16px;
+  padding: var(--raum-5) var(--raum-4);
+  background: radial-gradient(1000px 500px at 50% -10%, rgba(44, 123, 229, 0.14), transparent 70%), var(--grund);
 }
 
 .anmeldungKarte {
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
   background: var(--flaeche);
   border: 1px solid var(--rand);
-  border-radius: var(--radius);
-  padding: 24px;
-  box-shadow: var(--schatten);
+  border-radius: var(--radius-3);
+  padding: var(--raum-5);
+  box-shadow: var(--schatten-3);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--raum-4);
 }
 
-/* ---------- Meldungen ---------- */
+.anmeldungKopf {
+  display: flex;
+  align-items: center;
+  gap: var(--raum-3);
+}
+
+/* ============================================================================
+   Meldungen und Hinweise
+   ========================================================================= */
 
 .meldung {
-  border-radius: var(--radius-klein);
-  padding: 10px 12px;
-  font-size: 14px;
-  border: 1px solid var(--rand);
+  border-radius: var(--radius-2);
+  padding: var(--raum-3);
+  font-size: var(--gr-neben);
+  border: 1px solid var(--rand-stark);
+  background: var(--flaeche-hoch);
+  display: flex;
+  gap: var(--raum-3);
+  align-items: flex-start;
+}
+
+.meldung svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
 }
 
 .meldungRot {
   background: var(--rot-weich);
-  border-color: rgba(226, 58, 46, 0.4);
+  border-color: var(--rot-rand);
+}
+
+.meldungRot svg {
+  color: var(--text-rot);
+}
+
+.meldungGelb {
+  background: var(--gelb-weich);
+  border-color: var(--gelb-rand);
+}
+
+.meldungGelb svg {
+  color: var(--text-gelb);
 }
 
 .meldungBlau {
   background: var(--blau-weich);
-  border-color: rgba(44, 123, 229, 0.4);
+  border-color: var(--blau-rand);
+}
+
+.meldungBlau svg {
+  color: var(--text-blau);
 }
 
 .hinweise {
   position: fixed;
-  left: 16px;
-  right: 16px;
-  bottom: 16px;
+  left: var(--raum-4);
+  right: var(--raum-4);
+  bottom: calc(var(--raum-4) + env(safe-area-inset-bottom, 0px));
   z-index: 60;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--raum-2);
   align-items: center;
   pointer-events: none;
 }
 
 .hinweis {
   pointer-events: auto;
-  max-width: 460px;
+  max-width: 480px;
   width: 100%;
   background: var(--flaeche-hoch);
-  border: 1px solid var(--rand);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  box-shadow: var(--schatten);
+  border: 1px solid var(--rand-stark);
+  border-radius: var(--radius-2);
+  padding: var(--raum-3);
+  box-shadow: var(--schatten-3);
   display: flex;
-  gap: 10px;
+  gap: var(--raum-3);
   align-items: flex-start;
-  font-size: 14px;
+  font-size: var(--gr-neben);
+  animation: hinweisRein 200ms var(--kurve);
+}
+
+@keyframes hinweisRein {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 .hinweisRot {
-  border-color: rgba(226, 58, 46, 0.5);
+  border-color: var(--rot-rand);
 }
 
-.hinweisBlau {
-  border-color: rgba(44, 123, 229, 0.5);
+.hinweisRot .hinweisZeichen {
+  color: var(--text-rot);
 }
 
-/* ---------- Leere Zustände ---------- */
+.hinweisBlau .hinweisZeichen {
+  color: var(--text-blau);
+}
+
+.hinweisZeichen {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.hinweisText {
+  flex: 1;
+  min-width: 0;
+}
+
+.hinweisZu {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-leise);
+  cursor: pointer;
+  padding: var(--raum-1);
+  border-radius: var(--radius-1);
+  display: grid;
+  place-items: center;
+}
+
+.hinweisZu:hover {
+  color: var(--text);
+  background: var(--flaeche);
+}
+
+/* ============================================================================
+   Leere Zustände und Ladeflächen
+   ========================================================================= */
 
 .leer {
-  border: 1px dashed var(--rand);
-  border-radius: var(--radius);
-  padding: 22px 18px;
+  border: 1px dashed var(--rand-stark);
+  border-radius: var(--radius-2);
+  padding: var(--raum-5) var(--raum-4);
   text-align: center;
   color: var(--text-leise);
-  font-size: 14px;
+  font-size: var(--gr-neben);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--raum-2);
   align-items: center;
+}
+
+.leerZeichen {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-2);
+  display: grid;
+  place-items: center;
+  background: var(--flaeche-hoch);
+  border: 1px solid var(--rand);
+  color: var(--text-leise);
+  margin-bottom: var(--raum-1);
 }
 
 .leer strong {
   color: var(--text);
   font-weight: 600;
+  font-size: var(--gr-basis);
 }
 
-/* ---------- Tabelle ---------- */
+.leer p {
+  max-width: 46ch;
+}
+
+.skelett {
+  background: linear-gradient(90deg, var(--flaeche-hoch) 25%, var(--rand) 50%, var(--flaeche-hoch) 75%);
+  background-size: 200% 100%;
+  animation: schimmer 1.4s linear infinite;
+  border-radius: var(--radius-1);
+}
+
+@keyframes schimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.skelettKarte {
+  background: var(--flaeche);
+  border: 1px solid var(--rand);
+  border-radius: var(--radius-2);
+  padding: var(--raum-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--raum-2);
+}
+
+/* ============================================================================
+   Tabellen
+   ========================================================================= */
 
 .tabelleHuelle {
   overflow-x: auto;
+  border-radius: var(--radius-2);
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
-  min-width: 520px;
+  font-size: var(--gr-neben);
+  min-width: 560px;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--flaeche);
+  z-index: 1;
 }
 
 th,
 td {
   text-align: left;
-  padding: 10px 12px;
+  padding: var(--raum-3);
   border-bottom: 1px solid var(--rand);
   vertical-align: middle;
 }
@@ -834,27 +1488,32 @@ td {
 th {
   color: var(--text-leise);
   font-weight: 500;
-  font-size: 12px;
-  text-transform: none;
+  font-size: var(--gr-klein);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+tbody tr {
+  transition: background var(--zeit-schnell) var(--kurve);
+}
+
+tbody tr:hover {
+  background: var(--flaeche-hoch);
 }
 
 tbody tr:last-child td {
   border-bottom: 0;
 }
 
-/* ---------- Kleinigkeiten ---------- */
+/* ============================================================================
+   Kleinigkeiten
+   ========================================================================= */
 
 .laden {
   color: var(--text-leise);
-  font-size: 14px;
-  padding: 8px 0;
-}
-
-.werkzeugleiste {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
+  font-size: var(--gr-neben);
+  padding: var(--raum-2) 0;
 }
 
 .wachsen {
@@ -862,59 +1521,189 @@ tbody tr:last-child td {
   min-width: 160px;
 }
 
-@media (max-width: 640px) {
-  .inhalt {
-    padding: 12px 12px 56px;
+.stapel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--raum-3);
+}
+
+/* ============================================================================
+   Handy
+   ========================================================================= */
+
+@media (max-width: 720px) {
+  /* Knöpfe im Kopf zeigen nur noch ihr Zeichen, die Beschriftung liest das
+     Vorleseprogramm weiterhin über aria-label. */
+  .nurAufBreit {
+    display: none;
   }
 
-  /* Auf dem Handy zählt der Platz: Name und Rolle stehen ohnehin unter Zugänge. */
+  .inhalt {
+    padding: var(--raum-4) var(--raum-3) calc(var(--raum-7) + 64px);
+    gap: var(--raum-4);
+  }
+
   .person {
     display: none;
   }
 
   .kopfInhalt {
-    gap: 8px;
-    padding: 10px 12px;
+    padding: var(--raum-3);
+    gap: var(--raum-2);
   }
 
-  .knopf {
-    padding: 8px 12px;
+  .markeUnter {
+    display: none;
   }
 
-  /* Titel dürfen umbrechen statt abgeschnitten zu werden. */
+  /* Ein Filter im Kopf würde die feste Leiste unten an den Kopf binden.
+     Auf dem Handy ist der Kopf deshalb schlicht deckend. */
+  .kopf {
+    backdrop-filter: none;
+    background: var(--grund);
+  }
+
+  /* Auf dem Handy wandert die Navigation nach unten, in Daumenreichweite. */
+  .navigation {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    margin: 0;
+    padding: var(--raum-1) var(--raum-1) calc(var(--raum-1) + env(safe-area-inset-bottom, 0px));
+    background: color-mix(in srgb, var(--grund) 94%, transparent);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--rand);
+    justify-content: space-around;
+    overflow: visible;
+  }
+
+  .navKnopf {
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 6px 1px;
+    font-size: 10px;
+    letter-spacing: -0.01em;
+    border-radius: var(--radius-2);
+    min-height: 52px;
+    position: relative;
+  }
+
+  .navKnopfAktiv {
+    color: var(--text-blau);
+  }
+
+  .navZahl {
+    position: absolute;
+    top: 2px;
+    right: max(2px, calc(50% - 22px));
+  }
+
+  .fuss {
+    padding-bottom: calc(var(--raum-5) + 72px);
+  }
+
+  .hinweise {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+
   .zeileName,
   .zeileUnter {
     white-space: normal;
     overflow: visible;
   }
 
+  /* Erst Zustand und Kennwert in einer Zeile, darunter der Name mit Platz. */
   .zeileKopf {
-    align-items: flex-start;
-    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: var(--raum-3);
+    row-gap: var(--raum-2);
+  }
+
+  .zeileTitel {
+    flex: 1 0 100%;
+    order: 3;
   }
 
   .zeileRechts {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
+    order: 2;
+    margin-left: auto;
+    gap: var(--raum-2);
   }
 
-  .kennzahlWert {
-    font-size: 22px;
+  /* Auf dem Handy zählt der Name mehr als der Balken. */
+  .quoteBalken {
+    display: none;
+  }
+
+  .durchlaufZahlen {
+    margin-left: 0;
+    width: 100%;
+    white-space: normal;
   }
 
   .zustand {
-    padding: 14px;
+    padding: var(--raum-4);
+    gap: var(--raum-3);
   }
 
-  .zustandText h1 {
-    font-size: 18px;
+  .kennzahlWert {
+    font-size: 24px;
+  }
+
+  /* Tabellen werden zu Karten, damit nichts seitlich verschwindet. */
+  .tabelleKarten table,
+  .tabelleKarten thead,
+  .tabelleKarten tbody,
+  .tabelleKarten tr,
+  .tabelleKarten th,
+  .tabelleKarten td {
+    display: block;
+    min-width: 0;
+  }
+
+  .tabelleKarten thead {
+    display: none;
+  }
+
+  .tabelleKarten tr {
+    border: 1px solid var(--rand);
+    border-radius: var(--radius-2);
+    margin-bottom: var(--raum-2);
+    background: var(--flaeche);
+    padding: var(--raum-2);
+  }
+
+  .tabelleKarten td {
+    border: 0;
+    padding: var(--raum-1) var(--raum-2);
+    display: flex;
+    gap: var(--raum-3);
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .tabelleKarten td::before {
+    content: attr(data-name);
+    color: var(--text-leise);
+    font-size: var(--gr-klein);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex: 0 0 auto;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation: none !important;
-    transition: none !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }

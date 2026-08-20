@@ -125,6 +125,43 @@ src/
     Fehler.tsx     Protokoll.tsx   Zugaenge.tsx
 ```
 
+## Gestaltung
+
+Die Oberfläche folgt einem festen System, damit sie überall gleich aussieht und
+sich gleich verhält. Alle Werte stehen als Variablen in `src/styles/global.css`.
+
+**Farben.** Blau heißt „in Ordnung", Gelb heißt „hinschauen", Rot heißt „kaputt",
+bewusst ohne Grün. Für Flächen und Zeichen gelten die Logofarben, für Text
+etwas hellere Töne (`--text-blau`, `--text-gelb`, `--text-rot`), damit jede
+Schrift auf ihrem Untergrund mindestens 4,5 zu 1 Kontrast hat.
+
+**Zustand nie allein über Farbe.** Jedes Etikett zeigt Farbe, Zeichen und
+deutsches Wort zusammen. Wer Farben schlecht unterscheidet, liest trotzdem
+sofort, was los ist.
+
+**Schrift.** Fira Sans für Texte, Fira Code für alle Zahlen. Zahlen laufen mit
+fester Zeichenbreite, damit in Listen und Tabellen nichts springt. Fällt die
+Schrift aus, greifen die Systemschriften.
+
+**Abstände und Radien** kommen aus einer dichten Skala (4, 8, 12, 16, 24, 32,
+48 Pixel), passend zu einem Werkzeug, in dem viel auf einen Blick sichtbar
+sein soll.
+
+**Verlauf.** Die Erfolgsquote der letzten 14 Tage ist eine Linie mit
+gestricheltem Ziel bei 95 Prozent. Die Achse beginnt nicht immer bei null,
+sonst sähen alle Tage gleich aus. Wo sie beginnt, steht unter dem Bild. Jeder
+Tag ist mit der Tastatur erreichbar, und dieselben Zahlen stehen zusätzlich als
+Tabelle für Vorleseprogramme im Quelltext.
+
+**Auf dem Handy** wandert die Navigation als feste Leiste nach unten in
+Daumenreichweite, Tabellen werden zu Karten, und der Kopf zeigt nur noch das
+Nötigste. Getestet bei 360, 390, 768 und 1280 Pixel Breite.
+
+**Geprüft wurde** mit einem Skript im Browser: jedes Bedienelement hat einen
+lesbaren Namen, keine Fläche ist kleiner als 34 Pixel hoch, kein Text liegt
+unter 4,5 zu 1 Kontrast, und keine Seite scrollt seitlich. Wer weniger Bewegung
+eingestellt hat, bekommt keine Animationen.
+
 ## Was bewusst so ist
 
 - **Kein Grün.** Blau heißt „in Ordnung", Gelb heißt „hinschauen", Rot heißt
@@ -134,3 +171,5 @@ src/
 - **Realtime ist die Kür.** Die Daten laden sich ohnehin jede Minute nach. Fällt
   die Live-Verbindung aus, merkt man davon nichts.
 - **Leere Zustände laden zum Handeln ein**, statt nur zu melden, dass nichts da ist.
+- **Beim Laden bleibt die Form stehen.** Statt eines Textes erscheinen graue
+  Platzhalter in der Größe des späteren Inhalts, damit nichts springt.

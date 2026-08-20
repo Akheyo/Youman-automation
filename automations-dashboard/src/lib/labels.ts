@@ -1,3 +1,4 @@
+import type { ZeichenName } from '../components/Icons';
 import type {
   AutomationStatus,
   BefehlAktion,
@@ -118,4 +119,64 @@ export const ausloeserText: Record<string, string> = {
 export function ausloeser(art: string | null | undefined): string {
   if (!art) return 'unbekannter Anlass';
   return ausloeserText[art] ?? art;
+}
+
+/* Farbe allein erzählt nichts. Zu jedem Zustand gehört ein eigenes Zeichen. */
+
+export const automationZeichen: Record<AutomationStatus, ZeichenName> = {
+  running: 'kreisel',
+  stopped: 'stopp',
+  paused: 'pause',
+  error: 'warndreieck',
+};
+
+export const durchlaufZeichen: Record<RunStatus, ZeichenName> = {
+  running: 'kreisel',
+  success: 'haken',
+  error: 'warndreieck',
+  cancelled: 'stopp',
+};
+
+export const schwereZeichen: Record<FehlerSchwere, ZeichenName> = {
+  kritisch: 'kritisch',
+  hoch: 'warndreieck',
+  mittel: 'warnkreis',
+  niedrig: 'auskunft',
+};
+
+export const aktionZeichen: Record<BefehlAktion, ZeichenName> = {
+  start: 'start',
+  stop: 'pause',
+  run_now: 'blitz',
+  retry: 'wiederholen',
+  cancel: 'stopp',
+};
+
+export const befehlStatusZeichen: Record<BefehlStatus, ZeichenName> = {
+  pending: 'uhr',
+  accepted: 'kreisel',
+  done: 'haken',
+  failed: 'warndreieck',
+};
+
+export const fehlerStatusZeichen: Record<FehlerStatus, ZeichenName> = {
+  open: 'warnkreis',
+  in_progress: 'hand',
+  resolved: 'haken',
+};
+
+/**
+ * Im audit_log stehen kurze Schlüssel. Hier werden sie zu Sätzen, die man
+ * ohne Erklärung versteht.
+ */
+export function protokollAktionText(aktion: string | null | undefined): string {
+  if (!aktion) return 'Änderung';
+  const rollenTreffer = /^rolle_geaendert_zu_(viewer|operator|admin)$/.exec(aktion);
+  if (rollenTreffer) return `Rechte geändert auf: ${rolleText[rollenTreffer[1] as Rolle]}`;
+  const bekannt: Record<string, string> = {
+    zugang_gegeben: 'Zugang gegeben',
+    zugang_entzogen: 'Zugang entzogen',
+    rolle_geaendert: 'Rechte geändert',
+  };
+  return bekannt[aktion] ?? aktion.replace(/_/g, ' ');
 }

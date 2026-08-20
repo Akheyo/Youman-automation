@@ -1,17 +1,26 @@
 import type { AutomationUebersicht, Durchlauf, Kennzahlen24h, OffenerFehler } from '../lib/types';
-import { anzahl } from '../lib/format';
+import { anzahl, prozent } from '../lib/format';
+import Zeichen, { type ZeichenName } from './Icons';
 
 export type Gesamtzustand = 'blau' | 'gelb' | 'rot';
+
+export interface Fakt {
+  wert: string;
+  name: string;
+}
 
 export interface Lage {
   zustand: Gesamtzustand;
   satz: string;
   erklaerung: string;
+  fakten: Fakt[];
+  tat: { text: string; ziel: string } | null;
 }
 
 /**
  * Der Zustandsbalken sagt in einem deutschen Satz, ob alles in Ordnung ist.
  * Wer zum ersten Mal draufschaut, versteht die Lage, ohne eine Zahl zu lesen.
+ * Die Zahlen darunter sind die Belege, nicht die Botschaft.
  */
 export function lageBestimmen(
   automationen: AutomationUebersicht[],
@@ -24,11 +33,15 @@ export function lageBestimmen(
   const leicht = fehler.filter((eintrag) => eintrag.severity === 'mittel' || eintrag.severity === 'niedrig');
   const angehalten = automationen.filter((eintrag) => eintrag.status === 'paused' || eintrag.status === 'stopped');
   const fehlerhafteLaeufe = kennzahlen?.fehlerhaft ?? 0;
+  const abgeschlossen = (kennzahlen?.erfolgreich ?? 0) + fehlerhafteLaeufe;
+  const quote = abgeschlossen > 0 ? ((kennzahlen?.erfolgreich ?? 0) / abgeschlossen) * 100 : null;
 
-  const laeuftGerade =
-    laufende.length > 0
-      ? `${anzahl(laufende.length)} ${laufende.length === 1 ? 'Durchlauf läuft' : 'Durchläufe laufen'} gerade.`
-      : 'Gerade läuft nichts.';
+  const fakten: Fakt[] = [
+    { wert: anzahl(automationen.length), name: automationen.length === 1 ? 'Automation' : 'Automationen' },
+    { wert: anzahl(laufende.length), name: 'läuft gerade' },
+    { wert: anzahl(fehler.length), name: fehler.length === 1 ? 'offener Fehler' : 'offene Fehler' },
+    { wert: quote === null ? 'keine' : prozent(quote), name: 'erfolgreich in 24 Stunden' },
+  ];
 
   if (kaputt.length > 0 || schwer.length > 0) {
     const teile: string[] = [];
@@ -39,7 +52,9 @@ export function lageBestimmen(
     return {
       zustand: 'rot',
       satz: 'Es gibt ein Problem',
-      erklaerung: teile.join(' ') + ' Schau bitte in den Bereich Fehler.',
+      erklaerung: `${teile.join(' ')} Das solltest du dir jetzt ansehen.`,
+      fakten,
+      tat: { text: 'Fehler ansehen', ziel: '#/fehler' },
     };
   }
 
@@ -70,6 +85,11 @@ export function lageBestimmen(
       zustand: 'gelb',
       satz: 'Läuft, aber etwas wartet auf dich',
       erklaerung: teile.join(' '),
+      fakten,
+      tat:
+        leicht.length > 0
+          ? { text: 'Fehler ansehen', ziel: '#/fehler' }
+          : { text: 'Automationen ansehen', ziel: '#/automationen' },
     };
   }
 
@@ -78,43 +98,17 @@ export function lageBestimmen(
     satz: 'Alles in Ordnung',
     erklaerung:
       automationen.length === 0
-        ? 'Es ist noch keine Automation eingetragen.'
-        : `Alle ${anzahl(automationen.length)} Automationen sind unauffällig. ${laeuftGerade}`,
+        ? 'Es ist noch keine Automation eingetragen. Sobald die erste in der Datenbank steht, siehst du sie hier.'
+        : `Alle ${anzahl(automationen.length)} Automationen sind unauffällig, kein Fehler ist offen.`,
+    fakten,
+    tat: null,
   };
 }
 
-const zeichen: Record<Gesamtzustand, React.ReactNode> = {
-  blau: (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 6L9 17l-5-5" />
-    </svg>
-  ),
-  gelb: (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 8v5" />
-      <path d="M12 17h.01" />
-      <circle cx="12" cy="12" r="9" />
-    </svg>
-  ),
-  rot: (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
-      <path d="M12 9v4" />
-      <path d="M12 17h.01" />
-    </svg>
-  ),
-};
-
-const flaeche: Record<Gesamtzustand, string> = {
-  blau: 'var(--blau-weich)',
-  gelb: 'var(--gelb-weich)',
-  rot: 'var(--rot-weich)',
-};
-
-const farbe: Record<Gesamtzustand, string> = {
-  blau: 'var(--blau)',
-  gelb: 'var(--gelb)',
-  rot: 'var(--rot)',
+const zeichenName: Record<Gesamtzustand, ZeichenName> = {
+  blau: 'haken',
+  gelb: 'warnkreis',
+  rot: 'warndreieck',
 };
 
 const klasse: Record<Gesamtzustand, string> = {
@@ -123,19 +117,33 @@ const klasse: Record<Gesamtzustand, string> = {
   rot: 'zustandRot',
 };
 
-export default function Zustandsbalken({ lage }: { lage: Lage }) {
+export default function Zustandsbalken({ lage, gehZu }: { lage: Lage; gehZu: (ziel: string) => void }) {
   return (
-    <section className={`zustand ${klasse[lage.zustand]}`} aria-live="polite">
-      <span
-        className="zustandZeichen"
-        style={{ background: flaeche[lage.zustand], color: farbe[lage.zustand] }}
-        aria-hidden="true"
-      >
-        {zeichen[lage.zustand]}
+    <section className={`zustand ${klasse[lage.zustand]}`} aria-live="polite" aria-atomic="true">
+      <span className="zustandZeichen">
+        <Zeichen name={zeichenName[lage.zustand]} groesse={22} strich={2.2} />
       </span>
       <div className="zustandText">
         <h1>{lage.satz}</h1>
         <p>{lage.erklaerung}</p>
+
+        <div className="zustandFakten">
+          {lage.fakten.map((fakt) => (
+            <span key={fakt.name} className="zustandFakt">
+              <span className="zustandFaktWert">{fakt.wert}</span>
+              {fakt.name}
+            </span>
+          ))}
+        </div>
+
+        {lage.tat && (
+          <div className="zustandTat">
+            <button type="button" className="knopf knopfHaupt" onClick={() => gehZu(lage.tat!.ziel)}>
+              {lage.tat.text}
+              <Zeichen name="pfeilRechts" groesse={15} />
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
