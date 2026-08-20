@@ -29,7 +29,7 @@ export const mainNav: NavItem[] = [
     children: [
       { label: 'Fertigung und Maschinenbau', href: '/branchen/fertigung-und-maschinenbau' },
       { label: 'Logistik & Versand', href: '/branchen/logistik-und-versand' },
-      { label: 'E-Commerce & Autohandel', href: '/branchen/e-commerce-und-autohandel' },
+      { label: 'Onlinehandel', href: '/branchen/onlinehandel' },
       { label: 'Automobil und Zulieferer', href: '/branchen/automobil-und-zulieferer' },
     ],
   },

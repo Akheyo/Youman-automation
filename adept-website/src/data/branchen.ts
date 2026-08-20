@@ -56,24 +56,23 @@ export const branchen: Branche[] = [
     referenz: 'drahtmueller-palettenoptimierung',
   },
   {
-    slug: 'e-commerce-und-autohandel',
-    // Vorläufig das Versandzentrum aus dem Bildregister: es zeigt Kartons auf
-    // einer Förderstrecke und trifft damit die Versandseite. Ein Motiv, das
-    // auch den Fahrzeughandel abbildet, gibt es noch nicht.
+    slug: 'onlinehandel',
+    // Versandzentrum aus dem Bildregister: Kartons auf einer Förderstrecke,
+    // das trifft den Kern dieser Branche.
     bild: 'versandzentrum',
-    title: 'E-Commerce & Autohandel',
+    title: 'Onlinehandel',
     teaser: 'Artikelpflege, Listings und Retouren automatisiert und angebunden an Ihren Bestand.',
     intro:
-      'Im Onlinehandel entsteht der Aufwand selten beim Verkaufen, sondern davor und danach: Artikeldaten für jeden Kanal einzeln pflegen, Listings je Marktplatz neu aufbauen, Retouren wieder in den Bestand bringen. adept& bildet genau diese Abläufe als Modul ab und hängt sie an das System, das die Bestände führt. Im Fahrzeughandel gilt dieselbe Logik eine Ebene größer, für Inserate, Standzeiten und den Status eines Fahrzeugs.',
+      'Im Onlinehandel entsteht der Aufwand selten beim Verkaufen, sondern davor und danach: Artikeldaten für jeden Kanal einzeln pflegen, Listings je Marktplatz neu aufbauen, Retouren wieder in den Bestand bringen. Wir kennen die gängigen Marktplätze aus der Praxis, darunter Amazon und eBay, und wissen, an welchen Eigenheiten dort Arbeit hängen bleibt. adept& bildet diese Abläufe als Modul ab und hängt sie an das System, das die Bestände ohnehin führt. Für den Fahrzeughandel gilt dasselbe, dort mit Fahrzeugbörsen statt Marktplätzen.',
     painpoints: [
       'Artikeldaten werden für jeden Kanal von Hand gepflegt. Eine Preisänderung oder ein neues Foto bedeutet dieselbe Arbeit drei- oder viermal.',
       'Ein neues Produkt online zu stellen dauert länger, als es sollte: Texte, Merkmale, Kategorien und Bilder werden je Marktplatz neu zusammengesucht und in dessen Format gebracht.',
-      'Jeder Marktplatz verlangt eigene Pflichtfelder und Kategoriebäume. Was bei einem Kanal durchgeht, wird beim nächsten abgelehnt.',
+      'Jeder Marktplatz verlangt eigene Pflichtfelder und Kategoriebäume. Was bei Amazon durchgeht, wird bei eBay abgelehnt, und umgekehrt.',
       'Bestände in Shop, Marktplatz und Lager laufen auseinander. Verkauft wird Ware, die nicht mehr da ist. Storno, Nachbestellung und eine schlechtere Bewertung kommen dazu.',
       'Retouren laufen neben dem System. Wareneingang, Zustandsprüfung und Wiedereinlagerung hängen nicht am Bestand, und die Ware fehlt im Verkauf, obwohl sie im Regal steht.',
       'Ob eine Retoure zurück in den Verkauf geht, als B-Ware neu gelistet oder abgeschrieben wird, entscheidet Erfahrung statt einer hinterlegten Regel.',
       'Was ein Auftrag am Ende wirklich eingebracht hat, nach Verpackung, Versand, Retoure und Marktplatzgebühr, steht nirgends zusammen.',
-      'Im Fahrzeughandel dasselbe eine Ebene größer: Inserate liegen in mehreren Börsen, ein verkauftes Fahrzeug steht tagelang weiter online, und Standzeit sowie gebundenes Kapital je Fahrzeug sind nicht auf Knopfdruck sichtbar.',
+      'Im Fahrzeughandel dasselbe mit größeren Beträgen: Inserate liegen in mehreren Börsen, ein verkauftes Fahrzeug steht tagelang weiter online, und Standzeit sowie gebundenes Kapital je Fahrzeug sind nicht auf Knopfdruck sichtbar.',
     ],
     funktionen: ['systemintegration-und-erp-anbindung', 'logistik-und-versandsteuerung', 'reporting-und-operative-transparenz'],
     platzhalter: false,
