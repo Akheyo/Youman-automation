@@ -18,6 +18,26 @@ GENERIC_MAIL = re.compile(r"^(info|kontakt|mail|office|service|shop|web|hallo|"
                           r"impressum|zentrale|team)@", re.I)
 DECISION_ROLE = re.compile(r"(Geschäftsführ|Vorstand|Inhaber|Vertreten)", re.I)
 
+# Angeschnittene Rollen-/Abschnittswoerter, die faelschlich am Namen haengen
+NAME_TAIL = re.compile(
+    r"\s+(Verantwortl\w*|Geschäftsf\w*|Vertret\w*|Inhaber\w*|Vorstand\w*|"
+    r"Handelsreg\w*|Registerg\w*|Amtsger\w*|Umsatzst\w*|Steuern\w*|"
+    r"Postansch\w*|Anschrift\w*|Telefon\w*|Telefax\w*|Register\w*|Kontakt\w*|"
+    r"Adress\w*|Sitz\w*)$", re.I)
+
+
+def clean_name(v: str) -> str:
+    out = []
+    for part in (v or "").split(";"):
+        part = part.strip()
+        prev = None
+        while part and part != prev:          # mehrfach angehaengte Fragmente
+            prev = part
+            part = NAME_TAIL.sub("", part).strip(" .,;-")
+        if len(part.split()) >= 2:
+            out.append(part)
+    return "; ".join(out)
+
 
 def score(r: dict) -> int:
     """Je vollstaendiger und je naeher an einer echten Person, desto hoeher."""
@@ -64,6 +84,8 @@ def main():
     want = int(sys.argv[3]) if len(sys.argv) > 3 else 100
 
     rows = [r for r in csv.DictReader(open(src, encoding="utf-8")) if plausible(r)]
+    for r in rows:
+        r["entscheider"] = clean_name(r.get("entscheider", ""))
 
     # Dedupe: gleiche Firmierung oder gleiche Mail-Domain nur einmal
     seen_firma, seen_maildom, uniq = set(), set(), []

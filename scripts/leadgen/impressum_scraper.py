@@ -50,6 +50,12 @@ NAME_RE = re.compile(
     r"(?:\s+(?:von|van|de|der|zu|den))?"
     r"(?:\s+[A-ZÄÖÜ][a-zäöüß]+){1,2})")
 
+TAIL_STOP = re.compile(
+    r"(?:Verantwortl|Geschäftsführ|Vertretungsber|Vertreten|Inhaber|Vorstand|"
+    r"Handelsregister|Registergericht|Amtsgericht|Umsatzsteuer|USt|Steuernummer|"
+    r"Postanschrift|Anschrift|Telefon|Telefax|E-Mail|Sitz\s+der|Register|"
+    r"Aufsichtsrat|Redaktionell|Kontakt|Adresse)", re.I)
+
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
 PHONE_RE = re.compile(r"(?:\+|00)\s?(?:49|43|41)[\s\-/()\d]{6,20}|0\d{2,5}[\s\-/]\d[\s\-/\d]{4,16}")
 # Register-/Steuernummern bewusst OHNE re.I: sonst matcht "CHE" in
@@ -154,6 +160,9 @@ def pick_decision_maker(text: str):
         role = re.sub(r"\s+", " ", m.group(1)).strip()
         tail = text[m.end():m.end() + 120]
         tail = tail.split("\n")[0] if tail.split("\n")[0].strip() else tail.strip()
+        # Vor dem naechsten Abschnittswort abschneiden, sonst wandert ein
+        # angeschnittenes "Verantwortlich"/"Handelsregister" in den Namen.
+        tail = TAIL_STOP.split(tail)[0]
         for nm in NAME_RE.finditer(tail[:120]):
             name = re.sub(r"\s+", " ", nm.group(1)).strip()
             if BAD_NAME_WORDS.match(name):
