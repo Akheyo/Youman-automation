@@ -245,13 +245,15 @@ def pick_company(text: str, domain: str = "") -> str:
         line = line.strip(" .,;:-|/")
         if not (3 < len(line) <= 80):
             continue
-        if re.search(r"(Impressum|Datenschutz|Startseite|Navigation|Anmelden|"
-                     r"Warenkorb|Cookie|Newsletter|Versand|Zahlung|Widerruf)", line, re.I):
-            continue
         m = LEGAL_RE.search(line)
         if not m:
             continue
         cand = re.sub(r"\s+", " ", m.group(1)).strip(" .,;-")
+        # Navigationswoerter nur im TREFFER pruefen, nicht in der ganzen Zeile:
+        # "Impressum | epoq internet services GmbH" ist eine gueltige Quelle.
+        if re.search(r"(Impressum|Datenschutz|Startseite|Navigation|Anmelden|"
+                     r"Warenkorb|Cookie|Newsletter|Versand|Zahlung|Widerruf)", cand, re.I):
+            continue
         flat = re.sub(r"[^a-z0-9]", "", cand.lower())
         if root and len(root) > 3 and root in flat:
             return cand

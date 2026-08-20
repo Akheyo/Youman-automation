@@ -26,6 +26,19 @@ NAME_TAIL = re.compile(
     r"Adress\w*|Sitz\w*)$", re.I)
 
 
+# Parkdomains/Verkaufsseiten produzieren Phrasen, die wie Namen aussehen
+NOT_A_NAME = re.compile(
+    r"(Domain|Veräußer|Verkauf|Vermarkt|Angebot|Anfrage|Website|Impressum|"
+    r"Seite|Inhalt|Betreiber\s*$)", re.I)
+
+
+def clean_firma(v: str) -> str:
+    """Vorangestellte Jahreszahlen/Copyright-Reste entfernen."""
+    v = re.sub(r"^(?:©|Copyright)?\s*(?:19|20)\d{2}\s*[-–]?\s*(?:(?:19|20)\d{2})?\s*",
+               "", (v or "").strip())
+    return v.strip(" .,;-")
+
+
 def clean_name(v: str) -> str:
     out = []
     for part in (v or "").split(";"):
@@ -34,7 +47,7 @@ def clean_name(v: str) -> str:
         while part and part != prev:          # mehrfach angehaengte Fragmente
             prev = part
             part = NAME_TAIL.sub("", part).strip(" .,;-")
-        if len(part.split()) >= 2:
+        if len(part.split()) >= 2 and not NOT_A_NAME.search(part):
             out.append(part)
     return "; ".join(out)
 
@@ -74,7 +87,8 @@ def plausible(r: dict) -> bool:
     # Firmierung muss nach Firma aussehen, nicht nach Fliesstext
     firma = r.get("firma", "")
     if firma and (len(firma) > 70 or re.search(
-            r"(Innerhalb|Versand|Lieferung|Bestellung|Widerruf|Cookie)", firma, re.I)):
+            r"(Innerhalb|Versand|Lieferung|Bestellung|Widerruf|Cookie|"
+            r"Suchmaschinen|Weiterver|Domain)", firma, re.I)):
         r["firma"] = ""
     return True
 
@@ -86,6 +100,7 @@ def main():
     rows = [r for r in csv.DictReader(open(src, encoding="utf-8")) if plausible(r)]
     for r in rows:
         r["entscheider"] = clean_name(r.get("entscheider", ""))
+        r["firma"] = clean_firma(r.get("firma", ""))
 
     # Dedupe: gleiche Firmierung oder gleiche Mail-Domain nur einmal
     seen_firma, seen_maildom, uniq = set(), set(), []
