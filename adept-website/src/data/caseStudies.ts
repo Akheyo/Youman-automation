@@ -49,7 +49,7 @@ export const caseStudies: CaseStudy[] = [
   },
   {
     slug: 'absolar-warenwirtschaft',
-    title: 'Integriertes Warenwirtschaftssystem für Solarprojekte',
+    title: 'Warenwirtschaftssystem für Solarprojekte',
     kunde: 'A&B SolarEnergy',
     branche: 'Photovoltaik',
     date: null,
