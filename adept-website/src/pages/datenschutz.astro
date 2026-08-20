@@ -2,53 +2,305 @@
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
 import Section from '../components/Section.astro';
-import PlaceholderNote from '../components/PlaceholderNote.astro';
+import { anbieter, anbieterName, anbieterVollstaendig } from '../data/anbieter';
+import { kontakt, istWeb3Forms } from '../data/kontakt';
 
 /**
- * Bewusst ohne Inhalt: keine erfundenen Rechtstexte.
- * Die technischen Fakten unten sind belastbar und helfen beim Erstellen der
- * Erklärung – sie ersetzen sie aber nicht.
- */
-/*
- * Nachgemessen am ausgelieferten Stand, nicht aus dem Gedächtnis notiert:
- * über alle 21 Seiten wurde jede Netzanfrage protokolliert, einschließlich
- * der verzögert geladenen Bilder nach dem Scrollen. Ergebnis: keine einzige
+ * Datenschutzerklärung.
+ *
+ * Der Text ist nicht aus einer Vorlage übernommen, sondern beschreibt, was
+ * diese Seite nachweislich tut. Grundlage ist eine Messung über alle
+ * ausgelieferten Seiten: jede Netzanfrage wurde protokolliert, auch nach dem
+ * Scrollen wegen der verzögert geladenen Bilder. Ergebnis: keine einzige
  * Anfrage an einen fremden Host, keine Cookies, kein Speicher im Browser.
  *
- * Diese Liste ist die Grundlage für die Erklärung, nicht die Erklärung
- * selbst. Sie muss aktualisiert werden, sobald ein Dienst hinzukommt.
+ * Was hier steht, ist deshalb belegbar. Was nicht belegbar war, steht auch
+ * nicht drin: weder eine Speicherdauer beim Hoster noch die Rechtsgrundlage
+ * eines Drittlandtransfers, die adept& mit dem jeweiligen Anbieter selbst
+ * klären muss.
+ *
+ * Diese Seite ersetzt keine Rechtsberatung. Sie muss angepasst werden,
+ * sobald ein weiterer Dienst hinzukommt.
  */
-const technischeFakten = [
-  'Hosting über GitHub Pages (GitHub Inc., USA). Serverseitig fallen dabei Zugriffsdaten einschließlich IP-Adresse an. Rechtsgrundlage und Vereinbarung zur Auftragsverarbeitung sind zu klären.',
-  'Schriften werden selbst ausgeliefert (@fontsource). Es besteht keine Verbindung zur Google-Fonts-CDN.',
-  'Die Website setzt keine Cookies und legt nichts im Browser ab, weder localStorage noch sessionStorage. Es ist kein Analyse- oder Tracking-Werkzeug eingebunden.',
-  'Beim bloßen Aufruf einer Seite wird nichts von Dritten nachgeladen: keine eingebetteten Videos, keine Kartendienste, keine Social-Media-Plug-ins, keine externen Schriften oder Skripte.',
-  'Das Kontaktformular sendet an Web3Forms (api.web3forms.com). Übertragen werden Name, Unternehmen, E-Mail-Adresse, Telefonnummer und Nachricht, und nur dann, wenn das Formular abgeschickt wird. Rechtsgrundlage, Sitz des Anbieters, Speicherdauer und Vereinbarung zur Auftragsverarbeitung sind zu klären.',
-  'Die Terminbuchung ist ein Verweis auf den Google Kalender (calendar.app.google). Der Aufruf erfolgt erst beim Klick; ab dort gelten die Bedingungen von Google. Vor dem Klick wird nichts an Google übertragen.',
-  'Angaben zu Telefon und E-Mail auf der Kontaktseite sind reine Verweise (tel: und mailto:) und lösen von sich aus keine Übertragung aus.',
+
+const STAND = '20. August 2026';
+
+const rechte = [
+  { titel: 'Auskunft', norm: 'Art. 15 DSGVO', text: 'Sie können erfahren, ob und welche Daten wir zu Ihnen verarbeiten.' },
+  { titel: 'Berichtigung', norm: 'Art. 16 DSGVO', text: 'Unrichtige Daten müssen wir korrigieren, unvollständige ergänzen.' },
+  { titel: 'Löschung', norm: 'Art. 17 DSGVO', text: 'Sie können die Löschung Ihrer Daten verlangen, soweit keine Aufbewahrungspflicht entgegensteht.' },
+  { titel: 'Einschränkung', norm: 'Art. 18 DSGVO', text: 'Statt einer Löschung können Sie die Verarbeitung auch nur einschränken lassen.' },
+  { titel: 'Datenübertragbarkeit', norm: 'Art. 20 DSGVO', text: 'Sie erhalten Ihre Daten in einem gängigen, maschinenlesbaren Format.' },
+  { titel: 'Widerspruch', norm: 'Art. 21 DSGVO', text: 'Gegen eine Verarbeitung auf Grundlage berechtigter Interessen können Sie Widerspruch einlegen.' },
+  { titel: 'Widerruf der Einwilligung', norm: 'Art. 7 Abs. 3 DSGVO', text: 'Eine erteilte Einwilligung können Sie jederzeit mit Wirkung für die Zukunft widerrufen.' },
 ];
 ---
 
-<Base title="Datenschutzerklärung" description="Datenschutzerklärung von adept&: Verarbeitung personenbezogener Daten beim Besuch dieser Website. Der Text wird derzeit erstellt." noindex={true}>
-  <PageHeader title="Datenschutzerklärung" breadcrumb={[{ label: 'Home', href: '/' }]} />
+<Base
+  title="Datenschutzerklärung"
+  description="Datenschutzerklärung von adept&: welche Daten beim Besuch dieser Website verarbeitet werden, an wen sie gehen und welche Rechte Sie haben."
+  noindex={true}
+>
+  <PageHeader
+    title="Datenschutzerklärung"
+    lead={`Stand: ${STAND}`}
+    breadcrumb={[{ label: 'Home', href: '/' }]}
+  />
 
   <Section>
-    <PlaceholderNote title="Platzhalter: Datenschutzerklärung fehlt noch">
-      <p>
-        Diese Seite enthält bewusst keinen Text. Eine Datenschutzerklärung ist rechtlich verbindlich
-        und wird nicht generiert. Sie muss von adept& bzw. der Rechtsberatung geliefert werden.
-      </p>
-      <p class="mt-3">
-        Der technische Stand der Website, nachgemessen am ausgelieferten Stand. Diese Angaben
-        müssen in die Erklärung einfließen:
-      </p>
-      <ul class="mt-3 list-disc space-y-2 pl-5">
-        {technischeFakten.map((fakt) => <li>{fakt}</li>)}
-      </ul>
-      <p class="mt-4">
-        Der fertige Text wird in <code class="px-1">src/pages/datenschutz.astro</code> eingesetzt und
-        ersetzt diesen Block.
-      </p>
-    </PlaceholderNote>
+    <div class="max-w-3xl space-y-14">
+      {/* ------------------------------------------------ Verantwortlicher */}
+      <section>
+        <h2 class="text-2xl md:text-3xl">1. Verantwortlicher</h2>
+        <p class="prose-measure mt-5 text-ink-soft">
+          Verantwortlich für die Verarbeitung personenbezogener Daten auf dieser Website ist:
+        </p>
+        {
+          anbieterVollstaendig ? (
+            <address class="mt-5 not-italic leading-relaxed text-ink-soft">
+              <span class="block font-medium text-ink">{anbieterName}</span>
+              {anbieter.personen.map((person) => (
+                <span class="block">{person.name}</span>
+              ))}
+              <span class="mt-3 block">{anbieter.strasse}</span>
+              <span class="block">
+                {anbieter.plz} {anbieter.ort}
+              </span>
+              <span class="block">{anbieter.land}</span>
+              {anbieter.email && (
+                <span class="mt-3 block">
+                  E-Mail:{' '}
+                  <a class="text-accent" href={`mailto:${anbieter.email}`}>
+                    {anbieter.email}
+                  </a>
+                </span>
+              )}
+              {anbieter.personen[0]?.telefon && (
+                <span class="block">Telefon: {anbieter.personen[0].telefon}</span>
+              )}
+            </address>
+          ) : (
+            <p class="prose-measure mt-5 text-ink-soft">
+              Die vollständigen Angaben finden Sie im Impressum.
+            </p>
+          )
+        }
+      </section>
+
+      {/* -------------------------------------------------------- Aufruf */}
+      <section>
+        <h2 class="text-2xl md:text-3xl">2. Aufruf dieser Website</h2>
+        <div class="prose-measure mt-5 space-y-4 text-ink-soft">
+          <p>
+            Diese Website wird über GitHub Pages bereitgestellt, einen Dienst der GitHub, Inc. mit
+            Sitz in San Francisco, Kalifornien, USA. Beim Aufruf einer Seite übermittelt Ihr Browser
+            technische Angaben an die Server des Anbieters, die dort in sogenannten Server Logfiles
+            gespeichert werden. Dazu gehören insbesondere Ihre IP-Adresse, Datum und Uhrzeit des
+            Zugriffs, die angeforderte Datei, die zuvor besuchte Seite sowie Angaben zu Browser und
+            Betriebssystem.
+          </p>
+          <p>
+            Diese Verarbeitung ist technisch notwendig, damit die Seite überhaupt ausgeliefert
+            werden kann. Rechtsgrundlage ist unser berechtigtes Interesse an einem sicheren und
+            stabilen Betrieb nach Art. 6 Abs. 1 lit. f DSGVO. Wir selbst haben auf diese Logfiles
+            keinen Zugriff und werten sie nicht aus. Da der Anbieter seinen Sitz in den USA hat,
+            können die Daten dort verarbeitet werden. Näheres regelt die Datenschutzerklärung von
+            GitHub.
+          </p>
+          <p>
+            <a
+              class="text-accent"
+              href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement"
+              target="_blank"
+              rel="noopener noreferrer nofollow">Datenschutzerklärung von GitHub</a
+            >
+          </p>
+        </div>
+      </section>
+
+      {/* ------------------------------------------ Keine Cookies, kein Tracking */}
+      <section>
+        <h2 class="text-2xl md:text-3xl">3. Keine Cookies, keine Analyse, keine Einbettungen</h2>
+        <div class="prose-measure mt-5 space-y-4 text-ink-soft">
+          <p>
+            Diese Website setzt keine Cookies und legt nichts in Ihrem Browser ab, weder im
+            localStorage noch im sessionStorage. Es ist kein Analyse- oder Tracking-Werkzeug
+            eingebunden, es findet keine Reichweitenmessung statt und es werden keine Profile
+            gebildet.
+          </p>
+          <p>
+            Beim bloßen Aufruf einer Seite wird nichts von Dritten nachgeladen. Es sind keine
+            Videos eingebettet, keine Kartendienste, keine Social-Media-Plug-ins und keine externen
+            Skripte. Auch die verwendeten Schriften liegen auf unserem eigenen Server und werden
+            nicht von einem fremden Anbieter geladen. Eine Verbindung zu Google Fonts besteht
+            nicht.
+          </p>
+          <p>
+            Aus dem Netz nach außen geht ausschließlich das, was Sie selbst auslösen: das Absenden
+            des Kontaktformulars und der Klick auf die Terminbuchung. Beides ist unten beschrieben.
+          </p>
+        </div>
+      </section>
+
+      {/* --------------------------------------------------- Kontaktformular */}
+      <section>
+        <h2 class="text-2xl md:text-3xl">4. Kontaktformular</h2>
+        <div class="prose-measure mt-5 space-y-4 text-ink-soft">
+          <p>
+            Wenn Sie uns über das Formular auf der Kontaktseite schreiben, verarbeiten wir die von
+            Ihnen eingegebenen Angaben, um Ihre Anfrage zu bearbeiten. Übermittelt werden Ihr Name,
+            Ihr Unternehmen, Ihre E-Mail-Adresse, Ihre Telefonnummer, sofern Sie sie angeben, und
+            Ihre Nachricht. Pflichtfelder sind als solche gekennzeichnet.
+          </p>
+          {
+            istWeb3Forms && (
+              <p>
+                Die Übertragung läuft über den Dienst Web3Forms, der die Anfrage entgegennimmt und
+                als E-Mail an uns weiterleitet. Der Dienst erhält dabei die von Ihnen eingegebenen
+                Daten sowie technische Angaben zur Übertragung. Ein Speichern der Nachrichten über
+                die Weiterleitung hinaus ist nicht Zweck des Einsatzes.
+              </p>
+            )
+          }
+          <p>
+            Rechtsgrundlage ist Ihre Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO, die Sie vor dem
+            Absenden ausdrücklich erteilen, sowie Art. 6 Abs. 1 lit. b DSGVO, soweit Ihre Anfrage
+            auf den Abschluss oder die Durchführung eines Vertrags gerichtet ist. Ihre Einwilligung
+            können Sie jederzeit mit Wirkung für die Zukunft widerrufen. Eine formlose Nachricht an
+            uns genügt.
+          </p>
+          <p>
+            Das Formular enthält ein für Sie unsichtbares Zusatzfeld, das automatisierte Zusendungen
+            erkennen soll. Wird es ausgefüllt, verwerfen wir die Nachricht. Personenbezogene Daten
+            werden dabei nicht zusätzlich erhoben.
+          </p>
+          {
+            istWeb3Forms && (
+              <p>
+                <a
+                  class="text-accent"
+                  href="https://web3forms.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer nofollow">Datenschutzerklärung von Web3Forms</a
+                >
+              </p>
+            )
+          }
+        </div>
+      </section>
+
+      {/* ------------------------------------------------- E-Mail, Telefon */}
+      <section>
+        <h2 class="text-2xl md:text-3xl">5. Kontakt per E-Mail und Telefon</h2>
+        <div class="prose-measure mt-5 space-y-4 text-ink-soft">
+          <p>
+            Sie können uns auch unmittelbar schreiben oder anrufen. Die auf der Seite angegebenen
+            Adressen und Rufnummern sind reine Verweise. Ein Klick darauf öffnet Ihr eigenes
+            Programm für E-Mail oder Telefonie. Von sich aus überträgt die Website dabei nichts.
+          </p>
+          <p>
+            Wenden Sie sich an uns, verarbeiten wir Ihre Angaben zur Bearbeitung des Anliegens.
+            Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO bei vertraglichem Bezug, sonst unser
+            berechtigtes Interesse an der Beantwortung nach Art. 6 Abs. 1 lit. f DSGVO.
+          </p>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------- Terminlink */}
+      {
+        kontakt.terminlink && (
+          <section>
+            <h2 class="text-2xl md:text-3xl">6. Terminbuchung</h2>
+            <div class="prose-measure mt-5 space-y-4 text-ink-soft">
+              <p>
+                Für die Vereinbarung eines Gesprächs verweisen wir auf einen Buchungskalender von
+                Google. Es handelt sich um einen gewöhnlichen Verweis, nicht um eine Einbettung.
+                Solange Sie ihn nicht anklicken, wird nichts an Google übertragen.
+              </p>
+              <p>
+                Folgen Sie dem Verweis, verlassen Sie diese Website. Ab diesem Zeitpunkt gelten die
+                Bedingungen und die Datenschutzerklärung von Google. Dort eingegebene Angaben wie
+                Name, E-Mail-Adresse und Terminwunsch werden von Google verarbeitet und uns zur
+                Durchführung des Termins zur Verfügung gestellt.
+              </p>
+              <p>
+                <a
+                  class="text-accent"
+                  href="https://policies.google.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer nofollow">Datenschutzerklärung von Google</a
+                >
+              </p>
+            </div>
+          </section>
+        )
+      }
+
+      {/* ----------------------------------------------------- Speicherdauer */}
+      <section>
+        <h2 class="text-2xl md:text-3xl">7. Speicherdauer</h2>
+        <p class="prose-measure mt-5 text-ink-soft">
+          Wir speichern personenbezogene Daten nur so lange, wie es für den jeweiligen Zweck
+          erforderlich ist. Anfragen bewahren wir auf, bis das Anliegen abschließend bearbeitet ist
+          und sich daraus keine Rückfragen mehr ergeben. Bestehen gesetzliche Aufbewahrungspflichten,
+          etwa aus dem Handels- oder Steuerrecht, löschen wir erst nach deren Ablauf.
+        </p>
+      </section>
+
+      {/* ------------------------------------------------------------ Rechte */}
+      <section>
+        <h2 class="text-2xl md:text-3xl">8. Ihre Rechte</h2>
+        <p class="prose-measure mt-5 text-ink-soft">
+          Ihnen stehen gegenüber uns die folgenden Rechte zu. Für die Ausübung genügt eine formlose
+          Nachricht an die oben genannte Adresse.
+        </p>
+        <dl class="mt-8 rasterfugen sm:grid-cols-2">
+          {
+            rechte.map((recht) => (
+              <div class="bg-surface p-7">
+                <dt class="text-ink">
+                  <span class="font-medium">{recht.titel}</span>
+                  <span class="mt-1 block font-sans text-xs tracking-[0.14em] text-muted-fg uppercase">
+                    {recht.norm}
+                  </span>
+                </dt>
+                <dd class="mt-3 text-sm leading-relaxed text-ink-soft">{recht.text}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </section>
+
+      {/* ------------------------------------------------------- Beschwerde */}
+      <section>
+        <h2 class="text-2xl md:text-3xl">9. Beschwerde bei einer Aufsichtsbehörde</h2>
+        <div class="prose-measure mt-5 space-y-4 text-ink-soft">
+          <p>
+            Sind Sie der Ansicht, dass wir Ihre Daten nicht rechtmäßig verarbeiten, können Sie sich
+            bei einer Datenschutz-Aufsichtsbehörde beschweren. Zuständig ist die Behörde des
+            Bundeslandes, in dem wir unseren Sitz haben. Das ist Nordrhein-Westfalen.
+          </p>
+          <p>
+            <a
+              class="text-accent"
+              href="https://www.ldi.nrw.de"
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              >Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen</a
+            >
+          </p>
+        </div>
+      </section>
+
+      {/* -------------------------------------------------------- Änderungen */}
+      <section>
+        <h2 class="text-2xl md:text-3xl">10. Änderungen dieser Erklärung</h2>
+        <p class="prose-measure mt-5 text-ink-soft">
+          Wir passen diese Erklärung an, sobald sich die Verarbeitung ändert, etwa weil ein weiterer
+          Dienst hinzukommt. Es gilt jeweils die hier veröffentlichte Fassung. Der aktuelle Stand
+          ist oben vermerkt.
+        </p>
+      </section>
+    </div>
   </Section>
 </Base>

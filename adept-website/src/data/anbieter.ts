@@ -51,10 +51,8 @@ export const anbieter = {
 
   /** Ladungsfähige Anschrift – ein Postfach genügt nicht. */
   strasse: 'Dülmener Weg 86a',
-  /** FEHLT NOCH – wird nicht geraten. */
-  plz: null as string | null,
-  /** FEHLT NOCH – wird nicht geraten. */
-  ort: null as string | null,
+  plz: '46325' as string | null,
+  ort: 'Borken' as string | null,
   land: 'Deutschland',
 
   /** Zentrale Adresse; identisch mit der auf der Kontaktseite. */
