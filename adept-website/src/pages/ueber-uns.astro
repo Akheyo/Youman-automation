@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
 import Section from '../components/Section.astro';
+import Bild from '../components/Bild.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import PlaceholderNote from '../components/PlaceholderNote.astro';
 import Button from '../components/Button.astro';
@@ -117,9 +118,13 @@ import { kernleistungen, prozess, technischeLeistungen } from '../data/site';
     </ol>
   </Section>
 
+  {/* Bild und Platzhalter nebeneinander: das Motiv liegt vor, der Text noch
+      nicht. So ist der Abschnitt nicht leer, ohne dass etwas behauptet wird,
+      was nicht geschrieben wurde. */}
   <Section id="geschichte" tone="canvas">
     <SectionHeading kicker="Über adept&" title="Geschichte" />
-    <div class="mt-8">
+    <div class="mt-8 grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+      <Bild name="geschichte" ratio="16/9" sizes="(min-width: 1024px) 50vw, 100vw" />
       <PlaceholderNote title="Platzhalter – Text „Geschichte“ fehlt noch">
         <p>
           Für diesen Abschnitt liegt noch kein Text vor. Sobald die Unternehmensgeschichte
@@ -131,7 +136,8 @@ import { kernleistungen, prozess, technischeLeistungen } from '../data/site';
 
   <Section id="werte">
     <SectionHeading kicker="Über adept&" title="Werte" />
-    <div class="mt-8">
+    <div class="mt-8 grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
+      <Bild name="werte" ratio="16/9" sizes="(min-width: 1024px) 50vw, 100vw" />
       <PlaceholderNote title="Platzhalter – Text „Werte“ fehlt noch">
         <p>
           Für diesen Abschnitt liegt noch kein Text vor. Sobald die Werte formuliert sind, ersetzt

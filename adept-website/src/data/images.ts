@@ -21,7 +21,9 @@ export type BildKey =
   | 'material'
   | 'reporting'
   | 'architektur'
-  | 'versandzentrum';
+  | 'versandzentrum'
+  | 'geschichte'
+  | 'werte';
 
 /** Alt-Texte zentral, damit ein Bild überall gleich beschrieben wird. */
 export const bilder: Record<BildKey, string> = {
@@ -39,4 +41,6 @@ export const bilder: Record<BildKey, string> = {
   architektur: 'Stahlträger und hohe Fenster einer Industriehalle',
   versandzentrum:
     'Rollenförderer mit Kartons in einem Versandzentrum, dahinter Hochregale und ein Gabelstapler an der Verladetür',
+  geschichte: 'Sanduhr vor schwarzem Grund, der Sand rinnt durch die enge Mitte',
+  werte: 'Zwei Personen geben sich über einem Schreibtisch die Hand',
 };
