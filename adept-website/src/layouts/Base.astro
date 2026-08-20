@@ -6,6 +6,7 @@ import { withBase } from '../lib/url';
 import { bild } from '../lib/images';
 import { site } from '../data/site';
 import { kontakt } from '../data/kontakt';
+import { indexierungErlaubt } from '../data/sichtbarkeit';
 import type { BildKey } from '../data/images';
 
 interface Props {
@@ -39,6 +40,10 @@ const {
   breadcrumb = [],
   artikel,
 } = Astro.props;
+
+// Gesperrt ist eine Seite, wenn sie es selbst verlangt oder wenn die
+// gesamte Seite noch nicht zur Indexierung freigegeben ist.
+const gesperrt = noindex || !indexierungErlaubt;
 
 const seitentitel = title === site.name ? `${site.name} ${site.region}` : `${title} | ${site.name}`;
 const basis = Astro.site ?? new URL(Astro.url.origin);
@@ -137,9 +142,11 @@ const strukturierteDaten = {
     <title>{seitentitel}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical.href} />
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {/* Der globale Schalter sticht die Einstellung der einzelnen Seite:
+         solange die Seite nicht freigegeben ist, steht ueberall noindex. */}
+    {gesperrt && <meta name="robots" content="noindex, nofollow" />}
     {
-      !noindex && (
+      !gesperrt && (
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
       )
     }
@@ -160,7 +167,7 @@ const strukturierteDaten = {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
 
-    <link rel="sitemap" href={withBase('/sitemap-index.xml')} />
+    {indexierungErlaubt && <link rel="sitemap" href={withBase('/sitemap-index.xml')} />}
 
     <script
       type="application/ld+json"

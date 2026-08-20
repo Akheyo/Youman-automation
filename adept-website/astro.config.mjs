@@ -20,6 +20,10 @@ const SITE = (process.env.SITE_URL || 'https://www.adeptandpartners.de').replace
 );
 const BASE = process.env.SITE_BASE || '/';
 
+// Muss zu src/data/sichtbarkeit.ts passen. Zwei Stellen, weil die
+// Konfiguration keine TypeScript-Datei aus src/ importieren kann.
+const INDEXIERUNG_ERLAUBT = process.env.INDEXIERUNG?.trim().toLowerCase() === 'an';
+
 export default defineConfig({
   site: SITE,
   base: BASE,
@@ -39,7 +43,14 @@ export default defineConfig({
        * Texte da sind, koennen beide hier und in der jeweiligen Seite
        * freigegeben werden.
        */
-      filter: (seite) => !/\/(impressum|datenschutz)\/?$/.test(seite),
+      /*
+       * Ist die Seite noch nicht zur Indexierung freigegeben, bleibt die
+       * Sitemap leer. Eine Sitemap ist eine Bitte um Aufnahme; sie zu
+       * veroeffentlichen und gleichzeitig ueberall noindex zu setzen, waere
+       * ein Widerspruch.
+       */
+      filter: (seite) =>
+        INDEXIERUNG_ERLAUBT && !/\/(impressum|datenschutz)\/?$/.test(seite),
     }),
   ],
   vite: {
