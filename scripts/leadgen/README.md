@@ -37,6 +37,20 @@ python3 build_leadlist.py leads_raw.csv leads.csv 100
   Handelsregister- und USt-Nummer
 - verwirft alles, was sich nicht live verifizieren lässt (`status`-Spalte)
 
+## Die Spalte `firma_geprueft`
+
+Impressen nennen manchmal nicht den Shop-Betreiber, sondern die Agentur oder
+eine Gesellschafterin (z.B. „RYZE Digital GmbH" auf gepa-shop.de). Solche Namen
+lassen sich nicht einfach verwerfen — „Bauer + Kirch GmbH" ist für
+bike-components.de ja die richtige Betreibergesellschaft. Deshalb wird nur
+markiert:
+
+| Wert | Bedeutung |
+|---|---|
+| `ja` | Firmierung passt zur Domain oder zur Mail-Domain |
+| `pruefen` | Firmierung weicht ab — meist trotzdem korrekt, vor der Ansprache kurz gegenprüfen |
+| *(leer)* | keine Firmierung gefunden, es steht die Domain in der Spalte |
+
 ## Grenzen (ehrlich)
 
 - **Rund ein Drittel der Shops ist nicht auslesbar.** Große Händler setzen
@@ -47,6 +61,18 @@ python3 build_leadlist.py leads_raw.csv leads.csv 100
   (`info@`). Die Spalte `datenqualitaet` gewichtet spezifischere Postfächer höher.
 - **Konzern-Impressen nennen die Holding-Geschäftsführung**, nicht die für
   einen Einkauf zuständige Person.
+- **Rund jede achte Firmierung fehlt** (JS-gerenderte Impressen); dort steht
+  die Domain in der Spalte `firma`. Kontaktdaten und Entscheidername sind in
+  diesen Fällen trotzdem vorhanden.
+
+## Tests
+
+`python3 test_extraktion.py` prüft die Extraktionsmuster. Die Muster sind
+regex-lastig, und zwei Fehler sind hier bereits durchgerutscht: eine fehlende
+Wortgrenze schnitt „Max Mustermann" zu „Max M" ab (das Stoppwort `USt` traf
+das „ust" in „M**ust**ermann"), und Datumsangaben wurden als Telefonnummern
+erfasst. Beide Fälle sind jetzt abgedeckt — bei Änderungen an den Mustern
+bitte laufen lassen.
 
 ## Datenschutz
 

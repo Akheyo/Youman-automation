@@ -43,3 +43,6 @@ scripts/lod2-pipeline/venv/
 scripts/lod2-pipeline/__pycache__/
 *.gml
 *.xml.gz
+
+# Recherchierte Lead-Listen enthalten personenbezogene Daten -> nicht ins Repo
+leads-*.csv

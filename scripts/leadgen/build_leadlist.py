@@ -52,6 +52,32 @@ def clean_name(v: str) -> str:
     return "; ".join(out)
 
 
+def firma_passt(firma: str, domain: str, email: str) -> str:
+    """Gehoert die Firmierung zum Shop — oder ist es eine Fremdfirma?
+
+    Impressen nennen manchmal die Agentur oder die Gesellschafterin statt des
+    Betreibers (z.B. "RYZE Digital GmbH" auf gepa-shop.de). Solche Namen sind
+    nicht loeschbar — "Bauer + Kirch GmbH" fuer bike-components.de ist ja
+    richtig —, deshalb werden sie nur als "pruefen" markiert.
+    """
+    if not firma:
+        return ""
+    flat = re.sub(r"[^a-z0-9]", "", firma.lower())
+    roots = {re.sub(r"[^a-z0-9]", "", domain.split(".")[0].lower())}
+    if email and "@" in email:
+        roots.add(re.sub(r"[^a-z0-9]", "", email.split("@")[1].split(".")[0].lower()))
+    for root in roots:
+        if len(root) < 4:
+            continue
+        if root in flat or flat in root:
+            return "ja"
+        # Bindestrich-Domains: schon ein Wortteil genuegt als Beleg
+        for part in re.split(r"[-_]", domain.split(".")[0].lower()):
+            if len(part) >= 5 and part in flat:
+                return "ja"
+    return "pruefen"
+
+
 def score(r: dict) -> int:
     """Je vollstaendiger und je naeher an einer echten Person, desto hoeher."""
     s = 0
@@ -88,7 +114,9 @@ def plausible(r: dict) -> bool:
     firma = r.get("firma", "")
     if firma and (len(firma) > 70 or re.search(
             r"(Innerhalb|Versand|Lieferung|Bestellung|Widerruf|Cookie|"
-            r"Suchmaschinen|Weiterver|Domain)", firma, re.I)):
+            r"Suchmaschinen|Weiterver|Domain|Website\s+wird|wird\s+unter|"
+            r"^Geschäftszweig|^Zweigniederlassung|^Handels\s+GmbH$|"
+            r"Bildmaterial|urheberrecht)", firma, re.I)):
         r["firma"] = ""
     return True
 
@@ -119,7 +147,7 @@ def main():
     final = uniq[:want]
     cols = ["nr", "firma", "entscheider", "rolle", "email", "telefon", "website",
             "strasse", "plz", "ort", "land", "branche", "handelsregister",
-            "ust_id", "quelle_impressum", "datenqualitaet"]
+            "ust_id", "firma_geprueft", "quelle_impressum", "datenqualitaet"]
     with open(out, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=cols)
         w.writeheader()
@@ -139,6 +167,8 @@ def main():
                 "branche": r.get("branche", ""),
                 "handelsregister": r.get("handelsregister", ""),
                 "ust_id": r.get("ust_id", ""),
+                "firma_geprueft": firma_passt(r.get("firma", ""), r["domain"],
+                                              r.get("email", "")),
                 "quelle_impressum": r.get("impressum_url", ""),
                 "datenqualitaet": score(r),
             })
@@ -146,11 +176,14 @@ def main():
     named = sum(1 for r in final if r.get("entscheider"))
     mailed = sum(1 for r in final if r.get("email"))
     phoned = sum(1 for r in final if r.get("telefon"))
+    unsicher = sum(1 for r in final
+                   if firma_passt(r.get("firma", ""), r["domain"], r.get("email", "")) == "pruefen")
     laender = {}
     for r in final:
         laender[r.get("land", "?")] = laender.get(r.get("land", "?"), 0) + 1
     print(f"geliefert={len(final)} (gewuenscht {want}) | mit Entscheidername={named} "
           f"| mit Mail={mailed} | mit Telefon={phoned} | Laender={laender}")
+    print(f"Firmierung zu pruefen (moegliche Agentur/Gesellschafterin): {unsicher}")
     if len(final) < want:
         print(f"HINWEIS: {want - len(final)} Datensaetze fehlen — Kandidatenliste erweitern.")
 
