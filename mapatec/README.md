@@ -17,7 +17,35 @@ Die Vertriebspartnerschaft ist an folgenden Stellen sichtbar:
 | Sektion `#dck` | Hauptaussage, 3 Fakten-Karten, Hinweis „Mehr Informationen folgen in Kürze", DCK-Anfrage-Button |
 | Über uns | Zusatzabsatz DE/EN + Info-Karte „Vertriebspartnerschaft · Distribution" |
 | CTA-Band | Ansprache für DCK-Anfragen |
+| Sektion `#dck` | zusätzlich: Banner, Produktwelt-Karten, Partner-Plakette (siehe Bilddateien) |
 | Footer | DCK-Zeichen + „Offizieller Vertriebspartner" |
+
+## Bilddateien (neben die index.html legen)
+
+Die DCK-Sektion hat vier Bildbereiche. Die Dateien gehören **in denselben Ordner
+wie die `index.html`** (also `/mapatec/`) und müssen exakt so heißen:
+
+| Dateiname | Inhalt | Format |
+| --- | --- | --- |
+| `dck-banner.jpg` | Breites Banner „DCK Deutschland – Power Tools für Profis" | Querformat, ca. 2:1 |
+| `dck-tools-kabel.jpg` | Abbruchhammer, Kernbohrgerät, Kappsäge (auf Schwarz) | quadratisch 1:1 |
+| `dck-tools-akku.jpg` | 20V-Akku-Serie: Schlagschrauber, Bohrhammer, Winkelschleifer | quadratisch 1:1 |
+| `mapatec-meets-dck.png` | Lockup „www.MapaTec.de meets DCK" | quer oder quadratisch |
+
+Hinweise:
+
+- **Fehlt eine Datei, verschwindet ihr Block automatisch** – die Seite sieht nie
+  kaputt aus. Sind beide Produktbilder weg, fällt auch die Überschrift
+  „Die DCK Produktwelt" mit raus.
+- Die Endung wird einmal automatisch gegengeprüft (`.jpg` ↔ `.png`), ein
+  abweichendes Format kostet also nicht gleich den ganzen Block.
+- Bilder werden per `loading="lazy"` nachgeladen, die Container haben feste
+  Seitenverhältnisse – dadurch springt beim Laden nichts.
+- Die Produktbilder liegen auf schwarzem Grund und gehen dadurch nahtlos in die
+  dunkle Seite über. Das Lockup steht bewusst auf einer hellen Plakette.
+- Bewusst **nicht** als Base64 eingebettet: die Seite ist schon 1,1 MB groß,
+  vier Fotos zusätzlich würden sie auf mehrere MB aufblähen und den ersten
+  Seitenaufbau spürbar bremsen.
 
 ## Offizielles DCK-Logo einsetzen
 
