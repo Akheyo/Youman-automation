@@ -18,6 +18,7 @@ import { NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { findCompaniesByIndustry, type CompanyResult } from '@/lib/felix/overpass-companies';
 import { findCompaniesGoogle } from '@/lib/felix/places-companies';
+import { findCompaniesApify } from '@/lib/felix/apify-companies';
 import { researchCompany } from '@/lib/felix/research';
 import { createClient } from '@/lib/supabase/server';
 import { planForUser, isOwnerEmail, PLANS } from '@/lib/plans';
@@ -95,6 +96,7 @@ const FIND_COMPANIES_TOOL = {
           type: 'boolean',
           description: 'Nur Betriebe ohne hinterlegte Website zurückgeben (gut für Kaltakquise). Standard: false.',
         },
+        country: { type: 'string', enum: ['de', 'at', 'ch'], description: 'Land der Suche: de (Standard), at oder ch. Nur mit Apify-Quelle wirksam.' },
         limit: {
           type: 'integer',
           description: 'Maximale Trefferzahl (1–60, Standard 30).',
@@ -359,10 +361,22 @@ export async function POST(request: Request) {
             const industry = String(args.industry || '');
             const withoutWebsite = Boolean(args.without_website);
             const max = typeof args.limit === 'number' ? args.limit : undefined;
+            const country = ['de', 'at', 'ch'].includes(String(args.country || ''))
+              ? (String(args.country) as 'de' | 'at' | 'ch')
+              : 'de';
+            const apifyToken = process.env.APIFY_TOKEN;
             const googleKey = process.env.GOOGLE_MAPS_API_KEY;
-            const result = googleKey
-              ? await findCompaniesGoogle({ area, industry, without_website: withoutWebsite, limit: max }, googleKey)
-              : await findCompaniesByIndustry(area, industry, withoutWebsite, max);
+            // Apify first (covers AT/CH too), then Google Places, then free OSM.
+            let result = apifyToken
+              ? await findCompaniesApify({ area, industry, without_website: withoutWebsite, limit: max, country }, apifyToken)
+              : googleKey
+                ? await findCompaniesGoogle({ area, industry, without_website: withoutWebsite, limit: max }, googleKey)
+                : await findCompaniesByIndustry(area, industry, withoutWebsite, max);
+            // A failing Actor run must not dead-end the search when a second
+            // source is configured.
+            if (apifyToken && result.error && googleKey) {
+              result = await findCompaniesGoogle({ area, industry, without_website: withoutWebsite, limit: max }, googleKey);
+            }
             collected.push(...result.companies);
             resultText = result.error
               ? `Fehler: ${result.error}`

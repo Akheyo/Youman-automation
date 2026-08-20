@@ -1,0 +1,182 @@
+# Kandidaten: E-Commerce / Onlinehandel DACH
+# Format: domain,branche   —   jeder Eintrag wird live gegen das Impressum geprueft.
+# --- DE: Mode & Accessoires ---
+bergfreunde.de,Outdoor & Sport
+keller-sports.de,Sport
+sportscheck.com,Sport
+engelhorn.de,Mode
+konen.de,Mode
+breuninger.com,Mode
+peterhahn.de,Mode
+walbusch.de,Mode
+hessnatur.com,Nachhaltige Mode
+lodenfrey.com,Mode
+schuhe24.de,Schuhe
+gortz.de,Schuhe
+mysportbrands.de,Sport
+outfits24.de,Mode
+kastner-oehler.de,Mode
+# --- DE: Wohnen, Moebel, Garten ---
+manufactum.de,Warenhaus
+waschbaer.de,Nachhaltigkeit
+connox.de,Wohnen & Design
+ambientedirect.com,Design
+design-bestseller.de,Design
+moebel-hoeffner.de,Moebel
+segmueller.de,Moebel
+massivum.de,Moebel
+pharao24.de,Moebel
+betten.de,Schlafen
+traumnacht.de,Schlafen
+gartenxxl.de,Garten
+baldur-garten.de,Garten
+gaertner-poetschke.de,Garten
+lubera.com,Garten
+dehner.de,Garten
+mein-schoener-garten.de,Garten
+# --- DE: Sport, Fahrrad, Outdoor ---
+fahrrad-xxl.de,Fahrrad
+bike-components.de,Fahrrad
+rosebikes.de,Fahrrad
+bike-discount.de,Fahrrad
+fahrrad.de,Fahrrad
+lucky-bike.de,Fahrrad
+hibike.de,Fahrrad
+campz.de,Outdoor
+globetrotter.de,Outdoor
+unterwegs.biz,Outdoor
+sport-conrad.com,Sport
+gigasport.at,Sport
+# --- DE: Lebensmittel, Genuss ---
+teegschwendner.de,Lebensmittel
+kaffee-partner.de,Kaffee
+tchibo.de,Kaffee & Warenhaus
+roastmarket.de,Kaffee
+gepa-shop.de,Fair Trade
+wein-am-limit.de,Wein
+weinfreunde.de,Wein
+hawesko.de,Wein
+vinos.de,Wein
+gourmetfleisch.de,Lebensmittel
+frischeparadies.de,Lebensmittel
+kochhaus.de,Lebensmittel
+seeberger.de,Lebensmittel
+# --- DE: Elektronik, Buero, Technik ---
+bueromarkt-ag.de,Buerobedarf
+otto-office.com,Buerobedarf
+printus.de,Buerobedarf
+papersmart.de,Buerobedarf
+conrad.de,Elektronik
+reichelt.de,Elektronik
+voelkner.de,Elektronik
+pollin.de,Elektronik
+digitec.ch,Elektronik
+cyberport.de,Elektronik
+notebooksbilliger.de,Elektronik
+alternate.de,Elektronik
+caseking.de,Elektronik
+mindfactory.de,Elektronik
+# --- DE: Drogerie, Beauty, Gesundheit ---
+flaconi.de,Beauty
+parfumdreams.de,Beauty
+niche-beauty.com,Beauty
+douglas.de,Beauty
+shop-apotheke.com,Apotheke
+medpex.de,Apotheke
+apo-discounter.de,Apotheke
+sanicare.de,Apotheke
+vitafy.de,Gesundheit
+sportnahrung-engel.de,Gesundheit
+# --- DE: Hobby, Spiel, Medien ---
+idealo.de,Preisvergleich
+thalia.de,Buchhandel
+huegelspiele.de,Spielwaren
+spiele-offensive.de,Spielwaren
+mytoys.de,Spielwaren
+jako-o.com,Kinder
+tausendkind.de,Kinder
+babymarkt.de,Kinder
+kidsroom.de,Kinder
+modellbahnshop-lippe.com,Modellbau
+conrad-electronic.de,Hobby
+# --- DE: Bau, Werkzeug, Industrie-Handel ---
+contorion.de,Werkzeug
+svh24.de,Werkzeug
+hornbach.de,Baumarkt
+reuter.de,Bad & Sanitaer
+skybad.de,Bad & Sanitaer
+megabad.com,Bad & Sanitaer
+emero.de,Bad & Sanitaer
+kfzteile24.de,Kfz-Teile
+autodoc.de,Kfz-Teile
+motointegrator.de,Kfz-Teile
+# --- DE: Tier, Haushalt, Sonstiges ---
+zooroyal.de,Tierbedarf
+futterhaus.de,Tierbedarf
+petsdeli.de,Tierbedarf
+hundeland.de,Tierbedarf
+lampenwelt.de,Leuchten
+click-licht.de,Leuchten
+prediger.de,Leuchten
+weltbild.de,Warenhaus
+buecher.de,Buchhandel
+avocadostore.de,Nachhaltigkeit
+memolife.de,Nachhaltigkeit
+# --- AT: Onlinehandel ---
+universal.at,Warenhaus
+interspar.at,Lebensmittel
+thalia.at,Buchhandel
+niceshops.com,E-Commerce-Gruppe
+shoepping.at,Marktplatz
+haas.at,Handel
+mediashop.tv,Direktvertrieb
+bergzeit.at,Outdoor
+runnersfun.at,Sport
+gartenbaumschule.at,Garten
+weltbild.at,Warenhaus
+lampenwelt.at,Leuchten
+teufel.at,Elektronik
+# --- CH: Onlinehandel ---
+brack.ch,Elektronik
+galaxus.ch,Warenhaus
+microspot.ch,Elektronik
+interdiscount.ch,Elektronik
+ricardo.ch,Marktplatz
+lehner-versand.ch,Warenhaus
+ackermann.ch,Warenhaus
+beliani.ch,Moebel
+pfister.ch,Moebel
+coop.ch,Lebensmittel
+farmy.ch,Lebensmittel
+sportxx.ch,Sport
+ochsnersport.ch,Sport
+transa.ch,Outdoor
+bergfreunde.ch,Outdoor
+exlibris.ch,Medien
+orellfuessli.ch,Buchhandel
+# --- DACH: E-Commerce-Dienstleister, Agenturen, Fulfiller ---
+shopware.com,Shopsystem
+plentymarkets.com,Shopsystem
+oxid-esales.com,Shopsystem
+jtl-software.de,ERP & Shopsystem
+xt-commerce.com,Shopsystem
+gambio.de,Shopsystem
+afterbuy.de,Multichannel
+billbee.io,Multichannel
+tricoma.de,ERP
+pixi.eu,Fulfilment
+byrd.com,Fulfilment
+shipcloud.io,Versand
+sendcloud.de,Versand
+seven-senders.com,Versand
+trustedshops.de,Guetesiegel
+econda.de,Analytics
+trbo.com,Personalisierung
+epoq.de,Personalisierung
+smarketer.de,E-Commerce-Agentur
+netz98.de,E-Commerce-Agentur
+dotsource.de,E-Commerce-Agentur
+kommerz.de,E-Commerce-Agentur
+elio-group.com,E-Commerce-Agentur
+maxcluster.de,E-Commerce-Hosting
+timmehosting.de,E-Commerce-Hosting
