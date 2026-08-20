@@ -55,11 +55,13 @@ jobs:
         run: npm run build
 
       - name: Hinweis, wenn keine Zugangsdaten hinterlegt sind
-        if: ${{ secrets.VITE_SUPABASE_ANON_KEY == '' }}
         shell: bash
+        env:
+          SCHLUESSEL: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
-          echo "::warning::Kein VITE_SUPABASE_ANON_KEY als Secret hinterlegt."
-          echo "Die App fragt dann beim ersten Start nach der Datei konfiguration.json."
+          if [ -z "${SCHLUESSEL}" ]; then
+            echo "::warning::Kein VITE_SUPABASE_ANON_KEY hinterlegt. Das Programm fragt beim ersten Start nach der Datei konfiguration.json."
+          fi
 
       - name: Setup.exe bauen
         run: npx electron-builder --win nsis --publish never
