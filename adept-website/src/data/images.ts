@@ -46,7 +46,7 @@ export const bilder: Record<BildKey, string> = {
     'Rollenförderer mit Kartons in einem Versandzentrum, dahinter Hochregale und ein Gabelstapler an der Verladetür',
   geschichte: 'Sanduhr vor schwarzem Grund, der Sand rinnt durch die enge Mitte',
   werte: 'Zwei Personen geben sich über einem Schreibtisch die Hand',
-  feinplanung: 'Blick von oben auf eine Fahrzeugmontagelinie mit mehreren Karosserien und Arbeitsstationen',
-  versandsteuerung: 'Hallenkran hebt ein Bündel Metallprofile, im Hintergrund die Fertigungshalle',
-  referenzprojekte: 'Mehrere aufgefächerte Dokumentenstapel mit Registerlaschen auf einem Tisch',
+  feinplanung: 'Blick von oben auf eine Fahrzeugmontagelinie mit mehreren Karosserien auf Förderbahnen',
+  versandsteuerung: 'Hallenkran hebt ein Bündel Metallprofile, im Vordergrund zwei Personen mit Schutzhelmen',
+  referenzprojekte: 'Ausgebreitete Projektunterlagen mit Inhaltsverzeichnissen und Klammern, schwarzweiß',
 };
