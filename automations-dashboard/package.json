@@ -9,7 +9,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "app:start": "npm run build && electron .",
+    "app:setup": "npm run build && electron-builder --win nsis --publish never"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",
@@ -21,6 +23,48 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "typescript": "^5.6.2",
-    "vite": "^5.4.8"
+    "vite": "^5.4.8",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "main": "desktop/haupt.cjs",
+  "build": {
+    "appId": "de.youman.automationen",
+    "productName": "Automationen",
+    "copyright": "Youman",
+    "directories": {
+      "output": "setup",
+      "buildResources": "desktop/mittel"
+    },
+    "files": [
+      "dist/**/*",
+      "desktop/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "desktop/mittel/symbol.png",
+      "artifactName": "Automationen-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Automationen",
+      "installerLanguages": [
+        "de_DE"
+      ],
+      "language": "1031",
+      "deleteAppDataOnUninstall": false
+    }
   }
 }

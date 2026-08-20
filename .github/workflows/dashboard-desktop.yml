@@ -1,0 +1,80 @@
+name: Automations-Dashboard – Setup.exe bauen
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versionsnummer der Setup-Datei, zum Beispiel 1.0.0"
+        required: false
+        default: ""
+  push:
+    tags:
+      - "dashboard-v*"
+
+jobs:
+  bauen:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: automations-dashboard
+
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: automations-dashboard/package-lock.json
+
+      - name: Pakete installieren
+        run: npm ci
+
+      - name: Version bestimmen
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/dashboard-v* ]]; then
+            version="${GITHUB_REF#refs/tags/dashboard-v}"
+          elif [[ -n "${{ github.event.inputs.version }}" ]]; then
+            version="${{ github.event.inputs.version }}"
+          else
+            version="$(node -p "require('./package.json').version")"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          npm version "${version}" --no-git-tag-version --allow-same-version
+
+      - name: Oberfläche bauen
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - name: Hinweis, wenn keine Zugangsdaten hinterlegt sind
+        if: ${{ secrets.VITE_SUPABASE_ANON_KEY == '' }}
+        shell: bash
+        run: |
+          echo "::warning::Kein VITE_SUPABASE_ANON_KEY als Secret hinterlegt."
+          echo "Die App fragt dann beim ersten Start nach der Datei konfiguration.json."
+
+      - name: Setup.exe bauen
+        run: npx electron-builder --win nsis --publish never
+
+      - name: Setup.exe zum Herunterladen ablegen
+        uses: actions/upload-artifact@v4
+        with:
+          name: Automationen-Setup-${{ steps.version.outputs.version }}
+          path: automations-dashboard/setup/Automationen-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Setup.exe an die Veröffentlichung hängen
+        if: startsWith(github.ref, 'refs/tags/dashboard-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: automations-dashboard/setup/Automationen-Setup-*.exe
+          generate_release_notes: true

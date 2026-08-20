@@ -69,6 +69,48 @@ Das Dashboard ist ein eigenes Projekt im selben Repository. In Vercel:
 Die Datei `vercel.json` leitet alle Pfade auf `index.html` um, damit die
 Navigation auch nach dem Neuladen funktioniert.
 
+## Als Windows-Programm (Setup.exe)
+
+Für den Rechner gibt es dieselbe Oberfläche als eigenes Fenster mit Eintrag im
+Startmenü. Gebaut wird sie bei GitHub auf einem Windows-Rechner, nicht von Hand.
+
+**Bauen anstoßen:** im Repository auf **Actions**, links
+**Automations-Dashboard – Setup.exe bauen**, rechts **Run workflow**. Nach etwa
+fünf Minuten liegt unten im Lauf unter **Artifacts** die Datei
+`Automationen-Setup-1.0.0.exe` zum Herunterladen.
+
+**Feste Fassung veröffentlichen:** einen Tag setzen, dann hängt die Setup-Datei
+direkt an der Veröffentlichung:
+
+```bash
+git tag dashboard-v1.0.0
+git push origin dashboard-v1.0.0
+```
+
+**Zugangsschlüssel.** Zwei Wege, beide funktionieren:
+
+1. Im Repository unter **Settings, Secrets and variables, Actions** die Werte
+   `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY` hinterlegen. Dann steckt der
+   Schlüssel fest im Programm und es läuft nach der Installation sofort.
+2. Ohne Secrets bauen. Beim ersten Start legt das Programm die Datei
+   `konfiguration.json` an und sagt, wo sie liegt (bei Windows unter
+   `%APPDATA%\Automationen`). Dort Adresse und Schlüssel eintragen, Programm neu
+   starten. Über **Hilfe, Einstellungsordner öffnen** kommt man direkt hin. So
+   braucht ein neuer Schlüssel kein neues Setup.
+
+**Windows warnt beim ersten Start**, weil die Datei nicht signiert ist:
+„Der Computer wurde durch Windows geschützt". Über **Weitere Informationen**,
+dann **Trotzdem ausführen** startet die Installation. Das verschwindet erst mit
+einem gekauften Signaturzertifikat.
+
+**Selbst bauen** geht auch, aber nur auf einem Windows-Rechner:
+
+```bash
+npm install
+npm run app:setup     # Ergebnis liegt in setup/
+npm run app:start     # zum Ausprobieren ohne Installation
+```
+
 ## Woher die Daten kommen
 
 Gelesen wird ausschließlich aus den fertigen Views, nicht selbst zusammengerechnet:
@@ -103,6 +145,7 @@ werden.
 ## Aufbau des Quelltexts
 
 ```
+desktop/          Fenster für Windows (Electron), Menü und Zugangsdatei
 src/
   lib/
     supabase.ts   Verbindung, nur mit dem publishable Key

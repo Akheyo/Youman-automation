@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAnmeldung } from './lib/auth';
 import { DatenProvider, useDaten } from './lib/data';
-import { supabaseEingerichtet } from './lib/supabase';
+import { appUmgebung, supabaseEingerichtet } from './lib/supabase';
 import Anmeldung from './pages/Anmeldung';
 import Uebersicht from './pages/Uebersicht';
 import Automationen from './pages/Automationen';
@@ -205,7 +205,13 @@ export default function App() {
     return (
       <Hinweisseite
         titelText="Die Verbindung fehlt noch"
-        text="In der Datei .env.local müssen VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY stehen. Danach die Seite neu laden."
+        text={
+          appUmgebung.istApp
+            ? `Trag den Zugangsschlüssel in die Datei konfiguration.json ein und starte das Programm neu. Die Datei liegt unter ${
+                appUmgebung.einstellungspfad ?? 'den Einstellungen dieses Programms'
+              }. Über Hilfe, Einstellungsordner öffnen kommst du direkt hin.`
+            : 'In der Datei .env.local müssen VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY stehen. Danach die Seite neu laden.'
+        }
       />
     );
   }
