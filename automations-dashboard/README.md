@@ -1,0 +1,136 @@
+# Automations-Dashboard
+
+Internes Dashboard, mit dem Amanuel Kheyo und rund 25 Kolleginnen und Kollegen
+alle Automationen des Unternehmens an einer Stelle im Blick haben. Zustand,
+Durchläufe, Fehler und Steuerung, alles auf Deutsch.
+
+Das Konzept dahinter steht in [CLAUDE.md](./CLAUDE.md).
+
+## Was drin ist
+
+1. **Anmeldung und Rechte.** Login über Supabase Auth, die Rolle kommt aus
+   `profiles`. Drei Stufen: Zuschauen, Steuern, Alles. Steuerknöpfe sind für
+   Zuschauer sichtbar, aber deaktiviert, mit einem Satz daneben, der erklärt warum.
+2. **Übersicht.** Der Zustandsbalken ganz oben sagt in einem deutschen Satz, ob
+   alles in Ordnung ist. Darunter die Kennzahlen der letzten 24 Stunden, was
+   gerade läuft, der Verlauf der letzten 14 Tage, die dringendsten Fehler und
+   die Automationen, die auffallen.
+3. **Automationen.** Liste mit Suche und Bereichsfilter, jede Zeile aufklappbar:
+   zuletzt gelaufen, das nächste Mal dran, Zeitplan im Klartext, Zuverlässigkeit,
+   Zuständiger, die letzten 15 Durchläufe.
+4. **Fehler.** Schlimmste zuerst. Ein Fehler lässt sich übernehmen
+   („Kümmere ich mich drum") und abhaken („Erledigt"). Von jedem Fehler springt
+   man direkt zu der Automation, in der er entstanden ist.
+5. **Steuern.** Anhalten, wieder anschalten, jetzt sofort starten, einen
+   fehlgeschlagenen Durchlauf nochmal versuchen, einen laufenden abbrechen.
+6. **Protokoll.** Wer hat was gesteuert, und wer hat wem Zugang gegeben oder
+   entzogen.
+7. **Zugänge.** Nur für die Rolle „Alles": Rechte vergeben, Zugang geben und
+   entziehen. Jede Änderung landet zusätzlich in `audit_log`.
+
+## Einrichten
+
+```bash
+cd automations-dashboard
+npm install
+cp .env.example .env.local   # Schlüssel eintragen
+npm run dev                  # http://localhost:5173
+```
+
+In `.env.local` gehören zwei Zeilen:
+
+```
+VITE_SUPABASE_URL=https://cmijgibhncndxipfrtxl.supabase.co
+VITE_SUPABASE_ANON_KEY=<publishable Key aus Supabase>
+```
+
+Nur der publishable Key (anon) gehört ins Frontend. Der secret Key darf niemals
+in dieses Verzeichnis und niemals in den Browser. Ohne die beiden Werte startet
+die App trotzdem und sagt auf einer eigenen Seite, was fehlt.
+
+Weitere Befehle:
+
+```bash
+npm run typecheck   # TypeScript prüfen
+npm run build       # Typecheck und Bündel nach dist/
+npm run preview     # das gebaute Bündel ansehen
+```
+
+## Auf Vercel veröffentlichen
+
+Das Dashboard ist ein eigenes Projekt im selben Repository. In Vercel:
+
+- **Root Directory:** `automations-dashboard`
+- **Framework Preset:** Vite
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist`
+- **Umgebungsvariablen:** `VITE_SUPABASE_URL` und `VITE_SUPABASE_ANON_KEY`
+
+Die Datei `vercel.json` leitet alle Pfade auf `index.html` um, damit die
+Navigation auch nach dem Neuladen funktioniert.
+
+## Woher die Daten kommen
+
+Gelesen wird ausschließlich aus den fertigen Views, nicht selbst zusammengerechnet:
+
+| Ansicht | wofür |
+|---|---|
+| `v_dashboard_summary_24h` | Kennzahlen der letzten 24 Stunden |
+| `v_reliability_trend_14d` | Erfolgsquote pro Tag, letzte 14 Tage |
+| `v_automation_overview` | Zuverlässigkeit, offene Fehler, Zuständiger je Automation |
+| `v_open_errors_ranked` | offene Fehler, schlimmste zuerst |
+
+Dazu direkt aus den Tabellen: `automation_runs` (Durchläufe je Automation),
+`automation_errors` (übernehmen und abhaken), `control_commands` (Steuerung),
+`profiles` und `audit_log` (Zugänge).
+
+**Spaltennamen der Views:** Die Oberfläche holt sich jeden Wert über eine Liste
+möglicher Spaltennamen, siehe `src/lib/fields.ts` und `src/lib/queries.ts`.
+Heißt eine Spalte anders als erwartet, bleibt der Wert leer und die Oberfläche
+sagt „noch keine Angabe", statt eine falsche Zahl zu zeigen. Wenn irgendwo
+dauerhaft nichts steht, gehört der echte Spaltenname in die passende Liste in
+`queries.ts`.
+
+## Wie die Steuerung heute funktioniert
+
+Die Automationen selbst sind noch nicht angebunden. Jeder Klick auf einen
+Steuerknopf schreibt nur eine Zeile in `control_commands` mit dem Zustand
+`pending`. Die Oberfläche zeigt danach sofort, dass der Auftrag eingetragen ist,
+und der Knopf bleibt gesperrt, solange der Auftrag offen ist. Ein späterer
+Worker arbeitet die Zeilen ab, dann muss an der Oberfläche nichts mehr geändert
+werden.
+
+## Aufbau des Quelltexts
+
+```
+src/
+  lib/
+    supabase.ts   Verbindung, nur mit dem publishable Key
+    auth.tsx      Anmeldung, Profil und Rolle
+    data.tsx      gemeinsame Daten, Nachladen im Minutentakt, Realtime
+    queries.ts    alle Datenbankzugriffe an einer Stelle
+    fields.ts     tolerantes Lesen der View-Spalten
+    format.ts     deutsche Zeit-, Dauer- und Zahlenformate
+    labels.ts     deutsche Wörter für alle Zustände
+    types.ts      das Datenmodell
+  components/
+    Zustandsbalken.tsx  das Kernstück ganz oben
+    Steuerung.tsx       die Knöpfe, die nach control_commands schreiben
+    Durchlaeufe.tsx     ein Durchlauf mit Klartext und technischer Meldung
+    Trend.tsx           14 Tage als Säulen
+    Bausteine.tsx       Etiketten, Punkte, leere Zustände
+    Hinweise.tsx        kurze Rückmeldungen nach einer Aktion
+  pages/
+    Anmeldung.tsx  Uebersicht.tsx  Automationen.tsx
+    Fehler.tsx     Protokoll.tsx   Zugaenge.tsx
+```
+
+## Was bewusst so ist
+
+- **Kein Grün.** Blau heißt „in Ordnung", Gelb heißt „hinschauen", Rot heißt
+  „kaputt". So bleibt die Oberfläche in den Firmenfarben.
+- **Rechte doppelt geprüft.** Row Level Security in Supabase entscheidet, die
+  Oberfläche erklärt zusätzlich, warum ein Knopf gesperrt ist.
+- **Realtime ist die Kür.** Die Daten laden sich ohnehin jede Minute nach. Fällt
+  die Live-Verbindung aus, merkt man davon nichts.
+- **Leere Zustände laden zum Handeln ein**, statt nur zu melden, dass nichts da ist.
