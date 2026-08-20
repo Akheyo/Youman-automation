@@ -29,7 +29,7 @@ const feldKlasse =
 
 <Base
   title="Kontakt"
-  description="Schildern Sie uns Ihren operativen Engpass – wir melden uns mit einer ersten Einschätzung."
+  description="Schildern Sie uns Ihren operativen Engpass. Wir melden uns mit einer ersten Einschätzung."
   bild="buero"
   breadcrumb={brotkrumen}
 >
@@ -49,7 +49,7 @@ const feldKlasse =
           <div class="mt-8 border-l-2 border-accent bg-canvas p-6">
             <p class="font-serif text-xl text-ink">Am schnellsten geht es im Gespräch.</p>
             <p class="mt-2 text-sm text-ink-soft">
-              Suchen Sie sich direkt einen freien Termin aus – 30 Minuten, unverbindlich.
+              Suchen Sie sich direkt einen freien Termin aus. 30 Minuten, unverbindlich.
             </p>
             <Button href={kontakt.terminlink} class="mt-5">
               Termin auswählen
@@ -92,11 +92,11 @@ const feldKlasse =
             </dl>
           ) : (
             <div class="mt-8">
-              <PlaceholderNote title="Platzhalter – Kontaktdaten fehlen noch">
+              <PlaceholderNote title="Platzhalter: Kontaktdaten fehlen noch">
                 <p>
                   E-Mail-Adresse und Telefonnummer sind noch nicht hinterlegt. Sie werden als
                   Variablen <code class="px-1">KONTAKT_EMAIL</code> und
-                  <code class="px-1">KONTAKT_TELEFON</code> gesetzt – in GitHub unter Settings,
+                  <code class="px-1">KONTAKT_TELEFON</code> gesetzt, in GitHub unter Settings,
                   Secrets and variables, Actions, Variables. Ein Codeeingriff ist dafür nicht
                   nötig.
                 </p>
@@ -238,14 +238,14 @@ const feldKlasse =
             <div class="mt-8">
               <PlaceholderNote title="Formular wartet nur noch auf eine Adresse">
                 <p>
-                  Das vollständige Formular ist gebaut und geprüft – Beschriftungen, Pflichtfelder,
+                  Das vollständige Formular ist gebaut und geprüft: Beschriftungen, Pflichtfelder,
                   Einwilligung, Spamschutz und Rückmeldung ohne Seitenwechsel. Es fehlt allein die
                   Adresse, an die gesendet wird: GitHub Pages liefert nur statische Dateien und kann
                   selbst nichts entgegennehmen.
                 </p>
                 <p class="mt-3">
                   Konto bei <strong>Formspree</strong> oder <strong>Web3Forms</strong> anlegen, die
-                  Adresse als Variable <code class="px-1">FORMULAR_ENDPUNKT</code> hinterlegen – in
+                  Adresse als Variable <code class="px-1">FORMULAR_ENDPUNKT</code> hinterlegen, in
                   GitHub unter Settings, Secrets and variables, Actions, Variables. Bei Web3Forms
                   zusätzlich <code class="px-1">FORMULAR_SCHLUESSEL</code>. Danach erscheint das
                   Formular beim nächsten Build von selbst.
@@ -310,7 +310,7 @@ const feldKlasse =
 
         if (antwort.ok) {
           melden(
-            'Vielen Dank. Ihre Nachricht ist eingegangen – wir melden uns in der Regel innerhalb eines Werktages.',
+            'Vielen Dank. Ihre Nachricht ist eingegangen. Wir melden uns in der Regel innerhalb eines Werktages.',
           );
           formular.reset();
         } else {
@@ -320,7 +320,7 @@ const feldKlasse =
         }
       } catch {
         melden(
-          'Die Nachricht konnte nicht gesendet werden – vermutlich ist die Verbindung unterbrochen. Bitte versuchen Sie es erneut oder schreiben Sie uns direkt per E-Mail.',
+          'Die Nachricht konnte nicht gesendet werden. Vermutlich ist die Verbindung unterbrochen. Bitte versuchen Sie es erneut oder schreiben Sie uns direkt per E-Mail.',
         );
       } finally {
         if (knopf) {

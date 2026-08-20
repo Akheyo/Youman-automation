@@ -52,14 +52,14 @@ const referenz = branche.referenz ? caseStudyNach(branche.referenz) : undefined;
   <Section>
     {
       branche.platzhalter ? (
-        <PlaceholderNote title="Platzhalter – Branchentexte fehlen noch">
+        <PlaceholderNote title="Platzhalter: Branchentexte fehlen noch">
           <p>
             Für <strong>{branche.title}</strong> liegen bislang keine freigegebenen operativen
             Painpoints aus adept&-Projekten vor. Sobald drei bis fünf konkrete Problemstellungen
             benannt sind, wird dieser Abschnitt ersetzt.
           </p>
           <p class="mt-3">
-            Bis dahin bleibt diese Seite bewusst ohne inhaltliche Aussage – es werden keine
+            Bis dahin bleibt diese Seite bewusst ohne inhaltliche Aussage. Es werden keine
             Herausforderungen, Zahlen oder Referenzen erfunden.
           </p>
         </PlaceholderNote>
@@ -80,7 +80,7 @@ const referenz = branche.referenz ? caseStudyNach(branche.referenz) : undefined;
         <SectionHeading
           kicker="Woran es hakt"
           title="Typische Problemstellungen in dieser Branche"
-          lead="Wenn Ihnen davon etwas bekannt vorkommt, lohnt sich ein Gespräch – genau an solchen Stellen setzen wir an."
+          lead="Wenn Ihnen davon etwas bekannt vorkommt, lohnt sich ein Gespräch. Genau an solchen Stellen setzen wir an."
         />
         <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
           {branche.painpoints.map((punkt, i) => (
@@ -129,7 +129,7 @@ const referenz = branche.referenz ? caseStudyNach(branche.referenz) : undefined;
           <h3 class="text-2xl text-ink">{referenz.title}</h3>
           <p class="mt-4 text-ink-soft">{referenz.excerpt}</p>
           <Button href={referenz.href} variant="secondary" class="mt-8">
-            Case Study lesen
+            Referenzprojekt lesen
           </Button>
         </div>
       </Section>
@@ -140,7 +140,7 @@ const referenz = branche.referenz ? caseStudyNach(branche.referenz) : undefined;
     <div class="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
       <SectionHeading
         title="Passt das zu Ihrer Situation?"
-        lead="Schildern Sie uns den Engpass – wir sagen Ihnen, ob sich das als Modul abbilden lässt."
+        lead="Schildern Sie uns den Engpass. Wir sagen Ihnen, ob sich das als Modul abbilden lässt."
         tone="dark"
       />
       <Button href="/kontakt" variant="ghost" class="shrink-0">Kontakt aufnehmen</Button>

@@ -42,10 +42,10 @@ const offen = news.filter((item) => item.platzhalter);
     {
       offen.length > 0 && (
         <div class="mt-16">
-          <PlaceholderNote title={`Platzhalter – ${offen.length} weitere Beiträge offen`}>
+          <PlaceholderNote title={`Platzhalter: ${offen.length} weitere Beiträge offen`}>
             <p>
               Hier stehen Meldungen und Beiträge. Abgeschlossene Kundenprojekte finden Sie unter
-              <a href={withBase('/case-studies')} class="text-accent">Case Studies</a>.
+              <a href={withBase('/case-studies')} class="text-accent">Referenzprojekten</a>.
             </p>
             <p>
               Für „Aktuelle Themen“ liegen noch keine freigegebenen Inhalte vor. Sobald Titel,

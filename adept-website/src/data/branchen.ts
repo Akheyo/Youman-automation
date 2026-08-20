@@ -38,7 +38,7 @@ export const branchen: Branche[] = [
     slug: 'fertigung-und-maschinenbau',
     bild: 'maschinenbau',
     title: 'Fertigung und Maschinenbau',
-    teaser: 'Variantenreiche Fertigung planbar machen – ohne das ERP zu ersetzen.',
+    teaser: 'Variantenreiche Fertigung planbar machen, ohne das ERP zu ersetzen.',
     intro:
       'In der variantenreichen Fertigung entstehen die teuersten Entscheidungen selten im ERP-System, sondern daneben: in Excel-Listen, Zurufen und Erfahrungswissen einzelner Personen. adept& bildet genau diese operative Logik als Modul ab und bindet es an das bestehende System an.',
     funktionen: ['produktion-und-feinplanung', 'supply-chain-und-materialsteuerung', 'reporting-und-operative-transparenz'],
@@ -50,19 +50,10 @@ export const branchen: Branche[] = [
     title: 'Logistik & Versand',
     teaser: 'Verpackungs-, Paletten- und Versandlogik direkt am Auftragseingang.',
     intro:
-      'Zwischen Auftragseingang und Versandentscheidung liegt in logistikintensiven Betrieben häufig eine Lücke, die manuell geschlossen wird. adept& digitalisiert diese Entscheidungslogik und führt die Ergebnisse in den bestehenden Prozess zurück – so umgesetzt bei der Drahtmüller GmbH.',
+      'Zwischen Auftragseingang und Versandentscheidung liegt in logistikintensiven Betrieben häufig eine Lücke, die manuell geschlossen wird. adept& digitalisiert diese Entscheidungslogik und führt die Ergebnisse in den bestehenden Prozess zurück.',
     funktionen: ['logistik-und-versandsteuerung', 'supply-chain-und-materialsteuerung', 'systemintegration-und-erp-anbindung'],
     platzhalter: false,
     referenz: 'drahtmueller-palettenoptimierung',
-  },
-  {
-    slug: 'konsumgueter-und-handel',
-    bild: 'handel',
-    title: 'Konsumgüter und Handel',
-    teaser: 'Inhalte für diese Branche werden derzeit erarbeitet.',
-    intro: '',
-    funktionen: ['reporting-und-operative-transparenz', 'systemintegration-und-erp-anbindung'],
-    platzhalter: true,
   },
   {
     slug: 'e-commerce-und-autohandel',
@@ -71,17 +62,17 @@ export const branchen: Branche[] = [
     // auch den Fahrzeughandel abbildet, gibt es noch nicht.
     bild: 'versandzentrum',
     title: 'E-Commerce & Autohandel',
-    teaser: 'Artikelpflege, Listings und Retouren automatisiert – angebunden an Ihren Bestand.',
+    teaser: 'Artikelpflege, Listings und Retouren automatisiert und angebunden an Ihren Bestand.',
     intro:
-      'Im Onlinehandel entsteht der Aufwand selten beim Verkaufen, sondern davor und danach: Artikeldaten für jeden Kanal einzeln pflegen, Listings je Marktplatz neu aufbauen, Retouren wieder in den Bestand bringen. adept& bildet genau diese Abläufe als Modul ab und hängt sie an das System, das die Bestände führt. Im Fahrzeughandel gilt dieselbe Logik eine Ebene größer – für Inserate, Standzeiten und den Status eines Fahrzeugs.',
+      'Im Onlinehandel entsteht der Aufwand selten beim Verkaufen, sondern davor und danach: Artikeldaten für jeden Kanal einzeln pflegen, Listings je Marktplatz neu aufbauen, Retouren wieder in den Bestand bringen. adept& bildet genau diese Abläufe als Modul ab und hängt sie an das System, das die Bestände führt. Im Fahrzeughandel gilt dieselbe Logik eine Ebene größer, für Inserate, Standzeiten und den Status eines Fahrzeugs.',
     painpoints: [
       'Artikeldaten werden für jeden Kanal von Hand gepflegt. Eine Preisänderung oder ein neues Foto bedeutet dieselbe Arbeit drei- oder viermal.',
       'Ein neues Produkt online zu stellen dauert länger, als es sollte: Texte, Merkmale, Kategorien und Bilder werden je Marktplatz neu zusammengesucht und in dessen Format gebracht.',
       'Jeder Marktplatz verlangt eigene Pflichtfelder und Kategoriebäume. Was bei einem Kanal durchgeht, wird beim nächsten abgelehnt.',
-      'Bestände in Shop, Marktplatz und Lager laufen auseinander. Verkauft wird Ware, die nicht mehr da ist – Storno, Nachbestellung und eine schlechtere Bewertung inklusive.',
+      'Bestände in Shop, Marktplatz und Lager laufen auseinander. Verkauft wird Ware, die nicht mehr da ist. Storno, Nachbestellung und eine schlechtere Bewertung kommen dazu.',
       'Retouren laufen neben dem System. Wareneingang, Zustandsprüfung und Wiedereinlagerung hängen nicht am Bestand, und die Ware fehlt im Verkauf, obwohl sie im Regal steht.',
       'Ob eine Retoure zurück in den Verkauf geht, als B-Ware neu gelistet oder abgeschrieben wird, entscheidet Erfahrung statt einer hinterlegten Regel.',
-      'Was ein Auftrag am Ende wirklich eingebracht hat – nach Verpackung, Versand, Retoure und Marktplatzgebühr –, steht nirgends zusammen.',
+      'Was ein Auftrag am Ende wirklich eingebracht hat, nach Verpackung, Versand, Retoure und Marktplatzgebühr, steht nirgends zusammen.',
       'Im Fahrzeughandel dasselbe eine Ebene größer: Inserate liegen in mehreren Börsen, ein verkauftes Fahrzeug steht tagelang weiter online, und Standzeit sowie gebundenes Kapital je Fahrzeug sind nicht auf Knopfdruck sichtbar.',
     ],
     funktionen: ['systemintegration-und-erp-anbindung', 'logistik-und-versandsteuerung', 'reporting-und-operative-transparenz'],

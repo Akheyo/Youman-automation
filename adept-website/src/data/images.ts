@@ -23,7 +23,10 @@ export type BildKey =
   | 'architektur'
   | 'versandzentrum'
   | 'geschichte'
-  | 'werte';
+  | 'werte'
+  | 'feinplanung'
+  | 'versandsteuerung'
+  | 'referenzprojekte';
 
 /** Alt-Texte zentral, damit ein Bild überall gleich beschrieben wird. */
 export const bilder: Record<BildKey, string> = {
@@ -37,10 +40,13 @@ export const bilder: Record<BildKey, string> = {
   automobil: 'Blechteile auf Transportgestellen in einer Zulieferfertigung',
   handel: 'Kartons auf einer Förderstrecke in einem Verteilzentrum',
   material: 'Stahlcoils und Rohmaterial in einem Materiallager',
-  reporting: 'Leitstand mit mehreren Bildschirmen und Kennzahlenansichten',
+  reporting: 'Stapel aus Papierunterlagen und Formularen auf einem Schreibtisch',
   architektur: 'Stahlträger und hohe Fenster einer Industriehalle',
   versandzentrum:
     'Rollenförderer mit Kartons in einem Versandzentrum, dahinter Hochregale und ein Gabelstapler an der Verladetür',
   geschichte: 'Sanduhr vor schwarzem Grund, der Sand rinnt durch die enge Mitte',
   werte: 'Zwei Personen geben sich über einem Schreibtisch die Hand',
+  feinplanung: 'Blick von oben auf eine Fahrzeugmontagelinie mit mehreren Karosserien und Arbeitsstationen',
+  versandsteuerung: 'Hallenkran hebt ein Bündel Metallprofile, im Hintergrund die Fertigungshalle',
+  referenzprojekte: 'Mehrere aufgefächerte Dokumentenstapel mit Registerlaschen auf einem Tisch',
 };

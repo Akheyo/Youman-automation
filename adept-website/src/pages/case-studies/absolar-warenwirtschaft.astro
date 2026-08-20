@@ -80,7 +80,7 @@ const technologien = [
 
 const brotkrumen = [
   { label: 'Home', href: '/' },
-  { label: 'Case Studies', href: '/case-studies' },
+  { label: 'Referenzprojekte', href: '/case-studies' },
 ];
 ---
 
@@ -92,10 +92,10 @@ const brotkrumen = [
   artikel={{ titel: fall.title, beschreibung: "Wie adept& für A&B SolarEnergy Lager, Angebote aus Lexware Office und Baustellenplanung zu einem durchgängigen Warenwirtschaftsprozess verbunden hat.", datum: fall.date }}
 >
   <PageHeader
-    kicker="Case Study"
+    kicker="Referenzprojekt"
     bild={fall.bild}
     title="Aufbau eines integrierten Warenwirtschaftssystems für Solarprojekte"
-    lead={`${fall.kunde} – ${fall.branche}`}
+    lead={`${fall.kunde}, ${fall.branche}`}
     breadcrumb={brotkrumen}
   />
 
@@ -167,7 +167,7 @@ const brotkrumen = [
     <SectionHeading
       kicker="Herausforderung"
       title="Nicht fehlende Daten, sondern fehlende Verbindungen"
-      lead="Die Informationen waren vorhanden – nur eben in getrennten Ständen. Angebote lagen in Lexware Office, Lager- und Projektdaten in eigenen Strukturen. Ein durchgängiger digitaler Prozess von der Anfrage bis zur Baustellenplanung entstand daraus nicht."
+      lead="Die Informationen waren vorhanden, nur eben in getrennten Ständen. Angebote lagen in Lexware Office, Lager- und Projektdaten in eigenen Strukturen. Ein durchgängiger digitaler Prozess von der Anfrage bis zur Baustellenplanung entstand daraus nicht."
     />
 
     <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
@@ -260,7 +260,7 @@ const brotkrumen = [
 
     <div class="mt-12 flex flex-wrap gap-4">
       <Button href="/kontakt" variant="ghost">Ähnlichen Fall besprechen</Button>
-      <Button href="/case-studies" variant="ghost">Alle Case Studies</Button>
+      <Button href="/case-studies" variant="ghost">Alle Referenzprojekte</Button>
     </div>
   </Section>
 </Base>

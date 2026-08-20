@@ -40,7 +40,7 @@ export const news: NewsItem[] = [
   },
   {
     slug: 'platzhalter-3',
-    title: 'Platzhalter – Thema folgt',
+    title: 'Platzhalter: Thema folgt',
     date: null,
     kicker: 'Platzhalter',
     excerpt:
@@ -50,7 +50,7 @@ export const news: NewsItem[] = [
   },
   {
     slug: 'platzhalter-4',
-    title: 'Platzhalter – Thema folgt',
+    title: 'Platzhalter: Thema folgt',
     date: null,
     kicker: 'Platzhalter',
     excerpt:

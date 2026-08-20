@@ -26,7 +26,7 @@ const telefone = anbieter.personen.filter((person) => person.telefon);
 
 <Base
   title="Impressum"
-  description="Impressum von adept& – Anbieterkennzeichnung nach § 5 DDG mit Namen, Anschrift und Kontaktdaten der verantwortlichen Personen."
+  description="Impressum von adept&: Anbieterkennzeichnung nach § 5 DDG mit Namen, Anschrift und Kontaktdaten der verantwortlichen Personen."
   noindex={true}
 >
   <PageHeader title="Impressum" breadcrumb={[{ label: 'Home', href: '/' }]} />
@@ -112,7 +112,7 @@ const telefone = anbieter.personen.filter((person) => person.telefon);
           )}
 
           <div class="mt-16">
-            <PlaceholderNote title="Noch offen – Texte der Rechtsberatung">
+            <PlaceholderNote title="Noch offen: Texte der Rechtsberatung">
               <p>
                 Die Angaben oben sind vollständig. Was hier noch fehlt, sind Erklärungen mit
                 rechtlicher Wirkung, die nicht erzeugt werden können:
@@ -132,10 +132,10 @@ const telefone = anbieter.personen.filter((person) => person.telefon);
           </div>
         </div>
       ) : (
-        <PlaceholderNote title="Platzhalter – Impressum noch unvollständig">
+        <PlaceholderNote title="Platzhalter: Impressum noch unvollständig">
           <p>
             Die Anbieterkennzeichnung wird aus hinterlegten Angaben erzeugt. Sie bleibt so lange
-            unveröffentlicht, bis alle Pflichtfelder vorliegen – es wird nichts geraten und nichts
+            unveröffentlicht, bis alle Pflichtfelder vorliegen. Es wird nichts geraten und nichts
             halb ausgefüllt veröffentlicht.
           </p>
           <p class="mt-3">Es fehlt noch:</p>
@@ -146,7 +146,7 @@ const telefone = anbieter.personen.filter((person) => person.telefon);
           </ul>
           <p class="mt-4">
             Die Angaben stehen in <code class="px-1">src/data/anbieter.ts</code>. Ergänzt werden dort
-            später auch Rechtsform, Registerangaben und Umsatzsteuer-Identifikationsnummer – an
+            später auch Rechtsform, Registerangaben und Umsatzsteuer-Identifikationsnummer. An
             dieser Seite ist dafür nichts zu ändern.
           </p>
         </PlaceholderNote>

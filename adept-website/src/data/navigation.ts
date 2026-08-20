@@ -29,7 +29,6 @@ export const mainNav: NavItem[] = [
     children: [
       { label: 'Fertigung und Maschinenbau', href: '/branchen/fertigung-und-maschinenbau' },
       { label: 'Logistik & Versand', href: '/branchen/logistik-und-versand' },
-      { label: 'Konsumgüter und Handel', href: '/branchen/konsumgueter-und-handel' },
       { label: 'E-Commerce & Autohandel', href: '/branchen/e-commerce-und-autohandel' },
       { label: 'Automobil und Zulieferer', href: '/branchen/automobil-und-zulieferer' },
     ],
@@ -45,7 +44,7 @@ export const mainNav: NavItem[] = [
       { label: 'Systemintegration & ERP-Anbindung', href: '/funktionen/systemintegration-und-erp-anbindung' },
     ],
   },
-  { label: 'Case Studies', href: '/case-studies' },
+  { label: 'Referenzprojekte', href: '/case-studies' },
   { label: 'News', href: '/news' },
   { label: 'Über uns', href: '/ueber-uns' },
   { label: 'Kontakt', href: '/kontakt' },

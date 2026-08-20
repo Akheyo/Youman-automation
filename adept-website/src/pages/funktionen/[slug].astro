@@ -44,25 +44,41 @@ const passendeBranchen = branchen.filter((b) => b.funktionen.includes(funktion.s
   <Section>
     <SectionHeading
       title="Bausteine"
-      lead="Diese Elemente setzen wir in diesem Funktionsbereich um – immer zugeschnitten auf den konkreten Prozess, nie als Standardfunktion von der Stange."
+      lead="Diese Elemente setzen wir in diesem Funktionsbereich um, immer zugeschnitten auf den konkreten Prozess und nie als Standardfunktion von der Stange."
     />
-    <ul class="mt-12 grid gap-x-10 gap-y-6 md:grid-cols-2">
+    {/*
+      Jeder Baustein laesst sich aufklappen. <details> und <summary> statt
+      eigener Schaltflaechen: die Browser bringen Tastaturbedienung und
+      Ansage an Screenreader mit, und ohne JavaScript funktioniert es
+      ebenfalls. Der Kreis rechts ist die sichtbare Marke; der
+      Standardpfeil der Browser ist im Stylesheet abgeschaltet.
+    */}
+    <ul class="mt-12 grid gap-x-10 md:grid-cols-2">
       {
         funktion.bausteine.map((baustein) => (
-          <li class="flex items-start gap-4 border-t border-line pt-6">
-            <svg
-              class="mt-1 size-5 shrink-0 text-accent"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="m5 13 4 4L19 7" />
-            </svg>
-            <span class="text-lg text-ink">{baustein}</span>
+          <li class="border-t border-line">
+            <details class="group">
+              <summary class="flex min-h-11 cursor-pointer items-center justify-between gap-6 py-6">
+                <span class="text-lg text-ink">{baustein.titel}</span>
+                <span
+                  class="grid size-9 shrink-0 place-items-center rounded-full border border-line text-ink transition-colors duration-200 group-hover:border-accent group-open:border-accent group-open:bg-accent group-open:text-white"
+                  aria-hidden="true"
+                >
+                  <svg
+                    class="size-4 transition-transform duration-200 group-open:rotate-180"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </span>
+              </summary>
+              <p class="prose-measure pb-7 pr-4 text-ink-soft">{baustein.text}</p>
+            </details>
           </li>
         ))
       }

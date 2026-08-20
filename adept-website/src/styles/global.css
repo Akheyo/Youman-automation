@@ -170,9 +170,39 @@
   }
 }
 
-/* Textmaß für Fließtext */
+/*
+  Textmaß für Fließtext, dazu Blocksatz.
+
+  Blocksatz ohne Silbentrennung reißt im Deutschen breite Lücken zwischen die
+  Wörter, besonders auf dem Handy und bei langen Komposita wie
+  "Warenwirtschaftssystem". `hyphens: auto` greift, weil das Dokument
+  lang="de" trägt; der Browser trennt dann nach deutschen Regeln.
+*/
 @utility prose-measure {
   max-width: 68ch;
+  text-align: justify;
+  hyphens: auto;
+}
+
+/*
+  Zentrierte Abschnitte behalten ihre Ausrichtung: Blocksatz würde die
+  Zentrierung aufheben, und bei zwei, drei Zeilen sähe das aus wie ein
+  Fehler.
+*/
+.text-center .prose-measure,
+.text-center p {
+  text-align: center;
+}
+
+/*
+  Aufklappbare Bausteine. Der Standardpfeil der Browser wird entfernt, die
+  Marke sitzt als eigener Kreis rechts – sonst stünden zwei Zeichen da.
+*/
+summary {
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
 }
 
 /*

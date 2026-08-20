@@ -13,7 +13,7 @@ export const kernleistungen = [
   {
     title: 'Prozessberatung',
     description:
-      'Analyse und Strukturierung operativer Herausforderungen – von der Produktionsplanung bis zur Logistik.',
+      'Analyse und Strukturierung operativer Herausforderungen von der Produktionsplanung bis zur Logistik.',
   },
   {
     title: 'Custom Software Development',
@@ -27,7 +27,7 @@ export const kernleistungen = [
   {
     title: 'Implementierung & Rollout',
     description:
-      'Begleitung der Einführung direkt im Betrieb – von der Anforderung bis zum produktiven Einsatz.',
+      'Begleitung der Einführung direkt im Betrieb, von der Anforderung bis zum produktiven Einsatz.',
   },
 ] as const;
 

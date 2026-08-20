@@ -7,7 +7,6 @@ import TeaserCard from '../components/TeaserCard.astro';
 import Bild from '../components/Bild.astro';
 import Button from '../components/Button.astro';
 import { news } from '../data/news';
-import { caseStudies } from '../data/caseStudies';
 import { branchen } from '../data/branchen';
 import { funktionen } from '../data/funktionen';
 import { site, kernleistungen } from '../data/site';
@@ -15,19 +14,14 @@ import { withBase } from '../lib/url';
 
 /**
  * Reihenfolge der Startseite:
- * Hero > Aktuelle Themen > Case Studies > Was wir tun > Claim > Über adept&
+ * Hero > Einordnung > Pressemitteilungen > Was wir tun > Claim > adept&
  * > Branchen und Funktionen.
  *
- * Case Studies und "Aktuelle Themen" sind zwei getrennte Abschnitte. Ein
- * belegtes Kundenprojekt und eine Meldung leisten Verschiedenes; standen sie
- * in einer Liste, ging der einzige belastbare Beleg zwischen leeren
- * Platzhalter-Kacheln unter.
- *
- * "Was wir tun" und "Branchen" sind Ergänzungen zum Briefing – ohne sie sagt
- * die Startseite an keiner Stelle, womit das Unternehmen sein Geld verdient.
+ * Die Case Studies sind auf Wunsch von der Startseite genommen. Sie bleiben
+ * unter /case-studies erreichbar und stehen dort als Referenzprojekte.
  */
 
-// Inhalte für "Geschichte" und "Werte" liegen noch nicht vor.
+// Beide Abschnitte sind auf /ueber-uns ausformuliert.
 const ueberKacheln = [
   { title: 'Geschichte', href: '/ueber-uns', bild: 'geschichte' as const },
   { title: 'Werte', href: '/ueber-uns', bild: 'werte' as const },
@@ -80,9 +74,8 @@ const ueberKacheln = [
             Steuerungen und Sensorik, also Hardware, und würde die
             falschen Anfragen anziehen. */}
         <p class="prose-measure text-lg text-ink-soft lg:text-xl">
-          Wir analysieren, wo im Betrieb noch von Hand geplant, gerechnet und übertragen wird, und
-          automatisieren genau diese Schritte. Die Lösung läuft in Ihrem bestehenden ERP- oder
-          SAP-System – nicht daneben.
+          Wir analysieren Ihre Herausforderungen im Betrieb und bauen eine maßgeschneiderte Lösung.
+          Sie kooperiert mit Ihrem bestehenden ERP- oder SAP-System integrativ.
         </p>
       </div>
 
@@ -100,7 +93,7 @@ const ueberKacheln = [
   {/* ---------------------------------------------------- Aktuelle Themen */}
   <Section tone="canvas">
     <div class="flex flex-wrap items-end justify-between gap-6">
-      <SectionHeading kicker="Aktuelles" title="Aktuelle Themen" />
+      <SectionHeading kicker="Aktuelles" title="Pressemitteilungen" />
       <Button href="/news" variant="secondary">Alle Beiträge</Button>
     </div>
 
@@ -124,89 +117,6 @@ const ueberKacheln = [
     </ul>
   </Section>
 
-  {/* ---------------------------------------------------- Case Studies */}
-  <Section tone="light">
-    <SectionHeading
-      kicker="Case Studies"
-      title="Was wir gebaut haben"
-      lead="Abgeschlossene Kundenprojekte – vom operativen Engpass bis zur Anbindung an das bestehende System."
-      align="center"
-    />
-
-    {/* Zwei gleich gewichtete Karten statt Aufmacher plus Rest: bei genau
-        zwei Faellen wirkt eine Hierarchie willkuerlich. Das Raster nimmt
-        spaeter ohne Aenderung einen dritten und vierten Fall auf.
-
-        minmax(0,1fr) statt 1fr: eine Rasterspalte waechst sonst auf die
-        Mindestbreite ihres Inhalts. `overflow-wrap: break-word` erlaubt zwar
-        den Umbruch langer Woerter, senkt aber die gemeldete Mindestbreite
-        nicht - "Warenwirtschaftssystem" hat die Spalte bei 320 px deshalb
-        ueber den Rand geschoben. */}
-    <ul
-      class="mt-14 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[repeat(2,minmax(0,1fr))]"
-      data-reveal-gruppe
-    >
-      {
-        caseStudies.map((fall, index) => (
-          <li data-reveal style={`--reveal-index:${index}`}>
-            <a
-              href={withBase(fall.href)}
-              class="hebt-sich group flex h-full flex-col overflow-hidden bg-surface ring-1 ring-line"
-            >
-              <Bild
-                name={fall.bild}
-                index={index}
-                ratio="16/9"
-                zoom
-                sizes="(min-width: 1024px) 50vw, 100vw"
-                class={index === 0 ? 'wischt-auf' : undefined}
-              />
-              <div class="flex flex-1 flex-col p-8 md:p-10">
-                <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-                  {fall.branche}
-                </p>
-                <h3 class="mt-3 text-2xl text-ink transition-colors duration-200 group-hover:text-accent md:text-3xl">
-                  {fall.title}
-                </h3>
-                <p class="mt-2 text-sm text-muted-fg">{fall.kunde}</p>
-                <p class="prose-measure mt-5 flex-1 text-ink-soft">{fall.excerpt}</p>
-
-                {fall.kennzahl && (
-                  <p class="mt-8 flex flex-wrap items-end gap-x-5 gap-y-2 border-t border-line pt-6">
-                    <span class="font-display text-4xl font-semibold tabular-nums text-ink">
-                      {fall.kennzahl.wert}
-                    </span>
-                    <span class="min-w-0 pb-1 text-sm text-muted-fg">
-                      {fall.kennzahl.beschreibung}
-                    </span>
-                  </p>
-                )}
-
-                <span
-                  class="mt-8 inline-flex items-center gap-2 font-medium text-accent"
-                  aria-hidden="true"
-                >
-                  Case Study lesen
-                  <svg
-                    class="size-4 transition-transform duration-200 group-hover:translate-x-1"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path d="m9 18 6-6-6-6" />
-                  </svg>
-                </span>
-              </div>
-            </a>
-          </li>
-        ))
-      }
-    </ul>
-  </Section>
-
   {/* ---------------------------------------------------- Was wir tun */}
   <Section tone="canvas">
     <div class="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-24" data-reveal>
@@ -215,18 +125,8 @@ const ueberKacheln = [
           {site.claim}
         </p>
         <h2 class="mt-5 text-3xl sm:text-4xl lg:text-5xl">
-          Wir beraten, wo andere nur liefern – und wir bauen, was andere nur empfehlen.
+          Wir beraten, wo andere nur liefern und wir bauen, was andere nur empfehlen.
         </h2>
-        <p class="prose-measure mt-7 text-lg text-ink-soft">
-          adept& ist kein reines Beratungshaus, das Empfehlungen ausspricht, und kein
-          Softwareunternehmen, das ein Standardprodukt verkauft. Wir analysieren das operative
-          Problem – und wir bauen die Lösung, eingebettet in Ihr bestehendes ERP- oder SAP-System.
-        </p>
-        <div class="mt-9 border-l-2 border-accent pl-6">
-          <p class="font-serif text-xl text-ink sm:text-2xl">
-            Kein Systemwechsel. Keine Medienbrüche. Eine Oberfläche.
-          </p>
-        </div>
         <Button href="/ueber-uns" variant="secondary" class="mt-9">
           Wie wir arbeiten
         </Button>
@@ -303,9 +203,6 @@ const ueberKacheln = [
                 zoom
                 sizes="(min-width: 640px) 50vw, 100vw"
               >
-                <span class="absolute left-3 top-3 border border-white/40 bg-ink-deep/70 px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-widest text-white backdrop-blur-sm">
-                  Text folgt
-                </span>
                 <span class="absolute bottom-6 left-6 font-serif text-2xl font-medium text-white md:text-3xl">
                   {kachel.title}
                 </span>
@@ -315,10 +212,6 @@ const ueberKacheln = [
         ))
       }
     </ul>
-
-    <p class="mt-8 text-center text-sm text-muted-fg">
-      Texte für „Geschichte“ und „Werte“ liegen noch nicht vor.
-    </p>
   </Section>
 {/* ---------------------------------------------------- Branchen und Funktionen */}
   <Section tone="light">

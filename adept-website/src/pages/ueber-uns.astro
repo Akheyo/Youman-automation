@@ -7,6 +7,40 @@ import SectionHeading from '../components/SectionHeading.astro';
 import PlaceholderNote from '../components/PlaceholderNote.astro';
 import Button from '../components/Button.astro';
 import { kernleistungen, prozess, technischeLeistungen } from '../data/site';
+
+/**
+ * Geschichte und Werte, wie geliefert. Angepasst wurden ausschließlich
+ * Zeichensetzung und Absatzgrenzen; an den Aussagen ist nichts geändert.
+ */
+const geschichte = [
+  'Jedes Unternehmen, das ein ERP-System einführt, macht früher oder später dieselbe Erfahrung: Das System deckt vieles ab, aber nicht alles. Was übrig bleibt, sind die Prozesse, die sich nicht ins Schema pressen lassen, und die am Ende doch wieder in Excel-Tabellen und persönlichen Absprachen landen. Genau dort setzt adept& an, gegründet 2026 von zwei Personen mit komplementären Blickwinkeln auf exakt dieses Problem.',
+  'Isho I. sieht die Lücke aus der Beratungsperspektive. Als Wirtschaftsingenieur im TMT-Sektor tätig und mit Zertifizierungen in Business Process Modeling und Unternehmensanalytik ausgestattet, beobachtet er dasselbe Muster immer wieder: Unternehmen mit solider Systemlandschaft, die im operativen Alltag trotzdem an denselben Stellen hängen bleiben.',
+  'Ammanuel K. kennt das Problem von der anderen Seite. Lange bevor adept& existiert, baut er in seinem eigenen beruflichen Umfeld bereits Workflow-Automatisierungen und Softwaremodule, um genau solche Lücken zu schließen.',
+  'Die Beobachtung des einen trifft auf die Lösungskompetenz des anderen, und daraus entsteht eine gemeinsame Überzeugung: Was hier fehlt, muss gebaut werden, nicht nur beschrieben.',
+  'Unterschiedlich in der Aufgabe, identisch im Anspruch: Kein bestehendes System wird ersetzt. Jedes Modul entsteht dort, wo ein Unternehmen es tatsächlich braucht.',
+];
+
+const werte = [
+  {
+    titel: 'Ehrlichkeit',
+    text: 'Wir kommunizieren Risiken, Aufwände und Grenzen einer Lösung offen und ungeschönt, auch wenn das kurzfristig unbequem ist. Verlässliche Zusammenarbeit beginnt mit einer ehrlichen Einschätzung.',
+  },
+  {
+    titel: 'Transparenz',
+    text: 'Jeder Schritt unserer Arbeit ist für den Kunden nachvollziehbar, von der Analyse bis zur Umsetzung. Keine Blackbox, keine verborgene Komplexität.',
+  },
+  {
+    titel: 'Exzellenz',
+    text: 'Wir liefern keine Zwischenlösung, sondern die technisch fundierteste Antwort auf ein konkretes operatives Problem. Unser Anspruch ist Substanz, kein oberflächliches Ergebnis.',
+  },
+  {
+    titel: 'Professionalität',
+    text: 'Jedes Projekt erhält dieselbe Sorgfalt, unabhängig von Umfang oder Größe. Klare Zusagen, verbindliche Umsetzung, saubere Kommunikation.',
+  },
+];
+
+const werteSchluss =
+  'Im Zentrum jedes Projekts steht ein Anspruch: Unsere Kunden sollen durch unsere Arbeit einen echten, messbaren und dauerhaften Mehrwert erzielen, keine kurzfristige Verbesserung, sondern eine Lösung, die im operativen Alltag Bestand hat.';
 ---
 
 <Base
@@ -18,8 +52,8 @@ import { kernleistungen, prozess, technischeLeistungen } from '../data/site';
   <PageHeader
     kicker="Über uns"
     bild="architektur"
-    title="Über adept&"
-    lead="Wir beraten, wo andere nur liefern – und wir bauen, was andere nur empfehlen."
+    title="adept&"
+    lead="Wir beraten, wo andere nur liefern und wir bauen, was andere nur empfehlen."
     breadcrumb={[{ label: 'Home', href: '/' }]}
   />
 
@@ -41,7 +75,7 @@ import { kernleistungen, prozess, technischeLeistungen } from '../data/site';
     <SectionHeading
       kicker="Was wir tun"
       title="Eine einzige, dedizierte Softwareoberfläche"
-      lead="Unternehmen arbeiten täglich mit einer Vielzahl an Tools, Systemen und manuellen Prozessen – und verlieren dabei Zeit, Übersicht und Effizienz."
+      lead="Unternehmen arbeiten täglich mit einer Vielzahl an Tools, Systemen und manuellen Prozessen und verlieren dabei Zeit, Übersicht und Effizienz."
     />
     <div class="prose-measure mt-8 space-y-5 text-ink-soft">
       <p>
@@ -60,32 +94,20 @@ import { kernleistungen, prozess, technischeLeistungen } from '../data/site';
     <SectionHeading
       kicker="Was ist adept&"
       title="Eine modulare Plattform als Arbeitsgerüst"
-      lead="Stellen Sie sich adept& wie ein Betriebssystem vor: Es bildet das stabile Gerüst. Je nach Kundenanforderung wird eine spezifische Lösung – zum Beispiel eine Logistiksoftware, eine Produktionsplanung oder ein Reporting-Tool – als Modul in dieses Gerüst eingebettet."
+      lead="Stellen Sie sich adept& wie ein Betriebssystem vor: Es bildet das stabile Gerüst. Je nach Kundenanforderung wird eine spezifische Lösung als Modul in dieses Gerüst eingebettet, zum Beispiel eine Logistiksoftware, eine Produktionsplanung oder ein Reporting-Tool."
     />
     <ul class="mt-12 grid gap-x-10 gap-y-6 md:grid-cols-2">
       {
         technischeLeistungen.map((leistung) => (
-          <li class="flex items-start gap-4 border-t border-line pt-6">
-            <svg
-              class="mt-1 size-5 shrink-0 text-accent"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="m5 13 4 4L19 7" />
-            </svg>
+          <li class="border-t border-line pt-6">
             <span class="text-ink">{leistung}</span>
           </li>
         ))
       }
     </ul>
     <p class="prose-measure mt-10 text-ink-soft">
-      Der Mitarbeiter beim Kunden sieht nur eine Oberfläche. Was im Hintergrund passiert – Datenabruf,
-      Berechnung, Synchronisation mit dem ERP-System – geschieht vollautomatisch.
+      Der Mitarbeiter beim Kunden sieht nur eine Oberfläche. Datenabruf, Berechnung und
+      Synchronisation mit dem ERP-System geschehen vollautomatisch im Hintergrund.
     </p>
   </Section>
 
@@ -122,36 +144,38 @@ import { kernleistungen, prozess, technischeLeistungen } from '../data/site';
       nicht. So ist der Abschnitt nicht leer, ohne dass etwas behauptet wird,
       was nicht geschrieben wurde. */}
   <Section id="geschichte" tone="canvas">
-    <SectionHeading kicker="Über adept&" title="Geschichte" />
-    <div class="mt-8 grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
-      <Bild name="geschichte" ratio="16/9" sizes="(min-width: 1024px) 50vw, 100vw" />
-      <PlaceholderNote title="Platzhalter – Text „Geschichte“ fehlt noch">
-        <p>
-          Für diesen Abschnitt liegt noch kein Text vor. Sobald die Unternehmensgeschichte
-          formuliert ist, ersetzt sie diesen Block.
-        </p>
-      </PlaceholderNote>
+    <SectionHeading kicker="adept&" title="Geschichte" />
+    <div class="mt-10 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
+      <Bild name="geschichte" ratio="16/9" sizes="(min-width: 1024px) 45vw, 100vw" />
+      <div class="prose-measure space-y-5 text-lg text-ink-soft">
+        {geschichte.map((absatz) => <p>{absatz}</p>)}
+      </div>
     </div>
   </Section>
 
   <Section id="werte">
-    <SectionHeading kicker="Über adept&" title="Werte" />
-    <div class="mt-8 grid items-start gap-10 lg:grid-cols-2 lg:gap-16">
-      <Bild name="werte" ratio="16/9" sizes="(min-width: 1024px) 50vw, 100vw" />
-      <PlaceholderNote title="Platzhalter – Text „Werte“ fehlt noch">
-        <p>
-          Für diesen Abschnitt liegt noch kein Text vor. Sobald die Werte formuliert sind, ersetzt
-          dieser Text den Platzhalter.
-        </p>
-      </PlaceholderNote>
+    <SectionHeading kicker="adept&" title="Werte" />
+    <div class="mt-10 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
+      <Bild name="werte" ratio="16/9" sizes="(min-width: 1024px) 45vw, 100vw" />
+      <dl class="space-y-7">
+        {
+          werte.map((wert) => (
+            <div class="border-t border-line pt-6">
+              <dt class="text-xl text-ink">{wert.titel}</dt>
+              <dd class="prose-measure mt-2.5 text-ink-soft">{wert.text}</dd>
+            </div>
+          ))
+        }
+      </dl>
     </div>
+    <p class="prose-measure mt-12 text-lg text-ink-soft">{werteSchluss}</p>
   </Section>
 
   <Section tone="canvas">
     <div class="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
       <SectionHeading
         title="Sprechen wir über Ihren Engpass"
-        lead="Schildern Sie uns die Situation – wir sagen Ihnen, ob sich das als Modul abbilden lässt."
+        lead="Schildern Sie uns die Situation. Wir sagen Ihnen, ob sich das als Modul abbilden lässt."
       />
       <Button href="/kontakt" variant="primary" class="shrink-0">Kontakt aufnehmen</Button>
     </div>
