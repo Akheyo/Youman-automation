@@ -60,7 +60,10 @@ export const branchen: Branche[] = [
     // Versandzentrum aus dem Bildregister: Kartons auf einer Förderstrecke,
     // das trifft den Kern dieser Branche.
     bild: 'versandzentrum',
-    title: 'Onlinehandel',
+    // Beide Begriffe im Titel, wie bei den anderen Branchen auch. Sie meinen
+    // dasselbe, werden aber unterschiedlich gesucht: "E-Commerce" von
+    // Agenturen und Dienstleistern, "Onlinehandel" von Haendlern selbst.
+    title: 'E-Commerce & Onlinehandel',
     teaser: 'Artikelpflege, Listings und Retouren automatisiert und angebunden an Ihren Bestand.',
     intro:
       'Im Onlinehandel entsteht der Aufwand selten beim Verkaufen, sondern davor und danach: Artikeldaten für jeden Kanal einzeln pflegen, Listings je Marktplatz neu aufbauen, Retouren wieder in den Bestand bringen. Wir kennen die gängigen Marktplätze aus der Praxis, darunter Amazon und eBay, und wissen, an welchen Eigenheiten dort Arbeit hängen bleibt. adept& bildet diese Abläufe als Modul ab und hängt sie an das System, das die Bestände ohnehin führt. Für den Fahrzeughandel gilt dasselbe, dort mit Fahrzeugbörsen statt Marktplätzen.',
