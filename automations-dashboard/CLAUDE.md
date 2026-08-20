@@ -108,6 +108,17 @@ der Oberfläche zeigen, damit später nur noch angeschlossen werden muss.
   EAN, Bestand netto/physisch/reserviert, Bestand je Lager, Preise, Gewicht.
 - `plenty_artikeltexte` – 65.614 Zeilen. Titel, Beschreibung, Meta-Title,
   Meta-Description, Meta-Keywords, Bilder.
+
+  **Bilder ist kein einfaches Array von Adressen.** Es ist ein Array von
+  Objekten, eines je Bild, mit drei Größen und einer Reihenfolge:
+
+  ```json
+  [{ "gross": "...", "mittel": "...", "vorschau": "...", "position": 0 }]
+  ```
+
+  Zum Anzeigen nach `position` sortieren, das Bild mit `position` 0 ist das
+  Hauptbild. Je nach Zweck `vorschau`, `mittel` oder `gross` nehmen. Ein
+  Eintrag aus dem Array ist nie selbst eine Adresse.
 - `v_artikel_komplett` – beides zusammengeführt, **diese View verwenden**.
 - `plenty_sync_state` – Fortschritt und letzter Fehler des Abgleichs.
 
