@@ -40,7 +40,9 @@ export function lageBestimmen(
     { wert: anzahl(automationen.length), name: automationen.length === 1 ? 'Automation' : 'Automationen' },
     { wert: anzahl(laufende.length), name: 'läuft gerade' },
     { wert: anzahl(fehler.length), name: fehler.length === 1 ? 'offener Fehler' : 'offene Fehler' },
-    { wert: quote === null ? 'keine' : prozent(quote), name: 'erfolgreich in 24 Stunden' },
+    quote === null
+      ? { wert: 'keine', name: 'Durchläufe in 24 Stunden' }
+      : { wert: prozent(quote), name: 'erfolgreich in 24 Stunden' },
   ];
 
   if (kaputt.length > 0 || schwer.length > 0) {
@@ -99,7 +101,9 @@ export function lageBestimmen(
     erklaerung:
       automationen.length === 0
         ? 'Es ist noch keine Automation eingetragen. Sobald die erste in der Datenbank steht, siehst du sie hier.'
-        : `Alle ${anzahl(automationen.length)} Automationen sind unauffällig, kein Fehler ist offen.`,
+        : automationen.length === 1
+          ? 'Die eine Automation ist unauffällig, kein Fehler ist offen.'
+          : `Alle ${anzahl(automationen.length)} Automationen sind unauffällig, kein Fehler ist offen.`,
     fakten,
     tat: null,
   };
