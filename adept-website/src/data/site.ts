@@ -3,6 +3,8 @@ export const site = {
   /** Wird im Hero unter dem Namen angezeigt */
   region: 'Deutschland',
   claim: 'Beratung. Software. Integration.',
+  /** Aus dem freigegebenen Text unter "Geschichte". */
+  gruendungsjahr: '2026',
   subclaim: 'Maßgeschneiderte ERP- & SAP-Lösungen für Ihr Unternehmen.',
   description:
     'Managementberatung und individuelle Softwareentwicklung aus einer Hand: adept& analysiert Ihr operatives Problem und baut die Lösung ins bestehende ERP-System.',

@@ -6,7 +6,24 @@ import { withBase } from '../lib/url';
 import { bild } from '../lib/images';
 import { site } from '../data/site';
 import { kontakt } from '../data/kontakt';
+import { anbieter, anbieterVollstaendig } from '../data/anbieter';
 import { indexierungErlaubt } from '../data/sichtbarkeit';
+
+/*
+ * Die drei lateinischen Schriftschnitte werden hier eingebunden, damit ihre
+ * fertigen Adressen bekannt sind und vorab angemeldet werden koennen.
+ *
+ * Ohne das findet der Browser sie erst, nachdem er das Stylesheet gelesen
+ * hat. Bis sie da sind, steht der Text in der Ersatzschrift; beim Wechsel
+ * bricht er neu um und schiebt den Inhalt. Auf /ueber-uns hat das einen
+ * CLS von 0.103 verursacht, also ueber dem Grenzwert von 0.1.
+ *
+ * Die uebrigen Schnitte (kyrillisch, griechisch, vietnamesisch) bleiben
+ * unangemeldet. Sie laden wegen unicode-range bei deutschem Text ohnehin nie.
+ */
+import schriftSerif from '@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2?url';
+import schriftDisplay from '@fontsource-variable/lexend/files/lexend-latin-wght-normal.woff2?url';
+import schriftSans from '@fontsource-variable/source-sans-3/files/source-sans-3-latin-wght-normal.woff2?url';
 import type { BildKey } from '../data/images';
 
 interface Props {
@@ -81,6 +98,28 @@ const organisation = {
   // strukturierten Daten sind schlechter als fehlende.
   ...(kontakt.email ? { email: kontakt.email } : {}),
   ...(kontakt.telefon ? { telephone: kontakt.telefon } : {}),
+
+  /*
+   * Anschrift und Gruendungsjahr aus denselben Daten wie das Impressum.
+   * Die Anschrift ist der stärkste Ortsbezug, den strukturierte Daten
+   * hergeben; ohne sie bleibt regionale Sichtbarkeit Zufall. Sie erscheint
+   * nur vollstaendig, damit keine halbe Adresse in den Daten landet.
+   */
+  ...(anbieterVollstaendig
+    ? {
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: anbieter.strasse,
+          postalCode: anbieter.plz,
+          addressLocality: anbieter.ort,
+          addressCountry: 'DE',
+        },
+      }
+    : {}),
+  ...(site.gruendungsjahr ? { foundingDate: site.gruendungsjahr } : {}),
+  ...(anbieter.personen.length
+    ? { founder: anbieter.personen.map((person) => ({ '@type': 'Person', name: person.name })) }
+    : {}),
   ...(kontakt.email || kontakt.telefon
     ? {
         contactPoint: {
@@ -128,9 +167,22 @@ const artikelObjekt = artikel
     }
   : null;
 
+/*
+ * Ein WebSite-Knoten sagt Google, wie die Seite heisst. Ohne ihn leitet
+ * Google den Namen aus der Domain ab, hier also "Adeptandpartners".
+ */
+const webseite = {
+  '@type': 'WebSite',
+  '@id': absolut(withBase('/')) + '#webseite',
+  url: absolut(withBase('/')),
+  name: site.name,
+  inLanguage: 'de-DE',
+  publisher: { '@id': absolut(withBase('/')) + '#organisation' },
+};
+
 const strukturierteDaten = {
   '@context': 'https://schema.org',
-  '@graph': [organisation, brotkrumenListe, artikelObjekt].filter(Boolean),
+  '@graph': [organisation, webseite, brotkrumenListe, artikelObjekt].filter(Boolean),
 };
 ---
 
@@ -139,6 +191,12 @@ const strukturierteDaten = {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    {/* crossorigin ist Pflicht: Schriften werden immer im CORS-Modus geholt.
+        Ohne das Attribut laedt der Browser die Datei ein zweites Mal. */}
+    <link rel="preload" as="font" type="font/woff2" href={schriftSerif} crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href={schriftDisplay} crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href={schriftSans} crossorigin />
     <title>{seitentitel}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical.href} />
