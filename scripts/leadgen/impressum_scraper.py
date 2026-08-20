@@ -50,8 +50,9 @@ NAME_RE = re.compile(
     r"(?:\s+(?:von|van|de|der|zu|den))?"
     r"(?:\s+[A-ZÄÖÜ][a-zäöüß]+){1,2})")
 
+# Wortgrenze ist Pflicht: ohne \b schneidet "USt" mitten in "M-ust-ermann".
 TAIL_STOP = re.compile(
-    r"(?:Verantwortl|Geschäftsführ|Vertretungsber|Vertreten|Inhaber|Vorstand|"
+    r"\b(?:Verantwortl|Geschäftsführ|Vertretungsber|Vertreten|Inhaber|Vorstand|"
     r"Handelsregister|Registergericht|Amtsgericht|Umsatzsteuer|USt|Steuernummer|"
     r"Postanschrift|Anschrift|Telefon|Telefax|E-Mail|Sitz\s+der|Register|"
     r"Aufsichtsrat|Redaktionell|Kontakt|Adresse)", re.I)
@@ -158,12 +159,14 @@ def pick_decision_maker(text: str):
     found = []
     for m in ROLE_RE.finditer(text):
         role = re.sub(r"\s+", " ", m.group(1)).strip()
-        tail = text[m.end():m.end() + 120]
+        tail = text[m.end():m.end() + 160]
         tail = tail.split("\n")[0] if tail.split("\n")[0].strip() else tail.strip()
         # Vor dem naechsten Abschnittswort abschneiden, sonst wandert ein
         # angeschnittenes "Verantwortlich"/"Handelsregister" in den Namen.
         tail = TAIL_STOP.split(tail)[0]
-        for nm in NAME_RE.finditer(tail[:120]):
+        # "Thomas Holz, Birgit Rohn, Jonathan Gschwendner" -> alle drei erfassen
+        taken = 0
+        for nm in NAME_RE.finditer(tail[:160]):
             name = re.sub(r"\s+", " ", nm.group(1)).strip()
             if BAD_NAME_WORDS.match(name):
                 continue
@@ -176,7 +179,9 @@ def pick_decision_maker(text: str):
             if any(len(w) < 2 for w in name.split()):
                 continue
             found.append((role, name))
-            break
+            taken += 1
+            if taken >= 3:
+                break
     if not found:
         return "", ""
     # Mehrere Geschaeftsfuehrer: alle sammeln, Rolle des ersten Treffers
@@ -214,7 +219,7 @@ def impressum_block(text: str) -> str:
         return text
     best, best_score = text, -1
     for h in heads:
-        block = text[h.end():h.end() + 4000]
+        block = text[h.end():h.end() + 6000]
         score = sum(w for rx, w in BLOCK_SIGNALS if rx.search(block))
         # Ein explizites "Angaben gemaess Paragraf 5" ist der staerkste Anker
         if re.match(r"(?i)Angaben|Anbieterkenn|Diensteanbieter", h.group(1)):
@@ -224,7 +229,7 @@ def impressum_block(text: str) -> str:
     # Firmierung steht oft unmittelbar VOR der Ueberschrift -> Vorlauf mitnehmen
     idx = text.find(best)
     if idx > 0:
-        best = text[max(0, idx - 300):idx] + "\n" + best
+        best = text[max(0, idx - 600):idx] + "\n" + best
     return best if best_score >= 3 else text
 
 
@@ -236,7 +241,7 @@ def pick_company(text: str, domain: str = "") -> str:
     """
     root = re.sub(r"[^a-z0-9]", "", domain.split(".")[0].lower()) if domain else ""
     best = ""
-    for line in text.split("\n")[:120]:
+    for line in text.split("\n")[:400]:
         line = line.strip(" .,;:-|/")
         if not (3 < len(line) <= 80):
             continue
@@ -291,8 +296,20 @@ def pick_address(text: str, country: str):
     return street, plz, ort
 
 
+# Datumsangaben sehen wie Telefonnummern aus ("2026-08-20" -> "026-08-20 20")
+DATEISH = re.compile(
+    r"(?:19|20)\d{2}\s*[-–/\.]\s*(?:19|20)\d{2}"      # Jahresspanne "2015-2026"
+    r"|(?:19|20)\d{2}[-/\.]\d{1,2}[-/\.]\d{1,2}"       # ISO-Datum
+    r"|\d{1,2}[\./]\d{1,2}[\./](?:19|20)\d{2}")        # 20.08.2026
+
+
+def strip_dates(text: str) -> str:
+    return DATEISH.sub(" ", text)
+
+
 def pick_phone(text: str) -> str:
     """Telefonnummer bevorzugt aus einer als solche beschrifteten Zeile."""
+    text = strip_dates(text)
     for line in text.split("\n"):
         if not re.search(r"(Telefon|Tel\.?|Fon|Phone|Rufnummer)", line, re.I):
             continue
@@ -301,14 +318,21 @@ def pick_phone(text: str) -> str:
         m = PHONE_RE.search(line)
         if m:
             v = re.sub(r"\s+", " ", m.group(0)).strip(" .,;-/")
-            if len(re.sub(r"\D", "", v)) >= 7:
+            if plausible_phone(v):
                 return v
     m = PHONE_RE.search(text)
     if m:
         v = re.sub(r"\s+", " ", m.group(0)).strip(" .,;-/")
-        if len(re.sub(r"\D", "", v)) >= 7:
+        if plausible_phone(v):
             return v
     return ""
+
+
+def plausible_phone(v: str) -> bool:
+    digits = re.sub(r"\D", "", v)
+    if not (8 <= len(digits) <= 16):
+        return False
+    return not DATEISH.search(v)
 
 
 def first(rx, text, group=0, transform=None):
