@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase, supabaseEingerichtet } from './supabase';
+import { fehlerText } from './queries';
 import type { Profil, Rolle } from './types';
 
 interface Anmeldung {
@@ -8,6 +9,7 @@ interface Anmeldung {
   session: Session | null;
   profil: Profil | null;
   profilFehlt: boolean;
+  profilFehler: string | null;
   rolle: Rolle;
   darfSteuern: boolean;
   darfVerwalten: boolean;
@@ -42,6 +44,7 @@ export function AnmeldungProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profil, setProfil] = useState<Profil | null>(null);
   const [profilFehlt, setProfilFehlt] = useState(false);
+  const [profilFehler, setProfilFehler] = useState<string | null>(null);
 
   const profilLaden = useCallback(async (benutzerId: string) => {
     const { data, error } = await supabase
@@ -50,13 +53,26 @@ export function AnmeldungProvider({ children }: { children: React.ReactNode }) {
       .eq('id', benutzerId)
       .maybeSingle();
 
-    if (error || !data) {
+    /*
+     * Zwei sehr verschiedene Fälle, die nicht dieselbe Meldung bekommen dürfen:
+     * Es gibt keine Zeile zu diesem Konto, oder die Datenbank lässt das Lesen
+     * nicht zu. Im zweiten Fall hilft nur die technische Meldung weiter.
+     */
+    if (error) {
       setProfil(null);
+      setProfilFehlt(false);
+      setProfilFehler(fehlerText(error, 'Dein Profil') ?? error.message);
+      return;
+    }
+    if (!data) {
+      setProfil(null);
+      setProfilFehler(null);
       setProfilFehlt(true);
       return;
     }
     setProfil(data as Profil);
     setProfilFehlt(false);
+    setProfilFehler(null);
   }, []);
 
   useEffect(() => {
@@ -81,6 +97,7 @@ export function AnmeldungProvider({ children }: { children: React.ReactNode }) {
       } else {
         setProfil(null);
         setProfilFehlt(false);
+        setProfilFehler(null);
       }
     });
 
@@ -120,6 +137,7 @@ export function AnmeldungProvider({ children }: { children: React.ReactNode }) {
       session,
       profil,
       profilFehlt,
+      profilFehler,
       rolle,
       darfSteuern: rolle === 'operator' || rolle === 'admin',
       darfVerwalten: rolle === 'admin',
@@ -128,7 +146,7 @@ export function AnmeldungProvider({ children }: { children: React.ReactNode }) {
       abmelden,
       profilNeuLaden,
     };
-  }, [bereit, session, profil, profilFehlt, anmelden, passwortVergessen, abmelden, profilNeuLaden]);
+  }, [bereit, session, profil, profilFehlt, profilFehler, anmelden, passwortVergessen, abmelden, profilNeuLaden]);
 
   return <Kontext.Provider value={wert}>{children}</Kontext.Provider>;
 }

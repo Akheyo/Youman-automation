@@ -199,7 +199,7 @@ function Hinweisseite({
 }
 
 export default function App() {
-  const { bereit, session, profil, profilFehlt, abmelden } = useAnmeldung();
+  const { bereit, session, profil, profilFehlt, profilFehler, abmelden } = useAnmeldung();
 
   if (!supabaseEingerichtet) {
     return (
@@ -221,6 +221,27 @@ export default function App() {
   }
 
   if (!session) return <Anmeldung />;
+
+  if (profilFehler) {
+    return (
+      <Hinweisseite
+        titelText="Die Datenbank lässt dich nicht an dein Profil"
+        text={`Die Anmeldung hat geklappt, aber das Lesen der Tabelle profiles wird abgelehnt. Das ist eine Einstellung in Supabase, kein Fehler an deinem Konto. Meldung der Datenbank: ${profilFehler}`}
+        aktion={
+          <>
+            <button type="button" className="knopf knopfHaupt" onClick={() => window.location.reload()}>
+              <Zeichen name="neuLaden" groesse={15} />
+              Nochmal versuchen
+            </button>
+            <button type="button" className="knopf" onClick={() => void abmelden()}>
+              <Zeichen name="abmelden" groesse={15} />
+              Abmelden
+            </button>
+          </>
+        }
+      />
+    );
+  }
 
   if (profilFehlt) {
     return (
