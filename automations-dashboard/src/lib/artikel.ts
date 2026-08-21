@@ -36,18 +36,23 @@ export interface Spaltenzuordnung {
   listenspalten: string[];
 }
 
+/*
+ * Die Namen tragen bei PlentyONE oft einen Vorsatz, etwa plenty_variation_id.
+ * Deshalb wird auf das Ende des Namens geprüft, nicht auf den ganzen.
+ */
 const muster = {
-  schluessel: /^(id|variation_id|variations_id|variationsnummer|variation)$/i,
-  artikelId: /^(artikel_?id|item_?id|plenty_?artikel_?id|plenty_?item_?id)$/i,
+  schluessel: /(^|_)(variation_?id|variations_?id|variationsnummer)$|^id$/i,
+  artikelId: /(^|_)(artikel_?id|item_?id)$/i,
   artikelnummer: /(artikel(nummer|_nr)|variation(s)?(nummer|_number)|^number$|sku)/i,
-  ean: /(ean|gtin|barcode)/i,
-  titel: /^(titel|title|name|artikelname|bezeichnung)$/i,
-  hersteller: /(hersteller|manufacturer|marke|brand)/i,
+  ean: /^(.*_)?(ean|gtin|barcode)$/i,
+  titel: /^(titel|title|artikelname|bezeichnung)$/i,
+  hersteller: /^(hersteller|marke|brand|manufacturer)$/i,
+  herstellerErsatz: /(hersteller|marke|brand|manufacturer)/i,
   beschreibung: /(beschreibung|description|text)/i,
   bilder: /(bilder|images|bild)/i,
-  bestand: /(bestand|stock|netto|physisch|reserviert|verfuegbar|verfügbar)/i,
+  bestand: /(^|_)(bestand|stock|verfuegbar|verfügbar)(_|$)/i,
   preis: /(preis|price|vk|uvp)/i,
-  lager: /(lager|warehouse)/i,
+  lager: /^(?!.*bestand)(.*lager.*|.*warehouse.*)$/i,
   gewicht: /(gewicht|weight)/i,
 };
 
@@ -72,9 +77,9 @@ export async function spaltenErkennen(): Promise<Spaltenzuordnung> {
     schluessel: ersterTreffer(alle, muster.schluessel),
     artikelId: ersterTreffer(alle, muster.artikelId),
     artikelnummer: ersterTreffer(alle, muster.artikelnummer),
-    ean: ersterTreffer(alle, muster.ean),
+    ean: alle.find((name) => /^ean$/i.test(name)) ?? ersterTreffer(alle, muster.ean),
     titel,
-    hersteller: ersterTreffer(alle, muster.hersteller),
+    hersteller: ersterTreffer(alle, muster.hersteller) ?? ersterTreffer(alle, muster.herstellerErsatz),
     beschreibung: alle.find((name) => muster.beschreibung.test(name) && !/meta/i.test(name)) ?? null,
     bilder: ersterTreffer(alle, muster.bilder),
     bestand: alle.filter((name) => muster.bestand.test(name)),
@@ -178,14 +183,20 @@ export async function artikelSuchen(
 
 /** Die vollständige Zeile, erst wenn jemand sie wirklich sehen will. */
 export async function artikelDetailLaden(zuordnung: Spaltenzuordnung, zeile: Zeile): Promise<Zeile> {
-  if (!zuordnung.schluessel) return zeile;
-  const wert = zeile[zuordnung.schluessel];
-  if (wert === null || wert === undefined) return zeile;
+  /*
+   * Zum Nachladen genügt irgendeine Spalte, die die Zeile eindeutig macht.
+   * Gibt es keine Schlüsselspalte, tun es Artikelnummer oder EAN.
+   */
+  const kandidaten = [zuordnung.schluessel, zuordnung.artikelnummer, zuordnung.ean, zuordnung.artikelId];
+  const spalte = kandidaten.find(
+    (name): name is string => Boolean(name) && zeile[name as string] !== null && zeile[name as string] !== undefined,
+  );
+  if (!spalte) return zeile;
 
   const { data, error } = await supabase
     .from(ARTIKEL_ANSICHT)
     .select('*')
-    .eq(zuordnung.schluessel, wert as string)
+    .eq(spalte, zeile[spalte] as string)
     .limit(1);
   if (error) throw new Error(fehlerText(error, 'Der Artikel') ?? error.message);
   return ((data?.[0] as Zeile | undefined) ?? zeile);

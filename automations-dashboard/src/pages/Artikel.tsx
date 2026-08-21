@@ -317,7 +317,12 @@ export default function Artikel() {
         {suchfeld('artikelnummer', 'Artikelnummer', 'beginnt mit', Boolean(spalten?.artikelnummer))}
         {suchfeld('ean', 'EAN', 'beginnt mit', Boolean(spalten?.ean))}
         {suchfeld('titel', 'Titel', 'enthält', Boolean(spalten?.titel))}
-        {suchfeld('hersteller', 'Hersteller', 'beginnt mit', Boolean(spalten?.hersteller))}
+        {suchfeld(
+          'hersteller',
+          spalten?.hersteller && /nummer/i.test(spalten.hersteller) ? 'Herstellernummer' : 'Hersteller',
+          'beginnt mit',
+          Boolean(spalten?.hersteller),
+        )}
       </div>
 
       <p className="leise klein">
