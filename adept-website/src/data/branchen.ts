@@ -57,9 +57,10 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'onlinehandel',
-    // Versandzentrum aus dem Bildregister: Kartons auf einer Förderstrecke,
-    // das trifft den Kern dieser Branche.
-    bild: 'versandzentrum',
+    // Kartons auf Rollenförderern in einem Verteilzentrum. Vorher stand hier
+    // 'versandzentrum', das aber schon der Logistik-Beitrag trägt. Dasselbe
+    // Bild auf zwei Seiten schwächt beide.
+    bild: 'handel',
     // Beide Begriffe im Titel, wie bei den anderen Branchen auch. Sie meinen
     // dasselbe, werden aber unterschiedlich gesucht: "E-Commerce" von
     // Agenturen und Dienstleistern, "Onlinehandel" von Haendlern selbst.

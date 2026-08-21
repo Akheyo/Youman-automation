@@ -41,7 +41,7 @@ export const caseStudies: CaseStudy[] = [
     excerpt:
       '2.556 aktive Palettentypen, jede Entscheidung ein Einzelfall: Wie ein Modul im adept&-Gerüst die Palettenlogik an das ERP-System anbindet, ohne Systemablösung.',
     href: '/case-studies/drahtmueller-palettenoptimierung',
-    bild: 'paletten',
+    bild: 'gitter',
     kennzahl: {
       wert: '2.556',
       beschreibung: 'verschiedene Palettentypen waren im aktiven Einsatz',
