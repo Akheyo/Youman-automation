@@ -27,8 +27,15 @@ export type Branche = {
    * Die Seite zeigt dann einen unmissverständlich markierten Platzhalter.
    */
   platzhalter: boolean;
-  /** Slug einer Referenz aus news.ts, falls vorhanden. */
+  /** Slug einer Referenz aus caseStudies.ts, falls vorhanden. */
   referenz?: string;
+  /**
+   * Einleitender Halbsatz, an den im Fliesstext der Verweis auf das
+   * Referenzprojekt angehaengt wird. Bewusst je Branche eigen formuliert:
+   * ein fuer alle Seiten gleicher Satz liest sich wie ein Baustein und
+   * wird ueberlesen. Der Verweis gehoert in den Text, nicht auf einen Knopf.
+   */
+  referenzHinweis?: string;
   /** Schlüssel aus dem Bildregister. */
   bild?: BildKey;
 };
@@ -36,6 +43,9 @@ export type Branche = {
 export const branchen: Branche[] = [
   {
     slug: 'fertigung-und-maschinenbau',
+    referenz: 'drahtmueller-palettenoptimierung',
+    referenzHinweis:
+      'Wie sich eine solche Sonderlogik abbilden lässt, ohne die vorhandene Systemlandschaft anzutasten, zeigt das Projekt',
     bild: 'maschinenbau',
     title: 'Fertigung und Maschinenbau',
     teaser: 'Variantenreiche Fertigung planbar machen, ohne das ERP zu ersetzen.',
@@ -54,9 +64,14 @@ export const branchen: Branche[] = [
     funktionen: ['logistik-und-versandsteuerung', 'supply-chain-und-materialsteuerung', 'systemintegration-und-erp-anbindung'],
     platzhalter: false,
     referenz: 'drahtmueller-palettenoptimierung',
+    referenzHinweis:
+      'Genau daran hat adept& in der Fertigung von Gitterrosten gearbeitet, nachzulesen im Projekt',
   },
   {
     slug: 'onlinehandel',
+    referenz: 'absolar-warenwirtschaft',
+    referenzHinweis:
+      'Dass sich getrennte Datenstände zu einem durchgängigen Prozess zusammenführen lassen, zeigt ein Projekt aus einer anderen Branche mit derselben Ausgangslage:',
     // Kartons auf Rollenförderern in einem Verteilzentrum. Vorher stand hier
     // 'versandzentrum', das aber schon der Logistik-Beitrag trägt. Dasselbe
     // Bild auf zwei Seiten schwächt beide.
@@ -83,6 +98,9 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'automobil-und-zulieferer',
+    referenz: 'drahtmueller-palettenoptimierung',
+    referenzHinweis:
+      'Wie ein solcher Engpass in einem produzierenden Betrieb konkret gelöst wurde, steht im Projekt',
     bild: 'automobil',
     title: 'Automobil und Zulieferer',
     teaser: 'Termintreue und Materialverfügbarkeit über die gesamte Lieferkette.',

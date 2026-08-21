@@ -486,6 +486,33 @@ summary::-webkit-details-marker {
   der Text umbricht. Bei reduzierter Bewegung erscheint der Strich sofort in
   voller Breite – die Rueckmeldung bleibt, nur die Bewegung faellt weg.
 */
+/*
+  Verweis im Fliesstext. Die Palette ist streng monochrom, ein Link kann sich
+  also nicht ueber Farbe abheben - er muesste sonst rot oder blau werden, und
+  beides ist ausgeschlossen. Traeger ist deshalb die Unterlaenge, die beim
+  Ueberfahren kraeftiger wird, dazu ein halber Schritt mehr Schriftgewicht.
+  currentColor, damit derselbe Stil auch in dunklen Sektionen traegt.
+*/
+@utility textverweis {
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+
+  &:hover,
+  &:focus-visible {
+    text-decoration-thickness: 2px;
+    text-decoration-color: currentColor;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    transition:
+      text-decoration-color 0.2s ease,
+      text-decoration-thickness 0.2s ease;
+  }
+}
+
 @utility unterstrich {
   background-image: linear-gradient(currentColor, currentColor);
   background-repeat: no-repeat;

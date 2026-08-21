@@ -5,6 +5,7 @@ import Section from '../../components/Section.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Button from '../../components/Button.astro';
 import { funktionen } from '../../data/funktionen';
+import { caseStudyNach } from '../../data/caseStudies';
 import { branchen } from '../../data/branchen';
 import { prozess } from '../../data/site';
 import { withBase } from '../../lib/url';
@@ -19,6 +20,7 @@ export function getStaticPaths() {
 const { funktion } = Astro.props;
 
 const passendeBranchen = branchen.filter((b) => b.funktionen.includes(funktion.slug));
+const referenz = funktion.referenz ? caseStudyNach(funktion.referenz) : undefined;
 ---
 
 <Base
@@ -46,6 +48,23 @@ const passendeBranchen = branchen.filter((b) => b.funktionen.includes(funktion.s
       title="Bausteine"
       lead="Diese Elemente setzen wir in diesem Funktionsbereich um, immer zugeschnitten auf den konkreten Prozess und nie als Standardfunktion von der Stange."
     />
+
+    {/*
+      Verweis auf ein Referenzprojekt im Fliesstext. Die Referenzprojekte sind
+      das staerkste Argument auf der Seite und waren zugleich am schlechtesten
+      erreichbar: je ein einziger Verweis aus dem Inhaltsbereich.
+    */}
+    {
+      referenz && funktion.referenzHinweis && (
+        <p class="prose-measure mt-8 text-lg text-ink-soft">
+          {funktion.referenzHinweis}{' '}
+          <a href={withBase(referenz.href)} class="textverweis">
+            {referenz.title}
+          </a>
+          .
+        </p>
+      )
+    }
     {/*
       Jeder Baustein laesst sich aufklappen. <details> und <summary> statt
       eigener Schaltflaechen: die Browser bringen Tastaturbedienung und

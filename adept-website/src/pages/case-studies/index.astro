@@ -22,7 +22,63 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
     breadcrumb={brotkrumen}
   />
 
+  {/*
+    Einleitung: was ein Referenzprojekt hier enthaelt - und was bewusst fehlt.
+    Die Aussage zu Einsparquoten steht hier, weil ihr Fehlen sonst wie eine
+    Luecke wirkt statt wie eine Entscheidung.
+  */}
   <Section>
+    <div class="prose-measure space-y-6 text-lg text-ink-soft">
+      <p>
+        Zwei abgeschlossene Projekte, beide mit Namen des Kunden. In beiden Fällen lief ein
+        System, das seine Aufgabe erfüllte. Daneben lag der Teil der Arbeit, für den es
+        keine Vorlage gab: in Tabellen, in Erfahrungswerten einzelner Mitarbeiter, in
+        Absprachen, die niemand aufgeschrieben hatte.
+      </p>
+      <p>
+        Bei der{' '}
+        <a href={withBase('/case-studies/drahtmueller-palettenoptimierung')} class="textverweis">
+          Drahtmüller GmbH
+        </a>{' '}
+        waren das 2.556 aktive Palettentypen. Weil die Gitterroste nach Kundenmaß gefertigt
+        werden, muss auch die Palette dazu passen. Jede Entscheidung ist ein Einzelfall,
+        den der Standard nicht abbildet. Bei{' '}
+        <a href={withBase('/case-studies/absolar-warenwirtschaft')} class="textverweis">
+          A&amp;B SolarEnergy
+        </a>{' '}
+        lagen Angebote in Lexware Office, Lagerdaten in einer eigenen Datenbank und die
+        Baustellenplanung wieder woanders. Drei Stände, die niemand gegeneinander abglich,
+        bis es an der Baustelle auffiel.
+      </p>
+      <p>
+        Jede Darstellung nennt Ausgangslage, Vorgehen und was danach anders war. Was sie
+        nicht nennt, sind Einsparquoten, Amortisationszeiten und Kundenstimmen. Solche
+        Angaben ließen sich leicht schreiben, wären aber nicht belegt. In den Unterlagen zu
+        beiden Projekten stehen sie nicht. Genannt wird nur, was sich aus dem Projekt selbst
+        ergibt, etwa die Zahl der Palettentypen.
+      </p>
+      <p>
+        Beide Fälle folgen derselben Machart: ein eigenständiges Modul im adept&-Gerüst, über
+        eine Schnittstelle an das bestehende System gehängt, ohne Ablösung. Welche{' '}
+        <a href={withBase('/funktionen')} class="textverweis">Funktionsbereiche</a> dabei
+        greifen und in welchen{' '}
+        <a href={withBase('/branchen')} class="textverweis">Branchen</a> wir arbeiten, steht
+        jeweils dort.
+      </p>
+      <p>
+        Zwei Projekte sind keine lange Liste, und wir tun nicht so, als wäre sie länger.
+        Aufgenommen wird hier nur, was abgeschlossen ist und wofür der Kunde der Nennung
+        ausdrücklich zugestimmt hat. Laufende Projekte fehlen deshalb, ebenso solche, über
+        die wir vertraglich nicht sprechen dürfen. Wenn Ihre Ausgangslage einem der beiden
+        Fälle ähnelt, bringt ein{' '}
+        <a href={withBase('/kontakt')} class="textverweis">Gespräch</a> Ihnen mehr als jede
+        weitere Referenz auf dieser Seite.
+      </p>
+    </div>
+  </Section>
+
+  <Section tone="canvas">
+    <h2 class="sr-only">Abgeschlossene Projekte</h2>
     {/*
       Liste statt Kachelraster: bei zwei Einträgen wirkt ein dreispaltiges
       Raster löchrig. Jeder Eintrag bekommt dafür die volle Breite und trägt
@@ -48,7 +104,7 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
                 <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-accent">
                   {fall.branche}
                 </p>
-                <h2 class="mt-3 text-2xl text-ink md:text-3xl">{fall.title}</h2>
+                <h3 class="mt-3 text-2xl text-ink md:text-3xl">{fall.title}</h3>
                 <p class="mt-2 text-sm text-muted-fg">{fall.kunde}</p>
                 <p class="prose-measure mt-5 text-ink-soft">{fall.excerpt}</p>
 

@@ -19,7 +19,56 @@ const offen = news.filter((item) => item.platzhalter);
 >
   <PageHeader kicker="News" bild="material" title="Pressemitteilungen" breadcrumb={[{ label: 'Home', href: '/' }]} />
 
+  {/*
+    Einleitung: der Unterschied zwischen einer Meldung und einem
+    Referenzprojekt. Beides stand frueher in einer Liste, und der einzige
+    belastbare Beleg ging zwischen leeren Kacheln unter.
+  */}
   <Section>
+    <div class="prose-measure space-y-6 text-lg text-ink-soft">
+      <p>
+        Hier stehen Beiträge zu Entwicklungen, die produktionsnahe und logistikintensive
+        Betriebe betreffen: was sich in der Branche bewegt, was davon für einen mittelgroßen
+        Betrieb tatsächlich zählt und was sich als Mode erweist. Kein Newsroom im üblichen
+        Sinn. Wir schreiben dann etwas, wenn wir zu einem Thema eine Position haben, die über
+        das hinausgeht, was ohnehin überall steht.
+      </p>
+      <p>
+        Was hier ausdrücklich nicht steht, sind abgeschlossene Projekte. Die haben eine
+        eigene Übersicht unter{' '}
+        <a href={withBase('/case-studies')} class="textverweis">Referenzprojekte</a>. Der
+        Unterschied ist wichtig: Ein Referenzprojekt belegt, was wir können, eine Meldung
+        berichtet, was uns gerade beschäftigt. Solange beides in einer Liste stand, ging der
+        einzige belastbare Beleg zwischen den Meldungen unter.
+      </p>
+      <p>
+        Zahlen aus fremden Quellen werden benannt und der Quelle zugeschrieben, statt sie als
+        eigene Erkenntnis auszugeben. Im{' '}
+        <a href={withBase('/news/logistik-2026-kostendruck-automatisierung')} class="textverweis">
+          Beitrag zur Logistik 2026
+        </a>{' '}
+        sind das Analysen von Gartner, entsprechend gekennzeichnet. Eigene Zahlen nennen wir nur dort, wo sie aus
+        einem Projekt stammen, das wir auch benennen dürfen.
+      </p>
+      <p>
+        Kacheln, die noch nicht befüllt sind, tragen sichtbar den Vermerk „Platzhalter". Sie
+        stehen dort, damit die Lücke erkennbar bleibt, statt sie mit Blindtext oder einem
+        beliebigen Thema zu kaschieren. Wenn Sie zu einem der{' '}
+        <a href={withBase('/funktionen')} class="textverweis">Funktionsbereiche</a> eine
+        Frage haben, die hier noch nicht beantwortet ist, ist der{' '}
+        <a href={withBase('/kontakt')} class="textverweis">direkte Weg</a> ohnehin schneller.
+      </p>
+      <p>
+        Eine feste Erscheinungsweise gibt es nicht. Ein Beitrag entsteht, wenn ein Thema es
+        wert ist, und nicht, weil ein Redaktionsplan ihn vorsieht. Das bedeutet längere
+        Pausen zwischen den Meldungen, dafür steht in jeder etwas, das nicht ohnehin schon
+        in zehn anderen Beiträgen stand. Wer wissen möchte, wie wir konkret arbeiten, findet
+        das in den abgeschlossenen Projekten schneller als hier.
+      </p>
+    </div>
+  </Section>
+
+  <Section tone="canvas">
     <h2 class="sr-only">Veröffentlichte Beiträge</h2>
     <ul class="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
       {

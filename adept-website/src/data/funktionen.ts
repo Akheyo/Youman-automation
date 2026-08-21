@@ -20,6 +20,14 @@ export type Funktion = {
   bausteine: Baustein[];
   /** Schlüssel aus dem Bildregister. */
   bild?: BildKey;
+  /** Slug eines Referenzprojekts aus caseStudies.ts. */
+  referenz?: string;
+  /**
+   * Halbsatz, an den im Fliesstext der Verweis auf das Referenzprojekt
+   * angehaengt wird. Je Funktion eigen formuliert, damit er nicht wie ein
+   * wiederholter Baustein wirkt.
+   */
+  referenzHinweis?: string;
 };
 
 /**
@@ -30,6 +38,9 @@ export type Funktion = {
 export const funktionen: Funktion[] = [
   {
     slug: 'produktion-und-feinplanung',
+    referenz: 'drahtmueller-palettenoptimierung',
+    referenzHinweis:
+      'Ein abgeschlossenes Beispiel für genau diese Art von Sonderlogik im Fertigungsalltag ist das Projekt',
     bild: 'feinplanung',
     title: 'Produktion & Feinplanung',
     teaser:
@@ -59,6 +70,9 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'logistik-und-versandsteuerung',
+    referenz: 'drahtmueller-palettenoptimierung',
+    referenzHinweis:
+      'Wie weit eine solche Verpackungs- und Palettenlogik im Einzelfall reicht, zeigt das Projekt',
     bild: 'versandsteuerung',
     title: 'Logistik & Versandsteuerung',
     teaser:
@@ -88,6 +102,9 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'supply-chain-und-materialsteuerung',
+    referenz: 'absolar-warenwirtschaft',
+    referenzHinweis:
+      'Was es bedeutet, Lagerdaten und Bedarfe aus getrennten Ständen zusammenzuführen, steht im Projekt',
     bild: 'material',
     title: 'Supply Chain & Materialsteuerung',
     teaser:
@@ -109,6 +126,9 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'reporting-und-operative-transparenz',
+    referenz: 'absolar-warenwirtschaft',
+    referenzHinweis:
+      'Wie fehlende Übersicht im Tagesgeschäft entsteht und wodurch sie sich beheben ließ, beschreibt das Projekt',
     bild: 'reporting',
     title: 'Reporting & operative Transparenz',
     teaser:
@@ -130,6 +150,9 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'systemintegration-und-erp-anbindung',
+    referenz: 'absolar-warenwirtschaft',
+    referenzHinweis:
+      'Ein Fall, in dem drei getrennte Systeme zu einem durchgängigen Prozess verbunden wurden, ist das Projekt',
     bild: 'oberflaeche',
     title: 'Systemintegration & ERP-Anbindung',
     teaser:
