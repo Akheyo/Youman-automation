@@ -21,6 +21,7 @@ export const ARTIKEL_ANSICHT = 'v_artikel_komplett';
 export interface Spaltenzuordnung {
   alle: string[];
   schluessel: string | null;
+  artikelId: string | null;
   artikelnummer: string | null;
   ean: string | null;
   titel: string | null;
@@ -37,6 +38,7 @@ export interface Spaltenzuordnung {
 
 const muster = {
   schluessel: /^(id|variation_id|variations_id|variationsnummer|variation)$/i,
+  artikelId: /^(artikel_?id|item_?id|plenty_?artikel_?id|plenty_?item_?id)$/i,
   artikelnummer: /(artikel(nummer|_nr)|variation(s)?(nummer|_number)|^number$|sku)/i,
   ean: /(ean|gtin|barcode)/i,
   titel: /^(titel|title|name|artikelname|bezeichnung)$/i,
@@ -68,6 +70,7 @@ export async function spaltenErkennen(): Promise<Spaltenzuordnung> {
   const zuordnung: Spaltenzuordnung = {
     alle,
     schluessel: ersterTreffer(alle, muster.schluessel),
+    artikelId: ersterTreffer(alle, muster.artikelId),
     artikelnummer: ersterTreffer(alle, muster.artikelnummer),
     ean: ersterTreffer(alle, muster.ean),
     titel,
@@ -84,6 +87,7 @@ export async function spaltenErkennen(): Promise<Spaltenzuordnung> {
   /* Nur das, was in der Liste steht. Alles andere wäre unnötige Last. */
   const gewuenscht = [
     zuordnung.schluessel,
+    zuordnung.artikelId,
     zuordnung.artikelnummer,
     zuordnung.ean,
     zuordnung.titel,
@@ -103,15 +107,24 @@ function saeubern(begriff: string): string {
 }
 
 export interface Suchfelder {
+  artikelId: string;
   artikelnummer: string;
   ean: string;
   titel: string;
   hersteller: string;
 }
 
-export const LEERE_SUCHE: Suchfelder = { artikelnummer: '', ean: '', titel: '', hersteller: '' };
+export const LEERE_SUCHE: Suchfelder = {
+  artikelId: '',
+  artikelnummer: '',
+  ean: '',
+  titel: '',
+  hersteller: '',
+};
 
 export function sucheIstLeer(felder: Suchfelder): boolean {
+  /* Die Artikel-ID trifft genau, deshalb reicht dort schon ein Zeichen. */
+  if (felder.artikelId.trim().length >= 1) return false;
   return Object.values(felder).every((wert) => wert.trim().length < 2);
 }
 
@@ -141,6 +154,16 @@ export async function artikelSuchen(
     if (!spalte || sauber.length < 2) return;
     abfrage = abfrage.ilike(spalte, vonVorne ? `${sauber}%` : `%${sauber}%`);
   };
+
+  /*
+   * Die Artikel-ID aus PlentyONE ist eine Zahl und meint genau einen Artikel.
+   * Deshalb wird sie exakt verglichen, nicht als Text durchsucht. Das ist
+   * schneller und liefert keine Zufallstreffer aus Titeln.
+   */
+  const idWert = saeubern(felder.artikelId);
+  if (zuordnung.artikelId && idWert) {
+    abfrage = abfrage.eq(zuordnung.artikelId, idWert);
+  }
 
   anlegen(zuordnung.artikelnummer, felder.artikelnummer, true);
   anlegen(zuordnung.ean, felder.ean, true);

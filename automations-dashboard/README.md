@@ -32,12 +32,15 @@ Das Konzept dahinter steht in [CLAUDE.md](./CLAUDE.md).
 
 Ein eigener Bereich durchsucht die Artikeldaten aus PlentyONE, die in derselben
 Datenbank liegen und alle zehn Minuten abgeglichen werden. Gesucht wird über
-`v_artikel_komplett` mit **vier getrennten Feldern**: Artikelnummer, EAN, Titel
-und Hersteller. Jedes Feld sucht in seiner eigenen Spalte, mehrere Felder
-gelten zusammen. Ab zwei Zeichen je Feld geht es los, mit kurzer Verzögerung
-beim Tippen.
+`v_artikel_komplett` mit **fünf getrennten Feldern**: Artikel-ID aus PlentyONE,
+Artikelnummer, EAN, Titel und Hersteller. Jedes Feld sucht in seiner eigenen
+Spalte, mehrere Felder gelten zusammen. Ab zwei Zeichen je Feld geht es los,
+bei der Artikel-ID schon ab einem Zeichen, jeweils mit kurzer Verzögerung beim
+Tippen.
 
-Artikelnummer, EAN und Hersteller suchen **von vorne**. Das ist genau, deshalb
+Die **Artikel-ID** wird exakt verglichen, nicht als Text durchsucht. Sie meint
+genau einen Artikel, deshalb ist das schneller und liefert keine Zufallstreffer
+aus Titeln. Artikelnummer, EAN und Hersteller suchen **von vorne**. Das ist genau, deshalb
 liefert eine Artikelnummer auch nur den einen Artikel und nicht jeden Treffer,
 in dem dieselbe Zahlenfolge irgendwo im Titel steht. Der Titel sucht überall im
 Text, weil man dort selten den Anfang kennt.

@@ -78,6 +78,7 @@ function Artikelkarte({ zeile, spalten }: { zeile: Zeile; spalten: Spaltenzuordn
   const nummer = spalten.artikelnummer ? feldText(daten, [spalten.artikelnummer]) : null;
   const ean = spalten.ean ? feldText(daten, [spalten.ean]) : null;
   const hersteller = spalten.hersteller ? feldText(daten, [spalten.hersteller]) : null;
+  const artikelId = spalten.artikelId ? feldText(daten, [spalten.artikelId]) : null;
 
   const bilder = useMemo(
     () => (spalten.bilder ? bilderLesen(daten[spalten.bilder]) : []),
@@ -104,6 +105,7 @@ function Artikelkarte({ zeile, spalten }: { zeile: Zeile; spalten: Spaltenzuordn
         <span className="zeileTitel">
           <span className="zeileName">{titel}</span>
           <span className="zeileUnter">
+            {artikelId ? `Artikel-ID ${artikelId}, ` : ''}
             {nummer ? `Artikelnummer ${nummer}` : 'ohne Artikelnummer'}
             {ean ? `, EAN ${ean}` : ''}
             {hersteller ? `, ${hersteller}` : ''}
@@ -311,6 +313,7 @@ export default function Artikel() {
       </div>
 
       <div className="suchgitter">
+        {suchfeld('artikelId', 'Artikel-ID aus PlentyONE', 'genau diese Nummer', Boolean(spalten?.artikelId))}
         {suchfeld('artikelnummer', 'Artikelnummer', 'beginnt mit', Boolean(spalten?.artikelnummer))}
         {suchfeld('ean', 'EAN', 'beginnt mit', Boolean(spalten?.ean))}
         {suchfeld('titel', 'Titel', 'enthält', Boolean(spalten?.titel))}
@@ -318,9 +321,10 @@ export default function Artikel() {
       </div>
 
       <p className="leise klein">
-        Artikelnummer, EAN und Hersteller suchen von vorne, das ist genau und schnell. Der Titel sucht
-        überall im Text. Mehrere Felder gelten zusammen. Ab zwei Zeichen je Feld geht es los.
-        {spalten && !spalten.hersteller && ' Ein Feld für den Hersteller gibt es nicht, weil die Ansicht keine solche Spalte hat.'}
+        Die Artikel-ID trifft genau einen Artikel. Artikelnummer, EAN und Hersteller suchen von vorne,
+        das ist genau und schnell. Der Titel sucht überall im Text. Mehrere Felder gelten zusammen.
+        {spalten && !spalten.artikelId && ' Ein Feld für die Artikel-ID gibt es nicht, weil die Ansicht keine solche Spalte hat.'}
+        {spalten && !spalten.hersteller && ' Dasselbe gilt für den Hersteller.'}
       </p>
 
       {fehler && <Meldung ton="rot">{fehler}</Meldung>}
@@ -359,6 +363,7 @@ export default function Artikel() {
               <Artikelkarte
                 key={String(
                   (spalten.schluessel ? zeile[spalten.schluessel] : null) ??
+                    (spalten.artikelId ? zeile[spalten.artikelId] : null) ??
                     (spalten.artikelnummer ? zeile[spalten.artikelnummer] : null) ??
                     index,
                 )}
