@@ -1,0 +1,169 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Section from '../components/Section.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Button from '../components/Button.astro';
+import { anbieter, anbieterVollstaendig } from '../data/anbieter';
+import { withBase } from '../lib/url';
+
+/**
+ * Regionalseite. Genau EINE, nicht eine je Ort.
+ *
+ * Der uebliche Fehler beim lokalen SEO ist, dieselbe Seite fuer zehn Staedte
+ * zu vervielfaeltigen und nur den Ortsnamen zu tauschen. Google erkennt das
+ * seit Jahren und wertet es als Doorway Pages ab; im schlechteren Fall
+ * beschaedigt es die Bewertung der uebrigen Seiten mit. Eine Seite mit
+ * eigener Aussage traegt weiter als zehn ohne.
+ *
+ * Der Inhalt hier ist deshalb auch nicht die Startseite mit eingestreuten
+ * Ortsnamen, sondern beantwortet eine Frage, die nur regional Sinn ergibt:
+ * was die Naehe praktisch aendert.
+ *
+ * Keine erfundenen Angaben: keine Fahrzeiten in Minuten, keine Zahl
+ * betreuter Kunden in der Region, keine Ortsliste, die Zustaendigkeit
+ * suggeriert, wo keine belegt ist.
+ */
+
+const BESCHREIBUNG =
+  'ERP-Integration und individuelle Softwareentwicklung aus Borken: was ein Anbieter aus der Region praktisch ändert und wann Nähe tatsächlich zählt.';
+
+const naehe = [
+  {
+    titel: 'Die Analyse findet im Betrieb statt',
+    text: 'Der Ablauf, um den es geht, lässt sich am Bildschirm nur zur Hälfte verstehen. Wer sehen will, warum an einer Stelle von Hand nachgeholfen wird, muss danebenstehen, während es passiert. Das ist der Teil der Arbeit, für den Nähe wirklich zählt.',
+  },
+  {
+    titel: 'Ein Vor-Ort-Termin ist keine Verhandlungssache',
+    text: 'Bei größerer Entfernung wird jeder Besuch zu einer Kostenfrage und findet deshalb seltener statt als sinnvoll wäre. Aus dem Münsterland heraus ist ein Termin eine Terminfrage, keine Reisekostenfrage.',
+  },
+  {
+    titel: 'Beim Rollout entscheidet Anwesenheit',
+    text: 'Die Einführung im Betrieb ist der Moment, in dem sich zeigt, ob eine Lösung im Alltag trägt. Wer dabei im Raum steht, sieht Rückfragen, die per Ticket nie gestellt würden.',
+  },
+];
+
+const ehrlich = [
+  'Entwicklung und Abstimmung laufen zum größten Teil ohnehin aus der Ferne. Nähe spart keine Entwicklungszeit.',
+  'Für ein reines Schnittstellenprojekt ohne Prozessanalyse ist der Standort des Anbieters zweitrangig.',
+  'Wir arbeiten im gesamten DACH-Raum. Die Region ist ein Vorteil bei der Analyse, kein Einzugsgebiet, außerhalb dessen wir absagen.',
+];
+
+const brotkrumen = [{ label: 'Home', href: '/' }];
+---
+
+<Base
+  title="Softwareentwicklung und ERP im Münsterland"
+  description={BESCHREIBUNG}
+  bild="architektur"
+  breadcrumb={brotkrumen}
+>
+  <PageHeader
+    kicker="Region"
+    bild="architektur"
+    title="Softwareentwicklung und ERP-Integration im Münsterland"
+    lead="adept& sitzt in Borken. Diese Seite beantwortet, was das praktisch ändert und wann es nichts ändert."
+    breadcrumb={brotkrumen}
+  />
+
+  <Section>
+    <div class="prose-measure space-y-5 text-lg text-ink-soft">
+      <p>
+        Das Münsterland ist Fertigungsland. Metallverarbeitung, Maschinenbau, Kunststoff,
+        Lebensmittel, dazu eine Logistikdichte, die aus der Lage zwischen Ruhrgebiet und den
+        Niederlanden folgt. Das sind genau die Betriebe, in denen ein ERP-System seit Jahren
+        läuft und daneben trotzdem ein Teil der Arbeit von Hand erledigt wird, weil der
+        eigentliche Prozess nie in den Standard gepasst hat.
+      </p>
+      <p>
+        adept& sitzt in Borken, im Kreis Borken, und arbeitet im gesamten deutschsprachigen
+        Raum. Die Frage, ob der Anbieter aus der Region kommt, ist trotzdem nicht gleichgültig.
+        Sie ist nur an anderer Stelle wichtig, als meistens angenommen wird.
+      </p>
+    </div>
+  </Section>
+
+  <Section tone="canvas">
+    <SectionHeading
+      kicker="Wo Nähe zählt"
+      title="Drei Stellen, an denen der Standort einen Unterschied macht"
+      lead="Alle drei haben mit der Analyse und der Einführung zu tun, keine mit der Entwicklung selbst."
+    />
+    <ul class="mt-12 rasterfugen sm:grid-cols-3" data-reveal>
+      {
+        naehe.map((punkt, i) => (
+          <li class="bg-surface p-7">
+            <span class="font-display text-sm font-semibold tabular-nums text-accent">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <h2 class="mt-3 text-lg text-ink">{punkt.titel}</h2>
+            <p class="mt-3 text-ink-soft">{punkt.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section>
+    <div class="prose-measure space-y-5 text-lg text-ink-soft">
+      <h2 class="font-serif text-3xl text-ink">Und wo sie nichts ändert</h2>
+      <p>
+        Eine Regionalseite, die nur Vorteile aufzählt, ist eine Anzeige. Deshalb der andere
+        Teil:
+      </p>
+      <ul class="space-y-3">
+        {ehrlich.map((punkt) => <li>{punkt}</li>)}
+      </ul>
+      <p>
+        Wer einen Anbieter sucht, sollte ihn nach dem Verständnis für seinen Ablauf auswählen,
+        nicht nach der Entfernung. Die Nähe ist ein Vorteil obendrauf, kein Argument für sich.
+      </p>
+    </div>
+  </Section>
+
+  <Section tone="canvas">
+    <div class="prose-measure space-y-5 text-lg text-ink-soft">
+      <h2 class="font-serif text-3xl text-ink">Woran wir hier arbeiten</h2>
+      <p>
+        Die Aufgaben unterscheiden sich nicht danach, wo ein Betrieb steht, sondern danach, was
+        er tut. Für produzierende Betriebe sind das meistens{' '}
+        <a href={withBase('/funktionen/produktion-und-feinplanung')} class="textverweis"
+          >Feinplanung und Produktionsplanung</a
+        >{' '}
+        sowie{' '}
+        <a href={withBase('/funktionen/supply-chain-und-materialsteuerung')} class="textverweis"
+          >Materialsteuerung</a
+        >, für logistiknahe Betriebe{' '}
+        <a href={withBase('/funktionen/logistik-und-versandsteuerung')} class="textverweis"
+          >Versandsteuerung und Verpackungslogik</a
+        >.
+      </p>
+      <p>
+        Ein abgeschlossenes Projekt aus der Region ist die{' '}
+        <a href={withBase('/case-studies/drahtmueller-palettenoptimierung')} class="textverweis"
+          >Palettenoptimierung bei der Drahtmüller GmbH</a
+        >, einem Hersteller von Gitterrosten nach Kundenmaß. 2.556 aktive Palettentypen, bei
+        denen jede Zuordnung vorher Erfahrungssache war.
+      </p>
+    </div>
+  </Section>
+
+  <Section tone="dark">
+    <div class="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+      <SectionHeading
+        kicker="Vor Ort"
+        title="Ein Termin im Betrieb ist der schnellste Weg"
+        lead="Eine halbe Stunde am Ort, an dem das Problem entsteht, bringt mehr als drei Telefonate."
+        class="max-w-2xl"
+      />
+      <Button href="/kontakt">Termin vereinbaren</Button>
+    </div>
+    {
+      anbieterVollstaendig && (
+        <p class="mt-10 text-sm text-white/70">
+          adept&amp;, {anbieter.strasse}, {anbieter.plz} {anbieter.ort}
+        </p>
+      )
+    }
+  </Section>
+</Base>

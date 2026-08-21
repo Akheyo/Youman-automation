@@ -24,8 +24,8 @@ const referenz = funktion.referenz ? caseStudyNach(funktion.referenz) : undefine
 ---
 
 <Base
-  title={funktion.title}
-  description={funktion.teaser}
+  title={funktion.seoTitel ?? funktion.title}
+  description={funktion.seoBeschreibung ?? funktion.teaser}
   bild={funktion.bild}
   dienstleistung={{ name: funktion.title, beschreibung: funktion.teaser }}
   breadcrumb={[

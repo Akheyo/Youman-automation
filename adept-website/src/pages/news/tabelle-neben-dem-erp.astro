@@ -1,0 +1,176 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import Section from '../../components/Section.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
+import Button from '../../components/Button.astro';
+import { news } from '../../data/news';
+import { withBase } from '../../lib/url';
+
+/**
+ * Fachbeitrag ohne fremde Zahlen und ohne Aussagen ueber eigene Projekte.
+ * Dieselbe Machart wie "ERP-Insellösungen anbinden": das Thema traegt sich
+ * aus der Sache, nicht aus zitierten Erhebungen.
+ */
+
+const beitrag = news.find((e) => e.slug === 'tabelle-neben-dem-erp')!;
+
+const BESCHREIBUNG =
+  'Fast jeder Betrieb führt Tabellen neben dem ERP. Sie sind kein Zeichen von Nachlässigkeit, sondern zeigen ziemlich genau, wo eine Lösung fehlt.';
+
+const kosten = [
+  {
+    titel: 'Sie hängt an einer Person',
+    text: 'Wer sie gebaut hat, ist der Einzige, der sie ändern kann. Urlaub und Krankheit werden zum Betriebsrisiko, und niemand spricht darüber, weil es ja läuft.',
+  },
+  {
+    titel: 'Ihre Regeln sind unsichtbar',
+    text: 'Die Entscheidungslogik steckt in Formeln, Sortierungen und in dem, was der Bearbeiter im Kopf ergänzt. Sie lässt sich nicht prüfen, nicht übergeben und nicht diskutieren.',
+  },
+  {
+    titel: 'Sie ist nie auswertbar',
+    text: 'Was in der Tabelle passiert, kommt in keiner Kennzahl vor. Ausgerechnet der Teil des Ablaufs, der die meiste Handarbeit kostet, ist der einzige, über den es keine Zahlen gibt.',
+  },
+  {
+    titel: 'Sie wächst weiter',
+    text: 'Jede neue Ausnahme kommt als Spalte dazu. Nach ein paar Jahren ist die Tabelle das eigentliche System, und das ERP führt nur noch die Buchungen nach.',
+  },
+];
+
+const fragen = [
+  'Welche Entscheidung wird in der Tabelle tatsächlich getroffen, und woran macht sie sich fest?',
+  'Woher kommen die Daten hinein, und wohin gehen die Ergebnisse zurück?',
+  'Welche Fälle behandelt der Bearbeiter anders, als die Formel es vorsieht, und warum?',
+  'Was passiert, wenn die Person, die sie pflegt, zwei Wochen nicht da ist?',
+];
+
+const brotkrumen = [
+  { label: 'Home', href: '/' },
+  { label: 'News', href: '/news' },
+];
+---
+
+<Base
+  title="Die Tabelle neben dem ERP"
+  description={BESCHREIBUNG}
+  bild={beitrag.bild}
+  breadcrumb={brotkrumen}
+  artikel={{ titel: beitrag.title, beschreibung: BESCHREIBUNG, datum: beitrag.date }}
+>
+  <PageHeader
+    kicker="Praxis"
+    bild={beitrag.bild}
+    title="Die Tabelle neben dem ERP"
+    lead="Sie gilt als Provisorium und ist meistens der bestdokumentierte Hinweis darauf, wo im Betrieb eine Lösung fehlt."
+    breadcrumb={brotkrumen}
+  />
+
+  <Section>
+    <div class="prose-measure space-y-5 text-lg text-ink-soft">
+      <p>
+        In fast jedem Betrieb, den wir uns ansehen, gibt es sie. Eine Datei, die nicht im
+        Systemhandbuch steht, an der aber ein Teil des Tagesgeschäfts hängt. Die
+        Versandreihenfolge. Die Zuordnung von Verpackung zu Artikel. Die Liste, welcher Kunde
+        welche Sonderregel hat. Meistens liegt sie auf einem Laufwerk, manchmal auf einem
+        einzelnen Rechner, und fast immer hat sie einen Namen mit einer Jahreszahl darin.
+      </p>
+      <p>
+        Der Reflex ist, das für Unordnung zu halten. Das ist es selten. Eine solche Tabelle
+        entsteht, weil jemand eine Aufgabe erledigen musste, für die das System keine Vorlage
+        hatte, und weil er nicht auf ein Projekt warten konnte. Sie ist die schnellste
+        verfügbare Antwort auf eine echte Anforderung. Genau deshalb ist sie so aufschlussreich.
+      </p>
+      <p>
+        Wer wissen will, wo in einem Betrieb Software fehlt, muss nicht die Prozesse
+        analysieren. Er muss fragen, welche Dateien niemand löschen darf.
+      </p>
+    </div>
+  </Section>
+
+  <Section tone="canvas">
+    <SectionHeading
+      kicker="Was sie kostet"
+      title="Vier Kosten, die in keiner Rechnung auftauchen"
+      lead="Die Arbeitszeit ist davon die kleinste und die einzige, die jemand bemerkt."
+    />
+    <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
+      {
+        kosten.map((punkt, i) => (
+          <li class="flex gap-5 bg-surface p-7">
+            <span class="font-display text-sm font-semibold tabular-nums text-accent">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <div>
+              <h2 class="text-lg text-ink">{punkt.titel}</h2>
+              <p class="mt-2 text-ink-soft">{punkt.text}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section>
+    <div class="prose-measure space-y-5 text-lg text-ink-soft">
+      <h2 class="font-serif text-3xl text-ink">Abschaffen ist der falsche erste Schritt</h2>
+      <p>
+        Die naheliegende Reaktion ist, die Tabelle zu verbieten und auf den Standardweg zu
+        verweisen. Das geht regelmäßig schief, weil der Standardweg den Fall ja gerade nicht
+        abdeckt. Die Tabelle verschwindet dann nicht, sie wandert nur in einen Ordner, den
+        niemand mehr kennt.
+      </p>
+      <p>
+        Der brauchbarere Weg beginnt damit, sie ernst zu nehmen. Was in ihr steckt, ist eine
+        Sammlung von Regeln, die jemand über Jahre aus der Praxis abgeleitet hat. Diese Regeln
+        sind das Wertvollste an ihr. Sie zu heben und in eine Form zu bringen, die prüfbar und
+        übergebbar ist, ist die eigentliche Aufgabe. Ob am Ende ein Modul dabei herauskommt,
+        entscheidet sich erst danach.
+      </p>
+      <p>
+        Im Referenzprojekt{' '}
+        <a href={withBase('/case-studies/drahtmueller-palettenoptimierung')} class="textverweis"
+          >Palettenoptimierung bei der Drahtmüller GmbH</a
+        > war genau das der Kern: 2.556 aktive Palettentypen, bei denen jede Zuordnung ein
+        Einzelfall war, den vorher Erfahrung entschieden hat.
+      </p>
+    </div>
+  </Section>
+
+  <Section tone="canvas">
+    <SectionHeading
+      kicker="Vier Fragen"
+      title="Woran sich erkennen lässt, ob sich das Heben lohnt"
+      lead="Wer diese vier Fragen für eine Tabelle beantworten kann, hat den größten Teil der Anforderungsanalyse bereits erledigt."
+    />
+    <ol class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
+      {
+        fragen.map((frage, i) => (
+          <li class="flex gap-5 bg-surface p-7">
+            <span class="font-display text-sm font-semibold tabular-nums text-accent">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <p class="text-ink-soft">{frage}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="prose-measure mt-10 text-lg text-ink-soft">
+      Bleibt bei einer der Fragen ein Achselzucken, ist das kein schlechtes Zeichen. Es zeigt
+      nur, an welcher Stelle zuerst hingeschaut werden muss. Welche{' '}
+      <a href={withBase('/funktionen')} class="textverweis">Funktionsbereiche</a> davon berührt
+      sind, ergibt sich meistens aus der Antwort auf die erste Frage.
+    </p>
+  </Section>
+
+  <Section tone="dark">
+    <div class="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+      <SectionHeading
+        kicker="Nächster Schritt"
+        title="Sie kennen so eine Tabelle in Ihrem Betrieb?"
+        lead="Beschreiben Sie kurz, was darin entschieden wird. Das reicht für eine erste Einschätzung."
+        class="max-w-2xl"
+      />
+      <Button href="/kontakt">Gespräch vereinbaren</Button>
+    </div>
+  </Section>
+</Base>

@@ -16,6 +16,23 @@ export type Funktion = {
   title: string;
   /** Kurzzeile für Übersichtsseiten. Erscheint NICHT im Dropdown. */
   teaser: string;
+  /**
+   * Titel fuer die Suche, falls er vom sichtbaren Titel abweichen soll.
+   *
+   * Grund: "Produktion & Feinplanung" ist der Name des Bereichs, aber nicht
+   * das, was jemand eintippt. Gesucht wird nach dem Gegenstand plus dem Wort
+   * "Software", "Schnittstelle" oder "ERP". Der sichtbare Titel bleibt
+   * unveraendert, damit die Seite nicht wie eine Anzeige klingt.
+   *
+   * Bewusst OHNE Ortsnamen. Denselben Ort in fuenf Titel zu schreiben, sieht
+   * nach Vorlage aus und verdraengt den kommerziellen Begriff, auf den die
+   * Seite eigentlich zielt. Der Ortsbezug haengt an Anschrift, Footer,
+   * Unternehmensprofil und einer eigenen Regionalseite, nicht an fuenf
+   * gleichfoermigen Titeln.
+   */
+  seoTitel?: string;
+  /** Beschreibung fuer die Suche, falls der Teaser dafuer zu knapp ist. */
+  seoBeschreibung?: string;
   /** Die im Briefing genannten Bausteine, jeweils mit Erläuterung. */
   bausteine: Baustein[];
   /**
@@ -49,6 +66,9 @@ export type Funktion = {
 export const funktionen: Funktion[] = [
   {
     slug: 'produktion-und-feinplanung',
+    seoTitel: 'Feinplanung und Produktionsplanung Software',
+    seoBeschreibung:
+      'Feinplanungstools, Leitstände und OEE-Dashboards als Modul am bestehenden ERP-System. adept& aus Borken, tätig in Deutschland, Österreich und der Schweiz.',
     painpoints: [
       'Der Plan aus dem ERP steht auf dem Papier, geplant wird aber in einer Tabelle auf dem Rechner des Fertigungsleiters. Fällt er aus, weiß niemand, warum die Reihenfolge so ist, wie sie ist.',
       'Eine Eilbestellung kommt herein und die Umplanung läuft über Zuruf. Was sie an anderer Stelle verschiebt, zeigt sich erst, wenn dort etwas zu spät kommt.',
@@ -88,6 +108,9 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'logistik-und-versandsteuerung',
+    seoTitel: 'Versandsteuerung und Logistiksoftware',
+    seoBeschreibung:
+      'Verpackungs- und Palettenlogik, Priorisierung und Dispositionsübersichten, angebunden an Ihr ERP-System. adept& aus Borken, tätig im gesamten DACH-Raum.',
     painpoints: [
       'Welche Verpackung zu welchem Auftrag passt, weiß der Kollege im Versand. Ist er nicht da, wird geschätzt, und es geht zu viel Luft oder zu wenig Schutz mit.',
       'Sonderpaletten und Kundenvorgaben stehen in einer Liste neben dem System. Wer sie nicht kennt, packt nach Standard, und die Ware kommt beanstandet zurück.',
@@ -127,6 +150,9 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'supply-chain-und-materialsteuerung',
+    seoTitel: 'Supply-Chain-Software und Materialsteuerung',
+    seoBeschreibung:
+      'Engpasserkennung, Verfügbarkeitsübersichten und Szenarien bei Materialverzug als Modul am bestehenden System. adept& aus Borken, tätig im DACH-Raum.',
     painpoints: [
       'Ein Material fehlt, und welche Aufträge daran hängen, findet man erst heraus, wenn man sie einzeln durchgeht.',
       'Der Lieferant meldet zwei Wochen Verzug. Was das für die Zusagen an Kunden bedeutet, lässt sich nicht durchrechnen, sondern nur schätzen.',
@@ -158,6 +184,9 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'reporting-und-operative-transparenz',
+    seoTitel: 'Reporting und KPI-Cockpits für die Produktion',
+    seoBeschreibung:
+      'Rollenbasierte Cockpits für Produktion und Logistik, mit Drill-down bis auf Auftrags- und Maschinenebene. adept& aus Borken, tätig im gesamten DACH-Raum.',
     painpoints: [
       'Der Monatsbericht entsteht, indem jemand drei Tage lang Zahlen aus mehreren Systemen zusammenträgt. Bis er fertig ist, ist er alt.',
       'Jede Abteilung bringt eigene Zahlen mit ins Meeting. Die erste halbe Stunde geht dafür drauf, sich zu einigen, welche davon stimmt.',
@@ -189,6 +218,9 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'systemintegration-und-erp-anbindung',
+    seoTitel: 'ERP-Anbindung und Schnittstellenentwicklung',
+    seoBeschreibung:
+      'API-basierte Anbindung an ERP-, SAP- und TMS-Systeme sowie kundenspezifische Module ohne Systemablösung. adept& aus Borken, tätig im DACH-Raum.',
     painpoints: [
       'Daten wandern per Export und Import zwischen zwei Systemen. Jemand macht das morgens von Hand, und wenn er krank ist, macht es niemand.',
       'Dasselbe Feld wird an drei Stellen gepflegt. Welche Version stimmt, hängt davon ab, wen man fragt.',

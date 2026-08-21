@@ -47,6 +47,7 @@ export const mainNav: NavItem[] = [
   { label: 'Referenzprojekte', href: '/case-studies' },
   { label: 'News', href: '/news' },
   { label: 'Über uns', href: '/ueber-uns' },
+  { label: 'Münsterland', href: '/muensterland' },
   { label: 'Kontakt', href: '/kontakt' },
 ];
 
