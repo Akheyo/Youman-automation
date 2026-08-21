@@ -132,6 +132,26 @@
   }
 
   /*
+    Sicherheitsnetz fuer dunkle Sektionen.
+
+    `SectionHeading` und einige Textbausteine tragen eine eigene
+    tone-Eigenschaft. Wird sie in einer dunklen Sektion vergessen, rendert
+    der Text in `text-ink-soft`, also #2e2e2e auf Schwarz: ein Kontrast von
+    1.54:1 statt der geforderten 4.5:1. Das ist praktisch unlesbar, faellt
+    beim Schreiben aber nicht auf, weil die Ueberschrift daneben weiss ist.
+
+    Genau das ist auf drei neuen Seiten passiert. Statt sich darauf zu
+    verlassen, dass die Eigenschaft immer gesetzt wird, faengt die dunkle
+    Sektion die beiden Sekundaerfarben hier ab. Ein ausdrueckliches
+    tone="dark" bleibt richtig und bleibt wirksam; das hier verhindert nur,
+    dass sein Fehlen unlesbaren Text erzeugt.
+  */
+  .on-dark .text-ink-soft,
+  .on-dark .text-muted-fg {
+    color: rgb(255 255 255 / 0.78);
+  }
+
+  /*
     Es gibt keine Akzentfarbe mehr, an der ein Verweis zu erkennen wäre –
     Schwarz auf Weiß ist auch die Farbe des Fließtextes. Die Form übernimmt
     das: jeder Verweis im Text trägt einen Unterstrich, der beim Überfahren
