@@ -22,7 +22,12 @@ const BASE = process.env.SITE_BASE || '/';
 
 // Muss zu src/data/sichtbarkeit.ts passen. Zwei Stellen, weil die
 // Konfiguration keine TypeScript-Datei aus src/ importieren kann.
-const INDEXIERUNG_ERLAUBT = process.env.INDEXIERUNG?.trim().toLowerCase() === 'an';
+// Eine einzige Quelle fuer die Freigabe, geteilt mit den Seiten selbst. Vorher
+// las diese Datei nur die Umgebungsvariable, waehrend die Seiten zusaetzlich
+// den Schalter im Code auswerteten. Wer den Schalter umlegte, bekam Seiten
+// ohne noindex, aber eine leere Sitemap - ein Zustand, in dem die Freigabe
+// halb wirkt und niemand sieht, warum.
+import { indexierungErlaubt as INDEXIERUNG_ERLAUBT } from './src/data/sichtbarkeit.ts';
 
 export default defineConfig({
   site: SITE,
