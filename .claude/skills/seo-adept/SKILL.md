@@ -24,9 +24,19 @@ Beschreibungslängen aus, darunter die Befunde. Rückgabewert 0 heißt sauber,
 1 heißt es gibt etwas zu tun. Es braucht keinen Vorschauserver und keine
 zusätzlichen Pakete.
 
-Für die Prüfungen, die einen Browser brauchen, siehe `references/browser.md`:
-waagerechter Überlauf, axe-core und die Kontrolle, dass die Seite nichts von
-Dritten nachlädt.
+Die Prüfungen, die einen Browser brauchen, laufen getrennt, weil sie einen
+Vorschauserver voraussetzen und einige Minuten dauern:
+
+```bash
+cd adept-website && npx astro preview --port 4321 &
+cd ..
+node .claude/skills/seo-adept/scripts/browser-pruefungen.mjs
+```
+
+Darin: axe-core gegen WCAG 2.1 A und AA, waagerechter Überlauf bei fünf
+Breiten, Layout-Sprung und Ladezeit, sowie die Kontrolle, dass nichts von
+fremden Hosts geladen wird und keine Cookies gesetzt werden. Einzelheiten
+und die Fallstricke dazu in `references/browser.md`.
 
 ## Die Falle, in die diese Prüfung selbst zweimal getappt ist
 
