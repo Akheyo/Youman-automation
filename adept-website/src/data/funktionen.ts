@@ -18,6 +18,17 @@ export type Funktion = {
   teaser: string;
   /** Die im Briefing genannten Bausteine, jeweils mit Erläuterung. */
   bausteine: Baustein[];
+  /**
+   * Typische Problemstellungen dieses Funktionsbereichs, in der Sprache der
+   * Betroffenen. Sie stehen VOR den Bausteinen: erst das Problem, dann die
+   * Antwort. Wer sein eigenes Problem oben wiedererkennt, liest den Rest.
+   *
+   * Es sind allgemein bekannte Fachprobleme, keine Aussagen ueber konkrete
+   * adept&-Projekte. Deshalb ohne Zahlen, ohne Kundennamen und ohne
+   * Erfolgsbehauptung: was ein Projekt gebracht hat, steht ausschliesslich
+   * in den Referenzprojekten, wo es belegt ist.
+   */
+  painpoints?: string[];
   /** Schlüssel aus dem Bildregister. */
   bild?: BildKey;
   /** Slug eines Referenzprojekts aus caseStudies.ts. */
@@ -38,6 +49,13 @@ export type Funktion = {
 export const funktionen: Funktion[] = [
   {
     slug: 'produktion-und-feinplanung',
+    painpoints: [
+      'Der Plan aus dem ERP steht auf dem Papier, geplant wird aber in einer Tabelle auf dem Rechner des Fertigungsleiters. Fällt er aus, weiß niemand, warum die Reihenfolge so ist, wie sie ist.',
+      'Eine Eilbestellung kommt herein und die Umplanung läuft über Zuruf. Was sie an anderer Stelle verschiebt, zeigt sich erst, wenn dort etwas zu spät kommt.',
+      'Rüstzeiten hängen an der Reihenfolge, die Reihenfolge entsteht aber nach Liefertermin. Dass zwei ähnliche Aufträge hintereinander eine Umrüstung sparen, sieht nur, wer die Maschine kennt.',
+      'Stillstände werden auf einem Zettel notiert und später eingetippt, wenn überhaupt. Woran die Woche tatsächlich gehangen hat, lässt sich am Monatsende nicht mehr rekonstruieren.',
+      'Schichtleitung und Werksleitung schauen auf verschiedene Zahlen, weil sich jede ihre eigene Auswertung gebaut hat. Die Diskussion dreht sich dann um die Zahl statt um das Problem.',
+    ],
     referenz: 'drahtmueller-palettenoptimierung',
     referenzHinweis:
       'Ein abgeschlossenes Beispiel für genau diese Art von Sonderlogik im Fertigungsalltag ist das Projekt',
@@ -70,6 +88,13 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'logistik-und-versandsteuerung',
+    painpoints: [
+      'Welche Verpackung zu welchem Auftrag passt, weiß der Kollege im Versand. Ist er nicht da, wird geschätzt, und es geht zu viel Luft oder zu wenig Schutz mit.',
+      'Sonderpaletten und Kundenvorgaben stehen in einer Liste neben dem System. Wer sie nicht kennt, packt nach Standard, und die Ware kommt beanstandet zurück.',
+      'Kommissioniert wird in der Reihenfolge des Auftragseingangs statt nach Abholzeit der Spedition. Nachmittags steht fertige Ware herum, während anderes hektisch fertig wird.',
+      'Was eine Sendung an Fracht gekostet hat, steht erst mit der Rechnung fest. Ob sie sich gelohnt hat, sieht man Wochen später.',
+      'Der Dispositionsstand hängt an Zurufen und Mails. Wer wissen will, was heute noch rausgeht, muss durch die Halle laufen.',
+    ],
     referenz: 'drahtmueller-palettenoptimierung',
     referenzHinweis:
       'Wie weit eine solche Verpackungs- und Palettenlogik im Einzelfall reicht, zeigt das Projekt',
@@ -102,6 +127,13 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'supply-chain-und-materialsteuerung',
+    painpoints: [
+      'Ein Material fehlt, und welche Aufträge daran hängen, findet man erst heraus, wenn man sie einzeln durchgeht.',
+      'Der Lieferant meldet zwei Wochen Verzug. Was das für die Zusagen an Kunden bedeutet, lässt sich nicht durchrechnen, sondern nur schätzen.',
+      'Sicherheitsbestände wurden einmal festgelegt und seitdem nicht angefasst. Von manchem liegt zu viel im Lager, von dem, was regelmäßig hakt, zu wenig.',
+      'Bei knappem Material entscheidet, wer zuerst fragt, statt welcher Auftrag der wichtigere ist.',
+      'Bestand ist im System vorhanden, aber längst für etwas anderes reserviert. Verfügbar und vorhanden werden verwechselt, und die Zusage platzt.',
+    ],
     referenz: 'absolar-warenwirtschaft',
     referenzHinweis:
       'Was es bedeutet, Lagerdaten und Bedarfe aus getrennten Ständen zusammenzuführen, steht im Projekt',
@@ -126,6 +158,13 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'reporting-und-operative-transparenz',
+    painpoints: [
+      'Der Monatsbericht entsteht, indem jemand drei Tage lang Zahlen aus mehreren Systemen zusammenträgt. Bis er fertig ist, ist er alt.',
+      'Jede Abteilung bringt eigene Zahlen mit ins Meeting. Die erste halbe Stunde geht dafür drauf, sich zu einigen, welche davon stimmt.',
+      'Eine Kennzahl fällt auf, aber woran es liegt, ist nicht nachvollziehbar. Man sieht das Ergebnis, nicht den Auftrag, die Maschine oder das Material dahinter.',
+      'Auswertungen liegen als Tabellen auf einzelnen Rechnern. Wer sie gebaut hat, ist die einzige Person, die sie ändern kann.',
+      'Die Geschäftsführung bekommt dieselbe Ansicht wie die Schichtleitung, und keiner von beiden findet darin, was er sucht.',
+    ],
     referenz: 'absolar-warenwirtschaft',
     referenzHinweis:
       'Wie fehlende Übersicht im Tagesgeschäft entsteht und wodurch sie sich beheben ließ, beschreibt das Projekt',
@@ -150,6 +189,13 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'systemintegration-und-erp-anbindung',
+    painpoints: [
+      'Daten wandern per Export und Import zwischen zwei Systemen. Jemand macht das morgens von Hand, und wenn er krank ist, macht es niemand.',
+      'Dasselbe Feld wird an drei Stellen gepflegt. Welche Version stimmt, hängt davon ab, wen man fragt.',
+      'Eine Anpassung wurde als Sonderentwicklung ins ERP gebaut. Beim nächsten Update ist offen, ob sie das übersteht.',
+      'Der Prozess, um den es eigentlich geht, passt nicht in den Standard. Also läuft er daneben, in Tabellen, und lässt sich nicht auswerten.',
+      'Für jede Auswertung über Systemgrenzen hinweg braucht es jemanden, der beide Systeme kennt. Davon gibt es genau eine Person.',
+    ],
     referenz: 'absolar-warenwirtschaft',
     referenzHinweis:
       'Ein Fall, in dem drei getrennte Systeme zu einem durchgängigen Prozess verbunden wurden, ist das Projekt',

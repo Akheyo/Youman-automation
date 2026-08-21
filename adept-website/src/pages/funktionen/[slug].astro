@@ -27,6 +27,7 @@ const referenz = funktion.referenz ? caseStudyNach(funktion.referenz) : undefine
   title={funktion.title}
   description={funktion.teaser}
   bild={funktion.bild}
+  dienstleistung={{ name: funktion.title, beschreibung: funktion.teaser }}
   breadcrumb={[
     { label: 'Home', href: '/' },
     { label: 'Funktionen', href: '/funktionen' },
@@ -43,6 +44,33 @@ const referenz = funktion.referenz ? caseStudyNach(funktion.referenz) : undefine
     ]}
   />
 
+  {/*
+    Problemstellungen vor den Bausteinen, wie auf den Branchenseiten: erst
+    das Problem, dann die Antwort. Fehlt die Liste, entfaellt der Abschnitt
+    ersatzlos.
+  */}
+  {
+    funktion.painpoints && funktion.painpoints.length > 0 && (
+      <Section tone="canvas">
+        <SectionHeading
+          kicker="Woran es hakt"
+          title="Typische Problemstellungen in diesem Bereich"
+          lead="Wenn Ihnen davon etwas bekannt vorkommt, lohnt sich ein Gespräch. Genau an solchen Stellen setzen wir an."
+        />
+        <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
+          {funktion.painpoints.map((punkt, i) => (
+            <li class="flex gap-5 bg-surface p-7">
+              <span class="font-display text-sm font-semibold tabular-nums text-accent">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <p class="text-ink-soft">{punkt}</p>
+            </li>
+          ))}
+        </ul>
+      </Section>
+    )
+  }
+
   <Section>
     <SectionHeading
       title="Bausteine"
@@ -58,10 +86,7 @@ const referenz = funktion.referenz ? caseStudyNach(funktion.referenz) : undefine
       referenz && funktion.referenzHinweis && (
         <p class="prose-measure mt-8 text-lg text-ink-soft">
           {funktion.referenzHinweis}{' '}
-          <a href={withBase(referenz.href)} class="textverweis">
-            {referenz.title}
-          </a>
-          .
+          <a href={withBase(referenz.href)} class="textverweis">{referenz.title}</a>.
         </p>
       )
     }

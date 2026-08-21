@@ -47,6 +47,14 @@ interface Props {
    * ein Article-Objekt in den strukturierten Daten.
    */
   artikel?: { titel: string; beschreibung: string; datum: string | null };
+  /**
+   * Setzen, wenn die Seite eine Dienstleistung beschreibt. Erzeugt ein
+   * Service-Objekt in den strukturierten Daten, damit maschinell lesbar
+   * wird, WAS hier angeboten wird und WER es anbietet. Ohne das trugen die
+   * Funktionsseiten nur Organization, WebSite und BreadcrumbList, also
+   * Angaben ueber die Seite, aber keine ueber die Leistung.
+   */
+  dienstleistung?: { name: string; beschreibung: string };
 }
 
 const {
@@ -56,13 +64,14 @@ const {
   bild: bildKey,
   breadcrumb = [],
   artikel,
+  dienstleistung,
 } = Astro.props;
 
 // Gesperrt ist eine Seite, wenn sie es selbst verlangt oder wenn die
 // gesamte Seite noch nicht zur Indexierung freigegeben ist.
 const gesperrt = noindex || !indexierungErlaubt;
 
-const seitentitel = title === site.name ? `${site.name} ${site.region}` : `${title} | ${site.name}`;
+const seitentitel = title === site.name ? site.startseitenTitel : `${title} | ${site.name}`;
 const basis = Astro.site ?? new URL(Astro.url.origin);
 const canonical = new URL(Astro.url.pathname, basis);
 
@@ -180,9 +189,30 @@ const webseite = {
   publisher: { '@id': absolut(withBase('/')) + '#organisation' },
 };
 
+/*
+ * Service. Bewusst schlank gehalten: provider verweist per @id auf die
+ * bereits vorhandene Organisation, statt sie ein zweites Mal auszuschreiben,
+ * und areaServed nennt das Land. Kein Offer und kein Preis, denn beides
+ * liegt nicht vor; ein leeres Offer-Objekt waere eine Falschangabe.
+ */
+const dienstleistungsObjekt = dienstleistung
+  ? {
+      '@type': 'Service',
+      name: dienstleistung.name,
+      serviceType: dienstleistung.name,
+      description: dienstleistung.beschreibung,
+      provider: { '@id': absolut(withBase('/')) + '#organisation' },
+      areaServed: { '@type': 'Country', name: 'Deutschland' },
+      inLanguage: 'de-DE',
+      mainEntityOfPage: canonical.href,
+    }
+  : null;
+
 const strukturierteDaten = {
   '@context': 'https://schema.org',
-  '@graph': [organisation, webseite, brotkrumenListe, artikelObjekt].filter(Boolean),
+  '@graph': [organisation, webseite, brotkrumenListe, artikelObjekt, dienstleistungsObjekt].filter(
+    Boolean,
+  ),
 };
 ---
 

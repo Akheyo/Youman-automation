@@ -78,10 +78,7 @@ const referenz = branche.referenz ? caseStudyNach(branche.referenz) : undefined;
       referenz && branche.referenzHinweis && (
         <p class="prose-measure mt-6 text-lg text-ink-soft">
           {branche.referenzHinweis}{' '}
-          <a href={withBase(referenz.href)} class="textverweis">
-            {referenz.title}
-          </a>
-          .
+          <a href={withBase(referenz.href)} class="textverweis">{referenz.title}</a>.
         </p>
       )
     }

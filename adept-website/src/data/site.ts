@@ -3,6 +3,19 @@ export const site = {
   /** Wird im Hero unter dem Namen angezeigt */
   region: 'Deutschland',
   claim: 'Beratung. Software. Integration.',
+  /**
+   * Titel der Startseite in der Suche. Steht getrennt vom Namen, weil
+   * "adept& Deutschland" kein einziges Suchwort enthaelt: niemand sucht nach
+   * einem Firmennamen, den er noch nicht kennt. Der Titel ist die staerkste
+   * einzelne Angabe einer Seite, und die Startseite ist die staerkste Seite.
+   *
+   * Aufbau: zwei kommerzielle Begriffe, dann der Ort, dann die Marke.
+   * 57 Zeichen, damit Google ihn nicht abschneidet.
+   */
+  startseitenTitel: 'ERP-Integration und Individualsoftware aus Borken | adept&',
+  /** Beschreibung der Startseite in der Suche. */
+  startseitenBeschreibung:
+    'adept& verbindet Prozessberatung mit individueller Softwareentwicklung: Module für ERP- und SAP-Anbindung in Produktion, Logistik und Onlinehandel. Aus Borken.',
   /** Aus dem freigegebenen Text unter "Geschichte". */
   gruendungsjahr: '2026',
   subclaim: 'Maßgeschneiderte ERP- & SAP-Lösungen für Ihr Unternehmen.',
