@@ -1134,6 +1134,83 @@ details.technisch[open] summary .pfeil {
 }
 
 /* ============================================================================
+   Artikelsuche
+   ========================================================================= */
+
+.artikelBild {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: var(--radius-1);
+  border: 1px solid var(--rand);
+  background: var(--flaeche-hoch);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  color: var(--text-leise);
+}
+
+.artikelBild img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bilderReihe {
+  display: flex;
+  gap: var(--raum-2);
+  flex-wrap: wrap;
+}
+
+.bildKachel {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-1);
+  border: 1px solid var(--rand);
+  background: var(--flaeche-hoch);
+  overflow: hidden;
+  display: block;
+  transition: border-color var(--zeit) var(--kurve);
+}
+
+.bildKachel:hover {
+  border-color: var(--blau);
+}
+
+.bildKachel img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.feldGitter {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--raum-1) var(--raum-4);
+  margin-top: var(--raum-2);
+}
+
+.feldZeile {
+  display: flex;
+  gap: var(--raum-3);
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--raum-1) 0;
+  border-bottom: 1px solid var(--rand);
+  min-width: 0;
+}
+
+.feldWert {
+  font-size: var(--gr-klein);
+  text-align: right;
+  overflow-wrap: anywhere;
+  max-height: 4.5em;
+  overflow: hidden;
+}
+
+/* ============================================================================
    Fehlerkarten
    ========================================================================= */
 
@@ -1575,16 +1652,17 @@ tbody tr:last-child td {
     background: color-mix(in srgb, var(--grund) 94%, transparent);
     backdrop-filter: blur(12px);
     border-top: 1px solid var(--rand);
-    justify-content: space-around;
-    overflow: visible;
+    justify-content: space-between;
+    overflow-x: auto;
+    overflow-y: visible;
   }
 
   .navKnopf {
     flex-direction: column;
     gap: 2px;
-    flex: 1 1 0;
-    min-width: 0;
-    padding: 6px 1px;
+    flex: 0 0 auto;
+    min-width: 68px;
+    padding: 6px 4px;
     font-size: 10px;
     letter-spacing: -0.01em;
     border-radius: var(--radius-2);

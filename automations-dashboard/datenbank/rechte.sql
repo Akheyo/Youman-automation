@@ -76,6 +76,11 @@ grant select on v_reliability_trend_14d to authenticated;
 grant select on v_open_errors_ranked to authenticated;
 grant select on v_automation_overview to authenticated;
 
+-- Artikeldaten aus PlentyONE, für die Suche im Dashboard
+grant select on v_artikel_komplett to authenticated;
+grant select on table plenty_variationen to authenticated;
+grant select on table plenty_artikeltexte to authenticated;
+
 
 -- ---------------------------------------------------------------------------
 -- 3. Ansehen darf jeder Angemeldete
@@ -114,6 +119,20 @@ for select to authenticated using (true);
 
 drop policy if exists "protokoll lesen" on audit_log;
 create policy "protokoll lesen" on audit_log
+for select to authenticated using (true);
+
+-- Artikeldaten: nur lesen, und nur für Angemeldete. Falls auf den beiden
+-- Plenty-Tabellen keine Row Level Security aktiv ist, sind die beiden
+-- folgenden Blöcke wirkungslos und schaden nicht.
+alter table plenty_variationen enable row level security;
+alter table plenty_artikeltexte enable row level security;
+
+drop policy if exists "artikeldaten lesen" on plenty_variationen;
+create policy "artikeldaten lesen" on plenty_variationen
+for select to authenticated using (true);
+
+drop policy if exists "artikeltexte lesen" on plenty_artikeltexte;
+create policy "artikeltexte lesen" on plenty_artikeltexte
 for select to authenticated using (true);
 
 

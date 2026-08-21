@@ -8,18 +8,19 @@ import Automationen from './pages/Automationen';
 import Fehler from './pages/Fehler';
 import Protokoll from './pages/Protokoll';
 import Zugaenge from './pages/Zugaenge';
+import Artikel from './pages/Artikel';
 import Zeichen, { type ZeichenName } from './components/Icons';
 import { relativ } from './lib/format';
 import { rolleText } from './lib/labels';
 
-type Seite = 'uebersicht' | 'automationen' | 'fehler' | 'protokoll' | 'zugaenge';
+type Seite = 'uebersicht' | 'automationen' | 'fehler' | 'artikel' | 'protokoll' | 'zugaenge';
 
 interface Ziel {
   seite: Seite;
   id: string | null;
 }
 
-const seiten: Seite[] = ['uebersicht', 'automationen', 'fehler', 'protokoll', 'zugaenge'];
+const seiten: Seite[] = ['uebersicht', 'automationen', 'fehler', 'artikel', 'protokoll', 'zugaenge'];
 
 function zielLesen(hash: string): Ziel {
   const teile = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
@@ -34,6 +35,7 @@ const titel: Record<Seite, string> = {
   uebersicht: 'Übersicht',
   automationen: 'Automationen',
   fehler: 'Fehler',
+  artikel: 'Artikel',
   protokoll: 'Protokoll',
   zugaenge: 'Zugänge',
 };
@@ -42,6 +44,7 @@ const navZeichen: Record<Seite, ZeichenName> = {
   uebersicht: 'raster',
   automationen: 'liste',
   fehler: 'warndreieck',
+  artikel: 'lupe',
   protokoll: 'uhr',
   zugaenge: 'menschen',
 };
@@ -164,6 +167,7 @@ function AngemeldeteAnsicht() {
           {ziel.seite === 'uebersicht' && <Uebersicht gehZu={gehZu} />}
           {ziel.seite === 'automationen' && <Automationen offenId={ziel.id} />}
           {ziel.seite === 'fehler' && <Fehler gehZu={gehZu} />}
+          {ziel.seite === 'artikel' && <Artikel />}
           {ziel.seite === 'protokoll' && <Protokoll />}
           {ziel.seite === 'zugaenge' && <Zugaenge />}
         </main>

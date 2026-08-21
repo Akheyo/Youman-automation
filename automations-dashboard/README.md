@@ -28,6 +28,31 @@ Das Konzept dahinter steht in [CLAUDE.md](./CLAUDE.md).
 7. **Zugänge.** Nur für die Rolle „Alles": Rechte vergeben, Zugang geben und
    entziehen. Jede Änderung landet zusätzlich in `audit_log`.
 
+## Artikelsuche
+
+Ein eigener Bereich durchsucht die Artikeldaten aus PlentyONE, die in derselben
+Datenbank liegen und alle zehn Minuten abgeglichen werden. Gesucht wird über
+`v_artikel_komplett` nach Artikelnummer, EAN und Titel, ab zwei Zeichen und mit
+kurzer Verzögerung beim Tippen, damit nicht jeder Tastendruck eine Abfrage
+auslöst.
+
+Jeder Treffer zeigt Vorschaubild, Titel, Artikelnummer und EAN sowie den
+Bestand als Etikett: blau ab fünf Stück, gelb darunter, rot bei null.
+Aufgeklappt kommen Bestände je Spalte, Preise, Lager, Gewicht, alle Bilder in
+der richtigen Reihenfolge und darunter aufklappbar sämtliche Felder der
+Datenbankzeile.
+
+**Die Spalten werden zur Laufzeit erkannt.** Beim ersten Aufruf holt die Suche
+eine Zeile und ordnet die Spaltennamen zu, siehe `src/lib/artikel.ts`. Heißt
+eine Spalte anders als erwartet, fällt sie nicht weg, sie erscheint nur im
+Block „Alle Felder" statt an ihrem angestammten Platz. Findet die Suche in
+einer Spalte keinen Text, weicht sie automatisch auf den Titel aus und sagt
+das in der Oberfläche.
+
+**Bilder** sind ein Array von Objekten mit `gross`, `mittel`, `vorschau` und
+`position`, nicht einfach Adressen. Sortiert wird nach `position`, angezeigt
+wird `vorschau`, verlinkt ist `gross`.
+
 ## Einrichten
 
 ```bash
@@ -139,6 +164,7 @@ Gelesen wird ausschließlich aus den fertigen Views, nicht selbst zusammengerech
 | `v_reliability_trend_14d` | Erfolgsquote pro Tag, letzte 14 Tage |
 | `v_automation_overview` | Zuverlässigkeit, offene Fehler, Zuständiger je Automation |
 | `v_open_errors_ranked` | offene Fehler, schlimmste zuerst |
+| `v_artikel_komplett` | Artikelsuche: Varianten und Texte zusammengeführt |
 
 Dazu direkt aus den Tabellen: `automation_runs` (Durchläufe je Automation),
 `automation_errors` (übernehmen und abhaken), `control_commands` (Steuerung),
