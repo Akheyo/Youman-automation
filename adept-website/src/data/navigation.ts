@@ -7,6 +7,16 @@ export type NavItem = {
   label: string;
   href: string;
   children?: NavChild[];
+  /**
+   * true = erscheint nur im Footer, nicht in der Hauptnavigation.
+   *
+   * Fuer Seiten, die einen Verweis brauchen, damit sie nicht ohne Verweis
+   * dastehen, aber in der obersten Ebene zu prominent waeren. Die
+   * Regionalseite ist so ein Fall: adept& arbeitet im gesamten DACH-Raum,
+   * und ein Ortsname neben "Branchen" und "Funktionen" wuerde das Gegenteil
+   * nahelegen.
+   */
+  nurFooter?: boolean;
 };
 
 /**
@@ -47,7 +57,7 @@ export const mainNav: NavItem[] = [
   { label: 'Referenzprojekte', href: '/case-studies' },
   { label: 'News', href: '/news' },
   { label: 'Über uns', href: '/ueber-uns' },
-  { label: 'Münsterland', href: '/muensterland' },
+  { label: 'Münsterland', href: '/muensterland', nurFooter: true },
   { label: 'Kontakt', href: '/kontakt' },
 ];
 

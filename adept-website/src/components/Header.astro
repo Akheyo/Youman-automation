@@ -66,7 +66,7 @@ const currentPath = Astro.url.pathname;
     <nav class="hidden xl:block ml-6" aria-label="Hauptnavigation">
       <ul class="flex items-center gap-1">
         {
-          mainNav.map((item) => {
+          mainNav.filter((item) => !item.nurFooter).map((item) => {
             const active = isActive(currentPath, item.href);
             const panelId = `dropdown-${item.label.toLowerCase().replace(/[^a-z]/g, '')}`;
             return (
@@ -189,6 +189,7 @@ const currentPath = Astro.url.pathname;
         <ul class="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
           {
             mainNav
+              .filter((item) => !item.nurFooter)
               .filter((item) => item.children)
               .map((item) => (
                 <li>
@@ -218,6 +219,8 @@ const currentPath = Astro.url.pathname;
             <ul class="mt-4 space-y-1">
               {
                 mainNav
+                  .filter((item) => !item.nurFooter)
+              .filter((item) => !item.nurFooter)
                   .filter((item) => !item.children && item.href !== '/')
                   .map((item) => (
                     <li>
