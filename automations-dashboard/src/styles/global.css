@@ -1,51 +1,39 @@
-/* ============================================================================
-   Automations-Dashboard, Gestaltungsgrundlage
-
-   Farben aus dem Logo abgeleitet. Bewusst kein Grün: Blau übernimmt die Rolle
-   von "in Ordnung", damit die Oberfläche in den Firmenfarben bleibt.
-
-   Zustand wird nie allein über Farbe erzählt. Jede Farbe kommt zusammen mit
-   einem Zeichen und einem deutschen Wort, damit auch bei Farbschwäche oder auf
-   einem schlechten Bildschirm klar ist, was los ist.
-
-   Alle Textfarben sind gegen ihren Untergrund auf mindestens 4,5 zu 1 geprüft.
-   ========================================================================= */
-
 :root {
+  /*
+   * Nahezu einfarbig, neutrale Grautöne. Farbe erscheint nur dort, wo sie
+   * eine Bedeutung trägt: als kleiner Punkt am Zustand, als Linie im
+   * Diagramm, als Fokusrahmen. Keine Farbflächen, keine Verläufe.
+   */
+
   /* --- Flächen ---------------------------------------------------------- */
-  --grund: #0a111e;
-  --flaeche: #121c2d;
-  --flaeche-hoch: #18243a;
-  --flaeche-tief: #0d1524;
-  --rand: #243247;
-  --rand-stark: #31435e;
+  --grund: #0b0c0e;
+  --flaeche: #101215;
+  --flaeche-hoch: #16181c;
+  --flaeche-tief: #0d0e11;
+  --rand: #1f2227;
+  --rand-stark: #2b2f36;
 
-  /* --- Marke ------------------------------------------------------------ */
-  --blau: #2c7be5;
-  --gelb: #f5b301;
-  --rot: #e23a2e;
+  /* --- Schrift ---------------------------------------------------------- */
+  --text: #e9eaec;
+  --text-leise: #9ba1a9;
+  --text-still: #868c94;
+  --text-invers: #0b0c0e;
 
-  /* --- Schriftfarben, geprüft auf Kontrast ------------------------------ */
-  --text: #e9eff7;
-  --text-leise: #93a5be;
-  --text-blau: #6fa8f5;
-  --text-gelb: #ffc53d;
-  --text-rot: #ff6b5e;
+  /* --- Zustände, nur als Punkt oder Linie -------------------------------- */
+  --ok: #4f8ff0;
+  --warnung: #d6a53c;
+  --kritisch: #e0574c;
 
-  /* --- Füllungen für Zustände ------------------------------------------- */
-  --blau-weich: rgba(44, 123, 229, 0.13);
-  --gelb-weich: rgba(245, 179, 1, 0.13);
-  --rot-weich: rgba(226, 58, 46, 0.13);
-  --blau-rand: rgba(111, 168, 245, 0.38);
-  --gelb-rand: rgba(255, 197, 61, 0.38);
-  --rot-rand: rgba(255, 107, 94, 0.38);
+  /* --- Akzent, sparsam --------------------------------------------------- */
+  --akzent: #4f8ff0;
+  --akzent-still: rgba(79, 143, 240, 0.14);
 
-  /* --- Knöpfe ----------------------------------------------------------- */
-  --knopf-haupt: #2670d6;
-  --knopf-haupt-hover: #1e5ab8;
-  --knopf-haupt-aktiv: #1b51a6;
+  /* --- Knöpfe: hell auf dunkel, statt bunt ------------------------------- */
+  --knopf-haupt: #e9eaec;
+  --knopf-haupt-hover: #ffffff;
+  --knopf-haupt-schrift: #0b0c0e;
 
-  /* --- Abstände, dicht wie ein Arbeitswerkzeug --------------------------- */
+  /* --- Abstände ---------------------------------------------------------- */
   --raum-1: 4px;
   --raum-2: 8px;
   --raum-3: 12px;
@@ -54,33 +42,33 @@
   --raum-6: 32px;
   --raum-7: 48px;
 
-  /* --- Radien ----------------------------------------------------------- */
-  --radius-1: 6px;
-  --radius-2: 10px;
-  --radius-3: 14px;
+  /* --- Radien, klein und ruhig ------------------------------------------ */
+  --radius-1: 4px;
+  --radius-2: 6px;
+  --radius-3: 8px;
   --radius-rund: 999px;
 
   /* --- Schrift ---------------------------------------------------------- */
-  --schrift: "Fira Sans", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --schrift-zahl: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --schrift: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --schrift-zahl: Inter, system-ui, sans-serif;
 
   --gr-micro: 11px;
   --gr-klein: 12px;
   --gr-neben: 13px;
-  --gr-basis: 15px;
-  --gr-gross: 17px;
-  --gr-titel: 20px;
-  --gr-zahl: 28px;
-  --gr-zustand: clamp(20px, 1.1rem + 1vw, 26px);
+  --gr-basis: 14px;
+  --gr-gross: 16px;
+  --gr-titel: 19px;
+  --gr-zahl: 26px;
+  --gr-zustand: 20px;
 
-  /* --- Tiefe ------------------------------------------------------------ */
-  --schatten-1: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --schatten-2: 0 2px 4px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.28);
-  --schatten-3: 0 10px 34px rgba(0, 0, 0, 0.45);
+  /* --- Tiefe: fast keine -------------------------------------------------- */
+  --schatten-1: none;
+  --schatten-2: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --schatten-3: 0 8px 28px rgba(0, 0, 0, 0.55);
 
-  /* --- Bewegung, kurz und sachlich -------------------------------------- */
-  --zeit-schnell: 120ms;
-  --zeit: 180ms;
+  /* --- Bewegung ---------------------------------------------------------- */
+  --zeit-schnell: 100ms;
+  --zeit: 160ms;
   --kurve: cubic-bezier(0.2, 0, 0.2, 1);
 
   color-scheme: dark;
@@ -125,14 +113,18 @@ h3 {
 
 h1 {
   font-size: var(--gr-titel);
+  font-weight: 550;
 }
 
 h2 {
-  font-size: var(--gr-gross);
+  font-size: var(--gr-basis);
+  font-weight: 550;
+  letter-spacing: 0;
 }
 
 h3 {
-  font-size: var(--gr-basis);
+  font-size: var(--gr-neben);
+  font-weight: 550;
 }
 
 p {
@@ -140,7 +132,7 @@ p {
 }
 
 a {
-  color: var(--text-blau);
+  color: var(--text);
   text-underline-offset: 3px;
 }
 
@@ -166,7 +158,7 @@ th,
 
 /* Ein sichtbarer Fokusrahmen ist Pflicht, nicht Zierde. */
 :focus-visible {
-  outline: 2px solid var(--text-blau);
+  outline: 2px solid var(--text);
   outline-offset: 2px;
   border-radius: var(--radius-1);
 }
@@ -243,9 +235,9 @@ th,
   border-radius: var(--radius-2);
   display: grid;
   place-items: center;
-  background: linear-gradient(140deg, var(--blau), #1b4f96);
-  color: #fff;
-  box-shadow: var(--schatten-1);
+  background: var(--flaeche-hoch);
+  border: 1px solid var(--rand-stark);
+  color: var(--text);
 }
 
 .markeName {
@@ -257,7 +249,7 @@ th,
 }
 
 .markeUnter {
-  display: block;
+  display: none;
   color: var(--text-leise);
   font-size: var(--gr-klein);
   font-weight: 400;
@@ -339,22 +331,26 @@ th,
   border-color: var(--rand-stark);
 }
 
+.navKnopfAktiv .navZeichen {
+  opacity: 1;
+}
+
 .navZeichen {
   color: currentColor;
   opacity: 0.85;
 }
 
 .navZahl {
-  min-width: 20px;
-  padding: 0 6px;
-  border-radius: var(--radius-rund);
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-1);
   font-size: var(--gr-micro);
-  font-weight: 600;
-  line-height: 18px;
+  font-weight: 550;
+  line-height: 17px;
   text-align: center;
-  background: var(--rot-weich);
-  color: var(--text-rot);
-  border: 1px solid var(--rot-rand);
+  background: var(--flaeche-hoch);
+  color: var(--text-leise);
+  border: 1px solid var(--rand-stark);
   font-variant-numeric: tabular-nums;
 }
 
@@ -409,14 +405,16 @@ th,
   border: 1px solid var(--rand);
   border-radius: var(--radius-3);
   padding: var(--raum-4);
-  box-shadow: var(--schatten-1);
+  box-shadow: none;
 }
 
 .karteKopf {
   display: flex;
   align-items: center;
   gap: var(--raum-3);
-  margin-bottom: var(--raum-4);
+  margin: calc(var(--raum-4) * -1) calc(var(--raum-4) * -1) var(--raum-4);
+  padding: var(--raum-3) var(--raum-4);
+  border-bottom: 1px solid var(--rand);
   flex-wrap: wrap;
 }
 
@@ -451,12 +449,12 @@ th,
   position: relative;
   border-radius: var(--radius-3);
   border: 1px solid var(--rand);
+  background: var(--flaeche);
   padding: var(--raum-5);
   display: flex;
   gap: var(--raum-4);
   align-items: flex-start;
   overflow: hidden;
-  box-shadow: var(--schatten-2);
 }
 
 .zustand::before {
@@ -465,37 +463,31 @@ th,
   left: 0;
   top: 0;
   bottom: 0;
-  width: 4px;
+  width: 2px;
   background: currentColor;
 }
 
 .zustandBlau {
-  color: var(--blau);
-  background: linear-gradient(120deg, var(--blau-weich), rgba(44, 123, 229, 0.03) 60%), var(--flaeche);
-  border-color: var(--blau-rand);
+  color: var(--ok);
 }
 
 .zustandGelb {
-  color: var(--gelb);
-  background: linear-gradient(120deg, var(--gelb-weich), rgba(245, 179, 1, 0.03) 60%), var(--flaeche);
-  border-color: var(--gelb-rand);
+  color: var(--warnung);
 }
 
 .zustandRot {
-  color: var(--rot);
-  background: linear-gradient(120deg, var(--rot-weich), rgba(226, 58, 46, 0.03) 60%), var(--flaeche);
-  border-color: var(--rot-rand);
+  color: var(--kritisch);
 }
 
 .zustandZeichen {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
   border-radius: var(--radius-2);
   display: grid;
   place-items: center;
-  background: color-mix(in srgb, currentColor 16%, transparent);
-  border: 1px solid color-mix(in srgb, currentColor 34%, transparent);
+  background: var(--flaeche-hoch);
+  border: 1px solid var(--rand);
 }
 
 .zustandText {
@@ -504,7 +496,7 @@ th,
 }
 
 .zustandText h1 {
-  font-size: var(--gr-zustand);
+  font-size: 18px;
   color: var(--text);
   letter-spacing: -0.02em;
 }
@@ -522,7 +514,7 @@ th,
   gap: var(--raum-2) var(--raum-4);
   margin-top: var(--raum-3);
   padding-top: var(--raum-3);
-  border-top: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-top: 1px solid var(--rand);
 }
 
 .zustandFakt {
@@ -534,11 +526,10 @@ th,
 }
 
 .zustandFaktWert {
-  font-family: var(--schrift-zahl);
-  font-variant-ligatures: none;
   font-size: var(--gr-gross);
-  font-weight: 600;
+  font-weight: 550;
   color: var(--text);
+  letter-spacing: -0.01em;
 }
 
 .zustandTat {
@@ -571,10 +562,10 @@ th,
 }
 
 .kennzahlName {
-  color: var(--text-leise);
-  font-size: var(--gr-klein);
+  color: var(--text-still);
+  font-size: var(--gr-micro);
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   display: flex;
   align-items: center;
@@ -582,24 +573,19 @@ th,
 }
 
 .kennzahlWert {
-  font-family: var(--schrift-zahl);
-  font-variant-ligatures: none;
   font-size: var(--gr-zahl);
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
 }
 
-.kennzahlWertBlau {
-  color: var(--text-blau);
-}
-
+.kennzahlWertBlau,
 .kennzahlWertGelb {
-  color: var(--text-gelb);
+  color: var(--text);
 }
 
 .kennzahlWertRot {
-  color: var(--text-rot);
+  color: var(--kritisch);
 }
 
 .kennzahlHinweis {
@@ -618,7 +604,7 @@ th,
 .kennzahlBalkenFuellung {
   height: 100%;
   border-radius: var(--radius-rund);
-  background: var(--blau);
+  background: var(--rand-stark);
 }
 
 /* ============================================================================
@@ -629,33 +615,31 @@ th,
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px 3px 8px;
-  border-radius: var(--radius-rund);
+  padding: 2px 8px 2px 6px;
+  border-radius: var(--radius-1);
   font-size: var(--gr-klein);
-  font-weight: 500;
-  border: 1px solid var(--rand-stark);
+  font-weight: 450;
+  border: 1px solid var(--rand);
   background: var(--flaeche-hoch);
   color: var(--text-leise);
   white-space: nowrap;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
-.etikettBlau {
-  color: var(--text-blau);
-  border-color: var(--blau-rand);
-  background: var(--blau-weich);
+.etikettBlau svg {
+  color: var(--ok);
 }
 
-.etikettGelb {
-  color: var(--text-gelb);
-  border-color: var(--gelb-rand);
-  background: var(--gelb-weich);
+.etikettGelb svg {
+  color: var(--warnung);
+}
+
+.etikettRot svg {
+  color: var(--kritisch);
 }
 
 .etikettRot {
-  color: var(--text-rot);
-  border-color: var(--rot-rand);
-  background: var(--rot-weich);
+  color: var(--text);
 }
 
 .etikettZeichen {
@@ -713,8 +697,8 @@ th,
 }
 
 .knopf:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--flaeche-hoch) 70%, var(--blau) 30%);
-  border-color: var(--blau-rand);
+  background: var(--flaeche-hoch);
+  border-color: var(--rand-stark);
 }
 
 .knopf:active:not(:disabled) {
@@ -729,29 +713,28 @@ th,
 .knopfHaupt {
   background: var(--knopf-haupt);
   border-color: var(--knopf-haupt);
-  color: #fff;
-  font-weight: 600;
+  color: var(--knopf-haupt-schrift);
+  font-weight: 550;
 }
 
 .knopfHaupt:hover:not(:disabled) {
   background: var(--knopf-haupt-hover);
   border-color: var(--knopf-haupt-hover);
-  box-shadow: var(--schatten-2);
 }
 
 .knopfHaupt:active:not(:disabled) {
-  background: var(--knopf-haupt-aktiv);
+  background: #d5d7da;
 }
 
 .knopfWarnung {
-  color: var(--text-rot);
-  border-color: var(--rot-rand);
-  background: var(--rot-weich);
+  color: var(--kritisch);
+  border-color: var(--rand-stark);
+  background: var(--flaeche-hoch);
 }
 
 .knopfWarnung:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--rot-weich) 60%, var(--rot) 20%);
-  border-color: var(--text-rot);
+  border-color: var(--kritisch);
+  background: var(--flaeche-hoch);
 }
 
 .knopfLeise {
@@ -815,7 +798,6 @@ th,
 
 .zeileOffen {
   border-color: var(--rand-stark);
-  box-shadow: var(--schatten-2);
 }
 
 .zeileKopf {
@@ -892,10 +874,10 @@ th,
 }
 
 .wertPaarName {
-  color: var(--text-leise);
-  font-size: var(--gr-klein);
+  color: var(--text-still);
+  font-size: var(--gr-micro);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
 }
 
 .wertPaarWert {
@@ -909,7 +891,7 @@ th,
 
 /* Kleiner Balken, der Zuverlässigkeit auf einen Blick zeigt. */
 .quoteBalken {
-  height: 6px;
+  height: 4px;
   width: 64px;
   border-radius: var(--radius-rund);
   background: var(--flaeche-hoch);
@@ -971,8 +953,9 @@ th,
 }
 
 .klartext {
-  background: var(--rot-weich);
-  border: 1px solid var(--rot-rand);
+  background: var(--flaeche-hoch);
+  border: 1px solid var(--rand);
+  border-left: 2px solid var(--kritisch);
   border-radius: var(--radius-1);
   padding: var(--raum-3);
   font-size: var(--gr-neben);
@@ -983,7 +966,7 @@ th,
 }
 
 .klartext svg {
-  color: var(--text-rot);
+  color: var(--kritisch);
   flex: 0 0 auto;
   margin-top: 2px;
 }
@@ -1050,16 +1033,15 @@ details.technisch[open] summary .pfeil {
 }
 
 .diagrammZiel {
-  stroke: var(--text-blau);
+  stroke: var(--rand-stark);
   stroke-width: 1;
-  stroke-dasharray: 4 4;
-  opacity: 0.7;
+  stroke-dasharray: 3 3;
 }
 
 .diagrammLinie {
   fill: none;
-  stroke: var(--blau);
-  stroke-width: 2;
+  stroke: var(--akzent);
+  stroke-width: 1.5;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
@@ -1121,16 +1103,15 @@ details.technisch[open] summary .pfeil {
 }
 
 .legendeLinie {
-  width: 16px;
-  height: 2px;
-  background: var(--blau);
-  border-radius: 2px;
+  width: 14px;
+  height: 1.5px;
+  background: var(--akzent);
 }
 
 .legendeZiel {
-  width: 16px;
+  width: 14px;
   height: 0;
-  border-top: 2px dashed var(--text-blau);
+  border-top: 1px dashed var(--rand-stark);
 }
 
 /* ============================================================================
@@ -1181,7 +1162,7 @@ details.technisch[open] summary .pfeil {
 }
 
 .bildKachel:hover {
-  border-color: var(--blau);
+  border-color: var(--akzent);
 }
 
 .bildKachel img {
@@ -1221,20 +1202,20 @@ details.technisch[open] summary .pfeil {
    ========================================================================= */
 
 .fehlerKarte {
-  border-left: 3px solid var(--rand);
+  border-left: 2px solid var(--rand);
 }
 
 .fehlerKritisch,
 .fehlerHoch {
-  border-left-color: var(--rot);
+  border-left-color: var(--kritisch);
 }
 
 .fehlerMittel {
-  border-left-color: var(--gelb);
+  border-left-color: var(--warnung);
 }
 
 .fehlerNiedrig {
-  border-left-color: var(--blau);
+  border-left-color: var(--rand-stark);
 }
 
 .fehlerTitel {
@@ -1289,7 +1270,7 @@ input::placeholder {
 
 input:hover,
 select:hover {
-  border-color: var(--blau-rand);
+  border-color: var(--rand-stark);
 }
 
 select {
@@ -1331,7 +1312,7 @@ select {
   display: grid;
   place-items: center;
   padding: var(--raum-5) var(--raum-4);
-  background: radial-gradient(1000px 500px at 50% -10%, rgba(44, 123, 229, 0.14), transparent 70%), var(--grund);
+  background: var(--grund);
 }
 
 .anmeldungKarte {
@@ -1361,11 +1342,13 @@ select {
   border-radius: var(--radius-2);
   padding: var(--raum-3);
   font-size: var(--gr-neben);
-  border: 1px solid var(--rand-stark);
+  border: 1px solid var(--rand);
+  border-left-width: 2px;
   background: var(--flaeche-hoch);
   display: flex;
   gap: var(--raum-3);
   align-items: flex-start;
+  color: var(--text);
 }
 
 .meldung svg {
@@ -1374,30 +1357,27 @@ select {
 }
 
 .meldungRot {
-  background: var(--rot-weich);
-  border-color: var(--rot-rand);
+  border-left-color: var(--kritisch);
 }
 
 .meldungRot svg {
-  color: var(--text-rot);
+  color: var(--kritisch);
 }
 
 .meldungGelb {
-  background: var(--gelb-weich);
-  border-color: var(--gelb-rand);
+  border-left-color: var(--warnung);
 }
 
 .meldungGelb svg {
-  color: var(--text-gelb);
+  color: var(--warnung);
 }
 
 .meldungBlau {
-  background: var(--blau-weich);
-  border-color: var(--blau-rand);
+  border-left-color: var(--rand-stark);
 }
 
 .meldungBlau svg {
-  color: var(--text-blau);
+  color: var(--text-leise);
 }
 
 .hinweise {
@@ -1437,15 +1417,15 @@ select {
 }
 
 .hinweisRot {
-  border-color: var(--rot-rand);
+  border-color: var(--rand-stark);
 }
 
 .hinweisRot .hinweisZeichen {
-  color: var(--text-rot);
+  color: var(--text);
 }
 
 .hinweisBlau .hinweisZeichen {
-  color: var(--text-blau);
+  color: var(--text);
 }
 
 .hinweisZeichen {
@@ -1569,11 +1549,11 @@ td {
 }
 
 th {
-  color: var(--text-leise);
+  color: var(--text-still);
   font-weight: 500;
-  font-size: var(--gr-klein);
+  font-size: var(--gr-micro);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
@@ -1677,7 +1657,7 @@ tbody tr:last-child td {
   }
 
   .navKnopfAktiv {
-    color: var(--text-blau);
+    color: var(--text);
   }
 
   .navZahl {

@@ -92,9 +92,9 @@ export function Pfeil({ offen }: { offen: boolean }) {
 /** Farbe des Zuverlässigkeitsbalkens: ab 95 in Ordnung, ab 80 hinschauen. */
 export function quoteFarbe(quote: number | null): string {
   if (quote === null) return 'var(--rand-stark)';
-  if (quote >= 95) return 'var(--blau)';
-  if (quote >= 80) return 'var(--gelb)';
-  return 'var(--rot)';
+  if (quote >= 95) return 'var(--ok)';
+  if (quote >= 80) return 'var(--warnung)';
+  return 'var(--kritisch)';
 }
 
 export function QuoteBalken({ quote }: { quote: number | null }) {

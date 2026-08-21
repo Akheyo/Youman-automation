@@ -236,18 +236,20 @@ src/
 Die Oberfläche folgt einem festen System, damit sie überall gleich aussieht und
 sich gleich verhält. Alle Werte stehen als Variablen in `src/styles/global.css`.
 
-**Farben.** Blau heißt „in Ordnung", Gelb heißt „hinschauen", Rot heißt „kaputt",
-bewusst ohne Grün. Für Flächen und Zeichen gelten die Logofarben, für Text
-etwas hellere Töne (`--text-blau`, `--text-gelb`, `--text-rot`), damit jede
-Schrift auf ihrem Untergrund mindestens 4,5 zu 1 Kontrast hat.
+**Farben.** Die Oberfläche ist fast einfarbig: neutrale Grautöne, keine
+Farbflächen, keine Verläufe, keine Schatten. Farbe erscheint nur dort, wo sie
+etwas bedeutet, und dann als kleines Zeichen oder als schmale Kante: Blau für
+in Ordnung, Gelb für hinschauen, Rot für kaputt. Der Hauptknopf ist hell auf
+dunkel statt farbig, damit die einzige starke Fläche im Bild die wichtigste
+Handlung ist.
 
-**Zustand nie allein über Farbe.** Jedes Etikett zeigt Farbe, Zeichen und
-deutsches Wort zusammen. Wer Farben schlecht unterscheidet, liest trotzdem
-sofort, was los ist.
+**Zustand nie allein über Farbe.** Jedes Etikett zeigt Zeichen und deutsches
+Wort, die Farbe steckt nur im Zeichen. Wer Farben schlecht unterscheidet,
+liest trotzdem sofort, was los ist.
 
-**Schrift.** Fira Sans für Texte, Fira Code für alle Zahlen. Zahlen laufen mit
-fester Zeichenbreite, damit in Listen und Tabellen nichts springt. Fällt die
-Schrift aus, greifen die Systemschriften.
+**Schrift.** Inter in wenigen Schnitten, Zahlen mit fester Zeichenbreite, damit
+in Listen und Tabellen nichts springt. Beschriftungen klein, versal und ruhig,
+Werte groß, aber nicht fett.
 
 **Abstände und Radien** kommen aus einer dichten Skala (4, 8, 12, 16, 24, 32,
 48 Pixel), passend zu einem Werkzeug, in dem viel auf einen Blick sichtbar

@@ -114,8 +114,8 @@ export default function Trend({ tage }: { tage: Trendtag[] }) {
         >
           <defs>
             <linearGradient id="verlaufFuellung" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--blau)" stopOpacity="0.28" />
-              <stop offset="100%" stopColor="var(--blau)" stopOpacity="0.02" />
+              <stop offset="0%" stopColor="var(--akzent)" stopOpacity="0.10" />
+              <stop offset="100%" stopColor="var(--akzent)" stopOpacity="0" />
             </linearGradient>
           </defs>
 
@@ -161,10 +161,10 @@ export default function Trend({ tage }: { tage: Trendtag[] }) {
                 key={`p${punkt.index}`}
                 cx={punkt.x}
                 cy={punkt.y}
-                r={aktiv === punkt.index ? 5 : 3}
-                fill={aktiv === punkt.index ? 'var(--text-blau)' : 'var(--grund)'}
-                stroke="var(--blau)"
-                strokeWidth={2}
+                r={aktiv === punkt.index ? 4 : 2.5}
+                fill={aktiv === punkt.index ? 'var(--akzent)' : 'var(--grund)'}
+                stroke="var(--akzent)"
+                strokeWidth={1.5}
               />
             ) : null,
           )}
