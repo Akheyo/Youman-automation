@@ -84,16 +84,58 @@ describe("PrefilledTextRenderer", () => {
     expect(value()).toBe("Tor 3");
   });
 
-  it("offers the other addresses of the customer", async () => {
+  const twoAddresses = () =>
     addressesReturn([
       option("302", "Gewerbepark Süd 4a\n51149 Köln", "Lieferadresse (Standard)"),
       option("301", "Deutzer Freiheit 72\n50679 Köln", "Rechnungsadresse"),
     ]);
+
+  it("offers the other addresses of the customer", async () => {
+    twoAddresses();
     render(<Harness defaults={{ customerId: "118", deliveryAddress: "" }} />);
     await waitFor(() => expect(value()).toContain("Gewerbepark"));
 
     await userEvent.selectOptions(screen.getByRole("combobox"), "301");
     expect(value()).toBe("Deutzer Freiheit 72\n50679 Köln");
+  });
+
+  it("shows which address the text comes from", async () => {
+    twoAddresses();
+    render(<Harness defaults={{ customerId: "118", deliveryAddress: "" }} />);
+    await waitFor(() => expect(value()).toContain("Gewerbepark"));
+    const select = screen.getByRole("combobox") as HTMLSelectElement;
+    expect(select.value).toBe("302");
+
+    await userEvent.selectOptions(select, "301");
+    expect(select.value).toBe("301");
+  });
+
+  it("switches to manual entry and clears the field", async () => {
+    twoAddresses();
+    render(<Harness defaults={{ customerId: "118", deliveryAddress: "" }} />);
+    await waitFor(() => expect(value()).toContain("Gewerbepark"));
+
+    await userEvent.selectOptions(screen.getByRole("combobox"), "__manuell__");
+    expect(value()).toBe("");
+    expect(screen.getByRole("textbox")).toHaveFocus();
+  });
+
+  it("falls back to manual as soon as the text is edited", async () => {
+    // Sonst behauptete die Auswahl weiter, der Text stamme aus dem Kundenstamm.
+    twoAddresses();
+    render(<Harness defaults={{ customerId: "118", deliveryAddress: "" }} />);
+    await waitFor(() => expect(value()).toContain("Gewerbepark"));
+
+    await userEvent.type(screen.getByRole("textbox"), ", Tor 3");
+    expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("__manuell__");
+  });
+
+  it("finds the address again despite stray whitespace", async () => {
+    twoAddresses();
+    render(<Harness defaults={{ customerId: "118", deliveryAddress: "  Deutzer Freiheit 72\n50679 Köln  " }} />);
+    await waitFor(() =>
+      expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("301")
+    );
   });
 
   it("shows no selector for a single address", async () => {

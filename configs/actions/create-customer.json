@@ -300,38 +300,23 @@
       "actionId": "action-create-customer",
       "key": "address.countryCode",
       "label": "Land",
-      "type": "dropdown",
+      "type": "searchable_select",
       "required": true,
       "defaultValue": "DE",
+      "placeholder": "Land suchen (Name oder Kürzel)",
       "order": 10,
       "groupId": "address",
       "width": "third",
-      "options": [
-        {
-          "value": "DE",
-          "label": "Deutschland"
-        },
-        {
-          "value": "AT",
-          "label": "Österreich"
-        },
-        {
-          "value": "CH",
-          "label": "Schweiz"
-        },
-        {
-          "value": "FR",
-          "label": "Frankreich"
-        },
-        {
-          "value": "GB",
-          "label": "Großbritannien"
-        },
-        {
-          "value": "US",
-          "label": "USA"
-        }
-      ]
+      "dynamicSource": {
+        "endpoint": "/api/v1/search/countries",
+        "searchParam": "q",
+        "valueField": "code",
+        "labelField": "name",
+        "descriptionField": "code",
+        "minChars": 0,
+        "debounceMs": 0,
+        "pageSize": 300
+      }
     },
     {
       "id": "f-currency",

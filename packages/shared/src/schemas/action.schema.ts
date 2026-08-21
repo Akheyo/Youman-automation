@@ -108,6 +108,15 @@ export const CreateQuoteSchema = z.object({
    * die nachgeschlagene Adresse, sonst wäre die Bearbeitung wirkungslos.
    */
   deliveryAddress: optionalString(),
+  /**
+   * Zahlungsart des Angebots (z. B. "Rechnung", "Vorauszahlung").
+   *
+   * Leer bedeutet: Es gilt der Standardtext des Mandanten aus den
+   * Einstellungen. Bewusst freier Text und keine feste Auswahl, damit ein
+   * Mandant weitere Zahlungsarten ergaenzen kann, ohne dass die App neu
+   * ausgeliefert werden muss - die Auswahl steht in der Aktionskonfiguration.
+   */
+  paymentMethod: optionalString(),
   currency: z.string().length(3).default("EUR"),
   /** Sprache des erzeugten Dokuments – wählt Vorlage, Texte und Zahlenformat. */
   language: z.enum(QUOTE_LANGUAGES).default("de"),

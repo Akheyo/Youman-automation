@@ -11,6 +11,15 @@ interface Props { field: FieldDefinition; disabled?: boolean | undefined }
 
 interface Option { id: string; [key: string]: unknown }
 
+/** Wert der Auswahl für "steht in keinem Kundenstamm". */
+const MANUAL = "__manuell__";
+
+/** Vergleich, der an Leerzeichen und Zeilenenden nicht scheitert. */
+function sameAddress(a: string, b: string | undefined): boolean {
+  const norm = (v: string) => v.replace(/\r\n/g, "\n").trim();
+  return !!b && norm(a) === norm(b);
+}
+
 /**
  * Mehrzeiliges Textfeld, das sich aus einem Endpunkt vorbelegt und danach frei
  * bearbeitbar bleibt – für die Lieferanschrift eines Angebots.
@@ -61,6 +70,7 @@ export function PrefilledTextRenderer({ field, disabled }: Props) {
   // Beim Weiterarbeiten an einem Angebot steht der Text bereits. Er gilt dann
   // als für diesen Kunden gesetzt und wird nicht überschrieben.
   const filledFor = useRef<string | null>(currentValue?.trim() ? depKey : null);
+  const box = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     if (options.length === 0) return;
@@ -70,6 +80,16 @@ export function PrefilledTextRenderer({ field, disabled }: Props) {
     // textOf und setValue sind über den Renderlauf stabil.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options, depKey, field.key]);
+
+  // Die Auswahl zeigt, woher der Text stammt: eine Anschrift aus dem
+  // Kundenstamm oder eine von Hand eingetragene. Ein Feld, das immer auf leer
+  // zurückspringt, verschweigt genau das.
+  const selectedId =
+    options.find((o) => sameAddress(textOf(o), currentValue))?.id !== undefined
+      ? String(options.find((o) => sameAddress(textOf(o), currentValue))!.id)
+      : MANUAL;
+
+  const { ref: registerRef, ...rest } = register(field.key);
 
   return (
     <div className="space-y-1.5">
@@ -81,15 +101,20 @@ export function PrefilledTextRenderer({ field, disabled }: Props) {
 
       {options.length > 1 && (
         <select
+          aria-label={`${field.label} auswählen`}
           disabled={disabled}
-          value=""
+          value={selectedId}
           onChange={(e) => {
+            if (e.target.value === MANUAL) {
+              setValue(field.key, "", { shouldValidate: true, shouldDirty: true });
+              box.current?.focus();
+              return;
+            }
             const picked = options.find((o) => String(o.id) === e.target.value);
             if (picked) setValue(field.key, textOf(picked), { shouldValidate: true, shouldDirty: true });
           }}
           className="w-full h-9 rounded-md border border-input bg-input px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
         >
-          <option value="">Andere Anschrift aus dem Kundenstamm übernehmen…</option>
           {options.map((option) => (
             <option key={String(option.id)} value={String(option.id)}>
               {String(option[source?.descriptionField ?? "description"] ?? "")}
@@ -97,11 +122,16 @@ export function PrefilledTextRenderer({ field, disabled }: Props) {
               {textOf(option).replace(/\n/g, ", ")}
             </option>
           ))}
+          <option value={MANUAL}>Manuell eingeben</option>
         </select>
       )}
 
       <textarea
-        {...register(field.key)}
+        {...rest}
+        ref={(el) => {
+          registerRef(el);
+          box.current = el;
+        }}
         disabled={disabled}
         placeholder={field.placeholder}
         rows={3}

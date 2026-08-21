@@ -81,3 +81,25 @@ export const QUOTE_TEXT_DEFAULTS_EN: Record<keyof typeof QUOTE_TEXT_DEFAULTS, st
   quotePaymentTerms: "7 days net",
   quoteShippingMethod: "Forwarding agent or collection",
 };
+
+/**
+ * Englische Entsprechung der im Formular auswählbaren Zahlungsarten.
+ *
+ * Die Auswahl steht als deutscher Klartext in der Aktionskonfiguration, damit
+ * ein Mandant weitere Zahlungsarten ergänzen kann, ohne dass die App neu
+ * ausgeliefert werden muss. Auf einem englischen Angebot stünde sonst ein
+ * deutsches Wort. Unbekannte Einträge bleiben unverändert – ein selbst
+ * ergänzter Text ist besser als eine falsche Übersetzung.
+ */
+const PAYMENT_METHODS_EN: Record<string, string> = {
+  Rechnung: "Invoice",
+  Vorauszahlung: "Prepayment",
+  Vorkasse: "Prepayment",
+  Nachnahme: "Cash on delivery",
+  Lastschrift: "Direct debit",
+};
+
+export function translatePaymentMethod(value: string, language: QuoteLanguage): string {
+  if (language !== "en") return value;
+  return PAYMENT_METHODS_EN[value.trim()] ?? value;
+}

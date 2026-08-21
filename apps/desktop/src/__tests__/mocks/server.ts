@@ -46,6 +46,16 @@ export const handlers = [
     return HttpResponse.json({ ...QUOTE_EXECUTION, actionId: body.actionId });
   }),
 
+  http.get(`${API}/search/countries`, ({ request }) => {
+    const q = (new URL(request.url).searchParams.get("q") ?? "").toLowerCase();
+    const all = [
+      { code: "DE", name: "Deutschland", externalId: "1" },
+      { code: "AT", name: "Österreich", externalId: "2" },
+      { code: "JP", name: "Japan", externalId: "77" },
+    ];
+    const items = q ? all.filter((c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().startsWith(q)) : all;
+    return HttpResponse.json({ items, total: items.length, page: 1, pageSize: items.length, hasMore: false, searchDurationMs: 1 });
+  }),
   http.get(`${API}/search/customers`, () => HttpResponse.json(CUSTOMER_SEARCH)),
   http.get(`${API}/search/products`, () => HttpResponse.json(PRODUCT_SEARCH)),
   // Wie die uebrigen Suchen: Die Antwort traegt items. Das blanke Array hier

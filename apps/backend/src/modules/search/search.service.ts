@@ -1,6 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ConnectorsService } from "../connectors/connectors.service";
-import type { SearchRequest, SearchResult, Customer, Product, Address } from "@youman/shared";
+import { FALLBACK_COUNTRIES } from "./countries";
+import type { SearchRequest, SearchResult, Customer, Product, Address, Country } from "@youman/shared";
 
 /** Adresse mit den fertigen Anzeige- und Uebernahmetexten. */
 export interface AddressOption extends Address {
@@ -53,6 +54,8 @@ function byDeliverySuitability(a: Address, b: Address): number {
 
 @Injectable()
 export class SearchService {
+  private readonly logger = new Logger(SearchService.name);
+
   constructor(private readonly connectors: ConnectorsService) {}
 
   async searchCustomers(tenantId: string, req: SearchRequest): Promise<SearchResult<Customer>> {
@@ -82,6 +85,47 @@ export class SearchService {
       .slice()
       .sort(byDeliverySuitability)
       .map(toOption);
+    return {
+      items,
+      total: items.length,
+      page: 1,
+      pageSize: items.length,
+      hasMore: false,
+      searchDurationMs: Date.now() - startedAt,
+    };
+  }
+
+  /**
+   * Laenderauswahl fuer "Kunde anlegen".
+   *
+   * Die Liste kommt vom angebundenen System, weil dort auch die Landes-ID
+   * gepflegt wird, mit der adept die Adresse anlegt. Eine fest eingebaute Liste
+   * war auf sechs Laender beschraenkt, und alles darueber hinaus haette der
+   * Connector still nach Deutschland gebogen.
+   */
+  async getCountries(tenantId: string, query = ""): Promise<SearchResult<Country>> {
+    const startedAt = Date.now();
+    const connector = await this.connectors.getConnector(tenantId);
+    let items = FALLBACK_COUNTRIES;
+    if (typeof connector.getCountries === "function") {
+      try {
+        const live = await connector.getCountries();
+        if (live.length > 0) items = live;
+      } catch (err) {
+        this.logger.warn(
+          `Laenderliste des ERP nicht abrufbar, feste Liste wird verwendet: ${err instanceof Error ? err.message : err}`
+        );
+      }
+    }
+    // Tippen filtert: Bei ueber 200 Laendern ist Scrollen keine Suche. Der
+    // Code zaehlt mit, damit "DE" genauso findet wie "Deutsch".
+    const needle = query.trim().toLowerCase();
+    if (needle) {
+      items = items.filter(
+        (c) => c.name.toLowerCase().includes(needle) || c.code.toLowerCase().startsWith(needle)
+      );
+    }
+
     return {
       items,
       total: items.length,

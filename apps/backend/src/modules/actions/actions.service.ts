@@ -7,7 +7,7 @@ import { AuditService } from "../audit/audit.service";
 import { TemplatesService } from "../templates/templates.service";
 import { resolveFieldMapping } from "../templates/document-mapper";
 import { formatNumber } from "../templates/formatters";
-import { QUOTE_TEXT_DEFAULTS, QUOTE_TEXT_DEFAULTS_EN } from "@youman/shared";
+import { QUOTE_TEXT_DEFAULTS, QUOTE_TEXT_DEFAULTS_EN, translatePaymentMethod } from "@youman/shared";
 import type {
   ActionHistoryEntry,
   QuoteLanguage,
@@ -666,7 +666,10 @@ export class ActionsService {
       rabatt: formatNumber(zwischensumme - endbetrag, dto.language),
       endbetrag: formatNumber(endbetrag, dto.language),
       lieferdatum: dto.lineItems.find((i) => i.deliveryDate)?.deliveryDate ?? texts.quoteDeliveryDate,
-      zahlungsart: texts.quotePaymentMethod,
+      // Im Formular gewaehlte Zahlungsart schlaegt den Standardtext des Mandanten.
+      zahlungsart: dto.paymentMethod?.trim()
+        ? translatePaymentMethod(dto.paymentMethod.trim(), dto.language)
+        : texts.quotePaymentMethod,
       zahlungsziel: texts.quotePaymentTerms,
       versandart: texts.quoteShippingMethod,
     };

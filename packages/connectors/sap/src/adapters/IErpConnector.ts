@@ -8,6 +8,7 @@ import type {
   Appointment,
   Note,
   Address,
+  Country,
   SearchResult,
   SearchRequest,
 } from "@youman/shared";
@@ -29,6 +30,15 @@ export interface IErpConnector {
   createCustomer(data: Omit<Customer, "id" | "externalId" | "createdAt" | "updatedAt">): Promise<Customer>;
   updateCustomer(id: string, data: Partial<Customer>): Promise<Customer>;
   getCustomerAddresses(customerId: string): Promise<Address[]>;
+
+  /**
+   * Laender, die das angebundene System kennt.
+   *
+   * Optional: Nicht jedes System kann seine Laenderliste ausgeben. Fehlt die
+   * Methode, greift die feste Liste im Backend. Bewusst nicht verpflichtend,
+   * damit die uebrigen Connectoren unveraendert bleiben.
+   */
+  getCountries?(): Promise<Country[]>;
   createCustomerAddress(customerId: string, address: Omit<Address, "id">): Promise<Address>;
 
   // Product operations

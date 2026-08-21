@@ -41,6 +41,11 @@ export class SearchController {
     });
   }
 
+  @Get("countries")
+  getCountries(@CurrentUser() user: JwtUser, @Query("q") q?: string) {
+    return this.searchService.getCountries(user.tenantId, q ?? "");
+  }
+
   @Get("customers/:id/addresses")
   getAddresses(@CurrentUser() user: JwtUser, @Param("id") id: string) {
     return this.searchService.getCustomerAddresses(user.tenantId, id);

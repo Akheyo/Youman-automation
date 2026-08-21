@@ -87,6 +87,15 @@ export interface PlentyAddressOption {
   value: string;
 }
 
+/** Eintrag aus /rest/orders/shipping/countries. */
+export interface PlentyCountry {
+  id: number;
+  name: string;
+  isoCode2: string;
+  isoCode3?: string;
+  names?: Array<{ language: string; name: string }>;
+}
+
 export interface PlentyAddress {
   id: number;
   name1?: string | null;

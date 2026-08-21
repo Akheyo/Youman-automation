@@ -1,5 +1,6 @@
 import type {
   Address,
+  Country,
   Appointment,
   Customer,
   FollowUpTask,
@@ -156,6 +157,17 @@ export class PlentyMockConnector implements IErpConnector {
     await this.delay(200);
     const c = await this.getCustomer(id);
     return { ...c, ...data, id: c.id, updatedAt: new Date().toISOString() };
+  }
+
+  /** Kleiner Ausschnitt – der Mock soll die Auswahl zeigen, nicht Plenty ersetzen. */
+  async getCountries(): Promise<Country[]> {
+    return [
+      { code: "DE", name: "Deutschland", externalId: "1" },
+      { code: "AT", name: "Österreich", externalId: "2" },
+      { code: "CH", name: "Schweiz", externalId: "4" },
+      { code: "NL", name: "Niederlande", externalId: "22" },
+      { code: "PL", name: "Polen", externalId: "24" },
+    ];
   }
 
   async getCustomerAddresses(customerId: string): Promise<Address[]> {

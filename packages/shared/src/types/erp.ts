@@ -44,6 +44,16 @@ export interface Address {
   contactPhone?: string;
 }
 
+/** Land, wie es das angebundene ERP kennt. */
+export interface Country {
+  /** ISO-3166-1 alpha-2, der Wert den adept speichert. */
+  code: string;
+  /** Anzeigename, wenn moeglich auf Deutsch. */
+  name: string;
+  /** Id im ERP – Plenty adressiert Laender ueber eine eigene Nummer. */
+  externalId: string;
+}
+
 export interface Product {
   id: string;
   externalId: string;

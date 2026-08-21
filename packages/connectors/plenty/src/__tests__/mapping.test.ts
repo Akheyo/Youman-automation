@@ -417,3 +417,25 @@ describe("pickDefaultSalesPrice – wählbarer Verkaufspreis", () => {
     expect(pickDefaultSalesPrice(withPrices([]), 35)).toBeUndefined();
   });
 });
+
+describe("Länderzuordnung", () => {
+  const base = { type: "billing" as const, street: "Hauptstr.", zip: "10115", city: "Berlin", isDefault: true };
+
+  it("uses the id list the ERP reported", () => {
+    // Ohne die Liste kennt der Connector nur 30 Länder.
+    const payload = buildAddressPayload({ ...base, countryCode: "JP" }, { JP: 77 });
+    expect(payload["countryId"]).toBe(77);
+  });
+
+  it("still knows the built-in countries without a list", () => {
+    expect(buildAddressPayload({ ...base, countryCode: "AT" })["countryId"]).toBe(2);
+    expect(buildAddressPayload({ ...base, countryCode: "at" })["countryId"]).toBe(2);
+  });
+
+  it("refuses an unknown country instead of silently using Germany", () => {
+    // Vorher wurde der Kunde wortlos in DE angelegt – der Fehler fiel erst beim
+    // Versand auf.
+    expect(() => buildAddressPayload({ ...base, countryCode: "JP" })).toThrow(/JP/);
+    expect(() => buildAddressPayload({ ...base, countryCode: "JP" })).toThrow(/nicht bekannt/);
+  });
+});

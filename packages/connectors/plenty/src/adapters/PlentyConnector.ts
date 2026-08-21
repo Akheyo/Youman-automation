@@ -1,6 +1,7 @@
 import type {
   Address,
   Appointment,
+  Country,
   Customer,
   FollowUpTask,
   Note,
@@ -25,6 +26,7 @@ import type {
   PlentyAddress,
   PlentyConfig,
   PlentyContact,
+  PlentyCountry,
   PlentyOrder,
   PlentyPagedResponse,
   PlentyVariation,
@@ -74,6 +76,11 @@ export class PlentyConnector implements IErpConnector {
   private readonly cfg: PlentyConfig;
   private readonly http: PlentyHttpClient;
   private readonly logger: PlentyLogger;
+
+  /** Länderliste des Systems, einmal geladen und dann gehalten. */
+  private countries: Country[] | null = null;
+  private countryIds: Record<string, number> | undefined;
+  private countryCodes: Record<number, string> | undefined;
 
   constructor(tenantId: string, config: PlentyConfig, deps: PlentyConnectorDeps = {}) {
     this.tenantId = tenantId;
@@ -207,7 +214,7 @@ export class PlentyConnector implements IErpConnector {
     const nameFields = buildPlentyNames(data);
     const created: PlentyAddress[] = [];
     for (const address of data.addresses ?? []) {
-      const addressPayload = { ...buildAddressPayload(address), ...nameFields };
+      const addressPayload = { ...buildAddressPayload(address, this.countryIds), ...nameFields };
       this.logger.debug(`Adress-Payload an Plenty: ${JSON.stringify(addressPayload)}`);
       const res = await this.http.post<PlentyAddress>(
         `/accounts/contacts/${contact.id}/addresses`,
@@ -229,18 +236,61 @@ export class PlentyConnector implements IErpConnector {
     return mapContactToCustomer(contact, this.tenantId);
   }
 
+  /**
+   * Länder, die dieses Plenty-System kennt – mit ihrer dortigen ID.
+   *
+   * Die Auswahl im Formular kam bisher aus einer festen Liste von sechs
+   * Ländern, und die Zuordnung Code → Plenty-ID kannte nur 30. Beides ist
+   * systemabhängig, deshalb wird die Liste hier abgefragt statt gepflegt.
+   * Sie ändert sich praktisch nie und wird für die Lebensdauer des Connectors
+   * gehalten; ein fehlgeschlagener Abruf wird nicht zwischengespeichert.
+   */
+  async getCountries(): Promise<Country[]> {
+    if (this.countries) return this.countries;
+    const res = await this.http.get<PlentyCountry[] | PlentyPagedResponse<PlentyCountry>>(
+      "/orders/shipping/countries"
+    );
+    const entries = Array.isArray(res) ? res : res.entries;
+    const countries = entries
+      .filter((c) => !!c.isoCode2)
+      .map((c) => ({
+        code: c.isoCode2.toUpperCase(),
+        // Plenty liefert die Übersetzungen unter names; ohne deutsche Fassung
+        // bleibt der englische Name – besser als eine leere Zeile.
+        name: c.names?.find((n) => n.language === "de")?.name?.trim() || c.name,
+        externalId: String(c.id),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, "de"));
+    this.countries = countries;
+    this.countryIds = Object.fromEntries(countries.map((c) => [c.code, Number(c.externalId)]));
+    this.countryCodes = Object.fromEntries(countries.map((c) => [Number(c.externalId), c.code]));
+    return countries;
+  }
+
+  /** Lädt die Länderliste, ohne dass ein Fehler den Aufrufer scheitern lässt. */
+  private async ensureCountries(): Promise<void> {
+    if (this.countries) return;
+    try {
+      await this.getCountries();
+    } catch {
+      // Notnagel-Tabelle in mapping.ts übernimmt.
+    }
+  }
+
   async getCustomerAddresses(customerId: string): Promise<Address[]> {
+    await this.ensureCountries();
     const res = await this.http.get<PlentyAddress[] | PlentyPagedResponse<PlentyAddress>>(
       `/accounts/contacts/${encodeURIComponent(customerId)}/addresses`
     );
     const entries = Array.isArray(res) ? res : res.entries;
-    return entries.map((a) => mapPlentyAddress(a));
+    return entries.map((a) => mapPlentyAddress(a, this.countryCodes));
   }
 
   async createCustomerAddress(customerId: string, address: Omit<Address, "id">): Promise<Address> {
+    await this.ensureCountries();
     const res = await this.http.post<PlentyAddress>(
       `/accounts/contacts/${encodeURIComponent(customerId)}/addresses`,
-      buildAddressPayload(address)
+      buildAddressPayload(address, this.countryIds)
     );
     return mapPlentyAddress({
       ...res,

@@ -29,6 +29,14 @@ export const ORDER_TYPE_SALES_ORDER = 1;
 export const ORDER_TYPE_OFFER = 4;
 
 /** Minimal ISO-3166 numeric→alpha2 mapping for the markets Plenty ships with. */
+/**
+ * Notnagel-Zuordnung Plenty-Landes-ID zu ISO-Code.
+ *
+ * Massgeblich ist die Liste, die das jeweilige Plenty-System selbst liefert
+ * (siehe PlentyConnector.getCountries) - Plenty pflegt dort deutlich mehr
+ * Laender als diese 30. Diese Tabelle greift nur, solange die Liste noch nicht
+ * geladen ist oder der Abruf scheitert.
+ */
 const COUNTRY_ID_TO_CODE: Record<number, string> = {
   1: "DE", 2: "AT", 3: "BE", 4: "CH", 5: "CY", 6: "CZ", 7: "DK", 8: "ES", 9: "EE",
   10: "FR", 11: "FI", 12: "GB", 13: "GR", 14: "HU", 15: "IT", 16: "IE", 17: "LU",
@@ -38,6 +46,17 @@ const COUNTRY_ID_TO_CODE: Record<number, string> = {
 const COUNTRY_CODE_TO_ID: Record<string, number> = Object.fromEntries(
   Object.entries(COUNTRY_ID_TO_CODE).map(([id, code]) => [code, Number(id)])
 );
+
+/** Landes-ID zu einem ISO-Code, bevorzugt aus der Liste des Plenty-Systems. */
+export function countryIdFor(code: string, live?: Record<string, number>): number | undefined {
+  const key = code.trim().toUpperCase();
+  return live?.[key] ?? COUNTRY_CODE_TO_ID[key];
+}
+
+/** ISO-Code zu einer Landes-ID, bevorzugt aus der Liste des Plenty-Systems. */
+export function countryCodeFor(id: number, live?: Record<number, string>): string | undefined {
+  return live?.[id] ?? COUNTRY_ID_TO_CODE[id];
+}
 
 // ─── Plenty → internal model ──────────────────────────────────────────────────
 
@@ -120,7 +139,10 @@ export function dedupeAddresses(addresses: PlentyAddress[]): PlentyAddress[] {
   return [...byId.values()];
 }
 
-export function mapPlentyAddress(addr: PlentyAddress): Address {
+export function mapPlentyAddress(
+  addr: PlentyAddress,
+  countryCodes?: Record<number, string>
+): Address {
   const type = addr.pivot?.typeId === ADDRESS_TYPE_SHIPPING ? "shipping" : "billing";
   return {
     id: String(addr.id),
@@ -130,7 +152,7 @@ export function mapPlentyAddress(addr: PlentyAddress): Address {
     ...(addr.address3 ? { additionalLine: addr.address3 } : {}),
     zip: addr.postalCode ?? "",
     city: addr.town ?? "",
-    countryCode: (addr.countryId != null ? COUNTRY_ID_TO_CODE[addr.countryId] : undefined) ?? "DE",
+    countryCode: (addr.countryId != null ? countryCodeFor(addr.countryId, countryCodes) : undefined) ?? "DE",
     isDefault: addr.isDefault ?? false,
     ...(addr.name1 ? { contactName: addr.name1 } : {}),
   };
@@ -345,7 +367,10 @@ export function buildPlentyNames(data: {
   return data.name ? { name1: data.name } : {};
 }
 
-export function buildAddressPayload(address: Omit<Address, "id">): Record<string, unknown> {
+export function buildAddressPayload(
+  address: Omit<Address, "id">,
+  countryIds?: Record<string, number>
+): Record<string, unknown> {
   return {
     ...(address.contactName ? { name1: address.contactName } : {}),
     address1: address.street,
@@ -353,7 +378,18 @@ export function buildAddressPayload(address: Omit<Address, "id">): Record<string
     ...(address.additionalLine ? { address3: address.additionalLine } : {}),
     postalCode: address.zip,
     town: address.city,
-    countryId: COUNTRY_CODE_TO_ID[address.countryCode.toUpperCase()] ?? COUNTRY_CODE_TO_ID["DE"],
+    // Kein stilles Ausweichen auf Deutschland mehr: Ein unbekanntes Land legte
+    // den Kunden bisher wortlos in DE an - der Fehler faellt erst beim Versand
+    // auf. Lieber hier abbrechen und den Code nennen.
+    countryId: (() => {
+      const id = countryIdFor(address.countryCode, countryIds);
+      if (id === undefined) {
+        throw new Error(
+          `Land "${address.countryCode}" ist in diesem Plenty-System nicht bekannt – bitte ein anderes Land wählen.`
+        );
+      }
+      return id;
+    })(),
     typeId: address.type === "shipping" ? ADDRESS_TYPE_SHIPPING : ADDRESS_TYPE_BILLING,
   };
 }

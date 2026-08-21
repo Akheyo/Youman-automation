@@ -138,6 +138,23 @@
       ]
     },
     {
+      "id": "f-payment-method",
+      "actionId": "action-create-quote",
+      "key": "paymentMethod",
+      "label": "Zahlungsart",
+      "type": "dropdown",
+      "required": true,
+      "defaultValue": "Rechnung",
+      "order": 5,
+      "groupId": "details",
+      "width": "third",
+      "helpText": "Steht so auf dem Angebot. Leer lassen übernimmt den Standardtext aus den Einstellungen.",
+      "options": [
+        { "value": "Rechnung", "label": "Rechnung" },
+        { "value": "Vorauszahlung", "label": "Vorauszahlung" }
+      ]
+    },
+    {
       "id": "f-currency",
       "actionId": "action-create-quote",
       "key": "currency",
