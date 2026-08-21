@@ -24,7 +24,7 @@ const currentPath = Astro.url.pathname;
   >
   </div>
   <div class="container-page flex items-center gap-4 h-20 md:h-24">
-    <!-- Menü-Button: öffnet die Gesamtübersicht (auf allen Breakpoints, wie in der Referenz) -->
+    {/* Menü-Button: öffnet die Gesamtübersicht (auf allen Breakpoints, wie in der Referenz) */}
     <button
       type="button"
       class="grid place-items-center size-11 -ml-2 shrink-0 text-ink hover:text-accent transition-colors duration-200 cursor-pointer"
@@ -55,7 +55,7 @@ const currentPath = Astro.url.pathname;
       <Logo class="text-2xl md:text-3xl" />
     </a>
 
-    <!-- Hauptnavigation ab lg -->
+    {/* Hauptnavigation ab lg */}
     {/*
       Die ausgeschriebene Navigation erscheint erst ab xl. Mit sechs Punkten
       passte sie bei 1024 px nicht mehr neben Logo und Schaltflaeche und schob
@@ -148,14 +148,14 @@ const currentPath = Astro.url.pathname;
       </ul>
     </nav>
 
-    <!--
+    {/*
       Handlungsaufforderung ganz rechts. Ziel ist das Formular selbst, nicht
       der Seitenkopf - deshalb der Anker. Die Beschriftung kuerzt sich auf
       schmalen Geraeten, statt auf ein blosses Symbol zu schrumpfen: ein
       unbeschrifteter Umschlag laesst offen, was passiert. Die volle
       Hauptnavigation erscheint erst ab lg, ein Namensdoppel mit dem Eintrag
       "Kontakt" entsteht dadurch nicht.
-    -->
+    */}
     <a
       href={withBase('/kontakt')}
       class="druckt-sich ml-auto inline-flex min-h-11 shrink-0 items-center justify-center gap-2 bg-accent px-4 text-[0.9375rem] font-medium text-white transition-colors duration-200 hover:bg-accent-hover sm:px-6 md:min-h-12"
@@ -178,7 +178,7 @@ const currentPath = Astro.url.pathname;
     </a>
   </div>
 
-  <!-- Vollflächiges Menü (Hamburger) -->
+  {/* Vollflächiges Menü (Hamburger) */}
   <div
     id="site-menu"
     class="on-dark fixed inset-x-0 top-20 md:top-24 bottom-0 z-40 hidden overflow-y-auto bg-ink-deep"

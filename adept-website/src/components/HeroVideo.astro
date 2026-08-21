@@ -77,7 +77,7 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
   class="on-dark relative isolate flex min-h-[calc(100svh-5rem)] md:min-h-[calc(100svh-6rem)] flex-col items-center justify-center overflow-hidden bg-ink-deep text-white"
   data-hero
 >
-  <!-- Hintergrundebene. Feste Größe reserviert den Platz (CLS < 0.1). -->
+  {/* Hintergrundebene. Feste Größe reserviert den Platz (CLS < 0.1). */}
   {
     videoSrc ? (
       <video
@@ -107,7 +107,7 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
     )
   }
 
-  <!--
+  {/*
     Zwei Ebenen statt einer festen Abdunklung:
 
     Grundschleier – nur noch ein Hauch am unteren Rand. Oben braucht es keinen:
@@ -123,7 +123,7 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
 
     Steht der Titel bereits fest im Video, blendet die Ellipse zusammen mit der
     Überschrift aus, sobald die Wiedergabe läuft.
-  -->
+  */}
   <div
     class="absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-transparent to-ink-deep/30"
     aria-hidden="true"
@@ -159,12 +159,12 @@ const videoType = mimeTypes[videoSrc?.split('.').pop()?.toLowerCase() ?? ''] ?? 
     }
   </div>
 
-  <!-- Scroll-Hinweis, wie in der Referenz unten links.
+  {/* Scroll-Hinweis, wie in der Referenz unten links.
        href bleibt als Rueckfall stehen, damit der Sprung auch ohne
        JavaScript funktioniert. Das Skript unten faengt den Klick ab und
        scrollt selbst, damit kein Anker in der Adresszeile landet.
        Ziel ist der erste Abschnitt unter dem Hero – nicht #inhalt, denn
-       <main> beginnt beim Hero selbst, der Sprung liefe ins Leere. -->
+       <main> beginnt beim Hero selbst, der Sprung liefe ins Leere. */}
   <a
     href={sprungziel}
     data-hero-sprung

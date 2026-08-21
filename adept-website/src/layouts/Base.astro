@@ -278,9 +278,9 @@ const strukturierteDaten = {
       set:html={JSON.stringify(strukturierteDaten)}
     />
 
-    <!-- Schaltet das Einblenden beim Scrollen frei. Steht im <head>, damit
+    {/* Schaltet das Einblenden beim Scrollen frei. Steht im <head>, damit
          kein Aufblitzen entsteht, und ist bewusst inline: laeuft kein
-         JavaScript, bleibt der Inhalt schlicht sofort sichtbar. -->
+         JavaScript, bleibt der Inhalt schlicht sofort sichtbar. */}
     <script is:inline>
       if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
         document.documentElement.classList.add('reveal-aktiv');
@@ -297,9 +297,9 @@ const strukturierteDaten = {
 
     <Header />
 
-    <!-- tabindex="-1": ohne das nehmen manche Browser den Fokus beim
+    {/* tabindex="-1": ohne das nehmen manche Browser den Fokus beim
          Sprung nicht mit, die Tastatur bliebe oben stehen. Der Rahmen
-         entfaellt, weil hier kein Bedienelement fokussiert wird. -->
+         entfaellt, weil hier kein Bedienelement fokussiert wird. */}
     <main id="inhalt" tabindex="-1" class="flex-1 focus:outline-none">
       <slot />
     </main>
