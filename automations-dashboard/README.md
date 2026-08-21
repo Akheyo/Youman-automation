@@ -111,6 +111,24 @@ npm run app:setup     # Ergebnis liegt in setup/
 npm run app:start     # zum Ausprobieren ohne Installation
 ```
 
+## Wenn das Dashboard ein eigenes Repository bekommt
+
+Der Ordner lässt sich mit seiner ganzen Geschichte als eigenständiges
+Repository herauslösen:
+
+```bash
+git clone https://github.com/Akheyo/Youman-automation
+cd Youman-automation
+git checkout claude/new-session-b5riox
+git subtree split --prefix automations-dashboard -b nur-dashboard
+git push https://github.com/NEUER-ACCOUNT/automations-dashboard.git nur-dashboard:main
+```
+
+Im neuen Repository liegt das Dashboard dann direkt im Wurzelverzeichnis. Der
+passende Bauplan für die Setup-Datei liegt schon bereit unter
+`.github/workflows/setup-exe.yml` und greift dort automatisch. Getaggt wird in
+diesem Fall mit `v1.0.2` statt mit `dashboard-v1.0.2`.
+
 ## Woher die Daten kommen
 
 Gelesen wird ausschließlich aus den fertigen Views, nicht selbst zusammengerechnet:

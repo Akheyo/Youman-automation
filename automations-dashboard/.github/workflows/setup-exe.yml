@@ -1,0 +1,83 @@
+# Dieser Bauplan gilt, wenn das Dashboard in einem eigenen Repository liegt,
+# also direkt im Wurzelverzeichnis statt im Unterordner automations-dashboard.
+# Im Sammel-Repository wird er nicht ausgeführt, dort zählt nur .github im
+# Wurzelverzeichnis.
+
+name: Setup.exe bauen
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versionsnummer der Setup-Datei, zum Beispiel 1.0.2"
+        required: false
+        default: ""
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  bauen:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Quelltext holen
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Pakete installieren
+        run: npm ci
+
+      - name: Version bestimmen
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            version="${GITHUB_REF#refs/tags/v}"
+          elif [[ -n "${{ github.event.inputs.version }}" ]]; then
+            version="${{ github.event.inputs.version }}"
+          else
+            version="$(node -p "require('./package.json').version")"
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          npm version "${version}" --no-git-tag-version --allow-same-version
+
+      - name: Oberfläche bauen
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - name: Hinweis, wenn keine Zugangsdaten hinterlegt sind
+        shell: bash
+        env:
+          SCHLUESSEL: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "${SCHLUESSEL}" ]; then
+            echo "::warning::Kein VITE_SUPABASE_ANON_KEY hinterlegt. Das Programm fragt beim ersten Start nach der Datei konfiguration.json."
+          fi
+
+      - name: Setup.exe bauen
+        run: npx electron-builder --win nsis --publish never
+
+      - name: Setup.exe zum Herunterladen ablegen
+        uses: actions/upload-artifact@v4
+        with:
+          name: Automationen-Setup-${{ steps.version.outputs.version }}
+          path: setup/Automationen-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Setup.exe an die Veröffentlichung hängen
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: setup/Automationen-Setup-*.exe
+          generate_release_notes: true
