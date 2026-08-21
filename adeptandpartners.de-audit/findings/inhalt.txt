@@ -1,0 +1,51 @@
+=== Textumfang und interne Verweise aus dem Inhaltsbereich ===
+
+Seite                                                 Woerter  Verweise darauf
+/404.html/                                                 22                0
+/branchen/                                                 56                4
+/news/                                                     77                2
+/case-studies/                                             78                3
+/impressum/                                                91                0
+/funktionen/                                              106                5
+/kontakt/                                                 116               14
+/branchen/automobil-und-zulieferer/                       142                5
+/branchen/fertigung-und-maschinenbau/                     148                5
+/branchen/logistik-und-versand/                           162                5
+/funktionen/systemintegration-und-erp-anbindung/          169                5
+/funktionen/supply-chain-und-materialsteuerung/           182                5
+/funktionen/reporting-und-operative-transparenz/          191                4
+/funktionen/logistik-und-versandsteuerung/                217                5
+/funktionen/produktion-und-feinplanung/                   229                4
+/                                                         307               19
+/branchen/onlinehandel/                                   398                5
+/case-studies/drahtmueller-palettenoptimierung/           514                2
+/case-studies/absolar-warenwirtschaft/                    665                1
+/ueber-uns/                                               687                1
+/news/logistik-2026-kostendruck-automatisierung/          745                2
+/datenschutz/                                             879                1
+
+=== Duenn, unter 300 Woertern: 13 ===
+  /branchen/                                              56
+  /news/                                                  77
+  /case-studies/                                          78
+  /funktionen/                                           106
+  /kontakt/                                              116
+  /branchen/automobil-und-zulieferer/                    142
+  /branchen/fertigung-und-maschinenbau/                  148
+  /branchen/logistik-und-versand/                        162
+  /funktionen/systemintegration-und-erp-anbindung/       169
+  /funktionen/supply-chain-und-materialsteuerung/        182
+  /funktionen/reporting-und-operative-transparenz/       191
+  /funktionen/logistik-und-versandsteuerung/             217
+  /funktionen/produktion-und-feinplanung/                229
+
+=== Schwach verlinkt, hoechstens 2 Verweise: 5 ===
+  /case-studies/absolar-warenwirtschaft/                 1   von: /case-studies/
+  /ueber-uns/                                            1   von: /
+  /case-studies/drahtmueller-palettenoptimierung/        2   von: /branchen/logistik-und-versand/, /case-studies/
+  /news/                                                 2   von: /, /news/logistik-2026-kostendruck-automatisierung/
+  /news/logistik-2026-kostendruck-automatisierung/       2   von: /, /news/
+
+=== Platzhalter im ausgelieferten Text ===
+  /: Platzhalter Platzhalter Platzhalter: Thema folgt Diese Kachel ist noch nicht befü
+  /news/: Platzhalter: 2 weitere Beiträge offen Hier stehen Meldungen und Beiträge
