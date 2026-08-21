@@ -32,15 +32,31 @@ Das Konzept dahinter steht in [CLAUDE.md](./CLAUDE.md).
 
 Ein eigener Bereich durchsucht die Artikeldaten aus PlentyONE, die in derselben
 Datenbank liegen und alle zehn Minuten abgeglichen werden. Gesucht wird über
-`v_artikel_komplett` nach Artikelnummer, EAN und Titel, ab zwei Zeichen und mit
-kurzer Verzögerung beim Tippen, damit nicht jeder Tastendruck eine Abfrage
-auslöst.
+`v_artikel_komplett` mit **vier getrennten Feldern**: Artikelnummer, EAN, Titel
+und Hersteller. Jedes Feld sucht in seiner eigenen Spalte, mehrere Felder
+gelten zusammen. Ab zwei Zeichen je Feld geht es los, mit kurzer Verzögerung
+beim Tippen.
+
+Artikelnummer, EAN und Hersteller suchen **von vorne**. Das ist genau, deshalb
+liefert eine Artikelnummer auch nur den einen Artikel und nicht jeden Treffer,
+in dem dieselbe Zahlenfolge irgendwo im Titel steht. Der Titel sucht überall im
+Text, weil man dort selten den Anfang kennt.
+
+**Für das Tempo** sind zwei Dinge entscheidend. Die Trefferliste holt nur die
+Spalten, die sie anzeigt, nicht Beschreibung und Meta-Texte. Die vollständige
+Zeile kommt erst beim Aufklappen. Und in der Datenbank sollten die Indexe aus
+`datenbank/tempo.sql` liegen, sonst durchsucht Postgres bei jedem Tastendruck
+alle 40.000 Varianten. Unter der Trefferliste steht, wie lange die Suche
+gedauert hat, damit man das nicht raten muss.
 
 Jeder Treffer zeigt Vorschaubild, Titel, Artikelnummer und EAN sowie den
 Bestand als Etikett: blau ab fünf Stück, gelb darunter, rot bei null.
 Aufgeklappt kommen Bestände je Spalte, Preise, Lager, Gewicht, alle Bilder in
 der richtigen Reihenfolge und darunter aufklappbar sämtliche Felder der
 Datenbankzeile.
+
+Antworten überholter Abfragen werden verworfen, damit beim schnellen Tippen
+nicht ein älteres Ergebnis das neuere überschreibt.
 
 **Die Spalten werden zur Laufzeit erkannt.** Beim ersten Aufruf holt die Suche
 eine Zeile und ordnet die Spaltennamen zu, siehe `src/lib/artikel.ts`. Heißt

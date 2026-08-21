@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { artikelSuchen, bilderLesen, spaltenErkennen, type Spaltenzuordnung } from '../lib/artikel';
+import {
+  artikelDetailLaden,
+  artikelSuchen,
+  bilderLesen,
+  LEERE_SUCHE,
+  spaltenErkennen,
+  sucheIstLeer,
+  type Spaltenzuordnung,
+  type Suchfelder,
+} from '../lib/artikel';
 import { text as feldText, type Zeile } from '../lib/fields';
 import { anzahl } from '../lib/format';
 import { Etikett, LeererZustand, Meldung, Pfeil, SkelettKarten } from '../components/Bausteine';
 import Zeichen from '../components/Icons';
 
-const WARTEZEIT = 350;
+const WARTEZEIT = 300;
 const GRENZE = 40;
 
 function zahlText(wert: unknown): string | null {
@@ -28,7 +37,6 @@ function wertAnzeigen(wert: unknown): string {
   return String(wert);
 }
 
-/** Bestand: viel ist gut, wenig heißt hinschauen, nichts ist rot. */
 function bestandTon(menge: number) {
   if (menge <= 0) return 'rot' as const;
   if (menge < 5) return 'gelb' as const;
@@ -43,34 +51,54 @@ function bestandZeichen(menge: number) {
 
 function Artikelkarte({ zeile, spalten }: { zeile: Zeile; spalten: Spaltenzuordnung }) {
   const [offen, setOffen] = useState(false);
+  const [voll, setVoll] = useState<Zeile | null>(null);
+  const [ladefehler, setLadefehler] = useState<string | null>(null);
 
-  const titel =
-    (spalten.titel ? feldText(zeile, [spalten.titel]) : null) ?? 'Artikel ohne Titel';
-  const nummer = spalten.artikelnummer ? feldText(zeile, [spalten.artikelnummer]) : null;
-  const ean = spalten.ean ? feldText(zeile, [spalten.ean]) : null;
+  /* Die ganze Zeile wird erst geholt, wenn jemand sie aufklappt. */
+  useEffect(() => {
+    if (!offen || voll) return;
+    let abgebrochen = false;
+    artikelDetailLaden(spalten, zeile)
+      .then((ergebnis) => {
+        if (!abgebrochen) setVoll(ergebnis);
+      })
+      .catch((problem) => {
+        if (!abgebrochen) {
+          setVoll(zeile);
+          setLadefehler(problem instanceof Error ? problem.message : 'Der Artikel konnte nicht geladen werden.');
+        }
+      });
+    return () => {
+      abgebrochen = true;
+    };
+  }, [offen, voll, spalten, zeile]);
+
+  const daten = voll ?? zeile;
+  const titel = (spalten.titel ? feldText(daten, [spalten.titel]) : null) ?? 'Artikel ohne Titel';
+  const nummer = spalten.artikelnummer ? feldText(daten, [spalten.artikelnummer]) : null;
+  const ean = spalten.ean ? feldText(daten, [spalten.ean]) : null;
+  const hersteller = spalten.hersteller ? feldText(daten, [spalten.hersteller]) : null;
+
   const bilder = useMemo(
-    () => (spalten.bilder ? bilderLesen(zeile[spalten.bilder]) : []),
-    [zeile, spalten.bilder],
+    () => (spalten.bilder ? bilderLesen(daten[spalten.bilder]) : []),
+    [daten, spalten.bilder],
   );
   const vorschau = bilder[0]?.vorschau ?? bilder[0]?.mittel ?? null;
 
-  const bestaende = spalten.bestand
-    .map((name) => ({ name, wert: zeile[name] }))
-    .filter((eintrag) => zahlText(eintrag.wert) !== null);
+  const ersterBestand = spalten.bestand[0] ? zahlText(daten[spalten.bestand[0]]) : null;
 
+  const bestaende = spalten.bestand
+    .map((name) => ({ name, wert: daten[name] }))
+    .filter((eintrag) => zahlText(eintrag.wert) !== null);
   const preise = spalten.preise
-    .map((name) => ({ name, wert: euro(zeile[name]) }))
+    .map((name) => ({ name, wert: euro(daten[name]) }))
     .filter((eintrag) => eintrag.wert !== null);
 
   return (
     <div className={`zeile ${offen ? 'zeileOffen' : ''}`}>
       <button type="button" className="zeileKopf" onClick={() => setOffen(!offen)} aria-expanded={offen}>
         <span className="artikelBild" aria-hidden="true">
-          {vorschau ? (
-            <img src={vorschau} alt="" loading="lazy" />
-          ) : (
-            <Zeichen name="postfach" groesse={18} />
-          )}
+          {vorschau ? <img src={vorschau} alt="" loading="lazy" /> : <Zeichen name="postfach" groesse={18} />}
         </span>
 
         <span className="zeileTitel">
@@ -78,15 +106,16 @@ function Artikelkarte({ zeile, spalten }: { zeile: Zeile; spalten: Spaltenzuordn
           <span className="zeileUnter">
             {nummer ? `Artikelnummer ${nummer}` : 'ohne Artikelnummer'}
             {ean ? `, EAN ${ean}` : ''}
+            {hersteller ? `, ${hersteller}` : ''}
           </span>
         </span>
 
         <span className="zeileRechts">
-          {bestaende[0] && (
+          {ersterBestand !== null && (
             <Etikett
-              ton={bestandTon(Number(bestaende[0].wert))}
-              zeichen={bestandZeichen(Number(bestaende[0].wert))}
-              text={`${zahlText(bestaende[0].wert)} auf Lager`}
+              ton={bestandTon(Number(daten[spalten.bestand[0] as string]))}
+              zeichen={bestandZeichen(Number(daten[spalten.bestand[0] as string]))}
+              text={`${ersterBestand} auf Lager`}
             />
           )}
           <Pfeil offen={offen} />
@@ -95,77 +124,82 @@ function Artikelkarte({ zeile, spalten }: { zeile: Zeile; spalten: Spaltenzuordn
 
       {offen && (
         <div className="zeileInhalt">
-          {(bestaende.length > 0 || preise.length > 0 || spalten.lager || spalten.gewicht || ean) && (
-            <div className="wertePaare">
-              {bestaende.map((eintrag) => (
-                <div key={eintrag.name}>
-                  <div className="wertPaarName">{eintrag.name.replace(/_/g, ' ')}</div>
-                  <div className="wertPaarWert zahl">{zahlText(eintrag.wert)}</div>
-                </div>
-              ))}
-              {preise.map((eintrag) => (
-                <div key={eintrag.name}>
-                  <div className="wertPaarName">{eintrag.name.replace(/_/g, ' ')}</div>
-                  <div className="wertPaarWert zahl">{eintrag.wert}</div>
-                </div>
-              ))}
-              {spalten.lager && feldText(zeile, [spalten.lager]) && (
-                <div>
-                  <div className="wertPaarName">Lager</div>
-                  <div className="wertPaarWert">{feldText(zeile, [spalten.lager])}</div>
-                </div>
-              )}
-              {spalten.gewicht && zahlText(zeile[spalten.gewicht]) && (
-                <div>
-                  <div className="wertPaarName">Gewicht</div>
-                  <div className="wertPaarWert zahl">{zahlText(zeile[spalten.gewicht])} g</div>
-                </div>
-              )}
-              {ean && (
-                <div>
-                  <div className="wertPaarName">EAN</div>
-                  <div className="wertPaarWert zahl">{ean}</div>
-                </div>
-              )}
-            </div>
-          )}
+          {!voll && <p className="laden">Der Artikel wird geladen.</p>}
+          {ladefehler && <Meldung ton="rot">{ladefehler}</Meldung>}
 
-          {bilder.length > 0 && (
-            <div>
-              <div className="wertPaarName" style={{ marginBottom: 'var(--raum-2)' }}>
-                {anzahl(bilder.length)} {bilder.length === 1 ? 'Bild' : 'Bilder'}, Hauptbild zuerst
-              </div>
-              <div className="bilderReihe">
-                {bilder.map((bild, index) => (
-                  <a
-                    key={`${bild.vorschau ?? index}`}
-                    href={bild.gross ?? bild.mittel ?? bild.vorschau ?? '#'}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="bildKachel"
-                    title="In voller Größe öffnen"
-                  >
-                    <img src={bild.vorschau ?? bild.mittel ?? ''} alt={`Bild ${index + 1}`} loading="lazy" />
-                  </a>
+          {voll && (
+            <>
+              <div className="wertePaare">
+                {bestaende.map((eintrag) => (
+                  <div key={eintrag.name}>
+                    <div className="wertPaarName">{eintrag.name.replace(/_/g, ' ')}</div>
+                    <div className="wertPaarWert zahl">{zahlText(eintrag.wert)}</div>
+                  </div>
                 ))}
+                {preise.map((eintrag) => (
+                  <div key={eintrag.name}>
+                    <div className="wertPaarName">{eintrag.name.replace(/_/g, ' ')}</div>
+                    <div className="wertPaarWert zahl">{eintrag.wert}</div>
+                  </div>
+                ))}
+                {ean && (
+                  <div>
+                    <div className="wertPaarName">EAN</div>
+                    <div className="wertPaarWert zahl">{ean}</div>
+                  </div>
+                )}
+                {spalten.lager && feldText(voll, [spalten.lager]) && (
+                  <div>
+                    <div className="wertPaarName">Lager</div>
+                    <div className="wertPaarWert">{feldText(voll, [spalten.lager])}</div>
+                  </div>
+                )}
+                {spalten.gewicht && zahlText(voll[spalten.gewicht]) && (
+                  <div>
+                    <div className="wertPaarName">Gewicht</div>
+                    <div className="wertPaarWert zahl">{zahlText(voll[spalten.gewicht])} g</div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
 
-          <details className="technisch">
-            <summary>
-              <Pfeil offen={false} />
-              Alle Felder aus der Datenbank anzeigen
-            </summary>
-            <div className="feldGitter">
-              {spalten.alle.map((name) => (
-                <div key={name} className="feldZeile">
-                  <span className="wertPaarName">{name}</span>
-                  <span className="feldWert">{wertAnzeigen(zeile[name])}</span>
+              {bilder.length > 0 && (
+                <div>
+                  <div className="wertPaarName" style={{ marginBottom: 'var(--raum-2)' }}>
+                    {anzahl(bilder.length)} {bilder.length === 1 ? 'Bild' : 'Bilder'}, Hauptbild zuerst
+                  </div>
+                  <div className="bilderReihe">
+                    {bilder.map((bild, index) => (
+                      <a
+                        key={`${bild.vorschau ?? index}`}
+                        href={bild.gross ?? bild.mittel ?? bild.vorschau ?? '#'}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bildKachel"
+                        title="In voller Größe öffnen"
+                      >
+                        <img src={bild.vorschau ?? bild.mittel ?? ''} alt={`Bild ${index + 1}`} loading="lazy" />
+                      </a>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </details>
+              )}
+
+              <details className="technisch">
+                <summary>
+                  <Pfeil offen={false} />
+                  Alle Felder aus der Datenbank anzeigen
+                </summary>
+                <div className="feldGitter">
+                  {spalten.alle.map((name) => (
+                    <div key={name} className="feldZeile">
+                      <span className="wertPaarName">{name}</span>
+                      <span className="feldWert">{wertAnzeigen(voll[name])}</span>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -173,13 +207,14 @@ function Artikelkarte({ zeile, spalten }: { zeile: Zeile; spalten: Spaltenzuordn
 }
 
 export default function Artikel() {
-  const [begriff, setBegriff] = useState('');
+  const [felder, setFelder] = useState<Suchfelder>(LEERE_SUCHE);
   const [spalten, setSpalten] = useState<Spaltenzuordnung | null>(null);
   const [zeilen, setZeilen] = useState<Zeile[] | null>(null);
+  const [dauer, setDauer] = useState<number | null>(null);
   const [laden, setLaden] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
-  const [eingeschraenkt, setEingeschraenkt] = useState(false);
   const uhr = useRef<number>();
+  const laufendeNummer = useRef(0);
 
   useEffect(() => {
     let abgebrochen = false;
@@ -198,79 +233,95 @@ export default function Artikel() {
   }, []);
 
   const suchen = useCallback(
-    async (text: string) => {
+    async (aktuelle: Suchfelder) => {
       if (!spalten) return;
-      if (text.trim().length < 2) {
+      if (sucheIstLeer(aktuelle)) {
         setZeilen(null);
+        setDauer(null);
         return;
       }
+      const nummer = ++laufendeNummer.current;
       setLaden(true);
       setFehler(null);
       try {
-        const ergebnis = await artikelSuchen(text, spalten, GRENZE);
+        const ergebnis = await artikelSuchen(aktuelle, spalten, GRENZE);
+        /* Antworten von überholten Abfragen werden verworfen. */
+        if (nummer !== laufendeNummer.current) return;
         setZeilen(ergebnis.zeilen);
-        setEingeschraenkt(ergebnis.eingeschraenkt);
+        setDauer(ergebnis.dauer);
       } catch (problem) {
+        if (nummer !== laufendeNummer.current) return;
         setZeilen([]);
         setFehler(problem instanceof Error ? problem.message : 'Die Suche ist fehlgeschlagen.');
       } finally {
-        setLaden(false);
+        if (nummer === laufendeNummer.current) setLaden(false);
       }
     },
     [spalten],
   );
 
-  /* Getippt wird schneller als die Datenbank antwortet, deshalb kurz abwarten. */
   useEffect(() => {
     window.clearTimeout(uhr.current);
-    uhr.current = window.setTimeout(() => void suchen(begriff), WARTEZEIT);
+    uhr.current = window.setTimeout(() => void suchen(felder), WARTEZEIT);
     return () => window.clearTimeout(uhr.current);
-  }, [begriff, suchen]);
+  }, [felder, suchen]);
 
-  const sucheIn = spalten?.suchbar.join(', ');
+  const setzen = (name: keyof Suchfelder) => (ereignis: React.ChangeEvent<HTMLInputElement>) =>
+    setFelder((vorher) => ({ ...vorher, [name]: ereignis.target.value }));
+
+  const etwasEingetragen = Object.values(felder).some((wert) => wert.length > 0);
+  const leer = sucheIstLeer(felder);
+
+  const suchfeld = (
+    name: keyof Suchfelder,
+    beschriftung: string,
+    platzhalter: string,
+    vorhanden: boolean,
+  ) =>
+    vorhanden ? (
+      <label className="feld">
+        <span className="feldName">{beschriftung}</span>
+        <input
+          type="search"
+          value={felder[name]}
+          placeholder={platzhalter}
+          onChange={setzen(name)}
+          onKeyDown={(ereignis) => {
+            if (ereignis.key === 'Escape') setFelder((vorher) => ({ ...vorher, [name]: '' }));
+          }}
+        />
+      </label>
+    ) : null;
 
   return (
     <>
       <div className="seitenkopf">
         <div>
           <h1>Artikel</h1>
-          <p>
-            Suche in den Artikeldaten aus PlentyONE, die alle zehn Minuten abgeglichen werden.
-          </p>
+          <p>Suche in den Artikeldaten aus PlentyONE, die alle zehn Minuten abgeglichen werden.</p>
         </div>
-      </div>
-
-      <div className="werkzeugleiste">
-        <div className="suchfeld">
-          <span className="suchfeldZeichen">
-            <Zeichen name="lupe" groesse={16} />
-          </span>
-          <input
-            type="search"
-            value={begriff}
-            autoFocus
-            placeholder="Artikelnummer, EAN oder Titel"
-            aria-label="Artikel suchen"
-            onChange={(ereignis) => setBegriff(ereignis.target.value)}
-            onKeyDown={(ereignis) => {
-              if (ereignis.key === 'Escape') setBegriff('');
-            }}
-          />
-        </div>
-        {begriff && (
-          <button type="button" className="knopf knopfLeise nurAufBreit" onClick={() => setBegriff('')}>
-            <Zeichen name="schliessen" groesse={14} />
-            Leeren
-          </button>
+        {etwasEingetragen && (
+          <div className="seitenkopfRechts">
+            <button type="button" className="knopf knopfLeise" onClick={() => setFelder(LEERE_SUCHE)}>
+              <Zeichen name="schliessen" groesse={14} />
+              Alle Felder leeren
+            </button>
+          </div>
         )}
       </div>
 
-      {sucheIn && (
-        <p className="leise klein">
-          Gesucht wird in: {sucheIn}
-          {eingeschraenkt ? '. Die übrigen Spalten enthalten keinen Text, deshalb bleiben sie außen vor.' : '.'}
-        </p>
-      )}
+      <div className="suchgitter">
+        {suchfeld('artikelnummer', 'Artikelnummer', 'beginnt mit', Boolean(spalten?.artikelnummer))}
+        {suchfeld('ean', 'EAN', 'beginnt mit', Boolean(spalten?.ean))}
+        {suchfeld('titel', 'Titel', 'enthält', Boolean(spalten?.titel))}
+        {suchfeld('hersteller', 'Hersteller', 'beginnt mit', Boolean(spalten?.hersteller))}
+      </div>
+
+      <p className="leise klein">
+        Artikelnummer, EAN und Hersteller suchen von vorne, das ist genau und schnell. Der Titel sucht
+        überall im Text. Mehrere Felder gelten zusammen. Ab zwei Zeichen je Feld geht es los.
+        {spalten && !spalten.hersteller && ' Ein Feld für den Hersteller gibt es nicht, weil die Ansicht keine solche Spalte hat.'}
+      </p>
 
       {fehler && <Meldung ton="rot">{fehler}</Meldung>}
 
@@ -278,18 +329,18 @@ export default function Artikel() {
 
       {spalten && laden && <SkelettKarten anzahl={3} zeilen={2} />}
 
-      {spalten && !laden && zeilen === null && (
+      {spalten && !laden && leer && (
         <LeererZustand
           titel="Wonach suchst du?"
-          text="Tipp eine Artikelnummer, eine EAN oder ein Wort aus dem Titel ein. Ab zwei Zeichen wird gesucht."
+          text="Trag in ein Feld mindestens zwei Zeichen ein. Für einen bestimmten Artikel nimm die Artikelnummer, für eine ganze Gruppe den Titel."
           zeichen="lupe"
         />
       )}
 
-      {spalten && !laden && zeilen !== null && zeilen.length === 0 && !fehler && (
+      {spalten && !laden && !leer && zeilen !== null && zeilen.length === 0 && !fehler && (
         <LeererZustand
           titel="Nichts gefunden"
-          text={`Zu „${begriff}" gibt es keinen Artikel. Prüfe die Schreibweise, oder such nur nach einem Teil der Nummer.`}
+          text="Kein Artikel passt auf diese Angaben. Lösch ein Feld oder kürze den Begriff, die Suche wird dann breiter."
           zeichen="lupe"
         />
       )}
@@ -298,12 +349,22 @@ export default function Artikel() {
         <>
           <p className="leise klein">
             {zeilen.length >= GRENZE
-              ? `Die ersten ${anzahl(GRENZE)} Treffer. Grenze die Suche weiter ein, wenn deiner nicht dabei ist.`
+              ? `Die ersten ${anzahl(GRENZE)} Treffer`
               : `${anzahl(zeilen.length)} ${zeilen.length === 1 ? 'Treffer' : 'Treffer'}`}
+            {dauer !== null ? `, gefunden in ${(dauer / 1000).toFixed(1).replace('.', ',')} Sekunden` : ''}
+            {zeilen.length >= GRENZE ? '. Grenze weiter ein, wenn deiner nicht dabei ist.' : ''}
           </p>
           <div className="liste">
             {zeilen.map((zeile, index) => (
-              <Artikelkarte key={String(zeile.id ?? zeile.variation_id ?? index)} zeile={zeile} spalten={spalten} />
+              <Artikelkarte
+                key={String(
+                  (spalten.schluessel ? zeile[spalten.schluessel] : null) ??
+                    (spalten.artikelnummer ? zeile[spalten.artikelnummer] : null) ??
+                    index,
+                )}
+                zeile={zeile}
+                spalten={spalten}
+              />
             ))}
           </div>
         </>

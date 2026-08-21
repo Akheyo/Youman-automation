@@ -1157,6 +1157,12 @@ details.technisch[open] summary .pfeil {
   display: block;
 }
 
+.suchgitter {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--raum-3);
+}
+
 .bilderReihe {
   display: flex;
   gap: var(--raum-2);
