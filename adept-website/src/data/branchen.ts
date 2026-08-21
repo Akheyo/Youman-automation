@@ -43,6 +43,13 @@ export type Branche = {
 export const branchen: Branche[] = [
   {
     slug: 'fertigung-und-maschinenbau',
+    painpoints: [
+      'Stücklisten und Arbeitspläne für Varianten werden kopiert und angepasst. Nach einigen Jahren lässt sich nicht mehr sagen, welche Variante von welcher abstammt.',
+      'Der Liefertermin wird zugesagt, bevor feststeht, ob die Maschine zu dem Zeitpunkt frei ist. Die Rückfrage läuft über den Fertigungsleiter, der es im Kopf hat.',
+      'Eine Konstruktionsänderung erreicht die Fertigung per Mail. Ob sie bei allen laufenden Aufträgen angekommen ist, prüft niemand systematisch.',
+      'Nacharbeit taucht in keiner Kalkulation auf. Was ein Teil tatsächlich gekostet hat, weiß man erst, wenn jemand von Hand nachrechnet.',
+      'Bei Einzelstücken und Kleinserien passt die Vorkalkulation nie ganz. Der Aufschlag ist ein Erfahrungswert, den eine einzige Person im Haus verantwortet.',
+    ],
     referenz: 'drahtmueller-palettenoptimierung',
     referenzHinweis:
       'Wie sich eine solche Sonderlogik abbilden lässt, ohne die vorhandene Systemlandschaft anzutasten, zeigt das Projekt',
@@ -56,6 +63,14 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'logistik-und-versand',
+    painpoints: [
+      'Welche Ware auf welche Palette darf, steht in keiner hinterlegten Regel. Es steht im Kopf des Kollegen, der die Ladung seit Jahren stellt.',
+      'Zwei Lieferungen an denselben Kunden gehen am selben Tag getrennt raus, weil die Aufträge in zwei Vorgängen liefen und niemand sie zusammengeführt hat.',
+      'Kundenspezifische Versandvorgaben zu Etikett, Avis und Zeitfenster stehen in einer Datei neben dem System. Wer sie nicht kennt, liefert falsch an.',
+      'Die Ladungssicherung richtet sich danach, was der Fahrer akzeptiert. Bei einem neuen Fahrer wird diskutiert statt verladen.',
+      'Ob eine Sendung pünktlich war, lässt sich nachträglich nicht sagen, weil der zugesagte Termin nirgends festgehalten wurde.',
+      'Retouren und Reklamationen laufen neben dem System. Die Ware steht im Wareneingang, im Bestand fehlt sie weiterhin, und der Kunde fragt nach.',
+    ],
     bild: 'logistik',
     title: 'Logistik & Versand',
     teaser: 'Verpackungs-, Paletten- und Versandlogik direkt am Auftragseingang.',
@@ -98,6 +113,14 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'automobil-und-zulieferer',
+    painpoints: [
+      'Lieferabrufe kommen als EDI-Nachricht und werden von Hand in die Planung übertragen, weil das Format nicht zum eigenen System passt.',
+      'Schwankt ein Abruf, fällt das erst beim nächsten Blick in die Datei auf. Eine Warnung gibt es nicht.',
+      'Rückverfolgbarkeit ist gefordert, entsteht aber aus Chargenzetteln und Tabellen. Im Reklamationsfall dauert die Auskunft Tage statt Minuten.',
+      'Sonderfahrten werden entschieden, ohne dass jemand vorher ausrechnet, was sie kosten. Sie erscheinen später als Sammelposten auf der Kostenstelle.',
+      'Der Abruf des Kunden und der eigene Bestand liegen in zwei Systemen. Wer die Deckung sehen will, baut sich dafür eine Tabelle.',
+      'Werkzeug- und Vorrichtungsstandzeiten werden getrennt gepflegt. Dass ein Werkzeug demnächst fällig ist, erfährt die Planung nicht rechtzeitig.',
+    ],
     referenz: 'drahtmueller-palettenoptimierung',
     referenzHinweis:
       'Wie ein solcher Engpass in einem produzierenden Betrieb konkret gelöst wurde, steht im Projekt',

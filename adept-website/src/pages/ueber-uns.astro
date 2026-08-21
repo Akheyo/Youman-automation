@@ -7,6 +7,7 @@ import SectionHeading from '../components/SectionHeading.astro';
 import PlaceholderNote from '../components/PlaceholderNote.astro';
 import Button from '../components/Button.astro';
 import { kernleistungen, prozess, technischeLeistungen } from '../data/site';
+import { withBase } from '../lib/url';
 
 /**
  * Geschichte und Werte, wie geliefert. Angepasst wurden ausschließlich
@@ -108,6 +109,12 @@ const werteSchluss =
     <p class="prose-measure mt-10 text-ink-soft">
       Der Mitarbeiter beim Kunden sieht nur eine Oberfläche. Datenabruf, Berechnung und
       Synchronisation mit dem ERP-System geschehen vollautomatisch im Hintergrund.
+    </p>
+    <p class="prose-measure mt-5 text-ink-soft">
+      Unser Sitz ist Borken, gearbeitet wird im gesamten deutschsprachigen Raum. Was die
+      räumliche Nähe an einem Projekt praktisch ändert und an welchen Stellen sie nichts
+      ändert, haben wir auf der Seite{' '}
+      <a href={withBase('/muensterland')} class="textverweis">Münsterland</a> aufgeschrieben.
     </p>
   </Section>
 

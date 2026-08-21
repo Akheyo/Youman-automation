@@ -90,6 +90,15 @@ const referenz = funktion.referenz ? caseStudyNach(funktion.referenz) : undefine
         </p>
       )
     }
+
+    {
+      funktion.beitrag && (
+        <p class="prose-measure mt-4 text-lg text-ink-soft">
+          {funktion.beitrag.hinweis}{' '}
+          <a href={withBase(funktion.beitrag.href)} class="textverweis">{funktion.beitrag.titel}</a>.
+        </p>
+      )
+    }
     {/*
       Jeder Baustein laesst sich aufklappen. <details> und <summary> statt
       eigener Schaltflaechen: die Browser bringen Tastaturbedienung und

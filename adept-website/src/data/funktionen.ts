@@ -50,6 +50,8 @@ export type Funktion = {
   bild?: BildKey;
   /** Slug eines Referenzprojekts aus caseStudies.ts. */
   referenz?: string;
+  /** Pfad eines vertiefenden Beitrags, samt einleitendem Halbsatz. */
+  beitrag?: { href: string; titel: string; hinweis: string };
   /**
    * Halbsatz, an den im Fliesstext der Verweis auf das Referenzprojekt
    * angehaengt wird. Je Funktion eigen formuliert, damit er nicht wie ein
@@ -184,6 +186,12 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'reporting-und-operative-transparenz',
+    beitrag: {
+      href: '/news/tabelle-neben-dem-erp',
+      titel: 'Die Tabelle neben dem ERP',
+      hinweis:
+        'Warum ausgerechnet der Teil des Ablaufs, der die meiste Handarbeit kostet, in keiner Kennzahl auftaucht, beschreibt der Beitrag',
+    },
     seoTitel: 'Reporting und KPI-Cockpits für die Produktion',
     seoBeschreibung:
       'Rollenbasierte Cockpits für Produktion und Logistik, mit Drill-down bis auf Auftrags- und Maschinenebene. adept& aus Borken, tätig im gesamten DACH-Raum.',
@@ -218,6 +226,12 @@ export const funktionen: Funktion[] = [
   },
   {
     slug: 'systemintegration-und-erp-anbindung',
+    beitrag: {
+      href: '/news/erp-insellosungen-anbinden',
+      titel: 'ERP-Insellösungen anbinden statt das System wechseln',
+      hinweis:
+        'Wann eine Anbindung genügt und wann ein Wechsel die ehrlichere Antwort ist, steht ausführlich im Beitrag',
+    },
     seoTitel: 'ERP-Anbindung und Schnittstellenentwicklung',
     seoBeschreibung:
       'API-basierte Anbindung an ERP-, SAP- und TMS-Systeme sowie kundenspezifische Module ohne Systemablösung. adept& aus Borken, tätig im DACH-Raum.',
