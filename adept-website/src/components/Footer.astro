@@ -4,6 +4,7 @@ import Button from './Button.astro';
 import { mainNav, footerLegalNav } from '../data/navigation';
 import { withBase } from '../lib/url';
 import { site } from '../data/site';
+import { anbieter, anbieterVollstaendig } from '../data/anbieter';
 
 const jahr = new Date().getFullYear();
 const bereiche = mainNav.filter((item) => item.children);
@@ -89,7 +90,36 @@ const bereiche = mainNav.filter((item) => item.children);
       <div
         class="mt-12 flex flex-col gap-4 border-t border-line pt-8 sm:flex-row sm:items-center sm:justify-between"
       >
-        <p class="text-sm text-muted-fg">© {jahr} adept&amp;</p>
+        {/*
+          Anschrift auf jeder Seite, nicht nur im Impressum. Fuer ortsbezogene
+          Suchen zaehlt, dass Name, Anschrift und Telefonnummer ueberall
+          identisch stehen, auf der eigenen Seite wie in Verzeichnissen. Steht
+          die Anschrift nur im Impressum, fehlt dieses Signal auf 21 von 22
+          Seiten. Als <address> ausgezeichnet, damit die Angabe auch
+          maschinell als Anschrift erkennbar ist.
+
+          Erscheint nur vollstaendig; eine halbe Adresse ist schlechter als
+          keine, weil sie die Uebereinstimmung mit anderen Quellen bricht.
+        */}
+        <div class="text-sm text-muted-fg">
+          <p>© {jahr} adept&amp;</p>
+          {anbieterVollstaendig && (
+            <address class="mt-1 not-italic">
+              {anbieter.strasse}, {anbieter.plz} {anbieter.ort}
+              {anbieter.personen[0]?.telefon && (
+                <>
+                  {' · '}
+                  <a
+                    href={`tel:${anbieter.personen[0].telefon.replace(/\s/g, '')}`}
+                    class="unterstrich hover:text-accent transition-colors duration-200"
+                  >
+                    {anbieter.personen[0].telefon}
+                  </a>
+                </>
+              )}
+            </address>
+          )}
+        </div>
         <ul class="flex flex-wrap gap-x-6 gap-y-1">
           {
             footerLegalNav.map((item) => (

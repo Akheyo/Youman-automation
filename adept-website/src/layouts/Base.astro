@@ -83,7 +83,22 @@ const seitenbild = bildKey ? bild(bildKey) : null;
 const ogImage = absolut(seitenbild ? seitenbild.quelle.src : withBase('/hero-poster.jpg'));
 
 const organisation = {
-  '@type': 'Organization',
+  /*
+   * Zwei Typen zugleich. Organization allein sagt nur "es gibt diese Firma";
+   * ProfessionalService ist ein Untertyp von LocalBusiness und ordnet sie
+   * einem Ort zu. Das ist die Voraussetzung dafuer, dass Google die Firma
+   * bei ortsbezogenen Suchen ueberhaupt in Betracht zieht.
+   *
+   * Nur mit vollstaendiger Anschrift. Ein LocalBusiness ohne Adresse ist ein
+   * Widerspruch und wuerde als fehlerhaft gewertet. Ohne Anschrift bleibt es
+   * bei Organization.
+   *
+   * Bewusst NICHT enthalten: openingHours und geo. Beides liegt nicht vor,
+   * und erfundene Oeffnungszeiten waeren eine Falschangabe an genau der
+   * Stelle, an der Google Verlaesslichkeit prueft. Beides gehoert ohnehin
+   * ins Google-Unternehmensprofil, sobald es das gibt.
+   */
+  '@type': anbieterVollstaendig ? ['Organization', 'ProfessionalService'] : 'Organization',
   '@id': absolut(withBase('/')) + '#organisation',
   name: 'adept&',
   url: absolut(withBase('/')),
