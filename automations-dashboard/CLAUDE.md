@@ -142,29 +142,42 @@ mit erklärendem Hinweis statt stiller Sperre.
 
 ## Gestaltung
 
-**Farben** (aus dem Logo abgeleitet, bei Amanuel gegenprüfen):
+**Schwarz auf Weiß, keine Farbe.** Auf Wunsch von Amanuel ist die Oberfläche
+streng zweifarbig. Der frühere dunkelblaue Entwurf gilt nicht mehr.
 
 ```
-Hintergrund      #0A111E
-Fläche           #121C2D
-Fläche erhöht    #18243A
-Rand             #243247
-Blau  = alles ok #2C7BE5
-Gelb  = hinschauen #F5B301
-Rot   = kaputt   #E23A2E
-Text             #E9EFF7
-Text leise       #8698B2
+Grund            #FFFFFF
+Fläche gehoben   #F1F1F1
+Fläche tief      #FAFAFA
+Rand fein        #BDBDBD
+Rand hart        #000000
+Text             #000000
+Text leise       #4A4A4A
+Text still       #5F5F5F
+Text invers      #FFFFFF
 ```
 
-**Bewusst kein Grün.** Blau übernimmt die Rolle von „in Ordnung", damit die
-Oberfläche in den Firmenfarben bleibt.
+**Keine runden Ecken.** Alle Radien stehen auf null. Jede Karte, jeder Knopf
+und jedes Eingabefeld ist ein Rechteck mit harter Kante. Keine Verläufe, keine
+weichen Schatten, nur harte versetzte Schlagschatten dort, wo etwas über dem
+Rest schwebt.
+
+**Rang statt Farbe.** Weil es keine Farbe gibt, trägt die Rahmenstärke die
+Bedeutung: feiner grauer Rahmen heißt ruhig, kräftiger schwarzer Rahmen oder
+eine Schraffur heißt hinschauen, schwarz gefüllt mit weißer Schrift heißt
+dringend. Jedes Etikett zeigt zusätzlich Zeichen und deutsches Wort, damit die
+Stufe nie allein an der Fläche hängt.
+
+**Schriften.** Inter für Texte, JetBrains Mono für alles, was eine Nummer ist:
+Artikelnummer, EAN, Bestand, Uhrzeit, Dauer.
 
 **Der Zustandsbalken ganz oben ist das Kernstück.** Ein breiter Streifen, der in
-einem deutschen Satz sagt, ob alles in Ordnung ist. Blau: „Alles in Ordnung".
-Gelb: „Läuft, aber etwas wartet auf dich". Rot: „Es gibt ein Problem". Auch wer
-zum ersten Mal draufschaut, versteht die Lage ohne eine Zahl zu lesen.
+einem deutschen Satz sagt, ob alles in Ordnung ist: „Alles in Ordnung", „Läuft,
+aber etwas wartet auf dich", „Es gibt ein Problem". Bei einem Problem kippt der
+Balken ins Gegenteil und wird schwarz mit weißer Schrift. Auch wer zum ersten
+Mal draufschaut, versteht die Lage ohne eine Zahl zu lesen.
 
-Dunkel, ruhig, sachlich. Muss auf dem Handy funktionieren, Amanuel sitzt nicht
+Hell, ruhig, sachlich. Muss auf dem Handy funktionieren, Amanuel sitzt nicht
 immer am Schreibtisch.
 
 ---

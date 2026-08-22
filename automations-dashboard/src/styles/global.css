@@ -1,39 +1,49 @@
 :root {
   /*
-   * Nahezu einfarbig, neutrale Grautöne. Farbe erscheint nur dort, wo sie
-   * eine Bedeutung trägt: als kleiner Punkt am Zustand, als Linie im
-   * Diagramm, als Fokusrahmen. Keine Farbflächen, keine Verläufe.
+   * Schwarz auf Weiß. Keine Farbe, keine runden Ecken, keine weichen
+   * Schatten. Rang entsteht durch Gewicht, Rahmenstärke und Umkehrung:
+   * ruhig ist einfach nur Text, wichtig bekommt einen dicken Rahmen,
+   * dringend wird schwarz gefüllt und die Schrift weiß.
    */
 
   /* --- Flächen ---------------------------------------------------------- */
-  --grund: #0b0c0e;
-  --flaeche: #101215;
-  --flaeche-hoch: #16181c;
-  --flaeche-tief: #0d0e11;
-  --rand: #1f2227;
-  --rand-stark: #2b2f36;
+  --grund: #ffffff;
+  --flaeche: #ffffff;
+  --flaeche-hoch: #f1f1f1;
+  --flaeche-tief: #fafafa;
+  --rand: #bdbdbd;
+  --rand-stark: #000000;
 
   /* --- Schrift ---------------------------------------------------------- */
-  --text: #e9eaec;
-  --text-leise: #9ba1a9;
-  --text-still: #868c94;
-  --text-invers: #0b0c0e;
+  --text: #000000;
+  --text-leise: #4a4a4a;
+  --text-still: #5f5f5f;
+  --text-invers: #ffffff;
 
-  /* --- Zustände, nur als Punkt oder Linie -------------------------------- */
-  --ok: #4f8ff0;
-  --warnung: #d6a53c;
-  --kritisch: #e0574c;
+  /* --- Zustände: kein Farbton, nur Stärke ------------------------------- */
+  --ok: #5f5f5f;
+  --warnung: #000000;
+  --kritisch: #000000;
 
-  /* --- Akzent, sparsam --------------------------------------------------- */
-  --akzent: #4f8ff0;
-  --akzent-still: rgba(79, 143, 240, 0.14);
+  /* Schraffur statt Farbe: markiert "sieh hier hin", ohne bunt zu werden. */
+  --schraffur: repeating-linear-gradient(
+    45deg,
+    #000000 0,
+    #000000 2px,
+    #ffffff 2px,
+    #ffffff 5px
+  );
 
-  /* --- Knöpfe: hell auf dunkel, statt bunt ------------------------------- */
-  --knopf-haupt: #e9eaec;
-  --knopf-haupt-hover: #ffffff;
-  --knopf-haupt-schrift: #0b0c0e;
+  /* --- Akzent ------------------------------------------------------------ */
+  --akzent: #000000;
+  --akzent-still: rgba(0, 0, 0, 0.07);
 
-  /* --- Abstände ---------------------------------------------------------- */
+  /* --- Knöpfe: gefuellt schwarz, Schrift weiß --------------------------- */
+  --knopf-haupt: #000000;
+  --knopf-haupt-hover: #303030;
+  --knopf-haupt-schrift: #ffffff;
+
+  /* --- Abstände --------------------------------------------------------- */
   --raum-1: 4px;
   --raum-2: 8px;
   --raum-3: 12px;
@@ -42,36 +52,43 @@
   --raum-6: 32px;
   --raum-7: 48px;
 
-  /* --- Radien, klein und ruhig ------------------------------------------ */
-  --radius-1: 4px;
-  --radius-2: 6px;
-  --radius-3: 8px;
-  --radius-rund: 999px;
+  /* --- Ecken: keine ------------------------------------------------------ */
+  --radius-1: 0;
+  --radius-2: 0;
+  --radius-3: 0;
+  --radius-rund: 0;
 
-  /* --- Schrift ---------------------------------------------------------- */
+  /* --- Rahmenstärken ---------------------------------------------------- */
+  --strich: 1px;
+  --strich-stark: 2px;
+  --strich-kante: 6px;
+
+  /* --- Schrift ----------------------------------------------------------- */
   --schrift: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --schrift-zahl: Inter, system-ui, sans-serif;
+  --schrift-zahl: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Consolas,
+    "Liberation Mono", monospace;
 
   --gr-micro: 11px;
   --gr-klein: 12px;
   --gr-neben: 13px;
   --gr-basis: 14px;
   --gr-gross: 16px;
-  --gr-titel: 19px;
-  --gr-zahl: 26px;
-  --gr-zustand: 20px;
+  --gr-titel: 20px;
+  --gr-zahl: 30px;
+  --gr-zustand: 22px;
 
-  /* --- Tiefe: fast keine -------------------------------------------------- */
+  /* --- Tiefe: harte Kante statt Weichzeichner ---------------------------- */
   --schatten-1: none;
-  --schatten-2: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --schatten-3: 0 8px 28px rgba(0, 0, 0, 0.55);
+  --schatten-2: none;
+  --schatten-3: 8px 8px 0 var(--rand-stark);
 
   /* --- Bewegung ---------------------------------------------------------- */
-  --zeit-schnell: 100ms;
-  --zeit: 160ms;
-  --kurve: cubic-bezier(0.2, 0, 0.2, 1);
+  --zeit-schnell: 80ms;
+  --zeit: 120ms;
+  --kurve: steps(1, end);
+  --kurve-weich: cubic-bezier(0.2, 0, 0.2, 1);
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 *,
@@ -106,28 +123,30 @@ h1,
 h2,
 h3 {
   margin: 0;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  text-wrap: balance;
 }
 
 h1 {
   font-size: var(--gr-titel);
-  font-weight: 550;
+  font-weight: 700;
 }
 
 h2 {
   font-size: var(--gr-basis);
-  font-weight: 550;
+  font-weight: 600;
   letter-spacing: 0;
 }
 
 h3 {
   font-size: var(--gr-neben);
-  font-weight: 550;
+  font-weight: 600;
 }
 
 p {
+  text-wrap: pretty;
   margin: 0;
 }
 
@@ -144,23 +163,46 @@ button {
 /* Zahlen laufen nicht: gleiche Breite, damit nichts springt. */
 .zahl,
 .kennzahlWert,
+.zustandFaktWert,
+.durchlaufZahlen,
+.wertPaarWert,
+.feldWert,
 td,
-th,
-.durchlaufZahlen {
+th {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
 }
 
-.zahl {
+/* Zahlen, Nummern und Zeiten laufen in der Schreibmaschinenschrift. Jede
+   Ziffer ist gleich breit, dadurch stehen Spalten sauber untereinander und
+   eine Artikelnummer bleibt auf einen Blick lesbar. */
+.zahl,
+.kennzahlWert,
+.zustandFaktWert,
+.durchlaufZahlen,
+.feldWert,
+.roh,
+td,
+th {
   font-family: var(--schrift-zahl);
   font-variant-ligatures: none;
+  letter-spacing: 0;
 }
 
 /* Ein sichtbarer Fokusrahmen ist Pflicht, nicht Zierde. */
+/* Zwei Ringe: der schwarze zeigt sich auf hellem Grund, der weiße Abstand
+   dazwischen zeigt ihn auch auf einer schwarz gefüllten Fläche. */
 :focus-visible {
-  outline: 2px solid var(--text);
-  outline-offset: 2px;
-  border-radius: var(--radius-1);
+  outline: var(--strich-stark) solid var(--text);
+  outline-offset: var(--strich-stark);
+  box-shadow: 0 0 0 var(--strich-stark) var(--text-invers);
+  border-radius: 0;
+}
+
+.knopfHaupt:focus-visible,
+.hinweisZu:focus-visible {
+  box-shadow: 0 0 0 var(--strich-stark) var(--text-invers),
+    inset 0 0 0 var(--strich) var(--text-invers);
 }
 
 .nurVorlesen {
@@ -203,13 +245,14 @@ th,
   flex-direction: column;
 }
 
+/* Der Kopf ist deckend weiß, nicht milchig. Ein durchscheinender Kopf
+   wirkt auf hellem Grund unsauber, sobald Text darunter durchscheint. */
 .kopf {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: color-mix(in srgb, var(--grund) 88%, transparent);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--rand);
+  background: var(--grund);
+  border-bottom: var(--strich-stark) solid var(--rand-stark);
 }
 
 .kopfInhalt {
@@ -228,22 +271,25 @@ th,
   min-width: 0;
 }
 
+/* Das Zeichen ist ein schwarzes Quadrat mit weißem Inhalt. Kein Verlauf,
+   kein Schimmer, nichts Rundes. */
 .markeZeichen {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  border-radius: var(--radius-2);
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 0;
   display: grid;
   place-items: center;
-  background: var(--flaeche-hoch);
-  border: 1px solid var(--rand-stark);
-  color: var(--text);
+  background: var(--text);
+  border: var(--strich) solid var(--text);
+  color: var(--text-invers);
 }
 
 .markeName {
-  font-weight: 600;
+  font-weight: 700;
   font-size: var(--gr-gross);
-  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   line-height: 1.15;
   white-space: nowrap;
 }
@@ -301,17 +347,22 @@ th,
   display: none;
 }
 
+/* Die Karteireiter sitzen als Reihe von Rechtecken nebeneinander. Der
+   gewählte ist schwarz gefüllt, alle anderen sind nur Text. Ein einziger
+   Blick genügt, um zu sehen, wo man ist. */
 .navKnopf {
   appearance: none;
-  border: 1px solid transparent;
+  border: var(--strich) solid transparent;
   background: transparent;
   color: var(--text-leise);
   padding: var(--raum-2) var(--raum-3);
-  border-radius: var(--radius-rund);
+  border-radius: 0;
   cursor: pointer;
   white-space: nowrap;
-  font-size: var(--gr-neben);
-  font-weight: 500;
+  font-size: var(--gr-klein);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
   display: inline-flex;
   align-items: center;
   gap: var(--raum-2);
@@ -321,14 +372,21 @@ th,
 
 .navKnopf:hover {
   color: var(--text);
-  background: var(--flaeche);
+  background: var(--flaeche-hoch);
+  border-color: var(--rand-stark);
 }
 
 .navKnopfAktiv,
 .navKnopfAktiv:hover {
-  color: var(--text);
-  background: var(--flaeche-hoch);
-  border-color: var(--rand-stark);
+  color: var(--text-invers);
+  background: var(--text);
+  border-color: var(--text);
+}
+
+.navKnopfAktiv .navZahl {
+  background: var(--text);
+  color: var(--text-invers);
+  border-color: var(--text-invers);
 }
 
 .navKnopfAktiv .navZeichen {
@@ -343,14 +401,15 @@ th,
 .navZahl {
   min-width: 18px;
   padding: 0 5px;
-  border-radius: var(--radius-1);
+  border-radius: 0;
+  font-family: var(--schrift-zahl);
   font-size: var(--gr-micro);
-  font-weight: 550;
-  line-height: 17px;
+  font-weight: 500;
+  line-height: 16px;
   text-align: center;
-  background: var(--flaeche-hoch);
-  color: var(--text-leise);
-  border: 1px solid var(--rand-stark);
+  background: var(--flaeche);
+  color: var(--text);
+  border: var(--strich) solid var(--rand-stark);
   font-variant-numeric: tabular-nums;
 }
 
@@ -402,20 +461,33 @@ th,
 
 .karte {
   background: var(--flaeche);
-  border: 1px solid var(--rand);
-  border-radius: var(--radius-3);
+  border: var(--strich) solid var(--rand-stark);
+  border-radius: 0;
   padding: var(--raum-4);
   box-shadow: none;
 }
 
+/* Der Kartenkopf ist eine eigene Bank: heller Grund, harte Trennlinie,
+   Beschriftung in Versalien. Die Karte bekommt dadurch eine Kante, an der
+   das Auge hängen bleibt. */
 .karteKopf {
   display: flex;
   align-items: center;
   gap: var(--raum-3);
   margin: calc(var(--raum-4) * -1) calc(var(--raum-4) * -1) var(--raum-4);
-  padding: var(--raum-3) var(--raum-4);
-  border-bottom: 1px solid var(--rand);
+  padding: var(--raum-2) var(--raum-4);
+  border-bottom: var(--strich-stark) solid var(--rand-stark);
+  background: var(--flaeche-hoch);
   flex-wrap: wrap;
+  min-height: 40px;
+}
+
+.karteKopf h2,
+.karteKopf h3 {
+  font-size: var(--gr-klein);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
 }
 
 .karteKopfRechts {
@@ -447,8 +519,8 @@ th,
 
 .zustand {
   position: relative;
-  border-radius: var(--radius-3);
-  border: 1px solid var(--rand);
+  border-radius: 0;
+  border: var(--strich-stark) solid var(--rand-stark);
   background: var(--flaeche);
   padding: var(--raum-5);
   display: flex;
@@ -457,13 +529,15 @@ th,
   overflow: hidden;
 }
 
+/* Die linke Kante trägt den Zustand, ganz ohne Farbe:
+   grau = in Ordnung, schraffiert = Achtung, voll schwarz = Störung. */
 .zustand::before {
   content: "";
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
-  width: 2px;
+  width: var(--strich-kante);
   background: currentColor;
 }
 
@@ -475,19 +549,76 @@ th,
   color: var(--warnung);
 }
 
+.zustandGelb::before {
+  background: var(--schraffur);
+}
+
 .zustandRot {
   color: var(--kritisch);
 }
 
+/* Bei einer echten Störung kippt der ganze Kopf ins Gegenteil: schwarze
+   Fläche, weiße Schrift. Das sieht man aus zehn Metern Entfernung. */
+.zustandRot {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--text-invers);
+}
+
+.zustandRot .zustandText h1,
+.zustandRot .zustandFaktWert {
+  color: var(--text-invers);
+}
+
+.zustandRot .zustandText p,
+.zustandRot .zustandFakt {
+  color: #d6d6d6;
+}
+
+.zustandRot .zustandFakten {
+  border-top-color: #4a4a4a;
+}
+
+.zustandRot .zustandZeichen {
+  background: var(--text);
+  border-color: var(--text-invers);
+  color: var(--text-invers);
+}
+
+.zustandRot::before {
+  background: var(--text-invers);
+}
+
+.zustandRot .knopf {
+  border-color: var(--text-invers);
+  background: var(--text);
+  color: var(--text-invers);
+}
+
+.zustandRot .knopf:hover:not(:disabled) {
+  background: var(--text-invers);
+  color: var(--text);
+}
+
+.zustandRot .knopfHaupt {
+  background: var(--text-invers);
+  color: var(--text);
+}
+
+.zustandRot .knopfHaupt:hover:not(:disabled) {
+  background: #d6d6d6;
+  color: var(--text);
+}
+
 .zustandZeichen {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  border-radius: var(--radius-2);
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 0;
   display: grid;
   place-items: center;
   background: var(--flaeche-hoch);
-  border: 1px solid var(--rand);
+  border: var(--strich) solid var(--rand-stark);
 }
 
 .zustandText {
@@ -496,7 +627,8 @@ th,
 }
 
 .zustandText h1 {
-  font-size: 18px;
+  font-size: var(--gr-zustand);
+  font-weight: 700;
   color: var(--text);
   letter-spacing: -0.02em;
 }
@@ -527,7 +659,7 @@ th,
 
 .zustandFaktWert {
   font-size: var(--gr-gross);
-  font-weight: 550;
+  font-weight: 500;
   color: var(--text);
   letter-spacing: -0.01em;
 }
@@ -552,8 +684,8 @@ th,
 .kennzahl {
   position: relative;
   background: var(--flaeche);
-  border: 1px solid var(--rand);
-  border-radius: var(--radius-2);
+  border: var(--strich) solid var(--rand-stark);
+  border-radius: 0;
   padding: var(--raum-4);
   display: flex;
   flex-direction: column;
@@ -564,8 +696,8 @@ th,
 .kennzahlName {
   color: var(--text-still);
   font-size: var(--gr-micro);
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   display: flex;
   align-items: center;
@@ -575,8 +707,7 @@ th,
 .kennzahlWert {
   font-size: var(--gr-zahl);
   font-weight: 500;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 
 .kennzahlWertBlau,
@@ -584,8 +715,12 @@ th,
   color: var(--text);
 }
 
+/* Eine Zahl, die nicht stimmt, wird unterstrichen statt eingefärbt. */
 .kennzahlWertRot {
   color: var(--kritisch);
+  text-decoration: underline;
+  text-decoration-thickness: var(--strich-stark);
+  text-underline-offset: 4px;
 }
 
 .kennzahlHinweis {
@@ -594,16 +729,17 @@ th,
 }
 
 .kennzahlBalken {
-  height: 4px;
-  border-radius: var(--radius-rund);
-  background: var(--flaeche-hoch);
+  height: 6px;
+  border-radius: 0;
+  border: var(--strich) solid var(--rand-stark);
+  background: var(--flaeche);
   overflow: hidden;
-  margin-top: var(--raum-1);
+  margin-top: var(--raum-2);
 }
 
 .kennzahlBalkenFuellung {
   height: 100%;
-  border-radius: var(--radius-rund);
+  border-radius: 0;
   background: var(--rand-stark);
 }
 
@@ -611,35 +747,51 @@ th,
    Etiketten und Zeichen für Zustände
    ========================================================================= */
 
+/* Etikett in drei Stufen, alle schwarzweiß:
+   in Ordnung  = feiner grauer Rahmen, zurückhaltend
+   Achtung     = kräftiger schwarzer Rahmen, hebt sich ab
+   Störung     = schwarz gefüllt, Schrift weiß, springt sofort ins Auge */
 .etikett {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 2px 8px 2px 6px;
-  border-radius: var(--radius-1);
+  border-radius: 0;
   font-size: var(--gr-klein);
-  font-weight: 450;
-  border: 1px solid var(--rand);
-  background: var(--flaeche-hoch);
+  font-weight: 500;
+  border: var(--strich) solid var(--rand);
+  background: var(--flaeche);
   color: var(--text-leise);
   white-space: nowrap;
   line-height: 1.7;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .etikettBlau svg {
   color: var(--ok);
 }
 
-.etikettGelb svg {
-  color: var(--warnung);
+.etikettGelb {
+  border: var(--strich-stark) solid var(--rand-stark);
+  color: var(--text);
+  font-weight: 600;
+  padding: 1px 7px 1px 5px;
 }
 
-.etikettRot svg {
-  color: var(--kritisch);
+.etikettGelb svg {
+  color: var(--text);
 }
 
 .etikettRot {
-  color: var(--text);
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--text-invers);
+  font-weight: 600;
+}
+
+.etikettRot svg {
+  color: var(--text-invers);
 }
 
 .etikettZeichen {
@@ -676,37 +828,48 @@ th,
    Knöpfe
    ========================================================================= */
 
+/* Ein Knopf ist ein Rechteck mit schwarzem Rahmen. Beim Überfahren kehrt
+   er sich um: aus weiß mit schwarzer Schrift wird schwarz mit weißer.
+   Beim Drücken rutscht er zwei Punkte nach rechts unten, so als würde er
+   wirklich eingedrückt. Das ersetzt jede Farbe. */
 .knopf {
   appearance: none;
-  border: 1px solid var(--rand-stark);
-  background: var(--flaeche-hoch);
+  border: var(--strich-stark) solid var(--rand-stark);
+  background: var(--flaeche);
   color: var(--text);
   padding: var(--raum-2) var(--raum-4);
-  border-radius: var(--radius-1);
+  border-radius: 0;
   cursor: pointer;
   font-size: var(--gr-neben);
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--raum-2);
   min-height: 40px;
   text-decoration: none;
-  transition: background var(--zeit) var(--kurve), border-color var(--zeit) var(--kurve),
-    transform var(--zeit-schnell) var(--kurve), box-shadow var(--zeit) var(--kurve);
+  position: relative;
+  transition: background var(--zeit) var(--kurve), color var(--zeit) var(--kurve),
+    border-color var(--zeit) var(--kurve), transform var(--zeit-schnell) var(--kurve);
 }
 
 .knopf:hover:not(:disabled) {
-  background: var(--flaeche-hoch);
-  border-color: var(--rand-stark);
+  background: var(--text);
+  color: var(--text-invers);
+  border-color: var(--text);
 }
 
 .knopf:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: translate(2px, 2px);
 }
 
+/* Gesperrt heißt: durchgestrichener Rahmen, blasse Schrift. Nicht nur
+   halbdurchsichtig, denn das liest sich auf Weiß zu schnell als "geht". */
 .knopf:disabled {
-  opacity: 0.45;
+  color: var(--text-still);
+  border-color: var(--rand);
+  background: var(--flaeche-tief);
   cursor: not-allowed;
 }
 
@@ -714,44 +877,65 @@ th,
   background: var(--knopf-haupt);
   border-color: var(--knopf-haupt);
   color: var(--knopf-haupt-schrift);
-  font-weight: 550;
+  font-weight: 700;
 }
 
 .knopfHaupt:hover:not(:disabled) {
-  background: var(--knopf-haupt-hover);
-  border-color: var(--knopf-haupt-hover);
+  background: var(--flaeche);
+  color: var(--text);
+  border-color: var(--rand-stark);
 }
 
 .knopfHaupt:active:not(:disabled) {
-  background: #d5d7da;
+  background: var(--knopf-haupt-hover);
+  color: var(--text-invers);
+  border-color: var(--knopf-haupt-hover);
 }
 
+/* Ein Knopf, der etwas anhält oder abbricht, trägt eine Schraffur als
+   Warnstreifen über der oberen Kante. */
 .knopfWarnung {
-  color: var(--kritisch);
+  color: var(--text);
   border-color: var(--rand-stark);
-  background: var(--flaeche-hoch);
+  background: var(--flaeche);
+  padding-top: calc(var(--raum-2) + 3px);
+}
+
+.knopfWarnung::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+  background: var(--schraffur);
 }
 
 .knopfWarnung:hover:not(:disabled) {
-  border-color: var(--kritisch);
-  background: var(--flaeche-hoch);
+  border-color: var(--text);
+  background: var(--text);
+  color: var(--text-invers);
 }
 
 .knopfLeise {
   background: transparent;
+  border-width: var(--strich);
   border-color: var(--rand);
   color: var(--text-leise);
+  font-weight: 500;
 }
 
 .knopfLeise:hover:not(:disabled) {
-  color: var(--text);
-  background: var(--flaeche-hoch);
+  color: var(--text-invers);
+  background: var(--text);
+  border-color: var(--text);
 }
 
 .knopfKlein {
   min-height: 34px;
   padding: var(--raum-1) var(--raum-3);
   font-size: var(--gr-klein);
+  border-width: var(--strich);
 }
 
 .knopfReihe {
@@ -786,14 +970,16 @@ th,
 
 .zeile {
   background: var(--flaeche);
-  border: 1px solid var(--rand);
-  border-radius: var(--radius-2);
+  border: var(--strich) solid var(--rand-stark);
+  border-radius: 0;
   overflow: hidden;
-  transition: border-color var(--zeit) var(--kurve);
+  transition: box-shadow var(--zeit) var(--kurve);
 }
 
+/* Kein Farbwechsel beim Überfahren, sondern ein zweiter Strich innen.
+   Das bleibt schwarzweiß und ist trotzdem eindeutig. */
 .zeile:hover {
-  border-color: var(--rand-stark);
+  box-shadow: inset 0 0 0 var(--strich) var(--rand-stark);
 }
 
 .zeileOffen {
@@ -891,11 +1077,11 @@ th,
 
 /* Kleiner Balken, der Zuverlässigkeit auf einen Blick zeigt. */
 .quoteBalken {
-  height: 4px;
+  height: 8px;
   width: 64px;
-  border-radius: var(--radius-rund);
-  background: var(--flaeche-hoch);
-  border: 1px solid var(--rand);
+  border-radius: 0;
+  background: var(--flaeche);
+  border: var(--strich) solid var(--rand-stark);
   overflow: hidden;
   flex: 0 0 auto;
 }
@@ -903,7 +1089,7 @@ th,
 .quoteFuellung {
   display: block;
   height: 100%;
-  border-radius: var(--radius-rund);
+  border-radius: 0;
 }
 
 /* ============================================================================
@@ -940,8 +1126,10 @@ th,
 .durchlaufZahlen {
   margin-left: auto;
   color: var(--text-leise);
-  font-size: var(--gr-klein);
-  white-space: nowrap;
+  font-size: var(--gr-micro);
+  white-space: normal;
+  text-align: right;
+  min-width: 0;
 }
 
 .durchlaufSpur {
@@ -953,10 +1141,10 @@ th,
 }
 
 .klartext {
-  background: var(--flaeche-hoch);
-  border: 1px solid var(--rand);
-  border-left: 2px solid var(--kritisch);
-  border-radius: var(--radius-1);
+  background: var(--flaeche-tief);
+  border: var(--strich) solid var(--rand-stark);
+  border-left: var(--strich-kante) solid var(--kritisch);
+  border-radius: 0;
   padding: var(--raum-3);
   font-size: var(--gr-neben);
   display: flex;
@@ -1000,10 +1188,11 @@ details.technisch[open] summary .pfeil {
 .roh {
   margin: var(--raum-2) 0 0;
   padding: var(--raum-3);
-  background: var(--grund);
-  border: 1px solid var(--rand);
-  border-radius: var(--radius-1);
+  background: var(--flaeche-tief);
+  border: var(--strich) solid var(--rand-stark);
+  border-radius: 0;
   color: var(--text-leise);
+  line-height: 1.45;
   font-family: var(--schrift-zahl);
   font-variant-ligatures: none;
   font-size: var(--gr-klein);
@@ -1041,7 +1230,7 @@ details.technisch[open] summary .pfeil {
 .diagrammLinie {
   fill: none;
   stroke: var(--akzent);
-  stroke-width: 1.5;
+  stroke-width: 2;
   stroke-linejoin: round;
   stroke-linecap: round;
 }
@@ -1063,7 +1252,9 @@ details.technisch[open] summary .pfeil {
 }
 
 .diagrammFeld:focus-visible {
-  fill: rgba(111, 168, 245, 0.14);
+  fill: var(--akzent-still);
+  stroke: var(--rand-stark);
+  stroke-width: 2;
   outline: none;
 }
 
@@ -1071,9 +1262,10 @@ details.technisch[open] summary .pfeil {
   position: absolute;
   z-index: 5;
   pointer-events: none;
-  background: var(--flaeche-hoch);
-  border: 1px solid var(--rand-stark);
-  border-radius: var(--radius-1);
+  background: var(--text);
+  color: var(--text-invers);
+  border: var(--strich) solid var(--rand-stark);
+  border-radius: 0;
   padding: var(--raum-2) var(--raum-3);
   box-shadow: var(--schatten-2);
   font-size: var(--gr-klein);
@@ -1201,8 +1393,10 @@ details.technisch[open] summary .pfeil {
    Fehlerkarten
    ========================================================================= */
 
+/* Die Dringlichkeit steht in der linken Kante:
+   schwarz und breit = sofort, schraffiert = bald, dünn grau = irgendwann. */
 .fehlerKarte {
-  border-left: 2px solid var(--rand);
+  border-left: var(--strich-kante) solid var(--rand);
 }
 
 .fehlerKritisch,
@@ -1211,11 +1405,18 @@ details.technisch[open] summary .pfeil {
 }
 
 .fehlerMittel {
-  border-left-color: var(--warnung);
+  border-left-color: transparent;
+  background-image: var(--schraffur);
+  background-repeat: no-repeat;
+  background-size: var(--strich-kante) 100%;
+  background-position: left top;
+  background-origin: border-box;
+  background-clip: border-box;
 }
 
 .fehlerNiedrig {
-  border-left-color: var(--rand-stark);
+  border-left-width: var(--strich-stark);
+  border-left-color: var(--text-still);
 }
 
 .fehlerTitel {
@@ -1239,10 +1440,14 @@ details.technisch[open] summary .pfeil {
   gap: var(--raum-1);
 }
 
+/* Jede Beschriftung steht sichtbar über dem Feld, nie nur als blasser
+   Text im Feld. Wer tippt, soll noch sehen, was gefragt war. */
 .feldName {
-  font-size: var(--gr-neben);
-  color: var(--text-leise);
-  font-weight: 500;
+  font-size: var(--gr-micro);
+  color: var(--text);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
 }
 
 input[type="text"],
@@ -1253,24 +1458,43 @@ select,
 textarea {
   width: 100%;
   padding: var(--raum-2) var(--raum-3);
-  border-radius: var(--radius-1);
-  border: 1px solid var(--rand-stark);
+  border-radius: 0;
+  border: var(--strich-stark) solid var(--rand-stark);
   background: var(--grund);
   color: var(--text);
   font: inherit;
   font-size: var(--gr-basis);
-  min-height: 42px;
-  transition: border-color var(--zeit) var(--kurve), box-shadow var(--zeit) var(--kurve);
+  min-height: 44px;
+  transition: box-shadow var(--zeit) var(--kurve);
+}
+
+/* Ein Feld, in dem eine Nummer stehen soll, zeigt sie auch als Nummer. */
+input[type="search"],
+input[inputmode="numeric"] {
+  font-family: var(--schrift-zahl);
+  font-variant-ligatures: none;
 }
 
 input::placeholder {
-  color: var(--text-leise);
-  opacity: 0.85;
+  color: var(--text-still);
+  opacity: 1;
+  font-family: var(--schrift);
+  letter-spacing: 0;
 }
 
+/* Beim Überfahren wird der Rahmen nach innen doppelt statt heller. */
 input:hover,
-select:hover {
-  border-color: var(--rand-stark);
+select:hover,
+textarea:hover {
+  box-shadow: inset 0 0 0 var(--strich) var(--rand-stark);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: inset 0 calc(var(--strich-kante) * -1) 0 calc(var(--strich-kante) * -1 + 3px)
+    var(--rand-stark);
 }
 
 select {
@@ -1315,12 +1539,14 @@ select {
   background: var(--grund);
 }
 
+/* Die Anmeldekarte steht als Block auf der Fläche, mit einem harten
+   versetzten Schlagschatten statt eines weichen Scheins. */
 .anmeldungKarte {
   width: 100%;
   max-width: 400px;
   background: var(--flaeche);
-  border: 1px solid var(--rand);
-  border-radius: var(--radius-3);
+  border: var(--strich-stark) solid var(--rand-stark);
+  border-radius: 0;
   padding: var(--raum-5);
   box-shadow: var(--schatten-3);
   display: flex;
@@ -1339,12 +1565,12 @@ select {
    ========================================================================= */
 
 .meldung {
-  border-radius: var(--radius-2);
+  border-radius: 0;
   padding: var(--raum-3);
   font-size: var(--gr-neben);
-  border: 1px solid var(--rand);
-  border-left-width: 2px;
-  background: var(--flaeche-hoch);
+  border: var(--strich) solid var(--rand-stark);
+  border-left-width: var(--strich-kante);
+  background: var(--flaeche-tief);
   display: flex;
   gap: var(--raum-3);
   align-items: flex-start;
@@ -1365,7 +1591,13 @@ select {
 }
 
 .meldungGelb {
-  border-left-color: var(--warnung);
+  border-left-color: transparent;
+  background-image: var(--schraffur);
+  background-repeat: no-repeat;
+  background-size: var(--strich-kante) 100%;
+  background-position: left top;
+  background-origin: border-box;
+  background-clip: border-box;
 }
 
 .meldungGelb svg {
@@ -1373,7 +1605,8 @@ select {
 }
 
 .meldungBlau {
-  border-left-color: var(--rand-stark);
+  border-left-color: var(--text-still);
+  border-left-width: var(--strich-stark);
 }
 
 .meldungBlau svg {
@@ -1397,11 +1630,11 @@ select {
   pointer-events: auto;
   max-width: 480px;
   width: 100%;
-  background: var(--flaeche-hoch);
-  border: 1px solid var(--rand-stark);
-  border-radius: var(--radius-2);
+  background: var(--flaeche);
+  border: var(--strich-stark) solid var(--rand-stark);
+  border-radius: 0;
   padding: var(--raum-3);
-  box-shadow: var(--schatten-3);
+  box-shadow: 6px 6px 0 var(--rand-stark);
   display: flex;
   gap: var(--raum-3);
   align-items: flex-start;
@@ -1416,11 +1649,21 @@ select {
   }
 }
 
+/* Eine Fehlermeldung kehrt sich um, damit sie nicht übersehen wird. */
 .hinweisRot {
-  border-color: var(--rand-stark);
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--text-invers);
+  box-shadow: 6px 6px 0 var(--text-still);
 }
 
-.hinweisRot .hinweisZeichen {
+.hinweisRot .hinweisZeichen,
+.hinweisRot .hinweisZu {
+  color: var(--text-invers);
+}
+
+.hinweisRot .hinweisZu:hover {
+  background: var(--text-invers);
   color: var(--text);
 }
 
@@ -1445,23 +1688,34 @@ select {
   color: var(--text-leise);
   cursor: pointer;
   padding: var(--raum-1);
-  border-radius: var(--radius-1);
+  border-radius: 0;
   display: grid;
   place-items: center;
+  min-width: 32px;
+  min-height: 32px;
 }
 
 .hinweisZu:hover {
-  color: var(--text);
-  background: var(--flaeche);
+  color: var(--text-invers);
+  background: var(--text);
 }
 
 /* ============================================================================
    Leere Zustände und Ladeflächen
    ========================================================================= */
 
+/* Leere Bereiche bekommen eine Schraffur statt einer gestrichelten Linie.
+   Das sagt deutlicher: hier ist absichtlich nichts. */
 .leer {
-  border: 1px dashed var(--rand-stark);
-  border-radius: var(--radius-2);
+  border: var(--strich-stark) solid var(--rand-stark);
+  border-radius: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--flaeche-tief) 0,
+    var(--flaeche-tief) 10px,
+    var(--flaeche) 10px,
+    var(--flaeche) 20px
+  );
   padding: var(--raum-5) var(--raum-4);
   text-align: center;
   color: var(--text-leise);
@@ -1473,20 +1727,20 @@ select {
 }
 
 .leerZeichen {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-2);
+  width: 44px;
+  height: 44px;
+  border-radius: 0;
   display: grid;
   place-items: center;
-  background: var(--flaeche-hoch);
-  border: 1px solid var(--rand);
-  color: var(--text-leise);
+  background: var(--flaeche);
+  border: var(--strich-stark) solid var(--rand-stark);
+  color: var(--text);
   margin-bottom: var(--raum-1);
 }
 
 .leer strong {
   color: var(--text);
-  font-weight: 600;
+  font-weight: 700;
   font-size: var(--gr-basis);
 }
 
@@ -1494,23 +1748,29 @@ select {
   max-width: 46ch;
 }
 
+/* Beim Laden läuft kein weicher Schimmer, sondern ein hartes Umschalten
+   zwischen zwei Grautönen. Das passt zum Rest und flackert nicht. */
 .skelett {
-  background: linear-gradient(90deg, var(--flaeche-hoch) 25%, var(--rand) 50%, var(--flaeche-hoch) 75%);
-  background-size: 200% 100%;
-  animation: schimmer 1.4s linear infinite;
-  border-radius: var(--radius-1);
+  background: var(--flaeche-hoch);
+  animation: schimmer 1.2s steps(2, end) infinite;
+  border-radius: 0;
 }
 
 @keyframes schimmer {
-  to {
-    background-position: -200% 0;
+  0%,
+  49% {
+    background-color: var(--flaeche-hoch);
+  }
+  50%,
+  100% {
+    background-color: var(--rand);
   }
 }
 
 .skelettKarte {
   background: var(--flaeche);
-  border: 1px solid var(--rand);
-  border-radius: var(--radius-2);
+  border: var(--strich) solid var(--rand-stark);
+  border-radius: 0;
   padding: var(--raum-4);
   display: flex;
   flex-direction: column;
@@ -1523,7 +1783,8 @@ select {
 
 .tabelleHuelle {
   overflow-x: auto;
-  border-radius: var(--radius-2);
+  border-radius: 0;
+  border: var(--strich) solid var(--rand-stark);
 }
 
 table {
@@ -1533,36 +1794,55 @@ table {
   min-width: 560px;
 }
 
+/* Die Kopfzeile bleibt beim Blättern oben stehen und ist schwarz gefüllt.
+   Damit weiß man auch nach zweihundert Zeilen noch, in welcher Spalte man
+   gerade liest. */
 thead th {
   position: sticky;
   top: 0;
-  background: var(--flaeche);
+  background: var(--text);
+  color: var(--text-invers);
   z-index: 1;
+  border-bottom: var(--strich-stark) solid var(--rand-stark);
 }
 
 th,
 td {
   text-align: left;
-  padding: var(--raum-3);
-  border-bottom: 1px solid var(--rand);
+  padding: var(--raum-2) var(--raum-3);
+  border-bottom: var(--strich) solid var(--rand);
   vertical-align: middle;
 }
 
 th {
-  color: var(--text-still);
-  font-weight: 500;
+  font-weight: 700;
   font-size: var(--gr-micro);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.09em;
   white-space: nowrap;
+}
+
+/* Jede zweite Zeile bekommt einen Hauch Grau. Das führt das Auge über
+   breite Tabellen, ohne dass eine einzige Linie mehr nötig wäre. */
+tbody tr:nth-child(even) {
+  background: var(--flaeche-tief);
 }
 
 tbody tr {
   transition: background var(--zeit-schnell) var(--kurve);
 }
 
-tbody tr:hover {
+tbody tr:hover,
+tbody tr:nth-child(even):hover {
   background: var(--flaeche-hoch);
+  box-shadow: inset var(--strich-kante) 0 0 calc(var(--strich-kante) * -1 + 6px) var(--rand-stark);
+}
+
+/* Zahlen rechtsbündig: so stehen Tausender unter Tausendern. */
+td.zahl,
+th.zahl {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 tbody tr:last-child td {
@@ -1626,6 +1906,10 @@ tbody tr:last-child td {
     background: var(--grund);
   }
 
+  .markeName {
+    letter-spacing: 0.04em;
+  }
+
   /* Auf dem Handy wandert die Navigation nach unten, in Daumenreichweite. */
   .navigation {
     position: fixed;
@@ -1635,9 +1919,8 @@ tbody tr:last-child td {
     z-index: 40;
     margin: 0;
     padding: var(--raum-1) var(--raum-1) calc(var(--raum-1) + env(safe-area-inset-bottom, 0px));
-    background: color-mix(in srgb, var(--grund) 94%, transparent);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid var(--rand);
+    background: var(--grund);
+    border-top: var(--strich-stark) solid var(--rand-stark);
     justify-content: space-between;
     overflow-x: auto;
     overflow-y: visible;
@@ -1650,20 +1933,29 @@ tbody tr:last-child td {
     min-width: 68px;
     padding: 6px 4px;
     font-size: 10px;
-    letter-spacing: -0.01em;
-    border-radius: var(--radius-2);
+    letter-spacing: 0.02em;
+    border-radius: 0;
     min-height: 52px;
     position: relative;
   }
 
   .navKnopfAktiv {
-    color: var(--text);
+    color: var(--text-invers);
+  }
+
+  .navKnopfAktiv .navZahl {
+    background: var(--text);
+    color: var(--text-invers);
+    border-color: var(--text-invers);
   }
 
   .navZahl {
     position: absolute;
-    top: 2px;
-    right: max(2px, calc(50% - 22px));
+    top: 4px;
+    right: max(2px, calc(50% - 24px));
+    line-height: 14px;
+    min-width: 16px;
+    font-size: 10px;
   }
 
   .fuss {
@@ -1735,8 +2027,8 @@ tbody tr:last-child td {
   }
 
   .tabelleKarten tr {
-    border: 1px solid var(--rand);
-    border-radius: var(--radius-2);
+    border: var(--strich) solid var(--rand-stark);
+    border-radius: 0;
     margin-bottom: var(--raum-2);
     background: var(--flaeche);
     padding: var(--raum-2);
@@ -1770,4 +2062,352 @@ tbody tr:last-child td {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ============================================================================
+   Feinschliff
+   Kleinigkeiten, die man einzeln nicht bemerkt, zusammen aber sehr wohl.
+   ========================================================================= */
+
+/* --- Markierter Text kehrt sich um ---------------------------------------- */
+
+::selection {
+  background: var(--text);
+  color: var(--text-invers);
+}
+
+::-moz-selection {
+  background: var(--text);
+  color: var(--text-invers);
+}
+
+/* --- Bildlaufleisten passen sich an: eckig, schwarz, schmal --------------- */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rand-stark) var(--flaeche-hoch);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--flaeche-hoch);
+  border-left: var(--strich) solid var(--rand);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--rand-stark);
+  border: 2px solid var(--flaeche-hoch);
+  border-radius: 0;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text);
+  border-width: 1px;
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--flaeche-hoch);
+}
+
+/* --- Anfassbares zeigt es auch ------------------------------------------- */
+
+button:not(:disabled),
+summary,
+[role="button"]:not([aria-disabled="true"]),
+label[for] {
+  cursor: pointer;
+}
+
+/* Auf Fingergeräten gibt es kein Überfahren. Dort zählt nur, was beim
+   Antippen passiert, deshalb bleibt die Rückmeldung beim Drücken erhalten
+   und der Umkehr-Effekt beim Überfahren wird abgeschaltet. */
+@media (hover: none) {
+  .knopf:hover:not(:disabled),
+  .navKnopf:hover {
+    background: var(--flaeche);
+    color: var(--text);
+    border-color: var(--rand-stark);
+  }
+
+  .knopfHaupt:hover:not(:disabled) {
+    background: var(--knopf-haupt);
+    color: var(--knopf-haupt-schrift);
+    border-color: var(--knopf-haupt);
+  }
+
+  .navKnopfAktiv:hover {
+    background: var(--text);
+    color: var(--text-invers);
+  }
+
+  .knopf:active:not(:disabled) {
+    background: var(--text);
+    color: var(--text-invers);
+    transform: translate(2px, 2px);
+  }
+}
+
+/* --- Angetippte Fläche nicht blau einfärben ------------------------------- */
+
+button,
+a,
+summary,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.08);
+}
+
+/* --- Trennlinien und Reihen ---------------------------------------------- */
+
+.trennlinie {
+  height: var(--strich);
+  background: var(--rand-stark);
+}
+
+/* --- Zahlen und Nummern hervorheben -------------------------------------- */
+
+/* Eine Artikelnummer, eine EAN oder eine Uhrzeit im Fließtext bekommt einen
+   feinen Kasten. Man erkennt sofort, was man kopieren kann. */
+.wertPaarWert,
+.feldWert {
+  font-family: var(--schrift-zahl);
+  font-size: var(--gr-klein);
+  letter-spacing: 0;
+}
+
+.zeileUnter .zahl,
+.durchlaufZeit {
+  font-family: var(--schrift-zahl);
+  font-size: var(--gr-klein);
+}
+
+/* --- Bilder ------------------------------------------------------------- */
+
+.artikelBild,
+.bildKachel,
+.artikelBild img,
+.bildKachel img {
+  border-radius: 0;
+}
+
+.bildKachel {
+  border: var(--strich) solid var(--rand-stark);
+}
+
+.bildKachel:hover {
+  box-shadow: inset 0 0 0 var(--strich-stark) var(--rand-stark);
+}
+
+/* --- Aufklappzeilen ------------------------------------------------------ */
+
+.zeileOffen {
+  box-shadow: inset 0 0 0 var(--strich) var(--rand-stark);
+}
+
+.zeileInhalt {
+  border-top: var(--strich) solid var(--rand-stark);
+  background: var(--flaeche-tief);
+}
+
+.zeileKopf:hover {
+  background: var(--flaeche-hoch);
+}
+
+/* --- Nur Vorlesen: bleibt unsichtbar, springt aber beim Anspringen auf --- */
+
+.springmarke {
+  border: var(--strich-stark) solid var(--rand-stark);
+  background: var(--grund);
+  font-weight: 700;
+}
+
+/* ============================================================================
+   Ausdruck
+   Das Dashboard wird auch mal ausgedruckt und in eine Besprechung gelegt.
+   Auf Papier gibt es kein Überfahren, keine Navigation und keine Knöpfe.
+   ========================================================================= */
+
+@media print {
+  :root {
+    --rand: #999999;
+    --rand-stark: #000000;
+    --flaeche-hoch: #ffffff;
+    --flaeche-tief: #ffffff;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+    font-size: 10pt;
+  }
+
+  .kopf,
+  .navigation,
+  .fuss,
+  .hinweise,
+  .knopfReihe,
+  .werkzeugleiste,
+  .springmarke {
+    display: none !important;
+  }
+
+  .inhalt {
+    padding: 0;
+    max-width: none;
+  }
+
+  .karte,
+  .kennzahl,
+  .zeile,
+  .zustand {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+
+  /* Ausgeklappte Zeilen werden auf Papier vollständig gedruckt. */
+  .zeileInhalt {
+    display: block !important;
+  }
+
+  /* Die schwarze Fläche einer Störung frisst Toner. Auf Papier reicht ein
+     dicker Rahmen. */
+  .zustandRot,
+  .hinweisRot,
+  .etikettRot {
+    background: #ffffff;
+    color: #000000;
+    border: 2pt solid #000000;
+  }
+
+  .zustandRot .zustandText h1,
+  .zustandRot .zustandText p,
+  .zustandRot .zustandFakt,
+  .zustandRot .zustandFaktWert {
+    color: #000000;
+  }
+
+  thead th {
+    background: #ffffff;
+    color: #000000;
+    border-bottom: 2pt solid #000000;
+  }
+
+  /* Verweise auf Papier ohne Ziel sind wertlos. */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 8pt;
+  }
+}
+
+/* ============================================================================
+   Sonderfälle der Anzeige
+   ========================================================================= */
+
+/* Wer im Betriebssystem "mehr Kontrast" eingestellt hat, bekommt dickere
+   Linien und kein Grau mehr. */
+@media (prefers-contrast: more) {
+  :root {
+    --rand: #000000;
+    --text-leise: #1a1a1a;
+    --text-still: #1a1a1a;
+    --ok: #000000;
+    --strich: 2px;
+  }
+}
+
+/* Windows-Kontrastmodus setzt eigene Farben. Dann tritt unsere Palette
+   zurück und wir sorgen nur noch dafür, dass Rahmen sichtbar bleiben. */
+@media (forced-colors: active) {
+  .karte,
+  .kennzahl,
+  .zeile,
+  .zustand,
+  .knopf,
+  .etikett,
+  .hinweis,
+  .tabelleHuelle {
+    border: 1px solid CanvasText;
+  }
+
+  .knopfHaupt,
+  .navKnopfAktiv,
+  .etikettRot,
+  thead th {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    border-color: HighlightText;
+  }
+
+  .zustandRot {
+    forced-color-adjust: none;
+    background: Canvas;
+    color: CanvasText;
+    border: 3px solid CanvasText;
+  }
+
+  .zustandRot .zustandText h1,
+  .zustandRot .zustandText p,
+  .zustandRot .zustandFakt,
+  .zustandRot .zustandFaktWert {
+    color: CanvasText;
+  }
+
+  .schraffur,
+  .zustandGelb::before {
+    background: CanvasText;
+  }
+
+  :focus-visible {
+    outline: 2px solid CanvasText;
+  }
+}
+
+/* Sehr schmale Geräte: das Raster wird einspaltig, bevor etwas abgeschnitten
+   wird. Seitliches Schieben soll es nirgends geben. */
+@media (max-width: 380px) {
+  .kennzahlen {
+    grid-template-columns: 1fr;
+  }
+
+  .suchgitter {
+    grid-template-columns: 1fr;
+  }
+
+  .kennzahlWert {
+    font-size: 22px;
+  }
+}
+
+/* Sehr breite Bildschirme: der Inhalt läuft nicht endlos auseinander,
+   sondern bleibt in lesbarer Breite stehen. */
+@media (min-width: 1600px) {
+  .inhalt,
+  .kopfInhalt,
+  .navigation {
+    max-width: 1360px;
+  }
+}
+
+/* In einer Tabellenzelle steht oft beides: eine Nummer und ein erklärender
+   Satz. Die Nummer bleibt in der Schreibmaschinenschrift, der Satz kehrt
+   zur normalen Schrift zurück. */
+td .leise,
+td .klein,
+td p,
+td .knopf,
+td .etikett,
+th .leise {
+  font-family: var(--schrift);
+  letter-spacing: normal;
+}
+
+/* Ein gesperrter Knopf braucht keinen Warnstreifen mehr, er tut ja nichts. */
+.knopfWarnung:disabled::before {
+  opacity: 0.3;
 }

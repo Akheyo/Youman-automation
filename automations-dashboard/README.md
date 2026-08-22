@@ -236,30 +236,52 @@ src/
 Die Oberfläche folgt einem festen System, damit sie überall gleich aussieht und
 sich gleich verhält. Alle Werte stehen als Variablen in `src/styles/global.css`.
 
-**Farben.** Die Oberfläche ist fast einfarbig: neutrale Grautöne, keine
-Farbflächen, keine Verläufe, keine Schatten. Farbe erscheint nur dort, wo sie
-etwas bedeutet, und dann als kleines Zeichen oder als schmale Kante: Blau für
-in Ordnung, Gelb für hinschauen, Rot für kaputt. Der Hauptknopf ist hell auf
-dunkel statt farbig, damit die einzige starke Fläche im Bild die wichtigste
-Handlung ist.
+**Schwarz auf Weiß, sonst nichts.** Es gibt keine Farbe in der Oberfläche.
+Weiße Flächen, schwarze Linien, Grau nur für Nebensächliches. Keine Verläufe,
+keine weichen Schatten, keine runden Ecken: jedes Feld, jeder Knopf und jede
+Kachel ist ein Rechteck mit harter Kante.
 
-**Zustand nie allein über Farbe.** Jedes Etikett zeigt Zeichen und deutsches
-Wort, die Farbe steckt nur im Zeichen. Wer Farben schlecht unterscheidet,
-liest trotzdem sofort, was los ist.
+**Rang entsteht durch Gewicht, nicht durch Farbe.** Drei Stufen ziehen sich
+durch das ganze Bild:
 
-**Schrift.** Inter in wenigen Schnitten, Zahlen mit fester Zeichenbreite, damit
-in Listen und Tabellen nichts springt. Beschriftungen klein, versal und ruhig,
-Werte groß, aber nicht fett.
+| Stufe | Aussehen | Wo |
+|---|---|---|
+| ruhig | feiner grauer Rahmen | in Ordnung, erledigt, niedrig |
+| wichtig | kräftiger schwarzer Rahmen oder Schraffur | hinschauen, mittel |
+| dringend | schwarz gefüllt, Schrift weiß | Störung, kritisch, offen |
 
-**Abstände und Radien** kommen aus einer dichten Skala (4, 8, 12, 16, 24, 32,
-48 Pixel), passend zu einem Werkzeug, in dem viel auf einen Blick sichtbar
-sein soll.
+Ein schwerer Fehler kippt den ganzen Zustandsbalken ins Gegenteil: schwarze
+Fläche, weiße Schrift. Das sieht man quer durchs Büro.
+
+**Zustand nie allein über die Fläche.** Jedes Etikett zeigt zusätzlich ein
+Zeichen und ein deutsches Wort. Wer nur kurz hinschaut, liest das Wort, wer
+genau hinschaut, sieht die Stufe.
+
+**Schriften.** Inter für Texte und Beschriftungen, JetBrains Mono für alles,
+was eine Nummer ist: Artikelnummern, EAN, Bestände, Uhrzeiten, Dauern. Jede
+Ziffer ist gleich breit, dadurch stehen Spalten sauber untereinander und eine
+lange Nummer bleibt auf einen Blick lesbar. Beschriftungen laufen klein und
+versal, Überschriften fett.
+
+**Knöpfe kehren sich um.** Beim Überfahren wird aus weiß mit schwarzer Schrift
+schwarz mit weißer, beim Drücken rutscht der Knopf zwei Punkte nach rechts
+unten. Ein Knopf, der etwas anhält oder abbricht, trägt oben eine Schraffur
+als Warnstreifen.
+
+**Abstände** kommen aus einer dichten Skala (4, 8, 12, 16, 24, 32, 48 Pixel),
+passend zu einem Werkzeug, in dem viel auf einen Blick sichtbar sein soll.
+Ecken haben durchgehend den Wert null.
 
 **Verlauf.** Die Erfolgsquote der letzten 14 Tage ist eine Linie mit
 gestricheltem Ziel bei 95 Prozent. Die Achse beginnt nicht immer bei null,
 sonst sähen alle Tage gleich aus. Wo sie beginnt, steht unter dem Bild. Jeder
 Tag ist mit der Tastatur erreichbar, und dieselben Zahlen stehen zusätzlich als
 Tabelle für Vorleseprogramme im Quelltext.
+
+**Ausdruck.** Wer die Seite ausdruckt, bekommt ein sauberes Blatt: Kopf,
+Navigation und Knöpfe fallen weg, aufgeklappte Zeilen werden vollständig
+gedruckt, schwarze Flächen werden zu Rahmen, damit die Patrone nicht leerläuft,
+und hinter jedem Verweis steht seine Adresse.
 
 **Auf dem Handy** wandert die Navigation als feste Leiste nach unten in
 Daumenreichweite, Tabellen werden zu Karten, und der Kopf zeigt nur noch das
