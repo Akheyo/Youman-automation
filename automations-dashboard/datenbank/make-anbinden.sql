@@ -100,9 +100,23 @@ as $$
 declare
   gehoert_zu uuid;
   ueberschrift text;
+  -- Die Zustandsspalten sind eigene Typen, keine freien Texte. Die Variablen
+  -- übernehmen den Typ der jeweiligen Spalte, dann passt die Zuweisung immer,
+  -- auch wenn der Typ in der Datenbank später einmal anders heißt.
+  zustand_lauf automation_runs.status%type;
+  zustand_automation automations.status%type;
+  schwere automation_errors.severity%type;
 begin
+  if erfolg then
+    zustand_lauf := 'success';
+    zustand_automation := 'running';
+  else
+    zustand_lauf := 'error';
+    zustand_automation := 'error';
+  end if;
+
   update automation_runs
-     set status = case when erfolg then 'success' else 'error' end,
+     set status = zustand_lauf,
          finished_at = now(),
          items_total = gesamt,
          items_success = in_ordnung,
@@ -118,7 +132,7 @@ begin
   end if;
 
   update automations
-     set status = case when erfolg then 'running' else 'error' end,
+     set status = zustand_automation,
          last_run_at = now(),
          next_run_at = coalesce(naechster_lauf, next_run_at)
    where id = gehoert_zu;
@@ -127,13 +141,21 @@ begin
   if not erfolg then
     select name into ueberschrift from automations where id = gehoert_zu;
 
+    -- Ist ein Teil durchgelaufen, ist es ärgerlich. Ist gar nichts
+    -- durchgelaufen, ist es dringend.
+    if nicht_geklappt > 0 and in_ordnung > 0 then
+      schwere := 'mittel';
+    else
+      schwere := 'hoch';
+    end if;
+
     insert into automation_errors (
       automation_id, run_id, severity, status, title, message_readable
     )
     values (
       gehoert_zu,
       lauf,
-      case when nicht_geklappt > 0 and in_ordnung > 0 then 'mittel' else 'hoch' end,
+      schwere,
       'open',
       coalesce(ueberschrift, 'Automation') || ' ist nicht durchgelaufen',
       coalesce(klartext, 'Der Durchlauf wurde abgebrochen. Ein Grund wurde nicht mitgeliefert.')
@@ -159,21 +181,28 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  angenommen control_commands.status%type := 'accepted';
 begin
+  -- Das Ändern steht im with-Block, damit die geänderte Zeile anschließend
+  -- als Ergebnis herausgegeben werden kann.
   return query
-  update control_commands
-     set status = 'accepted',
-         processed_at = now()
-   where id = (
-     select id
-       from control_commands
-      where automation_id = automation
-        and status = 'pending'
-      order by requested_at
-      limit 1
-      for update skip locked
-   )
-  returning id, action::text, run_id;
+  with genommen as (
+    update control_commands
+       set status = angenommen,
+           processed_at = now()
+     where id = (
+       select id
+         from control_commands
+        where automation_id = automation
+          and status = 'pending'
+        order by requested_at
+        limit 1
+        for update skip locked
+     )
+    returning id, action, run_id
+  )
+  select genommen.id, genommen.action::text, genommen.run_id from genommen;
 end;
 $$;
 
@@ -184,14 +213,24 @@ $$;
 
 create or replace function auftrag_erledigt(auftrag uuid, geklappt boolean default true)
 returns void
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  ausgang control_commands.status%type;
+begin
+  if geklappt then
+    ausgang := 'done';
+  else
+    ausgang := 'failed';
+  end if;
+
   update control_commands
-     set status = case when geklappt then 'done' else 'failed' end,
+     set status = ausgang,
          processed_at = now()
    where id = auftrag;
+end;
 $$;
 
 
