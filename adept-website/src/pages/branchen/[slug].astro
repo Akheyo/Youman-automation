@@ -28,7 +28,7 @@ const referenz = branche.referenz ? caseStudyNach(branche.referenz) : undefined;
 ---
 
 <Base
-  title={branche.title}
+  title={branche.seoTitel ?? branche.title}
   description={branche.platzhalter
     ? `${branche.title}: Inhalte für diese Branche werden derzeit erarbeitet.`
     : `${branche.teaser} adept& baut dafür Module und bindet sie an das bestehende ERP-System an.`}

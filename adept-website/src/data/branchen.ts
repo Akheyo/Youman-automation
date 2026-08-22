@@ -6,6 +6,13 @@ export type Branche = {
   /** Kurzzeile für Übersicht und Karten. */
   teaser: string;
   /**
+   * Titel fuer die Suche, wo der Branchenname allein zu wenig traegt.
+   * "Logistik & Versand" ist der Name des Bereichs, gesucht wird aber nach
+   * dem Bereich plus "Software" oder "ERP". Der sichtbare Titel im
+   * Kopfbereich bleibt unveraendert.
+   */
+  seoTitel?: string;
+  /**
    * Einordnung der Branche. Bewusst allgemein gehalten: konkrete Painpoints
    * aus adept&-Projekten liegen für diese Branche noch nicht vor.
    */
@@ -63,6 +70,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'logistik-und-versand',
+    seoTitel: 'ERP-Software für Logistik und Versand',
     painpoints: [
       'Welche Ware auf welche Palette darf, steht in keiner hinterlegten Regel. Es steht im Kopf des Kollegen, der die Ladung seit Jahren stellt.',
       'Zwei Lieferungen an denselben Kunden gehen am selben Tag getrennt raus, weil die Aufträge in zwei Vorgängen liefen und niemand sie zusammengeführt hat.',
