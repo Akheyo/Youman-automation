@@ -47,7 +47,7 @@ export const news: NewsItem[] = [
     title: 'ERP-Insellösungen anbinden statt das System wechseln',
     href: '/news/erp-insellosungen-anbinden',
     platzhalter: false,
-    bild: 'oberflaeche',
+    bild: 'erp-bausteine',
   },
   {
     slug: 'tabelle-neben-dem-erp',
@@ -58,6 +58,6 @@ export const news: NewsItem[] = [
     title: 'Die Tabelle neben dem ERP',
     href: '/news/tabelle-neben-dem-erp',
     platzhalter: false,
-    bild: 'buero',
+    bild: 'digitaler-zwilling',
   },
 ];

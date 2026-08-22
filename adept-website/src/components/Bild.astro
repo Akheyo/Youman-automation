@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import { bild } from '../lib/images';
 import type { BildKey } from '../data/images';
+import { bildFokus } from '../data/images';
 
 interface Props {
   /** Schlüssel aus dem Bildregister. Fehlt die Datei, greift die Ersatzfläche. */
@@ -75,6 +76,7 @@ const scrims: Record<string, string> = {
         loading={priority ? 'eager' : 'lazy'}
         decoding="async"
         fetchpriority={priority ? 'high' : 'auto'}
+        style={name && bildFokus[name] ? `object-position:${bildFokus[name]}` : undefined}
         class:list={[
           'size-full object-cover',
           zoom && 'transition-transform duration-700 ease-out group-hover:scale-[1.04]',

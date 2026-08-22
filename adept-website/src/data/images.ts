@@ -26,7 +26,9 @@ export type BildKey =
   | 'werte'
   | 'feinplanung'
   | 'versandsteuerung'
-  | 'referenzprojekte';
+  | 'referenzprojekte'
+  | 'erp-bausteine'
+  | 'digitaler-zwilling';
 
 /** Alt-Texte zentral, damit ein Bild überall gleich beschrieben wird. */
 export const bilder: Record<BildKey, string> = {
@@ -50,4 +52,23 @@ export const bilder: Record<BildKey, string> = {
   feinplanung: 'Blick von oben auf eine Fahrzeugmontagelinie mit mehreren Karosserien auf Förderbahnen',
   versandsteuerung: 'Hallenkran hebt ein Bündel Metallprofile, im Vordergrund zwei Personen mit Schutzhelmen',
   referenzprojekte: 'Ausgebreitete Projektunterlagen mit Inhaltsverzeichnissen und Klammern, schwarzweiß',
+  'erp-bausteine':
+    'Sechs Holzwürfel zu einer Pyramide gestapelt, beschriftet mit Symbolen für ERP, Auswertung, Steuerung und Vernetzung',
+  'digitaler-zwilling':
+    'Doppelbelichtung: das Profil einer Person mit Schutzhelm, überlagert von Industrieanlagen und Hochhäusern',
+};
+
+/**
+ * Bildmittelpunkt für den Zuschnitt, wo die Vorgabe "mittig" das Falsche trifft.
+ *
+ * `object-cover` schneidet aus der Mitte. Bei den meisten Motiven stimmt das.
+ * Sitzt das Wesentliche aber am Rand, zeigt ein schmaler Ausschnitt genau das
+ * Belanglose: Beim Kopfbereich eines Beitrags ist der Ausschnitt hochkant, und
+ * vom Portrait mit Schutzhelm blieb dort nur ein formatfüllendes Ohr übrig.
+ *
+ * Werte sind gültige `object-position`-Angaben. Fehlt ein Eintrag, bleibt es
+ * bei der Mitte.
+ */
+export const bildFokus: Partial<Record<BildKey, string>> = {
+  'digitaler-zwilling': 'right top',
 };
