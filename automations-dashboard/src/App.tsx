@@ -10,6 +10,7 @@ import Protokoll from './pages/Protokoll';
 import Zugaenge from './pages/Zugaenge';
 import Artikel from './pages/Artikel';
 import Zeichen, { type ZeichenName } from './components/Icons';
+import Marke from './components/Marke';
 import { relativ } from './lib/format';
 import { rolleText } from './lib/labels';
 
@@ -59,9 +60,7 @@ function Kopf({ ziel, gehZu }: { ziel: Ziel; gehZu: (pfad: string) => void }) {
     <header className="kopf">
       <div className="kopfInhalt">
         <div className="marke">
-          <span className="markeZeichen">
-            <Zeichen name="blitz" groesse={17} />
-          </span>
+          <Marke />
           <span>
             <span className="markeName">Automationen</span>
             <span className="markeUnter">alles an einer Stelle</span>
@@ -190,9 +189,7 @@ function Hinweisseite({
     <main className="anmeldung">
       <div className="anmeldungKarte">
         <div className="anmeldungKopf">
-          <span className="markeZeichen">
-            <Zeichen name="blitz" groesse={17} />
-          </span>
+          <Marke groesse={32} />
           <h1>{titelText}</h1>
         </div>
         <p className="leise">{text}</p>

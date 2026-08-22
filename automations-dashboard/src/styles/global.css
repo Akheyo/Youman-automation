@@ -290,6 +290,9 @@ th {
   font-size: var(--gr-gross);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1.15;
   white-space: nowrap;
 }
@@ -1097,8 +1100,8 @@ th {
    ========================================================================= */
 
 .durchlauf {
-  border: 1px solid var(--rand);
-  border-radius: var(--radius-2);
+  border: var(--strich) solid var(--rand-stark);
+  border-radius: 0;
   background: var(--flaeche);
   padding: var(--raum-3);
   display: flex;
@@ -2410,4 +2413,43 @@ th .leise {
 /* Ein gesperrter Knopf braucht keinen Warnstreifen mehr, er tut ja nichts. */
 .knopfWarnung:disabled::before {
   opacity: 0.3;
+}
+
+/* ============================================================================
+   Firmenlogo
+   Das Logo liegt als Datei in `public`. Es kann breit sein (mit Schriftzug)
+   oder quadratisch. Beides muss oben in der Kopfzeile funktionieren, deshalb
+   ist nur die Höhe festgelegt, die Breite ergibt sich aus dem Bild.
+   ========================================================================= */
+
+.markeBild {
+  display: block;
+  width: auto;
+  max-width: 220px;
+  height: 34px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  object-position: left center;
+}
+
+/* Auf dem Handy ist oben wenig Platz. Dort wird das Logo kleiner und der
+   Zusatztext daneben verschwindet ohnehin schon. */
+@media (max-width: 720px) {
+  .markeBild {
+    height: 28px;
+    max-width: 132px;
+  }
+
+  /* Steht ein Logo im Kopf, sagt es schon, um wessen Software es geht.
+     Auf dem schmalen Bildschirm tritt der Name daneben zurück, sonst
+     schiebt er sich unter die Knöpfe. Ohne Logo bleibt er stehen. */
+  .markeBild + span {
+    display: none;
+  }
+}
+
+@media print {
+  .markeBild {
+    height: 12mm;
+  }
 }
