@@ -251,3 +251,72 @@ grant execute on function lauf_start(uuid, text) to service_role;
 grant execute on function lauf_ende(uuid, boolean, integer, integer, integer, text, text, text, timestamptz) to service_role;
 grant execute on function auftrag_abholen(uuid) to service_role;
 grant execute on function auftrag_erledigt(uuid, boolean) to service_role;
+
+
+-- ============================================================================
+-- 7. Der bequeme Weg: ein Szenario meldet sich selbst an
+--
+-- Bis hierhin musste für jedes neue Szenario erst eine Zeile in `automations`
+-- angelegt und deren id von Hand nach Make kopiert werden. Bei einer Handvoll
+-- Automationen geht das, bei dreißig nicht mehr.
+--
+-- `lauf_start_make` nimmt stattdessen die Nummer des Make-Szenarios entgegen.
+-- Kennt das Dashboard sie schon, wird der Durchlauf dort eingehängt. Kennt es
+-- sie nicht, legt es die Automation selbst an.
+--
+-- In Make gibt es die Nummer und den Namen des laufenden Szenarios ohne
+-- Zutun als {{scenario.id}} und {{scenario.name}}. Der Baustein sieht in
+-- jedem Szenario also gleich aus und muss nie angepasst werden.
+-- ============================================================================
+
+create or replace function lauf_start_make(
+  szenario text,
+  wie_heisst_es text default null,
+  bereich text default null,
+  zeitplan text default null,
+  ausgeloest_durch text default 'schedule'
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  gehoert_zu uuid;
+begin
+  if szenario is null or btrim(szenario) = '' then
+    raise exception 'Ohne die Nummer des Szenarios geht es nicht. In Make ist das {{scenario.id}}.';
+  end if;
+
+  select id into gehoert_zu
+    from automations
+   where n8n_instance = 'make.com'
+     and n8n_workflow_id = btrim(szenario);
+
+  -- Beim ersten Durchlauf eines neuen Szenarios legt sich die Automation
+  -- selbst an. Name und Bereich werden danach nicht mehr überschrieben:
+  -- wer sie im Dashboard umbenennt, soll das behalten dürfen.
+  if gehoert_zu is null then
+    insert into automations (
+      name, description, category, status, schedule_cron,
+      n8n_workflow_id, n8n_instance, is_active
+    )
+    values (
+      coalesce(nullif(btrim(wie_heisst_es), ''), 'Szenario ' || btrim(szenario)),
+      'Hat sich beim ersten Durchlauf selbst eingetragen. Beschreibung noch nachtragen.',
+      coalesce(nullif(btrim(bereich), ''), 'Ohne Bereich'),
+      'stopped',
+      nullif(btrim(zeitplan), ''),
+      btrim(szenario),
+      'make.com',
+      true
+    )
+    returning id into gehoert_zu;
+  end if;
+
+  return lauf_start(gehoert_zu, ausgeloest_durch);
+end;
+$$;
+
+revoke all on function lauf_start_make(text, text, text, text, text) from public, anon, authenticated;
+grant execute on function lauf_start_make(text, text, text, text, text) to service_role;
