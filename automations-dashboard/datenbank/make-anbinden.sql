@@ -320,3 +320,122 @@ $$;
 
 revoke all on function lauf_start_make(text, text, text, text, text) from public, anon, authenticated;
 grant execute on function lauf_start_make(text, text, text, text, text) to service_role;
+
+
+-- ============================================================================
+-- 8. Schluss melden, ohne die Nummer des Durchlaufs zu kennen
+--
+-- `lauf_ende` braucht die Nummer, die `lauf_start_make` zurückgegeben hat.
+-- In Make heißt die je nach Szenario {{1.data}}, {{58.data}} oder sonst wie,
+-- je nachdem, welche Nummer der erste Baustein gerade hat. Damit muss beim
+-- Kopieren in ein neues Szenario doch wieder etwas angepasst werden.
+--
+-- `lauf_ende_make` nimmt stattdessen wieder nur die Nummer des Szenarios und
+-- schließt den Durchlauf ab, der dort gerade offen ist. Damit sehen beide
+-- Bausteine in jedem Szenario gleich aus und lassen sich unverändert
+-- kopieren.
+--
+-- Ein Hinweis dazu: läuft ein Szenario mehrfach gleichzeitig, sind auch
+-- mehrere Durchläufe gleichzeitig offen und der Aufruf kann den falschen
+-- erwischen. Make arbeitet ein Szenario normalerweise nacheinander ab, dann
+-- kann das nicht passieren. Wer auf Nummer sicher gehen will oder bewusst
+-- parallel laufen lässt, nimmt weiterhin `lauf_ende` mit der Nummer des
+-- Durchlaufs.
+-- ============================================================================
+
+create or replace function lauf_ende_make(
+  szenario text,
+  erfolg boolean,
+  gesamt integer default 0,
+  in_ordnung integer default 0,
+  nicht_geklappt integer default 0,
+  klartext text default null,
+  technisch text default null,
+  protokoll_adresse text default null,
+  naechster_lauf timestamptz default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  offener_lauf uuid;
+begin
+  if szenario is null or btrim(szenario) = '' then
+    raise exception 'Ohne die Nummer des Szenarios geht es nicht. In Make ist das {{scenario.id}}.';
+  end if;
+
+  select r.id into offener_lauf
+    from automation_runs r
+    join automations a on a.id = r.automation_id
+   where a.n8n_instance = 'make.com'
+     and a.n8n_workflow_id = btrim(szenario)
+     and r.status = 'running'
+   order by r.started_at desc
+   limit 1;
+
+  if offener_lauf is null then
+    raise exception
+      'Für Szenario % ist gerade kein Durchlauf offen. Fehlt der Baustein lauf_start_make am Anfang?',
+      btrim(szenario);
+  end if;
+
+  perform lauf_ende(
+    offener_lauf, erfolg, gesamt, in_ordnung, nicht_geklappt,
+    klartext, technisch, protokoll_adresse, naechster_lauf
+  );
+
+  return offener_lauf;
+end;
+$$;
+
+revoke all on function lauf_ende_make(text, boolean, integer, integer, integer, text, text, text, timestamptz)
+  from public, anon, authenticated;
+grant execute on function lauf_ende_make(text, boolean, integer, integer, integer, text, text, text, timestamptz)
+  to service_role;
+
+
+-- ============================================================================
+-- 9. Liegengebliebene Durchläufe aufräumen
+--
+-- Bricht ein Szenario ab, ohne dass der Fehlerzweig greift, bleibt ein
+-- Durchlauf auf "läuft gerade" stehen und das Dashboard zeigt für immer eine
+-- Automation an, die angeblich arbeitet.
+--
+-- Dieser Aufruf schließt alles ab, was länger offen ist als erlaubt. Einmal
+-- aufrufen, wann immer es passt, oder in ein kleines Make-Szenario hängen,
+-- das stündlich läuft.
+-- ============================================================================
+
+create or replace function liegengebliebene_aufraeumen(nach_minuten integer default 60)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  abgebrochen automation_runs.status%type := 'cancelled';
+  wieviele integer;
+begin
+  with alt as (
+    update automation_runs
+       set status = abgebrochen,
+           finished_at = now(),
+           error_message_readable = coalesce(
+             error_message_readable,
+             'Der Durchlauf hat sich nach ' || nach_minuten ||
+             ' Minuten nicht mehr gemeldet und wurde abgebrochen.'
+           )
+     where status = 'running'
+       and started_at < now() - make_interval(mins => nach_minuten)
+    returning id
+  )
+  select count(*) into wieviele from alt;
+
+  return wieviele;
+end;
+$$;
+
+revoke all on function liegengebliebene_aufraeumen(integer) from public, anon, authenticated;
+grant execute on function liegengebliebene_aufraeumen(integer) to service_role;

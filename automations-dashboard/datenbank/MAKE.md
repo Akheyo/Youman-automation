@@ -45,8 +45,8 @@ er richtig aufgehoben.
 Der Aufbau ist in jedem Szenario derselbe:
 
 ```
-Auslöser  →  [lauf_start_make]  →  deine Arbeit  →  [lauf_ende]
-                                                 ↘  Fehlerzweig → [lauf_ende]
+Auslöser  →  [lauf_start_make]  →  deine Arbeit  →  [lauf_ende_make]
+                                                 ↘  Fehlerzweig → [lauf_ende_make]
 ```
 
 ### Ganz am Anfang, direkt hinter den Auslöser
@@ -75,12 +75,12 @@ Zurück kommt die Nummer des Durchlaufs. Die brauchst du gleich wieder.
 
 ### Ganz am Ende jedes Zweigs
 
-- URL: `https://cmijgibhncndxipfrtxl.supabase.co/rest/v1/rpc/lauf_ende`
+- URL: `https://cmijgibhncndxipfrtxl.supabase.co/rest/v1/rpc/lauf_ende_make`
 - Request content:
 
 ```json
 {
-  "lauf": "{{1.data}}",
+  "szenario": "{{scenario.id}}",
   "erfolg": true,
   "gesamt": 120,
   "in_ordnung": 118,
@@ -88,20 +88,25 @@ Zurück kommt die Nummer des Durchlaufs. Die brauchst du gleich wieder.
 }
 ```
 
-`{{1.data}}` ist die Ausgabe des ersten Bausteins, die Nummer musst du an die
-deines Szenarios anpassen. Lass das Szenario einmal laufen, dann erscheint das
-Feld in der Zuordnungsliste und du kannst es dort anklicken.
+**Auch dieser Block ist in jedem Szenario gleich.** Er schließt den Durchlauf
+ab, der für dieses Szenario gerade offen ist. Du musst also nirgends eine
+Modulnummer heraussuchen und nichts von einem Baustein zum anderen
+durchreichen.
 
 Die Zahlen kommen aus deinem Szenario. Hast du keine, lass sie einfach weg.
 
+Hat ein Zweig mehrere Enden, kommt der Baustein an jedes Ende. Sonst bleibt
+der Durchlauf bei diesem Weg auf "läuft gerade" stehen.
+
 ### Wenn etwas schiefgeht
 
-Rechtsklick auf den ersten Baustein → **Add error handler** → dort derselbe
-Aufruf auf `lauf_ende`, nur mit `"erfolg": false` und einer Erklärung:
+Rechtsklick auf den Baustein, der abbrechen kann → **Add error handler** →
+dort derselbe Aufruf auf `lauf_ende_make`, nur mit `"erfolg": false` und einer
+Erklärung:
 
 ```json
 {
-  "lauf": "{{1.data}}",
+  "szenario": "{{scenario.id}}",
   "erfolg": false,
   "gesamt": 120,
   "in_ordnung": 40,
@@ -121,19 +126,62 @@ Fehlerbereich an, den jemand übernehmen und abhaken kann.
 **Ohne diesen Zweig bleibt bei jedem Abbruch ein Durchlauf für immer auf
 "läuft gerade" stehen.** Er ist keine Kür.
 
+Gib auch im Fehlerfall die Zahlen mit, wenn dein Szenario sie kennt. Ist ein
+Teil durchgelaufen, stuft das Dashboard den Fehler als "mittel" ein statt als
+"hoch".
+
 ---
 
 ## Ein weiteres Szenario anschließen
 
-1. Die beiden HTTP-Bausteine aus einem fertigen Szenario kopieren
-2. Im neuen Szenario einfügen, den ersten hinter den Auslöser, den zweiten
-   ans Ende
-3. Beim zweiten Baustein die Nummer in `{{1.data}}` auf den ersten Baustein
-   des neuen Szenarios anpassen
+1. Die beiden HTTP-Bausteine in einem fertigen Szenario markieren, **Strg + C**
+2. Neues Szenario öffnen, **Strg + V**
+3. Den ersten hinter den Auslöser hängen, den zweiten ans Ende
 4. Fehlerzweig anhängen
 
-Kein SQL, keine ID, kein Eintrag im Dashboard. Beim ersten Durchlauf taucht
-die neue Automation von selbst auf.
+**Fertig. Es gibt nichts anzupassen.** Kein SQL, keine ID, keine Modulnummer,
+kein Eintrag im Dashboard. Beide Bausteine enthalten nur `{{scenario.id}}`,
+und das füllt Make in jedem Szenario selbst aus.
+
+Beim ersten Durchlauf taucht die neue Automation von selbst im Dashboard auf.
+Beschreibung, Bereich und Zeitplan kannst du danach in Ruhe nachtragen.
+
+### Wenn ein Szenario mehrfach gleichzeitig läuft
+
+`lauf_ende_make` schließt den Durchlauf ab, der für das Szenario gerade offen
+ist. Laufen mehrere Ausführungen desselben Szenarios zur selben Zeit, sind
+auch mehrere Durchläufe offen und der Aufruf kann den falschen erwischen.
+
+Make arbeitet ein Szenario normalerweise nacheinander ab, dann kann das nicht
+passieren. Lässt du bewusst parallel laufen, nimm stattdessen `lauf_ende` und
+gib die Nummer aus dem ersten Baustein mit, zum Beispiel `{{1.data}}`. Dann
+ist es eindeutig, dafür musst du die Modulnummer pro Szenario anpassen.
+
+---
+
+## Liegengebliebene Durchläufe
+
+Bricht ein Szenario ab, ohne dass der Fehlerzweig greift, etwa weil Make selbst
+ausfällt, bleibt ein Durchlauf auf "läuft gerade" stehen. Im Dashboard sieht
+das dann so aus, als würde die Automation ewig arbeiten.
+
+Dagegen gibt es:
+
+```sql
+select liegengebliebene_aufraeumen(60);
+```
+
+Das schließt alles ab, was länger als 60 Minuten offen ist, mit einer
+verständlichen Begründung. Zurück kommt die Anzahl.
+
+Am besten hängst du das in ein kleines Make-Szenario, das stündlich läuft:
+
+- URL: `https://cmijgibhncndxipfrtxl.supabase.co/rest/v1/rpc/liegengebliebene_aufraeumen`
+- Request content: `{ "nach_minuten": 60 }`
+
+Die Zahl an deine längste Automation anpassen. Läuft eine davon regelmäßig
+zwei Stunden, nimm 180 statt 60, sonst reißt der Aufruf ihr den Durchlauf
+unter den Füßen weg.
 
 ---
 
