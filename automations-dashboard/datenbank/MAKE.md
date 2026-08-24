@@ -45,31 +45,42 @@ er richtig aufgehoben.
 Der Aufbau ist in jedem Szenario derselbe:
 
 ```
-Auslöser  →  [lauf_start_make]  →  deine Arbeit  →  [lauf_ende_make]
-                                                 ↘  Fehlerzweig → [lauf_ende_make]
+Auslöser  →  [Variable szenario]  →  [lauf_start_make]  →  deine Arbeit  →  [lauf_ende_make]
+                                                                          ↘  Fehlerzweig → [lauf_ende_make]
 ```
 
-### Ganz am Anfang, direkt hinter den Auslöser
+### Die Nummer des Szenarios einmal ablegen
+
+Make stellt die eigene Szenario-Nummer nicht als Baustein-Wert bereit,
+`{{scenario.id}}` gibt es also nicht. Damit du die Nummer trotzdem nur an
+einer Stelle pflegst, legst du sie ganz vorne in einer Variablen ab:
+
+- Baustein: **Tools → Set variable**, direkt hinter den Auslöser
+- Variable name: `szenario`
+- Variable value: die Nummer aus der Adresszeile, zum Beispiel bei
+  `.../scenarios/4776890/edit` die `4776890`
+
+Ab hier benutzen alle drei HTTP-Bausteine `{{szenario}}`. Für ein weiteres
+Szenario änderst du später nur diesen einen Wert.
+
+### Ganz am Anfang, direkt hinter der Variablen
 
 - URL: `https://cmijgibhncndxipfrtxl.supabase.co/rest/v1/rpc/lauf_start_make`
 - Request content:
 
 ```json
 {
-  "szenario": "{{scenario.id}}",
-  "wie_heisst_es": "{{scenario.name}}",
+  "szenario": "{{szenario}}",
+  "wie_heisst_es": "Automation Fotostudio PC 1",
   "bereich": "Stammdaten"
 }
 ```
 
-**Dieser Block ist in jedem Szenario gleich.** `{{scenario.id}}` und
-`{{scenario.name}}` füllt Make selbst aus. Du musst also nichts heraussuchen
-und nichts anpassen, außer dem Bereich, falls du einen anderen willst.
-
-Kennt das Dashboard das Szenario noch nicht, trägt es die Automation beim
-ersten Durchlauf selbst ein. Beschreibung und Zeitplan kannst du danach in
-Ruhe nachtragen. Benennst du die Automation im Dashboard um, bleibt der neue
-Name erhalten, auch wenn das Szenario in Make weiter anders heißt.
+Die Nummer kommt aus der Variablen. `wie_heisst_es` tippst du einmal aus,
+diesen Namen zeigt das Dashboard an. Er wird nur beim allerersten Durchlauf
+verwendet: kennt das Dashboard das Szenario noch nicht, trägt es die
+Automation damit selbst ein. Benennst du sie später im Dashboard um, bleibt
+der neue Name erhalten.
 
 Zurück kommt die Nummer des Durchlaufs. Die brauchst du gleich wieder.
 
@@ -80,7 +91,7 @@ Zurück kommt die Nummer des Durchlaufs. Die brauchst du gleich wieder.
 
 ```json
 {
-  "szenario": "{{scenario.id}}",
+  "szenario": "{{szenario}}",
   "erfolg": true,
   "gesamt": 120,
   "in_ordnung": 118,
@@ -88,9 +99,9 @@ Zurück kommt die Nummer des Durchlaufs. Die brauchst du gleich wieder.
 }
 ```
 
-**Auch dieser Block ist in jedem Szenario gleich.** Er schließt den Durchlauf
-ab, der für dieses Szenario gerade offen ist. Du musst also nirgends eine
-Modulnummer heraussuchen und nichts von einem Baustein zum anderen
+**Auch dieser Block greift wieder auf `{{szenario}}` zu.** Er schließt den
+Durchlauf ab, der für dieses Szenario gerade offen ist. Du musst also nirgends
+eine Modulnummer heraussuchen und nichts von einem Baustein zum anderen
 durchreichen.
 
 Die Zahlen kommen aus deinem Szenario. Hast du keine, lass sie einfach weg.
@@ -106,7 +117,7 @@ Erklärung:
 
 ```json
 {
-  "szenario": "{{scenario.id}}",
+  "szenario": "{{szenario}}",
   "erfolg": false,
   "gesamt": 120,
   "in_ordnung": 40,
@@ -134,14 +145,20 @@ Teil durchgelaufen, stuft das Dashboard den Fehler als "mittel" ein statt als
 
 ## Ein weiteres Szenario anschließen
 
-1. Die beiden HTTP-Bausteine in einem fertigen Szenario markieren, **Strg + C**
-2. Neues Szenario öffnen, **Strg + V**
-3. Den ersten hinter den Auslöser hängen, den zweiten ans Ende
-4. Fehlerzweig anhängen
+1. Das ganze Szenario kopieren, oder die Bausteine markieren, **Strg + C**,
+   in ein neues Szenario **Strg + V**
+2. Den Variablen-Baustein hinter den Auslöser, `lauf_start_make` dahinter,
+   `lauf_ende_make` ans Ende, Fehlerzweig anhängen
+3. Im Variablen-Baustein die Nummer auf die des neuen Szenarios ändern
+4. In `lauf_start_make` den Namen bei `wie_heisst_es` anpassen
 
-**Fertig. Es gibt nichts anzupassen.** Kein SQL, keine ID, keine Modulnummer,
-kein Eintrag im Dashboard. Beide Bausteine enthalten nur `{{scenario.id}}`,
-und das füllt Make in jedem Szenario selbst aus.
+**Das ist alles.** Kein SQL, keine Modulnummer, kein Eintrag im Dashboard. Die
+drei HTTP-Bausteine bleiben unangetastet, weil sie nur `{{szenario}}` lesen.
+Angefasst wird pro Szenario nur die eine Variable und der Name.
+
+So unterscheiden sich zwei Szenarien für dieselbe Sache, etwa PC 1 und PC 2,
+allein durch ihre Nummer und tauchen im Dashboard als zwei getrennte
+Automationen auf.
 
 Beim ersten Durchlauf taucht die neue Automation von selbst im Dashboard auf.
 Beschreibung, Bereich und Zeitplan kannst du danach in Ruhe nachtragen.
