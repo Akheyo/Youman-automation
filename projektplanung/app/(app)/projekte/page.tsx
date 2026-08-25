@@ -3,7 +3,7 @@ import { requireUser, supabaseConfigured } from '@/lib/supabase/server';
 import { plentyConfigured } from '@/lib/plenty/client';
 import ProjektDashboard, { type Projekt } from './ProjektDashboard';
 
-export const metadata: Metadata = { title: 'Projekte · Youman Projektplanung' };
+export const metadata: Metadata = { title: 'Projekte · Komplett Konzept Projektplanung' };
 export const dynamic = 'force-dynamic';
 
 export default async function ProjektePage() {

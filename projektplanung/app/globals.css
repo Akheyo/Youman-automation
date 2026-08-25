@@ -1,49 +1,57 @@
 /* =============================================================================
- * Youman Projektplanung — Global Styles
- * Vanilla CSS. Flat Design, Plus Jakarta Sans, Markenblau #0D73FC.
- * Dichte Dashboard-Dichte, 150–200ms Transitions, keine schweren Schatten.
+ * Komplett Konzept — Projektplanung · Global Styles
+ * Swiss Style / Minimalismus: seriöse Marineblau-Palette (Marken-Logo) mit
+ * dezentem Gold-Akzent, IBM Plex Sans, hohe Lesbarkeit, klare Hierarchie.
  * ============================================================================= */
 
 :root {
-  --blue: #0d73fc;
-  --blue-h: #0a5fd0;
-  --blue-soft: #e7f0ff;
-  --text: #14213d;
+  /* Markenfarben (aus dem Komplett-Konzept-Logo) */
+  --navy: #122a63;        /* tiefes Marineblau – Kopfzeilen, Überschriften */
+  --blue: #1b48a6;        /* Marken-Royalblau – primäre Aktionen/Links */
+  --blue-h: #143a8c;      /* Hover */
+  --blue-soft: #e8eefb;   /* zarter Blau-Hintergrund */
+  --gold: #f2c200;        /* Gold-Akzent (sparsam) */
+  --gold-soft: #fdf4d0;
+
+  --text: #0f172a;
   --muted: #5b6472;
   --bg: #ffffff;
   --bg-soft: #f5f7fb;
   --bg-softer: #fafbfd;
-  --border: #e4e8ef;
+  --border: #e2e8f0;
   --border-strong: #cbd5e1;
-  --green: #16a34a;
-  --green-soft: #dcfce7;
-  --amber: #d97706;
-  --amber-soft: #fef3c7;
-  --red: #dc2626;
-  --red-soft: #fee2e2;
-  --radius: 10px;
-  --radius-lg: 14px;
-  --shadow-sm: 0 1px 2px rgba(20, 33, 61, 0.06);
-  --shadow-md: 0 4px 14px rgba(20, 33, 61, 0.08);
-  --font: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
 
-  /* Dichte Dashboard-Spacing-Skala */
+  --green: #15803d;
+  --green-soft: #e7f6ec;
+  --amber: #b45309;
+  --amber-soft: #fef3c7;
+  --red: #d92d20;
+  --red-soft: #fdecea;
+
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 6px 20px rgba(15, 23, 42, 0.08);
+  --font: 'IBM Plex Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+
+  /* Spacing-Skala */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 24px;
   --space-6: 32px;
+  --space-7: 48px;
 }
 
-* , *::before, *::after { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
   font-family: var(--font);
   background: var(--bg-soft);
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.55;
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -53,6 +61,8 @@ button { font-family: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; font-size: inherit; }
 a { color: var(--blue); text-decoration: none; }
 a:hover { text-decoration: underline; }
+
+h1, h2, h3 { color: var(--navy); }
 
 :focus-visible {
   outline: 2px solid var(--blue);
@@ -69,7 +79,7 @@ a:hover { text-decoration: underline; }
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 

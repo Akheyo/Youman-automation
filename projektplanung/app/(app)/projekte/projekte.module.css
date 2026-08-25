@@ -109,8 +109,9 @@
 .result {
   margin-top: var(--space-4);
   padding: var(--space-4);
-  border: 1px solid #bbf7d0;
-  background: #f0fdf4;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--green);
+  background: var(--green-soft);
   border-radius: var(--radius);
   animation: fade-up 0.2s ease both;
 }

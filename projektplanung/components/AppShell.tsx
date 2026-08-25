@@ -1,17 +1,17 @@
 import Link from 'next/link';
+import Logo from './Logo';
 import styles from './app-shell.module.css';
 
-/** Schlanker Header-Shell für den eingeloggten Bereich. */
+/** Schlanker, seriöser Header-Shell für den eingeloggten Bereich. */
 export default function AppShell({ email, children }: { email: string | null; children: React.ReactNode }) {
   return (
     <div className={styles.shell}>
+      <div className={styles.accent} aria-hidden />
       <header className={styles.topbar}>
-        <Link href="/projekte" className={styles.brand}>
-          <span className={styles.brandMark}>YP</span>
-          <span className={styles.brandText}>
-            <span className={styles.brandName}>Youman Projektplanung</span>
-            <span className={styles.brandSub}>PlentyONE-Anbindung</span>
-          </span>
+        <Link href="/projekte" className={styles.brand} aria-label="Komplett Konzept – Projektplanung">
+          <Logo size="sm" />
+          <span className={styles.divider} aria-hidden />
+          <span className={styles.appName}>Projektplanung</span>
         </Link>
         <div className={styles.spacer} />
         {email && (

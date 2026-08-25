@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getUser, supabaseConfigured } from '@/lib/supabase/server';
+import Logo from '@/components/Logo';
 import AuthForm from './AuthForm';
 import styles from './login.module.css';
 
@@ -12,14 +13,17 @@ export default async function LoginPage() {
 
   return (
     <div className={styles.wrap}>
+      <div className={styles.accent} aria-hidden />
       <div className={styles.card}>
         <div className={styles.brand}>
-          <span className={styles.brandMark}>YP</span>
-          <span className={styles.brandText}>Youman Projektplanung</span>
+          <Logo size="lg" />
         </div>
-        <h1 className={styles.title}>Anmelden</h1>
-        <p className={styles.sub}>Projekte erfassen, Kategorien &amp; Artikel in Plenty anlegen.</p>
+        <h1 className={styles.title}>Projektplanung</h1>
+        <p className={styles.sub}>
+          Projekte erfassen und automatisch Kategorie, Artikel und EAN in PlentyONE anlegen.
+        </p>
         <AuthForm />
+        <p className={styles.foot}>Komplett Konzept Verwertungs GmbH · Interner Bereich</p>
       </div>
     </div>
   );
