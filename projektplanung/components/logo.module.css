@@ -7,6 +7,12 @@
 }
 
 .mark { display: block; flex-shrink: 0; }
+.img { display: block; width: auto; object-fit: contain; }
+
+/* Höhe der echten Logo-Datei je Größe */
+.sm .img { height: 32px; }
+.md .img { height: 40px; }
+.lg .img { height: 60px; }
 
 .words {
   display: flex;

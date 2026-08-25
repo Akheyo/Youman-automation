@@ -1,10 +1,14 @@
+'use client';
+
+import { useState } from 'react';
 import styles from './logo.module.css';
 
 /**
- * Komplett-Konzept-Wortmarke: Gold-Dreieck mit rotem Marken-Ball + Schriftzug.
+ * Komplett-Konzept-Logo.
  *
- * Interims-Logo in den offiziellen Markenfarben. Soll die exakte Original-Datei
- * verwendet werden: `public/logo.png` ablegen und hier durch ein <img> ersetzen.
+ * Bevorzugt die echte Bilddatei `public/logo.png` (einfach dort hochladen).
+ * Fehlt sie, wird automatisch der Vektor-Nachbau in den Markenfarben angezeigt
+ * (Gold-Dreieck + roter Marken-Ball + „KOMPLETT KONZEPT"-Schriftzug).
  */
 export default function Logo({
   size = 'md',
@@ -13,6 +17,23 @@ export default function Logo({
   size?: 'sm' | 'md' | 'lg';
   wordmark?: boolean;
 }) {
+  const [imgOk, setImgOk] = useState(true);
+
+  if (imgOk) {
+    return (
+      <span className={`${styles.logo} ${styles[size]}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.png"
+          alt="Komplett Konzept"
+          className={styles.img}
+          onError={() => setImgOk(false)}
+        />
+      </span>
+    );
+  }
+
+  // Fallback: Vektor-Nachbau
   return (
     <span className={`${styles.logo} ${styles[size]}`}>
       <svg className={styles.mark} viewBox="0 0 48 44" aria-hidden focusable="false">
