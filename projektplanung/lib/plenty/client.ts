@@ -78,10 +78,18 @@ async function login(cfg: PlentyConfig): Promise<string> {
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({ username: cfg.user, password: cfg.password }),
   });
+  const raw = await res.text();
   if (!res.ok) {
-    throw new Error(`Plenty-Login fehlgeschlagen (HTTP ${res.status}).`);
+    throw new Error(`Plenty-Login fehlgeschlagen (HTTP ${res.status}). Antwort: "${raw.slice(0, 200)}"`);
   }
-  const data = (await res.json()) as { access_token?: string; accessToken?: string; expires_in?: number };
+  let data: { access_token?: string; accessToken?: string; expires_in?: number };
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error(
+      `Plenty-Login: Antwort war kein JSON (HTTP ${res.status}). Stimmt PLENTY_BASE_URL? Body-Anfang: "${raw.slice(0, 160)}"`,
+    );
+  }
   const token = data.access_token ?? data.accessToken;
   if (!token) throw new Error('Plenty-Login lieferte kein access_token.');
   cachedToken = token;
@@ -100,13 +108,19 @@ async function api<T>(cfg: PlentyConfig, token: string, path: string, init?: Req
       ...(init?.headers ?? {}),
     },
   });
+  const text = await res.text();
   if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`Plenty ${init?.method ?? 'GET'} ${path} → HTTP ${res.status}${body ? `: ${body.slice(0, 300)}` : ''}`);
+    throw new Error(`Plenty ${init?.method ?? 'GET'} ${path} → HTTP ${res.status}${text ? `: ${text.slice(0, 300)}` : ''}`);
   }
   // 204 / leerer Body robust behandeln.
-  const text = await res.text();
-  return (text ? JSON.parse(text) : (null as unknown)) as T;
+  if (!text) return null as unknown as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(
+      `Plenty ${init?.method ?? 'GET'} ${path}: Antwort kein gültiges JSON (HTTP ${res.status}). Body-Anfang: "${text.slice(0, 160)}"`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -267,10 +281,12 @@ export async function syncProjektToPlenty(
   input: ProjektInput,
   date: Date,
   eanSeed: number,
+  existingEan?: string | null,
 ): Promise<PlentySyncResult> {
   const cfg = getPlentyConfig();
   const categoryName = buildCategoryName(input.company, input.location);
-  const ean = generateEan13(eanSeed, cfg.eanPrefix);
+  // Beim Wiederholen die bereits vergebene EAN behalten, sonst neu erzeugen.
+  const ean = existingEan && /^\d{13}$/.test(existingEan) ? existingEan : generateEan13(eanSeed, cfg.eanPrefix);
   const warnings: string[] = [];
 
   const base: PlentySyncResult = {
