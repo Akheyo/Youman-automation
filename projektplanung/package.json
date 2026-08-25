@@ -1,8 +1,8 @@
 {
-  "name": "youman-projektplanung",
+  "name": "komplett-konzept-projektplanung",
   "version": "1.0.0",
   "private": true,
-  "description": "Projektplanung-Dashboard mit PlentyONE-Anbindung — Firma/Ort/Ansprechpartner erfassen, Unterkategorie + Artikel in Plenty anlegen, EAN13 automatisch generieren.",
+  "description": "Komplett Konzept Projektplanung — Dashboard mit PlentyONE-Anbindung: Firma/Ort/Ansprechpartner erfassen, Unterkategorie + Artikel in Plenty anlegen, EAN13 automatisch generieren.",
   "license": "UNLICENSED",
   "scripts": {
     "dev": "next dev -p 3001",

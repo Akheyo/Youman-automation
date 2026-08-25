@@ -1,6 +1,7 @@
-# Youman Projektplanung
+# Komplett Konzept — Projektplanung
 
-Internes Dashboard für die **Projektplanung** mit direkter **PlentyONE**-Anbindung.
+Internes Dashboard der **Komplett Konzept Verwertungs GmbH** für die
+**Projektplanung** mit direkter **PlentyONE**-Anbindung.
 
 Der Ablauf:
 

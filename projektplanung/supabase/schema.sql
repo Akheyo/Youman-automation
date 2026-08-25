@@ -1,5 +1,5 @@
 -- ============================================================================
---  Youman Projektplanung — Supabase / Postgres Schema
+--  Komplett Konzept Projektplanung — Supabase / Postgres Schema
 --  Einmalig im Supabase-Dashboard ausführen: SQL Editor → New query → Run.
 -- ============================================================================
 

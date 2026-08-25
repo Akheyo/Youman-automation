@@ -3,12 +3,11 @@
   display: grid;
   place-items: center;
   padding: var(--space-5);
-  background:
-    radial-gradient(1200px 600px at 50% -10%, var(--blue-soft), transparent 60%),
-    var(--bg-soft);
+  background: var(--bg-soft);
 }
 
 .card {
+  position: relative;
   width: 100%;
   max-width: 400px;
   background: var(--bg);
@@ -16,42 +15,35 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   padding: var(--space-6);
+  overflow: hidden;
   animation: fade-up 0.25s ease both;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-5);
+/* Dezenter Gold-Markenstreifen am oberen Kartenrand */
+.accent { display: none; }
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--gold);
 }
-.brandMark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: var(--blue);
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.85rem;
-}
-.brandText { font-weight: 700; }
 
-.title { margin: 0 0 var(--space-1); font-size: 1.5rem; font-weight: 800; }
+.brand { margin-bottom: var(--space-5); }
+
+.title { margin: 0 0 var(--space-1); font-size: 1.4rem; font-weight: 700; }
 .sub { margin: 0 0 var(--space-5); color: var(--muted); font-size: 0.9rem; }
 
 .form { display: flex; flex-direction: column; gap: var(--space-4); }
 .field { display: flex; flex-direction: column; gap: var(--space-2); }
-.label { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.label { font-size: 0.85rem; font-weight: 600; color: var(--navy); }
 .input {
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   background: var(--bg);
   color: var(--text);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .input:focus {
   outline: none;
@@ -65,8 +57,8 @@
   border-radius: var(--radius);
   background: var(--blue);
   color: #fff;
-  font-weight: 700;
-  transition: background 0.15s ease;
+  font-weight: 600;
+  transition: background 0.2s ease;
 }
 .submit:hover:not(:disabled) { background: var(--blue-h); }
 .submit:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -96,4 +88,13 @@
   color: var(--green);
   border-radius: var(--radius);
   font-size: 0.85rem;
+}
+
+.foot {
+  margin: var(--space-5) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: center;
 }

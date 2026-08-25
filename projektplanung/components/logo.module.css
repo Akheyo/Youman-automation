@@ -1,0 +1,30 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  line-height: 1;
+  user-select: none;
+}
+
+.mark { display: block; flex-shrink: 0; }
+
+.words {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05em;
+  color: var(--navy);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.line1, .line2 { display: block; }
+.line2 { color: var(--blue); }
+
+/* Größen */
+.sm .mark { width: 26px; height: 24px; }
+.sm .words { font-size: 0.72rem; }
+
+.md .mark { width: 34px; height: 31px; }
+.md .words { font-size: 0.9rem; }
+
+.lg .mark { width: 52px; height: 48px; }
+.lg .words { font-size: 1.35rem; letter-spacing: 0.05em; }
