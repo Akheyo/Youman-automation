@@ -9,11 +9,6 @@
 .mark { display: block; flex-shrink: 0; }
 .img { display: block; width: auto; object-fit: contain; }
 
-/* Höhe der echten Logo-Datei je Größe */
-.sm .img { height: 32px; }
-.md .img { height: 40px; }
-.lg .img { height: 60px; }
-
 .words {
   display: flex;
   flex-direction: column;
@@ -25,12 +20,22 @@
 .line1, .line2 { display: block; }
 .line2 { color: var(--blue); }
 
-/* Größen */
+/* Weiße Variante für dunkle Flächen */
+.light .words { color: #ffffff; }
+.light .line2 { color: var(--gold); }
+
+/* Größen: Vektor-Nachbau */
 .sm .mark { width: 26px; height: 24px; }
 .sm .words { font-size: 0.72rem; }
-
 .md .mark { width: 34px; height: 31px; }
 .md .words { font-size: 0.9rem; }
-
 .lg .mark { width: 52px; height: 48px; }
 .lg .words { font-size: 1.35rem; letter-spacing: 0.05em; }
+.xl .mark { width: 66px; height: 61px; }
+.xl .words { font-size: 1.7rem; letter-spacing: 0.05em; }
+
+/* Größen: echte Bilddatei */
+.sm .img { height: 30px; }
+.md .img { height: 40px; }
+.lg .img { height: 58px; }
+.xl .img { height: 74px; }

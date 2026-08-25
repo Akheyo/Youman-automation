@@ -13,18 +13,29 @@ export default async function LoginPage() {
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.accent} aria-hidden />
-      <div className={styles.card}>
-        <div className={styles.brand}>
-          <Logo size="lg" />
+      <aside className={styles.brandPanel}>
+        <div className={styles.brandTop}>
+          <Logo size="xl" tone="light" />
         </div>
-        <h1 className={styles.title}>Projektplanung</h1>
-        <p className={styles.sub}>
-          Projekte erfassen und automatisch Kategorie, Artikel und EAN in PlentyONE anlegen.
-        </p>
-        <AuthForm />
-        <p className={styles.foot}>Komplett Konzept Verwertungs GmbH · Interner Bereich</p>
-      </div>
+        <div className={styles.brandBody}>
+          <h2 className={styles.tagline}>Projektplanung mit direkter PlentyONE-Anbindung</h2>
+          <ul className={styles.features}>
+            <li>Unterkategorie „Firma&nbsp;Ort“ automatisch anlegen</li>
+            <li>Artikel mit Firma, Ort, Datum &amp; Ansprechpartnern</li>
+            <li>EAN-13 automatisch erzeugen</li>
+          </ul>
+        </div>
+        <p className={styles.brandFoot}>Komplett Konzept Verwertungs GmbH · Interner Bereich</p>
+      </aside>
+
+      <main className={styles.formSide}>
+        <div className={styles.formInner}>
+          <span className={styles.eyebrow}>Anmeldung</span>
+          <h1 className={styles.title}>Willkommen zurück</h1>
+          <p className={styles.sub}>Melde dich an, um Projekte zu erfassen und in Plenty anzulegen.</p>
+          <AuthForm />
+        </div>
+      </main>
     </div>
   );
 }

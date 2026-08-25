@@ -46,6 +46,7 @@ export default function ProjektDashboard({
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ projekt: Projekt; sync: SyncInfo } | null>(null);
   const [query, setQuery] = useState('');
+  const [retrying, setRetrying] = useState<string | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const categoryPreview = useMemo(() => {
@@ -54,7 +55,6 @@ export default function ProjektDashboard({
     return [c, l].filter(Boolean).join(' ');
   }, [form.company, form.location]);
 
-  // Debounced Suche über den Verlauf.
   useEffect(() => {
     if (!supabaseReady) return;
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -66,7 +66,7 @@ export default function ProjektDashboard({
           setProjekte(data.projekte ?? []);
         }
       } catch {
-        /* Suche ist unkritisch */
+        /* Suche unkritisch */
       }
     }, 250);
     return () => {
@@ -88,10 +88,10 @@ export default function ProjektDashboard({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Anlegen fehlgeschlagen.');
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? `Serverfehler (HTTP ${res.status}).`);
       setResult({ projekt: data.projekt, sync: data.sync });
-      setProjekte((prev) => [data.projekt as Projekt, ...prev]);
+      setProjekte((prev) => [data.projekt as Projekt, ...prev.filter((p) => p.id !== data.projekt.id)]);
       setForm(EMPTY);
     } catch (err) {
       setError((err as Error).message);
@@ -100,28 +100,44 @@ export default function ProjektDashboard({
     }
   }
 
+  async function onRetry(id: string) {
+    setRetrying(id);
+    try {
+      const res = await fetch(`/api/projekte/${id}/sync`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? `Serverfehler (HTTP ${res.status}).`);
+      setProjekte((prev) => prev.map((p) => (p.id === id ? (data.projekt as Projekt) : p)));
+      if (result?.projekt.id === id) setResult({ projekt: data.projekt, sync: data.sync });
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setRetrying(null);
+    }
+  }
+
   async function onDelete(id: string) {
     if (!confirm('Diesen Eintrag aus dem Verlauf entfernen? (In Plenty wird nichts gelöscht.)')) return;
     const res = await fetch(`/api/projekte/${id}`, { method: 'DELETE' });
-    if (res.ok) setProjekte((prev) => prev.filter((p) => p.id !== id));
+    if (res.ok) {
+      setProjekte((prev) => prev.filter((p) => p.id !== id));
+      if (result?.projekt.id === id) setResult(null);
+    }
   }
 
   return (
     <div className={styles.page}>
       <header className={styles.head}>
-        <div>
-          <h1 className={styles.title}>Projektplanung</h1>
-          <p className={styles.subtitle}>
-            Projekt erfassen → Unterkategorie <strong>„Firma&nbsp;Ort“</strong> in Plenty anlegen → Artikel mit
-            automatischer EAN-13 erzeugen.
-          </p>
-        </div>
+        <span className={styles.eyebrow}>PlentyONE · Projektanlage</span>
+        <h1 className={styles.title}>Projektplanung</h1>
+        <p className={styles.subtitle}>
+          Projekt erfassen → Unterkategorie <strong>„Firma&nbsp;Ort“</strong> in Plenty anlegen → Artikel mit
+          automatischer EAN-13 erzeugen.
+        </p>
       </header>
 
       {!supabaseReady && (
-        <div className={styles.banner} role="status">
-          Supabase ist nicht konfiguriert – Login &amp; Suchverlauf sind deaktiviert. Trage die Umgebungsvariablen ein
-          (siehe README).
+        <div className={`${styles.notice} ${styles.noticeWarn}`} role="status">
+          Supabase ist nicht konfiguriert – Login &amp; Suchverlauf sind deaktiviert.
         </div>
       )}
 
@@ -130,7 +146,7 @@ export default function ProjektDashboard({
         <section className={styles.card}>
           <div className={styles.cardHead}>
             <h2 className={styles.cardTitle}>Neues Projekt</h2>
-            <StatusChip ready={plentyReady} label={plentyReady ? 'Plenty verbunden' : 'Plenty offline'} />
+            <StatusChip ready={plentyReady} />
           </div>
 
           <form onSubmit={onSubmit} className={styles.form}>
@@ -180,7 +196,7 @@ export default function ProjektDashboard({
             )}
 
             {error && (
-              <p className={styles.error} role="alert">
+              <p className={styles.formError} role="alert">
                 {error}
               </p>
             )}
@@ -190,7 +206,9 @@ export default function ProjektDashboard({
             </button>
           </form>
 
-          {result && <ResultCard result={result} />}
+          {result && (
+            <ResultCard result={result} retrying={retrying === result.projekt.id} onRetry={() => onRetry(result.projekt.id)} />
+          )}
         </section>
 
         {/* ---- Suchverlauf ---- */}
@@ -226,13 +244,18 @@ export default function ProjektDashboard({
                   </div>
                   <div className={styles.itemSide}>
                     <PlentyBadge status={p.plenty_status} />
+                    {p.plenty_status !== 'ok' && (
+                      <button
+                        className={styles.retryBtn}
+                        onClick={() => onRetry(p.id)}
+                        disabled={retrying === p.id}
+                        title="Erneut mit Plenty synchronisieren"
+                      >
+                        {retrying === p.id ? '…' : '↻'}
+                      </button>
+                    )}
                     <span className={styles.itemDate}>{new Date(p.created_at).toLocaleDateString('de-DE')}</span>
-                    <button
-                      className={styles.del}
-                      onClick={() => onDelete(p.id)}
-                      aria-label="Aus Verlauf entfernen"
-                      title="Aus Verlauf entfernen"
-                    >
+                    <button className={styles.del} onClick={() => onDelete(p.id)} aria-label="Aus Verlauf entfernen" title="Aus Verlauf entfernen">
                       ×
                     </button>
                   </div>
@@ -253,45 +276,75 @@ function Field({ label, required, children }: { label: string; required?: boolea
     <label className={styles.field}>
       <span className={styles.label}>
         {label}
-        {required && <span className={styles.req} aria-hidden> *</span>}
+        {required && (
+          <span className={styles.req} aria-hidden>
+            {' '}
+            *
+          </span>
+        )}
       </span>
       {children}
     </label>
   );
 }
 
-function StatusChip({ ready, label }: { ready: boolean; label: string }) {
+function StatusChip({ ready }: { ready: boolean }) {
   return (
     <span className={`${styles.chip} ${ready ? styles.chipOk : styles.chipOff}`}>
       <span className={styles.dot} />
-      {label}
+      {ready ? 'Plenty konfiguriert' : 'Plenty offline'}
     </span>
   );
 }
 
 function PlentyBadge({ status }: { status: Projekt['plenty_status'] }) {
   const map: Record<Projekt['plenty_status'], { label: string; cls: string }> = {
-    ok: { label: 'Plenty ✓', cls: styles.badgeOk },
+    ok: { label: 'In Plenty', cls: styles.badgeOk },
     skipped: { label: 'nur EAN', cls: styles.badgeMuted },
-    pending: { label: 'läuft…', cls: styles.badgeMuted },
+    pending: { label: 'offen', cls: styles.badgeMuted },
     error: { label: 'Fehler', cls: styles.badgeErr },
   };
   const b = map[status] ?? map.pending;
   return <span className={`${styles.badge} ${b.cls}`}>{b.label}</span>;
 }
 
-function ResultCard({ result }: { result: { projekt: Projekt; sync: SyncInfo } }) {
+function ResultCard({
+  result,
+  retrying,
+  onRetry,
+}: {
+  result: { projekt: Projekt; sync: SyncInfo };
+  retrying: boolean;
+  onRetry: () => void;
+}) {
   const { projekt, sync } = result;
+  const state: 'ok' | 'skipped' | 'error' = sync.ok ? (sync.skipped ? 'skipped' : 'ok') : 'error';
+
+  const cls =
+    state === 'ok' ? styles.resOk : state === 'skipped' ? styles.resInfo : styles.resErr;
+  const heading =
+    state === 'ok'
+      ? sync.eanAttached
+        ? 'In Plenty angelegt – Barcode gesetzt'
+        : 'In Plenty angelegt'
+      : state === 'skipped'
+        ? 'Gespeichert – Plenty nicht verbunden'
+        : 'Plenty-Sync fehlgeschlagen';
+
   return (
-    <div className={styles.result} role="status">
+    <div className={`${styles.result} ${cls}`} role="status">
       <div className={styles.resultHead}>
-        <CheckIcon />
-        <strong>Projekt angelegt</strong>
+        {state === 'error' ? <AlertIcon /> : <CheckIcon />}
+        <strong>{heading}</strong>
       </div>
+
       <dl className={styles.resultGrid}>
         <div>
           <dt>Unterkategorie</dt>
-          <dd>{projekt.category_name}{sync.categoryCreated ? ' (neu)' : ' (vorhanden)'}</dd>
+          <dd>
+            {projekt.category_name}
+            {state === 'ok' && (sync.categoryCreated ? ' (neu)' : ' (vorhanden)')}
+          </dd>
         </div>
         <div>
           <dt>EAN-13</dt>
@@ -303,20 +356,30 @@ function ResultCard({ result }: { result: { projekt: Projekt; sync: SyncInfo } }
             <dd className={styles.mono}>#{projekt.plenty_item_id}</dd>
           </div>
         )}
-        <div>
-          <dt>Status</dt>
-          <dd>
-            {sync.skipped
-              ? 'EAN erzeugt (Plenty nicht verbunden)'
-              : sync.ok
-                ? sync.eanAttached
-                  ? 'In Plenty angelegt, Barcode gesetzt'
-                  : 'In Plenty angelegt'
-                : 'Fehler beim Plenty-Sync'}
-          </dd>
-        </div>
       </dl>
-      {sync.error && <p className={styles.resultErr}>{sync.error}</p>}
+
+      {state === 'error' && (
+        <div className={styles.errorBox}>
+          <p className={styles.errorWhat}>
+            <strong>Was schiefging:</strong> {sync.error}
+          </p>
+          <p className={styles.errorFallback}>
+            ✓ Das Projekt und die EAN <span className={styles.mono}>{sync.ean}</span> wurden gespeichert – es ging nichts
+            verloren. Du kannst den Plenty-Abgleich jederzeit wiederholen.
+          </p>
+          <button className={styles.retryAction} onClick={onRetry} disabled={retrying}>
+            {retrying ? 'Synchronisiere…' : '↻ Erneut synchronisieren'}
+          </button>
+        </div>
+      )}
+
+      {state === 'skipped' && (
+        <p className={styles.hint}>
+          Trage die Plenty-Zugangsdaten ein (Environment Variables), dann werden Kategorie &amp; Artikel automatisch
+          angelegt. EAN wurde bereits erzeugt und gespeichert.
+        </p>
+      )}
+
       {sync.warnings?.length > 0 && (
         <ul className={styles.warnList}>
           {sync.warnings.map((w, i) => (
@@ -340,6 +403,14 @@ function CheckIcon() {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+function AlertIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 9v4M12 17h.01" />
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
     </svg>
   );
 }
