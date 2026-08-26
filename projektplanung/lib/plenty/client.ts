@@ -389,19 +389,39 @@ async function uploadVariationPropertyFile(
   variationId: number,
   propertyId: number,
   file: InvoiceFile,
-): Promise<void> {
-  const form = new FormData();
-  form.append('file', new Blob([new Uint8Array(file.bytes)], { type: file.contentType }), file.filename);
+): Promise<string> {
+  const blob = new Blob([new Uint8Array(file.bytes)], { type: file.contentType });
   const path = `/rest/items/${itemId}/variations/${variationId}/variation_properties/${propertyId}/upload`;
-  const res = await fetch(`${cfg.baseUrl}${path}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }, // Content-Type setzt fetch (Boundary) selbst
-    body: form,
-  });
-  if (!res.ok) {
+  // Feldname variiert je nach Plenty-Version – mehrere probieren, bis einer 2xx liefert.
+  const fieldNames = ['file', 'files', 'files[]', '0', 'document', 'upload'];
+  let lastErr = '';
+  for (const field of fieldNames) {
+    const form = new FormData();
+    form.append(field, blob, file.filename);
+    const res = await fetch(`${cfg.baseUrl}${path}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      body: form,
+    });
     const body = await res.text().catch(() => '');
-    throw new Error(`Plenty POST ${path} → HTTP ${res.status}${body ? `: ${body.slice(0, 300)}` : ''}`);
+    if (res.ok) return `feld="${field}" → HTTP ${res.status}: ${body.slice(0, 160)}`;
+    lastErr = `feld="${field}" → HTTP ${res.status}: ${body.slice(0, 160)}`;
+    // 404/400 → nächsten Feldnamen versuchen; andere Fehler abbrechen
+    if (![400, 404, 422].includes(res.status)) break;
   }
+  throw new Error(`Upload ${path} fehlgeschlagen (${lastErr})`);
+}
+
+/** Liest die Varianteneigenschaften (zur Verifikation nach dem Upload). */
+async function getVariationProperties(
+  cfg: PlentyConfig,
+  token: string,
+  itemId: number,
+  variationId: number,
+): Promise<any[]> {
+  const res = await api<any>(cfg, token, `/rest/items/${itemId}/variations/${variationId}/variation_properties`);
+  if (Array.isArray(res)) return res;
+  return res?.entries ?? [];
 }
 
 /** Hängt einen Barcode (z. B. EAN13) an die Variante. */
@@ -559,13 +579,37 @@ export async function syncProjektToPlenty(
         try {
           linkNote = `Verknüpfung ${await linkVariationProperty(cfg, token, itemId, variationId, propertyId)}`;
         } catch (e) {
-          linkNote = `Verknüpfung fehlgeschlagen: ${(e as Error).message}`;
+          linkNote = `Verknüpfung-Fehler: ${(e as Error).message.replace(/\s+/g, ' ').slice(0, 150)}`;
         }
+        let uploadNote = '';
         try {
-          await uploadVariationPropertyFile(cfg, token, itemId, variationId, propertyId, invoice);
-          invoiceAttached = true;
+          uploadNote = await uploadVariationPropertyFile(cfg, token, itemId, variationId, propertyId, invoice);
         } catch (err) {
-          warnings.push(`Rechnung nicht angehängt: ${(err as Error).message} [${resolveNote}] [${linkNote}]`);
+          uploadNote = (err as Error).message;
+        }
+        // Verifizieren, ob „Dokument 1" jetzt wirklich an der Variante hängt.
+        let verifyNote = '';
+        try {
+          const props = await getVariationProperties(cfg, token, itemId, variationId);
+          const entry = props.find((p) => Number(p?.propertyId ?? p?.property?.id) === Number(propertyId));
+          if (entry) {
+            const j = JSON.stringify(entry);
+            const hasFile =
+              /\.(pdf|jpe?g|png|docx?|xlsx?)/i.test(j) ||
+              Boolean(entry.value || entry.valueFile || entry.fileUrl || entry.propertyValue);
+            invoiceAttached = hasFile;
+            verifyNote = hasFile ? 'Datei bestätigt' : `verknüpft, aber ohne Datei: ${j.slice(0, 220)}`;
+          } else {
+            verifyNote = `„${cfg.invoicePropertyName}" (ID ${propertyId}) nicht an Variante gefunden`;
+          }
+        } catch (e) {
+          verifyNote = `Verifikation fehlgeschlagen: ${(e as Error).message.replace(/\s+/g, ' ').slice(0, 120)}`;
+        }
+
+        if (!invoiceAttached) {
+          warnings.push(
+            `Rechnung evtl. nicht gespeichert – ${verifyNote} | ${resolveNote} | ${linkNote} | Upload: ${uploadNote.replace(/\s+/g, ' ').slice(0, 220)}`,
+          );
         }
       }
     }
