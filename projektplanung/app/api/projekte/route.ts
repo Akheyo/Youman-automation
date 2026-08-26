@@ -19,17 +19,17 @@ async function storeInvoice(
   userId: string,
   projektId: string,
   invoice: InvoiceFile,
-): Promise<{ path: string; url: string } | null> {
+): Promise<{ path?: string; url?: string; error?: string }> {
   const admin = createAdminClient();
-  if (!admin) return null;
-  // Bucket bei Bedarf anlegen (idempotent).
+  if (!admin) return { error: 'SUPABASE_SERVICE_ROLE_KEY fehlt' };
+  // Bucket bei Bedarf anlegen (idempotent; Fehler wird ignoriert, falls er schon existiert).
   await admin.storage.createBucket(INVOICE_BUCKET, { public: false }).catch(() => {});
   const safe = invoice.filename.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-100) || 'rechnung';
   const path = `${userId}/${projektId}-${safe}`;
   const up = await admin.storage
     .from(INVOICE_BUCKET)
     .upload(path, invoice.bytes, { contentType: invoice.contentType, upsert: true });
-  if (up.error) return null;
+  if (up.error) return { error: up.error.message };
   const signed = await admin.storage.from(INVOICE_BUCKET).createSignedUrl(path, SIGNED_URL_TTL);
   return { path, url: signed.data?.signedUrl ?? '' };
 }
@@ -156,19 +156,21 @@ export async function POST(request: Request) {
   // 1b) Rechnung sicher im Storage ablegen (die eigentliche Datei) und Link erzeugen.
   let invoicePath: string | null = null;
   let invoiceUrl: string | undefined;
+  let storageError: string | null = null;
   if (invoice) {
     const stored = await storeInvoice(user.id, row.id, invoice);
-    if (stored) {
+    if (stored.path) {
       invoicePath = stored.path;
       invoiceUrl = stored.url || undefined;
-      // Bewusst KEIN Link in der Plenty-Beschreibung – die Datei wird direkt
-      // als „Dokument 1" hochgeladen. Supabase-Kopie dient nur als Sicherung.
+    } else {
+      storageError = stored.error ?? 'unbekannter Fehler';
     }
   }
 
   // 2) Plenty-Sync (best effort) — eindeutiger EAN-Seed aus Zeit + Zufall.
   const eanSeed = Date.now() * 1000 + Math.floor(Math.random() * 1000);
   const sync = await syncProjektToPlenty(input, now, eanSeed, null, invoice);
+  if (storageError) sync.warnings.push(`Rechnung-Speicherung (App) fehlgeschlagen: ${storageError}`);
 
   // 3) Ergebnis in den Datensatz zurückschreiben.
   const status = sync.skipped ? 'skipped' : sync.ok ? 'ok' : 'error';
