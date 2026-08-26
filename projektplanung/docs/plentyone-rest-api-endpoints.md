@@ -1,0 +1,2107 @@
+# PlentyONE REST API – Endpoint-Referenz
+
+> **Zweck:** Vollständige, durchsuchbare Referenz aller PlentyONE-REST-Endpoints, damit
+> chat-, zeit- und ortsunabhängig darauf zugegriffen werden kann. Immer wenn im Projekt
+> etwas mit Plenty gebaut/geändert wird, ist das hier die Quelle der Wahrheit für Route,
+> Methode und Zweck.
+>
+> **Quelle:** developers.plentymarkets.com – PlentyONE REST API (master), Stand: 2026-08-26.
+> Offizielle Doku pro Route: `https://developers.plentymarkets.com/en-gb/plentymarkets-rest-api/index.html#/<Tag>`
+>
+> **Nutzung:** Nach Ressource greppen, z. B. `grep -i "barcode" plentyone-rest-api-endpoints.md`.
+
+---
+
+## Basis, Auth & Konventionen
+
+Passend zum vorhandenen Client (`projektplanung/lib/plenty/client.ts`):
+
+- **Base-URL:** die exakte PlentyONE-REST-Basis, `https`, **ohne** `/rest` am Ende, z. B.
+  `https://p14443.my.plentysystems.com` oder `https://xxxxx.plentymarkets-cloud01.com`.
+  Alle Pfade unten werden an die Base-URL angehängt (`<baseUrl><pfad>`).
+- **Login:** `POST /rest/login` mit `{ username, password }` → Antwort enthält `access_token`
+  (Feld ggf. `accessToken`) und `expires_in`. Token wird als `Authorization: Bearer <token>`
+  gesendet. Token vor Ablauf cachen (siehe Client, Cache modulweit mit `expires_in - 60s`).
+- **Refresh:** `POST /rest/login/refresh` (Backend-User) bzw. `POST /rest/account/login/refresh` (Frontend-User).
+- **Header:** `Content-Type: application/json`, `Accept: application/json`.
+- **plentyId:** Mandanten-/Shop-ID (Env `PLENTY_ID`, Standard 0). Wird u. a. bei Kategorie-Details/Clients gebraucht.
+- **Wichtige Fallstricke (aus dem Client gelernt):**
+  - Kategorien-POST erwartet ein **Array** von Objekten (`[ {details, clients} ]`), sonst HTTP 500 „$data must be array".
+  - Barcode am Artikel: entweder inline beim `POST /rest/items` (läuft übers Artikel-Recht) oder separat via
+    `POST /rest/items/{id}/variations/{variationId}/variation_barcodes` (braucht Recht `item.item.variation.barcode.create`).
+  - Variantenname/-beschreibung über `POST /rest/items/{id}/variations/{variationId}/descriptions` (`lang`, `name`, `description`).
+  - Redirects auf POST vermeiden → exakte Base-URL nutzen (ein Redirect verwirft den POST-Body).
+- **Pagination:** Listen liefern i. d. R. `{ entries, isLastPage, page, ... }`. Übliche Query-Parameter
+  `page`, `itemsPerPage` (z. B. `?itemsPerPage=50&page=1`).
+
+**Env-Variablen (Projekt):** `PLENTY_BASE_URL`, `PLENTY_USER`, `PLENTY_PASSWORD`, `PLENTY_ID`,
+`PLENTY_PROJEKTE_CATEGORY_ID`, `PLENTY_EAN_BARCODE_ID`, `PLENTY_EAN_PREFIX`.
+
+**Notation unten:** `METHOD /pfad — Beschreibung`. `{param}` = Pfadparameter. `*` markiert von Plenty
+als besonders gekennzeichnete Routen.
+
+---
+
+## Account
+
+- POST /rest/account/login — Login frontend user
+- POST /rest/account/login/refresh — Refresh access token
+- POST /rest/account/logout — Logout frontend user
+- GET /rest/accounts — List companies
+- POST /rest/accounts — Create company
+- GET /rest/accounts/addresses — Get addresses
+- POST /rest/accounts/addresses — Create address
+- GET /rest/accounts/addresses/contact_relations — List address contact relations
+- POST /rest/accounts/addresses/contact_relations — Create address contact relations
+- PUT /rest/accounts/addresses/contact_relations — Update address contact relations
+- DELETE /rest/accounts/addresses/contact_relations/{addressContactRelationId} — Delete address contact relation
+- GET /rest/accounts/addresses/contact_relations/{addressContactRelationId} — Get address contact relation
+- GET /rest/accounts/addresses/option_types — List address option types
+- POST /rest/accounts/addresses/option_types — Create address option type
+- DELETE /rest/accounts/addresses/option_types/{optionTypeId} — Delete address option type
+- GET /rest/accounts/addresses/option_types/{optionTypeId} — Get address option type
+- PUT /rest/accounts/addresses/option_types/{optionTypeId} — Update address option type
+- DELETE /rest/accounts/addresses/options/{optionId} — Delete address option by option ID
+- GET /rest/accounts/addresses/options/{optionId} — Get address option
+- PUT /rest/accounts/addresses/options/{optionId} — Update address option
+- GET /rest/accounts/addresses/pos_relations — List address POS relations
+- POST /rest/accounts/addresses/pos_relations — Create address POS relation
+- DELETE /rest/accounts/addresses/pos_relations/{addressPosRelationId} — Delete address POS relation
+- GET /rest/accounts/addresses/pos_relations/{addressPosRelationId} — Get address POS relation
+- PUT /rest/accounts/addresses/pos_relations/{addressPosRelationId} — Update address POS relation
+- GET /rest/accounts/addresses/relation_types — List address relation types
+- GET /rest/accounts/addresses/relations/types/applications/{application}/{lang} — List address relation types
+- POST /rest/accounts/addresses/warehouse_relations — Create address warehouse relation
+- DELETE /rest/accounts/addresses/warehouse_relations/{relationId} — Delete address warehouse relation
+- PUT /rest/accounts/addresses/warehouse_relations/{relationId} — Update address warehouse relation
+- DELETE /rest/accounts/addresses/{addressId} — Delete address
+- GET /rest/accounts/addresses/{addressId} — Get address
+- PUT /rest/accounts/addresses/{addressId} — Update address
+- DELETE /rest/accounts/addresses/{addressId}/options — Delete address option by addressId
+- GET /rest/accounts/addresses/{addressId}/options — List address options
+- POST /rest/accounts/addresses/{addressId}/options — Create address option
+- PUT /rest/accounts/addresses/{addressId}/options — Update address option by addressId
+- GET /rest/accounts/addresses/{addressId}/related_data — Get address data by addressId
+- DELETE /rest/accounts/batchDelete — Delete Batch of Companies
+- POST /rest/accounts/contact_relations — Create company contact relation
+- DELETE /rest/accounts/contact_relations/{accountContactRelationId} — Delete company contact relation
+- GET /rest/accounts/contact_relations/{accountContactRelationId} — Get company contact relation
+- PUT /rest/accounts/contact_relations/{accountContactRelationId}/primary — Update account contact relation isPrimary field
+- GET /rest/accounts/contacts — List contacts
+- POST /rest/accounts/contacts — Create contact
+- POST /rest/accounts/contacts/banks — Create bank account
+- DELETE /rest/accounts/contacts/banks/{contactBankId} — Delete bank account
+- GET /rest/accounts/contacts/banks/{contactBankId} — Get bank account
+- PUT /rest/accounts/contacts/banks/{contactBankId} — Update bank account
+- PUT /rest/accounts/contacts/batch_update — Batch Update
+- GET /rest/accounts/contacts/classes — List contact classes
+- POST /rest/accounts/contacts/classes — Create a contact class
+- GET /rest/accounts/contacts/classes/paginated — List contact classes paginated
+- DELETE /rest/accounts/contacts/classes/{contactClassId} — Delete a contact class
+- GET /rest/accounts/contacts/classes/{contactClassId} — Get contact class by ID
+- PUT /rest/accounts/contacts/classes/{contactClassId} — Update a contact class
+- GET /rest/accounts/contacts/classesWithData — List contact classes
+- GET /rest/accounts/contacts/contact_events — List contact events
+- POST /rest/accounts/contacts/contact_events — Create contact event
+- GET /rest/accounts/contacts/contact_events/types/preview — Get contact event types as key/value array
+- DELETE /rest/accounts/contacts/contact_events/{contactEventId} — Delete contact event
+- PUT /rest/accounts/contacts/contact_events/{contactEventId} — Update contact event
+- GET /rest/accounts/contacts/departments — List contact departments
+- POST /rest/accounts/contacts/departments — Create contact department
+- DELETE /rest/accounts/contacts/departments/{departmentId} — Delete contact department
+- GET /rest/accounts/contacts/departments/{departmentId} — Get contact department
+- PUT /rest/accounts/contacts/departments/{departmentId} — Update contact department
+- GET /rest/accounts/contacts/group_functions — List all group function related data
+- POST /rest/accounts/contacts/group_functions — Apply selected group function options for given contact IDs
+- GET /rest/accounts/contacts/option_sub_types — List contact option sub-types
+- POST /rest/accounts/contacts/option_sub_types — Create contact option sub-type
+- DELETE /rest/accounts/contacts/option_sub_types/{optionSubTypeId} — Delete contact option sub-type
+- GET /rest/accounts/contacts/option_sub_types/{optionSubTypeId} — Get contact option sub-type
+- PUT /rest/accounts/contacts/option_sub_types/{optionSubTypeId} — Update contact option sub-type
+- GET /rest/accounts/contacts/option_types — List contact option types
+- POST /rest/accounts/contacts/option_types — Create contact option type
+- DELETE /rest/accounts/contacts/option_types/{optionTypeId} — Delete contact option type
+- GET /rest/accounts/contacts/option_types/{optionTypeId} — Get contact option type
+- PUT /rest/accounts/contacts/option_types/{optionTypeId} — Update contact option type
+- DELETE /rest/accounts/contacts/options/{optionId} — Delete contact option
+- GET /rest/accounts/contacts/options/{optionId} — Get contact option
+- PUT /rest/accounts/contacts/options/{optionId} — Update contact option
+- GET /rest/accounts/contacts/positions — List contact positions
+- POST /rest/accounts/contacts/positions — Create contact position
+- DELETE /rest/accounts/contacts/positions/{positionId} — Delete contact position
+- GET /rest/accounts/contacts/positions/{positionId} — Get contact position
+- PUT /rest/accounts/contacts/positions/{positionId} — Update contact position
+- GET /rest/accounts/contacts/sales_representative_regions — Get sales representative of region
+- POST /rest/accounts/contacts/search — * Search contacts
+- GET /rest/accounts/contacts/types — List contact types
+- POST /rest/accounts/contacts/types — Create contact type
+- DELETE /rest/accounts/contacts/types/{typeId} — Delete contact type
+- GET /rest/accounts/contacts/types/{typeId} — Get contact type
+- PUT /rest/accounts/contacts/types/{typeId} — Update contact type
+- DELETE /rest/accounts/contacts/{contactId} — Delete contact
+- GET /rest/accounts/contacts/{contactId} — Get contact
+- PUT /rest/accounts/contacts/{contactId} — Update contact
+- GET /rest/accounts/contacts/{contactId}/access_data/login_url — Get login URL
+- PUT /rest/accounts/contacts/{contactId}/access_data/new_password — Send password link for contact
+- PUT /rest/accounts/contacts/{contactId}/access_data/set_password — Update password for contact
+- PUT /rest/accounts/contacts/{contactId}/access_data/unblock_user — Unblock contact
+- POST /rest/accounts/contacts/{contactId}/accounts — Create company for existing contact
+- DELETE /rest/accounts/contacts/{contactId}/accounts/{accountId} — Delete company of the contact
+- GET /rest/accounts/contacts/{contactId}/accounts/{accountId} — Get company of the contact
+- PUT /rest/accounts/contacts/{contactId}/accounts/{accountId} — Update company
+- POST /rest/accounts/contacts/{contactId}/addresses — Create address for existing contact
+- GET /rest/accounts/contacts/{contactId}/addresses/primary — Get primary or last created addresses of contact
+- DELETE /rest/accounts/contacts/{contactId}/addresses/{addressId} — Delete address of the contact
+- PUT /rest/accounts/contacts/{contactId}/addresses/{addressId} — Update address of the contact
+- PUT /rest/accounts/contacts/{contactId}/addresses/{addressId}/types/{addressTypeId}/primary — Set contact address per address type as primary
+- PUT /rest/accounts/contacts/{contactId}/addresses/{addressId}/types/{addressTypeId}/reset_primary — Reset contact primary address
+- GET /rest/accounts/contacts/{contactId}/addresses/{addressTypeId} — List addresses linked with contacts
+- PUT /rest/accounts/contacts/{contactId}/anonymize — Anonymize contact
+- GET /rest/accounts/contacts/{contactId}/banks — List bank accounts
+- GET /rest/accounts/contacts/{contactId}/banksPaginated — List bank accounts paginated
+- GET /rest/accounts/contacts/{contactId}/contact_events — List contact events by contact ID
+- GET /rest/accounts/contacts/{contactId}/document — Get storage object from contact documents
+- POST /rest/accounts/contacts/{contactId}/document — Upload document to contact directory
+- POST /rest/accounts/contacts/{contactId}/document/link — Upload document to contact directory
+- PUT /rest/accounts/contacts/{contactId}/document/link/{documentId} — Update an existing document link
+- GET /rest/accounts/contacts/{contactId}/document/url — Get temporary url for document
+- DELETE /rest/accounts/contacts/{contactId}/documents — Delete files from contact documents
+- GET /rest/accounts/contacts/{contactId}/documents — List documents of a contact
+- DELETE /rest/accounts/contacts/{contactId}/options — Delete contact option
+- GET /rest/accounts/contacts/{contactId}/options — List contact options
+- POST /rest/accounts/contacts/{contactId}/options — Create contact option
+- PUT /rest/accounts/contacts/{contactId}/options — Update contact option
+- GET /rest/accounts/contacts/{contactId}/options/validate — Validate contact option by given value
+- GET /rest/accounts/contacts/{contactId}/related_data — List contact related data
+- GET /rest/accounts/contacts/{contactId}/sales_representative_regions — List regions by contactId
+- GET /rest/accounts/contacts/{contactId}/vcard — Get vcard filestream of contact
+- POST /rest/accounts/guests/convert — Convert guest account into regular account
+- GET /rest/accounts/jobs — Get paginated list of jobs
+- POST /rest/accounts/jobs — Create a job
+- DELETE /rest/accounts/jobs/{jobId} — Delete a job by id
+- GET /rest/accounts/jobs/{jobId} — Get single job by id
+- PUT /rest/accounts/jobs/{jobId} — Update job names
+- DELETE /rest/accounts/sales_representative_regions/{salesRepresentativeRegionId} — Delete region
+- GET /rest/accounts/sales_representative_regions/{salesRepresentativeRegionId} — Get region by ID
+- PUT /rest/accounts/sales_representative_regions/{salesRepresentativeRegionId} — Update region
+- DELETE /rest/accounts/{accountId} — Delete company
+- GET /rest/accounts/{accountId} — Get company
+- PUT /rest/accounts/{accountId} — Update company
+- GET /rest/accounts/{accountId}/contacts — List contacts
+- GET /rest/accounts/{accountId}/contacts/{contactId}/sales_representative_regions — Get region by contactId and accountId
+- POST /rest/accounts/{accountId}/contacts/{contactId}/sales_representative_regions — Create region for sales representative
+- POST /rest/orders/addresses — Create address for existing order
+- PUT /rest/orders/{orderId}/addresses/{addressId}/{relationTypeId} — Update an address for an existing order
+- GET /rest/orders/{orderId}/addresses/{relationTypeId} — List order addresses
+- POST /rest/orders/{orderId}/addresses/{relationTypeId} — Create an address for an existing order
+- POST /rest/stockmanagement/warehouses/addresses — Create address for existing warehouse
+- GET /rest/stockmanagement/warehouses/{warehouseId}/addresses/{relationTypeId} — List warehouse addresses
+
+## Accounting
+
+- POST /rest/accounting/locations — Create an accounting location
+- GET /rest/accounting/locations/existing_accounts — Get all unique posting accounts
+- GET /rest/accounting/locations/posting_accounts — Get all posting accounts
+- POST /rest/accounting/locations/posting_accounts — Save posting accounts
+- DELETE /rest/accounting/locations/posting_accounts/{id} — Delete a posting account
+- GET /rest/accounting/locations/posting_accounts/{id} — Get posting account
+- GET /rest/accounting/locations/revenue_account_configurations — List revenue account configurations
+- DELETE /rest/accounting/locations/{locationId} — Delete an accounting location
+- GET /rest/accounting/locations/{locationId} — Get an accounting location
+- PUT /rest/accounting/locations/{locationId} — Update an accounting location
+- GET /rest/accounting/locations/{locationId}/countries/{countryId}/revenue_accounts — Get revenue account config of a country
+- GET /rest/accounting/locations/{locationId}/debtor_account_configurations — Get debtor account configuration
+- PUT /rest/accounting/locations/{locationId}/debtor_account_configurations — Update debtor account configuration
+- GET /rest/accounting/locations/{locationId}/debtor_accounts/{mode} — List debtor accounts by mode
+- GET /rest/accounting/locations/{locationId}/posting_accounts — Get posting accounts by locationId
+- GET /rest/accounting/locations/{locationId}/posting_key_configurations — Get posting key configuration
+- PUT /rest/accounting/locations/{locationId}/posting_key_configurations — Update posting key configuration
+- GET /rest/accounting/locations/{locationId}/revenue_account_configurations — Get revenue account config of a location
+- PUT /rest/accounting/locations/{locationId}/revenue_account_configurations — Update revenue account config
+- GET /rest/accounting/locations/{locationId}/settings — Get accounting location settings
+- PUT /rest/accounting/locations/{locationId}/settings — Update accounting location settings
+- GET /rest/accounting/locations/{locationId}/{type}/posting_accounts — Get posting accounts by locationId and type
+- GET /rest/accounting/locations/{webstoreId}/{countryId}/posting_accounts — Get posting accounts by country and webstore
+- GET /rest/accounting/stores/locations — List accounting locations
+- GET /rest/accounting/stores/{plentyId}/locations — List accounting locations of a client
+- GET /rest/stores/{plentyId}/locations — Get ID of an accounting location of a country
+- GET /rest/vat — List VAT configurations
+- POST /rest/vat — Create a VAT configuration
+- GET /rest/vat/locations/{locationId} — List VAT configurations of an accounting location
+- GET /rest/vat/locations/{locationId}/countries/{countryId} — List VAT configs for one country of delivery
+- GET /rest/vat/locations/{locationId}/countries/{countryId}/date/{date} — Get VAT config for a country in a location
+- GET /rest/vat/standard — Get VAT config for the standard accounting location of a client
+- DELETE /rest/vat/{vatId} — Delete a VAT configuration
+- GET /rest/vat/{vatId} — Get a VAT configuration by id
+- PUT /rest/vat/{vatId} — Update a VAT configuration
+
+## AddressDesign
+
+- GET /rest/address_layout — List all layouts with contents
+- POST /rest/address_layout — Create new layout
+- GET /rest/address_layout/country/{countryId} — Get layout by country id
+- GET /rest/address_layout/default — Get default layout
+- GET /rest/address_layout/used_countries/{uuid} — List countries used in other layouts
+- DELETE /rest/address_layout/{uuid} — Delete layout
+- GET /rest/address_layout/{uuid} — Get layout
+- PUT /rest/address_layout/{uuid} — Update layout
+- GET /rest/address_layout_fields — List all available fields
+
+## AuditLog
+
+- GET /rest/audit-log/archive — Get available audit log archives
+- POST /rest/audit-log/archive/{key}/restore — Restore an audit log archive
+- GET /rest/audit-log/archive/{key}/signed-url — Get download url for a restored audit log archive
+- GET /rest/audit-log/entities — Get available audit log entities
+- GET /rest/audit-log/files — Get available audit log entities
+- GET /rest/audit-log/files/{key}/signed-url — Get download url for a restored audit log file
+- GET /rest/audit-log/system-config — Get audit log system config
+- POST /rest/audit-log/system-config — Write the system config
+
+## Authentication
+
+- POST /rest/check_password — Check password
+- POST /rest/check_pin — Check given pin
+- POST /rest/login — Login by backend user
+- POST /rest/login/refresh — Refresh access token
+- POST /rest/logout — Logout user
+- POST /rest/quick_login — Quick login user
+- GET /rest/session_limits — Get session limits
+- GET /rest/user — Get user
+- POST /rest/users/{id}/reset_failed_attempts — Reset failed authentication attempts
+
+## Authorization
+
+- GET /rest/authorized_user — Get authorized user
+- GET /rest/user/authorized_user_with_ui_config — Get authorized user with UiConfig
+- GET /rest/users/me — Get authorized user
+
+## BI
+
+- GET /rest/bi/key-figures — Return list of key figure classes
+- POST /rest/bi/key-figures/cache — Check if results changed since $since; return ids of updated key figures
+- GET /rest/bi/key-figures/config — Return all key figure configs
+- POST /rest/bi/key-figures/config — Add a key figure configuration
+- POST /rest/bi/key-figures/config/template — Generate key figure config from template class
+- GET /rest/bi/key-figures/config/templates — Get key figure templates
+- DELETE /rest/bi/key-figures/config/{keyFigureConfigId} — Delete key figure configuration
+- GET /rest/bi/key-figures/config/{keyFigureConfigId} — Get key figure config
+- PUT /rest/bi/key-figures/config/{keyFigureConfigId} — Update key figure configuration
+- DELETE /rest/bi/key-figures/configs — Delete multiple key figure configurations
+- GET /rest/bi/key-figures/details/{keyFigureName} — Return key figure calculation details
+- GET /rest/bi/key-figures/dimensions/{keyFigure} — Return key figure dimensions and dimension values
+- POST /rest/bi/key-figures/global-filters — Return global filters by given key figure identifiers
+- POST /rest/bi/key-figures/global-filters/values — Return global filter values by criteria identifiers
+- GET /rest/bi/key-figures/raw-data/{keyFigureConfigId} — Return filtered raw data for given key figure
+- POST /rest/bi/key-figures/raw-data/{keyFigureConfigId} — Return filtered raw data for given key figure
+- POST /rest/bi/key-figures/raw-data/{keyFigureConfigId}/export-spreadsheet — Export raw data to a spreadsheet
+- POST /rest/bi/key-figures/recalculate — Recalculate raw-data-based key figures by config ids
+- POST /rest/bi/key-figures/results — Search for key figure calculation results
+- GET /rest/bi/order-types — Get order types in string format
+- GET /rest/bi/raw-data — Get list of raw data files
+- GET /rest/bi/raw-data/config — Return list of all saved configurations
+- PUT /rest/bi/raw-data/config — Reset all saved raw data configurations
+- GET /rest/bi/raw-data/creators — Get list of all raw data creators
+- GET /rest/bi/raw-data/creators-configs — Return list of raw data creators with configurations
+- GET /rest/bi/raw-data/file — Get a raw data file from storage
+- DELETE /rest/bi/raw-data/{dataName} — Delete deletable RawData models
+- GET /rest/reports/raw-data — Get list of raw data files
+- PUT /rest/reports/raw-data/config — Reset all saved raw data configurations
+- GET /rest/reports/raw-data/creators — Get list of all raw data creators
+- GET /rest/reports/raw-data/creators-configs — Return list of raw data creators with configurations
+- GET /rest/reports/raw-data/file — Get a raw data file from storage
+
+## Basket
+
+- GET /rest/basket — Get basket
+- GET /rest/basket/items — List basket items
+- POST /rest/basket/items — Add item to basket
+- GET /rest/basket/items/{id} — Find a basket item by its ID
+
+## Batch
+
+- GET /rest/batch — Make batch requests
+
+## Blog
+
+- POST /rest/blogs/post — Create a blog post
+- DELETE /rest/blogs/post/{postId} — Delete a blog post
+- GET /rest/blogs/post/{postId} — Get a blog post
+- PUT /rest/blogs/post/{postId} — Update a blog post
+- GET /rest/blogs/posts — List blog posts
+
+## Board
+
+- GET /rest/boards/{boardId}/columns — List all columns of a board
+- POST /rest/boards/{boardId}/columns — Create column and assign to a board
+- DELETE /rest/boards/{boardId}/columns/{columnId} — Delete column
+- POST /rest/boards/{boardId}/columns/{columnId} — Copy column
+- PUT /rest/boards/{boardId}/columns/{columnId} — Update column
+- PUT /rest/boards/{boardId}/columns/{columnId}/position — Update position of a column
+- GET /rest/boards/{boardId}/columns/{columnId}/tasks — List all tasks of a column
+- POST /rest/boards/{boardId}/columns/{columnId}/tasks — Create task in specific column
+- DELETE /rest/boards/{boardId}/columns/{columnId}/tasks/{taskId} — Delete task
+- GET /rest/boards/{boardId}/columns/{columnId}/tasks/{taskId} — Get task by ID
+- POST /rest/boards/{boardId}/columns/{columnId}/tasks/{taskId} — Copy task
+- PUT /rest/boards/{boardId}/columns/{columnId}/tasks/{taskId} — Update task
+- PUT /rest/boards/{boardId}/columns/{columnId}/tasks/{taskId}/position — Update task position
+- POST /rest/boards/{boardId}/columns/{columnId}/tasks/{taskId}/references — Create reference
+- DELETE /rest/boards/{boardId}/columns/{columnId}/tasks/{taskId}/references/{referenceId} — Delete reference from a task
+- GET /rest/boards/{boardId}/columns/{columnId}/tasks/{taskId}/references/{referenceType}/{referenceKey} — Check reference key
+
+## Boards
+
+- GET /rest/boards — List all boards
+- POST /rest/boards — Create new board
+- DELETE /rest/boards/{boardId} — Delete board
+- GET /rest/boards/{boardId} — Get board by ID
+- POST /rest/boards/{boardId} — Copy board
+- PUT /rest/boards/{boardId} — Update board
+
+## Catalog
+
+- GET /rest/catalogs/catalogs — Get a list of Catalogs
+- POST /rest/catalogs/catalogs — Create Catalog
+- POST /rest/catalogs/catalogs/activate/{id} — Activate or deactivate Catalog
+- GET /rest/catalogs/catalogs/archive — Get archive
+- POST /rest/catalogs/catalogs/archive/{id}/restore — Restore archived Catalog
+- PUT /rest/catalogs/catalogs/copy — Copy Catalog
+- POST /rest/catalogs/catalogs/import — Import a catalog
+- POST /rest/catalogs/catalogs/migrate — Migrate Catalogs
+- GET /rest/catalogs/catalogs/schedule/days — Return available schedule days list
+- GET /rest/catalogs/catalogs/token — Generate token
+- PUT /rest/catalogs/catalogs/{catalogId}/copy — Copy Catalog format
+- DELETE /rest/catalogs/catalogs/{id} — Delete Catalog
+- GET /rest/catalogs/catalogs/{id} — Get Catalog
+- PUT /rest/catalogs/catalogs/{id} — Update Catalog
+- GET /rest/catalogs/catalogs/{id}/content — Get Catalog content
+- PUT /rest/catalogs/catalogs/{id}/content — Update Catalog content
+- GET /rest/catalogs/catalogs/{id}/export — Export a catalog
+- GET /rest/catalogs/catalogs/{id}/preview — Get preview catalog
+- GET /rest/catalogs/catalogs/{id}/preview/vdi — Get preview VDI catalog
+- GET /rest/catalogs/catalogs/{id}/url/private — Build private download url
+- GET /rest/catalogs/catalogs/{id}/url/public — Build public download url
+- GET /rest/catalogs/catalogs/{id}/versions — List Catalog versions
+- GET /rest/catalogs/catalogs/{id}/versions/{versionId} — Get Catalog by version
+- POST /rest/catalogs/catalogs/{id}/versions/{versionId}/restore — Restore version of Catalog
+- POST /rest/catalogs/connection/check/{protocol} — Check connection to FTP, FTPS, SFTP
+- GET /rest/catalogs/statuses — Get a list of Catalog statuses
+- GET /rest/catalogs/statuses/{id} — Get Catalog status
+- GET /rest/catalogs/statuses/{id}/data — Get status data
+- GET /rest/catalogs/statuses/{id}/histories — List status histories
+- GET /rest/catalogs/statuses/{id}/histories/{filename} — Get a single status history file
+- GET /rest/catalogs/statuses/{id}/logs — List status logs
+- GET /rest/catalogs/statuses/{id}/performances — List status performances
+- POST /rest/catalogs/statuses/{statusId}/cancel — Cancel export runs
+- GET /rest/v2/catalogs/channel-maps — Get a list of Channel Maps
+- POST /rest/v2/catalogs/channel-maps — Create a Channel Map
+- POST /rest/v2/catalogs/channel-maps/generate/{channelMapId}/{statusId} — Generate a channel map
+- GET /rest/v2/catalogs/channel-maps/generator/benchmark — Benchmark for channel map template generation
+- POST /rest/v2/catalogs/channel-maps/regenerate/{channelMapId} — Regenerate a channel map
+- GET /rest/v2/catalogs/channel-maps/templates/type/{type} — Get templates for type
+- GET /rest/v2/catalogs/channel-maps/templates/type/{type}/subtype/{subtype} — Get templates by type and subtype
+- GET /rest/v2/catalogs/channel-maps/templates/types — Get types
+- DELETE /rest/v2/catalogs/channel-maps/{id} — Delete a Channel Map
+- GET /rest/v2/catalogs/channel-maps/{id} — Get a Channel Map
+- PUT /rest/v2/catalogs/channel-maps/{id} — Update a Channel Map
+
+## Category
+
+- GET /rest/categories — List categories
+- POST /rest/categories — Create new categories (POST erwartet ein ARRAY von Kategorie-Objekten)
+- PUT /rest/categories — Update categories
+- DELETE /rest/categories/{id} — Delete a category
+- GET /rest/categories/{id} — Get a category
+- PUT /rest/categories/{id} — Update one category
+- DELETE /rest/categories/{id}/clients — Deactivate availability for clients
+- DELETE /rest/categories/{id}/details — Delete category details for specified languages
+- DELETE /rest/categories/{id}/templates — Delete a category template
+- GET /rest/categories/{id}/templates — Get a category template
+- PUT /rest/categories/{id}/templates — Update a category template
+- GET /rest/category_branches — Get category trees
+- GET /rest/category_branches/{id} — Get category tree
+
+## Cloud
+
+- DELETE /rest/storage/frontend/file — Delete object from frontend storage
+- GET /rest/storage/frontend/file — Get file information
+- POST /rest/storage/frontend/file — Upload a single file to frontend storage
+- PUT /rest/storage/frontend/file — Upload a single file to frontend storage
+- GET /rest/storage/frontend/file/metadata — Get metadata for storage object
+- POST /rest/storage/frontend/file/metadata — Update metadata of storage object
+- DELETE /rest/storage/frontend/files — Delete files from frontend storage
+- GET /rest/storage/frontend/files — List frontend storage files
+- GET /rest/storage/frontend/object-url — Get URL for a layout document
+- DELETE /rest/storage/layout — Delete layout documents
+- POST /rest/storage/layout — Upload a layout document
+- GET /rest/storage/layout/list — List layout documents
+- GET /rest/storage/layout/object-url — Get URL for a layout document
+- GET /rest/storage/order-properties/object-url — Get URL for an order property file
+- DELETE /rest/storage/plugins/inbox — Delete files from the inbox
+- POST /rest/storage/plugins/inbox — Upload a file to the inbox
+- POST /rest/storage/plugins/inbox/commit — Commit plugin changes
+- GET /rest/storage/plugins/inbox/list — List files from the inbox
+- GET /rest/storage/plugins/inbox/object-url — Get content of a file from the inbox
+- GET /rest/system/cloud/metrics — Get cloud metrics
+- GET /rest/system/metrics/{plentyId}/{date} — Get System metrics
+
+## Comment
+
+- POST /rest/comments — Create a comment
+- DELETE /rest/comments/{commentId} — Delete a comment
+- GET /rest/comments/{commentId} — Get a comment
+- PUT /rest/comments/{commentId} — Update a comment
+- GET /rest/comments/{referenceType}/{referenceValue} — List comments
+
+## Configuration
+
+- GET /rest/plugins/plugin_sets/{pluginSetId}/configurations/export — Export a configuration file
+- POST /rest/plugins/plugin_sets/{pluginSetId}/configurations/import — Import a configuration file
+- GET /rest/plugins/{pluginId}/plugin_sets/{pluginSetId}/configuration_layout — Get configuration file
+- GET /rest/plugins/{pluginId}/plugin_sets/{pluginSetId}/configurations — List configurations
+- PUT /rest/plugins/{pluginId}/plugin_sets/{pluginSetId}/configurations — Save configuration file
+
+## Document
+
+- GET /rest/categories/{categoryId}/documents — List documents of a category
+- POST /rest/categories/{categoryId}/documents — Upload category documents
+- GET /rest/categories/{categoryId}/documents/downloads — Download category documents
+- DELETE /rest/categories/{categoryId}/documents/{documentId} — Delete a category document
+- POST /rest/documents/incoming_items_receipt/generate — Generate a document of a stockIntake
+- POST /rest/documents/incoming_items_receipt/generate/preview — Generate preview of the incoming items receipt
+- POST /rest/documents/preview/generate/{previewType} — Generate a preview of a document
+- GET /rest/documents/preview/{documentHash} — Download content of a preview document
+- GET /rest/documents/{documentId} — Download content of a document
+- POST /rest/documents/{documentId}/regenerate — Regenerate a faulty document
+- GET /rest/documents/{documentId}/status — Get status of a document
+- GET /rest/orders/documents — List order documents
+- GET /rest/orders/documents/downloads/as_zip — Download documents (zip)
+- POST /rest/orders/documents/downloads/as_zip — Download documents (zip)
+- GET /rest/orders/documents/downloads/as_zip/asynchronous — Download documents asynchronous
+- GET /rest/orders/documents/downloads/{type} — Download documents of a document type
+- GET /rest/orders/documents/find — List documents
+- DELETE /rest/orders/documents/{documentId} — Delete a document without an order relation
+- GET /rest/orders/documents/{documentId} — Get an order document
+- GET /rest/orders/documents/{type} — List documents of a type
+- POST /rest/orders/{orderId}/documents/correction_document/generate — Generate adjustment form of an order
+- POST /rest/orders/{orderId}/documents/credit_note/generate — Generate credit note of an order
+- POST /rest/orders/{orderId}/documents/delivery_note/generate — Generate delivery note of an order
+- GET /rest/orders/{orderId}/documents/downloads/{type} — Download documents of an order
+- POST /rest/orders/{orderId}/documents/dunning_letter/generate — Generate dunning letter of an order
+- POST /rest/orders/{orderId}/documents/invoice/generate — Generate invoice of an order
+- POST /rest/orders/{orderId}/documents/multi_credit_note/generate — Generate multi credit note of an order
+- POST /rest/orders/{orderId}/documents/multi_invoice/generate — Generate multi-invoice of an order
+- POST /rest/orders/{orderId}/documents/offer/generate — Generate offer document of an order
+- POST /rest/orders/{orderId}/documents/order_confirmation/generate — Generate order confirmation of an order
+- POST /rest/orders/{orderId}/documents/order_custom/generate — Generate order custom document of an order
+- POST /rest/orders/{orderId}/documents/pickup_delivery/generate — Generate pick-up delivery note of an order
+- POST /rest/orders/{orderId}/documents/po_delivery_note/generate — Generate PO delivery note of an order
+- POST /rest/orders/{orderId}/documents/pro_forma_invoice/generate — Generate pro forma invoice of an order
+- POST /rest/orders/{orderId}/documents/reorder/generate — Generate reorder document of an order
+- POST /rest/orders/{orderId}/documents/repair_bill/generate — Generate repair slip of an order
+- POST /rest/orders/{orderId}/documents/return_note/generate — Generate return slip of an order
+- POST /rest/orders/{orderId}/documents/reversal_document/generate — Generate reversal document of an order
+- POST /rest/orders/{orderId}/documents/reversal_dunning_letter/generate — Generate dunning letter reversal document
+- POST /rest/orders/{orderId}/documents/reversal_refund/generate — Generate refund reversal document of an order
+- POST /rest/orders/{orderId}/documents/success_confirmation/generate — Generate success confirmation of an order
+- DELETE /rest/orders/{orderId}/documents/{documentId} — Delete document of an order
+- POST /rest/orders/{orderId}/documents/{documentId}/archive — Archive document of an order
+- GET /rest/orders/{orderId}/documents/{type} — List documents of an order
+- POST /rest/orders/{orderId}/documents/{type} — Upload order documents
+- GET /rest/orders/{orderId}/documents/{type}/current — Get current invoice or credit note of an order
+- POST /rest/orders/{orderId}/documents/{type}/generate — Generate document of an order
+- GET /rest/orders/{orderId}/documents/{type}/recent — Get most recent document of an order
+
+## ElasticSync
+
+- GET /rest/elastic-sync/mapping/csv-rows/{syncId} — Get the csv rows
+- GET /rest/elastic-sync/mapping/fields/{syncType} — Get plenty fields value map for a sync type
+- GET /rest/elastic-sync/mapping/filter/labels — Get label list for mapping filtration
+- GET /rest/elastic-sync/mapping/map/csv-columns/{syncId} — Get csv columns of a sync
+- GET /rest/elastic-sync/mapping/map/tree — Get the mapping values tree
+- GET /rest/elastic-sync/mapping/model/{syncType} — Get model key to field value key
+- GET /rest/elastic-sync/mapping/values/{syncType} — Get the mapping values
+- GET /rest/elastic-sync/mapping/variation — Get list with variation matches
+- POST /rest/elastic-sync/sync — Create a sync
+- PUT /rest/elastic-sync/sync/change-csv — Update the Csv of a Sync
+- POST /rest/elastic-sync/sync/import — Save the CSV on S3
+- POST /rest/elastic-sync/sync/import-different — Import the sync with different plentyId
+- POST /rest/elastic-sync/sync/import/file/public-url — Save the CSV on S3
+- POST /rest/elastic-sync/sync/import/file/public-url/different — Import the sync with different plentyId
+- GET /rest/elastic-sync/sync/intervals — Get list of sync intervals
+- DELETE /rest/elastic-sync/sync/mapping/filter/{filterId} — Delete a sync mapping
+- GET /rest/elastic-sync/sync/mapping/filter/{filterId} — Get a sync mapping
+- PUT /rest/elastic-sync/sync/mapping/filter/{filterId} — Update a sync mapping filter
+- DELETE /rest/elastic-sync/sync/mapping/row/{rowId} — Delete a sync mapping row
+- GET /rest/elastic-sync/sync/mapping/row/{rowId} — Get a sync mapping row
+- PUT /rest/elastic-sync/sync/mapping/row/{rowId} — Update a sync mapping row
+- DELETE /rest/elastic-sync/sync/mapping/{mappingId} — Delete a sync mapping
+- GET /rest/elastic-sync/sync/mapping/{mappingId} — Get a sync mapping
+- PUT /rest/elastic-sync/sync/mapping/{mappingId} — Update a sync mapping
+- POST /rest/elastic-sync/sync/mapping/{mappingId}/filter — Create a sync mapping filter
+- GET /rest/elastic-sync/sync/mapping/{mappingId}/filters — List sync mappings
+- POST /rest/elastic-sync/sync/mapping/{mappingId}/filters — Create sync mapping filters
+- PUT /rest/elastic-sync/sync/mapping/{mappingId}/filters — Update sync mapping filters
+- POST /rest/elastic-sync/sync/mapping/{mappingId}/row — Create a sync mapping row
+- GET /rest/elastic-sync/sync/mapping/{mappingId}/rows — List sync mapping rows
+- POST /rest/elastic-sync/sync/mapping/{mappingId}/rows — Create sync mapping rows
+- PUT /rest/elastic-sync/sync/mapping/{mappingId}/rows — Update sync mapping rows
+- DELETE /rest/elastic-sync/sync/mappings — Delete one or more mappings
+- POST /rest/elastic-sync/sync/mappings/copy — Copy one or more mappings
+- GET /rest/elastic-sync/sync/matching/decimals — Get list of decimals
+- DELETE /rest/elastic-sync/sync/matching/{matchingId} — Delete a sync matching
+- GET /rest/elastic-sync/sync/matching/{matchingId} — Get a sync matching
+- PUT /rest/elastic-sync/sync/matching/{matchingId} — Update a sync matching
+- DELETE /rest/elastic-sync/sync/option/{optionId} — Delete a sync
+- GET /rest/elastic-sync/sync/option/{optionId} — Get a sync
+- PUT /rest/elastic-sync/sync/option/{optionId} — Update a sync option
+- GET /rest/elastic-sync/sync/report/{id} — Get Log by ID
+- GET /rest/elastic-sync/sync/reports — Check Report Log
+- GET /rest/elastic-sync/sync/reports/availability — Check Report Log
+- GET /rest/elastic-sync/sync/reset-cache — Reset the cache
+- GET /rest/elastic-sync/sync/schedule/times — Get schedule times
+- GET /rest/elastic-sync/sync/status — Get syncs status
+- GET /rest/elastic-sync/sync/types — Get list of sync types
+- POST /rest/elastic-sync/sync/{statusId}/live/processing/{syncId}/{page} — Import a page for Live Import
+- POST /rest/elastic-sync/sync/{statusId}/live/queueing — Get list of jobs for Live Import
+- DELETE /rest/elastic-sync/sync/{syncId} — Delete a sync
+- GET /rest/elastic-sync/sync/{syncId} — Get a sync
+- PUT /rest/elastic-sync/sync/{syncId} — Update a sync
+- POST /rest/elastic-sync/sync/{syncId}/live/initiate — Initiate + queue live import
+- POST /rest/elastic-sync/sync/{syncId}/mapping — Create a sync mapping
+- GET /rest/elastic-sync/sync/{syncId}/mappings — List sync mappings
+- GET /rest/elastic-sync/sync/{syncId}/matches — List sync matches
+- POST /rest/elastic-sync/sync/{syncId}/matches — Create sync matches
+- PUT /rest/elastic-sync/sync/{syncId}/matches — Update sync matches
+- POST /rest/elastic-sync/sync/{syncId}/matching — Create a sync matching
+- GET /rest/elastic-sync/sync/{syncId}/matching/entity — Get an entity
+- POST /rest/elastic-sync/sync/{syncId}/option — Create a sync option
+- GET /rest/elastic-sync/sync/{syncId}/options — List syncs
+- POST /rest/elastic-sync/sync/{syncId}/options — Create sync options
+- PUT /rest/elastic-sync/sync/{syncId}/options — Update sync options
+- GET /rest/elastic-sync/sync/{syncId}/preview-computed — Get computed preview of mapped targets
+- GET /rest/elastic-sync/sync/{syncId}/preview-values — Get preview of csv values
+- POST /rest/elastic-sync/sync/{syncId}/run — Execute the run procedure
+- GET /rest/elastic-sync/sync/{syncId}/source-preview — Preview the syncs
+- GET /rest/elastic-sync/sync/{syncType}/matching/fields — Get list of all mappings for a sync type
+- DELETE /rest/elastic-sync/syncs — Delete syncs
+- GET /rest/elastic-sync/syncs — Get all Syncs
+- POST /rest/elastic-sync/syncs/copy — Copy the syncs
+- POST /rest/elastic-sync/syncs/export — Export the syncs
+- GET /rest/elastic-sync/syncs/export/{syncId} — Export the sync
+
+## Export
+
+- GET /export/{exportKey} — Export an elastic export
+- GET /export/{exportKey}/{token} — Export an elastic export
+- GET /rest/exports/format_keys — Get format keys
+- GET /rest/exports/format_keys/{type} — Get format keys
+- GET /rest/exports/generate_token — Generate a token
+- GET /rest/orders/shipping/export_documents/{orderId} — List export documents
+
+## ExportSettings
+
+- GET /rest/exports — List elastic exports
+- POST /rest/exports — Create an export
+- DELETE /rest/exports/{exportId} — Delete export
+- GET /rest/exports/{exportId} — Get export
+- PUT /rest/exports/{exportId} — Update an export
+- DELETE /rest/exports/{exportId}/filters/{key} — Delete filter from the export
+
+## Feedback
+
+- POST /rest/feedbacks/comment — Create a feedback comment
+- DELETE /rest/feedbacks/comment/{commentId} — Delete a feedback comment
+- GET /rest/feedbacks/comment/{commentId} — Get a feedback comment
+- GET /rest/feedbacks/comments — List feedback comments
+- DELETE /rest/feedbacks/delete_feedbacks/{feedbackIds} — Delete multiple feedbacks
+- POST /rest/feedbacks/feedback — Create a feedback
+- GET /rest/feedbacks/feedback/replies/{feedbackId} — List feedback replies
+- DELETE /rest/feedbacks/feedback/{feedbackId} — Delete a feedback
+- GET /rest/feedbacks/feedback/{feedbackId} — Get a feedback
+- PUT /rest/feedbacks/feedback/{feedbackId} — Update a feedback
+- GET /rest/feedbacks/feedbacks — List feedbacks
+- PUT /rest/feedbacks/feedbacks_visibility — Update visibility of multiple feedbacks
+- POST /rest/feedbacks/migrate — Migrate legacy feedbacks
+- POST /rest/feedbacks/rating — Create a feedback rating
+- DELETE /rest/feedbacks/rating/{ratingId} — Delete a feedback rating
+- GET /rest/feedbacks/rating/{ratingId} — Get a feedback rating
+- GET /rest/feedbacks/ratings — List feedback ratings
+
+## Fulfillment
+
+- GET /rest/fulfillment/picklist — Get all pick lists
+- GET /rest/fulfillment/picklist/picking_order_item — Get all pick list items
+- GET /rest/fulfillment/picklist/picking_order_item/{pickingOrderItemId} — Get pick list item
+- POST /rest/fulfillment/picklist/picking_order_item/{pickingOrderItemId}/status — Set state of a pick list item
+- POST /rest/fulfillment/picklist/trolley_tags — Create trolley tag
+- DELETE /rest/fulfillment/picklist/trolley_tags/{trolleyTag} — Delete trolley tag
+- GET /rest/fulfillment/picklist/trolley_tags/{trolleyTag} — Get a pick list
+- GET /rest/fulfillment/picklist/{id} — Get a pick list
+- POST /rest/fulfillment/picklist/{id}/{action} — Execute a pick list action
+- DELETE /rest/fulfillment/picklist/{pickingOrderId}/trolley_tags — Delete trolley tag
+
+## Item
+
+> Kern-Endpoints für Artikel/Varianten. Für das Projekt besonders relevant:
+> `POST /rest/items`, `.../descriptions`, `.../variation_barcodes`, `.../variation_categories`.
+
+- GET /rest/availabilities — List item availabilities
+- GET /rest/availabilities/{id} — Get an item availability
+- PUT /rest/availabilities/{id} — Update an item availability
+- DELETE /rest/item_sets — Delete item sets
+- GET /rest/item_sets — List item sets
+- POST /rest/item_sets — Create item sets
+- PUT /rest/item_sets — Update item sets
+- DELETE /rest/item_sets/{id} — Delete an item set
+- GET /rest/item_sets/{id} — Get an item set
+- PUT /rest/item_sets/{id} — Update an item set
+- DELETE /rest/item_sets/{setId}/components — Delete item set components
+- GET /rest/item_sets/{setId}/components — List item set components of an item set
+- POST /rest/item_sets/{setId}/components — Create item set components
+- PUT /rest/item_sets/{setId}/components — Update item set components
+- DELETE /rest/item_sets/{setId}/components/{id} — Delete an item set component
+- GET /rest/item_sets/{setId}/components/{id} — Get an item set component
+- PUT /rest/item_sets/{setId}/components/{id} — Update an item set component
+- GET /rest/item_sets/{setId}/config — Get the item set configuration
+- PUT /rest/item_sets/{setId}/config — Update an item set configuration
+- POST /rest/item_sets/{setId}/config/sales_prices — Trigger sales price calculation for an item set
+- GET /rest/items — Search item
+- POST /rest/items — Create new items
+- PUT /rest/items — Bulk update items
+- GET /rest/items/attribute_values/{valueId}/names — Get name and language for an attribute value ID
+- POST /rest/items/attribute_values/{valueId}/names — Create an attribute value name
+- DELETE /rest/items/attribute_values/{valueId}/names/{lang} — Delete an attribute value name
+- GET /rest/items/attribute_values/{valueId}/names/{lang} — Get an attribute value name
+- PUT /rest/items/attribute_values/{valueId}/names/{lang} — Update an attribute value name
+- GET /rest/items/attributes — List attributes
+- POST /rest/items/attributes — Create an attribute
+- GET /rest/items/attributes/maps — List all attribute maps
+- POST /rest/items/attributes/markets/maps — Create a new attribute map
+- GET /rest/items/attributes/values/maps — List all attribute value maps
+- POST /rest/items/attributes/values/markets/maps — Create a new attribute value map
+- DELETE /rest/items/attributes/{attributeId}/markets/{marketId}/maps — Delete an attribute map
+- GET /rest/items/attributes/{attributeId}/markets/{marketId}/maps — Get an attribute map
+- PUT /rest/items/attributes/{attributeId}/markets/{marketId}/maps — Update an attribute map
+- GET /rest/items/attributes/{attributeId}/names — Get an attribute name
+- POST /rest/items/attributes/{attributeId}/names — Create an attribute name
+- DELETE /rest/items/attributes/{attributeId}/names/{lang} — Delete an attribute name
+- GET /rest/items/attributes/{attributeId}/names/{lang} — List attribute names
+- PUT /rest/items/attributes/{attributeId}/names/{lang} — Update an attribute name
+- GET /rest/items/attributes/{attributeId}/value_market_names — Search attribute value market names
+- POST /rest/items/attributes/{attributeId}/value_market_names — Create an attribute value market name
+- DELETE /rest/items/attributes/{attributeId}/value_market_names/{valueId}/{lang}/{referenceType} — Delete attribute value market name
+- PUT /rest/items/attributes/{attributeId}/value_market_names/{valueId}/{lang}/{referenceType} — Update attribute value market name
+- GET /rest/items/attributes/{attributeId}/values — List attribute values
+- POST /rest/items/attributes/{attributeId}/values — Create an attribute value
+- DELETE /rest/items/attributes/{attributeId}/values/{attributeValueId}/markets/{marketId}/maps — Delete attribute value map
+- GET /rest/items/attributes/{attributeId}/values/{attributeValueId}/markets/{marketId}/maps — Get attribute value map
+- PUT /rest/items/attributes/{attributeId}/values/{attributeValueId}/markets/{marketId}/maps — Update attribute value map
+- DELETE /rest/items/attributes/{attributeId}/values/{id} — Delete an attribute value
+- GET /rest/items/attributes/{attributeId}/values/{id} — Get an attribute value
+- PUT /rest/items/attributes/{attributeId}/values/{id} — Update an attribute value
+- DELETE /rest/items/attributes/{id} — Delete an attribute
+- GET /rest/items/attributes/{id} — Get an attribute
+- PUT /rest/items/attributes/{id} — Update an attribute
+- GET /rest/items/barcodes — List barcodes
+- POST /rest/items/barcodes — Create a barcode
+- GET /rest/items/barcodes/referrer/{referrerId} — List barcodes by referrer
+- GET /rest/items/barcodes/type/{type} — List barcodes by type
+- DELETE /rest/items/barcodes/{barcodeId} — Delete a barcode
+- GET /rest/items/barcodes/{barcodeId} — Get a barcode
+- PUT /rest/items/barcodes/{barcodeId} — Update a barcode
+- POST /rest/items/barcodes/{barcodeId}/referrer — Activate a referrer
+- DELETE /rest/items/barcodes/{barcodeId}/referrer/{referrerId} — Deactivate a referrer
+- GET /rest/items/item_shipping_profiles — List all shipping profiles of all items
+- POST /rest/items/item_shipping_profiles — Bulk activate shipping profiles
+- GET /rest/items/labels — List item label templates
+- GET /rest/items/listings/categories — Search for item listing categories
+- GET /rest/items/listings/categories/{id} — Get one item listing categories
+- GET /rest/items/listings/shop_categories/{ebayAccountId} — Get a list of item listing shop categories
+- GET /rest/items/manufacturers — List manufacturers
+- POST /rest/items/manufacturers — Create a manufacturer
+- DELETE /rest/items/manufacturers/{id} — Delete a manufacturer
+- GET /rest/items/manufacturers/{id} — Get a manufacturer
+- PUT /rest/items/manufacturers/{id} — Update a manufacturer
+- GET /rest/items/manufacturers/{id}/commissions — List commissions
+- POST /rest/items/manufacturers/{id}/commissions — Create a commission
+- DELETE /rest/items/manufacturers/{id}/commissions/{manufacturerId} — Delete a commission
+- GET /rest/items/manufacturers/{id}/commissions/{manufacturerId} — Get a commission
+- PUT /rest/items/manufacturers/{id}/commissions/{manufacturerId} — Update a commission
+- GET /rest/items/packing_units — Get the item variation packing units
+- GET /rest/items/packing_units/{id} — Get item variation packing unit for a given id
+- GET /rest/items/properties — List properties
+- POST /rest/items/properties — Create a property
+- DELETE /rest/items/properties/{id} — Delete a property
+- GET /rest/items/properties/{id} — Get a property
+- PUT /rest/items/properties/{id} — Update a property
+- GET /rest/items/properties/{id}/market_references — List property market references
+- POST /rest/items/properties/{id}/market_references — Create a property market reference
+- DELETE /rest/items/properties/{id}/market_references/{marketId} — Delete a property market reference
+- GET /rest/items/properties/{id}/market_references/{marketId} — Get a property market reference
+- PUT /rest/items/properties/{id}/market_references/{marketId} — Update a property market reference
+- GET /rest/items/properties/{id}/names — List the property names
+- POST /rest/items/properties/{id}/names — Create a property name
+- DELETE /rest/items/properties/{id}/names/{lang} — Delete a property name
+- GET /rest/items/properties/{id}/names/{lang} — Get a property name
+- PUT /rest/items/properties/{id}/names/{lang} — Update a property name
+- GET /rest/items/properties/{propertyId}/selections — List property selections
+- POST /rest/items/properties/{propertyId}/selections — Create a property selection
+- DELETE /rest/items/properties/{propertyId}/selections/{id} — Delete a property selection
+- GET /rest/items/properties/{propertyId}/selections/{id} — Get a property selection
+- POST /rest/items/properties/{propertyId}/selections/{id} — Create a property selection lang
+- DELETE /rest/items/properties/{propertyId}/selections/{id}/{lang} — Delete a property selection language
+- GET /rest/items/properties/{propertyId}/selections/{id}/{lang} — List property selections by language
+- PUT /rest/items/properties/{propertyId}/selections/{id}/{lang} — Update a property selection
+- GET /rest/items/properties/{propertyId}/selections/{lang} — List property selections
+- GET /rest/items/property_groups — List property groups
+- POST /rest/items/property_groups — Create a property group
+- DELETE /rest/items/property_groups/{id} — Delete a property group
+- GET /rest/items/property_groups/{id} — Get a property group
+- PUT /rest/items/property_groups/{id} — Update a property group
+- GET /rest/items/property_groups/{id}/names — List property group names of a property group
+- POST /rest/items/property_groups/{id}/names — Create a property group name
+- DELETE /rest/items/property_groups/{id}/names/{lang} — Delete a property group name
+- GET /rest/items/property_groups/{id}/names/{lang} — Get a property group name in a language
+- PUT /rest/items/property_groups/{id}/names/{lang} — Update a property group name
+- GET /rest/items/sales_prices — List sales prices
+- POST /rest/items/sales_prices — Create a sales price
+- DELETE /rest/items/sales_prices/{id} — Delete a sales price
+- GET /rest/items/sales_prices/{id} — Get a sales price
+- PUT /rest/items/sales_prices/{id} — Update a sales price
+- GET /rest/items/sales_prices/{id}/accounts — List referrer accounts
+- POST /rest/items/sales_prices/{id}/accounts — Activate a referrer account
+- DELETE /rest/items/sales_prices/{id}/accounts/{accountType}/{accountId} — Deactivate a referrer account
+- GET /rest/items/sales_prices/{id}/countries — List countries by sales price
+- POST /rest/items/sales_prices/{id}/countries — Activate a country
+- DELETE /rest/items/sales_prices/{id}/countries/{countryId} — Deactivate a country
+- GET /rest/items/sales_prices/{id}/currencies — List activated currencies
+- POST /rest/items/sales_prices/{id}/currencies — Activate a currency
+- DELETE /rest/items/sales_prices/{id}/currencies/{currency} — Deactivate a currency
+- GET /rest/items/sales_prices/{id}/customer_classes — List activated customer classes
+- POST /rest/items/sales_prices/{id}/customer_classes — Activate a customer class
+- DELETE /rest/items/sales_prices/{id}/customer_classes/{customerClassId} — Activate a customer class
+- GET /rest/items/sales_prices/{id}/names — List names of a sales price
+- POST /rest/items/sales_prices/{id}/names — Create a sales price name
+- DELETE /rest/items/sales_prices/{id}/names/{lang} — Delete a sales price name
+- GET /rest/items/sales_prices/{id}/names/{lang} — Get a sales price name
+- PUT /rest/items/sales_prices/{id}/names/{lang} — Update a sales price name
+- GET /rest/items/sales_prices/{id}/online_stores — List activated clients (stores)
+- POST /rest/items/sales_prices/{id}/online_stores — Activate a client (store)
+- DELETE /rest/items/sales_prices/{id}/online_stores/{webstoreId} — Deactivate a client (store)
+- GET /rest/items/sales_prices/{id}/referrers — List activated referrers
+- POST /rest/items/sales_prices/{id}/referrers — Activate a referrer
+- DELETE /rest/items/sales_prices/{id}/referrers/{referrerId} — Deactivate a referrer
+- GET /rest/items/units — List units
+- POST /rest/items/units — Create a unit
+- GET /rest/items/units/unitsOfMeasurements — Get list with units of measurements
+- DELETE /rest/items/units/{id} — Delete a unit
+- GET /rest/items/units/{id} — Get a unit
+- PUT /rest/items/units/{id} — Update a unit
+- GET /rest/items/units/{id}/names — List unit names
+- POST /rest/items/units/{id}/names — Create a unit name
+- DELETE /rest/items/units/{id}/names/{lang} — Delete a unit name
+- GET /rest/items/units/{id}/names/{lang} — Get a unit name
+- PUT /rest/items/units/{id}/names/{lang} — Update a unit name
+- GET /rest/items/variations — Search variations
+- PUT /rest/items/variations — Update up to 50 variations
+- POST /rest/items/variations/variation_categories — Bulk create category links
+- PUT /rest/items/variations/variation_categories — Bulk update category links
+- GET /rest/items/variations/variation_markets — List all links between variations and markets
+- POST /rest/items/variations/variation_markets — Create up to 50 links between variations and markets
+- POST /rest/items/variations/variation_properties — Bulk update properties
+- PUT /rest/items/variations/variation_properties — Bulk update properties
+- GET /rest/items/variations/variation_sales_prices — Get all sales price relations
+- POST /rest/items/variations/variation_sales_prices — Bulk create prices
+- PUT /rest/items/variations/variation_sales_prices — Bulk update prices
+- GET /rest/items/{id}/images — List images of an item
+- GET /rest/items/{id}/images/attribute_value_markets — List attribute value image link
+- POST /rest/items/{id}/images/upload — Upload a new image
+- DELETE /rest/items/{id}/images/{imageId} — Delete an image
+- GET /rest/items/{id}/images/{imageId} — Get an image
+- PUT /rest/items/{id}/images/{imageId} — Update an image
+- POST /rest/items/{id}/images/{imageId}/attribute_value_markets — Create an attribute value image link
+- DELETE /rest/items/{id}/images/{imageId}/attribute_value_markets/{valueId} — Delete an attribute value image link
+- GET /rest/items/{id}/images/{imageId}/attribute_value_markets/{valueId} — Get an attribute value image link
+- PUT /rest/items/{id}/images/{imageId}/attribute_value_markets/{valueId} — Update an attribute value image link
+- DELETE /rest/items/{id}/images/{imageId}/availabilities — Delete an availability
+- GET /rest/items/{id}/images/{imageId}/availabilities — List availabilities
+- POST /rest/items/{id}/images/{imageId}/availabilities — Create an availability
+- GET /rest/items/{id}/images/{imageId}/names — List names of an image
+- POST /rest/items/{id}/images/{imageId}/names — Create an image name
+- DELETE /rest/items/{id}/images/{imageId}/names/{lang} — Delete an image name
+- GET /rest/items/{id}/images/{imageId}/names/{lang} — Get an image name
+- PUT /rest/items/{id}/images/{imageId}/names/{lang} — Update an image name
+- GET /rest/items/{id}/images/{imageId}/variation_images — List image links of an image
+- GET /rest/items/{id}/item_cross_selling — List cross-selling links
+- POST /rest/items/{id}/item_cross_selling — Create a cross-selling link
+- DELETE /rest/items/{id}/item_cross_selling/{crossItemId} — Delete a cross-selling link
+- PUT /rest/items/{id}/item_cross_selling/{crossItemId} — Update a cross-selling link
+- POST /rest/items/{id}/labels — Get an item label
+- GET /rest/items/{id}/variation_images — List image links of an item
+- GET /rest/items/{id}/variations/{variationId}/descriptions — List texts
+- POST /rest/items/{id}/variations/{variationId}/descriptions — Create texts (Variantenname/-beschreibung: lang, name, description)
+- DELETE /rest/items/{id}/variations/{variationId}/descriptions/{lang} — Delete texts
+- GET /rest/items/{id}/variations/{variationId}/descriptions/{lang} — Get texts
+- PUT /rest/items/{id}/variations/{variationId}/descriptions/{lang} — Update texts
+- GET /rest/items/{id}/variations/{variationId}/images — List images of a variation
+- POST /rest/items/{id}/variations/{variationId}/labels — Get a variation label
+- GET /rest/items/{id}/variations/{variationId}/market_ident_numbers — List ident number of a variation
+- POST /rest/items/{id}/variations/{variationId}/market_ident_numbers — Create a market ident number
+- DELETE /rest/items/{id}/variations/{variationId}/market_ident_numbers/{marketIdentNumberId} — Delete a market ident number
+- GET /rest/items/{id}/variations/{variationId}/market_ident_numbers/{marketIdentNumberId} — Get a market ident number
+- PUT /rest/items/{id}/variations/{variationId}/market_ident_numbers/{marketIdentNumberId} — Update a market ident number
+- GET /rest/items/{id}/variations/{variationId}/stock — List stock of a variation per warehouse
+- PUT /rest/items/{id}/variations/{variationId}/stock/bookIncomingItems — Book incoming stock
+- PUT /rest/items/{id}/variations/{variationId}/stock/bookOutgoingItems — Book outgoing stock
+- PUT /rest/items/{id}/variations/{variationId}/stock/correction — Correct stock
+- GET /rest/items/{id}/variations/{variationId}/stock/movements — List stock movements
+- PUT /rest/items/{id}/variations/{variationId}/stock/redistribute — Redistribute stock
+- GET /rest/items/{id}/variations/{variationId}/stock/storageLocations — List stock of a variation per storage locations
+- GET /rest/items/{id}/variations/{variationId}/variation_additional_skus — List additional SKUs
+- POST /rest/items/{id}/variations/{variationId}/variation_additional_skus — Create an additional SKU
+- DELETE /rest/items/{id}/variations/{variationId}/variation_additional_skus/{additionalSkuId} — Delete an additional SKU
+- GET /rest/items/{id}/variations/{variationId}/variation_additional_skus/{additionalSkuId} — Get an additional SKU
+- PUT /rest/items/{id}/variations/{variationId}/variation_additional_skus/{additionalSkuId} — Update an additional SKU
+- GET /rest/items/{id}/variations/{variationId}/variation_barcodes — List variation barcodes
+- POST /rest/items/{id}/variations/{variationId}/variation_barcodes — Create a variation barcode (Recht: item.item.variation.barcode.create)
+- DELETE /rest/items/{id}/variations/{variationId}/variation_barcodes/{barcodeId} — Delete a variation barcode
+- GET /rest/items/{id}/variations/{variationId}/variation_barcodes/{barcodeId} — Get a variation barcode
+- PUT /rest/items/{id}/variations/{variationId}/variation_barcodes/{barcodeId} — Update a variation barcode
+- GET /rest/items/{id}/variations/{variationId}/variation_bundles — List bundle components
+- POST /rest/items/{id}/variations/{variationId}/variation_bundles — Add a variation to a bundle
+- DELETE /rest/items/{id}/variations/{variationId}/variation_bundles/{bundleId} — Remove a bundle component
+- GET /rest/items/{id}/variations/{variationId}/variation_bundles/{bundleId} — Get a variation bundle
+- PUT /rest/items/{id}/variations/{variationId}/variation_bundles/{bundleId} — Update a variation bundle
+- GET /rest/items/{id}/variations/{variationId}/variation_categories — List categories linked to a variation
+- POST /rest/items/{id}/variations/{variationId}/variation_categories — Link a category to a variation
+- DELETE /rest/items/{id}/variations/{variationId}/variation_categories/{catId} — Remove a category from a variation
+- GET /rest/items/{id}/variations/{variationId}/variation_categories/{catId} — Get link between category and variation
+- PUT /rest/items/{id}/variations/{variationId}/variation_categories/{catId} — Update variation category link
+- GET /rest/items/{id}/variations/{variationId}/variation_clients — List clients linked to a variation
+- POST /rest/items/{id}/variations/{variationId}/variation_clients — Link a client to a variation
+- DELETE /rest/items/{id}/variations/{variationId}/variation_clients/{plentyId} — Unlink a client from a variation
+- GET /rest/items/{id}/variations/{variationId}/variation_component_bundles — List bundles
+- GET /rest/items/{id}/variations/{variationId}/variation_default_categories — List default category links
+- POST /rest/items/{id}/variations/{variationId}/variation_default_categories — Create a default category link
+- DELETE /rest/items/{id}/variations/{variationId}/variation_default_categories/{plentyId} — Delete a default category link
+- GET /rest/items/{id}/variations/{variationId}/variation_default_categories/{plentyId} — Get a default category link
+- GET /rest/items/{id}/variations/{variationId}/variation_images — List image links of a variation
+- POST /rest/items/{id}/variations/{variationId}/variation_images — Create an image link
+- DELETE /rest/items/{id}/variations/{variationId}/variation_images/{imageId} — Delete an image link
+- DELETE /rest/items/{id}/variations/{variationId}/variation_markets — Delete all market links of one variation
+- GET /rest/items/{id}/variations/{variationId}/variation_markets — List markets linked to a variation
+- POST /rest/items/{id}/variations/{variationId}/variation_markets — Create link between variation and market
+- DELETE /rest/items/{id}/variations/{variationId}/variation_markets/{marketplaceId} — Delete link between variation and market
+- DELETE /rest/items/{id}/variations/{variationId}/variation_properties — Delete all links between a variation and its property values
+- GET /rest/items/{id}/variations/{variationId}/variation_properties — List property values linked to a variation
+- POST /rest/items/{id}/variations/{variationId}/variation_properties — Create link between variation and property value
+- DELETE /rest/items/{id}/variations/{variationId}/variation_properties/{propertyId} — Delete link between variation and property value
+- GET /rest/items/{id}/variations/{variationId}/variation_properties/{propertyId} — Get a property value
+- PUT /rest/items/{id}/variations/{variationId}/variation_properties/{propertyId} — Update a property value
+- DELETE /rest/items/{id}/variations/{variationId}/variation_properties/{propertyId}/deleteFile — Delete file
+- POST /rest/items/{id}/variations/{variationId}/variation_properties/{propertyId}/upload — Upload file
+- DELETE /rest/items/{id}/variations/{variationId}/variation_sales_prices — Delete all links between a variation and its sales prices
+- GET /rest/items/{id}/variations/{variationId}/variation_sales_prices — List sales prices of a variation
+- POST /rest/items/{id}/variations/{variationId}/variation_sales_prices — Create link between variation and sales price
+- DELETE /rest/items/{id}/variations/{variationId}/variation_sales_prices/{priceId} — Delete link between variation and sales price
+- GET /rest/items/{id}/variations/{variationId}/variation_sales_prices/{priceId} — Get sales price data for a variation
+- PUT /rest/items/{id}/variations/{variationId}/variation_sales_prices/{priceId} — Update sales price data
+- GET /rest/items/{id}/variations/{variationId}/variation_skus — List SKUs
+- POST /rest/items/{id}/variations/{variationId}/variation_skus — Create an SKU
+- DELETE /rest/items/{id}/variations/{variationId}/variation_skus/{skuId} — Delete an SKU
+- GET /rest/items/{id}/variations/{variationId}/variation_skus/{skuId} — Get an SKU
+- PUT /rest/items/{id}/variations/{variationId}/variation_skus/{skuId} — Update an SKU
+- GET /rest/items/{id}/variations/{variationId}/variation_suppliers — List suppliers for a variation
+- POST /rest/items/{id}/variations/{variationId}/variation_suppliers — Create a link between variation and supplier
+- DELETE /rest/items/{id}/variations/{variationId}/variation_suppliers/{variationSupplierId} — Delete link between variation and supplier
+- GET /rest/items/{id}/variations/{variationId}/variation_suppliers/{variationSupplierId} — Get supplier data for a variation
+- PUT /rest/items/{id}/variations/{variationId}/variation_suppliers/{variationSupplierId} — Update supplier data for a variation
+- GET /rest/items/{id}/variations/{variationId}/variation_warehouses — List warehouses linked to a variation
+- POST /rest/items/{id}/variations/{variationId}/variation_warehouses — Create link between a variation and a warehouse
+- DELETE /rest/items/{id}/variations/{variationId}/variation_warehouses/{warehouseId} — Delete link between a warehouse and a variation
+- GET /rest/items/{id}/variations/{variationId}/variation_warehouses/{warehouseId} — Get warehouse data for a variation
+- PUT /rest/items/{id}/variations/{variationId}/variation_warehouses/{warehouseId} — Update warehouse data of a variation
+- DELETE /rest/items/{itemId} — Delete an item
+- GET /rest/items/{itemId} — Show an item
+- PUT /rest/items/{itemId} — Update an item
+- POST /rest/items/{itemId}/copy — Copy an item
+- POST /rest/items/{itemId}/fill — Fill item to es
+- DELETE /rest/items/{itemId}/item_shipping_profiles — Deactivate shipping profiles of an item
+- GET /rest/items/{itemId}/item_shipping_profiles — List shipping profiles of an item
+- POST /rest/items/{itemId}/item_shipping_profiles — Activate a shipping profile
+- DELETE /rest/items/{itemId}/item_shipping_profiles/{id} — Deactivate a shipping profile
+- GET /rest/items/{itemId}/variations — List variations of an item
+- POST /rest/items/{itemId}/variations — Create a variation
+- DELETE /rest/items/{itemId}/variations/{variationId} — Delete a variation
+- GET /rest/items/{itemId}/variations/{variationId} — Get a variation
+- PUT /rest/items/{itemId}/variations/{variationId} — Update a variation
+- POST /rest/items/{itemId}/variations/{variationId}/fill — Fill a variation
+- GET /rest/items/{itemId}/variations/{variationId}/variation_properties/{propertyId}/texts — Get property value texts
+- POST /rest/items/{itemId}/variations/{variationId}/variation_properties/{propertyId}/texts — Create property value text by language
+- DELETE /rest/items/{itemId}/variations/{variationId}/variation_properties/{propertyId}/texts/{lang} — Delete property value text by language
+- GET /rest/items/{itemId}/variations/{variationId}/variation_properties/{propertyId}/texts/{lang} — Get property value text by language
+- PUT /rest/items/{itemId}/variations/{variationId}/variation_properties/{propertyId}/texts/{lang} — Update property value text by language
+
+## LegalInformation
+
+- GET /rest/legalinformation/all/{plentyId}/{lang} — Return ALL legal texts
+- POST /rest/legalinformation/all/{plentyId}/{lang} — Update text in plenty_text table
+- GET /rest/legalinformation/{plentyId}/{lang}/{type} — Get legal information of an online store
+- PUT /rest/legalinformation/{plentyId}/{lang}/{type} — Save legal information for an online store
+
+## Listing
+
+- GET /rest/listings — List listing
+- POST /rest/listings — Create new listing
+- POST /rest/listings/layout_templates — Create new layout template
+- DELETE /rest/listings/layout_templates/{id} — Delete a layout template
+- GET /rest/listings/layout_templates/{id} — Get a layout template
+- GET /rest/listings/markets — List listing markets
+- POST /rest/listings/markets — Create new listing market
+- GET /rest/listings/markets/directories — Get all listing market directories
+- POST /rest/listings/markets/directories — Create listing market directory
+- DELETE /rest/listings/markets/directories/{id} — Delete listing market directory
+- GET /rest/listings/markets/directories/{id} — Get a listing market directory
+- PUT /rest/listings/markets/directories/{id} — Update listing market directory
+- GET /rest/listings/markets/find — Find listing markets
+- GET /rest/listings/markets/histories — List listing market history
+- DELETE /rest/listings/markets/histories/end/{id} — End the listing
+- POST /rest/listings/markets/histories/relist/{id} — Relist the listing
+- PUT /rest/listings/markets/histories/update/{id} — Update listing market histories
+- GET /rest/listings/markets/histories/{id} — Get a listing market history
+- GET /rest/listings/markets/infos — Search listing market info
+- GET /rest/listings/markets/item_specifics — Get all ListingMarketItemSpecifics
+- GET /rest/listings/markets/item_specifics/find — Get all ListingMarketItemSpecifics
+- DELETE /rest/listings/markets/item_specifics/{id} — Delete a ListingMarketItemSpecific
+- GET /rest/listings/markets/item_specifics/{id} — Get a ListingMarketItemSpecific
+- PUT /rest/listings/markets/item_specifics/{id} — Update a ListingMarketItemSpecific
+- POST /rest/listings/markets/start/{id} — Start the market listing on the designated market
+- GET /rest/listings/markets/texts — List listing market texts
+- POST /rest/listings/markets/texts — Create a listing market text
+- DELETE /rest/listings/markets/texts/{id} — Delete a listing market text
+- GET /rest/listings/markets/texts/{id} — Get a listing market text
+- PUT /rest/listings/markets/texts/{listingMarketId}/{lang} — Update a listing market text
+- POST /rest/listings/markets/verify/{id} — Verify listing markets
+- DELETE /rest/listings/markets/{id} — Delete listing market
+- GET /rest/listings/markets/{id} — Get a listing market
+- PUT /rest/listings/markets/{id} — Update a listing market
+- POST /rest/listings/option_templates — Create option template
+- GET /rest/listings/option_templates/preview — Get a preview list of option templates
+- DELETE /rest/listings/option_templates/{id} — Delete option template
+- GET /rest/listings/option_templates/{id} — Get option template
+- PUT /rest/listings/option_templates/{id} — Update option template
+- GET /rest/listings/shipping_profiles — List listing shipping profiles
+- GET /rest/listings/shipping_profiles/{id} — Get a shipping profile
+- GET /rest/listings/stock_dependence_types — List listing stock dependence types
+- GET /rest/listings/stock_dependence_types/{id} — Get a listing stock dependence type
+- GET /rest/listings/types — List listing types
+- GET /rest/listings/types/{id} — Get a listing type
+- DELETE /rest/listings/{id} — Delete a listing
+- GET /rest/listings/{id} — Get a listing
+- PUT /rest/listings/{id} — Update a listing
+
+## Log
+
+- GET /rest/delete_log — Search the delete log
+- GET /rest/logs/integration_keys — Get integration keys
+- GET /rest/logs/reference_types — Get reference types
+- GET /rest/logs/settings — Show config
+- POST /rest/logs/settings — Save config
+
+## MailTemplates
+
+- GET /rest/mail_templates/email_service/accounts — List all email accounts usable to send emails
+- POST /rest/mail_templates/email_service/addToFavourites/{templateId} — Add template to favourites for current user
+- GET /rest/mail_templates/email_service/getRecipient — Get email of a contact or order by receiver type
+- GET /rest/mail_templates/email_service/history — List all sent email for a specific entity
+- GET /rest/mail_templates/email_service/loadPreview/{templateId} — Generate a render preview of a template
+- POST /rest/mail_templates/email_service/removeFromFavourites/{templateId} — Remove template from favourites for current user
+- POST /rest/mail_templates/email_service/sendEmail/{templateId} — Render a template and send an email to recipients
+- POST /rest/mail_templates/email_service/sendPreview — Send a direct email to recipients (preview or custom content)
+- GET /rest/mail_templates/email_service/templatesTree — List all EmailBuilder templates and folders as nested tree
+
+## Market
+
+- GET /rest/gls/credentials — List credentials
+- POST /rest/gls/credentials — Create a credential
+- DELETE /rest/gls/credentials/{credentialsId} — Delete a credential
+- GET /rest/gls/credentials/{credentialsId} — Get a credential
+- PUT /rest/gls/credentials/{credentialsId} — Update a credential
+- GET /rest/markets/credentials — List credentials
+- POST /rest/markets/credentials — Create a credential
+- GET /rest/markets/credentials/all — List all credentials
+- DELETE /rest/markets/credentials/{credentialsId} — Delete a credential
+- GET /rest/markets/credentials/{credentialsId} — Get a credential
+- PUT /rest/markets/credentials/{credentialsId} — Update a credential
+- GET /rest/markets/ebay/auth/login — Get the login URL
+- PUT /rest/markets/ebay/auth/refresh-token — Refresh an expired access token
+- GET /rest/markets/ebay/categories — List categories
+- GET /rest/markets/ebay/categories/{id} — Get category
+- POST /rest/markets/ebay/fulfillment_policies — Create fulfillment policy
+- DELETE /rest/markets/ebay/fulfillment_policies/{id} — Delete fulfillment policy
+- GET /rest/markets/ebay/fulfillment_policies/{id} — Get fulfillment policy
+- POST /rest/markets/ebay/fulfillment_policies/{id} — Update fulfillment policy
+- GET /rest/markets/ebay/item_specifics — List item specifics
+- GET /rest/markets/ebay/marketplaces — Get all eBay marketplaces
+- GET /rest/markets/ebay/parts-fitments — List fitments
+- POST /rest/markets/ebay/parts-fitments — Create a fitment
+- GET /rest/markets/ebay/parts-fitments/search — Search fitments
+- DELETE /rest/markets/ebay/parts-fitments/{fitmentId} — Delete a fitment
+- GET /rest/markets/ebay/parts-fitments/{fitmentId} — Get a fitment
+- PUT /rest/markets/ebay/parts-fitments/{fitmentId} — Update fitment
+- POST /rest/markets/ebay/payment_policies — Create payment policy
+- DELETE /rest/markets/ebay/payment_policies/{id} — Delete payment policy
+- GET /rest/markets/ebay/payment_policies/{id} — Get payment policy
+- POST /rest/markets/ebay/payment_policies/{id} — Update payment policy
+- POST /rest/markets/ebay/return_policies — Create return policy
+- DELETE /rest/markets/ebay/return_policies/{id} — Delete payment policy
+- GET /rest/markets/ebay/return_policies/{id} — Get return policy
+- POST /rest/markets/ebay/return_policies/{id} — Update return policy
+- GET /rest/markets/ebay/shop_categories — List all eBay shop categories
+- GET /rest/markets/ebay/transactions — List transactions
+- GET /rest/markets/listings/marketplaces — Get all listing marketplaces
+- GET /rest/markets/settings — List market settings
+- POST /rest/markets/settings — Create market settings
+- POST /rest/markets/settings/bulk — Create market settings
+- PUT /rest/markets/settings/bulk — Update market settings
+- GET /rest/markets/settings/correlations — List correlation
+- POST /rest/markets/settings/correlations — Create a correlation
+- POST /rest/markets/settings/correlations/bulk — Create multiple correlations
+- DELETE /rest/markets/settings/{settingId} — Delete market settings
+- GET /rest/markets/settings/{settingId} — Get market settings
+- PUT /rest/markets/settings/{settingId} — Update market settings
+
+## Messenger
+
+- DELETE /rest/conversations — Delete a batch of conversations
+- GET /rest/conversations — List conversation based on parameters
+- POST /rest/conversations — Create a new conversation
+- PUT /rest/conversations/archive — Move multiple conversations to archive
+- DELETE /rest/conversations/archiveDelete — Permanently delete list of archived conversation
+- PUT /rest/conversations/archiveRestore — Restore multiple conversations from archive
+- PUT /rest/conversations/batchRestoreConversations — Restore deleted conversations from trash
+- PUT /rest/conversations/batch_update_conversations — Update batch of conversations
+- DELETE /rest/conversations/categories — Delete a batch of categories
+- GET /rest/conversations/categories — List conversation categories (paginated)
+- POST /rest/conversations/categories — Create a new category
+- POST /rest/conversations/categories/createDefaultTypesAndStatuses/{id} — Create default types and statuses for category
+- DELETE /rest/conversations/categories/{id} — Delete a single category (soft delete)
+- GET /rest/conversations/categories/{id} — Get a single category by ID
+- PUT /rest/conversations/categories/{id} — Update an existing category
+- PUT /rest/conversations/categories/{id}/status — Update category status
+- PUT /rest/conversations/close — Update state for a batch of conversations
+- PUT /rest/conversations/deadline — Update deadline for a batch of conversations
+- DELETE /rest/conversations/emptyTrash — Queue empty trash command
+- GET /rest/conversations/events — List conversation events (paginated)
+- POST /rest/conversations/events — Create a new event
+- DELETE /rest/conversations/events/{id} — Delete a single event
+- PUT /rest/conversations/events/{id} — Update an existing event
+- PUT /rest/conversations/events/{id}/copy — Copy an event to a new event
+- PUT /rest/conversations/events/{id}/updateExecutedAtEvent — Set last execution date for an event
+- PUT /rest/conversations/events/{id}/update_status — Set an event active/inactive
+- GET /rest/conversations/folders — List folders (paginated)
+- POST /rest/conversations/folders — Create a new folder
+- PUT /rest/conversations/folders — Assign batch of conversations to batch of folders
+- PUT /rest/conversations/folders/add — Add multiple conversations to multiple folders
+- PUT /rest/conversations/folders/remove — Remove multiple conversations from multiple folders
+- DELETE /rest/conversations/folders/{uuid5} — Delete a folder
+- GET /rest/conversations/folders/{uuid5} — Retrieve a folder object by UUID
+- PUT /rest/conversations/folders/{uuid5} — Update an existing folder
+- PUT /rest/conversations/followUpDate — Update follow up date for a batch of conversations
+- GET /rest/conversations/history/{uuid5} — Retrieve history for a conversation
+- GET /rest/conversations/inboxes — List all configured inboxes
+- PUT /rest/conversations/markNotSpam — Mark batch of conversations as read/unread
+- PUT /rest/conversations/owner — Update owner roles for conversation id/ids
+- PUT /rest/conversations/priority — Update priority for a batch of conversations
+- PUT /rest/conversations/read — Mark batch of conversations as read/unread
+- DELETE /rest/conversations/removeRelation — Remove conversation relation
+- DELETE /rest/conversations/roles — Delete a batch of roles
+- GET /rest/conversations/roles — List roles (paginated)
+- POST /rest/conversations/roles — Create new role
+- DELETE /rest/conversations/roles/{id} — Delete a role by ID
+- GET /rest/conversations/roles/{id} — Retrieve a role object by role id
+- PUT /rest/conversations/roles/{id} — Update an existing role
+- POST /rest/conversations/search — Search conversation based on parameters
+- GET /rest/conversations/searchReceiver — Search entities linkable to a conversation
+- DELETE /rest/conversations/statuses — Delete a batch of statuses
+- GET /rest/conversations/statuses — List conversation statuses (paginated)
+- POST /rest/conversations/statuses — Create a new status
+- DELETE /rest/conversations/statuses/{id} — Delete a single status
+- GET /rest/conversations/statuses/{id} — Retrieve a single status by ID
+- PUT /rest/conversations/statuses/{id} — Update an existing status
+- PUT /rest/conversations/subscribe — Subscribe current user to multiple conversations
+- GET /rest/conversations/totals — Total number of unread conversations for current user
+- PUT /rest/conversations/type_status — Update type and status for a batch of conversations
+- DELETE /rest/conversations/types — Delete a batch of types
+- GET /rest/conversations/types — List conversation types (paginated)
+- POST /rest/conversations/types — Create a new type
+- DELETE /rest/conversations/types/{id} — Delete a single type
+- GET /rest/conversations/types/{id} — Retrieve a single type by ID
+- PUT /rest/conversations/types/{id} — Update an existing type
+- PUT /rest/conversations/unsubscribe — Unsubscribe current user from multiple conversations
+- DELETE /rest/conversations/{uuid5} — Delete a conversation
+- GET /rest/conversations/{uuid5} — Get a single conversation by UUID
+- PUT /rest/conversations/{uuid5} — Update a conversation by UUID
+- PUT /rest/conversations/{uuid5}/subscribe — Subscribe a user to a conversation
+- PUT /rest/conversations/{uuid5}/tags — Add tags to a single conversation
+- PUT /rest/conversations/{uuid5}/unsubscribe — Unsubscribe a user from a conversation
+- GET /rest/messages — List message stream of a message (excluding message with UUID5)
+- POST /rest/messages — Create message
+- POST /rest/messages/attachments/all — Get all attachments by UUID
+- GET /rest/messages/forArchivedConversation — List archived message stream of a conversation
+- GET /rest/messages/forConversation — List of messages for a single conversation
+- GET /rest/messages/get — List messages per page
+- DELETE /rest/messages/{uuid5} — Delete message by UUID
+- GET /rest/messages/{uuid5} — Get message for UUID5 and all successors
+- GET /rest/messages/{uuid5}/attachments — Get attachment by UUID and file name
+- GET /rest/messages/{uuid5}/attachments/all — Get all attachments by UUID
+- PUT /rest/messages/{uuid5}/controls — Update message controls
+- PUT /rest/messages/{uuid5}/done — Set or unset doneAt date of message
+- PUT /rest/messages/{uuid5}/readBy — Update ReadBy array of message
+- PUT /rest/messages/{uuid5}/tags — Update tags of message
+- PUT /rest/messages/{uuid5}/visibility — Update message visibility
+- GET /rest/messenger/settings — Retrieve general settings object
+- PUT /rest/messenger/settings — Update general settings object
+- GET /rest/messenger/settings/getDefaultWhisperMode — Retrieve default value for whisper mode
+
+## Newsletter
+
+- DELETE /rest/newsletters — Delete entries
+- GET /rest/newsletters — List newsletter entries
+- POST /rest/newsletters — Create entry
+- POST /rest/newsletters/double_opt_in/{contactId} — Send doubleOptIn mail
+- DELETE /rest/newsletters/folders — Delete folders
+- GET /rest/newsletters/folders — List newsletter folders
+- POST /rest/newsletters/folders — Create folder
+- DELETE /rest/newsletters/folders/{folderId} — Delete folder
+- GET /rest/newsletters/folders/{folderId} — List details of a folder
+- PUT /rest/newsletters/folders/{folderId} — Update folder
+- GET /rest/newsletters/folders/{folderId}/recipients — List all recipients of a folder
+- GET /rest/newsletters/list_recipients — List recipients
+- DELETE /rest/newsletters/recipients — Delete recipients
+- GET /rest/newsletters/recipients — List recipients of folder
+- POST /rest/newsletters/recipients — Create recipient
+- DELETE /rest/newsletters/recipients/{recipientId} — Delete recipient
+- GET /rest/newsletters/recipients/{recipientId} — List recipient
+- PUT /rest/newsletters/recipients/{recipientId} — Update recipient
+- DELETE /rest/newsletters/{entryId} — Delete entry
+- GET /rest/newsletters/{entryId} — List details of an entry
+- PUT /rest/newsletters/{entryId} — Update entry
+- GET /rest/newsletters/folders/search — Search newsletter folders (untagged)
+- POST /rest/newsletters/orders/import — Import newsletter orders (untagged)
+- GET /rest/newsletters/orders/search — Search newsletter orders (untagged)
+- DELETE /rest/newsletters/recipients/batch — Delete recipients batch (untagged)
+- PUT /rest/newsletters/recipients/batchUpdate — Batch update recipients (untagged)
+- PUT /rest/newsletters/recipients/move — Move recipients (untagged)
+- PUT /rest/newsletters/recipients/moveById — Move recipients by id (untagged)
+
+## Order
+
+> Umfangreichster Bereich (Bestellungen, Angebote, Retouren, Gutschriften,
+> Reparaturen, Abos, Versand, Zahlungen-Relationen). Ausgewählte Kern-Routen zuerst,
+> danach vollständig.
+
+- GET /rest/orders — Search order
+- POST /rest/orders — Create an order
+- GET /rest/orders/batch — Get orders
+- GET /rest/orders/{orderId} — Get an order
+- PUT /rest/orders/{orderId} — Update an order
+- DELETE /rest/orders/{orderId} — Delete an order
+- GET /rest/orders/search — Search orders
+- POST /rest/orders/search — Search orders
+- POST /rest/advance_orders — Create an advance order
+- POST /rest/advance_orders/items/{orderItemId}/assign_variation — Change order item unassigned→variation
+- POST /rest/advance_orders/items/{orderItemId}/unassign_variation — Change order item variation→unassigned
+- POST /rest/advance_orders/preview — Get an advance order create preview
+- DELETE /rest/advance_orders/{orderId} — Delete an advance order
+- PUT /rest/advance_orders/{orderId} — Update an advance order
+- PUT /rest/advance_orders/{orderId}/preview — Get an advance order update preview
+- POST /rest/advance_orders/{orderId}/restore — Restore an advance order
+- POST /rest/credit_notes — Create a credit note
+- POST /rest/credit_notes/items/{orderItemId}/assign_variation — Change order item unassigned→variation
+- POST /rest/credit_notes/items/{orderItemId}/unassign_variation — Change order item variation→unassigned
+- POST /rest/credit_notes/preview — Get a credit note create preview
+- GET /rest/credit_notes/reasons — Get all order credit note reasons
+- POST /rest/credit_notes/reasons — Set an order credit note reason
+- DELETE /rest/credit_notes/reasons/{creditNotesReasonsId} — Delete an order credit note reason
+- GET /rest/credit_notes/reasons/{creditNotesReasonsId} — Get an order credit note reason
+- DELETE /rest/credit_notes/{orderId} — Delete a credit note
+- PUT /rest/credit_notes/{orderId} — Update a credit note
+- PUT /rest/credit_notes/{orderId}/preview — Get a credit note update preview
+- POST /rest/credit_notes/{orderId}/restore — Restore a credit note
+- POST /rest/delivery_orders — Create a delivery order
+- POST /rest/delivery_orders/items/{orderItemId}/assign_variation — Change order item unassigned→variation
+- POST /rest/delivery_orders/items/{orderItemId}/unassign_variation — Change order item variation→unassigned
+- POST /rest/delivery_orders/preview — Get a delivery order create preview
+- DELETE /rest/delivery_orders/{orderId} — Delete a delivery order
+- PUT /rest/delivery_orders/{orderId} — Update a delivery order
+- POST /rest/delivery_orders/{orderId}/book — Book out order items
+- POST /rest/delivery_orders/{orderId}/cancel_booking — Revert outgoing stock
+- POST /rest/delivery_orders/{orderId}/cancel_booking/validate — Validate cancellation of the booking
+- PUT /rest/delivery_orders/{orderId}/preview — Get a delivery order update preview
+- DELETE /rest/multi_credit_notes/{orderId} — Delete a multi credit note
+- PUT /rest/multi_credit_notes/{orderId} — Update a multi credit note
+- DELETE /rest/multi_orders/{orderId} — Delete a multi sales order
+- PUT /rest/multi_orders/{orderId} — Update a multi order
+- POST /rest/offers — Create an offer
+- POST /rest/offers/items/{orderItemId}/assign_variation — Change order item unassigned→variation
+- POST /rest/offers/items/{orderItemId}/unassign_variation — Change order item variation→unassigned
+- POST /rest/offers/preview — Get an offer create preview
+- DELETE /rest/offers/{orderId} — Delete an offer
+- PUT /rest/offers/{orderId} — Update an offer
+- PUT /rest/offers/{orderId}/preview — Get an offer update preview
+- POST /rest/offers/{orderId}/restore — Restore an offer
+- GET /rest/orders/contacts/{contactId} — List orders of a contact
+- POST /rest/orders/contacts/{contactId}/multi_order — Create a multi-order
+- GET /rest/orders/coupons/campaigns — Get list of campaigns
+- DELETE /rest/orders/coupons/campaigns/codes/{code} — Delete a coupon
+- GET /rest/orders/coupons/campaigns/codes/{code} — Get coupon code information
+- PUT /rest/orders/coupons/campaigns/codes/{code}/disabled/{isDisabled} — Disable or enable coupon
+- GET /rest/orders/coupons/campaigns/{campaignId} — Get campaign by Id
+- POST /rest/orders/coupons/campaigns/{campaignId}/codes — Create a coupon code
+- POST /rest/orders/coupons/codes — Validate multiple coupons
+- GET /rest/orders/coupons/codes/contacts/{contactId} — List redeemed coupon codes of a contact
+- POST /rest/orders/coupons/codes/{coupon} — Validate a coupon
+- GET /rest/orders/currencies — List currencies
+- GET /rest/orders/currencies/countries/{countryId} — Get a currency for a country
+- GET /rest/orders/currencies/exchange_rates/from/{currencyIso} — Get exchange rates from a currency
+- GET /rest/orders/currencies/exchange_rates/to/{currencyIso} — Get exchange rates to a currency
+- GET /rest/orders/currencies/live_exchange_rates — Get live exchange rates
+- GET /rest/orders/currencies/{currencyIso} — Get a currency
+- GET /rest/orders/currencies/{currencyIso}/countries — List countries for a currency
+- GET /rest/orders/currencies/{currencyIso}/exchangeRate — Get exchange rate for a currency
+- GET /rest/orders/dates/types — List order date types
+- POST /rest/orders/dates/types — Create an order date type
+- DELETE /rest/orders/dates/types/{typeId} — Delete an order date type
+- GET /rest/orders/dates/types/{typeId} — Find an order date type
+- PUT /rest/orders/dates/types/{typeId} — Update an order date type
+- GET /rest/orders/dates/types/{typeId}/names — List names of an order date type
+- GET /rest/orders/dates/types/{typeId}/names/{lang} — Get a name of an order date type
+- GET /rest/orders/documents/accounting_summary — List document accounting summaries
+- POST /rest/orders/items/dates — Create a date for an order item
+- DELETE /rest/orders/items/dates/{id} — Delete a date of an order item
+- GET /rest/orders/items/dates/{id} — Get date of an order item
+- PUT /rest/orders/items/dates/{id} — Update a date of an order item
+- DELETE /rest/orders/items/outgoing_stocks — Revert outgoing stock for order items
+- POST /rest/orders/items/properties — Create order item property
+- DELETE /rest/orders/items/properties/{id} — Delete order item property
+- GET /rest/orders/items/properties/{id} — Get order item property
+- PUT /rest/orders/items/properties/{id} — Update order item property
+- GET /rest/orders/items/transactions — Search order item transactions
+- POST /rest/orders/items/transactions — Create order item transactions
+- POST /rest/orders/items/transactions/booking — Book order item transactions
+- DELETE /rest/orders/items/transactions/{transactionId} — Delete order item transaction
+- PUT /rest/orders/items/transactions/{transactionId} — Update order item transaction
+- POST /rest/orders/items/{orderItemId}/booking — Book an order item in
+- GET /rest/orders/items/{orderItemId}/dates — List all dates of an order item
+- DELETE /rest/orders/items/{orderItemId}/dates/{typeId} — Delete a date of order item by type
+- GET /rest/orders/items/{orderItemId}/dates/{typeId} — Get a date of order item by type
+- POST /rest/orders/items/{orderItemId}/dates/{typeId} — Create a date for order item by type
+- PUT /rest/orders/items/{orderItemId}/dates/{typeId} — Update a date of order item by type
+- GET /rest/orders/items/{orderItemId}/properties — Get all order item properties
+- DELETE /rest/orders/items/{orderItemId}/properties/{typeId} — Delete order item property
+- GET /rest/orders/items/{orderItemId}/properties/{typeId} — Get order item property
+- POST /rest/orders/items/{orderItemId}/properties/{typeId} — Create order item property
+- PUT /rest/orders/items/{orderItemId}/properties/{typeId} — Update order item property
+- GET /rest/orders/items/{orderItemId}/transactions — List order item transactions
+- POST /rest/orders/items/{orderItemId}/transactions — Create order item transaction
+- GET /rest/orders/properties/types — List order property types
+- POST /rest/orders/properties/types — Create order property type
+- DELETE /rest/orders/properties/types/{typeId} — Delete property type
+- GET /rest/orders/properties/types/{typeId} — Get property type
+- PUT /rest/orders/properties/types/{typeId} — Update property type
+- DELETE /rest/orders/properties/{id} — Delete property of an order by property ID
+- PUT /rest/orders/properties/{id} — Update property of an order by property ID
+- GET /rest/orders/referrers — List referrers
+- GET /rest/orders/referrers/next_free_main — Get next free main referrer ID
+- GET /rest/orders/referrers/search — Search for referrers
+- POST /rest/orders/referrers/{parentReferrerId} — Create an order referrer
+- DELETE /rest/orders/referrers/{referrerId} — Delete referrer
+- GET /rest/orders/referrers/{referrerId} — Get a referrer
+- PUT /rest/orders/referrers/{referrerId} — Update referrer
+- GET /rest/orders/shipping/active_shipping_service_providers — Get active shipping service providers for registration
+- GET /rest/orders/shipping/countries — List shipping countries
+- GET /rest/orders/shipping/list_shipping_information — Paginated list of orders with shipping information
+- GET /rest/orders/shipping/package_types — List shipping package types
+- GET /rest/orders/shipping/package_types/{shippingPackageTypeId} — Get a shipping package type
+- DELETE /rest/orders/shipping/packages/items/{id} — Delete package/variation/quantity for an order
+- PUT /rest/orders/shipping/packages/items/{id} — Update package/variation/quantity for an order
+- DELETE /rest/orders/shipping/packages/items/{packageId}/{itemId}/{variationId} — Delete items of an order package
+- PUT /rest/orders/shipping/packages/items/{packageId}/{itemId}/{variationId} — Update items of an order package
+- PUT /rest/orders/shipping/packages/{orderShippingPackageId} — Update order shipping package by packageId
+- GET /rest/orders/shipping/packages/{packageId}/items — List items of an order package
+- POST /rest/orders/shipping/packages/{packageId}/items — Create package/variation/quantity for an order
+- GET /rest/orders/shipping/packages/{packageId}/packed_items — Get packed items in a package
+- GET /rest/orders/shipping/pallets — List order shipping pallets
+- POST /rest/orders/shipping/pallets — Create order shipping pallets
+- DELETE /rest/orders/shipping/pallets/{palletId} — Delete all pallets of an order
+- GET /rest/orders/shipping/pallets/{palletId} — List all pallets of an order
+- PUT /rest/orders/shipping/pallets/{palletId} — Update all pallets of an order
+- GET /rest/orders/shipping/pallets/{palletId}/packages — Get all packages for the given pallet ID
+- GET /rest/orders/shipping/parcel_service_regions/{parcelServiceRegionId} — Get an order parcel service region
+- GET /rest/orders/shipping/parcels/preview/{language} — Get preview list
+- GET /rest/orders/shipping/presets — List shipping profiles
+- GET /rest/orders/shipping/presets/preview/{language} — Get preview list
+- GET /rest/orders/shipping/presets/{presetId} — Get a shipping profile
+- GET /rest/orders/shipping/presets/{presetId}/parcel_service_regions — List parcel service regions by preset ID
+- GET /rest/orders/shipping/returns/returns_service_providers — List returns service providers
+- GET /rest/orders/shipping/returns/returns_service_providers/plugins — List returns service provider plugins
+- GET /rest/orders/shipping/returns/returns_service_providers/{providerId} — Get returns service provider by ID
+- GET /rest/orders/shipping/shipping_information — List orders with shipping information
+- POST /rest/orders/shipping/shipping_information — Create shipping information
+- GET /rest/orders/shipping/shipping_service_providers — List shipping service providers
+- POST /rest/orders/shipping/shipping_service_providers — Save a shipping service provider
+- GET /rest/orders/shipping/shipping_service_providers/plugins — List shipping service provider plugins
+- GET /rest/orders/shipping/shipping_service_providers/{shipping_service_provider_id} — Get a shipping service provider
+- GET /rest/orders/status-history — List status histories of orders
+- GET /rest/orders/statuses — Search for order statuses
+- POST /rest/orders/statuses — Create an order status
+- GET /rest/orders/statuses/all — Get all order statuses
+- POST /rest/orders/statuses/group_functions — Change order status properties
+- DELETE /rest/orders/statuses/{statusId} — Delete an order status
+- GET /rest/orders/statuses/{statusId} — Get an order status
+- PUT /rest/orders/statuses/{statusId} — Update an order status
+- POST /rest/orders/{orderId}/advance_orders — Create an advance order from a parent order
+- PUT /rest/orders/{orderId}/advance_orders/convert — Convert a sales order into an advance order
+- POST /rest/orders/{orderId}/booking — Book an order in
+- PUT /rest/orders/{orderId}/cancel — Cancel an order
+- GET /rest/orders/{orderId}/contactWish — Get a contact wish
+- POST /rest/orders/{orderId}/coupons/{coupon} — Redeem a coupon code
+- POST /rest/orders/{orderId}/coupons/{coupon}/validate — Validate coupon for order
+- POST /rest/orders/{orderId}/credit_notes — Create a credit note from a parent order
+- POST /rest/orders/{orderId}/credit_notes/validate — Validate items to create credit note from parent order
+- PUT /rest/orders/{orderId}/currency — Update the order currency
+- GET /rest/orders/{orderId}/dates — List all dates of an order
+- GET /rest/orders/{orderId}/dates/{typeId} — Get a date
+- POST /rest/orders/{orderId}/delivery_orders — Create a delivery order from a parent order
+- POST /rest/orders/{orderId}/delivery_orders/automatic — Create delivery orders automatically for all items
+- POST /rest/orders/{orderId}/delivery_orders/validate — Validate items to create delivery order from parent
+- GET /rest/orders/{orderId}/family — Get information about the order family
+- GET /rest/orders/{orderId}/items — Search order items
+- POST /rest/orders/{orderId}/items/reorders/generate — Create/update reorder(s) for order items
+- GET /rest/orders/{orderId}/items/serialNumbers — List serial numbers of an order
+- POST /rest/orders/{orderId}/items/warehouse_locations/attach — Attach warehouse locations
+- POST /rest/orders/{orderId}/items/warehouse_locations/detach — Detach warehouse locations
+- DELETE /rest/orders/{orderId}/items/{orderItemId} — Delete an order item
+- GET /rest/orders/{orderId}/items/{orderItemId}/serialNumbers — List serial numbers of an order item
+- POST /rest/orders/{orderId}/items/{orderItemId}/serialNumbers — Create item serial number and bind to order item
+- GET /rest/orders/{orderId}/my_account_url — Get My Account url of the order
+- POST /rest/orders/{orderId}/offers — Create an offer from a parent order
+- DELETE /rest/orders/{orderId}/outgoing_stocks — Revert outgoing stock
+- POST /rest/orders/{orderId}/outgoing_stocks — Book out order items
+- GET /rest/orders/{orderId}/packagenumbers — List package numbers of an order
+- POST /rest/orders/{orderId}/properties — Create property for an order
+- DELETE /rest/orders/{orderId}/properties/{typeId} — Delete property of order by order+type ID
+- GET /rest/orders/{orderId}/properties/{typeId} — List properties of an order
+- PUT /rest/orders/{orderId}/properties/{typeId} — Update property of order by order+property ID
+- POST /rest/orders/{orderId}/redistributions — Create a redistribution from a parent order
+- POST /rest/orders/{orderId}/reorders — Create a reorder from a parent order
+- POST /rest/orders/{orderId}/reorders/generate — Create reorder(s) for an order
+- POST /rest/orders/{orderId}/reorders/generate/validate — Validate items to create reorder
+- POST /rest/orders/{orderId}/repairs — Create a repair order from a parent order
+- POST /rest/orders/{orderId}/repairs/validate — Validate items to create repair from parent
+- POST /rest/orders/{orderId}/returns — Create a return from a parent order
+- POST /rest/orders/{orderId}/returns/validate — Validate items to create return from parent
+- POST /rest/orders/{orderId}/sales_orders — Create a sales order from a parent order
+- PUT /rest/orders/{orderId}/sales_orders/convert — Convert an advance order into a sales order
+- POST /rest/orders/{orderId}/sales_orders/validate — Validate items to create sales order from parent
+- DELETE /rest/orders/{orderId}/shipping/cancel_shipment — Cancel a shipment
+- DELETE /rest/orders/{orderId}/shipping/packages — Delete all order shipping packages for an order
+- GET /rest/orders/{orderId}/shipping/packages — List order shipping packages
+- POST /rest/orders/{orderId}/shipping/packages — Create an order shipping package
+- GET /rest/orders/{orderId}/shipping/packages/items — List items contained in packages of an order
+- GET /rest/orders/{orderId}/shipping/packages/packed_items — List packed items of a shipping package by order ID
+- GET /rest/orders/{orderId}/shipping/packages/unpacked_items — List unpacked items of a shipping package by order ID
+- GET /rest/orders/{orderId}/shipping/packages/unpacked_items_paginated — List unpacked items from an order
+- DELETE /rest/orders/{orderId}/shipping/packages/{orderShippingPackageId} — Delete an order shipping package
+- GET /rest/orders/{orderId}/shipping/packages/{orderShippingPackageId} — Get an order shipping package
+- PUT /rest/orders/{orderId}/shipping/packages/{orderShippingPackageId} — Update an order shipping package
+- GET /rest/orders/{orderId}/shipping/packages_paginated — Get all the packages for the given order
+- GET /rest/orders/{orderId}/shipping/pallets/packages/items — List items contained in package pallets of an order
+- DELETE /rest/orders/{orderId}/shipping/pallets/{palletId}/packages — Delete all order shipping packages in a pallet
+- GET /rest/orders/{orderId}/shipping/pallets/{palletId}/packages — List all packages contained in pallets of an order
+- PUT /rest/orders/{orderId}/shipping/pallets/{palletId}/packages — Update all packages in a pallet
+- POST /rest/orders/{orderId}/shipping/register_shipment — Register a shipment
+- DELETE /rest/orders/{orderId}/shipping/reset_shipment — Reset a shipment
+- DELETE /rest/orders/{orderId}/shipping/shipping_information — Delete shipping information
+- GET /rest/orders/{orderId}/shipping/shipping_information — Get shipping information
+- PUT /rest/orders/{orderId}/shipping/shipping_information/additional_data — Update additional data of shipping information
+- GET /rest/orders/{orderId}/shipping/shipping_information/export_label — Get Export label
+- PUT /rest/orders/{orderId}/shipping/shipping_information/status — Update shipping status of shipping information
+- GET /rest/orders/{orderId}/status-history — Get the status history of an order
+- POST /rest/orders/{orderId}/subscriptions — Create a subscription from a parent order
+- POST /rest/orders/{orderId}/subscriptions/validate — Validate items for subscription creation from parent
+- POST /rest/orders/{orderId}/transactions — Create order item transactions for an order
+- POST /rest/orders/{orderId}/warranties — Create a warranty from a parent order
+- POST /rest/orders/{orderId}/warranties/validate — Validate items to create warranty from parent
+- POST /rest/redistributions — Create a redistribution
+- POST /rest/redistributions/preview — Get a redistribution create preview
+- DELETE /rest/redistributions/{orderId} — Delete a redistribution
+- PUT /rest/redistributions/{orderId} — Update a redistribution
+- POST /rest/redistributions/{orderId}/book — Book an order in
+- PUT /rest/redistributions/{orderId}/preview — Get a redistribution update preview
+- POST /rest/redistributions/{orderId}/split — Split a redistribution into ≥2 redistributions
+- POST /rest/redistributions/{orderId}/split_by_transactions — Split a redistribution by order item transactions
+- POST /rest/reorders — Create a reorder
+- POST /rest/reorders/group — Group multiple reorders in one reorder
+- POST /rest/reorders/items/{orderItemId}/assign_variation — Change order item unassigned→variation
+- POST /rest/reorders/items/{orderItemId}/unassign_variation — Change order item variation→unassigned
+- POST /rest/reorders/preview — Get a reorder create preview
+- DELETE /rest/reorders/{orderId} — Delete a reorder
+- PUT /rest/reorders/{orderId} — Update a reorder
+- POST /rest/reorders/{orderId}/book — Book an order in
+- PUT /rest/reorders/{orderId}/currency — Update the currency
+- GET /rest/reorders/{orderId}/delivery_date — Get the delivery date
+- PUT /rest/reorders/{orderId}/delivery_dates — Calculate and save the delivery dates
+- PUT /rest/reorders/{orderId}/preview — Get a reorder update preview
+- POST /rest/reorders/{orderId}/split — Split a reorder into ≥2 reorders
+- POST /rest/repairs — Create a repair
+- POST /rest/repairs/items/{orderItemId}/assign_variation — Change order item unassigned→variation
+- POST /rest/repairs/items/{orderItemId}/unassign_variation — Change order item variation→unassigned
+- POST /rest/repairs/preview — Get a repair order create preview
+- GET /rest/repairs/reasons — Get all order repair reasons
+- POST /rest/repairs/reasons — Set an order repair reason
+- DELETE /rest/repairs/reasons/{repairReasonId} — Delete an order repair reason
+- GET /rest/repairs/reasons/{repairReasonId} — Get an order repair reason
+- GET /rest/repairs/status — Get all order repair status
+- POST /rest/repairs/status — Set an order repair status
+- DELETE /rest/repairs/status/{repairStatusId} — Delete an order repair status
+- GET /rest/repairs/status/{repairStatusId} — Get an order repair status
+- DELETE /rest/repairs/{orderId} — Delete a repair
+- PUT /rest/repairs/{orderId} — Update a repair
+- POST /rest/repairs/{orderId}/book — Book out order items
+- POST /rest/repairs/{orderId}/cancel_booking — Revert outgoing stock
+- POST /rest/repairs/{orderId}/cancel_booking/validate — Validate cancellation of the booking
+- PUT /rest/repairs/{orderId}/preview — Get a repair order update preview
+- POST /rest/repairs/{orderId}/restore — Restore a repair
+- POST /rest/returns — Create a return
+- POST /rest/returns/items/{orderItemId}/assign_variation — Change order item unassigned→variation
+- POST /rest/returns/items/{orderItemId}/unassign_variation — Change order item variation→unassigned
+- POST /rest/returns/preview — Get a return create preview
+- GET /rest/returns/reasons — Get all order return reasons
+- POST /rest/returns/reasons — Set an order return reason
+- DELETE /rest/returns/reasons/{returnReasonsId} — Delete an order return reason
+- GET /rest/returns/reasons/{returnReasonsId} — Get an order return reason
+- GET /rest/returns/status — Get all order return status
+- POST /rest/returns/status — Set an order return status
+- DELETE /rest/returns/status/{returnStatusId} — Delete an order return status
+- GET /rest/returns/status/{returnStatusId} — Get an order return status
+- DELETE /rest/returns/{orderId} — Delete a return
+- PUT /rest/returns/{orderId} — Update a return
+- POST /rest/returns/{orderId}/book — Book order items of return
+- POST /rest/returns/{orderId}/book/validate — Validate booking of a return
+- PUT /rest/returns/{orderId}/preview — Get a return update preview
+- POST /rest/returns/{orderId}/restore — Restore a return
+- POST /rest/sales_orders — Create a sales order
+- POST /rest/sales_orders/group — Group multiple orders in one order
+- POST /rest/sales_orders/incomplete/preview — Get a sales order create incomplete preview
+- POST /rest/sales_orders/items/{orderItemId}/assign_variation — Change order item unassigned→variation
+- POST /rest/sales_orders/items/{orderItemId}/unassign_variation — Change order item variation→unassigned
+- POST /rest/sales_orders/preview — Get a sales order create preview
+- DELETE /rest/sales_orders/{orderId} — Delete a sales order
+- PUT /rest/sales_orders/{orderId} — Update a sales order
+- POST /rest/sales_orders/{orderId}/book — Book out order items
+- POST /rest/sales_orders/{orderId}/cancel_booking — Revert outgoing stock
+- POST /rest/sales_orders/{orderId}/cancel_booking/validate — Validate cancellation of the booking
+- PUT /rest/sales_orders/{orderId}/preview — Get a sales order update preview
+- POST /rest/sales_orders/{orderId}/restore — Restore a sales order
+- POST /rest/sales_orders/{orderId}/split — Split a sales order into ≥2 sales orders
+- DELETE /rest/shipping_center/reset_shipments — Reset a shipment
+- POST /rest/subscriptions — Create a subscription
+- POST /rest/subscriptions/preview — Get a subscription create preview
+- DELETE /rest/subscriptions/{orderId} — Delete a subscription
+- PUT /rest/subscriptions/{orderId} — Update a subscription
+- PUT /rest/subscriptions/{orderId}/currency — Update the currency
+- POST /rest/subscriptions/{orderId}/manual_run — Create an order for today for a subscription
+- PUT /rest/subscriptions/{orderId}/preview — Get a subscription update preview
+- GET /rest/system/settings/taric_vat_assignment — List taric vat assignments
+- DELETE /rest/system/settings/taric_vat_assignment/{taricCode}/{countryId} — Delete taric vat assignment
+- GET /rest/system/settings/taric_vat_assignment/{taricCode}/{countryId} — Get taric vat assignment
+- POST /rest/system/settings/taric_vat_assignment/{taricCode}/{countryId} — Create taric vat assignment
+- PUT /rest/system/settings/taric_vat_assignment/{taricCode}/{countryId} — Update taric vat assignment
+- POST /rest/warranties — Create a warranty
+- POST /rest/warranties/items/{orderItemId}/assign_variation — Change order item unassigned→variation
+- POST /rest/warranties/items/{orderItemId}/unassign_variation — Change order item variation→unassigned
+- POST /rest/warranties/preview — Get a warranty create preview
+- DELETE /rest/warranties/{orderId} — Delete a warranty
+- PUT /rest/warranties/{orderId} — Update a warranty
+- POST /rest/warranties/{orderId}/book — Book out order items
+- POST /rest/warranties/{orderId}/cancel_booking — Revert outgoing stock
+- POST /rest/warranties/{orderId}/cancel_booking/validate — Validate cancellation of the booking
+- PUT /rest/warranties/{orderId}/preview — Get a warranty update preview
+- POST /rest/warranties/{orderId}/restore — Restore a warranty
+
+## OrderSummary
+
+- GET /rest/accounts/order_summaries — List order summaries
+- POST /rest/accounts/order_summaries — Create order summary
+- GET /rest/accounts/order_summaries/contacts/{contactId} — Get order summary by contact ID
+- GET /rest/accounts/order_summaries/orders/{addressId} — Get order summary by address ID
+- GET /rest/accounts/order_summaries/unpaid — List unpaid order summaries
+- DELETE /rest/accounts/order_summaries/{orderSummaryId} — Delete order summary
+- GET /rest/accounts/order_summaries/{orderSummaryId} — Get order summary by order summary ID
+- PUT /rest/accounts/order_summaries/{orderSummaryId} — Update order summary
+
+## Payment
+
+- POST /rest/payment/properties/types/names — Create name of property type
+- PUT /rest/payment/properties/types/names — Update name of property type
+- GET /rest/payment/properties/types/names/{lang} — List names of property types
+- GET /rest/payment/properties/types/names/{nameId} — Get a name of a property type
+- DELETE /rest/payment/{paymentId}/contact — Delete Payment-Contact-Relation
+- POST /rest/payment/{paymentId}/contact/{contactId} — Create Payment-Contact-Relation
+- DELETE /rest/payment/{paymentId}/order — Delete Payment-Order-Relation
+- POST /rest/payment/{paymentId}/order/{invoiceNumber}/invoice — Create order relation with validation
+- POST /rest/payment/{paymentId}/order/{orderId} — Create Payment-Order-Relation
+- POST /rest/payment/{paymentId}/order/{orderId}/validation — Create order relation with validation
+- GET /rest/payments — List payments
+- POST /rest/payments — Create a payment
+- PUT /rest/payments — Update a payment
+- DELETE /rest/payments/bulk — Delete payments
+- GET /rest/payments/entrydate — List payments by entry date
+- GET /rest/payments/importdate — List payments by import date
+- GET /rest/payments/methodNames — List payment methods names
+- GET /rest/payments/methodNames/{paymentMethodId} — List all payment method names for a method id
+- GET /rest/payments/methodNames/{paymentMethodId}/{lang} — Get a payment method name by id and lang
+- GET /rest/payments/methods — List payment methods
+- POST /rest/payments/methods — Create a payment method
+- PUT /rest/payments/methods — Update a payment method
+- PUT /rest/payments/methods/bulk — Update payment methods
+- GET /rest/payments/methods/list — Get payment methods
+- GET /rest/payments/methods/list/backend_active/{language} — Get active payment methods
+- GET /rest/payments/methods/list/backend_icon — Get payment methods and icons
+- GET /rest/payments/methods/list/backend_searchable/{language} — Get searchable payment methods
+- GET /rest/payments/methods/list/documentbuilder_active/{language} — Get DocumentBuilder active payment methods
+- GET /rest/payments/methods/list/handle_subscription/{language} — Get subscription-handling payment methods
+- GET /rest/payments/methods/plugins/{pluginKey} — Get a payment method
+- GET /rest/payments/methods/preview/{language} — Get preview list for payment method
+- GET /rest/payments/methods/{methodId} — List payments of a payment method
+- DELETE /rest/payments/order/{orderId} — Detach all payments from an order
+- POST /rest/payments/orders/autoassign/bulk — Assign Payments
+- GET /rest/payments/orders/{orderId} — List payments of an order
+- GET /rest/payments/properties — List properties
+- POST /rest/payments/properties — Create property
+- PUT /rest/payments/properties — Update property
+- GET /rest/payments/properties/date — List properties by creation date
+- GET /rest/payments/properties/types — List property types
+- POST /rest/payments/properties/types — Create property type
+- PUT /rest/payments/properties/types — Update property type
+- GET /rest/payments/properties/types/{typeId} — Get a property type
+- GET /rest/payments/properties/{propertyId} — Get a property
+- GET /rest/payments/property/{propertyTypeId}/{propertyValue} — List payments by property type ID and value
+- GET /rest/payments/search — Search payments
+- POST /rest/payments/search — Search payments
+- GET /rest/payments/status/{statusId} — List payments of a payment status
+- GET /rest/payments/transactions/{transactionTypeId} — List payments of a transaction type
+- DELETE /rest/payments/{paymentId} — Delete payment
+- GET /rest/payments/{paymentId} — Get a payment
+- GET /rest/payments/{paymentId}/properties — List properties for a payment
+
+## Pim
+
+- GET /rest/pim/amazon-product-types — Get item amazon product types
+- DELETE /rest/pim/attributes — Delete a list of attributes
+- GET /rest/pim/attributes — Search for attributes
+- POST /rest/pim/attributes — Create a list of attributes
+- PUT /rest/pim/attributes — Update a list of attributes
+- DELETE /rest/pim/attributes/names — Delete a list of attribute names
+- GET /rest/pim/attributes/names — Search attribute names
+- POST /rest/pim/attributes/names — Create a list of attribute names
+- PUT /rest/pim/attributes/names — Update a list of attribute names
+- DELETE /rest/pim/attributes/values — Delete a list of attribute values
+- GET /rest/pim/attributes/values — Search attribute values
+- POST /rest/pim/attributes/values — Create a list of attribute values
+- PUT /rest/pim/attributes/values — Update a list of attribute values
+- DELETE /rest/pim/attributes/values/names — Delete a list of attribute value names
+- GET /rest/pim/attributes/values/names — Search attribute value names
+- POST /rest/pim/attributes/values/names — Create a list of attribute value names
+- PUT /rest/pim/attributes/values/names — Update a list of attribute value names
+- GET /rest/pim/attributes/values/{id} — Get one attribute value
+- GET /rest/pim/attributes/{id} — Get one attribute
+- DELETE /rest/pim/barcodes — Delete a list of barcodes
+- GET /rest/pim/barcodes — Search for barcodes
+- POST /rest/pim/barcodes — Create a list of barcodes
+- PUT /rest/pim/barcodes — Update a list of barcodes
+- GET /rest/pim/barcodes/duplicates — Get all barcode duplicates
+- GET /rest/pim/barcodes/duplicates/count — Get barcode duplicates
+- GET /rest/pim/barcodes/duplicates/settings — List barcodes duplicate settings
+- GET /rest/pim/categories — Search categories
+- GET /rest/pim/categories/branches — Search category branches
+- GET /rest/pim/categories/clients — Search category clients
+- GET /rest/pim/categories/details — Search category details
+- GET /rest/pim/categories/properties — Search category properties
+- GET /rest/pim/categories/{id} — Get one category by given ID
+- DELETE /rest/pim/item-serial-numbers — Delete item serial numbers
+- GET /rest/pim/item-serial-numbers — Search for item serial numbers
+- POST /rest/pim/item-serial-numbers — Create item serial numbers
+- PUT /rest/pim/item-serial-numbers — Update item serial numbers
+- GET /rest/pim/items/{id}/attributes — Get Attributes linked to given item
+- GET /rest/pim/items/{id}/combinations — Get all existing variation combinations for item
+- DELETE /rest/pim/sales_prices — Delete a list of sales prices
+- GET /rest/pim/sales_prices — Search for sales prices
+- POST /rest/pim/sales_prices — Create a list of sales prices
+- PUT /rest/pim/sales_prices — Update a list of sales prices
+- GET /rest/pim/sales_prices/{id} — Get one sales price by ID
+- DELETE /rest/pim/variations — Delete a list of variations
+- GET /rest/pim/variations — List variations including specified related data
+- PUT /rest/pim/variations — Create a list of variations and related data
+- DELETE /rest/pim/variations/additional_skus — Delete a list of variation additional skus
+- PUT /rest/pim/variations/additional_skus — Create and update variation additional skus
+- DELETE /rest/pim/variations/barcodes — Delete variation barcodes
+- PUT /rest/pim/variations/barcodes — Create and update a list of variation barcodes
+- PUT /rest/pim/variations/bases — Create and update a list of variations
+- DELETE /rest/pim/variations/bundle_components — Delete variation bundle components
+- PUT /rest/pim/variations/bundle_components — Create and update a list of variation bundle components
+- DELETE /rest/pim/variations/categories — Delete variation categories
+- PUT /rest/pim/variations/categories — Create and update a list of variation categories
+- DELETE /rest/pim/variations/clients — Delete a list of variation clients
+- PUT /rest/pim/variations/clients — Create a list of variation clients
+- DELETE /rest/pim/variations/comments — Delete variation comments
+- PUT /rest/pim/variations/comments — Create and update a list of variation comments
+- DELETE /rest/pim/variations/default_categories — Delete variation default categories
+- PUT /rest/pim/variations/default_categories — Create and update variation default categories
+- DELETE /rest/pim/variations/images — Delete variation images
+- PUT /rest/pim/variations/images — Create a list of variation images
+- DELETE /rest/pim/variations/market_ident_numbers — Delete a list of variation market ident numbers
+- PUT /rest/pim/variations/market_ident_numbers — Create and update variation market ident numbers
+- DELETE /rest/pim/variations/markets — Delete a list of variation markets
+- PUT /rest/pim/variations/markets — Create a list of variation markets
+- DELETE /rest/pim/variations/properties — Delete a list of variation properties
+- PUT /rest/pim/variations/properties — Create and update a list of variation properties
+- DELETE /rest/pim/variations/sales_prices — Delete a list of variation sales prices
+- PUT /rest/pim/variations/sales_prices — Create and update a list of variation sales prices
+- GET /rest/pim/variations/scroll — Get all variations, scrolled by a cursor
+- DELETE /rest/pim/variations/skus — Delete a list of variation skus
+- PUT /rest/pim/variations/skus — Create and update a list of variation skus
+- DELETE /rest/pim/variations/supplier — Delete a list of variation supplier
+- PUT /rest/pim/variations/supplier — Create and update a list of variation suppliers
+- DELETE /rest/pim/variations/tags — Delete a list of variation tags
+- PUT /rest/pim/variations/tags — Create a list of variation tags
+- DELETE /rest/pim/variations/warehouses — Delete a list of variation warehouses
+- PUT /rest/pim/variations/warehouses — Create and update a list of variation warehouses
+
+## PluginMultilingualism
+
+- POST /rest/languages/translations — Create a new translation
+- DELETE /rest/languages/translations/{translationId} — Delete a translation
+- GET /rest/languages/translations/{translationId} — Get a translation
+- PUT /rest/languages/translations/{translationId} — Update a translation
+- DELETE /rest/plugin_sets/{pluginSetId}/languages/{languageCode} — Delete multiple translation
+
+## PluginSet
+
+- GET /rest/plugin_sets — List all Sets
+- POST /rest/plugin_sets — Create a Set
+- GET /rest/plugin_sets/info — Get details about plugin sets
+- GET /rest/plugin_sets/preview_hash — Get the preview hash for a set
+- GET /rest/plugin_sets/s3-inbox-opensource-plugins — Get open source plugins from inbox
+- GET /rest/plugin_sets/{pluginSetId}/languages — List all plugin translations for a plugin set
+- GET /rest/plugin_sets/{pluginSetId}/languages/csv/{languageCode} — List all plugin translations csv
+- POST /rest/plugin_sets/{pluginSetId}/languages/upload_translations — Upload and sync resources
+- GET /rest/plugin_sets/{pluginSetId}/languages/{targetLanguage} — List all plugin translations merged
+- POST /rest/plugin_sets/{pluginSetId}/languages/{targetLanguage} — Update all plugin translations
+- DELETE /rest/plugin_sets/{setId} — Delete a set
+- GET /rest/plugin_sets/{setId} — Get a set
+- PUT /rest/plugin_sets/{setId} — Update a set
+- GET /rest/plugin_sets/{setId}/plugins — List all Plugins of Set
+- GET /rest/plugin_sets/{setId}/plugins/get_compatibility/{pluginName}/{variationId} — Get plugin compatibility
+- GET /rest/plugin_sets/{setId}/plugins/search — Search plugins
+- DELETE /rest/plugin_sets/{setId}/plugins/{pluginId} — Remove a plugin from a set
+- POST /rest/plugin_sets/{setId}/plugins/{pluginId} — Add a plugin to a set
+- PUT /rest/plugin_sets/{setId}/plugins/{pluginId} — Change a plugin's active status for a set
+- POST /rest/plugin_sets/{setId}/plugins/{pluginId}/install_git_plugin — Install a git plugin into a set
+- POST /rest/plugin_sets/{setId}/plugins/{pluginId}/setPosition — Set a plugin's position in a set
+- GET /rest/plugin_sets/{setId}/set_entries — List all SetEntries of Set
+- GET /rest/plugin_sets_new/git_plugin_details/{pluginName} — Get git plugin description data
+- GET /rest/plugin_sets_new/plugin_details/{pluginName}/{variationId} — Get plugin description data
+- GET /rest/plugins/plugin_sets/{pluginSetId}/plugins — List all Plugins of Set
+- GET /rest/plugins/{pluginId}/plugin_sets/{pluginSetId}/containers — List containers
+
+## Plugins
+
+- GET /rest/plugin_sets/{pluginSetId}/updateReversedDependencies — Update reversed dependencies
+- GET /rest/plugins — List plugins
+- POST /rest/plugins — Create a plugin
+- POST /rest/plugins/constraint/version — Check for version constraint
+- GET /rest/plugins/search — List plugins
+- GET /rest/plugins/seo/sitemap — Load sitemap patterns
+- GET /rest/plugins/ui — List plugins for backend UI
+- DELETE /rest/plugins/{pluginId} — Delete a plugin
+- GET /rest/plugins/{pluginId} — Get a plugin
+- PUT /rest/plugins/{pluginId} — Update a plugin
+- DELETE /rest/plugins/{pluginId}/plugin_sets/{pluginSetId} — Delete a plugin
+- POST /rest/plugins/{pluginName}/plugin_sets/{pluginSetId}/reversedDependencies — Get reversed requirements
+- POST /rest/plugins_mail — Send mail
+
+## Property
+
+- GET /rest/properties — List properties
+- POST /rest/properties — Create a property
+- GET /rest/properties/amazons — List property amazons
+- POST /rest/properties/amazons — Create one or multiple property amazon
+- PUT /rest/properties/amazons — Update one or multiple property amazon
+- DELETE /rest/properties/amazons/{propertyAmazonId} — Delete a property amazon
+- GET /rest/properties/amazons/{propertyAmazonId} — Get a property amazon
+- GET /rest/properties/availabilities — List availabilities
+- POST /rest/properties/availabilities — Create an availability
+- DELETE /rest/properties/availabilities/{availabilityId} — Delete an availability
+- GET /rest/properties/availabilities/{availabilityId} — Get an availability
+- PUT /rest/properties/availabilities/{availabilityId} — Update an availability
+- GET /rest/properties/destinations — Get property destinations
+- GET /rest/properties/groups — List property groups
+- POST /rest/properties/groups — Create a property group
+- GET /rest/properties/groups/names — List group names
+- POST /rest/properties/groups/names — Create a group name
+- DELETE /rest/properties/groups/names/{groupNameId} — Delete a group name
+- GET /rest/properties/groups/names/{groupNameId} — Get a group name
+- PUT /rest/properties/groups/names/{groupNameId} — Update a group name
+- GET /rest/properties/groups/options — List group options
+- POST /rest/properties/groups/options — Create a group option
+- DELETE /rest/properties/groups/options/{groupOptionId} — Delete a group option
+- GET /rest/properties/groups/options/{groupOptionId} — Get a group option
+- PUT /rest/properties/groups/options/{groupOptionId} — Update a group option
+- GET /rest/properties/groups/surcharge/types — Get surcharge types from module configuration
+- GET /rest/properties/groups/types — Get group types from module configuration
+- GET /rest/properties/groups/{groupId} — Get a property group
+- PUT /rest/properties/groups/{groupId} — Update a property group
+- POST /rest/properties/groups/{groupId}/properties — Mass attach propertyId+groupId into pivot table
+- DELETE /rest/properties/groups/{groupId}/properties/{propertyId} — Detach a property from a property group
+- POST /rest/properties/groups/{groupId}/properties/{propertyId} — Attach a property to a property group
+- DELETE /rest/properties/groups/{propertyId} — Delete a property group
+- GET /rest/properties/markets — List property markets
+- POST /rest/properties/markets — Create a property market
+- DELETE /rest/properties/markets/{propertiesMarketId} — Delete a property market
+- GET /rest/properties/markets/{propertiesMarketId} — Get a property market
+- PUT /rest/properties/markets/{propertiesMarketId} — Update a property market
+- DELETE /rest/properties/multiple/options — Delete property options
+- POST /rest/properties/multiple/options — Create property options
+- GET /rest/properties/names — List names
+- POST /rest/properties/names — Create a name
+- DELETE /rest/properties/names/{nameId} — Delete a property name
+- GET /rest/properties/names/{nameId} — Get a property name
+- PUT /rest/properties/names/{nameId} — Update a property name
+- GET /rest/properties/options — List property options
+- POST /rest/properties/options — Create a property option
+- DELETE /rest/properties/options/{propertyOptionId} — Delete a property option
+- GET /rest/properties/options/{propertyOptionId} — Get a property option
+- PUT /rest/properties/options/{propertyOptionId} — Update a property option
+- DELETE /rest/properties/relations — Delete property relations
+- GET /rest/properties/relations — List property relations
+- POST /rest/properties/relations — Create a property relation
+- PUT /rest/properties/relations — Update relations
+- GET /rest/properties/relations/values — List property relation values
+- POST /rest/properties/relations/values — Create a property relation value
+- PUT /rest/properties/relations/values — Update multiple property relation value
+- DELETE /rest/properties/relations/values/{propertiesRelationValueId} — Delete a property relation value
+- GET /rest/properties/relations/values/{propertiesRelationValueId} — Get a property relation value
+- PUT /rest/properties/relations/values/{propertiesRelationValueId} — Update a property relation value
+- DELETE /rest/properties/relations/{relationId} — Delete a property relation
+- GET /rest/properties/relations/{relationId} — Get a property relation
+- PUT /rest/properties/relations/{relationId} — Update a property relation
+- POST /rest/properties/relations/{relationId}/file — Save property relation file to S3
+- DELETE /rest/properties/relations/{relationId}/values — Delete all property relation values of a relation
+- GET /rest/properties/selections — List property selections
+- POST /rest/properties/selections — Create a property selection
+- DELETE /rest/properties/selections/{propertySelectionId} — Delete a property selection
+- GET /rest/properties/selections/{propertySelectionId} — Get a property selection
+- PUT /rest/properties/selections/{propertySelectionId} — Update a property selection
+- GET /rest/properties/systemlang — Get system language
+- DELETE /rest/properties/{propertyId} — Delete a property
+- GET /rest/properties/{propertyId} — Get a property
+- PUT /rest/properties/{propertyId} — Update a property
+- GET /rest/v2/properties — Search for properties
+- POST /rest/v2/properties — Create a property
+- POST /rest/v2/properties/amazon — Create a property amazon
+- DELETE /rest/v2/properties/amazon/{amazonId} — Delete a property amazon
+- GET /rest/v2/properties/amazon/{amazonId} — Get a property amazon
+- PUT /rest/v2/properties/amazon/{amazonId} — Update a property amazon
+- GET /rest/v2/properties/groups — Search for property groups
+- POST /rest/v2/properties/groups — Create a property group
+- POST /rest/v2/properties/groups/names — Create a group name
+- DELETE /rest/v2/properties/groups/names/{nameId} — Delete a group name
+- GET /rest/v2/properties/groups/names/{nameId} — Get a group name
+- PUT /rest/v2/properties/groups/names/{nameId} — Update a group name
+- POST /rest/v2/properties/groups/options — Create a group option
+- DELETE /rest/v2/properties/groups/options/{optionId} — Delete a group option
+- GET /rest/v2/properties/groups/options/{optionId} — Get a group option
+- PUT /rest/v2/properties/groups/options/{optionId} — Update a group option
+- DELETE /rest/v2/properties/groups/relations — Delete a group relation
+- GET /rest/v2/properties/groups/relations — Search for group relations
+- POST /rest/v2/properties/groups/relations — Create a group relation
+- PUT /rest/v2/properties/groups/relations — Create a group relation
+- DELETE /rest/v2/properties/groups/relations/{relationId} — Delete a group relation
+- GET /rest/v2/properties/groups/relations/{relationId} — Get a group relation
+- DELETE /rest/v2/properties/groups/{groupId} — Delete a property group
+- GET /rest/v2/properties/groups/{groupId} — Get a property group
+- PUT /rest/v2/properties/groups/{groupId} — Update a property group
+- GET /rest/v2/properties/groups/{groupId}/names — Get group names by group ID
+- GET /rest/v2/properties/groups/{groupId}/options — Get group options by group ID
+- POST /rest/v2/properties/names — Create a property name
+- DELETE /rest/v2/properties/names/{nameId} — Delete a property name
+- GET /rest/v2/properties/names/{nameId} — Get a property name
+- PUT /rest/v2/properties/names/{nameId} — Update a property name
+- POST /rest/v2/properties/options — Create a property option
+- DELETE /rest/v2/properties/options/{optionId} — Delete a property option
+- GET /rest/v2/properties/options/{optionId} — Get a property option
+- PUT /rest/v2/properties/options/{optionId} — Update a property option
+- GET /rest/v2/properties/relations — Search for property relations
+- POST /rest/v2/properties/relations — Create a list of property relations
+- PUT /rest/v2/properties/relations — Update a list of property relations
+- POST /rest/v2/properties/relations/selections — Create a property relation selection
+- DELETE /rest/v2/properties/relations/selections/{relationSelectionId} — Delete a property relation selection
+- GET /rest/v2/properties/relations/selections/{relationSelectionId} — Get a property relation selection
+- PUT /rest/v2/properties/relations/selections/{relationSelectionId} — Update a property relation selection
+- POST /rest/v2/properties/relations/values — Create a property relation value
+- DELETE /rest/v2/properties/relations/values/{relationValueId} — Delete a property relation value
+- GET /rest/v2/properties/relations/values/{relationValueId} — Get a property relation value
+- PUT /rest/v2/properties/relations/values/{relationValueId} — Update a property relation value
+- DELETE /rest/v2/properties/relations/{relationId} — Delete a property relation
+- GET /rest/v2/properties/relations/{relationId} — Get a property relation
+- PUT /rest/v2/properties/relations/{relationId} — Update a property relation
+- DELETE /rest/v2/properties/relations/{relationId}/file — Delete the file of a property relation
+- POST /rest/v2/properties/relations/{relationId}/file — Upload a property relation file
+- GET /rest/v2/properties/relations/{relationId}/selections — Get property relation selections by relation ID
+- GET /rest/v2/properties/relations/{relationId}/values — Get property relation values by relation ID
+- POST /rest/v2/properties/selections — Create a property selection
+- POST /rest/v2/properties/selections/names — Create a property selection name
+- DELETE /rest/v2/properties/selections/names/{nameId} — Delete a property selection name
+- GET /rest/v2/properties/selections/names/{nameId} — Get a property selection name
+- PUT /rest/v2/properties/selections/names/{nameId} — Update a property selection name
+- DELETE /rest/v2/properties/selections/{selectionId} — Delete a property selection
+- GET /rest/v2/properties/selections/{selectionId} — Get a property selection
+- PUT /rest/v2/properties/selections/{selectionId} — Update a property selection
+- GET /rest/v2/properties/selections/{selectionId}/names — Get property selection names by selection ID
+- GET /rest/v2/properties/uuid/relations — Search for property relations
+- POST /rest/v2/properties/uuid/relations — Create a list of property relations
+- PUT /rest/v2/properties/uuid/relations — Update a list of property relations
+- POST /rest/v2/properties/uuid/relations/selections — Create a property relation selection
+- DELETE /rest/v2/properties/uuid/relations/selections/{relationSelectionId} — Delete a property relation selection
+- GET /rest/v2/properties/uuid/relations/selections/{relationSelectionId} — Get a property relation selection
+- PUT /rest/v2/properties/uuid/relations/selections/{relationSelectionId} — Update a property relation selection
+- POST /rest/v2/properties/uuid/relations/values — Create a property relation value
+- DELETE /rest/v2/properties/uuid/relations/values/{relationValueId} — Delete a property relation value
+- GET /rest/v2/properties/uuid/relations/values/{relationValueId} — Get a property relation value
+- PUT /rest/v2/properties/uuid/relations/values/{relationValueId} — Update a property relation value
+- DELETE /rest/v2/properties/uuid/relations/{relationId} — Delete a property relation
+- GET /rest/v2/properties/uuid/relations/{relationId} — Get a property uuid relation
+- PUT /rest/v2/properties/uuid/relations/{relationId} — Update a property relation
+- GET /rest/v2/properties/uuid/relations/{relationId}/selections — Get property relation selections by relation ID
+- GET /rest/v2/properties/uuid/relations/{relationId}/values — Get property relation values by relation ID
+- DELETE /rest/v2/properties/{propertyId} — Delete a property
+- GET /rest/v2/properties/{propertyId} — Get a property
+- PUT /rest/v2/properties/{propertyId} — Update a property
+- GET /rest/v2/properties/{propertyId}/amazon — Get property amazons by property ID
+- GET /rest/v2/properties/{propertyId}/names — Get property names by property ID
+- GET /rest/v2/properties/{propertyId}/options — Get property options by property ID
+- GET /rest/v2/properties/{propertyId}/selections — Get property selections by property ID
+
+## Returns
+
+- DELETE /rest/orders/shipping/returns/{returnsId} — Delete a return order
+- GET /rest/orders/shipping/returns/{returnsId} — Get order returns
+- PUT /rest/orders/shipping/returns/{returnsId} — Update a return order
+- GET /rest/orders/{orderId}/shipping/returns — Get order returns
+- POST /rest/orders/{orderId}/shipping/returns — Create a return order
+- PUT /rest/orders/{orderId}/shipping/returns/assign_label/{returnsId} — Assign label to order return
+
+## ShopBuilder
+
+- GET /rest/shop_builder/content_links — List content links
+- POST /rest/shop_builder/content_links — Link a content to a layout container
+- DELETE /rest/shop_builder/content_links/{contentLinkId} — Delete a content link
+- GET /rest/shop_builder/content_links/{contentLinkId} — Get a content link
+- PUT /rest/shop_builder/content_links/{contentLinkId} — Update a content link
+- GET /rest/shop_builder/content_links/{contentLinkId}/preview_url — Generate a preview link for a contentLink
+- GET /rest/shop_builder/contents — List all contents
+- POST /rest/shop_builder/contents — Create new content
+- PUT /rest/shop_builder/contents — Generate templates for all contents
+- GET /rest/shop_builder/contents/search — Search for contents
+- DELETE /rest/shop_builder/contents/{contentId} — Delete a content
+- GET /rest/shop_builder/contents/{contentId} — Find a content by ID
+- OPTIONS /rest/shop_builder/contents/{contentId} — Get cross origin headers
+- POST /rest/shop_builder/contents/{contentId} — Duplicate a content by ID
+- PUT /rest/shop_builder/contents/{contentId} — Update a content
+- GET /rest/shop_builder/contents/{contentId}/versions — List content versions
+- PUT /rest/shop_builder/contents/{contentId}/versions/{versionId} — Restore content version
+- GET /rest/shop_builder/data_fields — Resolve data field provider; return entries and child providers
+- OPTIONS /rest/shop_builder/data_fields — Get cross origin headers
+- GET /rest/shop_builder/frontend — Get contents of all shopBuilder.json from frontend plugins
+- GET /rest/shop_builder/global_settings — Get global settings from frontend plugins
+- PUT /rest/shop_builder/global_settings — Update global settings via registered handlers
+- GET /rest/shop_builder/pages — List content pages
+- GET /rest/shop_builder/sass/compile — Compile a single sass file
+- GET /rest/shop_builder/search — Search in multiple sources
+- GET /rest/shop_builder/search/{source}/{id} — Get a single entity from a specified source
+- GET /rest/shop_builder/widgets — List all widgets
+- OPTIONS /rest/shop_builder/widgets — Get cross origin headers
+- POST /rest/shop_builder/widgets — Render the preview for widgets
+
+## Stock
+
+- GET /rest/stock/reservations — List stock reservations
+
+## StockManagement
+
+- GET /rest/stockmanagement/stock — List stock
+- GET /rest/stockmanagement/stock/archives — List archive years of stock movements
+- PUT /rest/stockmanagement/stock/redistribute — Redistribute stock
+- GET /rest/stockmanagement/stock/types/{type} — List stock by warehouse type
+- GET /rest/stockmanagement/warehouses — List warehouses
+- POST /rest/stockmanagement/warehouses — Create a warehouse
+- GET /rest/stockmanagement/warehouses/{warehouseId} — Get a warehouse
+- GET /rest/stockmanagement/warehouses/{warehouseId}/management/storageLocations/{storageLocationId} — Get a storage location
+- GET /rest/stockmanagement/warehouses/{warehouseId}/stock — List stock by warehouse
+- PUT /rest/stockmanagement/warehouses/{warehouseId}/stock/bookIncomingItems — Book incoming stock
+- PUT /rest/stockmanagement/warehouses/{warehouseId}/stock/bookOutgoingItems — Book outgoing stock
+- PUT /rest/stockmanagement/warehouses/{warehouseId}/stock/correction — Correct stock
+- GET /rest/stockmanagement/warehouses/{warehouseId}/stock/movements — List stock movements
+- GET /rest/stockmanagement/warehouses/{warehouseId}/stock/storageLocations — List stock of a warehouse per storage location
+- GET /rest/stockmanagement/warehouses/{warehouseId}/stock/storageLocationsPim — List stock per storage location with pim entry
+- PUT /rest/stockmanagement/warehouses/{warehouseId}/stock/unpackVariation — Unpack variation
+- PUT /rest/stockmanagement/warehouses/{warehouseId}/{warehouseLocationId}/stock/bookStocktaking — Book stocktaking
+
+## Sync
+
+- POST /rest/elastic-sync/cleanup/old-files — Start cron to clean up old files
+- GET /rest/elastic-sync/document — Get a single storage object from sync documents
+- POST /rest/elastic-sync/document — Upload a document to sync directory
+- GET /rest/elastic-sync/document/url — Get temporary url for a single document
+- DELETE /rest/elastic-sync/documents — Delete files from sync documents
+- GET /rest/elastic-sync/documents — List documents for a single sync
+
+## Tag
+
+- GET /rest/tags — List tags
+- POST /rest/tags — Create a tag
+- POST /rest/tags/bulk — Create up to 50 tags
+- PUT /rest/tags/bulk — Update up to 50 tags
+- DELETE /rest/tags/relationships — Delete tag relationships
+- GET /rest/tags/relationships — List relationships
+- POST /rest/tags/relationships — Create tag relationship
+- DELETE /rest/tags/relationships/{relationshipValue}/{tagType}/{id} — Delete tag relationship
+- DELETE /rest/tags/{id} — Delete tag
+- GET /rest/tags/{id} — Get tag by ID
+- PUT /rest/tags/{id} — Update tag
+- DELETE /rest/tags/{id}/relationships/{tagType}/{relationshipUUID} — Delete tag relationship
+- GET /rest/v2/tags — List tags
+- POST /rest/v2/tags — Create a new tag
+- DELETE /rest/v2/tags/names/{id} — Delete a tag name
+- GET /rest/v2/tags/relationships — List tag relationships
+- POST /rest/v2/tags/relationships — Create a tag relationship
+- DELETE /rest/v2/tags/relationships/{relationshipId} — Delete a tag relationship
+- DELETE /rest/v2/tags/{tagId} — Delete a tag
+- GET /rest/v2/tags/{tagId} — Get one tag
+- PUT /rest/v2/tags/{tagId} — Update an existing tag
+
+## Ticket
+
+- GET /rest/tickets — List tickets by filters
+- POST /rest/tickets — Create ticket
+- GET /rest/tickets/status/names — List status names
+- GET /rest/tickets/status/type/names — List status names with typeId
+- GET /rest/tickets/types/names — List type names
+- GET /rest/tickets/{ticketId} — Get ticket
+- POST /rest/tickets/{ticketId} — Create message
+- PUT /rest/tickets/{ticketId} — Update ticket
+
+## TicketMessage
+
+- GET /rest/tickets/messages/{messageId} — Get ticket message for given message ID
+- GET /rest/tickets/{ticketId}/messages — List all ticket messages for given ticket ID
+- GET /rest/tickets/{ticketId}/messages/comment — List all internal ticket messages
+- GET /rest/tickets/{ticketId}/messages/message — List all public ticket messages
+
+## Todo
+
+- DELETE /rest/todo — Delete a list of todos
+- GET /rest/todo — Search for todos
+- POST /rest/todo — Create a list of todos
+- PUT /rest/todo — Update a list of tasks
+- GET /rest/todo/{id} — Get a todo (untagged)
+
+## User
+
+- GET /rest/backend/user/{userId} — Get user by id
+- GET /rest/backend/users — Get all users
+- GET /rest/backend/users/search_name/{name} — Find user by name
+- GET /rest/user/backend_pluginset — Get backend plugin set
+- POST /rest/user/backend_pluginset — Set backend plugin set
+- GET /rest/user/pin_users — Get users with pin
+
+## Warehouse
+
+- GET /rest/warehouses — List warehouses
+- POST /rest/warehouses — Create a new warehouse
+- POST /rest/warehouses/layouts — Create a storage location layout
+- DELETE /rest/warehouses/locations — Delete multiple storage locations
+- GET /rest/warehouses/locations — List storage locations
+- POST /rest/warehouses/locations — Create a storage location
+- GET /rest/warehouses/locations/availability/{warehouseLocationId} — Get availability for storage location
+- GET /rest/warehouses/locations/details — Get storage location details
+- POST /rest/warehouses/locations/dimensions — Create a storage location dimension
+- DELETE /rest/warehouses/locations/dimensions/{warehouseLocationDimensionId} — Delete a storage location dimension
+- GET /rest/warehouses/locations/dimensions/{warehouseLocationDimensionId} — Get a storage location dimension
+- PUT /rest/warehouses/locations/dimensions/{warehouseLocationDimensionId} — Update a storage location dimension
+- PUT /rest/warehouses/locations/group — Edit purpose and status for a group of storage locations
+- POST /rest/warehouses/locations/inventory — Create a storage location inventory
+- GET /rest/warehouses/locations/inventory/list — Get a storage location list of inventories
+- GET /rest/warehouses/locations/inventory/{warehouseLocationInventoryId} — Get a storage location inventory
+- POST /rest/warehouses/locations/levels — Create a storage location level
+- POST /rest/warehouses/locations/levels/positions — Move a storage location level position
+- DELETE /rest/warehouses/locations/levels/{warehouseLocationLevelId} — Delete a storage location level
+- GET /rest/warehouses/locations/levels/{warehouseLocationLevelId} — Get a storage location level
+- PUT /rest/warehouses/locations/levels/{warehouseLocationLevelId} — Update a storage location level
+- POST /rest/warehouses/locations/multiple_dimensions — Create multiple storage location dimensions
+- POST /rest/warehouses/locations/positions — Move a storage location position
+- POST /rest/warehouses/locations/previews — Generate storage location preview and save it
+- GET /rest/warehouses/locations/stock/{warehouseLocationId} — List storage locations stock
+- POST /rest/warehouses/locations/{warehouseId}/label — Generate the storage location label
+- DELETE /rest/warehouses/locations/{warehouseLocationId} — Delete a storage location
+- GET /rest/warehouses/locations/{warehouseLocationId} — Get a storage location
+- PUT /rest/warehouses/locations/{warehouseLocationId} — Update a storage location
+- GET /rest/warehouses/structure/{warehouseId} — Get a storage location structure
+- GET /rest/warehouses/structure/{warehouseId}/moving — Get a storage location structure moving
+- DELETE /rest/warehouses/{id} — Delete a warehouse
+- PUT /rest/warehouses/{id} — Update an existing warehouse
+- GET /rest/warehouses/{warehouseId}/locations — List storage locations
+- GET /rest/warehouses/{warehouseId}/locations/dimensions — List storage location dimensions
+- GET /rest/warehouses/{warehouseId}/locations/level/{warehouseLocationLevelId} — List storage locations by levelId
+- GET /rest/warehouses/{warehouseId}/locations/levels — List storage location levels
+
+## Webstore
+
+- GET /rest/webstores — List clients (stores)
+
+## Wizard
+
+- GET /rest/wizards — List wizards
+- GET /rest/wizards/folders — List wizard folders
+- GET /rest/wizards/pluginSets — Get non cached sets
+- GET /rest/wizards/{wizardKey} — Get a wizard
+- POST /rest/wizards/{wizardKey}/actions/{actionKey} — Perform an action of a registered actionHandlerClass
+- DELETE /rest/wizards/{wizardKey}/data — Delete a wizard data
+- GET /rest/wizards/{wizardKey}/data — Get a wizard data
+- POST /rest/wizards/{wizardKey}/data — Create a wizard data
+- PUT /rest/wizards/{wizardKey}/data — Update a wizard data
+- DELETE /rest/wizards/{wizardKey}/data/{optionId} — Delete a wizard data's option
+- GET /rest/wizards/{wizardKey}/data/{optionId} — Get a wizard data by optionId
+- POST /rest/wizards/{wizardKey}/data/{optionId} — Create a wizard data option
+- PUT /rest/wizards/{wizardKey}/data/{optionId} — Update a wizard data option
+- POST /rest/wizards/{wizardKey}/formfields/{formfieldKey} — Load dynamic data
+- GET /rest/wizards/{wizardKey}/rebuildCache — Rebuild wizard cache
+- POST /rest/wizards/{wizardKey}/settings/{optionId} — Finalize the wizard
+
+## plentyMarketplace
+
+- POST /rest/io/customer/login — plentyMarketplace login
+- POST /rest/partner-portal/partner-plugin/visibility — Change plugin visibility
+
+## Sonstige (untagged) Routen
+
+- GET /rest/documents/generation/settings — Get document generation settings
+- PUT /rest/documents/generation/settings — Update document generation settings
+
+---
+
+*Ende der Referenz. Bei API-Änderungen die offizielle Doku prüfen und diese Datei aktualisieren.*
