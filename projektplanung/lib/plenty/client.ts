@@ -46,7 +46,14 @@ export interface PlentyConfig {
 
 export function getPlentyConfig(): PlentyConfig {
   return {
-    baseUrl: (process.env.PLENTY_BASE_URL ?? '').replace(/\/+$/, ''),
+    // Basis-URL robust normalisieren: Leerzeichen/Slashes weg und ein evtl.
+    // angehängtes "/rest" entfernen (Plenty zeigt die REST-URL inkl. "/rest/"
+    // an – die App hängt "/rest/..." aber selbst an).
+    baseUrl: (process.env.PLENTY_BASE_URL ?? '')
+      .trim()
+      .replace(/\/+$/, '')
+      .replace(/\/rest$/i, '')
+      .replace(/\/+$/, ''),
     user: process.env.PLENTY_USER ?? '',
     password: process.env.PLENTY_PASSWORD ?? '',
     plentyId: Number(process.env.PLENTY_ID ?? '0') || 0,
