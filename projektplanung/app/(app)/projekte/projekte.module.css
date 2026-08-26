@@ -83,6 +83,19 @@
 }
 .input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
 
+.textarea {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+
 .preview { margin: 0; font-size: 0.85rem; color: var(--muted); }
 .previewTag {
   display: inline-block;
@@ -204,6 +217,7 @@
 .itemName { font-weight: 600; font-size: 0.9rem; color: var(--navy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .itemMeta { font-size: 0.78rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .itemEan { font-size: 0.72rem; color: var(--blue-h); font-family: ui-monospace, 'IBM Plex Mono', SFMono-Regular, Menlo, monospace; }
+.itemNote { font-size: 0.75rem; color: var(--muted); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .itemSide { display: flex; align-items: center; gap: var(--space-3); flex-shrink: 0; }
 .itemDate { font-size: 0.75rem; color: var(--muted); }
 

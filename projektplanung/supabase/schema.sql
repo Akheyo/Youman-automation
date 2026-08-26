@@ -15,6 +15,7 @@ create table if not exists public.projekte (
   location           text not null,          -- Ort, z. B. "Esslingen"
   contact_internal   text,                   -- Ansprechpartner intern
   contact_external   text,                   -- Ansprechpartner extern
+  notes              text,                   -- Anmerkungen / Randnotizen
 
   -- Ergebnis der Plenty-Synchronisation
   category_name      text,                   -- "Firma Ort" (Name der Unterkategorie)
@@ -37,10 +38,15 @@ create policy "projekte own" on public.projekte for all
 create index if not exists projekte_user_created_idx
   on public.projekte (user_id, created_at desc);
 
--- Volltext-freundliche Suche über Firma/Ort/Ansprechpartner.
+-- Falls die Tabelle schon existiert: Spalte nachrüsten (Migration).
+alter table public.projekte add column if not exists notes text;
+
+-- Volltext-freundliche Suche über Firma/Ort/Ansprechpartner/Anmerkungen.
+drop index if exists projekte_search_idx;
 create index if not exists projekte_search_idx
   on public.projekte using gin (
     to_tsvector('simple',
       coalesce(company,'') || ' ' || coalesce(location,'') || ' ' ||
-      coalesce(contact_internal,'') || ' ' || coalesce(contact_external,''))
+      coalesce(contact_internal,'') || ' ' || coalesce(contact_external,'') || ' ' ||
+      coalesce(notes,''))
   );

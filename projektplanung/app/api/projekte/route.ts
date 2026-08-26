@@ -38,6 +38,7 @@ export async function GET(request: Request) {
         `location.ilike.${like}`,
         `contact_internal.ilike.${like}`,
         `contact_external.ilike.${like}`,
+        `notes.ilike.${like}`,
         `category_name.ilike.${like}`,
         `ean.ilike.${like}`,
       ].join(','),
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
     location: body.location!.trim(),
     contactInternal: body.contactInternal?.trim() || undefined,
     contactExternal: body.contactExternal?.trim() || undefined,
+    notes: body.notes?.trim() || undefined,
   };
   const now = new Date();
   const categoryName = buildCategoryName(input.company, input.location);
@@ -79,6 +81,7 @@ export async function POST(request: Request) {
       location: input.location,
       contact_internal: input.contactInternal ?? null,
       contact_external: input.contactExternal ?? null,
+      notes: input.notes ?? null,
       category_name: categoryName,
       plenty_status: 'pending',
     })
