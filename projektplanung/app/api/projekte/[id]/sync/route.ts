@@ -33,6 +33,7 @@ export async function POST(_request: Request, { params }: { params: { id: string
     contactInternal: row.contact_internal ?? undefined,
     contactExternal: row.contact_external ?? undefined,
     notes: row.notes ?? undefined,
+    orderType: row.order_type ?? undefined,
   };
   const date = row.created_at ? new Date(row.created_at) : new Date();
   const eanSeed = Date.now() * 1000 + Math.floor(Math.random() * 1000);

@@ -6,8 +6,10 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { syncProjektToPlenty } from '@/lib/plenty/client';
-import { validateProjekt, buildCategoryName, type ProjektInput } from '@/lib/projekte/logic';
+import { syncProjektToPlenty, type InvoiceFile } from '@/lib/plenty/client';
+import { validateProjekt, buildCategoryName, normalizeOrderType, type ProjektInput } from '@/lib/projekte/logic';
+
+const MAX_INVOICE_BYTES = 8 * 1024 * 1024; // 8 MB
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -39,6 +41,7 @@ export async function GET(request: Request) {
         `contact_internal.ilike.${like}`,
         `contact_external.ilike.${like}`,
         `notes.ilike.${like}`,
+        `order_type.ilike.${like}`,
         `category_name.ilike.${like}`,
         `ean.ilike.${like}`,
       ].join(','),
@@ -58,16 +61,50 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Bitte anmelden.' }, { status: 401 });
 
-  const body = (await request.json().catch(() => ({}))) as Partial<ProjektInput>;
+  // Multipart (mit optionaler Rechnungsdatei) oder JSON akzeptieren.
+  const contentType = request.headers.get('content-type') ?? '';
+  let body: Partial<ProjektInput> = {};
+  let invoice: InvoiceFile | null = null;
+  let invoiceName: string | null = null;
+
+  if (contentType.includes('multipart/form-data')) {
+    const form = await request.formData().catch(() => null);
+    if (!form) return NextResponse.json({ error: 'Ungültiges Formular.' }, { status: 400 });
+    body = {
+      company: (form.get('company') as string) ?? '',
+      location: (form.get('location') as string) ?? '',
+      contactInternal: (form.get('contactInternal') as string) ?? '',
+      contactExternal: (form.get('contactExternal') as string) ?? '',
+      notes: (form.get('notes') as string) ?? '',
+      orderType: (form.get('orderType') as string) ?? '',
+    };
+    const file = form.get('invoice');
+    if (file instanceof File && file.size > 0) {
+      if (file.size > MAX_INVOICE_BYTES) {
+        return NextResponse.json({ error: 'Rechnung zu groß (max. 8 MB).' }, { status: 413 });
+      }
+      invoice = {
+        bytes: Buffer.from(await file.arrayBuffer()),
+        filename: file.name || 'rechnung.pdf',
+        contentType: file.type || 'application/octet-stream',
+      };
+      invoiceName = file.name || 'rechnung.pdf';
+    }
+  } else {
+    body = (await request.json().catch(() => ({}))) as Partial<ProjektInput>;
+  }
+
   const validationError = validateProjekt(body);
   if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
+  const orderType = normalizeOrderType(body.orderType);
   const input: ProjektInput = {
     company: body.company!.trim(),
     location: body.location!.trim(),
     contactInternal: body.contactInternal?.trim() || undefined,
     contactExternal: body.contactExternal?.trim() || undefined,
     notes: body.notes?.trim() || undefined,
+    orderType: orderType ?? undefined,
   };
   const now = new Date();
   const categoryName = buildCategoryName(input.company, input.location);
@@ -82,6 +119,8 @@ export async function POST(request: Request) {
       contact_internal: input.contactInternal ?? null,
       contact_external: input.contactExternal ?? null,
       notes: input.notes ?? null,
+      order_type: input.orderType ?? null,
+      invoice_name: invoiceName,
       category_name: categoryName,
       plenty_status: 'pending',
     })
@@ -93,7 +132,7 @@ export async function POST(request: Request) {
 
   // 2) Plenty-Sync (best effort) — eindeutiger EAN-Seed aus Zeit + Zufall.
   const eanSeed = Date.now() * 1000 + Math.floor(Math.random() * 1000);
-  const sync = await syncProjektToPlenty(input, now, eanSeed);
+  const sync = await syncProjektToPlenty(input, now, eanSeed, null, invoice);
 
   // 3) Ergebnis in den Datensatz zurückschreiben.
   const status = sync.skipped ? 'skipped' : sync.ok ? 'ok' : 'error';
@@ -121,6 +160,7 @@ export async function POST(request: Request) {
       ean: sync.ean,
       categoryCreated: sync.categoryCreated,
       eanAttached: sync.eanAttached,
+      invoiceAttached: sync.invoiceAttached,
       warnings: sync.warnings,
       error: sync.error,
     },
