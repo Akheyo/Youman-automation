@@ -190,25 +190,31 @@ async function ensureSubcategory(
   const existing = await findChildCategory(cfg, token, parentId, name);
   if (existing) return { id: existing, created: false };
 
-  const created = await api<PlentyCategory>(cfg, token, '/rest/categories', {
-    method: 'POST',
-    body: JSON.stringify({
-      type: 'item',
+  // PlentyONE erwartet ein ARRAY von Kategorie-Objekten (jeweils mit details
+  // und clients). Ein einzelnes Objekt führt zu HTTP 500 ("$data must be array").
+  const payload = [
+    {
       parentCategoryId: parentId,
-      linklist: 'N',
+      type: 'item',
       right: 'all',
       details: [
         {
+          plentyId: cfg.plentyId,
           lang: 'de',
           name,
           nameUrl: slugify(name),
-          plentyId: cfg.plentyId,
         },
       ],
-    }),
+      clients: [{ plentyId: cfg.plentyId }],
+    },
+  ];
+  const created = await api<PlentyCategory | PlentyCategory[]>(cfg, token, '/rest/categories', {
+    method: 'POST',
+    body: JSON.stringify(payload),
   });
-  if (!created?.id) throw new Error('Kategorie-Anlage lieferte keine ID.');
-  return { id: created.id, created: true };
+  const cat = Array.isArray(created) ? created[0] : created;
+  if (!cat?.id) throw new Error('Kategorie-Anlage lieferte keine ID (Antwort unerwartet).');
+  return { id: cat.id, created: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -225,50 +231,58 @@ interface PlentyItem {
   variations?: PlentyVariation[];
 }
 
-/** Legt einen Artikel mit Hauptvariante, Kategoriezuordnung und Barcode an. */
+/**
+ * Legt einen Artikel mit Hauptvariante an. Minimal-Payload laut PlentyONE-Doku:
+ * Variante braucht eine Kategoriezuordnung UND eine Einheit (unit).
+ */
 async function createItem(
   cfg: PlentyConfig,
   token: string,
-  opts: { categoryId: number; name: string; ean: string },
-): Promise<{ itemId: number; variationId: number; eanAttached: boolean }> {
-  const variationBarcodes = cfg.eanBarcodeId
-    ? [{ barcodeId: cfg.eanBarcodeId, code: opts.ean }]
-    : [];
-
+  categoryId: number,
+): Promise<{ itemId: number; variationId: number }> {
   const item = await api<PlentyItem>(cfg, token, '/rest/items', {
     method: 'POST',
     body: JSON.stringify({
       variations: [
         {
-          isMain: true,
-          name: opts.name,
-          variationCategories: [{ categoryId: opts.categoryId }],
-          variationBarcodes,
+          variationCategories: [{ categoryId }],
+          unit: { unitId: 1, content: 1 },
         },
       ],
     }),
   });
   if (!item?.id) throw new Error('Artikel-Anlage lieferte keine ID.');
   const mainVar = (item.variations ?? []).find((v) => v.isMain) ?? item.variations?.[0];
-  const variationId = mainVar?.id ?? 0;
-
-  return { itemId: item.id, variationId, eanAttached: variationBarcodes.length > 0 };
+  if (!mainVar?.id) throw new Error('Artikel angelegt, aber keine Varianten-ID erhalten.');
+  return { itemId: item.id, variationId: mainVar.id };
 }
 
-/** Setzt den Artikeltext (Name + Beschreibung) in Deutsch. */
-async function setItemText(
+/** Setzt Name + Beschreibung der Variante (eigener Endpunkt laut Doku). */
+async function setVariationDescription(
   cfg: PlentyConfig,
   token: string,
   itemId: number,
+  variationId: number,
   opts: { name: string; description: string },
 ): Promise<void> {
-  await api(cfg, token, `/rest/items/${itemId}/texts`, {
+  await api(cfg, token, `/rest/items/${itemId}/variations/${variationId}/descriptions`, {
     method: 'POST',
-    body: JSON.stringify({
-      lang: 'de',
-      name1: opts.name,
-      description: opts.description,
-    }),
+    body: JSON.stringify({ lang: 'de', name: opts.name, description: opts.description }),
+  });
+}
+
+/** Hängt einen Barcode (z. B. EAN13) an die Variante. */
+async function addVariationBarcode(
+  cfg: PlentyConfig,
+  token: string,
+  itemId: number,
+  variationId: number,
+  barcodeId: number,
+  code: string,
+): Promise<void> {
+  await api(cfg, token, `/rest/items/${itemId}/variations/${variationId}/variation_barcodes`, {
+    method: 'POST',
+    body: JSON.stringify({ barcodeId, code }),
   });
 }
 
@@ -339,23 +353,29 @@ export async function syncProjektToPlenty(
     );
 
     const itemName = buildItemName(input, date);
-    const { itemId, variationId, eanAttached } = await createItem(cfg, token, {
-      categoryId,
-      name: itemName,
-      ean,
-    });
+    const { itemId, variationId } = await createItem(cfg, token, categoryId);
 
-    if (!eanAttached) {
-      warnings.push('PLENTY_EAN_BARCODE_ID nicht gesetzt – EAN erzeugt, aber kein Barcode am Artikel hinterlegt.');
-    }
-
+    // Name + Beschreibung der Variante setzen (nicht blockierend).
     try {
-      await setItemText(cfg, token, itemId, {
+      await setVariationDescription(cfg, token, itemId, variationId, {
         name: itemName,
         description: buildItemDescription(input, date),
       });
     } catch (err) {
       warnings.push(`Artikeltext konnte nicht gesetzt werden: ${(err as Error).message}`);
+    }
+
+    // EAN als Barcode an die Variante hängen (nicht blockierend – Artikel steht).
+    let eanAttached = false;
+    if (cfg.eanBarcodeId) {
+      try {
+        await addVariationBarcode(cfg, token, itemId, variationId, cfg.eanBarcodeId, ean);
+        eanAttached = true;
+      } catch (err) {
+        warnings.push(`EAN-Barcode konnte nicht gesetzt werden: ${(err as Error).message}`);
+      }
+    } else {
+      warnings.push('PLENTY_EAN_BARCODE_ID nicht gesetzt – EAN erzeugt, aber kein Barcode am Artikel hinterlegt.');
     }
 
     return {
