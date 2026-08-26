@@ -37,7 +37,7 @@ interface SyncInfo {
 const EMPTY = { company: '', location: '', contactInternal: '', contactExternal: '', notes: '', orderType: '' };
 
 /** Sichtbarer Build-Marker – so erkennt man sofort, ob die neue Version live ist. */
-const APP_BUILD = 'rechnung-verify-2';
+const APP_BUILD = 'rechnung-verify-3';
 
 export default function ProjektDashboard({
   initial,
