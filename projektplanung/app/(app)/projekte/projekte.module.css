@@ -218,6 +218,7 @@
 .retryAction:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .hint { margin: var(--space-3) 0 0; font-size: 0.82rem; color: var(--muted); }
+.buildTag { margin: var(--space-3) 0 0; font-size: 0.68rem; color: var(--muted); opacity: 0.7; text-align: right; }
 .warnList { margin: var(--space-3) 0 0; padding-left: 1.1rem; color: var(--amber); font-size: 0.8rem; }
 
 /* ---- Suche + Liste ---- */
