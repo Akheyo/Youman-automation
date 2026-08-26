@@ -43,7 +43,13 @@ create index if not exists projekte_user_created_idx
 -- Falls die Tabelle schon existiert: Spalten nachrüsten (Migration).
 alter table public.projekte add column if not exists notes text;
 alter table public.projekte add column if not exists order_type text;   -- Demontage | Warenankauf | Auktion
-alter table public.projekte add column if not exists invoice_name text; -- Dateiname der nach Plenty hochgeladenen Rechnung
+alter table public.projekte add column if not exists invoice_name text; -- Original-Dateiname der Rechnung
+alter table public.projekte add column if not exists invoice_path text; -- Pfad der Rechnung im Supabase Storage
+
+-- Privater Storage-Bucket für Rechnungen (die App legt ihn sonst automatisch an).
+insert into storage.buckets (id, name, public)
+  values ('rechnungen', 'rechnungen', false)
+  on conflict (id) do nothing;
 
 -- Volltext-freundliche Suche über Firma/Ort/Ansprechpartner/Anmerkungen.
 drop index if exists projekte_search_idx;

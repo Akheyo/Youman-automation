@@ -253,6 +253,10 @@
 .itemMeta { font-size: 0.78rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .itemEan { font-size: 0.72rem; color: var(--blue-h); font-family: ui-monospace, 'IBM Plex Mono', SFMono-Regular, Menlo, monospace; }
 .itemNote { font-size: 0.75rem; color: var(--muted); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.itemInvoice { font-size: 0.75rem; color: var(--blue-h); display: inline-flex; align-items: center; gap: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.itemInvoice:hover { text-decoration: underline; }
+.invoiceLink { color: var(--blue-h); font-weight: 600; }
+.invoiceLink:hover { text-decoration: underline; }
 .itemSide { display: flex; align-items: center; gap: var(--space-3); flex-shrink: 0; }
 .itemDate { font-size: 0.75rem; color: var(--muted); }
 
