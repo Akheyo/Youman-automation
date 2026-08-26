@@ -324,12 +324,8 @@ async function linkVariationProperty(
   // Verschiedene Payload-Formate nacheinander versuchen; das erste, das Plenty
   // akzeptiert, gewinnt. Bereits vorhandene Verknüpfung gilt als Erfolg.
   const candidates: Array<{ label: string; body: string }> = [
-    { label: 'obj', body: JSON.stringify({ propertyId }) },
-    { label: 'obj+prop', body: JSON.stringify({ propertyId, property: { id: propertyId } }) },
-    { label: 'obj+var', body: JSON.stringify({ propertyId, variationId }) },
-    { label: 'obj:str', body: JSON.stringify({ propertyId: String(propertyId) }) },
-    { label: 'arr', body: JSON.stringify([{ propertyId }]) },
-    { label: 'arr+var', body: JSON.stringify([{ propertyId, variationId }]) },
+    { label: 'obj', body: JSON.stringify({ propertyId, variationId }) },
+    { label: 'arr', body: JSON.stringify([{ propertyId, variationId }]) },
   ];
   const errors: string[] = [];
   for (const c of candidates) {
@@ -339,7 +335,7 @@ async function linkVariationProperty(
     } catch (e) {
       const msg = (e as Error).message;
       if (/exist|dupli|already|bereits|verknüpft/i.test(msg)) return `bereits verknüpft (${c.label})`;
-      errors.push(`${c.label}: ${msg.replace(/\s+/g, ' ').slice(0, 90)}`);
+      errors.push(`${c.label}: ${msg.replace(/\s+/g, ' ').slice(0, 260)}`);
     }
   }
   throw new Error(`alle Formate abgelehnt – ${errors.join(' || ')}`);
