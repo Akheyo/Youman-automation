@@ -20,19 +20,46 @@ async function storeInvoice(
   projektId: string,
   invoice: InvoiceFile,
 ): Promise<{ path?: string; url?: string; error?: string }> {
+  // Häufiger Fehler: der Service-Role-Key wurde MASKIERT (mit •-Zeichen) aus dem
+  // Supabase-Dashboard kopiert. Solche Zeichen sprengen den HTTP-Header ("ByteString").
+  const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+  if (rawKey && !/^[\x20-\x7E]+$/.test(rawKey)) {
+    return {
+      error:
+        'SUPABASE_SERVICE_ROLE_KEY enthält ungültige Zeichen (vermutlich maskiert kopiert, „•"). ' +
+        'Im Supabase-Dashboard den Schlüssel erst EINBLENDEN, dann kopieren und in Vercel neu setzen.',
+    };
+  }
+
   const admin = createAdminClient();
   if (!admin) return { error: 'SUPABASE_SERVICE_ROLE_KEY fehlt' };
   // Bucket bei Bedarf anlegen (idempotent; Fehler wird ignoriert, falls er schon existiert).
-  await admin.storage.createBucket(INVOICE_BUCKET, { public: false }).catch(() => {});
+  try {
+    await admin.storage.createBucket(INVOICE_BUCKET, { public: false });
+  } catch {
+    /* existiert bereits – ignorieren */
+  }
+  // Nur ASCII im Dateinamen (Pfad landet in Headern/URLs).
   const safe = invoice.filename.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-100) || 'rechnung';
   const path = `${userId}/${projektId}-${safe}`;
   // Content-Type auf reines ASCII begrenzen (sonst „ByteString"-Fehler im Header).
   const contentType = /^[\x20-\x7E]+$/.test(invoice.contentType) ? invoice.contentType : 'application/octet-stream';
-  const bytes = new Uint8Array(invoice.bytes);
-  const up = await admin.storage.from(INVOICE_BUCKET).upload(path, bytes, { contentType, upsert: true });
-  if (up.error) return { error: up.error.message };
-  const signed = await admin.storage.from(INVOICE_BUCKET).createSignedUrl(path, SIGNED_URL_TTL);
-  return { path, url: signed.data?.signedUrl ?? '' };
+  // Als Blob hochladen: dadurch geht der Content-Type NICHT als roher Header raus,
+  // sondern über multipart/form-data — umgeht den ByteString-Header-Fehler komplett.
+  try {
+    const blob = new Blob([new Uint8Array(invoice.bytes)], { type: contentType });
+    const up = await admin.storage.from(INVOICE_BUCKET).upload(path, blob, { contentType, upsert: true });
+    if (up.error) return { error: `Upload: ${up.error.message}` };
+  } catch (e) {
+    return { error: `Upload-Ausnahme: ${e instanceof Error ? e.message : String(e)}` };
+  }
+  try {
+    const signed = await admin.storage.from(INVOICE_BUCKET).createSignedUrl(path, SIGNED_URL_TTL);
+    return { path, url: signed.data?.signedUrl ?? '' };
+  } catch (e) {
+    // Upload hat geklappt – nur die Signed-URL nicht. Pfad zählt als Erfolg.
+    return { path, url: '', error: `Signed-URL: ${e instanceof Error ? e.message : String(e)}` };
+  }
 }
 
 export const runtime = 'nodejs';
