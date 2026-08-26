@@ -538,22 +538,22 @@ export async function syncProjektToPlenty(
     // Rechnung als Datei an die Varianteneigenschaft „Dokument 1" hängen (nicht blockierend).
     let invoiceAttached = false;
     if (invoice) {
-      // Property-ID zuverlässig über den Namen ermitteln (feste IDs sind fehleranfällig),
-      // Fallback auf PLENTY_INVOICE_PROPERTY_ID.
-      let propertyId: number | null = null;
-      let resolveNote = '';
-      try {
-        propertyId = await findPropertyIdByName(cfg, token, cfg.invoicePropertyName);
-        resolveNote = propertyId
-          ? `„${cfg.invoicePropertyName}"=ID ${propertyId}`
-          : `„${cfg.invoicePropertyName}" nicht unter /rest/items/properties gefunden`;
-      } catch (e) {
-        resolveNote = `Property-Suche fehlgeschlagen: ${(e as Error).message.replace(/\s+/g, ' ').slice(0, 150)}`;
+      // Fest konfigurierte Property-ID hat Vorrang; sonst über den Namen ermitteln.
+      let propertyId: number | null = cfg.invoicePropertyId;
+      let resolveNote = propertyId ? `ID ${propertyId} (konfiguriert)` : '';
+      if (!propertyId) {
+        try {
+          propertyId = await findPropertyIdByName(cfg, token, cfg.invoicePropertyName);
+          resolveNote = propertyId
+            ? `„${cfg.invoicePropertyName}"=ID ${propertyId}`
+            : `„${cfg.invoicePropertyName}" nicht unter /rest/items/properties gefunden`;
+        } catch (e) {
+          resolveNote = `Property-Suche fehlgeschlagen: ${(e as Error).message.replace(/\s+/g, ' ').slice(0, 150)}`;
+        }
       }
-      if (!propertyId) propertyId = cfg.invoicePropertyId;
 
       if (!propertyId) {
-        warnings.push(`Rechnung nicht angehängt – ${resolveNote}.`);
+        warnings.push(`Rechnung nicht angehängt – ${resolveNote}. Setze PLENTY_INVOICE_PROPERTY_ID.`);
       } else {
         let linkNote = '';
         try {
