@@ -390,26 +390,53 @@ async function uploadVariationPropertyFile(
   propertyId: number,
   file: InvoiceFile,
 ): Promise<string> {
-  const blob = new Blob([new Uint8Array(file.bytes)], { type: file.contentType });
   const path = `/rest/items/${itemId}/variations/${variationId}/variation_properties/${propertyId}/upload`;
-  // Feldname variiert je nach Plenty-Version – mehrere probieren, bis einer 2xx liefert.
-  const fieldNames = ['file', 'files', 'files[]', '0', 'document', 'upload'];
-  let lastErr = '';
+  // Ein echter, gespeicherter Datei-Wert hat einen Pfad ("<id>/name.pdf").
+  // Nur der reine Dateiname bedeutet: Plenty hat die Binärdatei NICHT abgelegt.
+  const storedOk = (valueFile: unknown) => typeof valueFile === 'string' && valueFile.includes('/');
+  const fieldNames = ['file', 'files', 'files[]', '0', 'fileData', 'document', 'upload', String(propertyId)];
+  const notes: string[] = [];
   for (const field of fieldNames) {
     const form = new FormData();
-    form.append(field, blob, file.filename);
+    form.append(field, new Blob([new Uint8Array(file.bytes)], { type: file.contentType }), file.filename);
     const res = await fetch(`${cfg.baseUrl}${path}`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
       body: form,
     });
     const body = await res.text().catch(() => '');
-    if (res.ok) return `feld="${field}" → HTTP ${res.status}: ${body.slice(0, 160)}`;
-    lastErr = `feld="${field}" → HTTP ${res.status}: ${body.slice(0, 160)}`;
-    // 404/400 → nächsten Feldnamen versuchen; andere Fehler abbrechen
-    if (![400, 404, 422].includes(res.status)) break;
+    let valueFile: unknown;
+    try {
+      valueFile = JSON.parse(body)?.valueFile;
+    } catch {
+      /* kein JSON */
+    }
+    if (res.ok && storedOk(valueFile)) return `gespeichert feld="${field}" valueFile="${valueFile}"`;
+    notes.push(`feld="${field}" HTTP ${res.status}${valueFile ? ` valueFile="${valueFile}"` : ''}${body && !valueFile ? `: ${body.slice(0, 60)}` : ''}`);
+    if (![200, 400, 404, 422].includes(res.status)) break;
   }
-  throw new Error(`Upload ${path} fehlgeschlagen (${lastErr})`);
+
+  // Zusätzlicher Versuch: Datei als Roh-Body senden (manche Endpunkte lesen php://input).
+  try {
+    const res = await fetch(`${cfg.baseUrl}${path}?fileName=${encodeURIComponent(file.filename)}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': file.contentType },
+      body: new Uint8Array(file.bytes),
+    });
+    const body = await res.text().catch(() => '');
+    let valueFile: unknown;
+    try {
+      valueFile = JSON.parse(body)?.valueFile;
+    } catch {
+      /* kein JSON */
+    }
+    if (res.ok && storedOk(valueFile)) return `gespeichert (raw) valueFile="${valueFile}"`;
+    notes.push(`raw HTTP ${res.status}${valueFile ? ` valueFile="${valueFile}"` : ''}${body && !valueFile ? `: ${body.slice(0, 60)}` : ''}`);
+  } catch (e) {
+    notes.push(`raw Fehler: ${(e as Error).message.slice(0, 60)}`);
+  }
+
+  throw new Error(`Datei nicht wirklich gespeichert – ${notes.join(' | ')}`);
 }
 
 /** Liest die Varianteneigenschaften (zur Verifikation nach dem Upload). */
@@ -593,10 +620,11 @@ export async function syncProjektToPlenty(
           const props = await getVariationProperties(cfg, token, itemId, variationId);
           const entry = props.find((p) => Number(p?.propertyId ?? p?.property?.id) === Number(propertyId));
           if (entry) {
-            invoiceAttached = Boolean(entry.valueFile) || /\.(pdf|jpe?g|png|docx?|xlsx?)/i.test(JSON.stringify(entry));
+            // Nur ein echter Pfad ("<id>/name") bedeutet, dass die Datei wirklich abgelegt wurde.
+            invoiceAttached = typeof entry.valueFile === 'string' && entry.valueFile.includes('/');
             verifyNote = invoiceAttached
-              ? `Datei „${entry.valueFile ?? ''}" gespeichert`
-              : `verknüpft, aber ohne Datei: ${JSON.stringify(entry).slice(0, 200)}`;
+              ? `Datei „${entry.valueFile}" gespeichert`
+              : `verknüpft, aber Datei nicht abgelegt (valueFile="${entry.valueFile ?? ''}")`;
           } else {
             verifyNote = `„${cfg.invoicePropertyName}" (ID ${propertyId}) nicht an Variante gefunden`;
           }

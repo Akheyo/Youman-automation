@@ -30,6 +30,8 @@ interface SyncInfo {
   categoryCreated: boolean;
   eanAttached: boolean;
   invoiceAttached: boolean;
+  invoiceStored: boolean;
+  invoiceUrl: string | null;
   warnings: string[];
   error: string | null;
 }
@@ -37,7 +39,7 @@ interface SyncInfo {
 const EMPTY = { company: '', location: '', contactInternal: '', contactExternal: '', notes: '', orderType: '' };
 
 /** Sichtbarer Build-Marker – so erkennt man sofort, ob die neue Version live ist. */
-const APP_BUILD = 'rechnung-final';
+const APP_BUILD = 'rechnung-upload-real';
 
 export default function ProjektDashboard({
   initial,
@@ -342,9 +344,15 @@ export default function ProjektDashboard({
                     </span>
                     {p.ean && <span className={styles.itemEan}>EAN {p.ean}</span>}
                     {p.invoice_name && (
-                      <span className={styles.itemNote} title={p.invoice_name}>
+                      <a
+                        className={styles.itemInvoice}
+                        href={`/api/projekte/${p.id}/invoice`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={`Rechnung öffnen: ${p.invoice_name}`}
+                      >
                         <ClipIcon /> {p.invoice_name}
-                      </span>
+                      </a>
                     )}
                     {p.notes && <span className={styles.itemNote} title={p.notes}>✎ {p.notes}</span>}
                   </div>
@@ -468,10 +476,14 @@ function ResultCard({
             <dd>{projekt.order_type}</dd>
           </div>
         )}
-        {sync.invoiceAttached && (
+        {(sync.invoiceAttached || sync.invoiceStored) && (
           <div>
             <dt>Rechnung</dt>
-            <dd>als „Dokument 1" angehängt</dd>
+            <dd>
+              {sync.invoiceAttached
+                ? 'als „Dokument 1" in Plenty hochgeladen'
+                : 'gespeichert – Plenty-Upload noch offen'}
+            </dd>
           </div>
         )}
       </dl>

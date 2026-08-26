@@ -6,10 +6,33 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { syncProjektToPlenty, type InvoiceFile } from '@/lib/plenty/client';
 import { validateProjekt, buildCategoryName, normalizeOrderType, type ProjektInput } from '@/lib/projekte/logic';
 
 const MAX_INVOICE_BYTES = 8 * 1024 * 1024; // 8 MB
+const INVOICE_BUCKET = 'rechnungen';
+const SIGNED_URL_TTL = 60 * 60 * 24 * 3650; // ~10 Jahre
+
+/** Lädt die Rechnung in den Supabase-Storage und gibt Pfad + Signed-URL zurück. */
+async function storeInvoice(
+  userId: string,
+  projektId: string,
+  invoice: InvoiceFile,
+): Promise<{ path: string; url: string } | null> {
+  const admin = createAdminClient();
+  if (!admin) return null;
+  // Bucket bei Bedarf anlegen (idempotent).
+  await admin.storage.createBucket(INVOICE_BUCKET, { public: false }).catch(() => {});
+  const safe = invoice.filename.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-100) || 'rechnung';
+  const path = `${userId}/${projektId}-${safe}`;
+  const up = await admin.storage
+    .from(INVOICE_BUCKET)
+    .upload(path, invoice.bytes, { contentType: invoice.contentType, upsert: true });
+  if (up.error) return null;
+  const signed = await admin.storage.from(INVOICE_BUCKET).createSignedUrl(path, SIGNED_URL_TTL);
+  return { path, url: signed.data?.signedUrl ?? '' };
+}
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -130,6 +153,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: insertError?.message ?? 'Speichern fehlgeschlagen.' }, { status: 400 });
   }
 
+  // 1b) Rechnung sicher im Storage ablegen (die eigentliche Datei) und Link erzeugen.
+  let invoicePath: string | null = null;
+  let invoiceUrl: string | undefined;
+  if (invoice) {
+    const stored = await storeInvoice(user.id, row.id, invoice);
+    if (stored) {
+      invoicePath = stored.path;
+      invoiceUrl = stored.url || undefined;
+      // Bewusst KEIN Link in der Plenty-Beschreibung – die Datei wird direkt
+      // als „Dokument 1" hochgeladen. Supabase-Kopie dient nur als Sicherung.
+    }
+  }
+
   // 2) Plenty-Sync (best effort) — eindeutiger EAN-Seed aus Zeit + Zufall.
   const eanSeed = Date.now() * 1000 + Math.floor(Math.random() * 1000);
   const sync = await syncProjektToPlenty(input, now, eanSeed, null, invoice);
@@ -145,6 +181,7 @@ export async function POST(request: Request) {
       plenty_item_id: sync.itemId,
       plenty_status: status,
       plenty_error: sync.error,
+      invoice_path: invoicePath,
     })
     .eq('id', row.id)
     .eq('user_id', user.id)
@@ -161,6 +198,8 @@ export async function POST(request: Request) {
       categoryCreated: sync.categoryCreated,
       eanAttached: sync.eanAttached,
       invoiceAttached: sync.invoiceAttached,
+      invoiceStored: Boolean(invoicePath),
+      invoiceUrl: invoiceUrl ?? null,
       warnings: sync.warnings,
       error: sync.error,
     },

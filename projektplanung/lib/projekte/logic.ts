@@ -14,6 +14,7 @@ export interface ProjektInput {
   contactExternal?: string; // Ansprechpartner extern
   notes?: string; // Anmerkungen / Randnotizen
   orderType?: string; // Auftragstyp (Demontage | Warenankauf | Auktion)
+  invoiceUrl?: string; // Download-Link zur gespeicherten Rechnung (für die Beschreibung)
 }
 
 /** Normalisiert/validiert den Auftragstyp; gibt null zurück, wenn ungültig/leer. */
@@ -55,6 +56,7 @@ export function buildItemDescription(input: ProjektInput, date: Date): string {
   if (input.contactInternal?.trim()) lines.push(`Ansprechpartner intern: ${input.contactInternal.trim()}`);
   if (input.contactExternal?.trim()) lines.push(`Ansprechpartner extern: ${input.contactExternal.trim()}`);
   if (input.notes?.trim()) lines.push(`Anmerkungen: ${input.notes.trim()}`);
+  if (input.invoiceUrl?.trim()) lines.push(`Rechnung: ${input.invoiceUrl.trim()}`);
   return lines.join('\n');
 }
 
