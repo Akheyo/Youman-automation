@@ -593,22 +593,22 @@ export async function syncProjektToPlenty(
           const props = await getVariationProperties(cfg, token, itemId, variationId);
           const entry = props.find((p) => Number(p?.propertyId ?? p?.property?.id) === Number(propertyId));
           if (entry) {
-            const j = JSON.stringify(entry);
-            const hasFile = /\.(pdf|jpe?g|png|docx?|xlsx?)/i.test(j);
-            invoiceAttached = hasFile;
-            verifyNote = `Eintrag(${hasFile ? 'mit' : 'ohne'} Datei): ${j.slice(0, 320)}`;
+            invoiceAttached = Boolean(entry.valueFile) || /\.(pdf|jpe?g|png|docx?|xlsx?)/i.test(JSON.stringify(entry));
+            verifyNote = invoiceAttached
+              ? `Datei „${entry.valueFile ?? ''}" gespeichert`
+              : `verknüpft, aber ohne Datei: ${JSON.stringify(entry).slice(0, 200)}`;
           } else {
-            const all = JSON.stringify(props).slice(0, 200);
-            verifyNote = `Property ${propertyId} nicht an Variante. Vorhanden: ${all}`;
+            verifyNote = `„${cfg.invoicePropertyName}" (ID ${propertyId}) nicht an Variante gefunden`;
           }
         } catch (e) {
           verifyNote = `Verifikation fehlgeschlagen: ${(e as Error).message.replace(/\s+/g, ' ').slice(0, 120)}`;
         }
 
-        // Diagnose immer anzeigen (auch bei Erfolg), bis der Upload verlässlich sitzt.
-        warnings.push(
-          `Rechnung-Diagnose [ok=${invoiceAttached}] | ${resolveNote} | ${linkNote} | Upload ${uploadNote.replace(/\s+/g, ' ').slice(0, 200)} | Verify ${verifyNote}`,
-        );
+        if (!invoiceAttached) {
+          warnings.push(
+            `Rechnung evtl. nicht gespeichert – ${verifyNote} | ${linkNote} | Upload ${uploadNote.replace(/\s+/g, ' ').slice(0, 180)}`,
+          );
+        }
       }
     }
 
