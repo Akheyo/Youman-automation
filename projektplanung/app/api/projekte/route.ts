@@ -195,9 +195,6 @@ export async function POST(request: Request) {
     }
   }
 
-  // Download-Link der Rechnung an den Plenty-Artikel hängen (in die Beschreibung).
-  if (invoiceUrl) input.invoiceUrl = invoiceUrl;
-
   // 2) Plenty-Sync (best effort) — eindeutiger EAN-Seed aus Zeit + Zufall.
   const eanSeed = Date.now() * 1000 + Math.floor(Math.random() * 1000);
   const sync = await syncProjektToPlenty(input, now, eanSeed, null, invoice);

@@ -39,7 +39,7 @@ interface SyncInfo {
 const EMPTY = { company: '', location: '', contactInternal: '', contactExternal: '', notes: '', orderType: '' };
 
 /** Sichtbarer Build-Marker – so erkennt man sofort, ob die neue Version live ist. */
-const APP_BUILD = 'rechnung-link';
+const APP_BUILD = 'dokument1-relation';
 
 export default function ProjektDashboard({
   initial,
@@ -234,7 +234,7 @@ export default function ProjektDashboard({
               />
             </Field>
 
-            <Field label="Rechnung (Download-Link am Plenty-Artikel · Datei im Verlauf abrufbar)">
+            <Field label="Rechnung (wird als Dokument 1 an den Artikel gehängt)">
               <div
                 className={`${styles.dropzone} ${dragOver ? styles.dropzoneOver : ''} ${file ? styles.dropzoneFilled : ''}`}
                 onClick={() => fileInputRef.current?.click()}
@@ -480,7 +480,7 @@ function ResultCard({
           <div>
             <dt>Rechnung</dt>
             <dd>
-              {sync.invoiceAttached ? 'gespeichert · Link am Plenty-Artikel' : 'gespeichert'}
+              {sync.invoiceAttached ? 'als „Dokument 1" in Plenty hinterlegt' : 'gespeichert'}
               {' — '}
               <a href={`/api/projekte/${projekt.id}/invoice`} target="_blank" rel="noreferrer" className={styles.invoiceLink}>
                 öffnen

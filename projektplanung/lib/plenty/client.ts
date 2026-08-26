@@ -314,6 +314,108 @@ export interface InvoiceFile {
   contentType: string;
 }
 
+/** Liest die Varianteneigenschaften (Verknüpfungs-Zeilen) einer Variante. */
+async function getVariationProperties(
+  cfg: PlentyConfig,
+  token: string,
+  itemId: number,
+  variationId: number,
+): Promise<any[]> {
+  const res = await api<any>(cfg, token, `/rest/items/${itemId}/variations/${variationId}/variation_properties`);
+  if (Array.isArray(res)) return res;
+  return res?.entries ?? [];
+}
+
+/** Sucht die ID der Verknüpfungs-Zeile für ein bestimmtes Merkmal. */
+function findRelationId(rows: any[], propertyId: number): number | null {
+  const row = rows.find((r) => Number(r?.propertyId ?? r?.property?.id) === Number(propertyId));
+  const id = Number(row?.id);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+/**
+ * Verknüpft das Merkmal mit der Variante und liefert die ID der erzeugten
+ * Verknüpfungs-Zeile zurück. Genau diese ID (nicht die Merkmals-ID!) braucht der
+ * Upload-Endpunkt – der abgelegte Wert lautet später "<relationId>/<datei>".
+ * Existiert die Verknüpfung schon, wird ihre vorhandene ID ermittelt.
+ */
+async function linkVariationProperty(
+  cfg: PlentyConfig,
+  token: string,
+  itemId: number,
+  variationId: number,
+  propertyId: number,
+): Promise<{ relationId: number; note: string }> {
+  const path = `/rest/items/${itemId}/variations/${variationId}/variation_properties`;
+  const candidates: Array<{ label: string; body: string }> = [
+    { label: 'obj', body: JSON.stringify({ propertyId, variationId }) },
+    { label: 'arr', body: JSON.stringify([{ propertyId, variationId }]) },
+  ];
+  const errors: string[] = [];
+  for (const c of candidates) {
+    try {
+      const created = await api<any>(cfg, token, path, { method: 'POST', body: c.body });
+      const row = Array.isArray(created) ? created[0] : created;
+      const id = Number(row?.id);
+      if (Number.isFinite(id) && id > 0) return { relationId: id, note: `neu verknüpft (${c.label}, Zeile ${id})` };
+      // Angelegt, aber ohne ID in der Antwort → über die Liste nachschlagen.
+      const existing = findRelationId(await getVariationProperties(cfg, token, itemId, variationId), propertyId);
+      if (existing) return { relationId: existing, note: `verknüpft (${c.label}, Zeile ${existing})` };
+      errors.push(`${c.label}: Antwort ohne Zeilen-ID`);
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (/exist|dupli|already|bereits|verknüpft/i.test(msg)) {
+        const existing = findRelationId(await getVariationProperties(cfg, token, itemId, variationId), propertyId);
+        if (existing) return { relationId: existing, note: `bereits verknüpft (Zeile ${existing})` };
+      }
+      errors.push(`${c.label}: ${msg.replace(/\s+/g, ' ').replace(/^.*?(HTTP \d+)/, '$1').slice(0, 200)}`);
+    }
+  }
+  // Letzter Versuch: vielleicht existiert die Zeile trotz Fehlern bereits.
+  const fallback = findRelationId(await getVariationProperties(cfg, token, itemId, variationId), propertyId);
+  if (fallback) return { relationId: fallback, note: `vorhanden (Zeile ${fallback})` };
+  throw new Error(`keine Verknüpfungs-Zeile – ${errors.join(' || ')}`);
+}
+
+/**
+ * Lädt die Datei in die Verknüpfungs-Zeile hoch. Adressiert wird die Zeilen-ID,
+ * NICHT die Merkmals-ID – mit der Merkmals-ID nimmt Plenty die Datei zwar mit
+ * HTTP 200 an, legt aber nur den Dateinamen ab (Datei geht verloren).
+ */
+async function uploadVariationPropertyFile(
+  cfg: PlentyConfig,
+  token: string,
+  itemId: number,
+  variationId: number,
+  relationId: number,
+  file: InvoiceFile,
+): Promise<string> {
+  // Ein echt gespeicherter Wert hat die Form "<relationId>/<datei>".
+  const storedOk = (v: unknown) => typeof v === 'string' && v.includes('/');
+  const path = `/rest/items/${itemId}/variations/${variationId}/variation_properties/${relationId}/upload`;
+  const notes: string[] = [];
+  for (const field of ['file', 'files', 'files[]']) {
+    const form = new FormData();
+    form.append(field, new Blob([new Uint8Array(file.bytes)], { type: file.contentType }), file.filename);
+    const res = await fetch(`${cfg.baseUrl}${path}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      body: form,
+    });
+    const body = await res.text().catch(() => '');
+    let valueFile: unknown;
+    try {
+      valueFile = JSON.parse(body)?.valueFile;
+    } catch {
+      /* kein JSON */
+    }
+    if (res.ok && storedOk(valueFile)) return `gespeichert als "${valueFile}"`;
+    notes.push(`feld="${field}" HTTP ${res.status}${valueFile ? ` valueFile="${valueFile}"` : ''}`);
+  }
+  throw new Error(`Upload ohne Pfad – ${notes.join(' | ')}`);
+}
+
+
 /** Hängt einen Barcode (z. B. EAN13) an die Variante. */
 async function addVariationBarcode(
   cfg: PlentyConfig,
@@ -445,14 +547,31 @@ export async function syncProjektToPlenty(
       warnings.push('PLENTY_EAN_BARCODE_ID nicht gesetzt – EAN erzeugt, aber kein Barcode am Artikel hinterlegt.');
     }
 
-    // Rechnung: Die PlentyONE-REST-API kann KEINE Binärdatei in ein Datei-Merkmal
-    // („Dokument 1") ablegen – der /upload-Endpunkt speichert nur den Dateinamen,
-    // die Datei landet nie im Artikel (das kann nur die Plenty-Oberfläche via ui.php).
-    // Deshalb: die Rechnung liegt sicher im App-Storage und ihr Download-Link steht
-    // in der Artikelbeschreibung („Rechnung: <Link>") – aus Plenty heraus anklickbar.
-    const invoiceAttached = Boolean(invoice && input.invoiceUrl?.trim());
-    if (invoice && !invoiceAttached) {
-      warnings.push('Rechnung im App-Storage gespeichert, aber kein Download-Link erzeugt.');
+    // Rechnung als echte Datei in das Merkmal „Dokument 1" der Variante legen.
+    // Entscheidend: Der Upload adressiert die VERKNÜPFUNGS-ZEILE (deren ID), nicht
+    // die Merkmals-ID – der gespeicherte Wert lautet danach "<zeilenId>/<datei>".
+    let invoiceAttached = false;
+    if (invoice) {
+      const propertyId = cfg.invoicePropertyId;
+      if (!propertyId) {
+        warnings.push(
+          `Rechnung nicht angehängt – PLENTY_INVOICE_PROPERTY_ID ist nicht gesetzt (ID von „${cfg.invoicePropertyName}").`,
+        );
+      } else {
+        try {
+          const { relationId, note } = await linkVariationProperty(cfg, token, itemId, variationId, propertyId);
+          const uploadNote = await uploadVariationPropertyFile(cfg, token, itemId, variationId, relationId, invoice);
+          // Gegenprüfen, dass die Datei wirklich an der Variante hängt.
+          const rows = await getVariationProperties(cfg, token, itemId, variationId);
+          const row = rows.find((r) => Number(r?.id) === relationId);
+          invoiceAttached = typeof row?.valueFile === 'string' && row.valueFile.includes('/');
+          if (!invoiceAttached) {
+            warnings.push(`Rechnung nicht abgelegt – ${note} | ${uploadNote} | valueFile="${row?.valueFile ?? ''}"`);
+          }
+        } catch (e) {
+          warnings.push(`Rechnung nicht angehängt: ${(e as Error).message.replace(/\s+/g, ' ').slice(0, 250)}`);
+        }
+      }
     }
 
     return {
