@@ -39,7 +39,7 @@ interface SyncInfo {
 const EMPTY = { company: '', location: '', contactInternal: '', contactExternal: '', notes: '', orderType: '' };
 
 /** Sichtbarer Build-Marker – so erkennt man sofort, ob die neue Version live ist. */
-const APP_BUILD = 'rechnung-storage-diag';
+const APP_BUILD = 'rechnung-storage-fix';
 
 export default function ProjektDashboard({
   initial,

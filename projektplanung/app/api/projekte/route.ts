@@ -26,9 +26,10 @@ async function storeInvoice(
   await admin.storage.createBucket(INVOICE_BUCKET, { public: false }).catch(() => {});
   const safe = invoice.filename.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-100) || 'rechnung';
   const path = `${userId}/${projektId}-${safe}`;
-  const up = await admin.storage
-    .from(INVOICE_BUCKET)
-    .upload(path, invoice.bytes, { contentType: invoice.contentType, upsert: true });
+  // Content-Type auf reines ASCII begrenzen (sonst „ByteString"-Fehler im Header).
+  const contentType = /^[\x20-\x7E]+$/.test(invoice.contentType) ? invoice.contentType : 'application/octet-stream';
+  const bytes = new Uint8Array(invoice.bytes);
+  const up = await admin.storage.from(INVOICE_BUCKET).upload(path, bytes, { contentType, upsert: true });
   if (up.error) return { error: up.error.message };
   const signed = await admin.storage.from(INVOICE_BUCKET).createSignedUrl(path, SIGNED_URL_TTL);
   return { path, url: signed.data?.signedUrl ?? '' };
