@@ -115,6 +115,12 @@ async function login(cfg: PlentyConfig): Promise<string> {
   return token;
 }
 
+/** Verwirft den gecachten Token (erzwingt beim nächsten Aufruf einen neuen Login). */
+function invalidateToken(): void {
+  cachedToken = null;
+  cachedTokenExpiry = 0;
+}
+
 /** Interner Fetch-Helfer mit Bearer-Token, JSON und Fehlerbehandlung. */
 async function api<T>(cfg: PlentyConfig, token: string, path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${cfg.baseUrl}${path}`, {
@@ -160,7 +166,10 @@ async function findChildCategory(
   name: string,
 ): Promise<number | null> {
   const wanted = name.trim().toLowerCase();
-  // Plenty liefert Kategorien seitenweise; wir gehen die Kinder des Elternknotens durch.
+  // Plenty liefert Kategorien seitenweise; wir gehen sie durch und matchen NUR
+  // direkte Kinder des Elternknotens (parentCategoryId), damit garantiert keine
+  // zweite Unterkategorie gleichen Namens angelegt wird. Der parentCategoryId-
+  // Guard greift auch, falls der Query-Filter serverseitig ignoriert würde.
   let page = 1;
   const perPage = 50;
   for (;;) {
@@ -171,10 +180,11 @@ async function findChildCategory(
     );
     const entries = res?.entries ?? [];
     for (const cat of entries) {
+      if (Number(cat.parentCategoryId) !== Number(parentId)) continue;
       const match = (cat.details ?? []).some((d) => (d.name ?? '').trim().toLowerCase() === wanted);
       if (match) return cat.id;
     }
-    if (!entries.length || res?.isLastPage || page > 20) break;
+    if (!entries.length || res?.isLastPage || page > 40) break;
     page += 1;
   }
   return null;
@@ -372,7 +382,20 @@ export async function syncProjektToPlenty(
         await addVariationBarcode(cfg, token, itemId, variationId, cfg.eanBarcodeId, ean);
         eanAttached = true;
       } catch (err) {
-        warnings.push(`EAN-Barcode konnte nicht gesetzt werden: ${(err as Error).message}`);
+        // 403 direkt nach dem Freischalten von Rechten liegt oft an einem noch
+        // gecachten Token mit alten Scopes → neu einloggen und einmal wiederholen.
+        if (String((err as Error).message).includes('HTTP 403')) {
+          try {
+            invalidateToken();
+            const freshToken = await login(cfg);
+            await addVariationBarcode(cfg, freshToken, itemId, variationId, cfg.eanBarcodeId, ean);
+            eanAttached = true;
+          } catch (err2) {
+            warnings.push(`EAN-Barcode konnte nicht gesetzt werden: ${(err2 as Error).message}`);
+          }
+        } else {
+          warnings.push(`EAN-Barcode konnte nicht gesetzt werden: ${(err as Error).message}`);
+        }
       }
     } else {
       warnings.push('PLENTY_EAN_BARCODE_ID nicht gesetzt – EAN erzeugt, aber kein Barcode am Artikel hinterlegt.');

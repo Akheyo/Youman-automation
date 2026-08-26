@@ -11,9 +11,9 @@ describe('buildCategoryName', () => {
 });
 
 describe('buildItemName', () => {
-  it('enthält Firma, Ort und Datum', () => {
-    const name = buildItemName({ company: 'Bosch GmbH', location: 'Esslingen' }, new Date('2026-08-25T10:00:00'));
-    expect(name).toBe('Bosch GmbH Esslingen – 25.08.2026');
+  it('enthält Firma, Ort und Datum (ohne Bindestrich)', () => {
+    const name = buildItemName({ company: 'Bosch', location: 'Essen' }, new Date('2023-08-26T10:00:00'));
+    expect(name).toBe('Bosch Essen 26.08.2023');
   });
 });
 

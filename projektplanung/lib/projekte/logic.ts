@@ -26,7 +26,8 @@ export function buildCategoryName(company: string, location: string): string {
  */
 export function buildItemName(input: ProjektInput, date: Date): string {
   const datum = formatDateDE(date);
-  return `${buildCategoryName(input.company, input.location)} – ${datum}`;
+  // Format: "Firma Ort Datum", z. B. "Bosch Essen 26.08.2023"
+  return `${buildCategoryName(input.company, input.location)} ${datum}`;
 }
 
 /**
