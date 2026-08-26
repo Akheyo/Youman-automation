@@ -249,22 +249,44 @@ async function createItem(
   cfg: PlentyConfig,
   token: string,
   categoryId: number,
-): Promise<{ itemId: number; variationId: number }> {
-  const item = await api<PlentyItem>(cfg, token, '/rest/items', {
-    method: 'POST',
-    body: JSON.stringify({
+  barcode: { barcodeId: number; code: string } | null,
+): Promise<{ itemId: number; variationId: number; eanAttached: boolean }> {
+  const buildBody = (withBarcode: boolean) =>
+    JSON.stringify({
       variations: [
         {
           variationCategories: [{ categoryId }],
           unit: { unitId: 1, content: 1 },
+          ...(withBarcode && barcode
+            ? { variationBarcodes: [{ barcodeId: barcode.barcodeId, code: barcode.code }] }
+            : {}),
         },
       ],
-    }),
-  });
+    });
+
+  let item: PlentyItem | null = null;
+  let eanAttached = false;
+
+  // 1) Versuch: Artikel MIT eingebettetem Barcode (läuft über das Artikel-Recht).
+  if (barcode) {
+    try {
+      item = await api<PlentyItem>(cfg, token, '/rest/items', { method: 'POST', body: buildBody(true) });
+      eanAttached = true;
+    } catch (err) {
+      if (!String((err as Error).message).includes('HTTP 403')) throw err;
+      item = null; // Barcode inline nicht erlaubt → ohne Barcode neu anlegen
+    }
+  }
+  // 2) Ohne Barcode (Erstanlage oder Fallback nach 403).
+  if (!item) {
+    item = await api<PlentyItem>(cfg, token, '/rest/items', { method: 'POST', body: buildBody(false) });
+    eanAttached = false;
+  }
+
   if (!item?.id) throw new Error('Artikel-Anlage lieferte keine ID.');
   const mainVar = (item.variations ?? []).find((v) => v.isMain) ?? item.variations?.[0];
   if (!mainVar?.id) throw new Error('Artikel angelegt, aber keine Varianten-ID erhalten.');
-  return { itemId: item.id, variationId: mainVar.id };
+  return { itemId: item.id, variationId: mainVar.id, eanAttached };
 }
 
 /** Setzt Name + Beschreibung der Variante (eigener Endpunkt laut Doku). */
@@ -363,7 +385,14 @@ export async function syncProjektToPlenty(
     );
 
     const itemName = buildItemName(input, date);
-    const { itemId, variationId } = await createItem(cfg, token, categoryId);
+    // Artikel anlegen – Barcode wird nach Möglichkeit direkt eingebettet
+    // (läuft über das Artikel-Anlegen-Recht statt des separaten Barcode-Rechts).
+    const { itemId, variationId, eanAttached: inlineAttached } = await createItem(
+      cfg,
+      token,
+      categoryId,
+      cfg.eanBarcodeId ? { barcodeId: cfg.eanBarcodeId, code: ean } : null,
+    );
 
     // Name + Beschreibung der Variante setzen (nicht blockierend).
     try {
@@ -375,29 +404,30 @@ export async function syncProjektToPlenty(
       warnings.push(`Artikeltext konnte nicht gesetzt werden: ${(err as Error).message}`);
     }
 
-    // EAN als Barcode an die Variante hängen (nicht blockierend – Artikel steht).
-    let eanAttached = false;
-    if (cfg.eanBarcodeId) {
+    // Falls der Barcode nicht schon eingebettet gesetzt wurde: separater Endpunkt.
+    let eanAttached = inlineAttached;
+    if (!eanAttached && cfg.eanBarcodeId) {
       try {
         await addVariationBarcode(cfg, token, itemId, variationId, cfg.eanBarcodeId, ean);
         eanAttached = true;
       } catch (err) {
-        // 403 direkt nach dem Freischalten von Rechten liegt oft an einem noch
-        // gecachten Token mit alten Scopes → neu einloggen und einmal wiederholen.
         if (String((err as Error).message).includes('HTTP 403')) {
+          // Frischer Login (falls Rechte gerade erst gesetzt wurden), einmal wiederholen.
           try {
             invalidateToken();
             const freshToken = await login(cfg);
             await addVariationBarcode(cfg, freshToken, itemId, variationId, cfg.eanBarcodeId, ean);
             eanAttached = true;
           } catch (err2) {
-            warnings.push(`EAN-Barcode konnte nicht gesetzt werden: ${(err2 as Error).message}`);
+            warnings.push(
+              `EAN-Barcode konnte nicht gesetzt werden – dem Plenty-Benutzer fehlt das Recht „item.item.variation.barcode.create". (${(err2 as Error).message})`,
+            );
           }
         } else {
           warnings.push(`EAN-Barcode konnte nicht gesetzt werden: ${(err as Error).message}`);
         }
       }
-    } else {
+    } else if (!cfg.eanBarcodeId) {
       warnings.push('PLENTY_EAN_BARCODE_ID nicht gesetzt – EAN erzeugt, aber kein Barcode am Artikel hinterlegt.');
     }
 
