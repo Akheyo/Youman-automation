@@ -5,8 +5,11 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { syncProjektToPlenty } from '@/lib/plenty/client';
 import type { ProjektInput } from '@/lib/projekte/logic';
+
+const SIGNED_URL_TTL = 60 * 60 * 24 * 3650; // ~10 Jahre
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -35,6 +38,16 @@ export async function POST(_request: Request, { params }: { params: { id: string
     notes: row.notes ?? undefined,
     orderType: row.order_type ?? undefined,
   };
+  // Falls eine Rechnung hinterlegt ist: frischen Link erzeugen, damit er wieder
+  // in der Plenty-Artikelbeschreibung landet.
+  if (row.invoice_path) {
+    const admin = createAdminClient();
+    if (admin) {
+      const signed = await admin.storage.from('rechnungen').createSignedUrl(row.invoice_path, SIGNED_URL_TTL);
+      if (signed.data?.signedUrl) input.invoiceUrl = signed.data.signedUrl;
+    }
+  }
+
   const date = row.created_at ? new Date(row.created_at) : new Date();
   const eanSeed = Date.now() * 1000 + Math.floor(Math.random() * 1000);
   const sync = await syncProjektToPlenty(input, date, eanSeed, row.ean);
@@ -64,6 +77,8 @@ export async function POST(_request: Request, { params }: { params: { id: string
       ean: sync.ean,
       categoryCreated: sync.categoryCreated,
       eanAttached: sync.eanAttached,
+      invoiceAttached: sync.invoiceAttached,
+      invoiceStored: Boolean(row.invoice_path),
       warnings: sync.warnings,
       error: sync.error,
     },
