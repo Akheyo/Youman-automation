@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ORDER_TYPES } from '@/lib/projekte/logic';
 import styles from './projekte.module.css';
 
 export interface Projekt {
@@ -10,6 +11,8 @@ export interface Projekt {
   contact_internal: string | null;
   contact_external: string | null;
   notes: string | null;
+  order_type: string | null;
+  invoice_name: string | null;
   category_name: string | null;
   ean: string | null;
   plenty_category_id: number | null;
@@ -26,11 +29,12 @@ interface SyncInfo {
   ean: string;
   categoryCreated: boolean;
   eanAttached: boolean;
+  invoiceAttached: boolean;
   warnings: string[];
   error: string | null;
 }
 
-const EMPTY = { company: '', location: '', contactInternal: '', contactExternal: '', notes: '' };
+const EMPTY = { company: '', location: '', contactInternal: '', contactExternal: '', notes: '', orderType: '' };
 
 export default function ProjektDashboard({
   initial,
@@ -48,6 +52,9 @@ export default function ProjektDashboard({
   const [result, setResult] = useState<{ projekt: Projekt; sync: SyncInfo } | null>(null);
   const [query, setQuery] = useState('');
   const [retrying, setRetrying] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const categoryPreview = useMemo(() => {
@@ -84,16 +91,23 @@ export default function ProjektDashboard({
 
     setBusy(true);
     try {
-      const res = await fetch('/api/projekte', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
+      const fd = new FormData();
+      fd.append('company', form.company);
+      fd.append('location', form.location);
+      fd.append('contactInternal', form.contactInternal);
+      fd.append('contactExternal', form.contactExternal);
+      fd.append('notes', form.notes);
+      fd.append('orderType', form.orderType);
+      if (file) fd.append('invoice', file);
+
+      const res = await fetch('/api/projekte', { method: 'POST', body: fd });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? `Serverfehler (HTTP ${res.status}).`);
       setResult({ projekt: data.projekt, sync: data.sync });
       setProjekte((prev) => [data.projekt as Projekt, ...prev.filter((p) => p.id !== data.projekt.id)]);
       setForm(EMPTY);
+      setFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -190,6 +204,21 @@ export default function ProjektDashboard({
               </Field>
             </div>
 
+            <Field label="Auftragstyp">
+              <select
+                className={styles.input}
+                value={form.orderType}
+                onChange={(e) => setForm({ ...form, orderType: e.target.value })}
+              >
+                <option value="">— bitte wählen —</option>
+                {ORDER_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
             <Field label="Anmerkungen">
               <textarea
                 className={styles.textarea}
@@ -198,6 +227,63 @@ export default function ProjektDashboard({
                 placeholder="Randnotizen zum Projekt (optional)…"
                 rows={3}
               />
+            </Field>
+
+            <Field label="Rechnung (wird als Dokument 1 an den Artikel gehängt)">
+              <div
+                className={`${styles.dropzone} ${dragOver ? styles.dropzoneOver : ''} ${file ? styles.dropzoneFilled : ''}`}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDragOver(false);
+                  const f = e.dataTransfer.files?.[0];
+                  if (f) setFile(f);
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,image/*"
+                  className={styles.fileInputHidden}
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                />
+                {file ? (
+                  <span className={styles.fileChosen}>
+                    <DocIcon />
+                    <span className={styles.fileName}>{file.name}</span>
+                    <button
+                      type="button"
+                      className={styles.fileRemove}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFile(null);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      aria-label="Datei entfernen"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ) : (
+                  <span className={styles.dropzoneHint}>
+                    <UploadIcon />
+                    Rechnung hierher ziehen oder klicken zum Auswählen
+                  </span>
+                )}
+              </div>
             </Field>
 
             {categoryPreview && (
@@ -249,9 +335,14 @@ export default function ProjektDashboard({
                   <div className={styles.itemMain}>
                     <span className={styles.itemName}>{p.category_name || `${p.company} ${p.location}`}</span>
                     <span className={styles.itemMeta}>
-                      {[p.contact_internal, p.contact_external].filter(Boolean).join(' · ') || '—'}
+                      {[p.order_type, p.contact_internal, p.contact_external].filter(Boolean).join(' · ') || '—'}
                     </span>
                     {p.ean && <span className={styles.itemEan}>EAN {p.ean}</span>}
+                    {p.invoice_name && (
+                      <span className={styles.itemNote} title={p.invoice_name}>
+                        <ClipIcon /> {p.invoice_name}
+                      </span>
+                    )}
                     {p.notes && <span className={styles.itemNote} title={p.notes}>✎ {p.notes}</span>}
                   </div>
                   <div className={styles.itemSide}>
@@ -368,6 +459,18 @@ function ResultCard({
             <dd className={styles.mono}>#{projekt.plenty_item_id}</dd>
           </div>
         )}
+        {projekt.order_type && (
+          <div>
+            <dt>Auftragstyp</dt>
+            <dd>{projekt.order_type}</dd>
+          </div>
+        )}
+        {sync.invoiceAttached && (
+          <div>
+            <dt>Rechnung</dt>
+            <dd>als „Dokument 1" angehängt</dd>
+          </div>
+        )}
       </dl>
 
       {state === 'error' && (
@@ -415,6 +518,30 @@ function CheckIcon() {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+function UploadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="M17 8l-5-5-5 5" />
+      <path d="M12 3v12" />
+    </svg>
+  );
+}
+function DocIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+    </svg>
+  );
+}
+function ClipIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ display: 'inline', verticalAlign: '-2px' }}>
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
     </svg>
   );
 }

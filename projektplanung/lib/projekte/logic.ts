@@ -3,12 +3,23 @@
  */
 
 /** Ein Projekt-Datensatz, wie ihn das Formular liefert. */
+/** Erlaubte Auftragstypen. */
+export const ORDER_TYPES = ['Demontage', 'Warenankauf', 'Auktion'] as const;
+export type OrderType = (typeof ORDER_TYPES)[number];
+
 export interface ProjektInput {
   company: string; // Firmenname, z. B. "Bosch GmbH"
   location: string; // Ort, z. B. "Esslingen"
   contactInternal?: string; // Ansprechpartner intern
   contactExternal?: string; // Ansprechpartner extern
   notes?: string; // Anmerkungen / Randnotizen
+  orderType?: string; // Auftragstyp (Demontage | Warenankauf | Auktion)
+}
+
+/** Normalisiert/validiert den Auftragstyp; gibt null zurück, wenn ungültig/leer. */
+export function normalizeOrderType(value?: string): OrderType | null {
+  const match = ORDER_TYPES.find((t) => t.toLowerCase() === (value ?? '').trim().toLowerCase());
+  return match ?? null;
 }
 
 /**
@@ -40,6 +51,7 @@ export function buildItemDescription(input: ProjektInput, date: Date): string {
     `Ort: ${input.location.trim()}`,
     `Datum: ${formatDateDE(date)}`,
   ];
+  if (input.orderType?.trim()) lines.push(`Auftragstyp: ${input.orderType.trim()}`);
   if (input.contactInternal?.trim()) lines.push(`Ansprechpartner intern: ${input.contactInternal.trim()}`);
   if (input.contactExternal?.trim()) lines.push(`Ansprechpartner extern: ${input.contactExternal.trim()}`);
   if (input.notes?.trim()) lines.push(`Anmerkungen: ${input.notes.trim()}`);

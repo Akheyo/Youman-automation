@@ -96,6 +96,40 @@
 }
 .textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
 
+/* ---- Rechnung: Drag & Drop ---- */
+.dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 1rem;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-softer);
+  color: var(--muted);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+.dropzone:hover { border-color: var(--blue); color: var(--blue-h); }
+.dropzoneOver { border-color: var(--blue); background: var(--blue-soft); color: var(--blue-h); }
+.dropzoneFilled { border-style: solid; border-color: var(--green); background: var(--green-soft); color: var(--green); cursor: default; }
+.dropzoneHint { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+.fileInputHidden { display: none; }
+.fileChosen { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; max-width: 100%; }
+.fileName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+.fileRemove {
+  width: 22px; height: 22px;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+  border-radius: 50%;
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.fileRemove:hover { background: rgba(0, 0, 0, 0.12); }
+
 .preview { margin: 0; font-size: 0.85rem; color: var(--muted); }
 .previewTag {
   display: inline-block;

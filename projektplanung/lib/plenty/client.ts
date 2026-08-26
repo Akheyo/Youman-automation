@@ -42,6 +42,7 @@ export interface PlentyConfig {
   projekteCategoryId: number | null;
   eanBarcodeId: number | null;
   eanPrefix: string;
+  invoicePropertyId: number | null;
 }
 
 export function getPlentyConfig(): PlentyConfig {
@@ -62,6 +63,7 @@ export function getPlentyConfig(): PlentyConfig {
       : null,
     eanBarcodeId: process.env.PLENTY_EAN_BARCODE_ID ? Number(process.env.PLENTY_EAN_BARCODE_ID) : null,
     eanPrefix: process.env.PLENTY_EAN_PREFIX ?? '20',
+    invoicePropertyId: process.env.PLENTY_INVOICE_PROPERTY_ID ? Number(process.env.PLENTY_INVOICE_PROPERTY_ID) : null,
   };
 }
 
@@ -303,6 +305,53 @@ async function setVariationDescription(
   });
 }
 
+/** Eine hochzuladende Rechnung (Datei). */
+export interface InvoiceFile {
+  bytes: Buffer;
+  filename: string;
+  contentType: string;
+}
+
+/** Verknüpft eine Eigenschaft (Property) mit einer Variante (idempotent gedacht). */
+async function linkVariationProperty(
+  cfg: PlentyConfig,
+  token: string,
+  itemId: number,
+  variationId: number,
+  propertyId: number,
+): Promise<void> {
+  await api(cfg, token, `/rest/items/${itemId}/variations/${variationId}/variation_properties`, {
+    method: 'POST',
+    body: JSON.stringify({ propertyId }),
+  });
+}
+
+/**
+ * Lädt eine Datei in eine Varianteneigenschaft vom Typ „Datei" hoch
+ * (z. B. „Dokument 1"). Nutzt multipart/form-data – daher eigener fetch statt api().
+ */
+async function uploadVariationPropertyFile(
+  cfg: PlentyConfig,
+  token: string,
+  itemId: number,
+  variationId: number,
+  propertyId: number,
+  file: InvoiceFile,
+): Promise<void> {
+  const form = new FormData();
+  form.append('file', new Blob([new Uint8Array(file.bytes)], { type: file.contentType }), file.filename);
+  const path = `/rest/items/${itemId}/variations/${variationId}/variation_properties/${propertyId}/upload`;
+  const res = await fetch(`${cfg.baseUrl}${path}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }, // Content-Type setzt fetch (Boundary) selbst
+    body: form,
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Plenty POST ${path} → HTTP ${res.status}${body ? `: ${body.slice(0, 300)}` : ''}`);
+  }
+}
+
 /** Hängt einen Barcode (z. B. EAN13) an die Variante. */
 async function addVariationBarcode(
   cfg: PlentyConfig,
@@ -332,6 +381,7 @@ export interface PlentySyncResult {
   itemId: number | null;
   variationId: number | null;
   eanAttached: boolean;
+  invoiceAttached: boolean;
   warnings: string[];
   error: string | null;
 }
@@ -346,6 +396,7 @@ export async function syncProjektToPlenty(
   date: Date,
   eanSeed: number,
   existingEan?: string | null,
+  invoice?: InvoiceFile | null,
 ): Promise<PlentySyncResult> {
   const cfg = getPlentyConfig();
   const categoryName = buildCategoryName(input.company, input.location);
@@ -363,6 +414,7 @@ export async function syncProjektToPlenty(
     itemId: null,
     variationId: null,
     eanAttached: false,
+    invoiceAttached: false,
     warnings,
     error: null,
   };
@@ -431,6 +483,27 @@ export async function syncProjektToPlenty(
       warnings.push('PLENTY_EAN_BARCODE_ID nicht gesetzt – EAN erzeugt, aber kein Barcode am Artikel hinterlegt.');
     }
 
+    // Rechnung als Datei an die Varianteneigenschaft „Dokument 1" hängen (nicht blockierend).
+    let invoiceAttached = false;
+    if (invoice) {
+      if (!cfg.invoicePropertyId) {
+        warnings.push('PLENTY_INVOICE_PROPERTY_ID nicht gesetzt – Rechnung wurde nicht als Dokument angehängt.');
+      } else {
+        try {
+          // Property zuerst mit der Variante verknüpfen (falls noch nicht vorhanden).
+          try {
+            await linkVariationProperty(cfg, token, itemId, variationId, cfg.invoicePropertyId);
+          } catch {
+            /* evtl. bereits verknüpft – ignorieren, Upload folgt trotzdem */
+          }
+          await uploadVariationPropertyFile(cfg, token, itemId, variationId, cfg.invoicePropertyId, invoice);
+          invoiceAttached = true;
+        } catch (err) {
+          warnings.push(`Rechnung konnte nicht als Dokument angehängt werden: ${(err as Error).message}`);
+        }
+      }
+    }
+
     return {
       ...base,
       ok: true,
@@ -439,6 +512,7 @@ export async function syncProjektToPlenty(
       itemId,
       variationId,
       eanAttached,
+      invoiceAttached,
     };
   } catch (err) {
     return { ...base, error: (err as Error).message };

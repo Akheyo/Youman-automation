@@ -16,6 +16,8 @@ create table if not exists public.projekte (
   contact_internal   text,                   -- Ansprechpartner intern
   contact_external   text,                   -- Ansprechpartner extern
   notes              text,                   -- Anmerkungen / Randnotizen
+  order_type         text,                   -- Auftragstyp: Demontage | Warenankauf | Auktion
+  invoice_name       text,                   -- Rechnung: Original-Dateiname (Upload nach Plenty)
 
   -- Ergebnis der Plenty-Synchronisation
   category_name      text,                   -- "Firma Ort" (Name der Unterkategorie)
@@ -38,8 +40,10 @@ create policy "projekte own" on public.projekte for all
 create index if not exists projekte_user_created_idx
   on public.projekte (user_id, created_at desc);
 
--- Falls die Tabelle schon existiert: Spalte nachrüsten (Migration).
+-- Falls die Tabelle schon existiert: Spalten nachrüsten (Migration).
 alter table public.projekte add column if not exists notes text;
+alter table public.projekte add column if not exists order_type text;   -- Demontage | Warenankauf | Auktion
+alter table public.projekte add column if not exists invoice_name text; -- Dateiname der nach Plenty hochgeladenen Rechnung
 
 -- Volltext-freundliche Suche über Firma/Ort/Ansprechpartner/Anmerkungen.
 drop index if exists projekte_search_idx;
