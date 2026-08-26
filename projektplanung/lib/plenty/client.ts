@@ -43,6 +43,7 @@ export interface PlentyConfig {
   eanBarcodeId: number | null;
   eanPrefix: string;
   invoicePropertyId: number | null;
+  invoicePropertyName: string;
 }
 
 export function getPlentyConfig(): PlentyConfig {
@@ -64,6 +65,7 @@ export function getPlentyConfig(): PlentyConfig {
     eanBarcodeId: process.env.PLENTY_EAN_BARCODE_ID ? Number(process.env.PLENTY_EAN_BARCODE_ID) : null,
     eanPrefix: process.env.PLENTY_EAN_PREFIX ?? '20',
     invoicePropertyId: process.env.PLENTY_INVOICE_PROPERTY_ID ? Number(process.env.PLENTY_INVOICE_PROPERTY_ID) : null,
+    invoicePropertyName: process.env.PLENTY_INVOICE_PROPERTY_NAME ?? 'Dokument 1',
   };
 }
 
@@ -305,6 +307,39 @@ async function setVariationDescription(
   });
 }
 
+/**
+ * Ermittelt die ID eines Merkmals/Properties anhand seines Namens
+ * (z. B. „Dokument 1") über /rest/items/properties. Gibt null zurück, wenn nicht
+ * gefunden (dann gehört das Merkmal evtl. zum neueren Eigenschaften-System).
+ */
+async function findPropertyIdByName(
+  cfg: PlentyConfig,
+  token: string,
+  name: string,
+): Promise<number | null> {
+  const wanted = name.trim().toLowerCase();
+  let page = 1;
+  for (;;) {
+    const res = await api<{ entries?: any[]; isLastPage?: boolean }>(
+      cfg,
+      token,
+      `/rest/items/properties?itemsPerPage=50&page=${page}&with=names`,
+    );
+    const entries = res?.entries ?? [];
+    for (const p of entries) {
+      const names: any[] = p?.names ?? p?.property?.names ?? [];
+      const backend = String(p?.backendName ?? p?.property?.backendName ?? '').trim().toLowerCase();
+      const nameHit = names.some(
+        (n) => String(n?.name ?? n?.value ?? '').trim().toLowerCase() === wanted,
+      );
+      if (backend === wanted || nameHit) return Number(p.id);
+    }
+    if (!entries.length || res?.isLastPage || page > 20) break;
+    page += 1;
+  }
+  return null;
+}
+
 /** Eine hochzuladende Rechnung (Datei). */
 export interface InvoiceFile {
   bytes: Buffer;
@@ -503,21 +538,34 @@ export async function syncProjektToPlenty(
     // Rechnung als Datei an die Varianteneigenschaft „Dokument 1" hängen (nicht blockierend).
     let invoiceAttached = false;
     if (invoice) {
-      if (!cfg.invoicePropertyId) {
-        warnings.push('PLENTY_INVOICE_PROPERTY_ID nicht gesetzt – Rechnung wurde nicht als Dokument angehängt.');
+      // Property-ID zuverlässig über den Namen ermitteln (feste IDs sind fehleranfällig),
+      // Fallback auf PLENTY_INVOICE_PROPERTY_ID.
+      let propertyId: number | null = null;
+      let resolveNote = '';
+      try {
+        propertyId = await findPropertyIdByName(cfg, token, cfg.invoicePropertyName);
+        resolveNote = propertyId
+          ? `„${cfg.invoicePropertyName}"=ID ${propertyId}`
+          : `„${cfg.invoicePropertyName}" nicht unter /rest/items/properties gefunden`;
+      } catch (e) {
+        resolveNote = `Property-Suche fehlgeschlagen: ${(e as Error).message.replace(/\s+/g, ' ').slice(0, 150)}`;
+      }
+      if (!propertyId) propertyId = cfg.invoicePropertyId;
+
+      if (!propertyId) {
+        warnings.push(`Rechnung nicht angehängt – ${resolveNote}.`);
       } else {
-        // Property zuerst mit der Variante verknüpfen (Voraussetzung für den Upload).
         let linkNote = '';
         try {
-          linkNote = `Verknüpfung ${await linkVariationProperty(cfg, token, itemId, variationId, cfg.invoicePropertyId)}`;
+          linkNote = `Verknüpfung ${await linkVariationProperty(cfg, token, itemId, variationId, propertyId)}`;
         } catch (e) {
           linkNote = `Verknüpfung fehlgeschlagen: ${(e as Error).message}`;
         }
         try {
-          await uploadVariationPropertyFile(cfg, token, itemId, variationId, cfg.invoicePropertyId, invoice);
+          await uploadVariationPropertyFile(cfg, token, itemId, variationId, propertyId, invoice);
           invoiceAttached = true;
         } catch (err) {
-          warnings.push(`Rechnung konnte nicht als Dokument angehängt werden: ${(err as Error).message} [${linkNote}]`);
+          warnings.push(`Rechnung nicht angehängt: ${(err as Error).message} [${resolveNote}] [${linkNote}]`);
         }
       }
     }
