@@ -387,30 +387,39 @@ async function uploadVariationPropertyFile(
   token: string,
   itemId: number,
   variationId: number,
-  relationId: number,
+  ids: { relationId: number; propertyId: number },
   file: InvoiceFile,
 ): Promise<string> {
-  // Ein echt gespeicherter Wert hat die Form "<relationId>/<datei>".
+  // Ein echt gespeicherter Wert hat die Form "<id>/<datei>" – ein blanker
+  // Dateiname bedeutet, dass Plenty die Binärdatei NICHT abgelegt hat.
   const storedOk = (v: unknown) => typeof v === 'string' && v.includes('/');
-  const path = `/rest/items/${itemId}/variations/${variationId}/variation_properties/${relationId}/upload`;
+  const base = `/rest/items/${itemId}/variations/${variationId}/variation_properties`;
+  // Beide Adressierungen probieren: Merkmals-ID (liefert HTTP 200) und
+  // Verknüpfungs-Zeilen-ID – welche Plenty akzeptiert, zeigt die Antwort.
+  const targets = [
+    { label: `property=${ids.propertyId}`, path: `${base}/${ids.propertyId}/upload` },
+    { label: `relation=${ids.relationId}`, path: `${base}/${ids.relationId}/upload` },
+  ];
   const notes: string[] = [];
-  for (const field of ['file', 'files', 'files[]']) {
-    const form = new FormData();
-    form.append(field, new Blob([new Uint8Array(file.bytes)], { type: file.contentType }), file.filename);
-    const res = await fetch(`${cfg.baseUrl}${path}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-      body: form,
-    });
-    const body = await res.text().catch(() => '');
-    let valueFile: unknown;
-    try {
-      valueFile = JSON.parse(body)?.valueFile;
-    } catch {
-      /* kein JSON */
+  for (const t of targets) {
+    for (const field of ['file', 'files']) {
+      const form = new FormData();
+      form.append(field, new Blob([new Uint8Array(file.bytes)], { type: file.contentType }), file.filename);
+      const res = await fetch(`${cfg.baseUrl}${t.path}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        body: form,
+      });
+      const body = await res.text().catch(() => '');
+      let valueFile: unknown;
+      try {
+        valueFile = JSON.parse(body)?.valueFile;
+      } catch {
+        /* kein JSON */
+      }
+      if (res.ok && storedOk(valueFile)) return `gespeichert als "${valueFile}" (${t.label}, feld="${field}")`;
+      notes.push(`${t.label} feld="${field}" HTTP ${res.status}${valueFile ? ` valueFile="${valueFile}"` : ''}`);
     }
-    if (res.ok && storedOk(valueFile)) return `gespeichert als "${valueFile}"`;
-    notes.push(`feld="${field}" HTTP ${res.status}${valueFile ? ` valueFile="${valueFile}"` : ''}`);
   }
   throw new Error(`Upload ohne Pfad – ${notes.join(' | ')}`);
 }
@@ -560,7 +569,14 @@ export async function syncProjektToPlenty(
       } else {
         try {
           const { relationId, note } = await linkVariationProperty(cfg, token, itemId, variationId, propertyId);
-          const uploadNote = await uploadVariationPropertyFile(cfg, token, itemId, variationId, relationId, invoice);
+          const uploadNote = await uploadVariationPropertyFile(
+            cfg,
+            token,
+            itemId,
+            variationId,
+            { relationId, propertyId },
+            invoice,
+          );
           // Gegenprüfen, dass die Datei wirklich an der Variante hängt.
           const rows = await getVariationProperties(cfg, token, itemId, variationId);
           const row = rows.find((r) => Number(r?.id) === relationId);
@@ -599,4 +615,29 @@ export async function testPlentyConnection(): Promise<{ ok: boolean; message: st
   } catch (err) {
     return { ok: false, message: (err as Error).message };
   }
+}
+
+/**
+ * Diagnose: liest die Varianteneigenschaften eines Artikels roh aus, damit man
+ * einen MANUELL in Plenty hochgeladenen Beleg mit dem Ergebnis der API
+ * vergleichen kann (welche Felder setzt Plenty wirklich?).
+ */
+export async function inspectItemProperties(itemId: number): Promise<any> {
+  const cfg = getPlentyConfig();
+  if (!plentyConfigured(cfg)) return { error: 'Plenty nicht konfiguriert.' };
+  const token = await login(cfg);
+  const item = await api<any>(cfg, token, `/rest/items/${itemId}/variations`);
+  const variations: any[] = Array.isArray(item) ? item : (item?.entries ?? []);
+  const out: any[] = [];
+  for (const v of variations.slice(0, 5)) {
+    let props: any = null;
+    let err: string | null = null;
+    try {
+      props = await api<any>(cfg, token, `/rest/items/${itemId}/variations/${v.id}/variation_properties`);
+    } catch (e) {
+      err = (e as Error).message.slice(0, 300);
+    }
+    out.push({ variationId: v.id, isMain: v.isMain, properties: props, error: err });
+  }
+  return { itemId, variations: out };
 }
