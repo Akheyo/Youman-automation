@@ -8,6 +8,7 @@ export interface ProjektInput {
   location: string; // Ort, z. B. "Esslingen"
   contactInternal?: string; // Ansprechpartner intern
   contactExternal?: string; // Ansprechpartner extern
+  notes?: string; // Anmerkungen / Randnotizen
 }
 
 /**
@@ -41,6 +42,7 @@ export function buildItemDescription(input: ProjektInput, date: Date): string {
   ];
   if (input.contactInternal?.trim()) lines.push(`Ansprechpartner intern: ${input.contactInternal.trim()}`);
   if (input.contactExternal?.trim()) lines.push(`Ansprechpartner extern: ${input.contactExternal.trim()}`);
+  if (input.notes?.trim()) lines.push(`Anmerkungen: ${input.notes.trim()}`);
   return lines.join('\n');
 }
 

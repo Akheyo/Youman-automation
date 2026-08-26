@@ -9,6 +9,7 @@ export interface Projekt {
   location: string;
   contact_internal: string | null;
   contact_external: string | null;
+  notes: string | null;
   category_name: string | null;
   ean: string | null;
   plenty_category_id: number | null;
@@ -29,7 +30,7 @@ interface SyncInfo {
   error: string | null;
 }
 
-const EMPTY = { company: '', location: '', contactInternal: '', contactExternal: '' };
+const EMPTY = { company: '', location: '', contactInternal: '', contactExternal: '', notes: '' };
 
 export default function ProjektDashboard({
   initial,
@@ -189,6 +190,16 @@ export default function ProjektDashboard({
               </Field>
             </div>
 
+            <Field label="Anmerkungen">
+              <textarea
+                className={styles.textarea}
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                placeholder="Randnotizen zum Projekt (optional)…"
+                rows={3}
+              />
+            </Field>
+
             {categoryPreview && (
               <p className={styles.preview}>
                 Unterkategorie: <span className={styles.previewTag}>{categoryPreview}</span>
@@ -241,6 +252,7 @@ export default function ProjektDashboard({
                       {[p.contact_internal, p.contact_external].filter(Boolean).join(' · ') || '—'}
                     </span>
                     {p.ean && <span className={styles.itemEan}>EAN {p.ean}</span>}
+                    {p.notes && <span className={styles.itemNote} title={p.notes}>✎ {p.notes}</span>}
                   </div>
                   <div className={styles.itemSide}>
                     <PlentyBadge status={p.plenty_status} />
