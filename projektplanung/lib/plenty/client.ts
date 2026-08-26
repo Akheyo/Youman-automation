@@ -319,14 +319,30 @@ async function linkVariationProperty(
   itemId: number,
   variationId: number,
   propertyId: number,
-): Promise<void> {
+): Promise<string> {
   const path = `/rest/items/${itemId}/variations/${variationId}/variation_properties`;
-  // Manche Plenty-Versionen erwarten ein Objekt, andere ein Array – beides versuchen.
-  try {
-    await api(cfg, token, path, { method: 'POST', body: JSON.stringify({ propertyId }) });
-  } catch (err) {
-    await api(cfg, token, path, { method: 'POST', body: JSON.stringify([{ propertyId }]) });
+  // Verschiedene Payload-Formate nacheinander versuchen; das erste, das Plenty
+  // akzeptiert, gewinnt. Bereits vorhandene Verknüpfung gilt als Erfolg.
+  const candidates: Array<{ label: string; body: string }> = [
+    { label: 'obj', body: JSON.stringify({ propertyId }) },
+    { label: 'obj+prop', body: JSON.stringify({ propertyId, property: { id: propertyId } }) },
+    { label: 'obj+var', body: JSON.stringify({ propertyId, variationId }) },
+    { label: 'obj:str', body: JSON.stringify({ propertyId: String(propertyId) }) },
+    { label: 'arr', body: JSON.stringify([{ propertyId }]) },
+    { label: 'arr+var', body: JSON.stringify([{ propertyId, variationId }]) },
+  ];
+  const errors: string[] = [];
+  for (const c of candidates) {
+    try {
+      await api(cfg, token, path, { method: 'POST', body: c.body });
+      return `ok (${c.label})`;
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (/exist|dupli|already|bereits|verknüpft/i.test(msg)) return `bereits verknüpft (${c.label})`;
+      errors.push(`${c.label}: ${msg.replace(/\s+/g, ' ').slice(0, 90)}`);
+    }
   }
+  throw new Error(`alle Formate abgelehnt – ${errors.join(' || ')}`);
 }
 
 /**
@@ -493,9 +509,9 @@ export async function syncProjektToPlenty(
         warnings.push('PLENTY_INVOICE_PROPERTY_ID nicht gesetzt – Rechnung wurde nicht als Dokument angehängt.');
       } else {
         // Property zuerst mit der Variante verknüpfen (Voraussetzung für den Upload).
-        let linkNote = 'Verknüpfung ok';
+        let linkNote = '';
         try {
-          await linkVariationProperty(cfg, token, itemId, variationId, cfg.invoicePropertyId);
+          linkNote = `Verknüpfung ${await linkVariationProperty(cfg, token, itemId, variationId, cfg.invoicePropertyId)}`;
         } catch (e) {
           linkNote = `Verknüpfung fehlgeschlagen: ${(e as Error).message}`;
         }
