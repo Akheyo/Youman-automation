@@ -320,10 +320,13 @@ async function linkVariationProperty(
   variationId: number,
   propertyId: number,
 ): Promise<void> {
-  await api(cfg, token, `/rest/items/${itemId}/variations/${variationId}/variation_properties`, {
-    method: 'POST',
-    body: JSON.stringify({ propertyId }),
-  });
+  const path = `/rest/items/${itemId}/variations/${variationId}/variation_properties`;
+  // Manche Plenty-Versionen erwarten ein Objekt, andere ein Array – beides versuchen.
+  try {
+    await api(cfg, token, path, { method: 'POST', body: JSON.stringify({ propertyId }) });
+  } catch (err) {
+    await api(cfg, token, path, { method: 'POST', body: JSON.stringify([{ propertyId }]) });
+  }
 }
 
 /**
@@ -489,17 +492,18 @@ export async function syncProjektToPlenty(
       if (!cfg.invoicePropertyId) {
         warnings.push('PLENTY_INVOICE_PROPERTY_ID nicht gesetzt – Rechnung wurde nicht als Dokument angehängt.');
       } else {
+        // Property zuerst mit der Variante verknüpfen (Voraussetzung für den Upload).
+        let linkNote = 'Verknüpfung ok';
         try {
-          // Property zuerst mit der Variante verknüpfen (falls noch nicht vorhanden).
-          try {
-            await linkVariationProperty(cfg, token, itemId, variationId, cfg.invoicePropertyId);
-          } catch {
-            /* evtl. bereits verknüpft – ignorieren, Upload folgt trotzdem */
-          }
+          await linkVariationProperty(cfg, token, itemId, variationId, cfg.invoicePropertyId);
+        } catch (e) {
+          linkNote = `Verknüpfung fehlgeschlagen: ${(e as Error).message}`;
+        }
+        try {
           await uploadVariationPropertyFile(cfg, token, itemId, variationId, cfg.invoicePropertyId, invoice);
           invoiceAttached = true;
         } catch (err) {
-          warnings.push(`Rechnung konnte nicht als Dokument angehängt werden: ${(err as Error).message}`);
+          warnings.push(`Rechnung konnte nicht als Dokument angehängt werden: ${(err as Error).message} [${linkNote}]`);
         }
       }
     }
