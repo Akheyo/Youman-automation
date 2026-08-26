@@ -79,19 +79,30 @@ async function login(cfg: PlentyConfig): Promise<string> {
     body: JSON.stringify({ username: cfg.user, password: cfg.password }),
   });
   const raw = await res.text();
+  const contentType = res.headers.get('content-type') ?? 'unbekannt';
+  const redirectInfo = res.redirected ? ` – WEITERGELEITET nach ${res.url} (dadurch geht ein POST verloren!)` : '';
+
   if (!res.ok) {
-    throw new Error(`Plenty-Login fehlgeschlagen (HTTP ${res.status}). Antwort: "${raw.slice(0, 200)}"`);
+    throw new Error(`Plenty-Login fehlgeschlagen (HTTP ${res.status}) bei ${res.url}${redirectInfo}. Antwort: "${raw.slice(0, 200)}"`);
   }
+
   let data: { access_token?: string; accessToken?: string; expires_in?: number };
   try {
     data = JSON.parse(raw);
   } catch {
+    const detail =
+      raw.trim() === ''
+        ? `leere Antwort (Content-Type: ${contentType})`
+        : `Body-Anfang: "${raw.slice(0, 160)}" (Content-Type: ${contentType})`;
     throw new Error(
-      `Plenty-Login: Antwort war kein JSON (HTTP ${res.status}). Stimmt PLENTY_BASE_URL? Body-Anfang: "${raw.slice(0, 160)}"`,
+      `Plenty-Login: keine gültige JSON-Antwort (HTTP ${res.status}). Angefragt: ${cfg.baseUrl}/rest/login → ${res.url}${redirectInfo}. ${detail}. ` +
+        `PLENTY_BASE_URL muss die exakte PlentyONE-REST-Basis sein (https, ohne "/rest" am Ende), z. B. https://xxxxx.plentymarkets-cloud01.com`,
     );
   }
   const token = data.access_token ?? data.accessToken;
-  if (!token) throw new Error('Plenty-Login lieferte kein access_token.');
+  if (!token) {
+    throw new Error(`Plenty-Login: Antwort enthielt kein access_token. Felder: ${Object.keys(data).join(', ') || '(leer)'}`);
+  }
   cachedToken = token;
   cachedTokenExpiry = now + (Number(data.expires_in ?? 3600) - 60) * 1000;
   return token;
