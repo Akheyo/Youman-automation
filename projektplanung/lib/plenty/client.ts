@@ -335,7 +335,9 @@ async function linkVariationProperty(
     } catch (e) {
       const msg = (e as Error).message;
       if (/exist|dupli|already|bereits|verknüpft/i.test(msg)) return `bereits verknüpft (${c.label})`;
-      errors.push(`${c.label}: ${msg.replace(/\s+/g, ' ').slice(0, 260)}`);
+      // Pfad-Vorspann entfernen, damit die eigentliche Plenty-Meldung sichtbar bleibt.
+      const tail = msg.replace(/\s+/g, ' ').replace(/^.*?(HTTP \d+)/, '$1');
+      errors.push(`${c.label}: ${tail.slice(0, 400)}`);
     }
   }
   throw new Error(`alle Formate abgelehnt – ${errors.join(' || ')}`);
