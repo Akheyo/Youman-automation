@@ -84,6 +84,8 @@ export function plentyConfigured(cfg = getPlentyConfig()): boolean {
 
 let cachedToken: string | null = null;
 let cachedTokenExpiry = 0; // ms Epoch
+/** Benutzer-ID aus der Login-Antwort – ui.php verlangt sie als meta.id. */
+let cachedUserId: number | null = null;
 
 async function login(cfg: PlentyConfig): Promise<string> {
   const now = Date.now();
@@ -121,6 +123,9 @@ async function login(cfg: PlentyConfig): Promise<string> {
   }
   cachedToken = token;
   cachedTokenExpiry = now + (Number(data.expires_in ?? 3600) - 60) * 1000;
+  // Plenty liefert die Benutzer-ID als `user_id`; ui.php braucht sie in meta.id.
+  const uid = Number((data as Record<string, unknown>).user_id);
+  if (Number.isFinite(uid) && uid > 0) cachedUserId = uid;
   return token;
 }
 
@@ -128,6 +133,7 @@ async function login(cfg: PlentyConfig): Promise<string> {
 function invalidateToken(): void {
   cachedToken = null;
   cachedTokenExpiry = 0;
+  cachedUserId = null;
 }
 
 /** Interner Fetch-Helfer mit Bearer-Token, JSON und Fehlerbehandlung. */
@@ -379,18 +385,23 @@ async function ensurePropertyRelation(
 }
 
 /**
- * Legt die Datei an einer Property-Relation ab – exakt in der Reihenfolge und
- * mit den Nutzdaten, die auch die Plenty-Oberfläche verwendet (per
- * Netzwerk-Mitschnitt verifiziert):
+ * Legt die Rechnung als Datei an einer Property-Relation ab – in zwei Schritten,
+ * genau wie die Plenty-Oberfläche (per Netzwerk-Mitschnitt verifiziert):
  *
- *   1. Datei hochladen  → sie landet unter propertyItems/<relationId>/<datei>
- *   2. POST /rest/properties/relations/values mit einem ARRAY:
- *      [{ id: null, propertyRelationId, lang: "0", value: "<relationId>/<datei>",
- *         description: null }]
+ *  1. Datei hochladen über Plentys interne Oberflächen-Schnittstelle ui.php:
+ *       Feld "request"      → Umschlag mit Modul, dataName, command "save" und
+ *                             _dataArray { key, deleteIfExists, propertyRelationId }
+ *       Feld "file_upload"  → die Datei selbst
+ *     Sie landet danach unter propertyItems/<relationId>/<dateiname>.
  *
- * Wichtig: `lang` ist "0" (nicht "de"), und `id` sowie `description` müssen als
- * null mitgeschickt werden – fehlen sie, legt Plenty den Datensatz mit leerem
- * `value` an und meldet trotzdem HTTP 200.
+ *  2. Wert schreiben über die REST-API:
+ *       POST /rest/properties/relations/values
+ *       [{ id: null, propertyRelationId, lang: "0",
+ *          value: "<relationId>/<dateiname>", description: null }]
+ *
+ * Ohne Schritt 1 verwirft Plenty den Wert stillschweigend (die Datei fehlt),
+ * ohne Schritt 2 bleibt das Feld leer. Beide melden auch im Fehlerfall HTTP 200,
+ * daher wird am Ende am Artikel selbst geprüft.
  */
 async function uploadPropertyRelationFile(
   cfg: PlentyConfig,
@@ -399,37 +410,48 @@ async function uploadPropertyRelationFile(
   file: InvoiceFile,
   verify: () => Promise<boolean>,
 ): Promise<{ ok: boolean; log: string }> {
+  // Dateiname wird Teil von Pfad und Wert – auf unbedenkliche Zeichen begrenzen.
   const name = file.filename.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-80) || 'rechnung.pdf';
   const mimeType = /^[\x20-\x7E]+$/.test(file.contentType) ? file.contentType : 'application/pdf';
   const notes: string[] = [];
 
-  // --- 1) Datei hochladen ---------------------------------------------------
-  for (const field of ['file', 'files', 'files[]']) {
+  // --- Schritt 1: Datei über ui.php hochladen ------------------------------
+  if (cfg.uiUpload) {
+    const umschlag = JSON.stringify({
+      requests: [
+        {
+          _dataName: 'ItemVariationPropertyRelationFile',
+          _moduleName: 'item2/item_variation/property',
+          _searchParams: {},
+          _writeParams: {},
+          _validateParams: {},
+          _commandStack: [{ type: 'write', command: 'save' }],
+          _dataArray: { key: name, deleteIfExists: 1, propertyRelationId: relationId },
+          _dataList: {},
+        },
+      ],
+      meta: { id: cachedUserId ?? 0 },
+    });
     const form = new FormData();
-    form.append(field, new Blob([new Uint8Array(file.bytes)], { type: mimeType }), name);
+    form.append('request', umschlag);
+    form.append('file_upload', new Blob([new Uint8Array(file.bytes)], { type: mimeType }), name);
     try {
-      const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/${relationId}/files`, {
+      const res = await fetch(`${cfg.baseUrl}/plenty/api/ui.php`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
         body: form,
       });
-      notes.push(`upload(${field}) ${res.status}`);
-      if (res.ok) break;
-    } catch {
-      notes.push(`upload(${field}) Netzfehler`);
+      const text = await res.text();
+      const fehler = text.includes('"isException":true') || text.includes('"error"');
+      notes.push(`upload ${res.status}${fehler ? `: ${text.slice(0, 200)}` : ' ok'}`);
+    } catch (e) {
+      notes.push(`upload Netzfehler: ${(e as Error).message.slice(0, 80)}`);
     }
+  } else {
+    notes.push('ui.php-Upload abgeschaltet (PLENTY_UI_UPLOAD=0)');
   }
 
-  // --- 2) Wert schreiben – Nutzdaten exakt wie die Oberfläche ---------------
-  const payload = [
-    {
-      id: null,
-      propertyRelationId: relationId,
-      lang: '0',
-      value: `${relationId}/${name}`,
-      description: null,
-    },
-  ];
+  // --- Schritt 2: Wert schreiben -------------------------------------------
   try {
     const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values`, {
       method: 'POST',
@@ -438,11 +460,19 @@ async function uploadPropertyRelationFile(
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify([
+        {
+          id: null,
+          propertyRelationId: relationId,
+          lang: '0',
+          value: `${relationId}/${name}`,
+          description: null,
+        },
+      ]),
     });
-    notes.push(`wert ${res.status}: ${(await res.text().catch(() => '')).slice(0, 120)}`);
-  } catch {
-    notes.push('wert: Netzfehler');
+    notes.push(`wert ${res.status}: ${(await res.text()).slice(0, 150)}`);
+  } catch (e) {
+    notes.push(`wert Netzfehler: ${(e as Error).message.slice(0, 80)}`);
   }
 
   return { ok: await verify(), log: notes.join(' | ') };
