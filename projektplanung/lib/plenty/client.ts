@@ -968,25 +968,35 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  // Der eigentliche Anwendungscode liegt im Modulordner: laut Stacktrace
-  // plentymarkets_ui-0.js … -N.js unter plentymarkets_ui/.
-  for (let i = 0; i < 6; i += 1) {
-    for (const ordner of [`${gwtBasis}/plentymarkets_ui`, gwtBasis]) {
-      try {
-        const text = await laden(`${ordner}/plentymarkets_ui-${i}.js`);
-        if (!text) continue;
-        for (const m of text.matchAll(modulMuster)) module.add(m[1]);
-        for (const m of text.matchAll(datenMuster)) datennamen.add(m[1]);
-        break; // in diesem Ordner gefunden – zweiten nicht mehr probieren
-      } catch {
-        /* weiter */
-      }
+  // Der eigentliche Anwendungscode heißt NICHT plentymarkets_ui-0.js – das ist
+  // nur die sourceURL-Markierung, die GWT in seine Fragmente schreibt und die
+  // der Browser im Stacktrace anzeigt. Die echten Dateien heißen
+  // "<32-Zeichen-Hash>.cache.js"; die Hashes stehen in der nocache.js.
+  const modulOrdner = `${gwtBasis}/plentymarkets_ui`;
+  const starter = await laden(`${modulOrdner}/plentymarkets_ui.nocache.js`);
+  const hashes = Array.from(new Set(Array.from(starter.matchAll(/\b([0-9A-F]{32})\b/g)).map((m) => m[1])));
+
+  for (const hash of hashes.slice(0, 3)) {
+    // Hauptfragment …
+    const haupt = await laden(`${modulOrdner}/${hash}.cache.js`);
+    for (const m of haupt.matchAll(modulMuster)) module.add(m[1]);
+    for (const m of haupt.matchAll(datenMuster)) datennamen.add(m[1]);
+    // … und die nachgeladenen Code-Fragmente (GWT-Code-Splitting).
+    for (let i = 1; i <= 6; i += 1) {
+      const teil = await laden(`${modulOrdner}/deferredjs/${hash}/${i}.cache.js`);
+      if (!teil) break;
+      for (const m of teil.matchAll(modulMuster)) module.add(m[1]);
+      for (const m of teil.matchAll(datenMuster)) datennamen.add(m[1]);
     }
+    if (module.size) break;
   }
+
+  const gefundeneHashes = hashes.slice(0, 5);
 
   return {
     url,
     gwtBasis,
+    gefundeneHashes,
     adminHtmlGroesse: html.length,
     verweise: Array.from(verweise).slice(0, 20),
     geladen,
