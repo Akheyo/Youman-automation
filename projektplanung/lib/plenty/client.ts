@@ -920,12 +920,12 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  // 4) Kommandonamen des Writers suchen.
-  //    Modul und dataName sind bestätigt: Plenty meldet
-  //    "Writer class miss method <X> in ItemVariationPropertyRelationFileDataWriter",
-  //    die Klasse existiert also. Gesucht ist nur noch die Methode – bei jedem
-  //    Fehlgriff nennt Plenty den vermissten Namen, ein Treffer meldet etwas
-  //    anderes (z. B. fehlende Parameter).
+  // 4) Feldnamen der Datei suchen.
+  //    Bestätigt sind Modul, dataName und Kommando ("save"): Der Writer läuft
+  //    und meldet aus Plentys Quellcode
+  //      UploadedFile::__construct(): Argument #1 ($path) ... null given
+  //    Er greift also nach der Datei, findet sie unter "file" aber nicht.
+  //    Gesucht ist der Schlüssel, unter dem Plenty sie erwartet.
   const userId = ids[0] ?? 5;
   const dummy = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a])], {
     type: 'application/pdf',
@@ -933,32 +933,34 @@ export async function probeUiEndpoint(): Promise<any> {
   const MODUL = 'item2/item_variation/property';
   const DATEN = 'ItemVariationPropertyRelationFile';
 
-  const kommandos = [
-    'save', 'create', 'insert', 'add', 'store', 'set', 'update', 'put',
-    'uploadFile', 'saveFile', 'writeFile', 'createFile', 'addFile', 'storeFile',
-    'saveFiles', 'uploadFiles', 'send', 'process',
+  const felder = [
+    'files', 'files[]', 'file[]', 'file0', 'file_0', 'upload', 'uploadFile',
+    'fileToUpload', 'Filedata', 'qqfile', 'data', 'document', 'attachment',
+    'propertyFile', 'relationFile', 'ItemVariationPropertyRelationFile',
+    'itemVariationPropertyRelationFile', 'fileData',
   ];
 
+  const umschlag = JSON.stringify({
+    requests: [
+      {
+        _dataName: DATEN,
+        _moduleName: MODUL,
+        _searchParams: {},
+        _writeParams: {},
+        _validateParams: {},
+        _commandStack: [{ type: 'write', command: 'save' }],
+        _dataArray: {},
+        _dataList: {},
+      },
+    ],
+    meta: { id: userId },
+  });
+
   const uploadVersuche: any[] = [];
-  for (const kommando of kommandos) {
-    const umschlag = JSON.stringify({
-      requests: [
-        {
-          _dataName: DATEN,
-          _moduleName: MODUL,
-          _searchParams: {},
-          _writeParams: {},
-          _validateParams: {},
-          _commandStack: [{ type: 'write', command: kommando }],
-          _dataArray: {},
-          _dataList: {},
-        },
-      ],
-      meta: { id: userId },
-    });
+  for (const feld of felder) {
     const form = new FormData();
     form.append('request', umschlag);
-    form.append('file', dummy, 'test.pdf');
+    form.append(feld, dummy, 'test.pdf');
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -966,17 +968,17 @@ export async function probeUiEndpoint(): Promise<any> {
         body: form,
       });
       const body = await res.text();
-      // Fehlt genau diese Methode, ist der Name falsch – knapp abhaken.
-      const fehltMethode = body.includes(`miss method ${kommando}`);
+      // Solange dieser Fehler kommt, wurde die Datei nicht gefunden.
+      const nichtGefunden = body.includes('null given');
       uploadVersuche.push({
-        kommando,
-        treffer: !fehltMethode,
-        ...(fehltMethode ? {} : { antwort: body.slice(0, 500) }),
+        feld,
+        erkannt: !nichtGefunden,
+        ...(nichtGefunden ? {} : { antwort: body.slice(0, 500) }),
       });
     } catch (e) {
-      uploadVersuche.push({ kommando, treffer: false, fehler: (e as Error).message.slice(0, 80) });
+      uploadVersuche.push({ feld, erkannt: false, fehler: (e as Error).message.slice(0, 80) });
     }
   }
 
-  return { url, modul: MODUL, daten: DATEN, uploadVersuche };
+  return { url, modul: MODUL, daten: DATEN, kommando: 'save', uploadVersuche };
 }
