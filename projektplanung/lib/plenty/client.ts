@@ -695,3 +695,62 @@ export async function listPlentyProperties(): Promise<any> {
     properties,
   };
 }
+
+/**
+ * Diagnose: sucht Artikel, an denen wirklich ein Datei-Merkmal hängt, und zeigt
+ * die Roh-Datensätze. So lässt sich ein MANUELL hochgeladener Beleg finden und
+ * exakt nachbauen, ohne die Artikel-ID zu kennen.
+ */
+export async function findItemsWithDocuments(): Promise<any> {
+  const cfg = getPlentyConfig();
+  if (!plentyConfigured(cfg)) return { error: 'Plenty nicht konfiguriert.' };
+  const token = await login(cfg);
+
+  const probe = async (path: string) => {
+    try {
+      const res = await fetch(`${cfg.baseUrl}${path}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      });
+      const text = await res.text();
+      return { path, status: res.status, body: text.slice(0, 900) };
+    } catch (e) {
+      return { path, status: 0, body: `Fehler: ${(e as Error).message.slice(0, 150)}` };
+    }
+  };
+
+  // 1) Weitere Kandidaten-Endpunkte für Artikel-Eigenschaften abklopfen.
+  const candidates = [
+    '/rest/items/properties?itemsPerPage=20',
+    '/rest/items/property_values?itemsPerPage=20',
+    '/rest/items/item_properties?itemsPerPage=20',
+    '/rest/items/variations?with=variationProperties&itemsPerPage=20',
+    '/rest/properties/9',
+    '/rest/properties/9/options',
+  ];
+  const endpoints = [];
+  for (const c of candidates) endpoints.push(await probe(c));
+
+  // 2) Die letzten Artikel durchgehen und alles melden, wo Eigenschaften hängen.
+  const treffer: any[] = [];
+  try {
+    const items = await api<any>(cfg, token, '/rest/items?itemsPerPage=60&sortBy=id&sortOrder=desc');
+    for (const it of (items?.entries ?? []).slice(0, 60)) {
+      if (treffer.length >= 5) break;
+      try {
+        const vars = await api<any>(cfg, token, `/rest/items/${it.id}/variations`);
+        const list: any[] = Array.isArray(vars) ? vars : (vars?.entries ?? []);
+        const main = list.find((v) => v.isMain) ?? list[0];
+        if (!main?.id) continue;
+        const props = await api<any>(cfg, token, `/rest/items/${it.id}/variations/${main.id}/variation_properties`);
+        const rows: any[] = Array.isArray(props) ? props : (props?.entries ?? []);
+        if (rows.length) treffer.push({ itemId: it.id, variationId: main.id, rows });
+      } catch {
+        /* einzelne Artikel überspringen */
+      }
+    }
+  } catch (e) {
+    treffer.push({ fehler: (e as Error).message.slice(0, 200) });
+  }
+
+  return { endpoints, artikelMitEigenschaften: treffer };
+}
