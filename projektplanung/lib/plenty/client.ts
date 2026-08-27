@@ -920,12 +920,11 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  // 4) Feldnamen der Datei suchen.
-  //    Bestätigt sind Modul, dataName und Kommando ("save"): Der Writer läuft
-  //    und meldet aus Plentys Quellcode
-  //      UploadedFile::__construct(): Argument #1 ($path) ... null given
-  //    Er greift also nach der Datei, findet sie unter "file" aber nicht.
-  //    Gesucht ist der Schlüssel, unter dem Plenty sie erwartet.
+  // 4) Herkunft des Pfad-Parameters suchen.
+  //    Achtzehn Multipart-Feldnamen ergaben denselben Fehler wie "file" – der
+  //    Feldname ist also nicht die Ursache. Plenty liest den Pfad demnach nicht
+  //    aus $_FILES, sondern aus einem Parameter der Anfrage. Gesucht wird, an
+  //    welcher Stelle des Umschlags und unter welchem Schlüssel.
   const userId = ids[0] ?? 5;
   const dummy = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a])], {
     type: 'application/pdf',
@@ -933,16 +932,13 @@ export async function probeUiEndpoint(): Promise<any> {
   const MODUL = 'item2/item_variation/property';
   const DATEN = 'ItemVariationPropertyRelationFile';
 
-  const felder = [
-    'files', 'files[]', 'file[]', 'file0', 'file_0', 'upload', 'uploadFile',
-    'fileToUpload', 'Filedata', 'qqfile', 'data', 'document', 'attachment',
-    'propertyFile', 'relationFile', 'ItemVariationPropertyRelationFile',
-    'itemVariationPropertyRelationFile', 'fileData',
-  ];
+  const stellen = ['_dataArray', '_writeParams', '_searchParams'] as const;
+  const schluessel = ['path', 'filePath', 'tmpName', 'tmp_name', 'fileName', 'file', 'name'];
 
-  const umschlag = JSON.stringify({
-    requests: [
-      {
+  const uploadVersuche: any[] = [];
+  for (const stelle of stellen) {
+    for (const key of schluessel) {
+      const anfrage: any = {
         _dataName: DATEN,
         _moduleName: MODUL,
         _searchParams: {},
@@ -951,32 +947,28 @@ export async function probeUiEndpoint(): Promise<any> {
         _commandStack: [{ type: 'write', command: 'save' }],
         _dataArray: {},
         _dataList: {},
-      },
-    ],
-    meta: { id: userId },
-  });
-
-  const uploadVersuche: any[] = [];
-  for (const feld of felder) {
-    const form = new FormData();
-    form.append('request', umschlag);
-    form.append(feld, dummy, 'test.pdf');
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
-      });
-      const body = await res.text();
-      // Solange dieser Fehler kommt, wurde die Datei nicht gefunden.
-      const nichtGefunden = body.includes('null given');
-      uploadVersuche.push({
-        feld,
-        erkannt: !nichtGefunden,
-        ...(nichtGefunden ? {} : { antwort: body.slice(0, 500) }),
-      });
-    } catch (e) {
-      uploadVersuche.push({ feld, erkannt: false, fehler: (e as Error).message.slice(0, 80) });
+      };
+      anfrage[stelle] = { [key]: 'test.pdf' };
+      const form = new FormData();
+      form.append('request', JSON.stringify({ requests: [anfrage], meta: { id: userId } }));
+      form.append('file', dummy, 'test.pdf');
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: form,
+        });
+        const body = await res.text();
+        const unveraendert = body.includes('null given');
+        uploadVersuche.push({
+          stelle,
+          key,
+          weiter: !unveraendert,
+          ...(unveraendert ? {} : { antwort: body.slice(0, 400) }),
+        });
+      } catch (e) {
+        uploadVersuche.push({ stelle, key, weiter: false, fehler: (e as Error).message.slice(0, 60) });
+      }
     }
   }
 
