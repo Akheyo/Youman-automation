@@ -920,12 +920,12 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  // 4) Die im GWT-Code belegte Kombination testen – mit VOLLER Fehlerausgabe.
-  //    Der Code definiert wörtlich:
-  //      new TP(107, "ItemVariationPropertyRelationFile",
-  //                  "item2/item_variation/property")
-  //    Frühere Läufe verwarfen die Fehlermeldung und zeigten nur
-  //    "nicht gefunden" – genau die Information, auf die es ankommt.
+  // 4) Kommandonamen des Writers suchen.
+  //    Modul und dataName sind bestätigt: Plenty meldet
+  //    "Writer class miss method <X> in ItemVariationPropertyRelationFileDataWriter",
+  //    die Klasse existiert also. Gesucht ist nur noch die Methode – bei jedem
+  //    Fehlgriff nennt Plenty den vermissten Namen, ein Treffer meldet etwas
+  //    anderes (z. B. fehlende Parameter).
   const userId = ids[0] ?? 5;
   const dummy = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a])], {
     type: 'application/pdf',
@@ -933,31 +933,14 @@ export async function probeUiEndpoint(): Promise<any> {
   const MODUL = 'item2/item_variation/property';
   const DATEN = 'ItemVariationPropertyRelationFile';
 
-  const varianten: Array<{ label: string; anfrage: any; alsForm: boolean }> = [
-    {
-      label: 'write, multipart',
-      alsForm: true,
-      anfrage: { _commandStack: [{ type: 'write', command: 'write' }] },
-    },
-    {
-      label: 'read, multipart',
-      alsForm: true,
-      anfrage: { _commandStack: [{ type: 'read', command: 'read' }] },
-    },
-    {
-      label: 'write, form-encoded ohne Datei',
-      alsForm: false,
-      anfrage: { _commandStack: [{ type: 'write', command: 'write' }] },
-    },
-    {
-      label: 'upload-Kommando, multipart',
-      alsForm: true,
-      anfrage: { _commandStack: [{ type: 'write', command: 'upload' }] },
-    },
+  const kommandos = [
+    'save', 'create', 'insert', 'add', 'store', 'set', 'update', 'put',
+    'uploadFile', 'saveFile', 'writeFile', 'createFile', 'addFile', 'storeFile',
+    'saveFiles', 'uploadFiles', 'send', 'process',
   ];
 
   const uploadVersuche: any[] = [];
-  for (const v of varianten) {
+  for (const kommando of kommandos) {
     const umschlag = JSON.stringify({
       requests: [
         {
@@ -966,40 +949,34 @@ export async function probeUiEndpoint(): Promise<any> {
           _searchParams: {},
           _writeParams: {},
           _validateParams: {},
+          _commandStack: [{ type: 'write', command: kommando }],
           _dataArray: {},
           _dataList: {},
-          ...v.anfrage,
         },
       ],
       meta: { id: userId },
     });
+    const form = new FormData();
+    form.append('request', umschlag);
+    form.append('file', dummy, 'test.pdf');
     try {
-      let res: Response;
-      if (v.alsForm) {
-        const form = new FormData();
-        form.append('request', umschlag);
-        form.append('file', dummy, 'test.pdf');
-        res = await fetch(url, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: form,
-        });
-      } else {
-        res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            Authorization: `Bearer ${token}`,
-          },
-          body: `request=${encodeURIComponent(umschlag)}`,
-        });
-      }
-      // Diesmal IMMER die vollständige Antwort mitgeben.
-      uploadVersuche.push({ variante: v.label, status: res.status, antwort: (await res.text()).slice(0, 600) });
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      const body = await res.text();
+      // Fehlt genau diese Methode, ist der Name falsch – knapp abhaken.
+      const fehltMethode = body.includes(`miss method ${kommando}`);
+      uploadVersuche.push({
+        kommando,
+        treffer: !fehltMethode,
+        ...(fehltMethode ? {} : { antwort: body.slice(0, 500) }),
+      });
     } catch (e) {
-      uploadVersuche.push({ variante: v.label, status: 0, antwort: (e as Error).message.slice(0, 150) });
+      uploadVersuche.push({ kommando, treffer: false, fehler: (e as Error).message.slice(0, 80) });
     }
   }
 
-  return { url, modul: MODUL, daten: DATEN, uiVersuche, uploadVersuche };
+  return { url, modul: MODUL, daten: DATEN, uploadVersuche };
 }
