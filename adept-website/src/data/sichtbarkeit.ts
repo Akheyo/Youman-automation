@@ -23,7 +23,7 @@
 const ausUmgebung = process.env.INDEXIERUNG?.trim().toLowerCase();
 
 /** Vorgabe im Code. Umgebungsvariable sticht sie. */
-const FREIGEGEBEN = true;
+const FREIGEGEBEN = false;
 
 export const indexierungErlaubt =
   ausUmgebung === 'an' ? true : ausUmgebung === 'aus' ? false : FREIGEGEBEN;
