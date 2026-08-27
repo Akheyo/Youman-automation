@@ -374,14 +374,17 @@ async function ensurePropertyRelation(
 }
 
 /**
- * Legt die Datei an einer Property-Relation ab. Zwei Schritte, wie es auch die
- * Plenty-Oberfläche tut:
- *   1. Datei hochladen  → landet unter propertyItems/<relationId>/<datei>
- *   2. Relation-Value schreiben → value = "<relationId>/<datei>"
+ * Legt die Datei an einer Property-Relation ab.
  *
- * WICHTIG: Plenty antwortet auf mehrere dieser Routen mit HTTP 200, ohne etwas
- * zu speichern. Ein Statuscode taugt hier also nicht als Erfolgsnachweis –
- * nach JEDEM Versuch wird am Artikel geprüft, ob der Wert wirklich steht.
+ * Plenty verlangt hier drei Ebenen:
+ *   Relation (propertyId ↔ Variante)
+ *     → Wert-Datensatz (propertyRelationId, lang)
+ *       → Datei am Wert (value = "<relationId>/<datei>", mimeType Pflicht)
+ *
+ * Belegt durch die API-Antworten: Der Wert-Datensatz entsteht mit leerem
+ * `value`, und ein Update ohne `mimeType` scheitert mit HTTP 422
+ * ("Der gewählte Wert für mime typ …"). Statuscodes taugen nicht als
+ * Erfolgsnachweis – nach jedem Versuch wird am Artikel nachgesehen.
  */
 async function uploadPropertyRelationFile(
   cfg: PlentyConfig,
@@ -390,99 +393,107 @@ async function uploadPropertyRelationFile(
   file: InvoiceFile,
   verify: () => Promise<boolean>,
 ): Promise<{ ok: boolean; log: string }> {
-  // Dateiname auf ASCII begrenzen – er wird Teil von Pfad und Wert.
   const name = file.filename.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-80) || 'rechnung.pdf';
+  const mimeType = /^[\x20-\x7E]+$/.test(file.contentType) ? file.contentType : 'application/pdf';
+  const value = `${relationId}/${name}`;
   const notes: string[] = [];
 
-  // --- Schritt 1: Datei hochladen -------------------------------------------
-  let uploadBody = '';
-  for (const path of [
-    `/rest/properties/relations/${relationId}/files`,
-    `/rest/properties/relations/${relationId}/upload`,
-  ]) {
-    const form = new FormData();
-    form.append('file', new Blob([new Uint8Array(file.bytes)], { type: file.contentType }), name);
-    form.append('lang', 'de');
+  const send = async (
+    label: string,
+    path: string,
+    method: string,
+    body: BodyInit,
+    json: boolean,
+  ): Promise<boolean> => {
     try {
       const res = await fetch(`${cfg.baseUrl}${path}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-        body: form,
-      });
-      uploadBody = (await res.text().catch(() => '')).slice(0, 200);
-      notes.push(`upload HTTP ${res.status}${uploadBody ? `: ${uploadBody}` : ' (leer)'}`);
-      if (res.ok) break;
-    } catch {
-      notes.push(`upload ${path}: Netzwerkfehler`);
-    }
-  }
-  // Schon nach dem Upload prüfen – vielleicht setzt Plenty den Wert selbst.
-  if (await verify()) return { ok: true, log: `${notes.join(' | ')} → Wert nach Upload gesetzt` };
-
-  // Falls die Upload-Antwort einen Pfad nennt, diesen bevorzugen.
-  let value = `${relationId}/${name}`;
-  try {
-    const parsed = JSON.parse(uploadBody);
-    const fromApi = parsed?.value ?? parsed?.valueFile ?? parsed?.path;
-    if (typeof fromApi === 'string' && fromApi.includes('/')) value = fromApi;
-  } catch {
-    /* leere Antwort ist hier normal */
-  }
-
-  // --- Schritt 2: Relation-Value schreiben ----------------------------------
-  // Die laut Plenty-Doku vorgesehene Sammel-Route zuerst.
-  const attempts: Array<{ label: string; path: string; method: string; body: string }> = [
-    {
-      label: 'PUT relations/values []',
-      path: '/rest/properties/relations/values',
-      method: 'PUT',
-      body: JSON.stringify([{ propertyRelationId: relationId, lang: 'de', value }]),
-    },
-    {
-      label: 'POST relations/values []',
-      path: '/rest/properties/relations/values',
-      method: 'POST',
-      body: JSON.stringify([{ propertyRelationId: relationId, lang: 'de', value }]),
-    },
-    {
-      label: 'POST relations/values {}',
-      path: '/rest/properties/relations/values',
-      method: 'POST',
-      body: JSON.stringify({ propertyRelationId: relationId, lang: 'de', value }),
-    },
-    {
-      label: 'POST relations/{id}/values',
-      path: `/rest/properties/relations/${relationId}/values`,
-      method: 'POST',
-      body: JSON.stringify({ lang: 'de', value }),
-    },
-    {
-      label: 'PUT relations/{id}',
-      path: `/rest/properties/relations/${relationId}`,
-      method: 'PUT',
-      body: JSON.stringify({ relationValues: [{ lang: 'de', value }] }),
-    },
-  ];
-
-  for (const a of attempts) {
-    try {
-      const res = await fetch(`${cfg.baseUrl}${a.path}`, {
-        method: a.method,
+        method,
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
           Accept: 'application/json',
+          ...(json ? { 'Content-Type': 'application/json' } : {}),
         },
-        body: a.body,
+        body,
       });
-      const body = (await res.text().catch(() => '')).slice(0, 120);
-      notes.push(`${a.label} HTTP ${res.status}${body ? `: ${body}` : ''}`);
+      const text = (await res.text().catch(() => '')).slice(0, 160);
+      notes.push(`${label} HTTP ${res.status}${text ? `: ${text}` : ''}`);
     } catch {
-      notes.push(`${a.label}: Netzwerkfehler`);
-      continue;
+      notes.push(`${label}: Netzwerkfehler`);
+      return false;
     }
-    // Nicht dem Status glauben – am Artikel nachsehen.
-    if (await verify()) return { ok: true, log: `${notes.join(' | ')} → ${a.label} hat gegriffen` };
+    return verify();
+  };
+
+  const multipart = () => {
+    const form = new FormData();
+    form.append('file', new Blob([new Uint8Array(file.bytes)], { type: mimeType }), name);
+    form.append('mimeType', mimeType);
+    form.append('lang', 'de');
+    return form;
+  };
+
+  // --- 1) Datei an die Relation hochladen (legt sie im Storage ab) ----------
+  if (await send('upload relation', `/rest/properties/relations/${relationId}/files`, 'POST', multipart(), false)) {
+    return { ok: true, log: notes.join(' | ') };
+  }
+
+  // --- 2) Wert-Datensatz anlegen und dessen ID merken ----------------------
+  let valueId: number | null = null;
+  try {
+    const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ propertyRelationId: relationId, lang: 'de', value, mimeType }),
+    });
+    const text = await res.text().catch(() => '');
+    notes.push(`wert anlegen HTTP ${res.status}: ${text.slice(0, 120)}`);
+    const parsed = JSON.parse(text);
+    const row = Array.isArray(parsed) ? parsed[0] : parsed;
+    if (Number.isFinite(Number(row?.id))) valueId = Number(row.id);
+  } catch {
+    notes.push('wert anlegen: Antwort unlesbar');
+  }
+  if (await verify()) return { ok: true, log: notes.join(' | ') };
+
+  // --- 3) Datei bzw. Wert am WERT-Datensatz setzen (mimeType ist Pflicht) ---
+  if (valueId) {
+    const base = '/rest/properties/relations/values';
+    const jsonBody = JSON.stringify({ value, mimeType, lang: 'de' });
+
+    if (await send('datei an wert', `${base}/${valueId}/files`, 'POST', multipart(), false)) {
+      return { ok: true, log: notes.join(' | ') };
+    }
+    if (await send('wert setzen PUT', `${base}/${valueId}`, 'PUT', jsonBody, true)) {
+      return { ok: true, log: notes.join(' | ') };
+    }
+    if (
+      await send(
+        'wert setzen PUT[]',
+        base,
+        'PUT',
+        JSON.stringify([{ id: valueId, propertyRelationId: relationId, lang: 'de', value, mimeType }]),
+        true,
+      )
+    ) {
+      return { ok: true, log: notes.join(' | ') };
+    }
+  }
+
+  // --- 4) Relation selbst mit mimeType aktualisieren -----------------------
+  if (
+    await send(
+      'relation PUT',
+      `/rest/properties/relations/${relationId}`,
+      'PUT',
+      JSON.stringify({ relationValues: [{ lang: 'de', value, mimeType }] }),
+      true,
+    )
+  ) {
+    return { ok: true, log: notes.join(' | ') };
   }
 
   return { ok: false, log: notes.join(' | ') };
