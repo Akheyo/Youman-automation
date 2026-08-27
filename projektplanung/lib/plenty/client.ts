@@ -920,39 +920,54 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  // 4) Modulnamen direkt im JavaScript der Oberfläche suchen.
-  //    Der Referer der Oberfläche verrät den Pfad: /plenty/gwt/productive/<hash>/
-  //    Dort liegen plentymarkets_ui-0.js … -N.js mit allen Modulnamen im Klartext.
+  // 4) Modulnamen im GWT-JavaScript der Oberfläche suchen.
+  //    Der Referer nennt /plenty/gwt/productive/<hash>/admin.html. Die
+  //    Skriptpfade darin variieren (GWT legt sie in Unterordner), deshalb wird
+  //    admin.html ausgelesen und die Verweise daraus übernommen.
   const gwtBasis = process.env.PLENTY_GWT_PATH ?? '/plenty/gwt/productive/bafa1abc';
-  const dateien = ['plentymarkets_ui-0.js', 'plentymarkets_ui-1.js', 'plentymarkets_ui-2.js'];
+  const geladen: any[] = [];
+
+  const laden = async (pfad: string) => {
+    const res = await fetch(`${cfg.baseUrl}${pfad}`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: '*/*' },
+    });
+    const text = res.ok ? await res.text() : '';
+    geladen.push({ pfad: pfad.slice(-70), status: res.status, groesse: text.length });
+    return text;
+  };
+
+  // admin.html holen und alle Skriptverweise einsammeln.
+  const html = await laden(`${gwtBasis}/admin.html`);
+  const verweise = new Set<string>();
+  for (const m of html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)) verweise.add(m[1]);
+  for (const m of html.matchAll(/["']([^"']*plentymarkets_ui[^"']*\.js)["']/gi)) verweise.add(m[1]);
+  // GWT lädt oft über eine Bootstrap-Datei (<modul>.nocache.js).
+  for (const m of html.matchAll(/["']([^"']*\.nocache\.js)["']/gi)) verweise.add(m[1]);
+
+  const aufloesen = (v: string) =>
+    v.startsWith('http') ? v.replace(cfg.baseUrl, '') : v.startsWith('/') ? v : `${gwtBasis}/${v}`;
 
   // Modulpfade und dataNames rund um Eigenschaften/Dateien einsammeln.
   const modulMuster = /["'`]((?:item2|system|ui)\/[a-z0-9_\/]*(?:propert|file|upload|document)[a-z0-9_\/]*)["'`]/gi;
   const datenMuster = /["'`]([A-Z][A-Za-z]{2,}(?:Propert|File|Upload|Document)[A-Za-z]*)["'`]/g;
   const module = new Set<string>();
   const datennamen = new Set<string>();
-  const geladen: any[] = [];
 
-  for (const datei of dateien) {
-    const pfad = `${gwtBasis}/${datei}`;
+  for (const v of Array.from(verweise).slice(0, 10)) {
     try {
-      const res = await fetch(`${cfg.baseUrl}${pfad}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const text = res.ok ? await res.text() : '';
-      geladen.push({ datei, status: res.status, groesse: text.length });
+      const text = await laden(aufloesen(v));
       for (const m of text.matchAll(modulMuster)) module.add(m[1]);
       for (const m of text.matchAll(datenMuster)) datennamen.add(m[1]);
-    } catch (e) {
-      geladen.push({ datei, status: 0, fehler: (e as Error).message.slice(0, 80) });
+    } catch {
+      /* einzelne Datei überspringen */
     }
   }
 
   return {
     url,
     gwtBasis,
-    loginFelder: redact(loginData),
-    uiVersuche,
+    adminHtmlGroesse: html.length,
+    verweise: Array.from(verweise).slice(0, 20),
     geladen,
     module: Array.from(module).sort().slice(0, 80),
     datennamen: Array.from(datennamen).sort().slice(0, 80),
