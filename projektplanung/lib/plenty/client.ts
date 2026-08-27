@@ -920,9 +920,11 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  // 4) Im GWT-Code die Stelle suchen, an der der Upload gebaut wird.
-  //    Der Feldname kommt weder aus $_FILES-Namen noch aus dem Umschlag –
-  //    also wird nachgesehen, wie die Oberfläche selbst die Anfrage baut.
+  // 4) Verwendungsstellen der Upload-Konstanten im GWT-Code ansehen.
+  //    Der Konstantenblock neben der ui.php-URL nennt den Feldnamen:
+  //      jBa="/plenty/api/ui.php", kBa="token", lBa="_dataName",
+  //      mBa="_moduleName", xh="_dataArray", yh="_dataList", nBa="file"
+  //    Der Name "file" stimmt also – gesucht ist, wie die Anfrage gebaut wird.
   const gwtBasis = process.env.PLENTY_GWT_PATH ?? '/plenty/gwt/productive/bafa1abc';
   const laden = async (pfad: string) => {
     try {
@@ -943,35 +945,30 @@ export async function probeUiEndpoint(): Promise<any> {
     ...[1, 2, 3, 4, 5, 6].map((i) => `${modulOrdner}/deferredjs/${hash}/${i}.cache.js`),
   ];
 
-  // Begriffe, die im Upload-Code auftauchen müssen.
-  const marker = ['ui.php', 'multipart/form-data', 'FormData', 'setName', 'enctype'];
+  // nBa ist der Feldname "file", jBa die ui.php-URL – ihre Verwendungsstellen
+  // zeigen den Aufbau der Anfrage.
+  const symbole = ['nBa', 'jBa'];
   const fundstellen: any[] = [];
-  // Kurze Zeichenketten in der Umgebung – darunter der gesuchte Feldname.
-  const literalMuster = /["'`]([A-Za-z_][A-Za-z0-9_\[\]]{1,24})["'`]/g;
 
   for (const datei of dateien) {
     const text = await laden(datei);
     if (!text) continue;
-    for (const m of marker) {
-      let von = 0;
+    for (const sym of symbole) {
+      // Nur Verwendungen, keine Definition (`sym="..."`).
+      const muster = new RegExp(`(?<![A-Za-z0-9_$])${sym}(?![A-Za-z0-9_$])(?!\\s*=\\s*["'])`, 'g');
       let treffer = 0;
-      for (;;) {
-        const pos = text.indexOf(m, von);
-        if (pos < 0 || treffer >= 2 || fundstellen.length >= 12) break;
-        const umfeld = text.slice(Math.max(0, pos - 500), pos + 500);
+      for (const m of text.matchAll(muster)) {
+        if (treffer >= 3 || fundstellen.length >= 10) break;
+        const pos = m.index ?? 0;
         fundstellen.push({
-          marker: m,
+          symbol: sym,
           datei: datei.slice(-24),
-          literale: Array.from(
-            new Set(Array.from(umfeld.matchAll(literalMuster), (x) => String(x[1]))),
-          ).slice(0, 25),
-          auszug: umfeld.slice(380, 700),
+          auszug: text.slice(Math.max(0, pos - 420), pos + 420),
         });
-        von = pos + m.length;
         treffer += 1;
       }
     }
-    if (fundstellen.length >= 12) break;
+    if (fundstellen.length >= 10) break;
   }
 
   return { url, hash, fundstellen };
