@@ -920,69 +920,69 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  // 4) Datei-Upload anklopfen: Welche Struktur erwartet ui.php?
-  //    Eine Mini-PDF genügt – die Fehlermeldung ist das Ziel, nicht der Erfolg.
+  // 4) Modulnamen für den Datei-Upload suchen.
+  //    ui.php löst Module als "<moduleName>/<dataName>" auf und meldet bei
+  //    Fehlgriff DataFactoryException. Alles andere ist ein Treffer.
   const userId = ids[0] ?? 5;
   const dummy = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a])], {
     type: 'application/pdf',
   });
-  const envelope = (moduleName: string) =>
-    JSON.stringify({
-      requests: [
-        {
-          _dataName: 'File',
-          _moduleName: moduleName,
-          _searchParams: {},
-          _writeParams: {},
-          _validateParams: {},
-          _commandStack: [{ type: 'write', command: 'write' }],
-          _dataArray: {},
-          _dataList: {},
-        },
-      ],
-      meta: { id: userId },
-    });
 
-  const uploadVersuche: any[] = [];
-  const shapes: Array<{ label: string; build: () => FormData }> = [
-    {
-      label: 'nur Datei',
-      build: () => {
-        const f = new FormData();
-        f.append('file', dummy, 'test.pdf');
-        return f;
-      },
-    },
-    {
-      label: 'Datei + leerer request',
-      build: () => {
-        const f = new FormData();
-        f.append('request', JSON.stringify({ requests: [], meta: { id: userId } }));
-        f.append('file', dummy, 'test.pdf');
-        return f;
-      },
-    },
-    {
-      label: 'Datei + Modul item2/property/file',
-      build: () => {
-        const f = new FormData();
-        f.append('request', envelope('item2/property/file'));
-        f.append('file', dummy, 'test.pdf');
-        return f;
-      },
-    },
+  // Beobachtetes Namensschema der Oberfläche: item2/<bereich>/<aktion>
+  // mit CamelCase-dataName (item2/retail_price/list → RetailPriceList).
+  const kandidaten: Array<[string, string]> = [
+    ['item2/item_variation/property/file', 'ItemVariationPropertyFile'],
+    ['item2/item_variation/property/upload', 'ItemVariationPropertyUpload'],
+    ['item2/item_variation/property/list', 'ItemVariationPropertyList'],
+    ['item2/property/relation/value/file', 'PropertyRelationValueFile'],
+    ['item2/property/relation/file', 'PropertyRelationFile'],
+    ['item2/property/file/upload', 'PropertyFileUpload'],
+    ['item2/property/upload', 'PropertyUpload'],
+    ['item2/property/list', 'PropertyList'],
+    ['item2/file/upload', 'FileUpload'],
+    ['item2/item_variation/file/upload', 'ItemVariationFileUpload'],
+    ['system/file/upload', 'FileUpload'],
+    ['system/upload', 'Upload'],
   ];
 
-  for (const shape of shapes) {
+  const uploadVersuche: any[] = [];
+  for (const [moduleName, dataName] of kandidaten) {
+    const form = new FormData();
+    form.append(
+      'request',
+      JSON.stringify({
+        requests: [
+          {
+            _dataName: dataName,
+            _moduleName: moduleName,
+            _searchParams: {},
+            _writeParams: {},
+            _validateParams: {},
+            _commandStack: [{ type: 'write', command: 'write' }],
+            _dataArray: {},
+            _dataList: {},
+          },
+        ],
+        meta: { id: userId },
+      }),
+    );
+    form.append('file', dummy, 'test.pdf');
     try {
       const res = await fetch(url, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
-        body: shape.build(),
+        body: form,
       });
-      uploadVersuche.push({ form: shape.label, status: res.status, body: (await res.text()).slice(0, 300) });
+      const body = await res.text();
+      const unbekannt = body.includes('DataFactoryException');
+      // Nur Treffer ausführlich zeigen – Fehlgriffe knapp halten.
+      uploadVersuche.push({
+        modul: `${moduleName}/${dataName}`,
+        gefunden: !unbekannt,
+        ...(unbekannt ? {} : { body: body.slice(0, 400) }),
+      });
     } catch (e) {
-      uploadVersuche.push({ form: shape.label, status: 0, body: (e as Error).message.slice(0, 120) });
+      uploadVersuche.push({ modul: moduleName, gefunden: false, fehler: (e as Error).message.slice(0, 80) });
     }
   }
 
