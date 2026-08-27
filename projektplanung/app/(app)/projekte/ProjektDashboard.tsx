@@ -30,6 +30,7 @@ interface SyncInfo {
   categoryCreated: boolean;
   eanAttached: boolean;
   invoiceAttached: boolean;
+  invoiceLog?: string | null;
   invoiceStored: boolean;
   invoiceUrl: string | null;
   warnings: string[];
@@ -39,7 +40,7 @@ interface SyncInfo {
 const EMPTY = { company: '', location: '', contactInternal: '', contactExternal: '', notes: '', orderType: '' };
 
 /** Sichtbarer Build-Marker – so erkennt man sofort, ob die neue Version live ist. */
-const APP_BUILD = 'v1.2';
+const APP_BUILD = 'v1.3';
 
 export default function ProjektDashboard({
   initial,
@@ -485,6 +486,7 @@ function ResultCard({
               <a href={`/api/projekte/${projekt.id}/invoice`} target="_blank" rel="noreferrer" className={styles.invoiceLink}>
                 öffnen
               </a>
+              {sync.invoiceLog && <div className={styles.itemNote}>{sync.invoiceLog}</div>}
             </dd>
           </div>
         )}
