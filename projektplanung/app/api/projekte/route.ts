@@ -228,6 +228,7 @@ export async function POST(request: Request) {
       categoryCreated: sync.categoryCreated,
       eanAttached: sync.eanAttached,
       invoiceAttached: sync.invoiceAttached,
+      invoiceLog: sync.invoiceLog,
       invoiceStored: Boolean(invoicePath),
       invoiceUrl: invoiceUrl ?? null,
       warnings: sync.warnings,

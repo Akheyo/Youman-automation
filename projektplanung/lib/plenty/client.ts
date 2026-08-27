@@ -378,8 +378,9 @@ async function normalizeRelationFileValue(
   propertyId: number,
   relationId: number,
   erwartet: string,
-): Promise<string> {
+): Promise<{ log: string; wert: string | null }> {
   const notizen: string[] = [];
+  let letzterWert: string | null = null;
 
   for (const wartezeit of [0, 600, 1500]) {
     if (wartezeit) await new Promise((r) => setTimeout(r, wartezeit));
@@ -388,11 +389,12 @@ async function normalizeRelationFileValue(
     const row = rows.find((r) => Number(r?.propertyId) === Number(propertyId));
     const werte: any[] = row?.relationValues ?? [];
     const vorhanden = werte.find((v) => typeof v?.value === 'string' && v.value.length > 0);
+    letzterWert = vorhanden?.value ?? null;
 
     // Bereits relativ? Dann ist alles gut.
     if (vorhanden && !vorhanden.value.startsWith('http')) {
-      notizen.push('Wert relativ');
-      return notizen.join(', ');
+      notizen.push('relativ');
+      return { log: notizen.join(', '), wert: letzterWert };
     }
 
     // Volle URL vorgefunden → auf den relativen Teil zurückschneiden.
@@ -414,10 +416,11 @@ async function normalizeRelationFileValue(
         },
       ]),
     });
-    notizen.push(`${vorhanden ? 'gekürzt' : 'angelegt'} ${res.status}`);
+    const antwort = (await res.text().catch(() => '')).slice(0, 120);
+    notizen.push(`${vorhanden ? 'PUT' : 'POST'} ${res.status}${antwort ? ` ${antwort}` : ''}`);
   }
 
-  return notizen.join(', ');
+  return { log: notizen.join(' | '), wert: letzterWert };
 }
 
 /**
@@ -522,17 +525,16 @@ async function uploadPropertyRelationFile(
 
   // --- Schritt 2: Wert prüfen und in die relative Form bringen -------------
   try {
-    notes.push(
-      await normalizeRelationFileValue(
-        cfg,
-        token,
-        itemId,
-        variationId,
-        propertyId,
-        relationId,
-        `${relationId}/${name}`,
-      ),
+    const abgleich = await normalizeRelationFileValue(
+      cfg,
+      token,
+      itemId,
+      variationId,
+      propertyId,
+      relationId,
+      `${relationId}/${name}`,
     );
+    notes.push(`${abgleich.log} → "${abgleich.wert ?? '(leer)'}"`);
   } catch (e) {
     notes.push(`Wert-Abgleich fehlgeschlagen: ${(e as Error).message.slice(0, 100)}`);
   }
@@ -570,6 +572,8 @@ export interface PlentySyncResult {
   variationId: number | null;
   eanAttached: boolean;
   invoiceAttached: boolean;
+  /** Protokoll des Datei-Anhangs – zeigt den tatsächlich gespeicherten Wert. */
+  invoiceLog: string | null;
   warnings: string[];
   error: string | null;
 }
@@ -603,6 +607,7 @@ export async function syncProjektToPlenty(
     variationId: null,
     eanAttached: false,
     invoiceAttached: false,
+    invoiceLog: null,
     warnings,
     error: null,
   };
@@ -675,6 +680,7 @@ export async function syncProjektToPlenty(
     // Entscheidend: Der Upload adressiert die VERKNÜPFUNGS-ZEILE (deren ID), nicht
     // die Merkmals-ID – der gespeicherte Wert lautet danach "<zeilenId>/<datei>".
     let invoiceAttached = false;
+    let invoiceLog: string | null = null;
     if (invoice) {
       const propertyId = cfg.invoicePropertyId;
       if (!propertyId) {
@@ -726,6 +732,7 @@ export async function syncProjektToPlenty(
           }
 
           invoiceAttached = outcome.ok;
+          invoiceLog = outcome.log;
           if (!outcome.ok) {
             warnings.push(`Rechnung nicht abgelegt – ${outcome.note} | ${outcome.log.slice(0, 600)}`);
           }
@@ -744,6 +751,7 @@ export async function syncProjektToPlenty(
       variationId,
       eanAttached,
       invoiceAttached,
+      invoiceLog,
     };
   } catch (err) {
     return { ...base, error: (err as Error).message };
