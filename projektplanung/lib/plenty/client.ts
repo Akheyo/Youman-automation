@@ -313,115 +313,107 @@ export interface InvoiceFile {
   filename: string;
   contentType: string;
 }
+// --- Datei-Eigenschaft („Dokument 1") über Property-Relations -----------------
+// Plenty speichert Datei-Eigenschaften NICHT unter variation_properties (das ist
+// das alte Merkmal-System), sondern als Property-Relation an der Variante:
+//   { propertyId: 9, relationTypeIdentifier: "item", relationTargetId: <variationId>,
+//     id: <relationId>, relationValues: [{ lang: "de", value: "<relationId>/<datei>" }] }
+// Der Dateiwert entsteht beim Upload und lautet "<relationId>/<dateiname>".
 
-/** Liest die Varianteneigenschaften (Verknüpfungs-Zeilen) einer Variante. */
-async function getVariationProperties(
+/** Liest die Property-Relations einer Variante (über die properties-Beziehung). */
+async function getVariationPropertyRelations(
   cfg: PlentyConfig,
   token: string,
   itemId: number,
   variationId: number,
 ): Promise<any[]> {
-  const res = await api<any>(cfg, token, `/rest/items/${itemId}/variations/${variationId}/variation_properties`);
-  if (Array.isArray(res)) return res;
-  return res?.entries ?? [];
+  const res = await api<any>(cfg, token, `/rest/items/${itemId}/variations/${variationId}?with=properties`);
+  const props = res?.properties;
+  return Array.isArray(props) ? props : [];
 }
 
-/** Sucht die ID der Verknüpfungs-Zeile für ein bestimmtes Merkmal. */
-function findRelationId(rows: any[], propertyId: number): number | null {
-  const row = rows.find((r) => Number(r?.propertyId ?? r?.property?.id) === Number(propertyId));
-  const id = Number(row?.id);
-  return Number.isFinite(id) && id > 0 ? id : null;
+/** Liefert den abgelegten Dateiwert einer Eigenschaft, sofern vorhanden. */
+function relationFileValue(rows: any[], propertyId: number): string | null {
+  const row = rows.find((r) => Number(r?.propertyId) === Number(propertyId));
+  const value = (row?.relationValues ?? [])
+    .map((v: any) => v?.value)
+    .find((v: any) => typeof v === 'string' && v.includes('/'));
+  return value ?? null;
 }
 
 /**
- * Verknüpft das Merkmal mit der Variante und liefert die ID der erzeugten
- * Verknüpfungs-Zeile zurück. Genau diese ID (nicht die Merkmals-ID!) braucht der
- * Upload-Endpunkt – der abgelegte Wert lautet später "<relationId>/<datei>".
- * Existiert die Verknüpfung schon, wird ihre vorhandene ID ermittelt.
+ * Stellt sicher, dass die Eigenschaft mit der Variante verknüpft ist, und gibt
+ * die Relation-ID zurück. Genau diese ID trägt später den Dateipfad.
  */
-async function linkVariationProperty(
+async function ensurePropertyRelation(
   cfg: PlentyConfig,
   token: string,
   itemId: number,
   variationId: number,
   propertyId: number,
 ): Promise<{ relationId: number; note: string }> {
-  const path = `/rest/items/${itemId}/variations/${variationId}/variation_properties`;
-  const candidates: Array<{ label: string; body: string }> = [
-    { label: 'obj', body: JSON.stringify({ propertyId, variationId }) },
-    { label: 'arr', body: JSON.stringify([{ propertyId, variationId }]) },
-  ];
-  const errors: string[] = [];
-  for (const c of candidates) {
-    try {
-      const created = await api<any>(cfg, token, path, { method: 'POST', body: c.body });
-      const row = Array.isArray(created) ? created[0] : created;
-      const id = Number(row?.id);
-      if (Number.isFinite(id) && id > 0) return { relationId: id, note: `neu verknüpft (${c.label}, Zeile ${id})` };
-      // Angelegt, aber ohne ID in der Antwort → über die Liste nachschlagen.
-      const existing = findRelationId(await getVariationProperties(cfg, token, itemId, variationId), propertyId);
-      if (existing) return { relationId: existing, note: `verknüpft (${c.label}, Zeile ${existing})` };
-      errors.push(`${c.label}: Antwort ohne Zeilen-ID`);
-    } catch (e) {
-      const msg = (e as Error).message;
-      if (/exist|dupli|already|bereits|verknüpft/i.test(msg)) {
-        const existing = findRelationId(await getVariationProperties(cfg, token, itemId, variationId), propertyId);
-        if (existing) return { relationId: existing, note: `bereits verknüpft (Zeile ${existing})` };
-      }
-      errors.push(`${c.label}: ${msg.replace(/\s+/g, ' ').replace(/^.*?(HTTP \d+)/, '$1').slice(0, 200)}`);
-    }
-  }
-  // Letzter Versuch: vielleicht existiert die Zeile trotz Fehlern bereits.
-  const fallback = findRelationId(await getVariationProperties(cfg, token, itemId, variationId), propertyId);
-  if (fallback) return { relationId: fallback, note: `vorhanden (Zeile ${fallback})` };
-  throw new Error(`keine Verknüpfungs-Zeile – ${errors.join(' || ')}`);
+  const existing = await getVariationPropertyRelations(cfg, token, itemId, variationId);
+  const hit = existing.find((r) => Number(r?.propertyId) === Number(propertyId));
+  if (hit?.id) return { relationId: Number(hit.id), note: `vorhanden (Relation ${hit.id})` };
+
+  const body = JSON.stringify({
+    propertyId,
+    relationTypeIdentifier: 'item',
+    relationTargetId: variationId,
+  });
+  const created = await api<any>(cfg, token, '/rest/properties/relations', { method: 'POST', body });
+  const row = Array.isArray(created) ? created[0] : created;
+  const id = Number(row?.id);
+  if (Number.isFinite(id) && id > 0) return { relationId: id, note: `neu angelegt (Relation ${id})` };
+
+  // Angelegt, aber ohne ID in der Antwort → erneut auslesen.
+  const again = await getVariationPropertyRelations(cfg, token, itemId, variationId);
+  const found = again.find((r) => Number(r?.propertyId) === Number(propertyId));
+  if (found?.id) return { relationId: Number(found.id), note: `gefunden (Relation ${found.id})` };
+  throw new Error('Property-Relation konnte nicht angelegt werden.');
 }
 
 /**
- * Lädt die Datei in die Verknüpfungs-Zeile hoch. Adressiert wird die Zeilen-ID,
- * NICHT die Merkmals-ID – mit der Merkmals-ID nimmt Plenty die Datei zwar mit
- * HTTP 200 an, legt aber nur den Dateinamen ab (Datei geht verloren).
+ * Lädt die Datei in eine Property-Relation. Die genaue Upload-Route ist nicht
+ * dokumentiert, daher werden die plausiblen Kandidaten der Reihe nach probiert;
+ * der Erfolg wird anschließend am tatsächlich gespeicherten Wert geprüft.
  */
-async function uploadVariationPropertyFile(
+async function uploadPropertyRelationFile(
   cfg: PlentyConfig,
   token: string,
-  itemId: number,
-  variationId: number,
-  ids: { relationId: number; propertyId: number },
+  relationId: number,
   file: InvoiceFile,
 ): Promise<string> {
-  // Ein echt gespeicherter Wert hat die Form "<id>/<datei>" – ein blanker
-  // Dateiname bedeutet, dass Plenty die Binärdatei NICHT abgelegt hat.
-  const storedOk = (v: unknown) => typeof v === 'string' && v.includes('/');
-  const base = `/rest/items/${itemId}/variations/${variationId}/variation_properties`;
-  // Beide Adressierungen probieren: Merkmals-ID (liefert HTTP 200) und
-  // Verknüpfungs-Zeilen-ID – welche Plenty akzeptiert, zeigt die Antwort.
-  const targets = [
-    { label: `property=${ids.propertyId}`, path: `${base}/${ids.propertyId}/upload` },
-    { label: `relation=${ids.relationId}`, path: `${base}/${ids.relationId}/upload` },
+  const paths = [
+    `/rest/properties/relations/${relationId}/files`,
+    `/rest/properties/relations/${relationId}/value/files`,
+    `/rest/properties/relations/${relationId}/values/files`,
+    `/rest/properties/relations/${relationId}/upload`,
+    `/rest/properties/relations/values/${relationId}/files`,
   ];
   const notes: string[] = [];
-  for (const t of targets) {
+  for (const path of paths) {
     for (const field of ['file', 'files']) {
       const form = new FormData();
       form.append(field, new Blob([new Uint8Array(file.bytes)], { type: file.contentType }), file.filename);
-      const res = await fetch(`${cfg.baseUrl}${t.path}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-        body: form,
-      });
-      const body = await res.text().catch(() => '');
-      let valueFile: unknown;
+      let res: Response;
       try {
-        valueFile = JSON.parse(body)?.valueFile;
-      } catch {
-        /* kein JSON */
+        res = await fetch(`${cfg.baseUrl}${path}`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+          body: form,
+        });
+      } catch (e) {
+        notes.push(`${path} feld="${field}" Fehler`);
+        continue;
       }
-      if (res.ok && storedOk(valueFile)) return `gespeichert als "${valueFile}" (${t.label}, feld="${field}")`;
-      notes.push(`${t.label} feld="${field}" HTTP ${res.status}${valueFile ? ` valueFile="${valueFile}"` : ''}`);
+      const body = await res.text().catch(() => '');
+      if (res.ok) return `${path} feld="${field}" HTTP ${res.status}: ${body.slice(0, 120)}`;
+      notes.push(`${path} feld="${field}" HTTP ${res.status}`);
+      if (res.status === 404) break; // Route gibt es nicht – Feldvarianten sparen
     }
   }
-  throw new Error(`Upload ohne Pfad – ${notes.join(' | ')}`);
+  throw new Error(notes.join(' | '));
 }
 
 
@@ -568,24 +560,28 @@ export async function syncProjektToPlenty(
         );
       } else {
         try {
-          const { relationId, note } = await linkVariationProperty(cfg, token, itemId, variationId, propertyId);
-          const uploadNote = await uploadVariationPropertyFile(
+          const { relationId, note } = await ensurePropertyRelation(
             cfg,
             token,
             itemId,
             variationId,
-            { relationId, propertyId },
-            invoice,
+            propertyId,
           );
-          // Gegenprüfen, dass die Datei wirklich an der Variante hängt.
-          const rows = await getVariationProperties(cfg, token, itemId, variationId);
-          const row = rows.find((r) => Number(r?.id) === relationId);
-          invoiceAttached = typeof row?.valueFile === 'string' && row.valueFile.includes('/');
+          let uploadNote = '';
+          try {
+            uploadNote = await uploadPropertyRelationFile(cfg, token, relationId, invoice);
+          } catch (e) {
+            uploadNote = `kein Upload-Endpunkt: ${(e as Error).message}`;
+          }
+          // Wahrheit ist allein der gespeicherte Wert an der Variante.
+          const rows = await getVariationPropertyRelations(cfg, token, itemId, variationId);
+          const stored = relationFileValue(rows, propertyId);
+          invoiceAttached = Boolean(stored);
           if (!invoiceAttached) {
-            warnings.push(`Rechnung nicht abgelegt – ${note} | ${uploadNote} | valueFile="${row?.valueFile ?? ''}"`);
+            warnings.push(`Rechnung nicht abgelegt – ${note} | ${uploadNote.slice(0, 400)}`);
           }
         } catch (e) {
-          warnings.push(`Rechnung nicht angehängt: ${(e as Error).message.replace(/\s+/g, ' ').slice(0, 250)}`);
+          warnings.push(`Rechnung nicht angehängt: ${(e as Error).message.replace(/\s+/g, ' ').slice(0, 300)}`);
         }
       }
     }
