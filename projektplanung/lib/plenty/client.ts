@@ -618,9 +618,9 @@ export async function testPlentyConnection(): Promise<{ ok: boolean; message: st
 }
 
 /**
- * Diagnose: klopft alle in Frage kommenden Plenty-Endpunkte ab und zeigt, wo die
- * Eigenschaften/Dokumente eines Artikels wirklich liegen. Reines Werkzeug, um
- * einen MANUELL hochgeladenen Beleg zu finden und exakt nachzubauen.
+ * Diagnose: zeigt die Eigenschaften einer Variante VOLLSTÄNDIG (über die
+ * ?with=properties-Beziehung) und probiert weitere Schreib-Endpunkte durch.
+ * Damit lässt sich ein manuell hinterlegtes Dokument exakt nachbauen.
  */
 export async function inspectItemProperties(itemId: number): Promise<any> {
   const cfg = getPlentyConfig();
@@ -633,31 +633,39 @@ export async function inspectItemProperties(itemId: number): Promise<any> {
         headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
       });
       const text = await res.text();
-      return { path, status: res.status, body: text.slice(0, 1200) };
+      return { path, status: res.status, body: text.slice(0, 600) };
     } catch (e) {
-      return { path, status: 0, body: `Fehler: ${(e as Error).message.slice(0, 200)}` };
+      return { path, status: 0, body: `Fehler: ${(e as Error).message.slice(0, 150)}` };
     }
   };
 
-  // Hauptvariante ermitteln.
   const varRes = await api<any>(cfg, token, `/rest/items/${itemId}/variations`);
   const variations: any[] = Array.isArray(varRes) ? varRes : (varRes?.entries ?? []);
   const main = variations.find((v) => v.isMain) ?? variations[0];
   const vid = main?.id;
 
+  // Die properties-Beziehung der Variante KOMPLETT auslesen (nicht abschneiden).
+  let properties: any = null;
+  let propertiesError: string | null = null;
+  try {
+    const full = await api<any>(cfg, token, `/rest/items/${itemId}/variations/${vid}?with=properties`);
+    properties = full?.properties ?? null;
+  } catch (e) {
+    propertiesError = (e as Error).message.slice(0, 250);
+  }
+
   const paths = [
     `/rest/items/${itemId}/variations/${vid}/variation_properties`,
-    `/rest/items/${itemId}/variations/${vid}/properties`,
-    `/rest/items/${itemId}/variations/${vid}?with=properties,variationProperties`,
-    `/rest/items/${itemId}/properties`,
-    `/rest/items/${itemId}?with=itemProperties,properties`,
-    `/rest/items/${itemId}/documents`,
-    `/rest/properties?itemsPerPage=100`,
-    `/rest/properties/groups?itemsPerPage=50`,
+    `/rest/items/${itemId}/variations/${vid}/property_values`,
+    `/rest/items/${itemId}/variations/${vid}/properties/9`,
+    `/rest/variation_properties?variationId=${vid}`,
+    `/rest/properties/9/values`,
+    `/rest/items/${itemId}/images`,
   ];
-  const results = [];
-  for (const p of paths) results.push(await probe(p));
-  return { itemId, variationId: vid, variationCount: variations.length, results };
+  const endpoints = [];
+  for (const p of paths) endpoints.push(await probe(p));
+
+  return { itemId, variationId: vid, properties, propertiesError, endpoints };
 }
 
 /**
