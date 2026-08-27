@@ -920,87 +920,62 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  // 4) Modulnamen im GWT-JavaScript der Oberfläche suchen.
-  //    Der Referer nennt /plenty/gwt/productive/<hash>/admin.html. Die
-  //    Skriptpfade darin variieren (GWT legt sie in Unterordner), deshalb wird
-  //    admin.html ausgelesen und die Verweise daraus übernommen.
-  const gwtBasis = process.env.PLENTY_GWT_PATH ?? '/plenty/gwt/productive/bafa1abc';
-  const geladen: any[] = [];
+  // 4) Den im GWT-Code gefundenen Datei-Modul testen.
+  //    Der Scan der Fragmente lieferte den dataName
+  //    "ItemVariationPropertyRelationFile" und den Modulpfad
+  //    "item2/item_variation/property". Nach der beobachteten Konvention
+  //    (RetailPriceList ↔ item2/retail_price/list) wird daraus der volle Pfad.
+  const userId = ids[0] ?? 5;
+  const dummy = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a])], {
+    type: 'application/pdf',
+  });
 
-  const laden = async (pfad: string) => {
-    const res = await fetch(`${cfg.baseUrl}${pfad}`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: '*/*' },
-    });
-    const text = res.ok ? await res.text() : '';
-    geladen.push({ pfad: pfad.slice(-70), status: res.status, groesse: text.length });
-    return text;
-  };
+  const kandidaten: Array<[string, string]> = [
+    ['item2/item_variation/property/relation/file', 'ItemVariationPropertyRelationFile'],
+    ['item2/item_variation/property/relation_file', 'ItemVariationPropertyRelationFile'],
+    ['item2/item_variation/property/file', 'ItemVariationPropertyRelationFile'],
+    ['item2/item_variation/property', 'ItemVariationPropertyRelationFile'],
+  ];
 
-  // admin.html holen und alle Skriptverweise einsammeln.
-  const html = await laden(`${gwtBasis}/admin.html`);
-  const verweise = new Set<string>();
-  for (const m of html.matchAll(/<script[^>]+src=["']([^"']+)["']/gi)) verweise.add(m[1]);
-  for (const m of html.matchAll(/["']([^"']*plentymarkets_ui[^"']*\.js)["']/gi)) verweise.add(m[1]);
-  // GWT lädt oft über eine Bootstrap-Datei (<modul>.nocache.js).
-  for (const m of html.matchAll(/["']([^"']*\.nocache\.js)["']/gi)) verweise.add(m[1]);
-
-  const aufloesen = (v: string) =>
-    v.startsWith('http') ? v.replace(cfg.baseUrl, '') : v.startsWith('/') ? v : `${gwtBasis}/${v}`;
-
-  // Modulpfade und dataNames rund um Eigenschaften/Dateien einsammeln.
-  const modulMuster = /["'`]((?:item2|system|ui)\/[a-z0-9_\/]*(?:propert|file|upload|document)[a-z0-9_\/]*)["'`]/gi;
-  const datenMuster = /["'`]([A-Z][A-Za-z]{2,}(?:Propert|File|Upload|Document)[A-Za-z]*)["'`]/g;
-  const module = new Set<string>();
-  const datennamen = new Set<string>();
-
-  for (const v of Array.from(verweise).slice(0, 10)) {
+  const uploadVersuche: any[] = [];
+  for (const [moduleName, dataName] of kandidaten) {
+    const form = new FormData();
+    form.append(
+      'request',
+      JSON.stringify({
+        requests: [
+          {
+            _dataName: dataName,
+            _moduleName: moduleName,
+            _searchParams: {},
+            _writeParams: {},
+            _validateParams: {},
+            _commandStack: [{ type: 'write', command: 'write' }],
+            _dataArray: {},
+            _dataList: {},
+          },
+        ],
+        meta: { id: userId },
+      }),
+    );
+    form.append('file', dummy, 'test.pdf');
     try {
-      const text = await laden(aufloesen(v));
-      for (const m of text.matchAll(modulMuster)) module.add(m[1]);
-      for (const m of text.matchAll(datenMuster)) datennamen.add(m[1]);
-      // Die .nocache.js ist nur der GWT-Starter – sie nennt die eigentlichen
-      // Code-Dateien. Diese Verweise mit aufnehmen.
-      if (v.includes('nocache')) {
-        for (const m of text.matchAll(/["']([\w./-]+\.js)["']/g)) verweise.add(m[1]);
-      }
-    } catch {
-      /* einzelne Datei überspringen */
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      });
+      const body = await res.text();
+      const unbekannt = body.includes('DataFactoryException');
+      uploadVersuche.push({
+        modul: moduleName,
+        gefunden: !unbekannt,
+        ...(unbekannt ? {} : { antwort: body.slice(0, 500) }),
+      });
+    } catch (e) {
+      uploadVersuche.push({ modul: moduleName, gefunden: false, fehler: (e as Error).message.slice(0, 80) });
     }
   }
 
-  // Der eigentliche Anwendungscode heißt NICHT plentymarkets_ui-0.js – das ist
-  // nur die sourceURL-Markierung, die GWT in seine Fragmente schreibt und die
-  // der Browser im Stacktrace anzeigt. Die echten Dateien heißen
-  // "<32-Zeichen-Hash>.cache.js"; die Hashes stehen in der nocache.js.
-  const modulOrdner = `${gwtBasis}/plentymarkets_ui`;
-  const starter = await laden(`${modulOrdner}/plentymarkets_ui.nocache.js`);
-  const hashes = Array.from(new Set(Array.from(starter.matchAll(/\b([0-9A-F]{32})\b/g)).map((m) => m[1])));
-
-  for (const hash of hashes.slice(0, 3)) {
-    // Hauptfragment …
-    const haupt = await laden(`${modulOrdner}/${hash}.cache.js`);
-    for (const m of haupt.matchAll(modulMuster)) module.add(m[1]);
-    for (const m of haupt.matchAll(datenMuster)) datennamen.add(m[1]);
-    // … und die nachgeladenen Code-Fragmente (GWT-Code-Splitting).
-    for (let i = 1; i <= 6; i += 1) {
-      const teil = await laden(`${modulOrdner}/deferredjs/${hash}/${i}.cache.js`);
-      if (!teil) break;
-      for (const m of teil.matchAll(modulMuster)) module.add(m[1]);
-      for (const m of teil.matchAll(datenMuster)) datennamen.add(m[1]);
-    }
-    if (module.size) break;
-  }
-
-  const gefundeneHashes = hashes.slice(0, 5);
-
-  return {
-    url,
-    gwtBasis,
-    gefundeneHashes,
-    adminHtmlGroesse: html.length,
-    verweise: Array.from(verweise).slice(0, 20),
-    geladen,
-    module: Array.from(module).sort().slice(0, 80),
-    datennamen: Array.from(datennamen).sort().slice(0, 80),
-  };
+  return { url, loginFelder: redact(loginData), uiVersuche, uploadVersuche };
 }
