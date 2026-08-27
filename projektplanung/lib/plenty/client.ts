@@ -376,15 +376,16 @@ async function ensurePropertyRelation(
 /**
  * Legt die Datei an einer Property-Relation ab.
  *
- * Plenty verlangt hier drei Ebenen:
- *   Relation (propertyId ↔ Variante)
- *     → Wert-Datensatz (propertyRelationId, lang)
- *       → Datei am Wert (value = "<relationId>/<datei>", mimeType Pflicht)
+ * Erkenntnisse aus den API-Antworten:
+ *   - Relation und Wert-Datensatz lassen sich anlegen (HTTP 200).
+ *   - `value` per JSON zu setzen wirkt NICHT: Es bleibt leer, und `lang: "de"`
+ *     kommt als "0" zurück (die API castet das Feld auf eine Zahl).
+ *   → Bei cast="file" schreibt Plenty den Wert selbst beim Datei-Upload.
+ *     Offen ist nur der erwartete Feldname im Multipart-Body, daher wird eine
+ *     Reihe von Kandidaten durchprobiert.
  *
- * Belegt durch die API-Antworten: Der Wert-Datensatz entsteht mit leerem
- * `value`, und ein Update ohne `mimeType` scheitert mit HTTP 422
- * ("Der gewählte Wert für mime typ …"). Statuscodes taugen nicht als
- * Erfolgsnachweis – nach jedem Versuch wird am Artikel nachgesehen.
+ * Statuscodes sind hier wertlos (Plenty liefert 200 auch ohne zu speichern) –
+ * maßgeblich ist allein die Prüfung am Artikel nach jedem Versuch.
  */
 async function uploadPropertyRelationFile(
   cfg: PlentyConfig,
@@ -395,49 +396,9 @@ async function uploadPropertyRelationFile(
 ): Promise<{ ok: boolean; log: string }> {
   const name = file.filename.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-80) || 'rechnung.pdf';
   const mimeType = /^[\x20-\x7E]+$/.test(file.contentType) ? file.contentType : 'application/pdf';
-  const value = `${relationId}/${name}`;
   const notes: string[] = [];
 
-  const send = async (
-    label: string,
-    path: string,
-    method: string,
-    body: BodyInit,
-    json: boolean,
-  ): Promise<boolean> => {
-    try {
-      const res = await fetch(`${cfg.baseUrl}${path}`, {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-          ...(json ? { 'Content-Type': 'application/json' } : {}),
-        },
-        body,
-      });
-      const text = (await res.text().catch(() => '')).slice(0, 160);
-      notes.push(`${label} HTTP ${res.status}${text ? `: ${text}` : ''}`);
-    } catch {
-      notes.push(`${label}: Netzwerkfehler`);
-      return false;
-    }
-    return verify();
-  };
-
-  const multipart = () => {
-    const form = new FormData();
-    form.append('file', new Blob([new Uint8Array(file.bytes)], { type: mimeType }), name);
-    form.append('mimeType', mimeType);
-    form.append('lang', 'de');
-    return form;
-  };
-
-  // --- 1) Datei an die Relation hochladen (legt sie im Storage ab) ----------
-  if (await send('upload relation', `/rest/properties/relations/${relationId}/files`, 'POST', multipart(), false)) {
-    return { ok: true, log: notes.join(' | ') };
-  }
-
-  // --- 2) Wert-Datensatz anlegen und dessen ID merken ----------------------
+  // Wert-Datensatz anlegen (nötig, damit die Zeile am Artikel existiert).
   let valueId: number | null = null;
   try {
     const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values`, {
@@ -447,53 +408,49 @@ async function uploadPropertyRelationFile(
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ propertyRelationId: relationId, lang: 'de', value, mimeType }),
+      body: JSON.stringify({ propertyRelationId: relationId, lang: 'de' }),
     });
-    const text = await res.text().catch(() => '');
-    notes.push(`wert anlegen HTTP ${res.status}: ${text.slice(0, 120)}`);
-    const parsed = JSON.parse(text);
+    const parsed = JSON.parse(await res.text());
     const row = Array.isArray(parsed) ? parsed[0] : parsed;
     if (Number.isFinite(Number(row?.id))) valueId = Number(row.id);
+    notes.push(`wert #${valueId ?? '?'}`);
   } catch {
-    notes.push('wert anlegen: Antwort unlesbar');
+    notes.push('wert: unlesbar');
   }
   if (await verify()) return { ok: true, log: notes.join(' | ') };
 
-  // --- 3) Datei bzw. Wert am WERT-Datensatz setzen (mimeType ist Pflicht) ---
-  if (valueId) {
-    const base = '/rest/properties/relations/values';
-    const jsonBody = JSON.stringify({ value, mimeType, lang: 'de' });
+  // Feldnamen-Kandidaten gegen beide Datei-Routen durchprobieren.
+  const routes = [
+    { label: 'rel', path: `/rest/properties/relations/${relationId}/files` },
+    ...(valueId ? [{ label: 'val', path: `/rest/properties/relations/values/${valueId}/files` }] : []),
+  ];
+  const fields = ['file', 'files', 'files[]', 'value', 'document', 'upload', 'data', 'fileData'];
 
-    if (await send('datei an wert', `${base}/${valueId}/files`, 'POST', multipart(), false)) {
-      return { ok: true, log: notes.join(' | ') };
+  for (const route of routes) {
+    for (const field of fields) {
+      const form = new FormData();
+      form.append(field, new Blob([new Uint8Array(file.bytes)], { type: mimeType }), name);
+      form.append('mimeType', mimeType);
+      form.append('lang', 'de');
+      let status = 0;
+      let body = '';
+      try {
+        const res = await fetch(`${cfg.baseUrl}${route.path}`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+          body: form,
+        });
+        status = res.status;
+        body = (await res.text().catch(() => '')).slice(0, 70);
+      } catch {
+        notes.push(`${route.label}/${field}:netz`);
+        continue;
+      }
+      // Nur eine nicht-leere Antwort ist überhaupt ein Hinweis auf Wirkung.
+      notes.push(`${route.label}/${field}:${status}${body ? `:${body}` : ''}`);
+      if (await verify()) return { ok: true, log: notes.join(' | ') };
+      if (status === 404) break; // Route existiert nicht – Feldvarianten sparen
     }
-    if (await send('wert setzen PUT', `${base}/${valueId}`, 'PUT', jsonBody, true)) {
-      return { ok: true, log: notes.join(' | ') };
-    }
-    if (
-      await send(
-        'wert setzen PUT[]',
-        base,
-        'PUT',
-        JSON.stringify([{ id: valueId, propertyRelationId: relationId, lang: 'de', value, mimeType }]),
-        true,
-      )
-    ) {
-      return { ok: true, log: notes.join(' | ') };
-    }
-  }
-
-  // --- 4) Relation selbst mit mimeType aktualisieren -----------------------
-  if (
-    await send(
-      'relation PUT',
-      `/rest/properties/relations/${relationId}`,
-      'PUT',
-      JSON.stringify({ relationValues: [{ lang: 'de', value, mimeType }] }),
-      true,
-    )
-  ) {
-    return { ok: true, log: notes.join(' | ') };
   }
 
   return { ok: false, log: notes.join(' | ') };
