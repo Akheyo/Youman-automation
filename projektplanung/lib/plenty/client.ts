@@ -923,6 +923,17 @@ export async function probeUiEndpoint(): Promise<any> {
   // 4) Im GWT-Code nachsehen, welcher Modulpfad zu dem gefundenen dataName
   //    gehört. Der Pfad ließ sich aus dem Namen nicht ableiten – also wird die
   //    Umgebung der Fundstelle im Code ausgelesen.
+  const gwtBasis = process.env.PLENTY_GWT_PATH ?? '/plenty/gwt/productive/bafa1abc';
+  const laden = async (pfad: string) => {
+    try {
+      const res = await fetch(`${cfg.baseUrl}${pfad}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: '*/*' },
+      });
+      return res.ok ? await res.text() : '';
+    } catch {
+      return '';
+    }
+  };
   const modulOrdner = `${gwtBasis}/plentymarkets_ui`;
   const starter = await laden(`${modulOrdner}/plentymarkets_ui.nocache.js`);
   const hash = starter.match(/\b([0-9A-F]{32})\b/)?.[1] ?? '';
@@ -946,7 +957,9 @@ export async function probeUiEndpoint(): Promise<any> {
         if (pos < 0 || fundstellen.length >= 8) break;
         // Umgebung der Fundstelle mitnehmen und darin Pfade suchen.
         const umfeld = text.slice(Math.max(0, pos - 600), pos + 600);
-        const pfade = Array.from(new Set(Array.from(umfeld.matchAll(pfadMuster)).map((m) => m[1])))
+        const pfade = Array.from(
+          new Set(Array.from(umfeld.matchAll(pfadMuster), (m) => String(m[1]))),
+        )
           .filter((x) => x.includes('/') && !x.startsWith('http'));
         fundstellen.push({
           name,
