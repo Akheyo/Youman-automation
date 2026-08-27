@@ -374,18 +374,18 @@ async function ensurePropertyRelation(
 }
 
 /**
- * Legt die Datei an einer Property-Relation ab.
+ * Legt die Datei an einer Property-Relation ab – exakt in der Reihenfolge und
+ * mit den Nutzdaten, die auch die Plenty-Oberfläche verwendet (per
+ * Netzwerk-Mitschnitt verifiziert):
  *
- * Erkenntnisse aus den API-Antworten:
- *   - Relation und Wert-Datensatz lassen sich anlegen (HTTP 200).
- *   - `value` per JSON zu setzen wirkt NICHT: Es bleibt leer, und `lang: "de"`
- *     kommt als "0" zurück (die API castet das Feld auf eine Zahl).
- *   → Bei cast="file" schreibt Plenty den Wert selbst beim Datei-Upload.
- *     Offen ist nur der erwartete Feldname im Multipart-Body, daher wird eine
- *     Reihe von Kandidaten durchprobiert.
+ *   1. Datei hochladen  → sie landet unter propertyItems/<relationId>/<datei>
+ *   2. POST /rest/properties/relations/values mit einem ARRAY:
+ *      [{ id: null, propertyRelationId, lang: "0", value: "<relationId>/<datei>",
+ *         description: null }]
  *
- * Statuscodes sind hier wertlos (Plenty liefert 200 auch ohne zu speichern) –
- * maßgeblich ist allein die Prüfung am Artikel nach jedem Versuch.
+ * Wichtig: `lang` ist "0" (nicht "de"), und `id` sowie `description` müssen als
+ * null mitgeschickt werden – fehlen sie, legt Plenty den Datensatz mit leerem
+ * `value` an und meldet trotzdem HTTP 200.
  */
 async function uploadPropertyRelationFile(
   cfg: PlentyConfig,
@@ -398,8 +398,33 @@ async function uploadPropertyRelationFile(
   const mimeType = /^[\x20-\x7E]+$/.test(file.contentType) ? file.contentType : 'application/pdf';
   const notes: string[] = [];
 
-  // Wert-Datensatz anlegen (nötig, damit die Zeile am Artikel existiert).
-  let valueId: number | null = null;
+  // --- 1) Datei hochladen ---------------------------------------------------
+  for (const field of ['file', 'files', 'files[]']) {
+    const form = new FormData();
+    form.append(field, new Blob([new Uint8Array(file.bytes)], { type: mimeType }), name);
+    try {
+      const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/${relationId}/files`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        body: form,
+      });
+      notes.push(`upload(${field}) ${res.status}`);
+      if (res.ok) break;
+    } catch {
+      notes.push(`upload(${field}) Netzfehler`);
+    }
+  }
+
+  // --- 2) Wert schreiben – Nutzdaten exakt wie die Oberfläche ---------------
+  const payload = [
+    {
+      id: null,
+      propertyRelationId: relationId,
+      lang: '0',
+      value: `${relationId}/${name}`,
+      description: null,
+    },
+  ];
   try {
     const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values`, {
       method: 'POST',
@@ -408,52 +433,14 @@ async function uploadPropertyRelationFile(
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify({ propertyRelationId: relationId, lang: 'de' }),
+      body: JSON.stringify(payload),
     });
-    const parsed = JSON.parse(await res.text());
-    const row = Array.isArray(parsed) ? parsed[0] : parsed;
-    if (Number.isFinite(Number(row?.id))) valueId = Number(row.id);
-    notes.push(`wert #${valueId ?? '?'}`);
+    notes.push(`wert ${res.status}: ${(await res.text().catch(() => '')).slice(0, 120)}`);
   } catch {
-    notes.push('wert: unlesbar');
-  }
-  if (await verify()) return { ok: true, log: notes.join(' | ') };
-
-  // Feldnamen-Kandidaten gegen beide Datei-Routen durchprobieren.
-  const routes = [
-    { label: 'rel', path: `/rest/properties/relations/${relationId}/files` },
-    ...(valueId ? [{ label: 'val', path: `/rest/properties/relations/values/${valueId}/files` }] : []),
-  ];
-  const fields = ['file', 'files', 'files[]', 'value', 'document', 'upload', 'data', 'fileData'];
-
-  for (const route of routes) {
-    for (const field of fields) {
-      const form = new FormData();
-      form.append(field, new Blob([new Uint8Array(file.bytes)], { type: mimeType }), name);
-      form.append('mimeType', mimeType);
-      form.append('lang', 'de');
-      let status = 0;
-      let body = '';
-      try {
-        const res = await fetch(`${cfg.baseUrl}${route.path}`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-          body: form,
-        });
-        status = res.status;
-        body = (await res.text().catch(() => '')).slice(0, 70);
-      } catch {
-        notes.push(`${route.label}/${field}:netz`);
-        continue;
-      }
-      // Nur eine nicht-leere Antwort ist überhaupt ein Hinweis auf Wirkung.
-      notes.push(`${route.label}/${field}:${status}${body ? `:${body}` : ''}`);
-      if (await verify()) return { ok: true, log: notes.join(' | ') };
-      if (status === 404) break; // Route existiert nicht – Feldvarianten sparen
-    }
+    notes.push('wert: Netzfehler');
   }
 
-  return { ok: false, log: notes.join(' | ') };
+  return { ok: await verify(), log: notes.join(' | ') };
 }
 
 /** Hängt einen Barcode (z. B. EAN13) an die Variante. */
