@@ -631,31 +631,48 @@ export async function syncProjektToPlenty(
         );
       } else {
         try {
-          const { relationId, note } = await ensurePropertyRelation(
-            cfg,
-            token,
-            itemId,
-            variationId,
-            propertyId,
-          );
           // Prüft am Artikel, ob der Dateiwert tatsächlich gespeichert ist.
-          const verify = async () => {
+          const verify = async (tok: string) => {
             try {
-              const rows = await getVariationPropertyRelations(cfg, token, itemId, variationId);
+              const rows = await getVariationPropertyRelations(cfg, tok, itemId, variationId);
               return Boolean(relationFileValue(rows, propertyId));
             } catch {
               return false;
             }
           };
-          const { ok: stored, log } = await uploadPropertyRelationFile(
-            cfg,
-            token,
-            relationId,
-            invoice,
-            verify,
-          );
-          invoiceAttached = stored;
-          if (!stored) warnings.push(`Rechnung nicht abgelegt – ${note} | ${log.slice(0, 600)}`);
+
+          const attach = async (tok: string) => {
+            const { relationId, note } = await ensurePropertyRelation(
+              cfg,
+              tok,
+              itemId,
+              variationId,
+              propertyId,
+            );
+            const res = await uploadPropertyRelationFile(cfg, tok, relationId, invoice, () =>
+              verify(tok),
+            );
+            return { ...res, note };
+          };
+
+          let outcome = await attach(token);
+
+          // Fehlende Rechte? Der Token ist bis zu einer Stunde gecached und
+          // trägt dann noch die alten Rechte – einmal frisch anmelden und
+          // wiederholen, damit frisch vergebene Rechte sofort greifen.
+          if (!outcome.ok && /missing_permissions|unauthorized|HTTP 403/i.test(outcome.log)) {
+            invalidateToken();
+            const freshToken = await login(cfg);
+            const retry = await attach(freshToken);
+            outcome = retry.ok
+              ? retry
+              : { ...retry, log: `${retry.log} (auch nach frischer Anmeldung)` };
+          }
+
+          invoiceAttached = outcome.ok;
+          if (!outcome.ok) {
+            warnings.push(`Rechnung nicht abgelegt – ${outcome.note} | ${outcome.log.slice(0, 600)}`);
+          }
         } catch (e) {
           warnings.push(`Rechnung nicht angehängt: ${(e as Error).message.replace(/\s+/g, ' ').slice(0, 300)}`);
         }
