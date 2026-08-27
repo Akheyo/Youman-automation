@@ -891,10 +891,11 @@ export async function probeUiEndpoint(): Promise<any> {
       meta: { id },
     });
 
-  const idsFromLogin = [loginData.userId, loginData.user?.id, loginData.id]
+  // Plenty liefert die Benutzer-ID als `user_id` (mit Unterstrich).
+  const idsFromLogin = [loginData.user_id, loginData.userId, loginData.user?.id, loginData.id]
     .map(Number)
     .filter((n) => Number.isFinite(n) && n > 0);
-  const ids = Array.from(new Set([...idsFromLogin, 128, 1, 0]));
+  const ids = Array.from(new Set([...idsFromLogin, 5]));
 
   const uiVersuche: any[] = [];
   for (const id of ids) {
