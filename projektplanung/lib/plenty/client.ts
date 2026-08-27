@@ -352,12 +352,23 @@ function relationFileValue(rows: any[], propertyId: number): string | null {
   return value ?? null;
 }
 
+/** Schneidet eine volle Plenty-/S3-Adresse auf den relativen Teil zurück. */
+function relativerDateiPfad(wert: string): string {
+  const marke = 'propertyItems/';
+  const i = wert.lastIndexOf(marke);
+  return i >= 0 ? wert.slice(i + marke.length) : wert;
+}
+
 /**
  * Bringt den Dateiwert in die Form "<relationId>/<datei>".
  *
- * Plenty setzt beim ui.php-Upload teils eine VOLLSTÄNDIGE S3-URL als Wert. Die
- * Oberfläche stellt beim Anzeigen aber ihren CDN-Vorspann davor – der Link wird
- * dadurch doppelt und führt ins Leere. Erwartet wird der relative Pfad.
+ * Plenty schreibt beim ui.php-Upload eine VOLLSTÄNDIGE S3-URL in den Wert.
+ * Beim Anzeigen setzt die Oberfläche aber nochmals ihren CDN-Vorspann davor –
+ * der Link wird dadurch doppelt und endet in AccessDenied. Bei manuell
+ * angehängten Dateien steht dort der relative Pfad, und der Link funktioniert.
+ *
+ * Plenty setzt den Wert teils verzögert, daher wird mehrfach nachgesehen und
+ * bei Bedarf korrigiert – der letzte Stand zählt.
  */
 async function normalizeRelationFileValue(
   cfg: PlentyConfig,
@@ -368,31 +379,45 @@ async function normalizeRelationFileValue(
   relationId: number,
   erwartet: string,
 ): Promise<string> {
-  const rows = await getVariationPropertyRelations(cfg, token, itemId, variationId);
-  const row = rows.find((r) => Number(r?.propertyId) === Number(propertyId));
-  const werte: any[] = row?.relationValues ?? [];
-  const passt = werte.find((v) => v?.value === erwartet);
-  if (passt) return 'Wert korrekt';
+  const notizen: string[] = [];
 
-  // Vorhandene Zeile korrigieren, sonst eine neue anlegen.
-  const zuKorrigieren = werte.find((v) => typeof v?.value === 'string' && v.value.length > 0);
-  const eintrag = {
-    id: zuKorrigieren?.id ?? null,
-    propertyRelationId: relationId,
-    lang: '0',
-    value: erwartet,
-    description: null,
-  };
-  const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values`, {
-    method: zuKorrigieren ? 'PUT' : 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    body: JSON.stringify([eintrag]),
-  });
-  return `${zuKorrigieren ? 'korrigiert' : 'nachgetragen'} ${res.status}`;
+  for (const wartezeit of [0, 600, 1500]) {
+    if (wartezeit) await new Promise((r) => setTimeout(r, wartezeit));
+
+    const rows = await getVariationPropertyRelations(cfg, token, itemId, variationId);
+    const row = rows.find((r) => Number(r?.propertyId) === Number(propertyId));
+    const werte: any[] = row?.relationValues ?? [];
+    const vorhanden = werte.find((v) => typeof v?.value === 'string' && v.value.length > 0);
+
+    // Bereits relativ? Dann ist alles gut.
+    if (vorhanden && !vorhanden.value.startsWith('http')) {
+      notizen.push('Wert relativ');
+      return notizen.join(', ');
+    }
+
+    // Volle URL vorgefunden → auf den relativen Teil zurückschneiden.
+    const ziel = vorhanden ? relativerDateiPfad(vorhanden.value) : erwartet;
+    const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values`, {
+      method: vorhanden ? 'PUT' : 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify([
+        {
+          id: vorhanden?.id ?? null,
+          propertyRelationId: relationId,
+          lang: '0',
+          value: ziel,
+          description: null,
+        },
+      ]),
+    });
+    notizen.push(`${vorhanden ? 'gekürzt' : 'angelegt'} ${res.status}`);
+  }
+
+  return notizen.join(', ');
 }
 
 /**
