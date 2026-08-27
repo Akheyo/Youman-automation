@@ -353,6 +353,49 @@ function relationFileValue(rows: any[], propertyId: number): string | null {
 }
 
 /**
+ * Bringt den Dateiwert in die Form "<relationId>/<datei>".
+ *
+ * Plenty setzt beim ui.php-Upload teils eine VOLLSTÄNDIGE S3-URL als Wert. Die
+ * Oberfläche stellt beim Anzeigen aber ihren CDN-Vorspann davor – der Link wird
+ * dadurch doppelt und führt ins Leere. Erwartet wird der relative Pfad.
+ */
+async function normalizeRelationFileValue(
+  cfg: PlentyConfig,
+  token: string,
+  itemId: number,
+  variationId: number,
+  propertyId: number,
+  relationId: number,
+  erwartet: string,
+): Promise<string> {
+  const rows = await getVariationPropertyRelations(cfg, token, itemId, variationId);
+  const row = rows.find((r) => Number(r?.propertyId) === Number(propertyId));
+  const werte: any[] = row?.relationValues ?? [];
+  const passt = werte.find((v) => v?.value === erwartet);
+  if (passt) return 'Wert korrekt';
+
+  // Vorhandene Zeile korrigieren, sonst eine neue anlegen.
+  const zuKorrigieren = werte.find((v) => typeof v?.value === 'string' && v.value.length > 0);
+  const eintrag = {
+    id: zuKorrigieren?.id ?? null,
+    propertyRelationId: relationId,
+    lang: '0',
+    value: erwartet,
+    description: null,
+  };
+  const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values`, {
+    method: zuKorrigieren ? 'PUT' : 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify([eintrag]),
+  });
+  return `${zuKorrigieren ? 'korrigiert' : 'nachgetragen'} ${res.status}`;
+}
+
+/**
  * Stellt sicher, dass die Eigenschaft mit der Variante verknüpft ist, und gibt
  * die Relation-ID zurück. Genau diese ID trägt später den Dateipfad.
  */
@@ -406,10 +449,11 @@ async function ensurePropertyRelation(
 async function uploadPropertyRelationFile(
   cfg: PlentyConfig,
   token: string,
-  relationId: number,
+  ids: { itemId: number; variationId: number; propertyId: number; relationId: number },
   file: InvoiceFile,
   verify: () => Promise<boolean>,
 ): Promise<{ ok: boolean; log: string }> {
+  const { itemId, variationId, propertyId, relationId } = ids;
   // Dateiname wird Teil von Pfad und Wert – auf unbedenkliche Zeichen begrenzen.
   const name = file.filename.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-80) || 'rechnung.pdf';
   const mimeType = /^[\x20-\x7E]+$/.test(file.contentType) ? file.contentType : 'application/pdf';
@@ -451,28 +495,21 @@ async function uploadPropertyRelationFile(
     notes.push('ui.php-Upload abgeschaltet (PLENTY_UI_UPLOAD=0)');
   }
 
-  // --- Schritt 2: Wert schreiben -------------------------------------------
+  // --- Schritt 2: Wert prüfen und in die relative Form bringen -------------
   try {
-    const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify([
-        {
-          id: null,
-          propertyRelationId: relationId,
-          lang: '0',
-          value: `${relationId}/${name}`,
-          description: null,
-        },
-      ]),
-    });
-    notes.push(`wert ${res.status}: ${(await res.text()).slice(0, 150)}`);
+    notes.push(
+      await normalizeRelationFileValue(
+        cfg,
+        token,
+        itemId,
+        variationId,
+        propertyId,
+        relationId,
+        `${relationId}/${name}`,
+      ),
+    );
   } catch (e) {
-    notes.push(`wert Netzfehler: ${(e as Error).message.slice(0, 80)}`);
+    notes.push(`Wert-Abgleich fehlgeschlagen: ${(e as Error).message.slice(0, 100)}`);
   }
 
   return { ok: await verify(), log: notes.join(' | ') };
@@ -639,8 +676,12 @@ export async function syncProjektToPlenty(
               variationId,
               propertyId,
             );
-            const res = await uploadPropertyRelationFile(cfg, tok, relationId, invoice, () =>
-              verify(tok),
+            const res = await uploadPropertyRelationFile(
+              cfg,
+              tok,
+              { itemId, variationId, propertyId, relationId },
+              invoice,
+              () => verify(tok),
             );
             return { ...res, note };
           };
