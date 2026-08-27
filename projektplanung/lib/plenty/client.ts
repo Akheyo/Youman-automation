@@ -360,18 +360,16 @@ function relativerDateiPfad(wert: string): string {
 }
 
 /**
- * Bringt ALLE Dateiwerte einer Relation in die Form "<relationId>/<datei>".
+ * Setzt genau EINEN Dateiwert der Form "<relationId>/<datei>".
  *
  * Plenty legt beim ui.php-Upload einen eigenen Wert an – als vollständige
- * S3-URL. Beim Anzeigen stellt die Oberfläche aber nochmals ihren CDN-Vorspann
- * davor, wodurch die Adresse doppelt wird und in AccessDenied endet. Bei
- * manuell angehängten Dateien steht dort der relative Pfad, und der Link
- * funktioniert.
+ * S3-URL. Beim Anzeigen stellt die Oberfläche ihren CDN-Vorspann davor, wodurch
+ * die Adresse doppelt wird und in AccessDenied endet. Bei manuell angehängten
+ * Dateien steht dort der relative Pfad, und der Link funktioniert.
  *
- * Entscheidend: Es können MEHRERE Wert-Einträge existieren (einer von ui.php,
- * einer von der REST-Schnittstelle). Es genügt daher nicht, den ersten zu
- * prüfen – die Oberfläche zeigt womöglich einen anderen. Korrigiert werden
- * deshalb alle, die mit "http" beginnen.
+ * Einzelne Einträge zu korrigieren reichte nicht: Es entstehen mehrere Werte je
+ * Relation, und welchen die Oberfläche anzeigt, ist nicht vorhersagbar. Daher
+ * werden alle vorhandenen gelöscht und genau einer neu angelegt.
  */
 async function normalizeRelationFileValue(
   cfg: PlentyConfig,
@@ -382,63 +380,55 @@ async function normalizeRelationFileValue(
   relationId: number,
   erwartet: string,
 ): Promise<{ log: string; wert: string | null }> {
-  const schreibe = async (eintrag: Record<string, unknown>, methode: 'PUT' | 'POST') => {
+  const notizen: string[] = [];
+
+  const werteLesen = async () => {
+    const rows = await getVariationPropertyRelations(cfg, token, itemId, variationId);
+    const row = rows.find((r) => Number(r?.propertyId) === Number(propertyId));
+    return (row?.relationValues ?? []) as any[];
+  };
+
+  // Plenty schreibt den Wert nach dem Upload verzögert – kurz abwarten.
+  await new Promise((r) => setTimeout(r, 900));
+
+  // 1) Alle vorhandenen Werte entfernen.
+  const vorhanden = await werteLesen();
+  for (const v of vorhanden) {
+    if (!Number.isFinite(Number(v?.id))) continue;
+    try {
+      const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values/${v.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      });
+      notizen.push(`del #${v.id} ${res.status}`);
+    } catch {
+      notizen.push(`del #${v.id} Fehler`);
+    }
+  }
+
+  // 2) Genau einen Wert mit relativem Pfad anlegen.
+  try {
     const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values`, {
-      method: methode,
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify([eintrag]),
-    });
-    return res.status;
-  };
-
-  const notizen: string[] = [];
-  let letzterWert: string | null = null;
-
-  for (const wartezeit of [0, 700, 1600]) {
-    if (wartezeit) await new Promise((r) => setTimeout(r, wartezeit));
-
-    const rows = await getVariationPropertyRelations(cfg, token, itemId, variationId);
-    const row = rows.find((r) => Number(r?.propertyId) === Number(propertyId));
-    const werte: any[] = (row?.relationValues ?? []).filter(
-      (v: any) => typeof v?.value === 'string' && v.value.length > 0,
-    );
-    letzterWert = werte.map((v) => v.value).join(' + ') || null;
-
-    if (!werte.length) {
-      const status = await schreibe(
+      body: JSON.stringify([
         { id: null, propertyRelationId: relationId, lang: '0', value: erwartet, description: null },
-        'POST',
-      );
-      notizen.push(`neu ${status}`);
-      continue;
-    }
-
-    // Jeden Eintrag prüfen – nicht nur den ersten.
-    const zuLang = werte.filter((v) => v.value.startsWith('http'));
-    if (!zuLang.length) {
-      notizen.push(`ok (${werte.length} Wert${werte.length > 1 ? 'e' : ''})`);
-      return { log: notizen.join(' | '), wert: letzterWert };
-    }
-    for (const v of zuLang) {
-      const status = await schreibe(
-        {
-          id: v.id,
-          propertyRelationId: relationId,
-          lang: v.lang ?? '0',
-          value: relativerDateiPfad(v.value),
-          description: null,
-        },
-        'PUT',
-      );
-      notizen.push(`kürze #${v.id} → ${status}`);
-    }
+      ]),
+    });
+    notizen.push(`neu ${res.status}`);
+  } catch {
+    notizen.push('neu Fehler');
   }
 
-  return { log: notizen.join(' | '), wert: letzterWert };
+  // 3) Endstand lesen – das ist die einzige belastbare Aussage.
+  const danach = await werteLesen();
+  const wert = danach.map((v) => v?.value).filter(Boolean).join(' + ') || null;
+  notizen.push(`${danach.length} Wert${danach.length === 1 ? '' : 'e'}`);
+  return { log: notizen.join(' | '), wert };
 }
 
 /**
