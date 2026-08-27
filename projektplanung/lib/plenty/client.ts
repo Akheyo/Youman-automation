@@ -659,3 +659,39 @@ export async function inspectItemProperties(itemId: number): Promise<any> {
   for (const p of paths) results.push(await probe(p));
   return { itemId, variationId: vid, variationCount: variations.length, results };
 }
+
+/**
+ * Diagnose: listet ALLE Merkmale (Properties) kompakt auf – ID, Typ (cast) und
+ * deutscher Name. Damit lässt sich die echte ID von „Dokument 1" ablesen; die
+ * IDs aus der Plenty-Oberfläche stimmen nicht zwangsläufig mit der API überein.
+ */
+export async function listPlentyProperties(): Promise<any> {
+  const cfg = getPlentyConfig();
+  if (!plentyConfigured(cfg)) return { error: 'Plenty nicht konfiguriert.' };
+  const token = await login(cfg);
+
+  const all: any[] = [];
+  let page = 1;
+  for (;;) {
+    const res = await api<any>(cfg, token, `/rest/properties?itemsPerPage=100&page=${page}`);
+    const entries: any[] = res?.entries ?? [];
+    all.push(...entries);
+    if (!entries.length || res?.isLastPage || page > 10) break;
+    page += 1;
+  }
+
+  const properties = all.map((p) => ({
+    id: p.id,
+    propertyId: p.propertyId,
+    cast: p.cast, // "file" = Datei-Merkmal
+    typeIdentifier: p.typeIdentifier, // "item" | "variation" | …
+    groupId: p.propertyGroupId,
+    name: (p.names ?? []).find((n: any) => n.lang === 'de')?.name ?? (p.names ?? [])[0]?.name ?? '',
+  }));
+
+  return {
+    total: properties.length,
+    dateiMerkmale: properties.filter((p) => String(p.cast).toLowerCase().includes('file')),
+    properties,
+  };
+}
