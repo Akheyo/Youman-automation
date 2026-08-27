@@ -920,5 +920,71 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  return { url, loginFelder: redact(loginData), me, uiVersuche };
+  // 4) Datei-Upload anklopfen: Welche Struktur erwartet ui.php?
+  //    Eine Mini-PDF genügt – die Fehlermeldung ist das Ziel, nicht der Erfolg.
+  const userId = ids[0] ?? 5;
+  const dummy = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a])], {
+    type: 'application/pdf',
+  });
+  const envelope = (moduleName: string) =>
+    JSON.stringify({
+      requests: [
+        {
+          _dataName: 'File',
+          _moduleName: moduleName,
+          _searchParams: {},
+          _writeParams: {},
+          _validateParams: {},
+          _commandStack: [{ type: 'write', command: 'write' }],
+          _dataArray: {},
+          _dataList: {},
+        },
+      ],
+      meta: { id: userId },
+    });
+
+  const uploadVersuche: any[] = [];
+  const shapes: Array<{ label: string; build: () => FormData }> = [
+    {
+      label: 'nur Datei',
+      build: () => {
+        const f = new FormData();
+        f.append('file', dummy, 'test.pdf');
+        return f;
+      },
+    },
+    {
+      label: 'Datei + leerer request',
+      build: () => {
+        const f = new FormData();
+        f.append('request', JSON.stringify({ requests: [], meta: { id: userId } }));
+        f.append('file', dummy, 'test.pdf');
+        return f;
+      },
+    },
+    {
+      label: 'Datei + Modul item2/property/file',
+      build: () => {
+        const f = new FormData();
+        f.append('request', envelope('item2/property/file'));
+        f.append('file', dummy, 'test.pdf');
+        return f;
+      },
+    },
+  ];
+
+  for (const shape of shapes) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: shape.build(),
+      });
+      uploadVersuche.push({ form: shape.label, status: res.status, body: (await res.text()).slice(0, 300) });
+    } catch (e) {
+      uploadVersuche.push({ form: shape.label, status: 0, body: (e as Error).message.slice(0, 120) });
+    }
+  }
+
+  return { url, loginFelder: redact(loginData), me, uiVersuche, uploadVersuche };
 }
