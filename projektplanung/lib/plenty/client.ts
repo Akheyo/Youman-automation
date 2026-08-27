@@ -618,26 +618,44 @@ export async function testPlentyConnection(): Promise<{ ok: boolean; message: st
 }
 
 /**
- * Diagnose: liest die Varianteneigenschaften eines Artikels roh aus, damit man
- * einen MANUELL in Plenty hochgeladenen Beleg mit dem Ergebnis der API
- * vergleichen kann (welche Felder setzt Plenty wirklich?).
+ * Diagnose: klopft alle in Frage kommenden Plenty-Endpunkte ab und zeigt, wo die
+ * Eigenschaften/Dokumente eines Artikels wirklich liegen. Reines Werkzeug, um
+ * einen MANUELL hochgeladenen Beleg zu finden und exakt nachzubauen.
  */
 export async function inspectItemProperties(itemId: number): Promise<any> {
   const cfg = getPlentyConfig();
   if (!plentyConfigured(cfg)) return { error: 'Plenty nicht konfiguriert.' };
   const token = await login(cfg);
-  const item = await api<any>(cfg, token, `/rest/items/${itemId}/variations`);
-  const variations: any[] = Array.isArray(item) ? item : (item?.entries ?? []);
-  const out: any[] = [];
-  for (const v of variations.slice(0, 5)) {
-    let props: any = null;
-    let err: string | null = null;
+
+  const probe = async (path: string) => {
     try {
-      props = await api<any>(cfg, token, `/rest/items/${itemId}/variations/${v.id}/variation_properties`);
+      const res = await fetch(`${cfg.baseUrl}${path}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      });
+      const text = await res.text();
+      return { path, status: res.status, body: text.slice(0, 1200) };
     } catch (e) {
-      err = (e as Error).message.slice(0, 300);
+      return { path, status: 0, body: `Fehler: ${(e as Error).message.slice(0, 200)}` };
     }
-    out.push({ variationId: v.id, isMain: v.isMain, properties: props, error: err });
-  }
-  return { itemId, variations: out };
+  };
+
+  // Hauptvariante ermitteln.
+  const varRes = await api<any>(cfg, token, `/rest/items/${itemId}/variations`);
+  const variations: any[] = Array.isArray(varRes) ? varRes : (varRes?.entries ?? []);
+  const main = variations.find((v) => v.isMain) ?? variations[0];
+  const vid = main?.id;
+
+  const paths = [
+    `/rest/items/${itemId}/variations/${vid}/variation_properties`,
+    `/rest/items/${itemId}/variations/${vid}/properties`,
+    `/rest/items/${itemId}/variations/${vid}?with=properties,variationProperties`,
+    `/rest/items/${itemId}/properties`,
+    `/rest/items/${itemId}?with=itemProperties,properties`,
+    `/rest/items/${itemId}/documents`,
+    `/rest/properties?itemsPerPage=100`,
+    `/rest/properties/groups?itemsPerPage=50`,
+  ];
+  const results = [];
+  for (const p of paths) results.push(await probe(p));
+  return { itemId, variationId: vid, variationCount: variations.length, results };
 }
