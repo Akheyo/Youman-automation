@@ -920,62 +920,45 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  // 4) Den im GWT-Code gefundenen Datei-Modul testen.
-  //    Der Scan der Fragmente lieferte den dataName
-  //    "ItemVariationPropertyRelationFile" und den Modulpfad
-  //    "item2/item_variation/property". Nach der beobachteten Konvention
-  //    (RetailPriceList ↔ item2/retail_price/list) wird daraus der volle Pfad.
-  const userId = ids[0] ?? 5;
-  const dummy = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a])], {
-    type: 'application/pdf',
-  });
+  // 4) Im GWT-Code nachsehen, welcher Modulpfad zu dem gefundenen dataName
+  //    gehört. Der Pfad ließ sich aus dem Namen nicht ableiten – also wird die
+  //    Umgebung der Fundstelle im Code ausgelesen.
+  const modulOrdner = `${gwtBasis}/plentymarkets_ui`;
+  const starter = await laden(`${modulOrdner}/plentymarkets_ui.nocache.js`);
+  const hash = starter.match(/\b([0-9A-F]{32})\b/)?.[1] ?? '';
 
-  const kandidaten: Array<[string, string]> = [
-    ['item2/item_variation/property/relation/file', 'ItemVariationPropertyRelationFile'],
-    ['item2/item_variation/property/relation_file', 'ItemVariationPropertyRelationFile'],
-    ['item2/item_variation/property/file', 'ItemVariationPropertyRelationFile'],
-    ['item2/item_variation/property', 'ItemVariationPropertyRelationFile'],
+  const gesucht = ['ItemVariationPropertyRelationFile', 'ItemCharacterFileUpload'];
+  const fundstellen: any[] = [];
+  const pfadMuster = /["'`]([a-z0-9_]+(?:\/[a-z0-9_]+){1,5})["'`]/gi;
+
+  const dateien = [
+    `${modulOrdner}/${hash}.cache.js`,
+    ...[1, 2, 3, 4, 5, 6].map((i) => `${modulOrdner}/deferredjs/${hash}/${i}.cache.js`),
   ];
 
-  const uploadVersuche: any[] = [];
-  for (const [moduleName, dataName] of kandidaten) {
-    const form = new FormData();
-    form.append(
-      'request',
-      JSON.stringify({
-        requests: [
-          {
-            _dataName: dataName,
-            _moduleName: moduleName,
-            _searchParams: {},
-            _writeParams: {},
-            _validateParams: {},
-            _commandStack: [{ type: 'write', command: 'write' }],
-            _dataArray: {},
-            _dataList: {},
-          },
-        ],
-        meta: { id: userId },
-      }),
-    );
-    form.append('file', dummy, 'test.pdf');
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
-      });
-      const body = await res.text();
-      const unbekannt = body.includes('DataFactoryException');
-      uploadVersuche.push({
-        modul: moduleName,
-        gefunden: !unbekannt,
-        ...(unbekannt ? {} : { antwort: body.slice(0, 500) }),
-      });
-    } catch (e) {
-      uploadVersuche.push({ modul: moduleName, gefunden: false, fehler: (e as Error).message.slice(0, 80) });
+  for (const datei of dateien) {
+    const text = await laden(datei);
+    if (!text) continue;
+    for (const name of gesucht) {
+      let von = 0;
+      for (;;) {
+        const pos = text.indexOf(name, von);
+        if (pos < 0 || fundstellen.length >= 8) break;
+        // Umgebung der Fundstelle mitnehmen und darin Pfade suchen.
+        const umfeld = text.slice(Math.max(0, pos - 600), pos + 600);
+        const pfade = Array.from(new Set(Array.from(umfeld.matchAll(pfadMuster)).map((m) => m[1])))
+          .filter((x) => x.includes('/') && !x.startsWith('http'));
+        fundstellen.push({
+          name,
+          datei: datei.slice(-28),
+          pfadeInUmgebung: pfade.slice(0, 12),
+          auszug: umfeld.slice(500, 800),
+        });
+        von = pos + name.length;
+      }
     }
+    if (fundstellen.length >= 8) break;
   }
 
-  return { url, loginFelder: redact(loginData), uiVersuche, uploadVersuche };
+  return { url, gwtBasis, hash, uiVersuche, fundstellen };
 }
