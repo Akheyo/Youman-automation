@@ -39,7 +39,7 @@ interface SyncInfo {
 const EMPTY = { company: '', location: '', contactInternal: '', contactExternal: '', notes: '', orderType: '' };
 
 /** Sichtbarer Build-Marker – so erkennt man sofort, ob die neue Version live ist. */
-const APP_BUILD = 'file-upload'
+const APP_BUILD = 'v1.0'
 
 export default function ProjektDashboard({
   initial,
@@ -480,7 +480,7 @@ function ResultCard({
           <div>
             <dt>Rechnung</dt>
             <dd>
-              {sync.invoiceAttached ? 'als „Dokument 1" in Plenty hinterlegt' : 'gespeichert'}
+              {sync.invoiceAttached ? 'als „Dokument 1" am Plenty-Artikel' : 'gespeichert'}
               {' — '}
               <a href={`/api/projekte/${projekt.id}/invoice`} target="_blank" rel="noreferrer" className={styles.invoiceLink}>
                 öffnen
