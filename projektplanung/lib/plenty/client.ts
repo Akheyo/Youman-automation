@@ -920,58 +920,86 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  // 4) Im GWT-Code nachsehen, welcher Modulpfad zu dem gefundenen dataName
-  //    gehört. Der Pfad ließ sich aus dem Namen nicht ableiten – also wird die
-  //    Umgebung der Fundstelle im Code ausgelesen.
-  const gwtBasis = process.env.PLENTY_GWT_PATH ?? '/plenty/gwt/productive/bafa1abc';
-  const laden = async (pfad: string) => {
-    try {
-      const res = await fetch(`${cfg.baseUrl}${pfad}`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: '*/*' },
-      });
-      return res.ok ? await res.text() : '';
-    } catch {
-      return '';
-    }
-  };
-  const modulOrdner = `${gwtBasis}/plentymarkets_ui`;
-  const starter = await laden(`${modulOrdner}/plentymarkets_ui.nocache.js`);
-  const hash = starter.match(/\b([0-9A-F]{32})\b/)?.[1] ?? '';
+  // 4) Die im GWT-Code belegte Kombination testen – mit VOLLER Fehlerausgabe.
+  //    Der Code definiert wörtlich:
+  //      new TP(107, "ItemVariationPropertyRelationFile",
+  //                  "item2/item_variation/property")
+  //    Frühere Läufe verwarfen die Fehlermeldung und zeigten nur
+  //    "nicht gefunden" – genau die Information, auf die es ankommt.
+  const userId = ids[0] ?? 5;
+  const dummy = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a])], {
+    type: 'application/pdf',
+  });
+  const MODUL = 'item2/item_variation/property';
+  const DATEN = 'ItemVariationPropertyRelationFile';
 
-  const gesucht = ['ItemVariationPropertyRelationFile', 'ItemCharacterFileUpload'];
-  const fundstellen: any[] = [];
-  const pfadMuster = /["'`]([a-z0-9_]+(?:\/[a-z0-9_]+){1,5})["'`]/gi;
-
-  const dateien = [
-    `${modulOrdner}/${hash}.cache.js`,
-    ...[1, 2, 3, 4, 5, 6].map((i) => `${modulOrdner}/deferredjs/${hash}/${i}.cache.js`),
+  const varianten: Array<{ label: string; anfrage: any; alsForm: boolean }> = [
+    {
+      label: 'write, multipart',
+      alsForm: true,
+      anfrage: { _commandStack: [{ type: 'write', command: 'write' }] },
+    },
+    {
+      label: 'read, multipart',
+      alsForm: true,
+      anfrage: { _commandStack: [{ type: 'read', command: 'read' }] },
+    },
+    {
+      label: 'write, form-encoded ohne Datei',
+      alsForm: false,
+      anfrage: { _commandStack: [{ type: 'write', command: 'write' }] },
+    },
+    {
+      label: 'upload-Kommando, multipart',
+      alsForm: true,
+      anfrage: { _commandStack: [{ type: 'write', command: 'upload' }] },
+    },
   ];
 
-  for (const datei of dateien) {
-    const text = await laden(datei);
-    if (!text) continue;
-    for (const name of gesucht) {
-      let von = 0;
-      for (;;) {
-        const pos = text.indexOf(name, von);
-        if (pos < 0 || fundstellen.length >= 8) break;
-        // Umgebung der Fundstelle mitnehmen und darin Pfade suchen.
-        const umfeld = text.slice(Math.max(0, pos - 600), pos + 600);
-        const pfade = Array.from(
-          new Set(Array.from(umfeld.matchAll(pfadMuster), (m) => String(m[1]))),
-        )
-          .filter((x) => x.includes('/') && !x.startsWith('http'));
-        fundstellen.push({
-          name,
-          datei: datei.slice(-28),
-          pfadeInUmgebung: pfade.slice(0, 12),
-          auszug: umfeld.slice(500, 800),
+  const uploadVersuche: any[] = [];
+  for (const v of varianten) {
+    const umschlag = JSON.stringify({
+      requests: [
+        {
+          _dataName: DATEN,
+          _moduleName: MODUL,
+          _searchParams: {},
+          _writeParams: {},
+          _validateParams: {},
+          _dataArray: {},
+          _dataList: {},
+          ...v.anfrage,
+        },
+      ],
+      meta: { id: userId },
+    });
+    try {
+      let res: Response;
+      if (v.alsForm) {
+        const form = new FormData();
+        form.append('request', umschlag);
+        form.append('file', dummy, 'test.pdf');
+        res = await fetch(url, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: form,
         });
-        von = pos + name.length;
+      } else {
+        res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Authorization: `Bearer ${token}`,
+          },
+          body: `request=${encodeURIComponent(umschlag)}`,
+        });
       }
+      // Diesmal IMMER die vollständige Antwort mitgeben.
+      uploadVersuche.push({ variante: v.label, status: res.status, antwort: (await res.text()).slice(0, 600) });
+    } catch (e) {
+      uploadVersuche.push({ variante: v.label, status: 0, antwort: (e as Error).message.slice(0, 150) });
     }
-    if (fundstellen.length >= 8) break;
   }
 
-  return { url, gwtBasis, hash, uiVersuche, fundstellen };
+  return { url, modul: MODUL, daten: DATEN, uiVersuche, uploadVersuche };
 }
