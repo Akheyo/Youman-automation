@@ -817,19 +817,64 @@ export async function findItemsWithDocuments(): Promise<any> {
 // ---------------------------------------------------------------------------
 
 /**
- * Diagnose: Findet heraus, wie sich ein Server-Aufruf gegenüber ui.php
- * ausweisen kann. Die Oberfläche schickt in `meta` ein Sitzungs-Token, das aus
- * dem Browser-Login stammt – hier wird geprüft, ob ui.php auch den
- * REST-Bearer-Token akzeptiert oder selbst eines ausgibt.
+ * Diagnose: Ermittelt die Benutzer-ID für ui.php.
+ *
+ * Stand der Sondierung: ui.php akzeptiert den REST-Bearer-Token und stellt eine
+ * Sitzung aus (Set-Cookie SID_PLENTY_ADMIN_…). Es fehlt nur noch `meta.id` –
+ * die ID des angemeldeten Benutzers. Passt sie nicht, antwortet ui.php mit
+ * UIInvalidUserIdException ("User does not match").
  */
 export async function probeUiEndpoint(): Promise<any> {
   const cfg = getPlentyConfig();
   if (!plentyConfigured(cfg)) return { error: 'Plenty nicht konfiguriert.' };
-  const token = await login(cfg);
   const url = `${cfg.baseUrl}/plenty/api/ui.php`;
 
-  // Harmlose Leseanfrage – Aufbau wie im Mitschnitt der Oberfläche.
-  const readRequest = (meta: Record<string, unknown>) =>
+  // Geheimnisse niemals ausgeben – nur Struktur und unverfängliche Werte.
+  const redact = (v: unknown): unknown => {
+    if (typeof v === 'string') return v.length > 24 ? `«${v.length} Zeichen»` : v;
+    if (Array.isArray(v)) return v.slice(0, 3).map(redact);
+    if (v && typeof v === 'object') {
+      return Object.fromEntries(
+        Object.entries(v as Record<string, unknown>).map(([k, val]) => [
+          k,
+          /token|password|secret|refresh/i.test(k) ? '«ausgeblendet»' : redact(val),
+        ]),
+      );
+    }
+    return v;
+  };
+
+  // 1) Login-Antwort im Ganzen ansehen – enthält sie eine Benutzer-ID?
+  const loginRes = await fetch(`${cfg.baseUrl}/rest/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ username: cfg.user, password: cfg.password }),
+  });
+  const loginRaw = await loginRes.text();
+  let loginData: any = {};
+  try {
+    loginData = JSON.parse(loginRaw);
+  } catch {
+    /* egal */
+  }
+  const token = loginData.access_token ?? loginData.accessToken ?? '';
+
+  // 2) Kandidaten-Endpunkte für das eigene Benutzerkonto abfragen.
+  const meCandidates = ['/rest/accounts/contacts/me', '/rest/users/me', '/rest/accounts/me', '/rest/user'];
+  const me: any[] = [];
+  for (const path of meCandidates) {
+    try {
+      const res = await fetch(`${cfg.baseUrl}${path}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      });
+      me.push({ path, status: res.status, body: (await res.text()).slice(0, 250) });
+    } catch (e) {
+      me.push({ path, status: 0, body: (e as Error).message.slice(0, 100) });
+    }
+  }
+
+  // 3) ui.php mit verschiedenen Benutzer-IDs durchprobieren.
+  const readRequest = (id: number) =>
     JSON.stringify({
       requests: [
         {
@@ -843,64 +888,36 @@ export async function probeUiEndpoint(): Promise<any> {
           _dataList: {},
         },
       ],
-      meta,
+      meta: { id },
     });
 
-  const attempts: Array<{ label: string; init: RequestInit }> = [
-    {
-      label: 'ohne token, form-encoded',
-      init: {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `request=${encodeURIComponent(readRequest({ id: 1 }))}`,
-      },
-    },
-    {
-      label: 'REST-Bearer im Header',
-      init: {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: `Bearer ${token}`,
-        },
-        body: `request=${encodeURIComponent(readRequest({ id: 1 }))}`,
-      },
-    },
-    {
-      label: 'REST-Token in meta',
-      init: {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `request=${encodeURIComponent(readRequest({ id: 1, token }))}`,
-      },
-    },
-    {
-      label: 'REST-Bearer + Token in meta',
-      init: {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Authorization: `Bearer ${token}`,
-        },
-        body: `request=${encodeURIComponent(readRequest({ id: 1, token }))}`,
-      },
-    },
-  ];
+  const idsFromLogin = [loginData.userId, loginData.user?.id, loginData.id]
+    .map(Number)
+    .filter((n) => Number.isFinite(n) && n > 0);
+  const ids = Array.from(new Set([...idsFromLogin, 128, 1, 0]));
 
-  const results = [];
-  for (const a of attempts) {
+  const uiVersuche: any[] = [];
+  for (const id of ids) {
     try {
-      const res = await fetch(url, a.init);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Bearer ${token}`,
+        },
+        body: `request=${encodeURIComponent(readRequest(id))}`,
+      });
       const body = await res.text();
-      results.push({
-        versuch: a.label,
+      uiVersuche.push({
+        metaId: id,
         status: res.status,
-        setCookie: res.headers.get('set-cookie')?.slice(0, 120) ?? null,
-        body: body.slice(0, 400),
+        userMismatch: body.includes('UIInvalidUserIdException'),
+        body: body.slice(0, 220),
       });
     } catch (e) {
-      results.push({ versuch: a.label, status: 0, body: `Fehler: ${(e as Error).message.slice(0, 150)}` });
+      uiVersuche.push({ metaId: id, status: 0, body: (e as Error).message.slice(0, 100) });
     }
   }
-  return { url, results };
+
+  return { url, loginFelder: redact(loginData), me, uiVersuche };
 }
