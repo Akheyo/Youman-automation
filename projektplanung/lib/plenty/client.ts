@@ -360,15 +360,18 @@ function relativerDateiPfad(wert: string): string {
 }
 
 /**
- * Bringt den Dateiwert in die Form "<relationId>/<datei>".
+ * Bringt ALLE Dateiwerte einer Relation in die Form "<relationId>/<datei>".
  *
- * Plenty schreibt beim ui.php-Upload eine VOLLSTÄNDIGE S3-URL in den Wert.
- * Beim Anzeigen setzt die Oberfläche aber nochmals ihren CDN-Vorspann davor –
- * der Link wird dadurch doppelt und endet in AccessDenied. Bei manuell
- * angehängten Dateien steht dort der relative Pfad, und der Link funktioniert.
+ * Plenty legt beim ui.php-Upload einen eigenen Wert an – als vollständige
+ * S3-URL. Beim Anzeigen stellt die Oberfläche aber nochmals ihren CDN-Vorspann
+ * davor, wodurch die Adresse doppelt wird und in AccessDenied endet. Bei
+ * manuell angehängten Dateien steht dort der relative Pfad, und der Link
+ * funktioniert.
  *
- * Plenty setzt den Wert teils verzögert, daher wird mehrfach nachgesehen und
- * bei Bedarf korrigiert – der letzte Stand zählt.
+ * Entscheidend: Es können MEHRERE Wert-Einträge existieren (einer von ui.php,
+ * einer von der REST-Schnittstelle). Es genügt daher nicht, den ersten zu
+ * prüfen – die Oberfläche zeigt womöglich einen anderen. Korrigiert werden
+ * deshalb alle, die mit "http" beginnen.
  */
 async function normalizeRelationFileValue(
   cfg: PlentyConfig,
@@ -379,45 +382,60 @@ async function normalizeRelationFileValue(
   relationId: number,
   erwartet: string,
 ): Promise<{ log: string; wert: string | null }> {
-  const notizen: string[] = [];
-  let letzterWert: string | null = null;
-
-  for (const wartezeit of [0, 600, 1500]) {
-    if (wartezeit) await new Promise((r) => setTimeout(r, wartezeit));
-
-    const rows = await getVariationPropertyRelations(cfg, token, itemId, variationId);
-    const row = rows.find((r) => Number(r?.propertyId) === Number(propertyId));
-    const werte: any[] = row?.relationValues ?? [];
-    const vorhanden = werte.find((v) => typeof v?.value === 'string' && v.value.length > 0);
-    letzterWert = vorhanden?.value ?? null;
-
-    // Bereits relativ? Dann ist alles gut.
-    if (vorhanden && !vorhanden.value.startsWith('http')) {
-      notizen.push('relativ');
-      return { log: notizen.join(', '), wert: letzterWert };
-    }
-
-    // Volle URL vorgefunden → auf den relativen Teil zurückschneiden.
-    const ziel = vorhanden ? relativerDateiPfad(vorhanden.value) : erwartet;
+  const schreibe = async (eintrag: Record<string, unknown>, methode: 'PUT' | 'POST') => {
     const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values`, {
-      method: vorhanden ? 'PUT' : 'POST',
+      method: methode,
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify([
+      body: JSON.stringify([eintrag]),
+    });
+    return res.status;
+  };
+
+  const notizen: string[] = [];
+  let letzterWert: string | null = null;
+
+  for (const wartezeit of [0, 700, 1600]) {
+    if (wartezeit) await new Promise((r) => setTimeout(r, wartezeit));
+
+    const rows = await getVariationPropertyRelations(cfg, token, itemId, variationId);
+    const row = rows.find((r) => Number(r?.propertyId) === Number(propertyId));
+    const werte: any[] = (row?.relationValues ?? []).filter(
+      (v: any) => typeof v?.value === 'string' && v.value.length > 0,
+    );
+    letzterWert = werte.map((v) => v.value).join(' + ') || null;
+
+    if (!werte.length) {
+      const status = await schreibe(
+        { id: null, propertyRelationId: relationId, lang: '0', value: erwartet, description: null },
+        'POST',
+      );
+      notizen.push(`neu ${status}`);
+      continue;
+    }
+
+    // Jeden Eintrag prüfen – nicht nur den ersten.
+    const zuLang = werte.filter((v) => v.value.startsWith('http'));
+    if (!zuLang.length) {
+      notizen.push(`ok (${werte.length} Wert${werte.length > 1 ? 'e' : ''})`);
+      return { log: notizen.join(' | '), wert: letzterWert };
+    }
+    for (const v of zuLang) {
+      const status = await schreibe(
         {
-          id: vorhanden?.id ?? null,
+          id: v.id,
           propertyRelationId: relationId,
-          lang: '0',
-          value: ziel,
+          lang: v.lang ?? '0',
+          value: relativerDateiPfad(v.value),
           description: null,
         },
-      ]),
-    });
-    const antwort = (await res.text().catch(() => '')).slice(0, 120);
-    notizen.push(`${vorhanden ? 'PUT' : 'POST'} ${res.status}${antwort ? ` ${antwort}` : ''}`);
+        'PUT',
+      );
+      notizen.push(`kürze #${v.id} → ${status}`);
+    }
   }
 
   return { log: notizen.join(' | '), wert: letzterWert };
