@@ -44,6 +44,8 @@ export interface PlentyConfig {
   eanPrefix: string;
   invoicePropertyId: number | null;
   invoicePropertyName: string;
+  /** Versuch, die Datei über Plentys interne ui.php hochzuladen (abschaltbar). */
+  uiUpload: boolean;
 }
 
 export function getPlentyConfig(): PlentyConfig {
@@ -66,6 +68,9 @@ export function getPlentyConfig(): PlentyConfig {
     eanPrefix: process.env.PLENTY_EAN_PREFIX ?? '20',
     invoicePropertyId: process.env.PLENTY_INVOICE_PROPERTY_ID ? Number(process.env.PLENTY_INVOICE_PROPERTY_ID) : null,
     invoicePropertyName: process.env.PLENTY_INVOICE_PROPERTY_NAME ?? 'Dokument 1',
+    // Standard: an. Zum Abschalten in Vercel PLENTY_UI_UPLOAD=0 setzen –
+    // wirkt sofort, ohne neuen Build.
+    uiUpload: (process.env.PLENTY_UI_UPLOAD ?? '1') !== '0',
   };
 }
 
@@ -805,4 +810,97 @@ export async function findItemsWithDocuments(): Promise<any> {
   }
 
   return { endpoints, artikelMitEigenschaften: treffer };
+}
+
+// ---------------------------------------------------------------------------
+// ui.php – Plentys interne Oberflächen-Schnittstelle
+// ---------------------------------------------------------------------------
+
+/**
+ * Diagnose: Findet heraus, wie sich ein Server-Aufruf gegenüber ui.php
+ * ausweisen kann. Die Oberfläche schickt in `meta` ein Sitzungs-Token, das aus
+ * dem Browser-Login stammt – hier wird geprüft, ob ui.php auch den
+ * REST-Bearer-Token akzeptiert oder selbst eines ausgibt.
+ */
+export async function probeUiEndpoint(): Promise<any> {
+  const cfg = getPlentyConfig();
+  if (!plentyConfigured(cfg)) return { error: 'Plenty nicht konfiguriert.' };
+  const token = await login(cfg);
+  const url = `${cfg.baseUrl}/plenty/api/ui.php`;
+
+  // Harmlose Leseanfrage – Aufbau wie im Mitschnitt der Oberfläche.
+  const readRequest = (meta: Record<string, unknown>) =>
+    JSON.stringify({
+      requests: [
+        {
+          _dataName: 'RetailPriceList',
+          _moduleName: 'item2/retail_price/list',
+          _searchParams: {},
+          _writeParams: {},
+          _validateParams: {},
+          _commandStack: [{ type: 'read', command: 'read' }],
+          _dataArray: {},
+          _dataList: {},
+        },
+      ],
+      meta,
+    });
+
+  const attempts: Array<{ label: string; init: RequestInit }> = [
+    {
+      label: 'ohne token, form-encoded',
+      init: {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `request=${encodeURIComponent(readRequest({ id: 1 }))}`,
+      },
+    },
+    {
+      label: 'REST-Bearer im Header',
+      init: {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Bearer ${token}`,
+        },
+        body: `request=${encodeURIComponent(readRequest({ id: 1 }))}`,
+      },
+    },
+    {
+      label: 'REST-Token in meta',
+      init: {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `request=${encodeURIComponent(readRequest({ id: 1, token }))}`,
+      },
+    },
+    {
+      label: 'REST-Bearer + Token in meta',
+      init: {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Bearer ${token}`,
+        },
+        body: `request=${encodeURIComponent(readRequest({ id: 1, token }))}`,
+      },
+    },
+  ];
+
+  const results = [];
+  for (const a of attempts) {
+    try {
+      const res = await fetch(url, a.init);
+      const body = await res.text();
+      results.push({
+        versuch: a.label,
+        status: res.status,
+        setCookie: res.headers.get('set-cookie')?.slice(0, 120) ?? null,
+        body: body.slice(0, 400),
+      });
+    } catch (e) {
+      results.push({ versuch: a.label, status: 0, body: `Fehler: ${(e as Error).message.slice(0, 150)}` });
+    }
+  }
+  return { url, results };
 }
