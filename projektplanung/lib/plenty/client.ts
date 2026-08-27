@@ -958,8 +958,29 @@ export async function probeUiEndpoint(): Promise<any> {
       const text = await laden(aufloesen(v));
       for (const m of text.matchAll(modulMuster)) module.add(m[1]);
       for (const m of text.matchAll(datenMuster)) datennamen.add(m[1]);
+      // Die .nocache.js ist nur der GWT-Starter – sie nennt die eigentlichen
+      // Code-Dateien. Diese Verweise mit aufnehmen.
+      if (v.includes('nocache')) {
+        for (const m of text.matchAll(/["']([\w./-]+\.js)["']/g)) verweise.add(m[1]);
+      }
     } catch {
       /* einzelne Datei überspringen */
+    }
+  }
+
+  // Der eigentliche Anwendungscode liegt im Modulordner: laut Stacktrace
+  // plentymarkets_ui-0.js … -N.js unter plentymarkets_ui/.
+  for (let i = 0; i < 6; i += 1) {
+    for (const ordner of [`${gwtBasis}/plentymarkets_ui`, gwtBasis]) {
+      try {
+        const text = await laden(`${ordner}/plentymarkets_ui-${i}.js`);
+        if (!text) continue;
+        for (const m of text.matchAll(modulMuster)) module.add(m[1]);
+        for (const m of text.matchAll(datenMuster)) datennamen.add(m[1]);
+        break; // in diesem Ordner gefunden – zweiten nicht mehr probieren
+      } catch {
+        /* weiter */
+      }
     }
   }
 
