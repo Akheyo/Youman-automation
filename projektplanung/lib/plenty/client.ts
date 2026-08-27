@@ -374,9 +374,12 @@ async function ensurePropertyRelation(
 }
 
 /**
- * Lädt die Datei in eine Property-Relation. Die genaue Upload-Route ist nicht
- * dokumentiert, daher werden die plausiblen Kandidaten der Reihe nach probiert;
- * der Erfolg wird anschließend am tatsächlich gespeicherten Wert geprüft.
+ * Legt die Datei an einer Property-Relation ab. Zwei Schritte, wie es auch die
+ * Plenty-Oberfläche tut:
+ *   1. Datei hochladen  → landet unter propertyItems/<relationId>/<datei>
+ *   2. Relation-Value schreiben → value = "<relationId>/<datei>"
+ * Ohne Schritt 2 bleibt das Feld leer („Dateien hochladen"), obwohl der Upload
+ * mit HTTP 200 quittiert wurde.
  */
 async function uploadPropertyRelationFile(
   cfg: PlentyConfig,
@@ -384,38 +387,86 @@ async function uploadPropertyRelationFile(
   relationId: number,
   file: InvoiceFile,
 ): Promise<string> {
-  const paths = [
-    `/rest/properties/relations/${relationId}/files`,
-    `/rest/properties/relations/${relationId}/value/files`,
-    `/rest/properties/relations/${relationId}/values/files`,
-    `/rest/properties/relations/${relationId}/upload`,
-    `/rest/properties/relations/values/${relationId}/files`,
-  ];
+  // Dateiname auf ASCII begrenzen – er wird Teil von Pfad und Wert.
+  const name = file.filename.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-80) || 'rechnung.pdf';
   const notes: string[] = [];
-  for (const path of paths) {
-    for (const field of ['file', 'files']) {
-      const form = new FormData();
-      form.append(field, new Blob([new Uint8Array(file.bytes)], { type: file.contentType }), file.filename);
-      let res: Response;
-      try {
-        res = await fetch(`${cfg.baseUrl}${path}`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-          body: form,
-        });
-      } catch (e) {
-        notes.push(`${path} feld="${field}" Fehler`);
-        continue;
-      }
-      const body = await res.text().catch(() => '');
-      if (res.ok) return `${path} feld="${field}" HTTP ${res.status}: ${body.slice(0, 120)}`;
-      notes.push(`${path} feld="${field}" HTTP ${res.status}`);
-      if (res.status === 404) break; // Route gibt es nicht – Feldvarianten sparen
+
+  // --- Schritt 1: Datei hochladen -------------------------------------------
+  const uploadPaths = [
+    `/rest/properties/relations/${relationId}/files`,
+    `/rest/properties/relations/${relationId}/upload`,
+  ];
+  let uploadBody = '';
+  for (const path of uploadPaths) {
+    const form = new FormData();
+    form.append('file', new Blob([new Uint8Array(file.bytes)], { type: file.contentType }), name);
+    form.append('lang', 'de');
+    try {
+      const res = await fetch(`${cfg.baseUrl}${path}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+        body: form,
+      });
+      uploadBody = (await res.text().catch(() => '')).slice(0, 200);
+      notes.push(`upload ${path} HTTP ${res.status}${uploadBody ? `: ${uploadBody}` : ' (leer)'}`);
+      if (res.ok) break;
+    } catch (e) {
+      notes.push(`upload ${path} Fehler`);
     }
   }
-  throw new Error(notes.join(' | '));
-}
 
+  // Falls die Antwort schon einen Pfad nennt, diesen verwenden.
+  let value = `${relationId}/${name}`;
+  try {
+    const parsed = JSON.parse(uploadBody);
+    const fromApi = parsed?.value ?? parsed?.valueFile ?? parsed?.path;
+    if (typeof fromApi === 'string' && fromApi.includes('/')) value = fromApi;
+  } catch {
+    /* leere oder nicht-JSON-Antwort ist hier normal */
+  }
+
+  // --- Schritt 2: Relation-Value schreiben ----------------------------------
+  const valueAttempts: Array<{ label: string; path: string; method: string; body: string }> = [
+    {
+      label: 'relations/{id}/values POST',
+      path: `/rest/properties/relations/${relationId}/values`,
+      method: 'POST',
+      body: JSON.stringify({ lang: 'de', value }),
+    },
+    {
+      label: 'relations/values POST',
+      path: '/rest/properties/relations/values',
+      method: 'POST',
+      body: JSON.stringify({ propertyRelationId: relationId, lang: 'de', value }),
+    },
+    {
+      label: 'relations/values PUT[]',
+      path: '/rest/properties/relations/values',
+      method: 'PUT',
+      body: JSON.stringify([{ propertyRelationId: relationId, lang: 'de', value }]),
+    },
+  ];
+  for (const a of valueAttempts) {
+    try {
+      const res = await fetch(`${cfg.baseUrl}${a.path}`, {
+        method: a.method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: a.body,
+      });
+      const body = (await res.text().catch(() => '')).slice(0, 160);
+      notes.push(`${a.label} HTTP ${res.status}${body ? `: ${body}` : ''}`);
+      if (res.ok) break;
+    } catch (e) {
+      notes.push(`${a.label} Fehler`);
+    }
+  }
+
+  return notes.join(' | ');
+}
 
 /** Hängt einen Barcode (z. B. EAN13) an die Variante. */
 async function addVariationBarcode(
@@ -571,7 +622,7 @@ export async function syncProjektToPlenty(
           try {
             uploadNote = await uploadPropertyRelationFile(cfg, token, relationId, invoice);
           } catch (e) {
-            uploadNote = `kein Upload-Endpunkt: ${(e as Error).message}`;
+            uploadNote = `Upload-Fehler: ${(e as Error).message}`;
           }
           // Wahrheit ist allein der gespeicherte Wert an der Variante.
           const rows = await getVariationPropertyRelations(cfg, token, itemId, variationId);
