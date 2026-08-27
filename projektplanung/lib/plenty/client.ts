@@ -920,71 +920,41 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  // 4) Modulnamen für den Datei-Upload suchen.
-  //    ui.php löst Module als "<moduleName>/<dataName>" auf und meldet bei
-  //    Fehlgriff DataFactoryException. Alles andere ist ein Treffer.
-  const userId = ids[0] ?? 5;
-  const dummy = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a])], {
-    type: 'application/pdf',
-  });
+  // 4) Modulnamen direkt im JavaScript der Oberfläche suchen.
+  //    Der Referer der Oberfläche verrät den Pfad: /plenty/gwt/productive/<hash>/
+  //    Dort liegen plentymarkets_ui-0.js … -N.js mit allen Modulnamen im Klartext.
+  const gwtBasis = process.env.PLENTY_GWT_PATH ?? '/plenty/gwt/productive/bafa1abc';
+  const dateien = ['plentymarkets_ui-0.js', 'plentymarkets_ui-1.js', 'plentymarkets_ui-2.js'];
 
-  // Beobachtetes Namensschema der Oberfläche: item2/<bereich>/<aktion>
-  // mit CamelCase-dataName (item2/retail_price/list → RetailPriceList).
-  const kandidaten: Array<[string, string]> = [
-    ['item2/item_variation/property/file', 'ItemVariationPropertyFile'],
-    ['item2/item_variation/property/upload', 'ItemVariationPropertyUpload'],
-    ['item2/item_variation/property/list', 'ItemVariationPropertyList'],
-    ['item2/property/relation/value/file', 'PropertyRelationValueFile'],
-    ['item2/property/relation/file', 'PropertyRelationFile'],
-    ['item2/property/file/upload', 'PropertyFileUpload'],
-    ['item2/property/upload', 'PropertyUpload'],
-    ['item2/property/list', 'PropertyList'],
-    ['item2/file/upload', 'FileUpload'],
-    ['item2/item_variation/file/upload', 'ItemVariationFileUpload'],
-    ['system/file/upload', 'FileUpload'],
-    ['system/upload', 'Upload'],
-  ];
+  // Modulpfade und dataNames rund um Eigenschaften/Dateien einsammeln.
+  const modulMuster = /["'`]((?:item2|system|ui)\/[a-z0-9_\/]*(?:propert|file|upload|document)[a-z0-9_\/]*)["'`]/gi;
+  const datenMuster = /["'`]([A-Z][A-Za-z]{2,}(?:Propert|File|Upload|Document)[A-Za-z]*)["'`]/g;
+  const module = new Set<string>();
+  const datennamen = new Set<string>();
+  const geladen: any[] = [];
 
-  const uploadVersuche: any[] = [];
-  for (const [moduleName, dataName] of kandidaten) {
-    const form = new FormData();
-    form.append(
-      'request',
-      JSON.stringify({
-        requests: [
-          {
-            _dataName: dataName,
-            _moduleName: moduleName,
-            _searchParams: {},
-            _writeParams: {},
-            _validateParams: {},
-            _commandStack: [{ type: 'write', command: 'write' }],
-            _dataArray: {},
-            _dataList: {},
-          },
-        ],
-        meta: { id: userId },
-      }),
-    );
-    form.append('file', dummy, 'test.pdf');
+  for (const datei of dateien) {
+    const pfad = `${gwtBasis}/${datei}`;
     try {
-      const res = await fetch(url, {
-        method: 'POST',
+      const res = await fetch(`${cfg.baseUrl}${pfad}`, {
         headers: { Authorization: `Bearer ${token}` },
-        body: form,
       });
-      const body = await res.text();
-      const unbekannt = body.includes('DataFactoryException');
-      // Nur Treffer ausführlich zeigen – Fehlgriffe knapp halten.
-      uploadVersuche.push({
-        modul: `${moduleName}/${dataName}`,
-        gefunden: !unbekannt,
-        ...(unbekannt ? {} : { body: body.slice(0, 400) }),
-      });
+      const text = res.ok ? await res.text() : '';
+      geladen.push({ datei, status: res.status, groesse: text.length });
+      for (const m of text.matchAll(modulMuster)) module.add(m[1]);
+      for (const m of text.matchAll(datenMuster)) datennamen.add(m[1]);
     } catch (e) {
-      uploadVersuche.push({ modul: moduleName, gefunden: false, fehler: (e as Error).message.slice(0, 80) });
+      geladen.push({ datei, status: 0, fehler: (e as Error).message.slice(0, 80) });
     }
   }
 
-  return { url, loginFelder: redact(loginData), me, uiVersuche, uploadVersuche };
+  return {
+    url,
+    gwtBasis,
+    loginFelder: redact(loginData),
+    uiVersuche,
+    geladen,
+    module: Array.from(module).sort().slice(0, 80),
+    datennamen: Array.from(datennamen).sort().slice(0, 80),
+  };
 }
