@@ -378,26 +378,28 @@ async function ensurePropertyRelation(
  * Plenty-Oberfläche tut:
  *   1. Datei hochladen  → landet unter propertyItems/<relationId>/<datei>
  *   2. Relation-Value schreiben → value = "<relationId>/<datei>"
- * Ohne Schritt 2 bleibt das Feld leer („Dateien hochladen"), obwohl der Upload
- * mit HTTP 200 quittiert wurde.
+ *
+ * WICHTIG: Plenty antwortet auf mehrere dieser Routen mit HTTP 200, ohne etwas
+ * zu speichern. Ein Statuscode taugt hier also nicht als Erfolgsnachweis –
+ * nach JEDEM Versuch wird am Artikel geprüft, ob der Wert wirklich steht.
  */
 async function uploadPropertyRelationFile(
   cfg: PlentyConfig,
   token: string,
   relationId: number,
   file: InvoiceFile,
-): Promise<string> {
+  verify: () => Promise<boolean>,
+): Promise<{ ok: boolean; log: string }> {
   // Dateiname auf ASCII begrenzen – er wird Teil von Pfad und Wert.
   const name = file.filename.replace(/[^a-zA-Z0-9._-]+/g, '_').slice(-80) || 'rechnung.pdf';
   const notes: string[] = [];
 
   // --- Schritt 1: Datei hochladen -------------------------------------------
-  const uploadPaths = [
+  let uploadBody = '';
+  for (const path of [
     `/rest/properties/relations/${relationId}/files`,
     `/rest/properties/relations/${relationId}/upload`,
-  ];
-  let uploadBody = '';
-  for (const path of uploadPaths) {
+  ]) {
     const form = new FormData();
     form.append('file', new Blob([new Uint8Array(file.bytes)], { type: file.contentType }), name);
     form.append('lang', 'de');
@@ -408,45 +410,61 @@ async function uploadPropertyRelationFile(
         body: form,
       });
       uploadBody = (await res.text().catch(() => '')).slice(0, 200);
-      notes.push(`upload ${path} HTTP ${res.status}${uploadBody ? `: ${uploadBody}` : ' (leer)'}`);
+      notes.push(`upload HTTP ${res.status}${uploadBody ? `: ${uploadBody}` : ' (leer)'}`);
       if (res.ok) break;
-    } catch (e) {
-      notes.push(`upload ${path} Fehler`);
+    } catch {
+      notes.push(`upload ${path}: Netzwerkfehler`);
     }
   }
+  // Schon nach dem Upload prüfen – vielleicht setzt Plenty den Wert selbst.
+  if (await verify()) return { ok: true, log: `${notes.join(' | ')} → Wert nach Upload gesetzt` };
 
-  // Falls die Antwort schon einen Pfad nennt, diesen verwenden.
+  // Falls die Upload-Antwort einen Pfad nennt, diesen bevorzugen.
   let value = `${relationId}/${name}`;
   try {
     const parsed = JSON.parse(uploadBody);
     const fromApi = parsed?.value ?? parsed?.valueFile ?? parsed?.path;
     if (typeof fromApi === 'string' && fromApi.includes('/')) value = fromApi;
   } catch {
-    /* leere oder nicht-JSON-Antwort ist hier normal */
+    /* leere Antwort ist hier normal */
   }
 
   // --- Schritt 2: Relation-Value schreiben ----------------------------------
-  const valueAttempts: Array<{ label: string; path: string; method: string; body: string }> = [
+  // Die laut Plenty-Doku vorgesehene Sammel-Route zuerst.
+  const attempts: Array<{ label: string; path: string; method: string; body: string }> = [
     {
-      label: 'relations/{id}/values POST',
-      path: `/rest/properties/relations/${relationId}/values`,
-      method: 'POST',
-      body: JSON.stringify({ lang: 'de', value }),
+      label: 'PUT relations/values []',
+      path: '/rest/properties/relations/values',
+      method: 'PUT',
+      body: JSON.stringify([{ propertyRelationId: relationId, lang: 'de', value }]),
     },
     {
-      label: 'relations/values POST',
+      label: 'POST relations/values []',
+      path: '/rest/properties/relations/values',
+      method: 'POST',
+      body: JSON.stringify([{ propertyRelationId: relationId, lang: 'de', value }]),
+    },
+    {
+      label: 'POST relations/values {}',
       path: '/rest/properties/relations/values',
       method: 'POST',
       body: JSON.stringify({ propertyRelationId: relationId, lang: 'de', value }),
     },
     {
-      label: 'relations/values PUT[]',
-      path: '/rest/properties/relations/values',
+      label: 'POST relations/{id}/values',
+      path: `/rest/properties/relations/${relationId}/values`,
+      method: 'POST',
+      body: JSON.stringify({ lang: 'de', value }),
+    },
+    {
+      label: 'PUT relations/{id}',
+      path: `/rest/properties/relations/${relationId}`,
       method: 'PUT',
-      body: JSON.stringify([{ propertyRelationId: relationId, lang: 'de', value }]),
+      body: JSON.stringify({ relationValues: [{ lang: 'de', value }] }),
     },
   ];
-  for (const a of valueAttempts) {
+
+  for (const a of attempts) {
     try {
       const res = await fetch(`${cfg.baseUrl}${a.path}`, {
         method: a.method,
@@ -457,15 +475,17 @@ async function uploadPropertyRelationFile(
         },
         body: a.body,
       });
-      const body = (await res.text().catch(() => '')).slice(0, 160);
+      const body = (await res.text().catch(() => '')).slice(0, 120);
       notes.push(`${a.label} HTTP ${res.status}${body ? `: ${body}` : ''}`);
-      if (res.ok) break;
-    } catch (e) {
-      notes.push(`${a.label} Fehler`);
+    } catch {
+      notes.push(`${a.label}: Netzwerkfehler`);
+      continue;
     }
+    // Nicht dem Status glauben – am Artikel nachsehen.
+    if (await verify()) return { ok: true, log: `${notes.join(' | ')} → ${a.label} hat gegriffen` };
   }
 
-  return notes.join(' | ');
+  return { ok: false, log: notes.join(' | ') };
 }
 
 /** Hängt einen Barcode (z. B. EAN13) an die Variante. */
@@ -618,19 +638,24 @@ export async function syncProjektToPlenty(
             variationId,
             propertyId,
           );
-          let uploadNote = '';
-          try {
-            uploadNote = await uploadPropertyRelationFile(cfg, token, relationId, invoice);
-          } catch (e) {
-            uploadNote = `Upload-Fehler: ${(e as Error).message}`;
-          }
-          // Wahrheit ist allein der gespeicherte Wert an der Variante.
-          const rows = await getVariationPropertyRelations(cfg, token, itemId, variationId);
-          const stored = relationFileValue(rows, propertyId);
-          invoiceAttached = Boolean(stored);
-          if (!invoiceAttached) {
-            warnings.push(`Rechnung nicht abgelegt – ${note} | ${uploadNote.slice(0, 400)}`);
-          }
+          // Prüft am Artikel, ob der Dateiwert tatsächlich gespeichert ist.
+          const verify = async () => {
+            try {
+              const rows = await getVariationPropertyRelations(cfg, token, itemId, variationId);
+              return Boolean(relationFileValue(rows, propertyId));
+            } catch {
+              return false;
+            }
+          };
+          const { ok: stored, log } = await uploadPropertyRelationFile(
+            cfg,
+            token,
+            relationId,
+            invoice,
+            verify,
+          );
+          invoiceAttached = stored;
+          if (!stored) warnings.push(`Rechnung nicht abgelegt – ${note} | ${log.slice(0, 600)}`);
         } catch (e) {
           warnings.push(`Rechnung nicht angehängt: ${(e as Error).message.replace(/\s+/g, ' ').slice(0, 300)}`);
         }
