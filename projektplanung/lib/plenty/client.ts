@@ -920,57 +920,59 @@ export async function probeUiEndpoint(): Promise<any> {
     }
   }
 
-  // 4) Herkunft des Pfad-Parameters suchen.
-  //    Achtzehn Multipart-Feldnamen ergaben denselben Fehler wie "file" – der
-  //    Feldname ist also nicht die Ursache. Plenty liest den Pfad demnach nicht
-  //    aus $_FILES, sondern aus einem Parameter der Anfrage. Gesucht wird, an
-  //    welcher Stelle des Umschlags und unter welchem Schlüssel.
-  const userId = ids[0] ?? 5;
-  const dummy = new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a])], {
-    type: 'application/pdf',
-  });
-  const MODUL = 'item2/item_variation/property';
-  const DATEN = 'ItemVariationPropertyRelationFile';
+  // 4) Im GWT-Code die Stelle suchen, an der der Upload gebaut wird.
+  //    Der Feldname kommt weder aus $_FILES-Namen noch aus dem Umschlag –
+  //    also wird nachgesehen, wie die Oberfläche selbst die Anfrage baut.
+  const gwtBasis = process.env.PLENTY_GWT_PATH ?? '/plenty/gwt/productive/bafa1abc';
+  const laden = async (pfad: string) => {
+    try {
+      const res = await fetch(`${cfg.baseUrl}${pfad}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: '*/*' },
+      });
+      return res.ok ? await res.text() : '';
+    } catch {
+      return '';
+    }
+  };
+  const modulOrdner = `${gwtBasis}/plentymarkets_ui`;
+  const starter = await laden(`${modulOrdner}/plentymarkets_ui.nocache.js`);
+  const hash = starter.match(/\b([0-9A-F]{32})\b/)?.[1] ?? '';
 
-  const stellen = ['_dataArray', '_writeParams', '_searchParams'] as const;
-  const schluessel = ['path', 'filePath', 'tmpName', 'tmp_name', 'fileName', 'file', 'name'];
+  const dateien = [
+    `${modulOrdner}/${hash}.cache.js`,
+    ...[1, 2, 3, 4, 5, 6].map((i) => `${modulOrdner}/deferredjs/${hash}/${i}.cache.js`),
+  ];
 
-  const uploadVersuche: any[] = [];
-  for (const stelle of stellen) {
-    for (const key of schluessel) {
-      const anfrage: any = {
-        _dataName: DATEN,
-        _moduleName: MODUL,
-        _searchParams: {},
-        _writeParams: {},
-        _validateParams: {},
-        _commandStack: [{ type: 'write', command: 'save' }],
-        _dataArray: {},
-        _dataList: {},
-      };
-      anfrage[stelle] = { [key]: 'test.pdf' };
-      const form = new FormData();
-      form.append('request', JSON.stringify({ requests: [anfrage], meta: { id: userId } }));
-      form.append('file', dummy, 'test.pdf');
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: form,
+  // Begriffe, die im Upload-Code auftauchen müssen.
+  const marker = ['ui.php', 'multipart/form-data', 'FormData', 'setName', 'enctype'];
+  const fundstellen: any[] = [];
+  // Kurze Zeichenketten in der Umgebung – darunter der gesuchte Feldname.
+  const literalMuster = /["'`]([A-Za-z_][A-Za-z0-9_\[\]]{1,24})["'`]/g;
+
+  for (const datei of dateien) {
+    const text = await laden(datei);
+    if (!text) continue;
+    for (const m of marker) {
+      let von = 0;
+      let treffer = 0;
+      for (;;) {
+        const pos = text.indexOf(m, von);
+        if (pos < 0 || treffer >= 2 || fundstellen.length >= 12) break;
+        const umfeld = text.slice(Math.max(0, pos - 500), pos + 500);
+        fundstellen.push({
+          marker: m,
+          datei: datei.slice(-24),
+          literale: Array.from(
+            new Set(Array.from(umfeld.matchAll(literalMuster), (x) => String(x[1]))),
+          ).slice(0, 25),
+          auszug: umfeld.slice(380, 700),
         });
-        const body = await res.text();
-        const unveraendert = body.includes('null given');
-        uploadVersuche.push({
-          stelle,
-          key,
-          weiter: !unveraendert,
-          ...(unveraendert ? {} : { antwort: body.slice(0, 400) }),
-        });
-      } catch (e) {
-        uploadVersuche.push({ stelle, key, weiter: false, fehler: (e as Error).message.slice(0, 60) });
+        von = pos + m.length;
+        treffer += 1;
       }
     }
+    if (fundstellen.length >= 12) break;
   }
 
-  return { url, modul: MODUL, daten: DATEN, kommando: 'save', uploadVersuche };
+  return { url, hash, fundstellen };
 }
