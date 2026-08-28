@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Logo from './Logo';
+import NavLinks from './NavLinks';
 import styles from './app-shell.module.css';
 
 /** Schlanker, seriöser Header-Shell für den eingeloggten Bereich. */
@@ -13,6 +14,7 @@ export default function AppShell({ email, children }: { email: string | null; ch
           <span className={styles.divider} aria-hidden />
           <span className={styles.appName}>Projektplanung</span>
         </Link>
+        <NavLinks />
         <div className={styles.spacer} />
         {email && (
           <span className={styles.userMail} title={email}>
