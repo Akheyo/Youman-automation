@@ -103,6 +103,9 @@
 
   --font-serif: var(--font-newsreader), Newsreader, Georgia, "Times New Roman", serif;
   --font-sans: var(--font-source-sans), "Source Sans 3", system-ui, -apple-system, sans-serif;
+  /* Wortmarke, Ziffern und Navigationsbeschriftungen: geometrische Sans,
+     wie im Logobild. */
+  --font-display: var(--font-lexend), Lexend, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   color-scheme: light;
@@ -143,11 +146,19 @@ body {
 
 h1, h2, h3, h4, h5 {
   font-family: var(--font-serif);
-  font-weight: 600;
-  line-height: 1.16;
-  letter-spacing: var(--track-tight);
+  /* 500 statt 600: eine Serife trägt bei gleicher Zahl deutlich mehr
+     Strichstärke als eine Sans und wirkt sonst gedrungen. */
+  font-weight: 500;
+  line-height: 1.15;
+  /* Kaum negativ. Die enge Laufweite stammte von der Sans; Serifen brauchen
+     den Platz zwischen den Buchstaben, sonst verhaken sie sich. */
+  letter-spacing: -0.005em;
   text-wrap: balance;
   color: var(--ink);
+  /* Deutsche Komposita sprengen sonst schmale Viewports. Greift nur, wenn
+     das Wort wirklich nicht passt. */
+  overflow-wrap: break-word;
+  hyphens: auto;
   /* Große Grade dürfen feiner laufen, kleine brauchen mehr Fleisch. */
   font-variation-settings: "opsz" 36;
   font-synthesis-weight: none;
@@ -155,7 +166,7 @@ h1, h2, h3, h4, h5 {
 
 h1 { font-variation-settings: "opsz" 60; }
 h2 { font-variation-settings: "opsz" 44; }
-h3, h4, h5 { font-variation-settings: "opsz" 24; }
+h3, h4, h5 { font-variation-settings: "opsz" 20; }
 
 h1 { font-size: var(--t-3xl); letter-spacing: var(--track-tighter); }
 h2 { font-size: var(--t-2xl); }

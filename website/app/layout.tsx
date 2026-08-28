@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Newsreader, Source_Sans_3 } from 'next/font/google'
+import { Lexend, Newsreader, Source_Sans_3 } from 'next/font/google'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { JsonLd, organizationJsonLd } from '@/lib/seo'
@@ -27,6 +27,13 @@ const sourceSans = Source_Sans_3({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-source-sans',
+})
+
+/* Für Wortmarke, Ziffern und Navigation: geometrisch wie das Logobild. */
+const lexend = Lexend({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-lexend',
 })
 
 export const metadata: Metadata = {
@@ -78,7 +85,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" className={`${newsreader.variable} ${sourceSans.variable}`}>
+    <html lang="de" className={`${newsreader.variable} ${sourceSans.variable} ${lexend.variable}`}>
       <body>
         <a className="skip-link" href="#main">
           Zum Inhalt springen

@@ -28,6 +28,7 @@
 }
 
 .logo__word {
+  font-family: var(--font-display);
   font-size: var(--logo-size, 1.375rem);
   font-weight: 500;
   line-height: 1;
@@ -37,7 +38,7 @@
 }
 
 .logo__sub {
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: max(10px, calc(var(--logo-size, 1.375rem) * 0.3));
   font-weight: 400;
   line-height: 1;
@@ -76,6 +77,7 @@
 }
 
 .header__link {
+  font-family: var(--font-display);
   position: relative;
   padding-block: var(--s-2);
   font-size: var(--t-base);
@@ -293,8 +295,8 @@
 .hero__title {
   margin-top: var(--s-5);
   font-size: var(--t-4xl);
-  font-weight: 600;
-  letter-spacing: var(--track-tighter);
+  font-weight: 500;
+  letter-spacing: -0.005em;
   line-height: 1.08;
   max-width: 19ch;
 }
@@ -402,7 +404,7 @@
 
 .card__title {
   font-size: var(--t-lg);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .card__text {
@@ -1188,9 +1190,9 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 .hero-ed__title {
   margin-top: var(--s-5);
   font-size: var(--t-4xl);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.1;
-  letter-spacing: var(--track-tighter);
+  letter-spacing: -0.005em;
   color: var(--on-dark);
   max-width: 17ch;
 }
@@ -1253,7 +1255,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   margin: 0;
   font-family: var(--font-serif);
   font-size: var(--t-2xl);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1;
   color: var(--on-dark);
   font-variant-numeric: tabular-nums;
@@ -1445,16 +1447,17 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 
 .intro-band__titel {
   font-size: var(--t-3xl);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.15;
-  letter-spacing: var(--track-tighter);
-  max-width: 18ch;
+  letter-spacing: -0.005em;
+  /* Zwei Zeilen statt drei: bei 18ch brach der Satz eine Zeile zu früh. */
+  max-width: 24ch;
 }
 
 .intro-band__text {
-  /* Blocksatz mit Silbentrennung — ohne Trennung reißen im Deutschen
-     zu große Lücken auf. */
-  text-align: justify;
+  /* Flattersatz statt Blocksatz: die Silbentrennung greift nicht in jedem
+     Browser, und ohne sie reißt der Blocksatz im Deutschen Löcher in die
+     Zeile. Der ruhige Wortabstand ist mehr wert als die glatte Kante. */
   hyphens: auto;
   -webkit-hyphens: auto;
   color: var(--ink-3);
@@ -1521,9 +1524,9 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 .split-raster__titel {
   margin-top: var(--s-5);
   font-size: var(--t-3xl);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.18;
-  letter-spacing: var(--track-tighter);
+  letter-spacing: -0.005em;
   max-width: 20ch;
 }
 
@@ -1598,7 +1601,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 .raster__titel {
   margin-top: var(--s-4);
   font-size: var(--t-lg);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .raster__link {
@@ -1688,9 +1691,9 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   /* Die Spalte darf nicht in den aufgehellten Teil des Verlaufs laufen. */
   max-width: var(--aussage-spalte);
   font-size: var(--t-3xl);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.2;
-  letter-spacing: var(--track-tighter);
+  letter-spacing: -0.005em;
   color: #ffffff;
 }
 
@@ -1805,15 +1808,14 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 
 .cta-band__title {
   font-size: var(--t-3xl);
-  font-weight: 600;
-  letter-spacing: var(--track-tighter);
+  font-weight: 500;
+  letter-spacing: -0.005em;
   line-height: 1.15;
   max-width: 20ch;
 }
 
 .cta-band__text {
-  /* Blocksatz wie im Einleitungsband — hält die Kante zur Überschrift. */
-  text-align: justify;
+  /* Flattersatz wie im Einleitungsband, aus demselben Grund. */
   hyphens: auto;
   -webkit-hyphens: auto;
 }
@@ -1838,7 +1840,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   font-family: var(--font-sans);
   font-size: var(--t-xl);
   font-weight: 500;
-  letter-spacing: var(--track-tight);
+  letter-spacing: -0.005em;
   color: var(--ink);
 }
 
@@ -2206,7 +2208,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   font-size: clamp(1.5rem, 1.1rem + 1.9vw, 2.5rem);
   font-weight: 400;
   line-height: 1.3;
-  letter-spacing: var(--track-tight);
+  letter-spacing: -0.005em;
   color: #ffffff;
   text-wrap: balance;
 }
