@@ -74,3 +74,21 @@
   .userMail { display: none; }
   .content { padding: var(--space-5) var(--space-4); }
 }
+
+/* ---- Hauptnavigation ---- */
+.nav { display: flex; align-items: center; gap: 0.25rem; margin-left: var(--space-4); }
+.navLink {
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.navLink:hover { background: var(--bg-soft); color: var(--navy); text-decoration: none; }
+.navLinkActive { background: var(--blue-soft); color: var(--blue-h); }
+
+@media (max-width: 560px) {
+  .nav { margin-left: var(--space-2); }
+  .navLink { padding: 0.4rem 0.55rem; font-size: 0.82rem; }
+}
