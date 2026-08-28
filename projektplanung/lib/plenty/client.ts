@@ -807,3 +807,17 @@ export async function testPlentyConnection(): Promise<{ ok: boolean; message: st
     return { ok: false, message: (err as Error).message };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Lesezugriff für andere Plenty-Module (z. B. den Lagerplatz-Scan)
+// ---------------------------------------------------------------------------
+
+/**
+ * Führt einen GET gegen die Plenty-REST-API aus und nutzt dabei denselben
+ * gecachten Token wie der Projekt-Sync. Wirft bei HTTP-Fehlern (mit Statuscode
+ * in der Meldung), damit der Aufrufer gezielt auf 400/403 reagieren kann.
+ */
+export async function plentyGet<T>(path: string, cfg: PlentyConfig = getPlentyConfig()): Promise<T> {
+  const token = await login(cfg);
+  return api<T>(cfg, token, path);
+}

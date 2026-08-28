@@ -64,10 +64,78 @@ nie mit echten Hersteller-GTINs kollidiert. Aufbau: `[Präfix 2][Nutzlast 10]
 [Prüfziffer 1]`. Die Prüfziffer wird korrekt nach dem EAN-13-Standard berechnet
 (siehe [`lib/plenty/ean.ts`](lib/plenty/ean.ts)).
 
+## Lagerplatz-Scan (`/lagerplatz`)
+
+Viele Artikel tragen ihren Lagerplatz bis heute nur im Text — in der
+**Variantennummer** (`KK-2024-0815-H6R5A7`) oder mitten in der
+**Artikelbeschreibung** („Lagerplatz: Halle 6 Regal 5 Ablage 7"). Bevor daraus
+in Plenty echte Lagerorte werden können, muss erst einmal auf dem Tisch liegen,
+welche Lagerplätze es überhaupt gibt und wo die Angaben unsauber sind.
+
+Genau das macht die Seite **Lagerplätze**. Sie **liest nur** — in Plenty wird
+nichts angelegt und nichts verändert.
+
+**Was durchsucht wird** (in dieser Reihenfolge, das erste belastbare Ergebnis
+gewinnt): Variantennummer → Modell → Externe ID → Name → Beschreibung.
+
+**Was als Lagerplatz erkannt wird** — bewusst tolerant, weil die Codes über die
+Jahre unterschiedlich geschrieben wurden:
+
+| Schreibweise im Artikel | erkannt als |
+| --- | --- |
+| `H6R5A7` | `H6R5A7` — Halle 6 · Regal 5 · Ablage 7 |
+| `h6-r5-a7`, `H 6 / R 5 / A 7`, `H06R05A07` | `H6R5A7` |
+| `Lagerplatz: Halle 6 Regal 5 Ablage 7` | `H6R5A7` |
+| `H2R11F3` mitten im Beschreibungstext | `H2R11F3` |
+
+Bekannte Ebenen sind `H` Halle, `L` Lager, `G` Gang, `Z` Zeile, `R` Regal,
+`E` Ebene, `F` Fach, `A` Ablage, `B` Boden, `P` Platz, `C` Container,
+`K` Kiste, `S` Stellplatz — jeweils auch ausgeschrieben.
+
+**Jeder Artikel bekommt einen von vier Status:**
+
+- **gefunden** — mindestens drei bekannte Ebenen, eindeutig. Kann übernommen werden.
+- **unsicher** — nur zwei Ebenen (`R5A7`) oder eine unbekannte Ebene (`X1Y2Z3`).
+  Wird angezeigt, aber nicht als gesichert gezählt.
+- **Konflikt** — Variantennummer und Beschreibung nennen verschiedene Plätze.
+  Muss ein Mensch entscheiden.
+- **kein Treffer** — nichts gefunden. Reine Maßangaben wie `L120B60H90` landen
+  bewusst hier und nicht bei den Lagerplätzen.
+
+**Ergebnis:** Kennzahlen, die Liste aller verschiedenen Lagerplätze mit
+Artikelzahl (das ist die Anlage-Liste für Plenty) und eine durchsuchbare
+Einzelansicht. Beides als CSV exportierbar (Semikolon + BOM, öffnet direkt in
+Excel).
+
+### Bedienung
+
+Der Scan läuft in Häppchen: Jeder Aufruf liest einige Seiten und meldet, wo es
+weitergeht — die Oberfläche hängt selbstständig an, bis alles durch ist. So
+läuft er auch unter dem Serverless-Timeout von Vercel durch. „Anhalten" stoppt
+nach dem laufenden Häppchen; die bis dahin gefundenen Treffer bleiben stehen.
+
+**„Beschreibungen einzeln nachladen"**: Die Plenty-Variantenliste liefert je
+nach Version keine Beschreibungstexte mit. Ist die Option aus und steht der
+Lagerplatz nur in der Beschreibung, wird er nicht gefunden — die Seite weist
+darauf hin. Mit der Option wird die Beschreibung pro Variante nachgeladen
+(ein zusätzlicher API-Aufruf je Artikel, entsprechend langsamer, gedeckelt auf
+150 Nachladungen je Häppchen).
+
+Der Scan handelt den passenden `with`-Parameter beim ersten Aufruf selbst aus
+und schreibt in die Diagnose-Zeile, welcher funktioniert hat — die
+Variantenliste kennt je nach PlentyONE-Ausbaustufe unterschiedliche Werte.
+
+### Nächster Schritt
+
+Aus der Vorschau lassen sich später die echten Lagerorte in Plenty anlegen
+(Lager → Regal → Fach → Lagerort) und den Varianten zuordnen. Der Scan liefert
+dafür die Grundlage; das Schreiben ist bewusst noch nicht gebaut, damit die
+Liste erst geprüft werden kann.
+
 ## Tests
 
 ```bash
-npm test        # Vitest: EAN-Erzeugung + Kern-Logik
+npm test        # Vitest: EAN-Erzeugung, Kern-Logik, Lagerplatz-Erkennung
 npm run typecheck
 ```
 
@@ -77,13 +145,16 @@ npm run typecheck
 projektplanung/
 ├── app/
 │   ├── (app)/projekte/        # Dashboard (Formular + Suchverlauf)
+│   ├── (app)/lagerplatz/      # Lagerplatz-Scan (Vorschau, nur lesend)
 │   ├── api/projekte/          # GET Suche / POST Anlegen / [id] löschen
+│   ├── api/lagerplatz/scan/   # POST Lagerplatz-Scan (häppchenweise)
 │   ├── api/plenty/test/       # Verbindungstest
 │   ├── auth/                  # Supabase Login-Callback + Logout
 │   └── login/                 # Anmeldung
 ├── components/                # App-Shell (Header)
 ├── lib/
-│   ├── plenty/                # PlentyONE-Client + EAN-Erzeugung
+│   ├── lagerplatz/            # Lagerplatz-Erkennung + Befunde (getestet)
+│   ├── plenty/                # PlentyONE-Client, EAN-Erzeugung, Lagerplatz-Scan
 │   ├── projekte/              # Reine Geschäftslogik (getestet)
 │   └── supabase/              # Supabase-Helfer (server/client/admin)
 └── supabase/schema.sql        # DB-Schema
