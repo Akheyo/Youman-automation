@@ -5,6 +5,8 @@ import { videos, type Video, type VideoKey } from '@/lib/videos'
 
 type Props = {
   video: VideoKey
+  /** Wird gezeigt, solange kein Video vorliegt — besser als ein leerer Kasten. */
+  ersatzbild?: React.ReactNode
   /** Vom Server ermittelte Pfade, siehe app/page.tsx. */
   quellen?: { mp4?: string; webm?: string; standbild?: string }
   className?: string
@@ -22,7 +24,7 @@ type Props = {
  * - Wer `prefers-reduced-motion` gesetzt hat, bekommt das Standbild und keinen
  *   automatischen Start.
  */
-export function HeroVideo({ video, quellen, className }: Props) {
+export function HeroVideo({ video, quellen, ersatzbild, className }: Props) {
   const registriert: Video = videos[video]
   // Ausdrücklicher Eintrag im Register schlägt die gefundene Datei.
   const eintrag: Video = {
@@ -62,6 +64,10 @@ export function HeroVideo({ video, quellen, className }: Props) {
   }, [wenigerBewegung, eintrag.datei])
 
   const stil = { aspectRatio: eintrag.verhaeltnis.replace('/', ' / ') }
+
+  // Kein Video vorhanden: lieber das Standbild der Seite zeigen als einen
+  // Platzhalterkasten. Der Hero ist das Erste, was jemand sieht.
+  if (!eintrag.datei && ersatzbild) return <>{ersatzbild}</>
 
   if (!eintrag.datei) {
     return (

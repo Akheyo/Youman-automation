@@ -3,18 +3,13 @@ import { Figure } from '@/components/Figure'
 import { HeroVideo } from '@/components/HeroVideo'
 import { Icon } from '@/components/Icon'
 import { Reveal } from '@/components/Reveal'
-import {
-  AussageBand,
-  BereichsListe,
-  IntroBand,
-  SplitRaster,
-} from '@/components/Muster'
+import { AussageBand, SplitRaster } from '@/components/Muster'
 import { CtaBand } from '@/components/Sections'
 import { branchen } from '@/lib/branchen'
+import { videoQuellen } from '@/lib/dateien'
 import { referenzen } from '@/lib/referenzen'
 import { pageMetadata } from '@/lib/seo'
 import { services, site } from '@/lib/site'
-import { videoQuellen } from '@/lib/dateien'
 
 export const metadata = pageMetadata({
   title: `${site.fullName} — Prozesse automatisieren mit KI und Software`,
@@ -36,24 +31,14 @@ const kennzahlen = [
   { value: '1', label: 'Ansprechpartner vom Angebot bis zum Betrieb' },
 ]
 
-const ablauf = [
-  {
-    step: '01',
-    title: 'Prozess ansehen',
-    text: 'Kostenloses Erstgespräch. Ich schaue mir den Ablauf an und sage, was sich lohnt — und was nicht.',
-  },
-  {
-    step: '02',
-    title: 'Festes Angebot',
-    text: 'Fixer Umfang, fester Termin, fester Preis. Kein Stundenzettel, keine Überraschung.',
-  },
-  {
-    step: '03',
-    title: 'Bauen und übergeben',
-    text: 'Umsetzung mit Zwischenständen, dann Übergabe mit Dokumentation. Danach bleibe ich erreichbar.',
-  },
-]
-
+/**
+ * Aufbau nach dem Muster "Enterprise Gateway" aus dem UI/UX-Skill:
+ * Hero → Belege → Lösungen nach Branche → Leistungen → Referenzen → Kontakt.
+ *
+ * Bewusst sechs Sektionen. Die frühere Fassung hatte acht, davon zwei mit
+ * derselben Aussage; Ablauf und Bereichsliste stehen jetzt dort, wo sie
+ * hingehören — auf /leistungen und /branchen.
+ */
 export default function HomePage() {
   const topReferenzen = referenzen.slice(0, 2)
 
@@ -97,7 +82,13 @@ export default function HomePage() {
           </div>
 
           <Reveal index={2}>
-            <HeroVideo video="hero" quellen={videoQuellen('hero')} />
+            <HeroVideo
+              video="hero"
+              quellen={videoQuellen('hero')}
+              ersatzbild={
+                <Figure bild="heroStart" priority sizes="(min-width: 1000px) 45vw, 100vw" />
+              }
+            />
           </Reveal>
         </div>
 
@@ -113,18 +104,43 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ---------------------------------------------- Was wir machen */}
-      <IntroBand
-        label="Was wir machen"
-        titel="Beratung und Software aus einer Hand."
-        text="Wir sehen uns an, wo in Ihrem Betrieb Arbeit entsteht, die niemand braucht — und bauen genau dafür eine Lösung. Sie setzt auf Ihr bestehendes ERP, Ihren Shop oder Ihr Warenwirtschaftssystem auf, statt es zu ersetzen."
-        links={services.map((service) => ({
-          href: `/leistungen#${service.slug}`,
-          label: service.title,
-        }))}
-      />
+      {/* ---------------------------------------------- Branchen mit Bild */}
+      <section className="section" aria-labelledby="branchen-title">
+        <div className="container">
+          <Reveal className="section-head">
+            <p className="eyebrow">Branchen</p>
+            <h2 className="section-title" id="branchen-title">
+              Automatisierung ist kein Selbstzweck
+            </h2>
+            <p className="lead">
+              Was sich lohnt, hängt vom Geschäft ab. Deshalb nach Branche sortiert — mit
+              den Problemen, die dort tatsächlich anfallen.
+            </p>
+          </Reveal>
 
-      {/* ---------------------------------------------- Leistungen als Raster */}
+          <ul className="grid-cards grid-cards--3">
+            {branchen.map((b, i) => (
+              <Reveal as="li" key={b.slug} index={i} className="card card--link card--bild">
+                <Figure
+                  bild={b.bild}
+                  sizes="(min-width: 1000px) 33vw, (min-width: 640px) 50vw, 100vw"
+                />
+                <div className="card__body">
+                  <h3 className="card__title">
+                    <Link href={`/branchen/${b.slug}`} className="card__link">
+                      {b.title}
+                    </Link>
+                  </h3>
+                  <p className="card__text">{b.teaser}</p>
+                  <span className="card__more">Anwendungsfälle</span>
+                </div>
+              </Reveal>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------- Leistungen */}
       <SplitRaster
         label="Automatisierung. Software. Integration."
         titel="Wir beraten, wo andere nur liefern — und bauen, was andere nur empfehlen."
@@ -142,15 +158,6 @@ export default function HomePage() {
         bild="statement"
         zeilen={['Kein Systemwechsel.', 'Keine Medienbrüche.', 'Eine Oberfläche.']}
         text="Ihre Mitarbeitenden sehen eine Oberfläche. Datenabruf, Berechnung und Abgleich mit dem bestehenden System laufen vollautomatisch im Hintergrund."
-      />
-
-      {/* ---------------------------------------------- Branchen */}
-      <BereichsListe
-        label="Branchen"
-        eintraege={branchen.map((b) => ({
-          href: `/branchen/${b.slug}`,
-          label: b.title,
-        }))}
       />
 
       {/* ---------------------------------------------- Referenzprojekte */}
@@ -175,10 +182,7 @@ export default function HomePage() {
                     </Link>
                   </h3>
                   <p className="card__text">{r.teaser}</p>
-                  <span className="card__more">
-                    Projekt ansehen
-                    <Icon name="arrow" size={15} />
-                  </span>
+                  <span className="card__more">Projekt ansehen</span>
                 </div>
               </Reveal>
             ))}
@@ -190,28 +194,6 @@ export default function HomePage() {
               <Icon name="arrow" size={16} />
             </Link>
           </Reveal>
-        </div>
-      </section>
-
-      {/* ---------------------------------------------- Ablauf */}
-      <section className="section section--paper" aria-labelledby="ablauf-title">
-        <div className="container">
-          <Reveal className="section-head">
-            <p className="eyebrow">Ablauf</p>
-            <h2 className="section-title" id="ablauf-title">
-              Drei Schritte bis zum laufenden System
-            </h2>
-          </Reveal>
-
-          <ol className="steps">
-            {ablauf.map((s, i) => (
-              <Reveal as="li" key={s.step} index={i} className="step">
-                <span className="step__num">{s.step}</span>
-                <h3 className="step__title">{s.title}</h3>
-                <p className="step__text">{s.text}</p>
-              </Reveal>
-            ))}
-          </ol>
         </div>
       </section>
 

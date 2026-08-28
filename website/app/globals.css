@@ -67,16 +67,18 @@
   --track-tighter: -0.025em;
 
   /* --- Abstände (Dichte 6/10) --- */
+  /* Durchgehender 8er-Rhythmus. Zuvor brachen 20 und 100 aus der Reihe,
+     und 136 riss zwischen den Sektionen Löcher auf. */
   --s-1: 4px;
   --s-2: 8px;
   --s-3: 12px;
   --s-4: 16px;
-  --s-5: 20px;
+  --s-5: 24px;
   --s-6: 32px;
   --s-7: 48px;
-  --s-8: 72px;
-  --s-9: 100px;
-  --s-10: 136px;
+  --s-8: 64px;
+  --s-9: 88px;
+  --s-10: 112px;
 
   /* --- Radien: klein, technisch --- */
   --r-xs: 2px;
@@ -226,11 +228,32 @@ hr { border: 0; border-top: 1px solid var(--line); }
 }
 .container--narrow { max-width: var(--container-narrow); }
 
-.section { padding-block: clamp(var(--s-8), 6.5vw, var(--s-10)); }
-.section--tight { padding-block: clamp(var(--s-7), 5vw, var(--s-9)); }
+.section { padding-block: clamp(var(--s-8), 5.5vw, var(--s-9)); }
+.section--tight { padding-block: clamp(var(--s-7), 4vw, var(--s-8)); }
+/* Weicher Verlauf von Weiß nach hellem Grau, unten mit harter Kante.
+   Gibt der Seite Rhythmus, ohne eine zweite Farbe einzuführen. */
 .section--paper {
-  background: var(--paper-2);
-  border-block: 1px solid var(--line);
+  background: linear-gradient(
+    180deg,
+    var(--paper) 0%,
+    var(--paper) 28%,
+    #f2f2f2 78%,
+    #e9e9e9 100%
+  );
+  border-bottom: 1px solid var(--line);
+}
+
+/* Gleicher Verlauf, aber nach oben laufend — für Abschnitte, die direkt
+   unter einer dunklen Fläche sitzen. */
+.section--verlauf-oben {
+  background: linear-gradient(
+    0deg,
+    var(--paper) 0%,
+    var(--paper) 28%,
+    #f2f2f2 78%,
+    #e9e9e9 100%
+  );
+  border-top: 1px solid var(--line);
 }
 
 /* --- Sektionskopf --- */

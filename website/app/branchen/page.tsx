@@ -3,6 +3,7 @@ import { Figure } from '@/components/Figure'
 import { Icon } from '@/components/Icon'
 import { PageHead } from '@/components/PageHead'
 import { Reveal } from '@/components/Reveal'
+import { BereichsListe } from '@/components/Muster'
 import { CtaBand } from '@/components/Sections'
 import { branchen } from '@/lib/branchen'
 import { JsonLd, breadcrumbJsonLd, pageMetadata } from '@/lib/seo'
@@ -70,6 +71,14 @@ export default function BranchenPage() {
           </Reveal>
         </div>
       </section>
+
+      <BereichsListe
+        label="Alle Branchen im Überblick"
+        eintraege={branchen.map((b) => ({
+          href: `/branchen/${b.slug}`,
+          label: b.title,
+        }))}
+      />
 
       <CtaBand />
       <JsonLd data={breadcrumbJsonLd([{ name: 'Branchen', path: '/branchen' }])} />

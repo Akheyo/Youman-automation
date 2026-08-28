@@ -28,6 +28,24 @@ export const metadata = pageMetadata({
   ],
 })
 
+const ablauf = [
+  {
+    step: '01',
+    title: 'Prozess ansehen',
+    text: 'Kostenloses Erstgespräch. Wir schauen uns den Ablauf an und sagen, was sich lohnt — und was nicht.',
+  },
+  {
+    step: '02',
+    title: 'Festes Angebot',
+    text: 'Fixer Umfang, fester Termin, fester Preis. Kein Stundenzettel, keine Überraschung.',
+  },
+  {
+    step: '03',
+    title: 'Bauen und übergeben',
+    text: 'Umsetzung mit Zwischenständen, dann Übergabe mit Dokumentation. Danach bleiben wir erreichbar.',
+  },
+]
+
 export default function LeistungenPage() {
   return (
     <>
@@ -81,6 +99,27 @@ export default function LeistungenPage() {
           ))}
         </div>
       </div>
+
+      <section className="section section--paper" aria-labelledby="ablauf-title">
+        <div className="container">
+          <Reveal className="section-head">
+            <p className="eyebrow">Ablauf</p>
+            <h2 className="section-title" id="ablauf-title">
+              Drei Schritte bis zum laufenden System
+            </h2>
+          </Reveal>
+
+          <ol className="steps">
+            {ablauf.map((s, i) => (
+              <Reveal as="li" key={s.step} index={i} className="step">
+                <span className="step__num">{s.step}</span>
+                <h3 className="step__title">{s.title}</h3>
+                <p className="step__text">{s.text}</p>
+              </Reveal>
+            ))}
+          </ol>
+        </div>
+      </section>
 
       <FaqSection items={faq} title="Häufige Fragen zur Zusammenarbeit" />
       <CtaBand

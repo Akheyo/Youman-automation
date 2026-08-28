@@ -552,22 +552,32 @@
    Ablauf
    ------------------------------------------------------------ */
 
-.steps { display: grid; gap: var(--s-6); }
+.steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin-top: var(--s-6);
+  border-top: 1px solid var(--ink);
+  border-left: 1px solid var(--ink);
+}
 
 .step {
-  padding-top: var(--s-4);
-  border-top: 2px solid var(--ink-deep);
+  padding: var(--s-6);
+  border-right: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  background: var(--paper);
 }
 
 .step__num {
+  display: block;
   font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: var(--t-sm);
+  font-weight: 700;
+  font-size: var(--t-xl);
+  line-height: 1;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
-.step__title { margin-top: var(--s-2); font-size: var(--t-lg); }
+.step__title { margin-top: var(--s-4); font-size: var(--t-lg); }
 
 .step__text {
   margin-top: var(--s-3);
@@ -576,7 +586,7 @@
   color: var(--ink-4);
 }
 
-@media (min-width: 760px) { .steps { grid-template-columns: repeat(3, 1fr); gap: var(--s-6); } }
+@media (min-width: 760px) { .steps { grid-template-columns: repeat(3, 1fr); } }
 
 /* ------------------------------------------------------------
    Referenzprojekte
@@ -1056,12 +1066,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   display: grid;
   place-items: center;
   padding: var(--s-5);
-  background:
-    repeating-linear-gradient(
-      135deg,
-      var(--paper-2) 0 10px,
-      var(--paper-3) 10px 20px
-    );
+  background: var(--paper-2);
   border: 1px dashed var(--line-strong);
 }
 
@@ -1073,10 +1078,11 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 
 .figure__marke {
   display: inline-block;
-  padding: 3px var(--s-3);
+  padding: 2px var(--s-3);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-full);
-  background: var(--ink-deep);
-  color: var(--on-dark);
+  background: transparent;
+  color: var(--ink-5);
   font-size: var(--t-2xs);
   font-weight: 600;
   letter-spacing: var(--track-label);
@@ -1084,9 +1090,10 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 }
 
 .figure__motiv {
-  margin-top: var(--s-4);
-  font-size: var(--t-base);
-  line-height: 1.55;
+  margin-top: var(--s-3);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+  color: var(--ink-5);
 }
 
 .figure__masse {
@@ -1100,20 +1107,19 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 /* Auf dunklem Grund muss der Platzhalter mitziehen */
 .on-dark .figure--leer,
 .aussage .figure--leer {
-  background:
-    repeating-linear-gradient(
-      135deg,
-      #141414 0 10px,
-      #1c1c1c 10px 20px
-    );
+  background: #141414;
   border-color: #3a3a3a;
 }
 .on-dark .figure__hinweis,
 .aussage .figure__hinweis { color: var(--on-dark-2); }
+/* Die Motivzeile setzt ihre Farbe selbst und schlägt sonst die Regel für
+   dunklen Grund — dort stünde Grau auf Schwarz mit 3,4:1. */
+.on-dark .figure__motiv,
+.aussage .figure__motiv { color: var(--on-dark-2); }
 .on-dark .figure__masse,
 .aussage .figure__masse { color: var(--on-dark-3); }
 .on-dark .figure__marke,
-.aussage .figure__marke { background: var(--on-dark); color: var(--ink-deep); }
+.aussage .figure__marke { border-color: #4a4a4a; color: var(--on-dark-3); }
 
 /* Im Aussageband liegt der Platzhalter unter dem Verlauf und der Schrift.
    Er rückt nach rechts, wo kein Text steht. */
@@ -1434,8 +1440,15 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
    ------------------------------------------------------------ */
 
 .split-raster {
-  padding-block: clamp(var(--s-8), 6vw, var(--s-10));
-  background: var(--paper);
+  padding-block: clamp(var(--s-8), 5.5vw, var(--s-9));
+  background: linear-gradient(
+    180deg,
+    var(--paper) 0%,
+    var(--paper) 30%,
+    #f4f4f4 80%,
+    #ececec 100%
+  );
+  border-bottom: 1px solid var(--line);
 }
 
 .split-raster__inner {
