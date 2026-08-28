@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { branchen } from '@/lib/branchen'
 import { nav, site } from '@/lib/site'
 import { Logo } from './Logo'
 
@@ -17,21 +18,37 @@ export function Footer() {
               <Logo size="sm" />
             </Link>
             <p className="footer__blurb">
-              KI-Automationen, Chatbots, Websites und E-Commerce-Integrationen.
-              Umgesetzt von einer Person, die den Code auch selbst schreibt.
+              Prozessautomatisierung, KI-Chatbots und Software-Schnittstellen für
+              Mittelstand und Onlinehandel. Umgesetzt von einer Person, die den Code
+              auch selbst schreibt.
             </p>
           </div>
+
+          <nav aria-label="Branchen">
+            <h2 className="footer__heading">Branchen</h2>
+            <ul className="footer__list">
+              {branchen.map((b) => (
+                <li key={b.slug}>
+                  <Link href={`/branchen/${b.slug}`} className="footer__link">
+                    {b.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
 
           <nav aria-label="Footer-Navigation">
             <h2 className="footer__heading">Seiten</h2>
             <ul className="footer__list">
-              {nav.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} className="footer__link">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
+              {nav
+                .filter((item) => item.href !== '/')
+                .map((item) => (
+                  <li key={item.href}>
+                    <Link href={item.href} className="footer__link">
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
             </ul>
           </nav>
 

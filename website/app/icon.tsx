@@ -15,11 +15,11 @@ export default function Icon() {
           alignItems: 'center',
           justifyContent: 'center',
           gap: 6,
-          background: '#ffffff',
+          background: '#0f172a',
         }}
       >
-        <div style={{ width: 4, height: 40, background: '#09090b' }} />
-        <div style={{ fontSize: 40, color: '#09090b', lineHeight: 1 }}>Y</div>
+        <div style={{ width: 4, height: 40, background: '#ffffff' }} />
+        <div style={{ fontSize: 40, color: '#ffffff', lineHeight: 1 }}>Y</div>
       </div>
     ),
     size,

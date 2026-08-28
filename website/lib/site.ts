@@ -17,8 +17,10 @@ export const site = {
 } as const
 
 export const nav = [
+  { href: '/', label: 'Home' },
+  { href: '/branchen', label: 'Branchen' },
   { href: '/leistungen', label: 'Leistungen' },
-  { href: '/referenzen', label: 'Referenzen' },
+  { href: '/referenzprojekte', label: 'Referenzprojekte' },
   { href: '/ueber-mich', label: 'Über mich' },
   { href: '/kontakt', label: 'Kontakt' },
 ] as const

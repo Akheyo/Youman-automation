@@ -1,108 +1,132 @@
 # Youman — AI & Software · Design System (Master)
 
 Quelle: Skill `ui-ux-pro-max`, Abfrage
-`"professional minimal black white editorial software consultancy" --design-system`
-mit `--variance 3 --motion 4 --density 4`.
-Ergänzende Abfragen: `--domain style`, `--domain color`, `--domain typography`,
-`--domain google-fonts`, `--stack nextjs`.
+`"B2B enterprise consultancy trustworthy corporate industrial" --design-system`
+mit `--variance 4 --motion 3 --density 6`.
+Ergänzend: `--domain typography`, `--domain color`, `--domain google-fonts`,
+`--stack nextjs`.
 
-Dieses Dokument ist die verbindliche Referenz. Seiten-spezifische Abweichungen
+Dieses Dokument ist die verbindliche Referenz. Seitenspezifische Abweichungen
 gehören nach `pages/<seite>.md` und überschreiben dort den Master.
 
 ---
 
 ## Grundentscheidung
 
-Das Logo — dünne, weit gesperrte Versalien mit vertikaler Linie, Schwarz auf Weiß —
-gibt die Richtung vor. Alles Weitere ordnet sich unter: **Minimalism & Swiss Style**,
-monochrom, viel Weißraum, strenges Raster, Typografie trägt die Hierarchie statt
-Farbe oder Schatten.
+Zielgruppe sind Geschäftsführungen und Betriebsleitungen im Mittelstand —
+E-Commerce, Logistik, Produktion, Großhandel. Die Seite muss vor allem
+**glaubwürdig** wirken, nicht originell. Deshalb:
 
-Die Seite ist **bewusst nur hell**. Ein zweites Theme würde die monochrome Aussage
-verwässern; die eine invertierte Fläche (CTA-Band) ist die einzige Ausnahme und
-setzt genau deshalb einen Akzent.
+- **Navy statt Reinschwarz.** `#0f172a` als Grundton wirkt gesetzt, wo reines
+  Schwarz-Weiß schnell nach Galerie aussieht. Ein einziger Blauakzent trägt
+  Links, Fokus und Marker — mehr Farbe gibt es nicht.
+- **IBM Plex statt geometrischer Grotesk.** Plex Sans hat Gewicht und
+  Ingenieurs-Anmutung; Plex Mono setzt Label, Kennzahlen und Fachbegriffe.
+  Eine dünne, weit gesperrte Schrift las sich in der Vorgängerfassung
+  boutiquehaft — hier ist das Gegenteil gefragt.
+- **Dichte 6/10.** Kompakter Satz, engere Abstände. Substanz statt Weißraum.
+- **Bewegung 3/10.** Ein zurückhaltender Einblendeffekt beim Scrollen, sonst
+  nichts. Wer Vertrauen verkauft, animiert nicht.
 
 ## Farben
 
-Basis: Palette „Portfolio/Personal — Monochrome" (`--domain color`).
-Der dort vorgesehene blaue Akzent ist auf den Fokusring reduziert; die Marke
-bleibt schwarz-weiß.
+Basis: Palette „Professional navy + blue CTA" aus dem Skill.
 
-| Token | Wert | Verwendung | Kontrast auf Weiß |
+| Token | Wert | Verwendung | Kontrast auf `--paper` |
 |---|---|---|---|
-| `--ink` | `#09090b` | Fließtext, Überschriften | 20,1:1 |
-| `--ink-strong` | `#18181b` | Primärbutton, CTA-Band | 18,7:1 |
-| `--ink-2` | `#3f3f46` | Sekundärtext, Lead | 10,8:1 |
-| `--ink-3` | `#52525b` | gedämpfter Text, Navigation | 7,6:1 |
-| `--ink-4` | `#71717a` | Meta, Eyebrow, Captions | 4,9:1 |
+| `--ink` | `#020617` | Fließtext, Überschriften | 19,3:1 |
+| `--ink-deep` | `#0f172a` | Primärfläche, CTA-Band | 17,4:1 |
+| `--ink-2` | `#1e293b` | Titel | 14,4:1 |
+| `--ink-3` | `#334155` | Sekundärtext, Lead | 10,4:1 |
+| `--ink-4` | `#475569` | gedämpfter Text | 7,5:1 |
+| `--ink-5` | `#64748b` | Meta, Captions | 4,9:1 |
 | `--paper` | `#ffffff` | Grundfläche | — |
-| `--paper-2` | `#fafafa` | abgesetzte Sektionen | — |
-| `--paper-3` | `#f4f4f5` | Hover-Fläche | — |
-| `--line` | `#e4e4e7` | Trennlinien, Rahmen | — |
-| `--line-strong` | `#d4d4d8` | Formularrahmen | — |
-| `--focus` | `#2563eb` | **nur** Fokusring | 4,6:1 |
+| `--paper-2` | `#f8fafc` | abgesetzte Sektionen, Fußzeile | — |
+| `--line` | `#e2e8f0` | Trennlinien, Rahmen | — |
+| `--accent` | `#0369a1` | Links, Fokus, Eyebrows | 5,9:1 |
+| `--ok` | `#15803d` | Zustimmung im Vergleich | 4,8:1 |
 | `--danger` | `#b91c1c` | Formularfehler | 6,4:1 |
 
-Regel: Farbe transportiert nie allein eine Bedeutung. In der Vergleichstabelle
-steht neben jedem Wert ein eigenes Icon (Haken / Uhr / Minus).
+Farbe trägt nie allein eine Bedeutung: In der Vergleichstabelle steht neben
+jedem Wert ein eigenes Zeichen (Haken / Uhr / Minus).
 
 ## Typografie
 
-| Rolle | Schrift | Schnitte | Begründung |
-|---|---|---|---|
-| Display | **Jost** | 200, 300, 400, 500 | geometrische Grotesk, trifft die Logo-Anmutung |
-| Fließtext | **Inter** | variabel | verifizierte Paarung für „minimal, swiss, funktional, professionell" |
-| Mono | System-Stack | — | Tags, Indizes, Kicker |
+| Rolle | Schrift | Schnitte |
+|---|---|---|
+| Text und Titel | **IBM Plex Sans** | 400, 500, 600 |
+| Label, Kennzahlen, Fachbegriffe | **IBM Plex Mono** | 400, 500 |
 
-Beide über `next/font/google` selbst gehostet: keine externe Anfrage, kein
-Layout-Shift, DSGVO-unkritisch.
+Verifizierte Paarung für „financial, trustworthy, professional, corporate,
+serious". Beide über `next/font/google` selbst gehostet: keine externe Anfrage,
+kein Layout-Shift, datenschutzseitig unkritisch.
 
-Sperrungen sind das wiederkehrende Motiv aus dem Logo:
-`--track-logo: 0.34em` (Wortmarke), `--track-wide: 0.18em` (Unterzeile, Spalten),
-`--track-eyebrow: 0.22em` (Eyebrows). Überschriften laufen negativ
-(`-0.02em` bis `-0.035em`).
-
-Fluide Skala von `--t-xs` (12px) bis `--t-4xl` (44–80px), Basis 16px,
-Zeilenhöhe 1.65 im Fließtext.
+Skala von `--t-2xs` (12px) bis `--t-4xl` (36–60px), Grundtext 16px,
+Zeilenhöhe 1.65. Überschriften laufen leicht negativ (−0.015em bis −0.025em),
+Label in Mono mit `--track-label: 0.14em`.
 
 ## Raster und Abstände
 
-- Container 1200px, schmal 760px, Gutter `clamp(20px, 5vw, 48px)`
-- Abstandsskala 4 → 128px (`--s-1` … `--s-10`), Dichte 4/10
-- Sektionen: `clamp(64px, 9vw, 128px)` vertikal
-- Radien bleiben klein (2–6px) — Swiss Style ist eckig, nicht rund
+- Container 1240px, schmal 720px, Gutter `clamp(20px, 4vw, 40px)`
+- Abstandsskala 4 → 104px (`--s-1` … `--s-10`), Dichte 6/10
+- Sektionen `clamp(56px, 6.5vw, 104px)` vertikal
+- Radien 2–5px — technisch, nicht weich
 
-## Bewegung
+## Informationsarchitektur
 
-Stufe 4/10, dezent. Reveal beim Scrollen: 14px Versatz plus Opazität,
-420ms, `cubic-bezier(0.22, 1, 0.36, 1)`, Stagger 60ms (max. 8 Stufen).
+Die Startseite ist bewusst kurz: Hero, Branchen, Leistungen, zwei
+Referenzprojekte, Ablauf, CTA. Alles Weitere liegt auf Unterseiten, weil eine
+lange Startseite bei dieser Zielgruppe nicht zu Ende gelesen wird.
 
-Der Reveal prüft **Positionen statt Schwellenwert-Übergänge**. Ein
-IntersectionObserver feuert nur beim Überqueren einer Schwelle — ein Sprung
-ans Seitenende überspringt Elemente und würde sie dauerhaft unsichtbar lassen.
-Ein gemeinsamer, per `requestAnimationFrame` gedrosselter Scroll-Sweep kann
-nichts überspringen und hängt sich ab, sobald alles sichtbar ist.
+Das SEO-Cluster hängt an den Branchen:
 
-`prefers-reduced-motion: reduce` liefert sofort den Endzustand; Marquee und
-Puls-Animation stehen still.
+```
+/branchen  (Hub)
+  ├── /branchen/e-commerce
+  ├── /branchen/spedition-und-logistik
+  ├── /branchen/produktion-und-fertigung
+  ├── /branchen/grosshandel-und-distribution
+  ├── /branchen/handwerk-und-bau
+  └── /branchen/dienstleistung-und-agenturen
+        └── verweist auf ein passendes Referenzprojekt
+
+/referenzprojekte  (Hub)
+  └── vier Detailseiten, jede zurück auf ihre Branche
+```
+
+Jede Branchenseite bedient einen eigenen Suchintent und folgt derselben
+Dramaturgie: Einordnung, Painpoints in der Sprache der Betroffenen, Lösungen,
+Referenz, branchenspezifische FAQ, CTA.
 
 ## Verbindliche Regeln
 
 1. Keine Emojis als Icons — ausschließlich das SVG-Set in `components/Icon.tsx`.
-2. Fokus wird nie entfernt, nur gestaltet (`:focus-visible`, 2px, 3px Offset).
-3. Interaktive Ziele mindestens 48px hoch.
-4. Fließtext nie unter 12px. Einzige Ausnahme: die Logo-Unterzeile mit 9px —
-   Logotypen sind von WCAG 1.4.3 ausgenommen, Kontrast dort 7,6:1.
+2. Fokus wird nie entfernt, nur gestaltet (`:focus-visible`, 2px, 2px Offset).
+3. Interaktive Ziele mindestens 46px hoch.
+4. Keine Textgröße unter 12px. Einzige Ausnahme: die Logo-Unterzeile mit 9px —
+   Logotypen sind von WCAG 1.4.3 ausgenommen, Kontrast dort 7,5:1.
 5. Kein horizontaler Overflow — geprüft bei 375, 768, 1024 und 1440px.
-6. Breite Inhalte (Vergleichstabelle) scrollen in eigenem Container,
-   nie die Seite.
-7. Übergänge 150–420ms. Keine Animation von `width`/`height`.
+6. Breite Inhalte scrollen im eigenen Container, nie die Seite.
+7. Keine erfundenen Kennzahlen. Referenzprojekte beschreiben das System,
+   nicht behauptete Prozentwerte.
+
+## Bewegung
+
+Einblenden beim Scrollen: 10px Versatz plus Opazität, 360ms, Stagger 60ms.
+
+Der Reveal prüft **Positionen statt Schwellenwert-Übergänge**. Ein
+IntersectionObserver feuert nur beim Überqueren einer Schwelle — ein Sprung ans
+Seitenende überspringt Elemente und ließe sie dauerhaft unsichtbar. Ein
+gemeinsamer, per `requestAnimationFrame` gedrosselter Scroll-Sweep kann nichts
+überspringen und hängt sich ab, sobald alles sichtbar ist.
+
+`prefers-reduced-motion: reduce` liefert sofort den Endzustand.
 
 ## Abgelehnte Alternativen
 
-- **Dark/Tech (Indigo auf Anthrazit)** — erste Richtung, passte zur alten Seite,
-  aber nicht zum Logo und nicht zum Anspruch „seriös".
-- **Bento-Box-Grid** — für einen Portfolio-Kontext naheliegend, wirkt neben der
-  strengen Logo-Typografie jedoch verspielt. Stattdessen editoriale Zeilen
-  mit Trennlinien.
-- **Theme-Umschalter hell/dunkel** — siehe Grundentscheidung.
+- **Monochrom mit Jost Light** (Vorgängerfassung) — nah am Logo, wirkte in der
+  Anwendung aber boutiquehaft statt geschäftlich. Verworfen.
+- **Dark Mode / Theme-Umschalter** — verwässert die Aussage, verdoppelt die
+  Pflege. Die eine invertierte Fläche ist das CTA-Band.
+- **Serifen-Display** — hätte Autorität gebracht, aber gegen die geometrische
+  Wortmarke gearbeitet.

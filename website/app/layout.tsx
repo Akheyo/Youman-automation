@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Jost } from 'next/font/google'
+import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { JsonLd, organizationJsonLd } from '@/lib/seo'
@@ -7,57 +7,44 @@ import { site } from '@/lib/site'
 import './globals.css'
 import './ui.css'
 
-/* Self-hosted by next/font: no external request, no layout shift. */
-const jost = Jost({
+/* Selbst gehostet über next/font: keine externe Anfrage, kein Layout-Shift. */
+const plexSans = IBM_Plex_Sans({
   subsets: ['latin'],
-  weight: ['200', '300', '400', '500'],
+  weight: ['400', '500', '600'],
   display: 'swap',
-  variable: '--font-jost',
+  variable: '--font-plex-sans',
 })
 
-const inter = Inter({
+const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
+  weight: ['400', '500'],
   display: 'swap',
-  variable: '--font-inter',
+  variable: '--font-plex-mono',
 })
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: `${site.fullName} — KI-Automationen, Chatbots & Websites`,
-    template: `%s — ${site.name}`,
+    default: `${site.fullName} — Prozesse automatisieren mit KI und Software`,
+    template: `%s | ${site.name}`,
   },
   description: site.description,
   applicationName: site.fullName,
   authors: [{ name: site.legalName, url: site.url }],
   creator: site.legalName,
   publisher: site.legalName,
-  alternates: {
-    canonical: site.url,
-    languages: { 'de-DE': site.url },
-  },
-  keywords: [
-    'KI-Automatisierung',
-    'Prozessautomatisierung',
-    'Make.com Freelancer',
-    'n8n Entwickler',
-    'KI-Chatbot entwickeln lassen',
-    'Website erstellen lassen',
-    'E-Commerce Automatisierung',
-    'Shopify Schnittstelle',
-    'PlentyONE Anbindung',
-  ],
+  alternates: { canonical: site.url, languages: { 'de-DE': site.url } },
   openGraph: {
     type: 'website',
     locale: site.locale,
     url: site.url,
     siteName: site.fullName,
-    title: `${site.fullName} — KI-Automationen, Chatbots & Websites`,
+    title: `${site.fullName} — Prozesse automatisieren mit KI und Software`,
     description: site.description,
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${site.fullName} — KI-Automationen, Chatbots & Websites`,
+    title: `${site.fullName} — Prozesse automatisieren mit KI und Software`,
     description: site.description,
   },
   robots: {
@@ -78,13 +65,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#ffffff',
+  themeColor: '#0f172a',
   colorScheme: 'light',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" className={`${jost.variable} ${inter.variable}`}>
+    <html lang="de" className={`${plexSans.variable} ${plexMono.variable}`}>
       <body>
         <a className="skip-link" href="#main">
           Zum Inhalt springen

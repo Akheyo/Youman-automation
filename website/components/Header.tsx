@@ -38,8 +38,9 @@ export function Header() {
     return () => document.removeEventListener('keydown', onKey)
   }, [open])
 
+  // "/" ist nur auf der Startseite aktiv; alle anderen auch auf ihren Unterseiten.
   const isActive = (href: string) =>
-    pathname === href || (href !== '/' && pathname.startsWith(`${href}/`))
+    href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`)
 
   return (
     <header className={`header${scrolled ? ' header--scrolled' : ''}`}>

@@ -2,87 +2,91 @@
    YOUMAN — AI & SOFTWARE
    Design System · Foundations
 
-   Style     Minimalism & Swiss Style
-   Palette   Monochrome (near-black on white)
-   Type      Jost (display, light + wide tracking) / Inter (body)
-   Motion    Subtle — 300–450ms, 60ms stagger, reduced-motion aware
-   Density   Standard — 16–64px rhythm
+   Muster    Trust & Authority + Conversion
+   Palette   Professional Navy — Tiefschwarz-Blau auf kühlem Weiß
+   Type      IBM Plex Sans (Text und Titel) / IBM Plex Mono (Daten, Label)
+   Motion    Zurückhaltend — 3/10
+   Dichte    6/10 — kompakt, substanziell
    ============================================================ */
 
 :root {
-  /* --- Ink (text + solid surfaces) --- */
-  --ink: #09090b;          /* 20.1:1 on white */
-  --ink-strong: #18181b;   /* primary button surface */
-  --ink-2: #3f3f46;        /* secondary text            10.8:1 */
-  --ink-3: #52525b;        /* muted text                 7.6:1 */
-  --ink-4: #71717a;        /* meta / captions            4.9:1 */
+  /* --- Tinte: Text und feste Flächen --- */
+  --ink: #020617;          /* Fließtext                       19,3:1 auf --paper */
+  --ink-deep: #0f172a;     /* Primärfläche, invertierte Bänder 17,4:1 */
+  --ink-2: #1e293b;        /* Titel auf hellem Grund          14,4:1 */
+  --ink-3: #334155;        /* Sekundärtext                    10,4:1 */
+  --ink-4: #475569;        /* gedämpfter Text                  7,5:1 */
+  --ink-5: #64748b;        /* Meta, Captions                   4,9:1 */
 
-  /* --- Paper --- */
+  /* --- Papier --- */
   --paper: #ffffff;
-  --paper-2: #fafafa;
-  --paper-3: #f4f4f5;
+  --paper-2: #f8fafc;
+  --paper-3: #f1f5f9;
 
-  /* --- Lines --- */
-  --line: #e4e4e7;
-  --line-strong: #d4d4d8;
+  /* --- Linien --- */
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
 
-  /* --- Interaction --- */
+  /* --- Akzent: sparsam, trägt nie allein eine Bedeutung --- */
+  --accent: #0369a1;       /* Links, Fokus, Marker             5,9:1 auf --paper */
+  --accent-strong: #075985;
+  --accent-soft: #e0f2fe;
+  --on-accent: #ffffff;
+
   --on-ink: #ffffff;
-  --focus: #2563eb;        /* used only for focus rings — 4.6:1 on white */
-  --danger: #b91c1c;       /* 6.4:1 on white */
+  --danger: #b91c1c;
+  --ok: #15803d;
 
-  /* --- Type scale (fluid, 1.25 ratio at the top end) --- */
-  --t-xs: 0.75rem;
-  --t-sm: 0.8125rem;
-  --t-base: 1rem;
-  --t-md: 1.0625rem;
-  --t-lg: clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem);
-  --t-xl: clamp(1.375rem, 1.2rem + 0.8vw, 1.75rem);
-  --t-2xl: clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem);
-  --t-3xl: clamp(2.25rem, 1.6rem + 2.9vw, 3.75rem);
-  --t-4xl: clamp(2.75rem, 1.7rem + 4.6vw, 5rem);
+  /* --- Typografische Skala (fluid, kompakt) --- */
+  --t-2xs: 0.75rem;    /* 12px — kleinste zulaessige Groesse fuer Label */
+  --t-xs: 0.8125rem;   /* 13px */
+  --t-sm: 0.875rem;    /* 14px */
+  --t-base: 0.9375rem;
+  --t-md: 1rem;
+  --t-lg: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+  --t-xl: clamp(1.25rem, 1.12rem + 0.6vw, 1.5rem);
+  --t-2xl: clamp(1.5rem, 1.28rem + 1.1vw, 2.125rem);
+  --t-3xl: clamp(1.875rem, 1.5rem + 1.9vw, 2.875rem);
+  --t-4xl: clamp(2.25rem, 1.7rem + 2.7vw, 3.75rem);
 
-  /* --- Tracking (the logo's signature) --- */
-  --track-logo: 0.34em;
-  --track-wide: 0.18em;
-  --track-eyebrow: 0.22em;
-  --track-tight: -0.02em;
-  --track-tighter: -0.035em;
+  /* --- Laufweiten --- */
+  --track-logo: 0.3em;
+  --track-label: 0.14em;
+  --track-tight: -0.015em;
+  --track-tighter: -0.025em;
 
-  /* --- Spacing --- */
+  /* --- Abstände (Dichte 6/10) --- */
   --s-1: 4px;
   --s-2: 8px;
   --s-3: 12px;
   --s-4: 16px;
-  --s-5: 24px;
-  --s-6: 32px;
-  --s-7: 48px;
-  --s-8: 64px;
-  --s-9: 96px;
-  --s-10: 128px;
+  --s-5: 20px;
+  --s-6: 28px;
+  --s-7: 40px;
+  --s-8: 56px;
+  --s-9: 80px;
+  --s-10: 104px;
 
-  /* --- Radii — Swiss style stays close to square --- */
+  /* --- Radien: klein, technisch --- */
   --r-xs: 2px;
-  --r-sm: 4px;
-  --r-md: 6px;
+  --r-sm: 3px;
+  --r-md: 5px;
   --r-full: 999px;
 
-  /* --- Motion --- */
-  --dur-fast: 160ms;
-  --dur: 260ms;
-  --dur-slow: 420ms;
+  /* --- Bewegung --- */
+  --dur-fast: 140ms;
+  --dur: 220ms;
+  --dur-slow: 360ms;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-inout: cubic-bezier(0.65, 0.05, 0.36, 1);
 
   /* --- Layout --- */
-  --container: 1200px;
-  --container-narrow: 760px;
-  --header-h: 76px;
-  --gutter: clamp(20px, 5vw, 48px);
+  --container: 1240px;
+  --container-narrow: 720px;
+  --header-h: 68px;
+  --gutter: clamp(20px, 4vw, 40px);
 
-  --font-display: var(--font-jost), "Century Gothic", system-ui, sans-serif;
-  --font-body: var(--font-inter), system-ui, -apple-system, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-sans: var(--font-plex-sans), "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 
   color-scheme: light;
 }
@@ -111,78 +115,60 @@ body {
   min-height: 100dvh;
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-body);
-  font-size: var(--t-base);
+  font-family: var(--font-sans);
+  font-size: var(--t-md);
   line-height: 1.65;
-  font-feature-settings: "kern", "liga", "calt";
+  font-feature-settings: "kern", "liga";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5 {
-  font-family: var(--font-display);
-  font-weight: 300;
-  line-height: 1.1;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.18;
   letter-spacing: var(--track-tight);
   text-wrap: balance;
   color: var(--ink);
 }
 
-h1 { font-size: var(--t-3xl); }
+h1 { font-size: var(--t-3xl); letter-spacing: var(--track-tighter); }
 h2 { font-size: var(--t-2xl); }
 h3 { font-size: var(--t-xl); }
-h4 { font-size: var(--t-lg); font-weight: 400; }
+h4 { font-size: var(--t-lg); }
 
 p { text-wrap: pretty; }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+a { color: inherit; text-decoration: none; }
 
-ul, ol {
-  list-style: none;
-  padding: 0;
-}
+ul, ol { list-style: none; padding: 0; }
 
-img, svg, video {
-  display: block;
-  max-width: 100%;
-  height: auto;
-}
+img, svg, video { display: block; max-width: 100%; height: auto; }
 
-button, input, select, textarea {
-  font: inherit;
-  color: inherit;
-}
+button, input, select, textarea { font: inherit; color: inherit; }
 
 button { background: none; border: none; }
 
 strong { font-weight: 600; }
 
-hr {
-  border: 0;
-  border-top: 1px solid var(--line);
-}
+hr { border: 0; border-top: 1px solid var(--line); }
 
-/* --- Focus is never removed, only styled --- */
 :focus { outline: none; }
 
 :focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 3px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
   border-radius: var(--r-xs);
 }
 
 ::selection {
-  background: var(--ink);
+  background: var(--ink-deep);
   color: var(--on-ink);
 }
 
 /* ============================================================
-   Utilities
+   Hilfsklassen
    ============================================================ */
 
 .visually-hidden {
@@ -203,18 +189,13 @@ hr {
   left: var(--s-4);
   z-index: 300;
   padding: var(--s-3) var(--s-5);
-  background: var(--ink);
+  background: var(--ink-deep);
   color: var(--on-ink);
   font-size: var(--t-sm);
   font-weight: 500;
-  letter-spacing: var(--track-wide);
-  text-transform: uppercase;
   transition: top var(--dur) var(--ease);
 }
-.skip-link:focus-visible {
-  top: var(--s-4);
-  outline-offset: 2px;
-}
+.skip-link:focus-visible { top: var(--s-4); }
 
 .container {
   width: 100%;
@@ -222,81 +203,59 @@ hr {
   margin-inline: auto;
   padding-inline: var(--gutter);
 }
+.container--narrow { max-width: var(--container-narrow); }
 
-.container--narrow {
-  max-width: var(--container-narrow);
-}
-
-.section {
-  padding-block: clamp(var(--s-8), 9vw, var(--s-10));
-}
-.section--tight {
-  padding-block: clamp(var(--s-7), 6vw, var(--s-9));
-}
+.section { padding-block: clamp(var(--s-8), 6.5vw, var(--s-10)); }
+.section--tight { padding-block: clamp(var(--s-7), 5vw, var(--s-9)); }
 .section--paper {
   background: var(--paper-2);
   border-block: 1px solid var(--line);
 }
 
-/* --- Section head: rule + eyebrow + title, Swiss grid --- */
+/* --- Sektionskopf --- */
 
 .section-head {
   display: grid;
   gap: var(--s-4);
-  max-width: 720px;
-  margin-bottom: clamp(var(--s-6), 5vw, var(--s-8));
+  max-width: 680px;
+  margin-bottom: clamp(var(--s-6), 4vw, var(--s-7));
 }
 
 .eyebrow {
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  font-family: var(--font-display);
-  font-size: var(--t-xs);
-  font-weight: 400;
-  letter-spacing: var(--track-eyebrow);
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  font-weight: 500;
+  letter-spacing: var(--track-label);
   text-transform: uppercase;
-  color: var(--ink-4);
+  color: var(--accent);
 }
 .eyebrow::before {
   content: "";
-  width: 28px;
-  height: 1px;
-  background: var(--ink-4);
+  width: 20px;
+  height: 2px;
+  background: currentColor;
   flex: none;
 }
 
-.section-title {
-  font-size: var(--t-2xl);
-}
+.section-title { font-size: var(--t-2xl); }
 
 .lead {
-  max-width: 62ch;
+  max-width: 64ch;
   color: var(--ink-3);
-  font-size: var(--t-md);
+  font-size: var(--t-lg);
   line-height: 1.7;
 }
 
-.measure {
-  max-width: 68ch;
-}
+.measure { max-width: 68ch; }
 
-.prose > * + * {
-  margin-top: var(--s-4);
-}
-.prose h2 {
-  margin-top: var(--s-7);
-  font-size: var(--t-xl);
-}
-.prose h3 {
-  margin-top: var(--s-6);
-  font-size: var(--t-lg);
-}
+.prose > * + * { margin-top: var(--s-4); }
+.prose h2 { margin-top: var(--s-7); font-size: var(--t-xl); }
+.prose h3 { margin-top: var(--s-6); font-size: var(--t-lg); }
 .prose p,
-.prose li {
-  color: var(--ink-2);
-  line-height: 1.75;
-}
+.prose li { color: var(--ink-3); line-height: 1.75; }
 .prose ul {
   display: grid;
   gap: var(--s-2);
@@ -304,33 +263,35 @@ hr {
   list-style: disc;
 }
 .prose a {
+  color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
-  text-decoration-color: var(--line-strong);
-  transition: text-decoration-color var(--dur-fast) var(--ease);
 }
-.prose a:hover {
-  text-decoration-color: currentColor;
+.prose a:hover { color: var(--accent-strong); }
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 1px 5px;
+  background: var(--paper-3);
+  border-radius: var(--r-xs);
 }
 
 /* ============================================================
-   Motion — reveal on scroll
+   Bewegung
    ============================================================ */
 
 .reveal {
   opacity: 0;
-  transform: translateY(14px);
+  transform: translateY(10px);
   transition:
     opacity var(--dur-slow) var(--ease),
     transform var(--dur-slow) var(--ease);
   transition-delay: var(--reveal-delay, 0ms);
-  will-change: opacity, transform;
 }
 .reveal[data-visible="true"] {
   opacity: 1;
   transform: none;
-  will-change: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -343,18 +304,10 @@ hr {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .reveal {
-    opacity: 1;
-    transform: none;
-  }
+  .reveal { opacity: 1; transform: none; }
 }
-
-/* ============================================================
-   Print
-   ============================================================ */
 
 @media print {
   .header, .footer, .skip-link, .cta-band { display: none; }
   body { color: #000; background: #fff; }
-  a::after { content: " (" attr(href) ")"; font-size: 0.8em; }
 }

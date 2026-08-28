@@ -23,7 +23,7 @@ export default function KontaktPage() {
 
       <section className="section">
         <div className="container">
-          <div className="contact-grid">
+          <div className="split">
             <Reveal>
               <h2 className="section-title" style={{ fontSize: 'var(--t-xl)' }}>
                 Direkter Draht

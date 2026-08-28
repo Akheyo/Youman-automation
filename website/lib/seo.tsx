@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
-import { faq, services, site } from './site'
+import type { Branche } from './branchen'
+import { branchen } from './branchen'
+import type { Referenz } from './referenzen'
+import { services, site } from './site'
 
 /**
  * Every page builds its metadata through this helper so canonical URLs,
@@ -78,15 +81,26 @@ export function organizationJsonLd() {
         hasOfferCatalog: {
           '@type': 'OfferCatalog',
           name: 'Leistungen',
-          itemListElement: services.map((service) => ({
-            '@type': 'Offer',
-            itemOffered: {
-              '@type': 'Service',
-              name: service.title,
-              description: service.teaser,
-              url: `${site.url}/leistungen#${service.slug}`,
-            },
-          })),
+          itemListElement: [
+            ...services.map((service) => ({
+              '@type': 'Offer',
+              itemOffered: {
+                '@type': 'Service',
+                name: service.title,
+                description: service.teaser,
+                url: `${site.url}/leistungen#${service.slug}`,
+              },
+            })),
+            ...branchen.map((branche) => ({
+              '@type': 'Offer',
+              itemOffered: {
+                '@type': 'Service',
+                name: `Automatisierung für ${branche.title}`,
+                description: branche.teaser,
+                url: `${site.url}/branchen/${branche.slug}`,
+              },
+            })),
+          ],
         },
       },
       {
@@ -118,16 +132,54 @@ export function breadcrumbJsonLd(trail: { name: string; path: string }[]) {
   }
 }
 
-/** FAQ rich result — only valid where the questions are visible on the page. */
-export function faqJsonLd() {
+/** FAQ rich result — nur zulässig, wo die Fragen auf der Seite sichtbar sind. */
+export function faqPageJsonLd(items: readonly { q: string; a: string }[]) {
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: faq.map((item) => ({
+    mainEntity: items.map((item) => ({
       '@type': 'Question',
       name: item.q,
       acceptedAnswer: { '@type': 'Answer', text: item.a },
     })),
+  }
+}
+
+/** Eine Branchenseite ist ein Service-Angebot für ein Marktsegment. */
+export function brancheServiceJsonLd(branche: Branche) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: `Prozessautomatisierung für ${branche.title}`,
+    description: branche.metaDescription,
+    serviceType: 'Prozessautomatisierung',
+    provider: { '@id': ORG_ID },
+    areaServed: site.areaServed.map((name) => ({ '@type': 'Country', name })),
+    url: `${site.url}/branchen/${branche.slug}`,
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: `Anwendungsfälle ${branche.title}`,
+      itemListElement: branche.loesungen.map((l) => ({
+        '@type': 'Offer',
+        itemOffered: { '@type': 'Service', name: l.title, description: l.text },
+      })),
+    },
+  }
+}
+
+/** Referenzprojekte als Fallstudie. */
+export function caseStudyJsonLd(referenz: Referenz) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: referenz.title,
+    description: referenz.metaDescription,
+    about: referenz.brancheLabel,
+    author: { '@id': ORG_ID },
+    publisher: { '@id': ORG_ID },
+    inLanguage: 'de-DE',
+    url: `${site.url}/referenzprojekte/${referenz.slug}`,
+    mainEntityOfPage: `${site.url}/referenzprojekte/${referenz.slug}`,
   }
 }
 

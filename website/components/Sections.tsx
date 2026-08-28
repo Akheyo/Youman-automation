@@ -1,71 +1,8 @@
 import Link from 'next/link'
+import { Accordion } from './Accordion'
 import { Icon } from './Icon'
 import { Reveal } from './Reveal'
-import { comparison, processSteps, site, testimonials, tools } from '@/lib/site'
-
-export function SectionHead({
-  eyebrow,
-  title,
-  lead,
-  as: Heading = 'h2',
-}: {
-  eyebrow: string
-  title: string
-  lead?: string
-  as?: 'h1' | 'h2'
-}) {
-  return (
-    <Reveal className="section-head">
-      <p className="eyebrow">{eyebrow}</p>
-      <Heading className="section-title">{title}</Heading>
-      {lead ? <p className="lead">{lead}</p> : null}
-    </Reveal>
-  )
-}
-
-export function ToolMarquee() {
-  const row = [...tools, ...tools]
-  return (
-    <div className="marquee" aria-label="Eingesetzte Tools und Plattformen">
-      <ul className="marquee__track">
-        {row.map((tool, i) => (
-          <li key={`${tool}-${i}`} className="marquee__item" aria-hidden={i >= tools.length}>
-            {tool}
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-export function ProcessSection() {
-  return (
-    <section className="section section--paper" aria-labelledby="ablauf-title">
-      <div className="container">
-        <Reveal className="section-head">
-          <p className="eyebrow">Ablauf</p>
-          <h2 className="section-title" id="ablauf-title">
-            Vier Schritte, keine Überraschungen
-          </h2>
-          <p className="lead">
-            Vom ersten Gespräch bis zum laufenden Betrieb weißt du jederzeit, woran wir
-            sind und was als Nächstes passiert.
-          </p>
-        </Reveal>
-
-        <ol className="steps">
-          {processSteps.map((step, i) => (
-            <Reveal as="li" key={step.step} index={i} className="step">
-              <span className="step__num">{step.step}</span>
-              <h3 className="step__title">{step.title}</h3>
-              <p className="step__text">{step.text}</p>
-            </Reveal>
-          ))}
-        </ol>
-      </div>
-    </section>
-  )
-}
+import { comparison, site, testimonials } from '@/lib/site'
 
 export function TestimonialsSection() {
   return (
@@ -78,26 +15,19 @@ export function TestimonialsSection() {
           </h2>
         </Reveal>
 
-        <ul className="quotes">
+        <ul className="grid-cards grid-cards--3">
           {testimonials.map((item, i) => (
-            <Reveal as="li" key={item.name} index={i} className="quote">
-              <span className="quote__mark" aria-hidden="true">
-                &ldquo;
-              </span>
-              <blockquote className="quote__text">
+            <Reveal as="li" key={item.name} index={i} className="card">
+              <blockquote className="card__text">
                 <p>{item.quote}</p>
               </blockquote>
-              <figcaption className="quote__who">
-                <span className="quote__avatar" aria-hidden="true">
-                  {item.name
-                    .split(' ')
-                    .map((part) => part[0])
-                    .join('')}
+              <figcaption style={{ marginTop: 'auto', paddingTop: 'var(--s-4)' }}>
+                <span style={{ fontWeight: 600, fontSize: 'var(--t-base)' }}>
+                  {item.name}
                 </span>
-                <span>
-                  <span className="quote__name">{item.name}</span>
-                  <br />
-                  <span className="quote__role">{item.role}</span>
+                <br />
+                <span style={{ fontSize: 'var(--t-xs)', color: 'var(--ink-5)' }}>
+                  {item.role}
                 </span>
               </figcaption>
             </Reveal>
@@ -109,7 +39,8 @@ export function TestimonialsSection() {
 }
 
 export function ComparisonSection() {
-  // Each tone gets its own glyph so the meaning survives without colour.
+  // Jede Ausprägung bekommt ein eigenes Zeichen, damit die Aussage nicht
+  // allein an der Farbe hängt.
   const toneIcon = { good: 'check', mid: 'clock', bad: 'minus' } as const
 
   return (
@@ -122,7 +53,7 @@ export function ComparisonSection() {
           </h2>
           <p className="lead">
             Alle drei Wege sind legitim. Der Vergleich zeigt, wo der jeweilige Vorteil
-            wirklich liegt — auch da, wo er nicht bei mir liegt.
+            liegt — auch da, wo er nicht bei mir liegt.
           </p>
         </Reveal>
 
@@ -164,9 +95,37 @@ export function ComparisonSection() {
   )
 }
 
+export function FaqSection({
+  items,
+  title = 'Häufige Fragen',
+  eyebrow = 'FAQ',
+  narrow = true,
+}: {
+  items: readonly { q: string; a: string }[]
+  title?: string
+  eyebrow?: string
+  narrow?: boolean
+}) {
+  return (
+    <section className="section" aria-labelledby="faq-title">
+      <div className={narrow ? 'container container--narrow' : 'container'}>
+        <Reveal className="section-head">
+          <p className="eyebrow">{eyebrow}</p>
+          <h2 className="section-title" id="faq-title">
+            {title}
+          </h2>
+        </Reveal>
+        <Reveal>
+          <Accordion items={items} />
+        </Reveal>
+      </div>
+    </section>
+  )
+}
+
 export function CtaBand({
-  title = 'Lass uns über deinen Prozess sprechen.',
-  text = `Beschreib mir kurz, was heute manuell läuft. Du bekommst innerhalb von ${site.responseTime} eine ehrliche Einschätzung — auch dann, wenn Automatisierung sich nicht lohnt.`,
+  title = 'Sprechen wir über Ihren Prozess.',
+  text = `Beschreiben Sie kurz, was heute von Hand läuft. Sie bekommen innerhalb von ${site.responseTime} eine ehrliche Einschätzung — auch dann, wenn sich Automatisierung nicht lohnt.`,
 }: {
   title?: string
   text?: string
@@ -178,9 +137,7 @@ export function CtaBand({
           <h2 className="cta-band__title" id="cta-title">
             {title}
           </h2>
-          <p className="cta-band__text" style={{ marginTop: 'var(--s-5)' }}>
-            {text}
-          </p>
+          <p className="cta-band__text">{text}</p>
         </div>
         <div className="cta-band__actions">
           <Link href="/kontakt" className="btn btn--invert">

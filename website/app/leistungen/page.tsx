@@ -2,9 +2,15 @@ import Link from 'next/link'
 import { Icon } from '@/components/Icon'
 import { PageHead } from '@/components/PageHead'
 import { Reveal } from '@/components/Reveal'
-import { CtaBand, ProcessSection } from '@/components/Sections'
-import { JsonLd, breadcrumbJsonLd, pageMetadata, serviceJsonLd } from '@/lib/seo'
-import { services } from '@/lib/site'
+import { CtaBand, FaqSection } from '@/components/Sections'
+import {
+  JsonLd,
+  breadcrumbJsonLd,
+  faqPageJsonLd,
+  pageMetadata,
+  serviceJsonLd,
+} from '@/lib/seo'
+import { faq, services } from '@/lib/site'
 
 export const metadata = pageMetadata({
   title: 'Leistungen',
@@ -85,13 +91,14 @@ export default function LeistungenPage() {
         </div>
       </div>
 
-      <ProcessSection />
+      <FaqSection items={faq} title="Häufige Fragen zur Zusammenarbeit" />
       <CtaBand
         title="Unsicher, welcher Bereich passt?"
         text="Schreib mir, was heute nervt. Ich sortiere das Problem und sage dir, welcher Weg der kürzeste ist."
       />
 
       <JsonLd data={breadcrumbJsonLd([{ name: 'Leistungen', path: '/leistungen' }])} />
+      <JsonLd data={faqPageJsonLd(faq)} />
       {services.map((service) => {
         const data = serviceJsonLd(service.slug)
         return data ? <JsonLd key={service.slug} data={data} /> : null

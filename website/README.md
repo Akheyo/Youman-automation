@@ -4,7 +4,7 @@ Eigenständige Marketing-Website für Youman Automation: KI-Automationen, LLM-Ch
 Websites und E-Commerce-Integrationen.
 
 Next.js 14 (App Router), TypeScript, reines CSS mit Design-Tokens. Keine UI-Bibliothek,
-keine externen Laufzeit-Abhängigkeiten.
+keine externen Laufzeit-Abhängigkeiten. 18 statisch vorgerenderte Seiten.
 
 ---
 
@@ -27,33 +27,39 @@ npm run dev      # http://localhost:3001
 
 ```
 app/
-  layout.tsx            Schriften, globale Metadaten, Organisation-JSON-LD
-  page.tsx              Startseite
-  leistungen/           Leistungen im Detail (+ Service-JSON-LD)
-  referenzen/           Projekte
-  ueber-mich/           Profil und Arbeitsweise
-  kontakt/              Kontaktdaten und Anfrageformular
-  impressum/            § 5 DDG — PLATZHALTER, siehe unten
-  datenschutz/          Art. 13 DSGVO — PLATZHALTER, siehe unten
-  not-found.tsx         404
-  sitemap.ts            sitemap.xml
-  robots.ts             robots.txt
-  opengraph-image.tsx   Social-Preview 1200×630, beim Build erzeugt
-  icon.tsx              Favicon
-  globals.css           Design-Tokens, Reset, Layout-Primitive
-  ui.css                Komponenten und Sektionen
+  layout.tsx                    Schriften, globale Metadaten, Organisation-JSON-LD
+  page.tsx                      Startseite (bewusst kurz)
+  branchen/page.tsx             Hub des SEO-Clusters
+  branchen/[slug]/page.tsx      sechs Branchenseiten, statisch vorgerendert
+  referenzprojekte/page.tsx     Projektübersicht
+  referenzprojekte/[slug]/      vier Fallstudien
+  leistungen/                   Leistungen im Detail (+ Service- und FAQ-JSON-LD)
+  ueber-mich/                   Profil, Arbeitsweise, Einordnung
+  kontakt/                      Kontaktdaten und Anfrageformular
+  impressum/                    § 5 DDG — PLATZHALTER, siehe unten
+  datenschutz/                  Art. 13 DSGVO — PLATZHALTER, siehe unten
+  not-found.tsx                 404
+  sitemap.ts                    aus den Datenquellen erzeugt
+  robots.ts                     robots.txt
+  opengraph-image.tsx           Social-Preview 1200×630, beim Build erzeugt
+  icon.tsx                      Favicon
+  globals.css                   Design-Tokens, Reset, Layout-Primitive
+  ui.css                        Komponenten und Sektionen
 components/
   Header, Footer, Logo, Icon, Reveal, Accordion, ContactForm,
   PageHead, Sections
 lib/
-  site.ts               sämtliche Inhalte und Kontaktdaten an einer Stelle
+  site.ts               Marke, Navigation, Leistungen, FAQ, Kontaktdaten
+  branchen.ts           sechs Branchen mit Painpoints, Lösungen, FAQ, SEO-Feldern
+  referenzen.ts         vier Referenzprojekte als Fallstudien
   seo.tsx               Metadaten-Helfer und strukturierte Daten
 design-system/
   youman-automation/MASTER.md   verbindliche Design-Entscheidungen
 ```
 
-Inhalte werden nicht in Komponenten geschrieben, sondern in `lib/site.ts` gepflegt.
-Texte, Leistungen, Referenzen, FAQ und Kontaktdaten liegen dort zentral.
+Inhalte werden nicht in Komponenten geschrieben, sondern in `lib/` gepflegt.
+Eine neue Branche entsteht durch einen Eintrag in `lib/branchen.ts` — Seite,
+Navigation im Footer, Sitemap und strukturierte Daten folgen automatisch.
 
 ## SEO
 
@@ -62,8 +68,10 @@ Ab Werk enthalten:
 - `metadataBase`, Titel-Template und Canonical pro Seite über `lib/seo.tsx`
 - OpenGraph und Twitter Cards, Vorschaubild aus `opengraph-image.tsx`
 - Strukturierte Daten: `ProfessionalService`, `WebSite`, `BreadcrumbList`,
-  `FAQPage` (nur auf der Startseite, wo die Fragen sichtbar sind), `Service`
-  je Leistung
+  `Service` je Branche und je Leistung, `Article` je Referenzprojekt,
+  `FAQPage` nur dort, wo die Fragen auch sichtbar sind
+- SEO-Cluster: `/branchen` als Hub, sechs Branchenseiten als Spokes, jede mit
+  eigenem Suchintent, eigener FAQ und Querverweis auf ein Referenzprojekt
 - `sitemap.xml` und `robots.txt` generiert, nicht handgepflegt
 - Genau eine `h1` pro Seite, lückenlose Überschriften-Hierarchie
 - Server Components als Standard; `'use client'` nur in Header, Accordion,
@@ -81,12 +89,18 @@ Canonical-Tags, Sitemap und JSON-LD leiten sich daraus ab.
    Besuchers; es sendet nichts an einen Server. Für einen echten Versand eine Route
    `app/api/kontakt/route.ts` ergänzen und `buildMailto` in `ContactForm.tsx`
    ersetzen — dann auch Abschnitt 5 der Datenschutzerklärung anpassen.
-3. **Referenzen und Kundenstimmen** stammen aus der bisherigen Seite. Namen und
-   Zitate vor Veröffentlichung mit den Genannten abstimmen.
+3. **Referenzprojekte und Kundenstimmen** stammen aus der bisherigen Seite. Namen
+   und Zitate vor Veröffentlichung mit den Genannten abstimmen. Die Fallstudien
+   enthalten bewusst keine Prozentzahlen — belegte Kennzahlen können ergänzt
+   werden, sobald die Auftraggeber sie freigeben.
+4. **Branchentexte** beschreiben typische Problemlagen der jeweiligen Branche.
+   Wo Sie eigene Projekterfahrung haben, ersetzen Sie die allgemeine Formulierung
+   durch den konkreten Fall — das ist der stärkste Hebel für Glaubwürdigkeit
+   und für die Suche.
 
 ## Barrierefreiheit
 
-Geprüft mit Chromium über alle sieben Seiten:
+Geprüft mit Chromium über alle 18 Seiten:
 
 - Kontrast durchgehend über WCAG AA (Fließtext ≥ 7:1)
 - Tastaturbedienung inklusive Escape im Mobilmenü und Fokusrückgabe
