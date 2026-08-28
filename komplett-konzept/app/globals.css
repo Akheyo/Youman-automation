@@ -456,7 +456,9 @@ select { cursor: pointer; appearance: none; padding-right: 30px;
 
 /* --- Sparkline / Verlauf ------------------------------------------------ */
 .verlauf { display: flex; align-items: flex-end; gap: 2px; height: 34px; }
-.verlauf__balken { flex: 1; border-radius: 1.5px 1.5px 0 0; min-height: 2px; background: var(--kk-blau-hell); opacity: 0.85; }
+/* flex: none ist wichtig - sonst ueberstimmt der Flex-Container die
+   berechnete Hoehe und alle Tage sehen gleich aus. */
+.verlauf__balken { flex: none; width: 100%; min-height: 2px; background: var(--kk-blau-hell); opacity: 0.85; }
 .verlauf__balken--fehler { background: var(--fehler); }
 .verlauf__balken--leer { background: var(--flaeche-3); }
 

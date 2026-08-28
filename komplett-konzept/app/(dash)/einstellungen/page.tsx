@@ -89,7 +89,7 @@ export default async function EinstellungenSeite() {
             <div className="karte__koerper">
               <dl className="dl">
                 <dt>Automationen</dt><dd>{zahlen.automationen}</dd>
-                <dt>Laeufe</dt><dd>{zahlen.laeufe}</dd>
+                <dt>Läufe</dt><dd>{zahlen.laeufe}</dd>
                 <dt>Fehler</dt><dd>{zahlen.fehler}</dd>
                 <dt>Log-Zeilen</dt><dd>{zahlen.logs}</dd>
                 <dt>Datenbank</dt><dd className="klein schwach">{version.split(' ').slice(0, 2).join(' ')}</dd>

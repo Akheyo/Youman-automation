@@ -20,7 +20,7 @@ export default async function UebersichtSeite() {
   const nutzer = await nutzerErzwingen()
   const steuern = darfSteuern(nutzer)
 
-  const [zahlen, automationen, letzteLaeufe, offeneFehler, verlauf] = await Promise.all([
+  const [zahlen, automationen, letzteLäufe, offeneFehler, verlauf] = await Promise.all([
     kennzahlen(),
     automationenMitKennzahlen(),
     ausfuehrungen({ zeitraum: '24h', limit: 8 }),
@@ -53,7 +53,7 @@ export default async function UebersichtSeite() {
         <div className="kpi kpi--laeuft">
           <span className="kpi__label">Läuft gerade</span>
           <span className="kpi__wert">{zahlen.laeufe_laufend}</span>
-          <span className="kpi__zusatz">{zahl(zahlen.laeufe_24h)} Laeufe in 24 Std</span>
+          <span className="kpi__zusatz">{zahl(zahlen.laeufe_24h)} Läufe in 24 Std</span>
         </div>
 
         <div className={'kpi' + ((zahlen.erfolgsquote_24h ?? 100) < 90 ? ' kpi--warn' : ' kpi--ok')}>
@@ -80,7 +80,7 @@ export default async function UebersichtSeite() {
       {/* --- Verlauf --- */}
       <section className="karte">
         <div className="karte__kopf">
-          <h2>Laeufe der letzten 14 Tage</h2>
+          <h2>Läufe der letzten 14 Tage</h2>
           <div className="rechts klein schwach">
             <span className="reihe" style={{ gap: 6 }}>
               <span style={{ width: 9, height: 9, borderRadius: 2, background: 'var(--kk-blau-hell)' }} /> erfolgreich
@@ -134,7 +134,7 @@ export default async function UebersichtSeite() {
                 <div className="kachel__zahlen">
                   <div className="kachel__zahl">
                     <b>{zahl(a.laeufe_24h)}</b>
-                    <span>Laeufe 24 Std</span>
+                    <span>Läufe 24 Std</span>
                   </div>
                   <div className="kachel__zahl">
                     <b style={{ color: (a.erfolgsquote ?? 100) < 90 ? 'var(--warn)' : undefined }}>
@@ -160,7 +160,7 @@ export default async function UebersichtSeite() {
         )}
       </section>
 
-      {/* --- Letzte Laeufe + offene Fehler --- */}
+      {/* --- Letzte Läufe + offene Fehler --- */}
       <div className="zwei-spalten">
         <section className="karte">
           <div className="karte__kopf">
@@ -169,8 +169,8 @@ export default async function UebersichtSeite() {
               <Link href="/executions" className="btn btn--klein">Alle</Link>
             </div>
           </div>
-          {letzteLaeufe.zeilen.length === 0 ? (
-            <Leer titel="Keine Laeufe in den letzten 24 Stunden" />
+          {letzteLäufe.zeilen.length === 0 ? (
+            <Leer titel="Keine Läufe in den letzten 24 Stunden" />
           ) : (
             <div className="tabelle-huelle">
               <table className="tabelle">
@@ -183,7 +183,7 @@ export default async function UebersichtSeite() {
                   </tr>
                 </thead>
                 <tbody>
-                  {letzteLaeufe.zeilen.map((e) => (
+                  {letzteLäufe.zeilen.map((e) => (
                     <tr key={e.id}>
                       <td>
                         <Link href={'/executions/' + e.id} className="zeilen-link">{e.automation_name}</Link>

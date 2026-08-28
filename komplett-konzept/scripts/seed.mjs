@@ -3,8 +3,10 @@
 // Die echten Automationen kommen später - diese hier sind reine Attrappen
 // und lassen sich jederzeit mit "node scripts/seed.mjs --leeren" entfernen.
 import postgres from 'postgres'
+import { verbindungsOptionen } from '../lib/dbOptionen.mjs'
 
-const sql = postgres(process.env.DATABASE_URL, { max: 1 })
+const url = process.env.DATABASE_URL ?? ''
+const sql = postgres(url, { ...verbindungsOptionen(url), max: 1 })
 const leeren = process.argv.includes('--leeren')
 
 const AUTOMATIONEN = [
@@ -127,11 +129,18 @@ try {
       returning id, key, status
     `
 
-    // Ausführungen ueber die letzten 14 Tage verteilen (ca. 3 Laeufe pro Tag),
+    // Ausführungen ueber die letzten 14 Tage verteilen (ca. 3 Läufe pro Tag),
     // damit der Verlaufsbalken auf der Uebersicht auch etwas zu zeigen hat.
+    // Ungleichmäßig verteilt: manche Tage laufen häufiger, manche gar nicht.
+    // Gleichmäßige Balken sähen im Verlauf aus wie ein Fehler.
     const anzahl = 42
     for (let i = 0; i < anzahl; i++) {
-      const startMin = i * 480 + ((i * 37) % 190) + 9
+      // Manche Läufe fallen aus, damit die Tage unterschiedlich voll sind.
+      // Gleichmäßige Balken sähen im Verlauf aus wie ein kaputtes Diagramm.
+      if ((i * 7 + a.key.length * 3) % 5 === 0) continue
+
+      const schwankung = [0, 210, 480, 60, 900, 300, 130][i % 7]
+      const startMin = i * 430 + schwankung + 9
       const gestartet = minutenVorher(startMin)
       const dauer = 2_000 + ((i * 7919) % 48_000)
       const schlaegtFehl = auto.status === 'error' ? i % 3 === 0 : i % 9 === 0

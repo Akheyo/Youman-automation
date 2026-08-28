@@ -8,6 +8,7 @@
 import { createInterface } from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
 import postgres from 'postgres'
+import { verbindungsOptionen } from '../lib/dbOptionen.mjs'
 import { hashPassword } from '../lib/password.mjs'
 
 const [email, name, role = 'admin'] = process.argv.slice(2)
@@ -21,7 +22,8 @@ if (!['admin', 'operator', 'viewer'].includes(role)) {
   process.exit(1)
 }
 
-const sql = postgres(process.env.DATABASE_URL, { max: 1 })
+const url = process.env.DATABASE_URL ?? ''
+const sql = postgres(url, { ...verbindungsOptionen(url), max: 1 })
 
 try {
   let pw = process.env.ADMIN_PASSWORD

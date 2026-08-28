@@ -94,7 +94,7 @@ export async function automationHolen(id: string): Promise<Automation | null> {
   return zeilen[0] ?? null
 }
 
-/** Laeufe je Tag der letzten 14 Tage - für den kleinen Verlaufsbalken. */
+/** Läufe je Tag der letzten 14 Tage - für den kleinen Verlaufsbalken. */
 export async function verlauf14Tage(automationId?: string) {
   return sql<{ tag: string; erfolg: number; fehler: number }[]>`
     select to_char(d.tag, 'YYYY-MM-DD') as tag,

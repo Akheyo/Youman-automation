@@ -58,7 +58,7 @@ export default async function AutomationDetail({ params }: { params: { id: strin
 
       <section className="kpi-reihe">
         <div className="kpi">
-          <span className="kpi__label">Laeufe (24 Std)</span>
+          <span className="kpi__label">Läufe (24 Std)</span>
           <span className="kpi__wert">{zahl(kennzahl?.laeufe_24h ?? 0)}</span>
         </div>
         <div className={'kpi' + ((kennzahl?.erfolgsquote ?? 100) < 90 ? ' kpi--warn' : ' kpi--ok')}>
@@ -78,7 +78,7 @@ export default async function AutomationDetail({ params }: { params: { id: strin
       <div className="zwei-spalten">
         <div className="spalte">
           <section className="karte">
-            <div className="karte__kopf"><h2>Laeufe der letzten 14 Tage</h2></div>
+            <div className="karte__kopf"><h2>Läufe der letzten 14 Tage</h2></div>
             <div className="karte__koerper"><Verlauf daten={verlauf} /></div>
           </section>
 

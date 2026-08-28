@@ -1,4 +1,5 @@
 import postgres from 'postgres'
+import { verbindungsOptionen } from './dbOptionen.mjs'
 
 type Sql = ReturnType<typeof postgres>
 
@@ -20,12 +21,7 @@ function verbindung(): Sql {
     throw new Error('DATABASE_URL ist nicht gesetzt - siehe .env.example')
   }
 
-  instanz = postgres(url, {
-    max: 10,
-    idle_timeout: 30,
-    connect_timeout: 10,
-    onnotice: () => {},
-  })
+  instanz = postgres(url, verbindungsOptionen(url))
 
   // Im Dev-Modus über globalThis halten, damit Hot-Reload keine neuen Pools öffnet.
   if (process.env.NODE_ENV !== 'production') {

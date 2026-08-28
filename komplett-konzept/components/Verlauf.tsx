@@ -6,7 +6,7 @@ export function Verlauf({ daten }: { daten: { tag: string; erfolg: number; fehle
   const max = Math.max(1, ...daten.map((d) => d.erfolg + d.fehler))
 
   return (
-    <div className="verlauf" role="img" aria-label={'Laeufe der letzten ' + daten.length + ' Tage'}>
+    <div className="verlauf" role="img" aria-label={'Läufe der letzten ' + daten.length + ' Tage'}>
       {daten.map((d) => {
         const gesamt = d.erfolg + d.fehler
         const hoehe = gesamt === 0 ? 6 : Math.max(12, Math.round((gesamt / max) * 100))

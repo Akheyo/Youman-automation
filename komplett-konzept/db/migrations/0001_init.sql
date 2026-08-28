@@ -3,8 +3,6 @@
 -- Nutzer, Sitzungen, Automationen, Ausfuehrungen, Logs, Fehler, Protokoll
 -- ---------------------------------------------------------------------------
 
-create extension if not exists "pgcrypto";
-
 -- --- Nutzer ---------------------------------------------------------------
 create table if not exists users (
   id            uuid primary key default gen_random_uuid(),

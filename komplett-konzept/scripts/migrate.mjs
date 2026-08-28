@@ -5,6 +5,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import postgres from 'postgres'
+import { verbindungsOptionen } from '../lib/dbOptionen.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const migrationsDir = join(here, '..', 'db', 'migrations')
@@ -15,7 +16,7 @@ if (!url) {
   process.exit(1)
 }
 
-const sql = postgres(url, { max: 1, onnotice: () => {} })
+const sql = postgres(url, { ...verbindungsOptionen(url), max: 1 })
 
 async function waitForDb(attempts = 30) {
   for (let i = 1; i <= attempts; i++) {
