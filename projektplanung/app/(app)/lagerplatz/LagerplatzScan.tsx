@@ -9,6 +9,8 @@ interface ScanAntwort {
   konfiguriert: boolean;
   error: string | null;
   gelesen: number;
+  geprueft: number;
+  ohneBestand: number;
   vonSeite: number;
   bisSeite: number;
   naechsteSeite: number | null;
@@ -24,7 +26,7 @@ const FILTER: Array<{ wert: BefundStatus | 'alle'; text: string }> = [
   { wert: 'gefunden', text: 'Gefunden' },
   { wert: 'unsicher', text: 'Unsicher' },
   { wert: 'konflikt', text: 'Konflikt' },
-  { wert: 'kein-treffer', text: 'Kein Treffer' },
+  { wert: 'kein-treffer', text: 'Ohne Lagerplatz' },
 ];
 
 const MAX_ZEILEN = 300;
@@ -47,6 +49,8 @@ export default function LagerplatzScan({ plentyReady }: { plentyReady: boolean }
   const [fehler, setFehler] = useState<string | null>(null);
   const [diagnose, setDiagnose] = useState<string[]>([]);
   const [gelesen, setGelesen] = useState(0);
+  const [geprueft, setGeprueft] = useState(0);
+  const [quelle, setQuelle] = useState<'bestand' | 'alle'>('bestand');
   const [gesamt, setGesamt] = useState<number | null>(null);
   const [fertig, setFertig] = useState(false);
   const [proSeite, setProSeite] = useState(100);
@@ -75,29 +79,36 @@ export default function LagerplatzScan({ plentyReady }: { plentyReady: boolean }
     setBefunde([]);
     setDiagnose([]);
     setGelesen(0);
+    setGeprueft(0);
     setGesamt(null);
     setFertig(false);
 
     let seite = 1;
     let summe = 0;
+    let summeGeprueft = 0;
     try {
       for (;;) {
         if (abbruch.current) break;
         const res = await fetch('/api/lagerplatz/scan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ startSeite: seite, proSeite, maxSeiten: 8, texteNachladen }),
+          body: JSON.stringify({ quelle, startSeite: seite, proSeite, maxSeiten: 8, texteNachladen }),
         });
         const daten = (await res.json()) as ScanAntwort;
 
         if (Array.isArray(daten.befunde) && daten.befunde.length) {
-          setBefunde((alt) => [...alt, ...daten.befunde]);
+          setBefunde((alt) => {
+            const bekannt = new Set(alt.map((b) => b.variationId));
+            return [...alt, ...daten.befunde.filter((b) => !bekannt.has(b.variationId))];
+          });
         }
         if (Array.isArray(daten.diagnose) && daten.diagnose.length) {
           setDiagnose((alt) => [...new Set([...alt, ...daten.diagnose])]);
         }
         summe += daten.gelesen ?? 0;
+        summeGeprueft += daten.geprueft ?? 0;
         setGelesen(summe);
+        setGeprueft(summeGeprueft);
         if (typeof daten.gesamtLautPlenty === 'number') setGesamt(daten.gesamtLautPlenty);
 
         if (!res.ok || daten.error) {
@@ -125,10 +136,11 @@ export default function LagerplatzScan({ plentyReady }: { plentyReady: boolean }
         <span className={styles.eyebrow}>PlentyONE</span>
         <h1 className={styles.title}>Lagerplätze finden</h1>
         <p className={styles.subtitle}>
-          Durchsucht die Artikel in Plenty nach Lagerplatz-Codes wie <strong>H6R5A7</strong> — in der
-          Variantennummer, im Modellfeld und in der Artikelbeschreibung. Auch abweichende Schreibweisen
-          („h6-r5-a7", „Halle 6 Regal 5 Ablage 7") werden erkannt. Dieser Durchlauf <strong>liest nur</strong>;
-          in Plenty wird nichts verändert.
+          Geht <strong>jeden Artikel mit Bestand</strong> in Plenty durch und liest den Lagerplatz aus seinen
+          Texten — Variantennummer, Modell, Externe ID, Name und Artikelbeschreibung. Codes wie{' '}
+          <strong>H6R5A7</strong> werden auch in abweichender Schreibweise erkannt („h6-r5-a7",
+          „Halle 6 Regal 5 Ablage 7"). Dieser Durchlauf <strong>liest nur</strong>; in Plenty wird nichts
+          verändert.
         </p>
       </header>
 
@@ -149,8 +161,24 @@ export default function LagerplatzScan({ plentyReady }: { plentyReady: boolean }
 
         <div className={styles.controls}>
           <div className={styles.field}>
+            <label className={styles.label} htmlFor="quelle">
+              Welche Artikel
+            </label>
+            <select
+              id="quelle"
+              className={styles.select}
+              value={quelle}
+              onChange={(e) => setQuelle(e.target.value as 'bestand' | 'alle')}
+              disabled={laeuft}
+            >
+              <option value="bestand">Nur mit Bestand</option>
+              <option value="alle">Gesamter Artikelstamm</option>
+            </select>
+          </div>
+
+          <div className={styles.field}>
             <label className={styles.label} htmlFor="proSeite">
-              Varianten pro Abruf
+              Zeilen pro Abruf
             </label>
             <select
               id="proSeite"
@@ -202,8 +230,11 @@ export default function LagerplatzScan({ plentyReady }: { plentyReady: boolean }
 
         {(laeuft || gelesen > 0) && (
           <div className={styles.progress}>
-            {gelesen.toLocaleString('de-DE')} Varianten gelesen
+            {quelle === 'bestand'
+              ? `${gelesen.toLocaleString('de-DE')} Bestandszeilen gelesen`
+              : `${gelesen.toLocaleString('de-DE')} Varianten gelesen`}
             {gesamt ? ` von ${gesamt.toLocaleString('de-DE')}` : ''}
+            {quelle === 'bestand' && ` · ${geprueft.toLocaleString('de-DE')} Artikel mit Bestand geprüft`}
             {fortschritt !== null && (
               <div className={styles.bar}>
                 <div className={styles.barFill} style={{ width: `${fortschritt}%` }} />
@@ -230,7 +261,7 @@ export default function LagerplatzScan({ plentyReady }: { plentyReady: boolean }
                 <button
                   type="button"
                   className={styles.secondary}
-                  onClick={() => ladeHerunter('lagerplaetze-befunde.csv', alsCsv(befunde))}
+                  onClick={() => ladeHerunter('lagerplaetze-artikel.csv', alsCsv(befunde))}
                 >
                   Alles als CSV
                 </button>
@@ -264,13 +295,19 @@ export default function LagerplatzScan({ plentyReady }: { plentyReady: boolean }
               </div>
               <div className={`${styles.stat} ${styles.statMuted}`}>
                 <div className={styles.statNum}>{zusammenfassung.ohneTreffer.toLocaleString('de-DE')}</div>
-                <div className={styles.statLabel}>Kein Treffer</div>
+                <div className={styles.statLabel}>Ohne Lagerplatz</div>
               </div>
             </div>
 
             <p className={styles.hint}>
               {zusammenfassung.plaetze.length.toLocaleString('de-DE')} verschiedene Lagerplätze — so viele
-              müssten in Plenty angelegt werden.
+              müssten in Plenty angelegt werden.{' '}
+              {zusammenfassung.ohneTreffer > 0 && (
+                <>
+                  Bei {zusammenfassung.ohneTreffer.toLocaleString('de-DE')} Artikeln mit Bestand steht nirgends
+                  ein Lagerplatz — die müssen aufgenommen werden.
+                </>
+              )}
             </p>
           </section>
 
@@ -325,6 +362,8 @@ export default function LagerplatzScan({ plentyReady }: { plentyReady: boolean }
                   <thead>
                     <tr>
                       <th>Lagerplatz</th>
+                      <th>Bestand</th>
+                      <th>Lager</th>
                       <th>Variantennummer</th>
                       <th>Name</th>
                       <th>Quelle</th>
@@ -336,6 +375,8 @@ export default function LagerplatzScan({ plentyReady }: { plentyReady: boolean }
                     {sichtbar.slice(0, MAX_ZEILEN).map((b) => (
                       <tr key={b.variationId}>
                         <td className={styles.mono}>{b.code ?? '—'}</td>
+                        <td className={styles.mono}>{b.bestandPhysisch ?? b.bestand ?? '—'}</td>
+                        <td className={styles.cellHint}>{b.lager ?? '—'}</td>
                         <td className={styles.mono}>{b.nummer ?? '—'}</td>
                         <td className={styles.cellName} title={b.name ?? ''}>
                           {b.name ?? '—'}
@@ -369,7 +410,7 @@ function StatusBadge({ status }: { status: BefundStatus }) {
     gefunden: { klasse: styles.badgeOk, text: 'gefunden' },
     unsicher: { klasse: styles.badgeWarn, text: 'unsicher' },
     konflikt: { klasse: styles.badgeErr, text: 'Konflikt' },
-    'kein-treffer': { klasse: styles.badgeMuted, text: 'kein Treffer' },
+    'kein-treffer': { klasse: styles.badgeMuted, text: 'ohne Lagerplatz' },
   };
   const { klasse, text } = map[status];
   return <span className={`${styles.badge} ${klasse}`}>{text}</span>;

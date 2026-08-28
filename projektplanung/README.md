@@ -69,17 +69,33 @@ nie mit echten Hersteller-GTINs kollidiert. Aufbau: `[Präfix 2][Nutzlast 10]
 Viele Artikel tragen ihren Lagerplatz bis heute nur im Text — in der
 **Variantennummer** (`KK-2024-0815-H6R5A7`) oder mitten in der
 **Artikelbeschreibung** („Lagerplatz: Halle 6 Regal 5 Ablage 7"). Bevor daraus
-in Plenty echte Lagerorte werden können, muss erst einmal auf dem Tisch liegen,
-welche Lagerplätze es überhaupt gibt und wo die Angaben unsauber sind.
+in Plenty echte Lagerorte werden können, muss erst auf dem Tisch liegen, welche
+Lagerplätze es gibt und bei welchen Artikeln gar keiner hinterlegt ist.
 
 Genau das macht die Seite **Lagerplätze**. Sie **liest nur** — in Plenty wird
 nichts angelegt und nichts verändert.
 
-**Was durchsucht wird** (in dieser Reihenfolge, das erste belastbare Ergebnis
-gewinnt): Variantennummer → Modell → Externe ID → Name → Beschreibung.
+### Treiber ist der Bestand, nicht der Artikelstamm
 
-**Was als Lagerplatz erkannt wird** — bewusst tolerant, weil die Codes über die
-Jahre unterschiedlich geschrieben wurden:
+Der Scan geht **jeden Artikel mit Bestand** durch: Ausgangsliste ist
+`/rest/stockmanagement/stock`, nicht der Artikelstamm. Nur was tatsächlich im
+Lager liegt, braucht einen Lagerplatz — Karteileichen ohne Bestand bleiben außen
+vor. Bestandszeilen mit 0 Stück werden übersprungen und separat gezählt.
+
+Liegt derselbe Artikel in mehreren Lagern, werden seine Bestandszeilen zu einer
+Zeile zusammengefasst (Bestand summiert, Lager kommagetrennt). Zu jeder Variante
+mit Bestand lädt der Scan anschließend die Texte nach und wertet sie aus.
+
+Über die Auswahl **„Gesamter Artikelstamm"** lässt sich stattdessen alles
+durchsuchen — auch Artikel ohne Bestand.
+
+### Was als Lagerplatz erkannt wird
+
+Geprüft wird in dieser Reihenfolge, das erste belastbare Ergebnis gewinnt:
+**Variantennummer → Modell → Externe ID → Name → Beschreibung**.
+
+Bewusst tolerant, weil die Codes über die Jahre unterschiedlich geschrieben
+wurden:
 
 | Schreibweise im Artikel | erkannt als |
 | --- | --- |
@@ -99,13 +115,14 @@ Bekannte Ebenen sind `H` Halle, `L` Lager, `G` Gang, `Z` Zeile, `R` Regal,
   Wird angezeigt, aber nicht als gesichert gezählt.
 - **Konflikt** — Variantennummer und Beschreibung nennen verschiedene Plätze.
   Muss ein Mensch entscheiden.
-- **kein Treffer** — nichts gefunden. Reine Maßangaben wie `L120B60H90` landen
-  bewusst hier und nicht bei den Lagerplätzen.
+- **ohne Lagerplatz** — nichts gefunden. Bei einem Artikel mit Bestand ist das
+  die Arbeitsliste: Der Platz muss aufgenommen werden. Reine Maßangaben wie
+  `L120B60H90` landen bewusst hier und nicht bei den Lagerplätzen.
 
 **Ergebnis:** Kennzahlen, die Liste aller verschiedenen Lagerplätze mit
 Artikelzahl (das ist die Anlage-Liste für Plenty) und eine durchsuchbare
-Einzelansicht. Beides als CSV exportierbar (Semikolon + BOM, öffnet direkt in
-Excel).
+Einzelansicht inkl. Bestand und Lager. Beides als CSV exportierbar (Semikolon +
+BOM, öffnet direkt in Excel).
 
 ### Bedienung
 
@@ -121,9 +138,21 @@ darauf hin. Mit der Option wird die Beschreibung pro Variante nachgeladen
 (ein zusätzlicher API-Aufruf je Artikel, entsprechend langsamer, gedeckelt auf
 150 Nachladungen je Häppchen).
 
-Der Scan handelt den passenden `with`-Parameter beim ersten Aufruf selbst aus
-und schreibt in die Diagnose-Zeile, welcher funktioniert hat — die
-Variantenliste kennt je nach PlentyONE-Ausbaustufe unterschiedliche Werte.
+### Was der Scan zur Laufzeit über die API lernt
+
+PlentyONE-Instanzen unterscheiden sich; statt Feldnamen zu raten, probiert der
+Scan einmal aus und schreibt das Ergebnis in die Diagnose-Zeile:
+
+- welcher `with`-Parameter der Variantenliste funktioniert
+  (`item,variationDescription` → `variationDescription` → `item` → ohne),
+- ob `?id=1,2,3` mehrere Varianten auf einmal liefert — wird der Filter
+  ignoriert, lädt der Scan ab dann einzeln,
+- ob die Lagernamen lesbar sind (sonst werden die Lager-IDs angezeigt).
+
+### Benötigte Rechte des Plenty-API-Benutzers
+
+Lesend: Bestand (`/rest/stockmanagement/stock`), Lager, Artikel und Varianten.
+Fehlen die Lagernamen-Rechte, läuft der Scan trotzdem — er zeigt dann IDs.
 
 ### Nächster Schritt
 
@@ -154,7 +183,7 @@ projektplanung/
 ├── components/                # App-Shell (Header)
 ├── lib/
 │   ├── lagerplatz/            # Lagerplatz-Erkennung + Befunde (getestet)
-│   ├── plenty/                # PlentyONE-Client, EAN-Erzeugung, Lagerplatz-Scan
+│   ├── plenty/                # PlentyONE-Client, EAN-Erzeugung, Bestands-Scan
 │   ├── projekte/              # Reine Geschäftslogik (getestet)
 │   └── supabase/              # Supabase-Helfer (server/client/admin)
 └── supabase/schema.sql        # DB-Schema
