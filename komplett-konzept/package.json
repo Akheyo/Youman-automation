@@ -1,0 +1,30 @@
+{
+  "name": "komplett-konzept-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Komplett Konzept — Automations-Dashboard (Ubersicht, Executions, Fehler, Steuerung)",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "node scripts/migrate.mjs && next build",
+    "start": "next start -p 3000",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:seed": "node scripts/seed.mjs",
+    "admin:create": "node scripts/create-admin.mjs"
+  },
+  "dependencies": {
+    "next": "^14.2.35",
+    "postgres": "^3.4.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.35",
+    "typescript": "^5.6.2"
+  }
+}

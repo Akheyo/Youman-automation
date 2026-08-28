@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <rect width="48" height="48" rx="9" fill="#0E1420"/>
+  <path d="M24 9 41 39H7Z" fill="#F2C200"/>
+  <circle cx="18" cy="29" r="5" fill="#D92D20"/>
+  <text x="30" y="34" text-anchor="middle" font-size="14" font-weight="800" fill="#1B3D9E"
+        font-family="system-ui, sans-serif">KK</text>
+</svg>

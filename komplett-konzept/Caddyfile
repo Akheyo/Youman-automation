@@ -1,0 +1,16 @@
+# DOMAIN kommt aus der .env.
+#   DOMAIN=dashboard.beispiel.de  -> HTTPS-Zertifikat wird automatisch geholt
+#   DOMAIN=:80                    -> laeuft ohne Domain direkt auf der Server-IP
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Sicherheits-Header
+	header {
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	reverse_proxy app:3000
+}
