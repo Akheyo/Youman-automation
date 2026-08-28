@@ -5,6 +5,8 @@ import { videos, type Video, type VideoKey } from '@/lib/videos'
 
 type Props = {
   video: VideoKey
+  /** Vom Server ermittelte Pfade, siehe app/page.tsx. */
+  quellen?: { mp4?: string; webm?: string; standbild?: string }
   className?: string
 }
 
@@ -20,8 +22,15 @@ type Props = {
  * - Wer `prefers-reduced-motion` gesetzt hat, bekommt das Standbild und keinen
  *   automatischen Start.
  */
-export function HeroVideo({ video, className }: Props) {
-  const eintrag: Video = videos[video]
+export function HeroVideo({ video, quellen, className }: Props) {
+  const registriert: Video = videos[video]
+  // Ausdrücklicher Eintrag im Register schlägt die gefundene Datei.
+  const eintrag: Video = {
+    ...registriert,
+    datei: registriert.datei ?? quellen?.mp4,
+    dateiWebm: registriert.dateiWebm ?? quellen?.webm,
+    standbild: registriert.standbild ?? quellen?.standbild,
+  }
   const ref = useRef<HTMLVideoElement>(null)
   const [laeuft, setLaeuft] = useState(false)
   const [wenigerBewegung, setWenigerBewegung] = useState(false)

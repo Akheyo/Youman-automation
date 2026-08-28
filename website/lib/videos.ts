@@ -36,3 +36,4 @@ export const videos = {
 } satisfies Record<string, Video>
 
 export type VideoKey = keyof typeof videos
+

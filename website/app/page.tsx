@@ -14,6 +14,7 @@ import { branchen } from '@/lib/branchen'
 import { referenzen } from '@/lib/referenzen'
 import { pageMetadata } from '@/lib/seo'
 import { services, site } from '@/lib/site'
+import { videoQuellen } from '@/lib/dateien'
 
 export const metadata = pageMetadata({
   title: `${site.fullName} — Prozesse automatisieren mit KI und Software`,
@@ -96,7 +97,7 @@ export default function HomePage() {
           </div>
 
           <Reveal index={2}>
-            <HeroVideo video="hero" />
+            <HeroVideo video="hero" quellen={videoQuellen('hero')} />
           </Reveal>
         </div>
 

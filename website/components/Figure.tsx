@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { bildDatei } from '@/lib/dateien'
 import { bilder, type Bild, type BildKey } from '@/lib/bilder'
 
 type Props = {
@@ -29,15 +30,16 @@ export function Figure({ bild, priority, className, sizes = '100vw', fuellt }: P
   // `satisfies` im Register behält die engen Literaltypen; die Annotation
   // hier weitet sie auf Bild, damit das optionale `datei` sichtbar ist.
   const eintrag: Bild = bilder[bild]
+  const datei = eintrag.datei ?? bildDatei(bild)
   const stil = fuellt
     ? { position: 'absolute' as const, inset: 0 }
     : { aspectRatio: eintrag.verhaeltnis.replace('/', ' / ') }
 
-  if (eintrag.datei) {
+  if (datei) {
     return (
       <div className={['figure', className].filter(Boolean).join(' ')} style={stil}>
         <Image
-          src={eintrag.datei}
+          src={datei}
           alt={eintrag.alt}
           fill
           sizes={sizes}
