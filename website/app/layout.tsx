@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Source_Serif_4 } from 'next/font/google'
+import { Newsreader, Source_Sans_3 } from 'next/font/google'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { JsonLd, organizationJsonLd } from '@/lib/seo'
@@ -8,17 +8,25 @@ import './globals.css'
 import './ui.css'
 
 /* Selbst gehostet über next/font: keine externe Anfrage, kein Layout-Shift. */
-const sourceSerif = Source_Serif_4({
+/* Newsreader bringt eine optische Größenachse mit: große Überschriften
+   bekommen feinere Striche, kleiner Text kräftigere. Das ist echter
+   Satz statt bloßer Skalierung. */
+const newsreader = Newsreader({
   subsets: ['latin'],
-  weight: ['400', '600'],
   display: 'swap',
-  variable: '--font-source-serif',
+  variable: '--font-newsreader',
+  axes: ['opsz'],
+  /* Next.js kennt für Newsreader keine Metriken zur automatischen
+     Anpassung der Ersatzschrift; deshalb wird sie hier ausdrücklich
+     benannt und die Anpassung abgeschaltet, statt eine Warnung zu lassen. */
+  fallback: ['Georgia', 'Times New Roman', 'serif'],
+  adjustFontFallback: false,
 })
 
-const inter = Inter({
+const sourceSans = Source_Sans_3({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-inter',
+  variable: '--font-source-sans',
 })
 
 export const metadata: Metadata = {
@@ -70,7 +78,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" className={`${sourceSerif.variable} ${inter.variable}`}>
+    <html lang="de" className={`${newsreader.variable} ${sourceSans.variable}`}>
       <body>
         <a className="skip-link" href="#main">
           Zum Inhalt springen

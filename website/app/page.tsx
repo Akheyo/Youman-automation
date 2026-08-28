@@ -1,12 +1,11 @@
 import Link from 'next/link'
 import { Figure } from '@/components/Figure'
-import { HeroVideo } from '@/components/HeroVideo'
+import { HeroVoll } from '@/components/HeroVoll'
 import { Icon } from '@/components/Icon'
 import { Reveal } from '@/components/Reveal'
 import { AussageBand, SplitRaster } from '@/components/Muster'
 import { CtaBand } from '@/components/Sections'
 import { branchen } from '@/lib/branchen'
-import { videoQuellen } from '@/lib/dateien'
 import { referenzen } from '@/lib/referenzen'
 import { pageMetadata } from '@/lib/seo'
 import { services, site } from '@/lib/site'
@@ -45,59 +44,16 @@ export default function HomePage() {
   return (
     <>
       {/* ---------------------------------------------- Hero */}
-      <section className="hero-ed on-dark" aria-labelledby="hero-title">
-        <div className="container hero-ed__inner">
-          <div>
-            <Reveal className="hero-ed__status">
-              <span className="status-dot" aria-hidden="true" />
-              Verfügbar für neue Projekte
-            </Reveal>
+      <HeroVoll satz="Wir automatisieren Abläufe, die heute Menschen kosten — für Onlinehandel, Logistik, Produktion und Großhandel." />
 
-            <Reveal index={1}>
-              <h1 className="hero-ed__title" id="hero-title">
-                Prozesse, die heute Menschen kosten, laufen morgen allein.
-              </h1>
-              <p className="hero-ed__lead">
-                Wir verbinden Ihre Systeme, automatisieren wiederkehrende Abläufe und
-                bauen KI-Anwendungen, die im Tagesgeschäft standhalten — für
-                Onlinehandel, Logistik, Produktion und Großhandel.
-              </p>
-            </Reveal>
-
-            <Reveal index={2} className="hero-ed__actions">
-              <Link href="/kontakt" className="btn btn--invert">
-                Kostenloses Erstgespräch
-                <Icon name="arrow" size={16} />
-              </Link>
-              <Link href="/branchen" className="btn btn--outline-invert">
-                Branchen ansehen
-              </Link>
-            </Reveal>
-
-            <Reveal index={3}>
-              <p className="hero-ed__note">
-                Unverbindlich · Antwort innerhalb von {site.responseTime}
-              </p>
-            </Reveal>
-          </div>
-
-          <Reveal index={2}>
-            <HeroVideo
-              video="hero"
-              quellen={videoQuellen('hero')}
-              ersatzbild={
-                <Figure bild="heroStart" priority sizes="(min-width: 1000px) 45vw, 100vw" />
-              }
-            />
-          </Reveal>
-        </div>
-
-        <div className="container figures-bar">
-          <Reveal as="dl" className="figures-bar__grid">
+      {/* ---------------------------------------------- Kennzahlen */}
+      <section className="kennzahlen" aria-label="Zusammenarbeit in Zahlen">
+        <div className="container">
+          <Reveal as="dl" className="kennzahlen__grid">
             {kennzahlen.map((k) => (
-              <div className="figures-bar__item" key={k.value}>
-                <dt className="figures-bar__label">{k.label}</dt>
-                <dd className="figures-bar__value">{k.value}</dd>
+              <div className="kennzahlen__item" key={k.value}>
+                <dt className="kennzahlen__label">{k.label}</dt>
+                <dd className="kennzahlen__wert">{k.value}</dd>
               </div>
             ))}
           </Reveal>

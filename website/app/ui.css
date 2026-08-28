@@ -431,10 +431,26 @@
 .card--link:hover .card__more::before { width: 26px; }
 .card__more .icon { transition: transform var(--dur) var(--ease); }
 
-/* Ganze Karte klickbar, Fokus bleibt am Link */
-.card--link:hover { border-color: var(--ink-4); background: var(--paper-2); }
-.card--link:hover .card__more .icon { transform: translateX(3px); }
-.card--link:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+/* Ganze Karte klickbar; der Hover-Zustand kommt aus .hebt-ab. */
+.card--link {
+  position: relative;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.card--link:hover,
+.card--link:focus-within {
+  z-index: 2;
+  border-color: var(--ink);
+  box-shadow: 7px 7px 0 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+.card--link:active {
+  transform: translate(1px, 1px);
+  box-shadow: 4px 4px 0 0 var(--ink);
+}
+.card--link:hover .card__more::before { width: 26px; }
 
 .card__link::after {
   content: "";
@@ -1353,6 +1369,42 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 }
 
 /* ============================================================
+   Gemeinsames Hover-Muster
+   ------------------------------------------------------------
+   Ein Element, über dem die Maus steht, tritt mit kräftigem Rahmen
+   und hartem Versatzschatten aus der Fläche heraus. Bewusst ohne
+   Weichzeichnung — das passt zum harten Raster der Seite.
+   ============================================================ */
+
+.hebt-ab {
+  position: relative;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.hebt-ab:hover,
+.hebt-ab:focus-within {
+  z-index: 2;
+  border-color: var(--ink);
+  box-shadow: 7px 7px 0 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+
+.hebt-ab:active {
+  transform: translate(1px, 1px);
+  box-shadow: 4px 4px 0 0 var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hebt-ab,
+  .hebt-ab:hover,
+  .hebt-ab:focus-within,
+  .hebt-ab:active { transform: none; }
+}
+
+/* ============================================================
    Sektionsmuster
    ============================================================ */
 
@@ -1443,10 +1495,11 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   padding-block: clamp(var(--s-8), 5.5vw, var(--s-9));
   background: linear-gradient(
     180deg,
-    var(--paper) 0%,
-    var(--paper) 30%,
-    #f4f4f4 80%,
-    #ececec 100%
+    #ffffff 0%,
+    #fdfdfd 35%,
+    #fafafa 62%,
+    #f6f6f6 84%,
+    #f2f2f2 100%
   );
   border-bottom: 1px solid var(--line);
 }
@@ -1509,10 +1562,28 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 }
 
 .raster__zelle {
+  position: relative;
   padding: var(--s-7) var(--s-6);
-  border-right: 1px solid var(--ink);
-  border-bottom: 1px solid var(--ink);
+  border: 1px solid transparent;
+  border-right-color: var(--ink);
+  border-bottom-color: var(--ink);
   background: var(--paper);
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.raster__zelle:hover,
+.raster__zelle:focus-within {
+  z-index: 2;
+  border-color: var(--ink);
+  box-shadow: 7px 7px 0 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+.raster__zelle:active {
+  transform: translate(1px, 1px);
+  box-shadow: 4px 4px 0 0 var(--ink);
 }
 
 .raster__nummer {
@@ -1536,7 +1607,14 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   text-decoration-color: transparent;
   transition: text-decoration-color var(--dur-fast) var(--ease);
 }
-.raster__link:hover { text-decoration-color: currentColor; }
+.raster__zelle:hover .raster__link { text-decoration-color: currentColor; }
+/* Deckt die ganze Zelle ab: klickbar ist die Fläche, nicht nur der Titel. */
+.raster__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.raster__link:focus-visible { outline: none; }
 
 .raster__text {
   margin-top: var(--s-3);
@@ -1678,7 +1756,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   transition: transform var(--dur) var(--ease), color var(--dur-fast) var(--ease);
 }
 
-/* Der Hover-Zustand: kräftiger Rahmen plus harter Schatten nach unten rechts.
+/* Gleicher Zustand wie bei Karten und Rasterzellen — siehe .hebt-ab.
    z-index hebt den Eintrag über die Rahmen der Nachbarn. */
 .bereiche__link:hover,
 .bereiche__link:focus-visible {
@@ -1702,7 +1780,15 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   .bereiche__link,
   .bereiche__link:hover,
   .bereiche__link:focus-visible,
-  .bereiche__link:active { transform: none; }
+  .bereiche__link:active,
+  .card--link,
+  .card--link:hover,
+  .card--link:focus-within,
+  .card--link:active,
+  .raster__zelle,
+  .raster__zelle:hover,
+  .raster__zelle:focus-within,
+  .raster__zelle:active { transform: none; }
 }
 
 /* ------------------------------------------------------------
@@ -1868,4 +1954,340 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 .faq-sprung a:hover {
   color: var(--ink);
   border-bottom-color: var(--ink);
+}
+
+/* ============================================================
+   Feinschliff
+   ------------------------------------------------------------
+   Details, die den Unterschied zwischen "gebaut" und "gesetzt"
+   ausmachen. Bewusst zurückhaltend: nichts, was blinkt oder
+   springt — die Seite soll seriös bleiben.
+   ============================================================ */
+
+/* --- Bild in der Karte zieht beim Überfahren leicht an --- */
+
+.card--bild .figure {
+  overflow: hidden;
+}
+
+.card--bild .figure img {
+  transition: transform 600ms var(--ease);
+  will-change: transform;
+}
+
+.card--link:hover .figure img {
+  transform: scale(1.04);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card--bild .figure img,
+  .card--link:hover .figure img { transform: none; transition: none; }
+}
+
+/* --- Feines Raster im dunklen Hero, wie auf einem Satzspiegel --- */
+
+.hero-ed {
+  position: relative;
+  isolation: isolate;
+}
+
+.hero-ed::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in srgb, #ffffff 6%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: calc(100% / 6) 100%;
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+  pointer-events: none;
+}
+
+/* --- Überschriften: Kapitälchen-Label mit feiner Linie darüber --- */
+
+.section-head::before {
+  content: "";
+  display: block;
+  width: 40px;
+  height: 2px;
+  margin-bottom: var(--s-4);
+  background: var(--ink);
+}
+
+.on-dark .section-head::before {
+  background: color-mix(in srgb, var(--paper) 55%, transparent);
+}
+
+/* Das Eyebrow hat schon einen eigenen Strich — nicht doppeln. */
+.section-head:has(.eyebrow)::before { display: none; }
+
+/* --- Ziffern laufen in Spalten sauber untereinander --- */
+
+.figures-bar__value,
+.proof__value,
+.raster__nummer,
+.step__num,
+.pain__num,
+.service__index {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* --- Textlinks: Unterstreichung wächst aus der Mitte --- */
+
+.prose a {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  text-decoration: none;
+  transition: background-size var(--dur) var(--ease);
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--line-strong);
+}
+.prose a:hover { background-size: 100% 1px; }
+
+/* --- Zitatzeichen im Fließtext hängen aus dem Satzspiegel --- */
+
+.quote__text,
+.aussage__text {
+  hanging-punctuation: first;
+}
+
+/* --- Auswahlfarbe passend zur jeweiligen Fläche --- */
+
+.on-dark ::selection,
+.cta-band ::selection,
+.aussage ::selection {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* --- Erste Zeile des Leads etwas kräftiger, wie im Blocksatz üblich --- */
+
+.page-head__lead::first-line {
+  font-weight: 500;
+}
+
+/* --- Tabellenzeilen reagieren beim Überfahren --- */
+
+.compare tbody tr {
+  transition: background-color var(--dur-fast) var(--ease);
+}
+.compare tbody tr:hover {
+  background: var(--paper-2);
+}
+
+/* --- Fußzeilenlinks mit wachsender Unterstreichung --- */
+
+.footer__link {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  padding-bottom: 2px;
+  transition: background-size var(--dur) var(--ease), color var(--dur-fast) var(--ease);
+}
+.footer__link:hover {
+  background-size: 100% 1px;
+  text-decoration: none;
+}
+
+/* --- Knöpfe: Fläche wandert beim Überfahren ein --- */
+
+.btn--ghost {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn--ghost::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--ink);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform var(--dur) var(--ease);
+}
+.btn--ghost:hover {
+  color: var(--paper);
+  border-color: var(--ink);
+  background: transparent;
+}
+.btn--ghost:hover::before { transform: scaleY(1); }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn--ghost::before { transition: none; }
+}
+
+/* ============================================================
+   Hero über die volle Breite
+   ============================================================ */
+
+.hero-voll {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  place-items: center;
+  min-height: clamp(520px, 82vh, 860px);
+  background: var(--ink-deep);
+  border-bottom: 1px solid var(--line-dark);
+  overflow: hidden;
+  /* Fokusringe müssen auf dem dunklen Grund hell sein. */
+  --focus-ring: #ffffff;
+}
+
+.hero-voll__medium {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.hero-voll__medium .figure,
+.hero-voll__medium video {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  object-fit: cover;
+}
+
+/* Verdunkelung: trägt die weiße Schrift auch über einem hellen Video.
+   Nach unten hin etwas dichter, damit der Knopf sicher steht. */
+.hero-voll::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  /* Eine Schicht statt zwei: zwei übereinander ergaben rechnerisch über
+     0,9 Deckkraft — die Bewegung dahinter war praktisch nicht mehr zu sehen.
+     0,62 in der Mitte trägt weiße Schrift selbst über einem rein weißen
+     Video noch mit 5,3:1. */
+  background: radial-gradient(
+    ellipse 75% 65% at 50% 50%,
+    rgba(10, 10, 10, 0.62) 0%,
+    rgba(10, 10, 10, 0.74) 60%,
+    rgba(10, 10, 10, 0.82) 100%
+  );
+}
+
+/* Feines Raster wie auf einem Satzspiegel — sehr leise. */
+.hero-voll::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.05) 1px,
+    transparent 1px
+  );
+  background-size: calc(100% / 6) 100%;
+  pointer-events: none;
+}
+
+.hero-voll__inhalt {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding-block: clamp(var(--s-8), 10vh, var(--s-10));
+}
+
+/* Wortmarke auf dunklem Grund */
+.hero-voll__marke { color: #ffffff; }
+.hero-voll__marke .logo__sub { color: rgba(255, 255, 255, 0.72); }
+
+.hero-voll__satz {
+  margin-top: clamp(var(--s-6), 5vh, var(--s-8));
+  max-width: 22ch;
+  font-size: clamp(1.5rem, 1.1rem + 1.9vw, 2.5rem);
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: var(--track-tight);
+  color: #ffffff;
+  text-wrap: balance;
+}
+
+.hero-voll__knopf {
+  margin-top: clamp(var(--s-6), 4vh, var(--s-7));
+}
+
+/* Steuerung des Videos sitzt am unteren Rand, außerhalb des Textes. */
+.hero-voll .figure__steuerung {
+  right: var(--gutter);
+  bottom: var(--s-5);
+}
+
+@media (max-width: 560px) {
+  .hero-voll__knopf { width: min(100%, 320px); }
+}
+
+/* --- Kennzahlenstreifen unter dem Hero --- */
+
+.kennzahlen {
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.kennzahlen__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.kennzahlen__item {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--s-2);
+  padding-block: var(--s-6);
+  border-bottom: 1px solid var(--line);
+}
+.kennzahlen__item:last-child { border-bottom: 0; }
+
+.kennzahlen__wert {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--t-2xl);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.kennzahlen__label {
+  font-size: var(--t-base);
+  line-height: 1.5;
+  color: var(--ink-4);
+}
+
+@media (min-width: 800px) {
+  .kennzahlen__grid { grid-template-columns: repeat(3, 1fr); }
+  .kennzahlen__item {
+    padding: var(--s-7) var(--s-6) var(--s-7) 0;
+    border-bottom: 0;
+    border-right: 1px solid var(--line);
+  }
+  .kennzahlen__item:last-child { border-right: 0; }
+  .kennzahlen__item + .kennzahlen__item { padding-left: var(--s-6); }
+}
+
+/* Im Hero bleibt der Platzhalter stumm: eine ruhige dunkle Fläche wirkt
+   fertig, durchschimmernder Hinweistext wirkt wie eine Baustelle. Was an
+   Medien fehlt, steht in public/videos/README.md und public/bilder/README.md. */
+.hero-voll .figure--leer {
+  background: var(--ink-deep);
+  border: 0;
+}
+.hero-voll .figure__hinweis { display: none; }
+
+/* --- Im Code erzeugter Hintergrund des Heros --- */
+
+.hero-anim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
