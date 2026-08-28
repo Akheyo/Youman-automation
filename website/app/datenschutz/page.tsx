@@ -52,7 +52,7 @@ export default function DatenschutzPage() {
           <h2>3. Server-Logfiles</h2>
           <p>
             Beim Aufruf der Website werden durch den Hosting-Anbieter automatisch
-            Informationen erfasst, die dein Browser übermittelt: Browsertyp und -version,
+            Informationen erfasst, die Ihr Browser übermittelt: Browsertyp und -version,
             verwendetes Betriebssystem, Referrer-URL, Uhrzeit der Anfrage und die
             IP-Adresse in gekürzter Form. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO
             — das berechtigte Interesse am technisch fehlerfreien Betrieb der Website.
@@ -69,13 +69,13 @@ export default function DatenschutzPage() {
           <h2>5. Kontaktaufnahme</h2>
           <p>
             Das Kontaktformular auf dieser Website überträgt keine Daten an einen Server.
-            Es öffnet lediglich eine vorbereitete Nachricht in deinem eigenen
-            E-Mail-Programm. Erst mit dem Absenden dieser E-Mail erhalte ich deine
+            Es öffnet lediglich eine vorbereitete Nachricht in Ihrem eigenen
+            E-Mail-Programm. Erst mit dem Absenden dieser E-Mail erhalte ich Ihre
             Angaben.
           </p>
           <p>
-            Wenn du mich per E-Mail, Telefon oder WhatsApp kontaktierst, verarbeite ich
-            deine Angaben zur Bearbeitung der Anfrage. Rechtsgrundlage ist Art. 6 Abs. 1
+            Wenn Sie mich per E-Mail, Telefon oder WhatsApp kontaktieren, verarbeite ich
+            Ihre Angaben zur Bearbeitung der Anfrage. Rechtsgrundlage ist Art. 6 Abs. 1
             lit. b DSGVO bei vorvertraglichen Maßnahmen, sonst Art. 6 Abs. 1 lit. f
             DSGVO. Die Daten werden gelöscht, sobald sie für den Zweck nicht mehr
             erforderlich sind und keine gesetzlichen Aufbewahrungsfristen entgegenstehen.
@@ -84,12 +84,12 @@ export default function DatenschutzPage() {
           <h2>6. WhatsApp</h2>
           <p>
             Der WhatsApp-Link führt zu einem Dienst der WhatsApp Ireland Limited. Erst
-            wenn du den Link anklickst, entsteht eine Verbindung zu deren Servern. Es
-            gelten die Datenschutzbestimmungen von WhatsApp. Wenn du das vermeiden
-            möchtest, nutze stattdessen E-Mail oder Telefon.
+            wenn Sie den Link anklicken, entsteht eine Verbindung zu deren Servern. Es
+            gelten die Datenschutzbestimmungen von WhatsApp. Wenn Sie das vermeiden
+            möchten, nutzen Sie stattdessen E-Mail oder Telefon.
           </p>
 
-          <h2>7. Deine Rechte</h2>
+          <h2>7. Ihre Rechte</h2>
           <ul>
             <li>Auskunft über die verarbeiteten Daten (Art. 15 DSGVO)</li>
             <li>Berichtigung unrichtiger Daten (Art. 16 DSGVO)</li>
@@ -100,7 +100,7 @@ export default function DatenschutzPage() {
           </ul>
           <p>
             Für die Ausübung genügt eine formlose Nachricht an{' '}
-            <a href={`mailto:${site.email}`}>{site.email}</a>. Unabhängig davon steht dir
+            <a href={`mailto:${site.email}`}>{site.email}</a>. Unabhängig davon steht Ihnen
             ein Beschwerderecht bei einer Datenschutz-Aufsichtsbehörde zu (Art. 77
             DSGVO).
           </p>
@@ -108,8 +108,8 @@ export default function DatenschutzPage() {
           <h2>8. SSL-/TLS-Verschlüsselung</h2>
           <p>
             Diese Seite nutzt aus Sicherheitsgründen eine TLS-Verschlüsselung. Eine
-            verschlüsselte Verbindung erkennst du am <code>https://</code> in der
-            Adresszeile deines Browsers.
+            verschlüsselte Verbindung erkennen Sie am <code>https://</code> in der
+            Adresszeile Ihres Browsers.
           </p>
 
           <h2>9. Aktualität</h2>

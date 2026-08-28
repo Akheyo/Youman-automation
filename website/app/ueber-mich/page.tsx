@@ -16,15 +16,15 @@ export const metadata = pageMetadata({
 const principles = [
   {
     title: 'Ein Ansprechpartner',
-    text: 'Du sprichst vom ersten Gespräch bis zum Support mit derselben Person. Nichts geht auf dem Weg durch eine Kette verloren.',
+    text: 'Sie sprechen vom ersten Gespräch bis zum Support mit derselben Person. Nichts geht auf dem Weg durch eine Kette verloren.',
   },
   {
     title: 'Ehrliche Einschätzung',
-    text: 'Wenn sich Automatisierung für deinen Fall nicht rechnet, sage ich das — lieber ein Projekt weniger als eines, das niemandem hilft.',
+    text: 'Wenn sich Automatisierung für Ihren Fall nicht rechnet, sage ich das — lieber ein Projekt weniger als eines, das niemandem hilft.',
   },
   {
     title: 'Verständliche Übergabe',
-    text: 'Du bekommst dokumentiert, was gebaut wurde und wie es sich anpassen lässt. Kein Wissen, das nur in meinem Kopf existiert.',
+    text: 'Sie bekommen dokumentiert, was gebaut wurde und wie es sich anpassen lässt. Kein Wissen, das nur in meinem Kopf existiert.',
   },
   {
     title: 'Erreichbar nach dem Launch',
@@ -38,8 +38,8 @@ export default function UeberMichPage() {
       <PageHead
         crumb="Über mich"
         eyebrow="Über mich"
-        title="Hey — ich bin Youman"
-        lead="Entwickler aus Deutschland, spezialisiert auf KI-Automatisierung, intelligente Chatbots und performante Websites."
+        title="Hinter Youman steht eine Person"
+        lead="Entwickler aus Deutschland, spezialisiert auf Prozessautomatisierung, KI-Anwendungen und Software-Schnittstellen für den Mittelstand."
       />
 
       <section className="section">
@@ -58,13 +58,13 @@ export default function UeberMichPage() {
                   Einsatz kommt.
                 </p>
                 <p>
-                  Was mich von einer Agentur unterscheidet: Du sprichst immer direkt mit
+                  Was mich von einer Agentur unterscheidet: Sie sprechen immer direkt mit
                   mir. Kein Account-Manager, keine Weitergabe an Subunternehmer, keine
-                  Übersetzungsverluste zwischen dem, was du brauchst, und dem, was gebaut
+                  Übersetzungsverluste zwischen dem, was Sie brauchen, und dem, was gebaut
                   wird.
                 </p>
                 <p>
-                  Und was mich von einer eigenen Stelle unterscheidet: Du zahlst für das
+                  Und was mich von einer eigenen Stelle unterscheidet: Sie zahlen für das
                   Projekt, nicht für ein Jahr. Wenn nichts zu tun ist, kostet es nichts.
                 </p>
               </div>

@@ -38,12 +38,12 @@ export function ContactForm() {
     const service = String(data.get('service') ?? '').trim()
     const message = String(data.get('message') ?? '').trim()
 
-    if (name.length < 2) next.name = 'Bitte gib deinen Namen an.'
+    if (name.length < 2) next.name = 'Bitte geben Sie Ihren Namen an.'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))
-      next.email = 'Bitte gib eine gültige E-Mail-Adresse an.'
-    if (!service) next.service = 'Bitte wähle einen Bereich aus.'
+      next.email = 'Bitte geben Sie eine gültige E-Mail-Adresse an.'
+    if (!service) next.service = 'Bitte wählen Sie einen Bereich aus.'
     if (message.length < 10)
-      next.message = 'Beschreibe dein Vorhaben bitte in mindestens einem Satz.'
+      next.message = 'Beschreiben Sie Ihr Vorhaben bitte in mindestens einem Satz.'
 
     return next
   }
@@ -121,7 +121,7 @@ export function ContactForm() {
 
       <div className="field">
         <label className="field__label" htmlFor="message">
-          Dein Vorhaben <span className="field__req">*</span>
+          Ihr Vorhaben <span className="field__req">*</span>
         </label>
         <p className="field__hint" id="message-hint">
           Was läuft heute manuell, und wie sähe das ideale Ergebnis aus?
@@ -147,7 +147,7 @@ export function ContactForm() {
       </button>
 
       <p className="form__note">
-        Deine Angaben öffnen eine vorbereitete E-Mail in deinem Mailprogramm. Antwort
+        Ihre Angaben öffnen eine vorbereitete E-Mail in Ihrem Mailprogramm. Antwort
         kommt innerhalb von {site.responseTime}.
       </p>
     </form>

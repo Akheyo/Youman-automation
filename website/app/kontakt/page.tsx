@@ -17,8 +17,8 @@ export default function KontaktPage() {
       <PageHead
         crumb="Kontakt"
         eyebrow="Kontakt"
-        title="Lass uns loslegen"
-        lead={`Beschreib dein Vorhaben in ein paar Sätzen. Du bekommst innerhalb von ${site.responseTime} eine konkrete Einschätzung — kostenlos und unverbindlich.`}
+        title="Sprechen wir über Ihr Vorhaben"
+        lead={`Beschreiben Sie Ihr Vorhaben in ein paar Sätzen. Sie bekommen innerhalb von ${site.responseTime} eine konkrete Einschätzung — kostenlos und unverbindlich.`}
       />
 
       <section className="section">
@@ -29,7 +29,7 @@ export default function KontaktPage() {
                 Direkter Draht
               </h2>
               <p className="lead" style={{ marginTop: 'var(--s-4)' }}>
-                Wenn dir ein Anruf oder eine kurze Nachricht lieber ist als ein Formular
+                Wenn Ihnen ein Anruf oder eine kurze Nachricht lieber ist als ein Formular
                 — auch gut.
               </p>
 
@@ -88,7 +88,7 @@ export default function KontaktPage() {
                 Anfrage senden
               </h2>
               <p className="lead" style={{ marginTop: 'var(--s-4)', marginBottom: 'var(--s-6)' }}>
-                Je konkreter du beschreibst, was heute manuell läuft, desto genauer wird
+                Je konkreter Sie beschreiben, was heute manuell läuft, desto genauer wird
                 meine Antwort.
               </p>
               <ContactForm />

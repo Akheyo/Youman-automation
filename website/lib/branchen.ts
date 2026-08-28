@@ -73,15 +73,15 @@ export const branchen: Branche[] = [
       },
       {
         title: 'Überwachung mit Alarm',
-        text: 'Jede Schnittstelle meldet, wenn sie nicht durchläuft. Du erfährst es vor deinen Kunden.',
+        text: 'Jede Schnittstelle meldet, wenn sie nicht durchläuft. Sie erfahren es vor Ihren Kunden.',
       },
     ],
     systeme: ['Shopify', 'PlentyONE', 'eBay API', 'Amazon SP-API', 'WooCommerce', 'Make.com', 'n8n'],
     referenz: 'marktplatz-synchronisation',
     faq: [
       {
-        q: 'Muss ich mein Shopsystem wechseln?',
-        a: 'Nein. Die Automatisierung setzt auf dein bestehendes System auf und spricht mit ihm über die vorhandene Schnittstelle. Ein Systemwechsel ist ein eigenes Projekt und selten die günstigere Lösung.',
+        q: 'Müssen wir unser Shopsystem wechseln?',
+        a: 'Nein. Die Automatisierung setzt auf Ihr bestehendes System auf und spricht mit ihm über die vorhandene Schnittstelle. Ein Systemwechsel ist ein eigenes Projekt und selten die günstigere Lösung.',
       },
       {
         q: 'Wie schnell synchronisieren die Bestände?',
@@ -89,7 +89,7 @@ export const branchen: Branche[] = [
       },
       {
         q: 'Was passiert, wenn eine Plattform ausfällt?',
-        a: 'Fehlgeschlagene Übertragungen werden in eine Warteschlange gelegt und automatisch wiederholt. Bleibt es dabei, bekommst du eine Meldung mit dem konkreten Vorgang, statt es zufällig zu entdecken.',
+        a: 'Fehlgeschlagene Übertragungen werden in eine Warteschlange gelegt und automatisch wiederholt. Bleibt es dabei, bekommen Sie eine Meldung mit dem konkreten Vorgang, statt es zufällig zu entdecken.',
       },
     ],
   },
@@ -343,7 +343,7 @@ export const branchen: Branche[] = [
       },
       {
         title: 'Nachfassen ohne Erinnerung',
-        text: 'Offene Angebote melden sich selbst, nach deinem Rhythmus statt nach Zufall.',
+        text: 'Offene Angebote melden sich selbst, nach Ihrem Rhythmus statt nach Zufall.',
       },
     ],
     systeme: ['CRM-Systeme', 'Notion', 'Slack', 'Make.com', 'n8n', 'Claude API'],

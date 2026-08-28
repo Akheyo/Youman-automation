@@ -60,7 +60,7 @@ export const services: Service[] = [
     icon: 'workflow',
     title: 'KI-Automationen',
     teaser:
-      'Make.com, n8n und Custom Code verschmelzen zu Workflows, die rund um die Uhr für dich arbeiten.',
+      'Make.com, n8n und Custom Code verschmelzen zu Workflows, die rund um die Uhr für Sie arbeiten.',
     body: 'Leads, Bestellungen, E-Mails, Datenabgleich — Prozesse, die heute Stunden manueller Arbeit kosten, laufen als überwachter Workflow. Mit Fehlerbehandlung, Retry-Logik und Benachrichtigung, wenn doch mal etwas hakt.',
     outcomes: [
       'Wiederkehrende Abläufe laufen ohne manuelles Zutun',
@@ -76,11 +76,11 @@ export const services: Service[] = [
     title: 'KI-Chatbots',
     teaser:
       'Echte LLMs statt Skript-Theater — für Kundenservice, Lead-Qualifizierung und internes Wissen.',
-    body: 'Chatbots auf Basis von Claude, GPT oder Groq, angebunden an deine echten Inhalte per RAG. Sie beantworten Fragen aus deiner Wissensdatenbank, qualifizieren Anfragen vor und übergeben sauber an einen Menschen, wenn es nötig wird.',
+    body: 'Chatbots auf Basis von Claude, GPT oder Groq, angebunden an Ihre echten Inhalte per RAG. Sie beantworten Fragen aus Ihrer Wissensdatenbank, qualifizieren Anfragen vor und übergeben sauber an einen Menschen, wenn es nötig wird.',
     outcomes: [
       'Ein Großteil der Standardanfragen wird eigenständig beantwortet',
-      'Antworten kommen aus deinen Dokumenten, nicht aus dem Nichts',
-      'Automatische Eskalation an dein Team statt Sackgasse',
+      'Antworten kommen aus Ihren Dokumenten, nicht aus dem Nichts',
+      'Automatische Eskalation an Ihr Team statt Sackgasse',
     ],
     stack: ['Claude API', 'OpenAI', 'Groq', 'RAG', 'WhatsApp'],
   },
@@ -91,7 +91,7 @@ export const services: Service[] = [
     title: 'Moderne Websites',
     teaser:
       'Pixel-genau, blitzschnell, auf Conversion gebaut — nicht nur schön, sondern verkaufend.',
-    body: 'Next.js oder schlankes HTML/CSS, je nachdem was dein Projekt wirklich braucht. Sauberes SEO-Fundament, gute Core Web Vitals, barrierefreie Bedienung und ein Design, das zu deiner Marke passt statt zum Template.',
+    body: 'Next.js oder schlankes HTML/CSS, je nachdem was Ihr Projekt wirklich braucht. Sauberes SEO-Fundament, gute Core Web Vitals, barrierefreie Bedienung und ein Design, das zu Ihrer Marke passt statt zum Template.',
     outcomes: [
       'Schnelle Ladezeiten auf Mobilgeräten, nicht nur im Test',
       'Klare Nutzerführung bis zur Anfrage',
@@ -106,7 +106,7 @@ export const services: Service[] = [
     title: 'E-Commerce-Lösungen',
     teaser:
       'Shopify, PlentyONE, eBay- und Amazon-API — Bestände, Preise und Bestellungen laufen allein.',
-    body: 'Marktplatz-Anbindungen, die Bestände in Echtzeit synchron halten, Preise nach deinen Regeln anpassen und Bestellungen automatisch ins ERP schreiben. Inklusive Monitoring, damit du siehst, dass es läuft.',
+    body: 'Marktplatz-Anbindungen, die Bestände in Echtzeit synchron halten, Preise nach Ihren Regeln anpassen und Bestellungen automatisch ins ERP schreiben. Inklusive Monitoring, damit Sie sehen, dass es läuft.',
     outcomes: [
       'Bestände über alle Kanäle hinweg konsistent',
       'Preisanpassungen nach Regeln statt per Hand',
@@ -120,7 +120,7 @@ export const processSteps = [
   {
     step: '01',
     title: 'Erstgespräch',
-    text: 'Kostenlos und unverbindlich. Ich schaue mir deinen Prozess an und sage dir ehrlich, was sich lohnt zu automatisieren — und was nicht.',
+    text: 'Kostenlos und unverbindlich. Ich schaue mir Ihren Prozess an und sage Ihnen ehrlich, was sich lohnt zu automatisieren — und was nicht.',
   },
   {
     step: '02',
@@ -130,7 +130,7 @@ export const processSteps = [
   {
     step: '03',
     title: 'Umsetzung',
-    text: 'Regelmäßige Updates, direkte Kommunikation. Du siehst Zwischenstände, statt wochenlang im Dunkeln zu sitzen.',
+    text: 'Regelmäßige Updates, direkte Kommunikation. Sie sehen Zwischenstände, statt wochenlang im Dunkeln zu sitzen.',
   },
   {
     step: '04',
@@ -244,26 +244,26 @@ export const comparison = {
 export const faq = [
   {
     q: 'Was kostet ein Projekt?',
-    a: 'Jedes Projekt ist individuell, es gibt keinen Einheitspreis. Eine einfache Automation startet bei rund 300–500 €, komplexere Systeme wie KI-Chatbots mit RAG oder vollständige E-Commerce-Integrationen liegen darüber. Im kostenlosen Erstgespräch bekommst du einen konkreten Preis ohne Überraschungen.',
+    a: 'Jedes Projekt ist individuell, es gibt keinen Einheitspreis. Eine einfache Automation startet bei rund 300–500 €, komplexere Systeme wie KI-Chatbots mit RAG oder vollständige E-Commerce-Integrationen liegen darüber. Im kostenlosen Erstgespräch bekommen Sie einen konkreten Preis ohne Überraschungen.',
   },
   {
     q: 'Wie lange dauert ein typisches Projekt?',
-    a: 'Eine einfache Automation ist oft in ein bis drei Tagen fertig. Eine komplette Website oder ein KI-Chatbot dauert in der Regel ein bis drei Wochen, je nach Komplexität. Den Zeitplan bekommst du immer vorab.',
+    a: 'Eine einfache Automation ist oft in ein bis drei Tagen fertig. Eine komplette Website oder ein KI-Chatbot dauert in der Regel ein bis drei Wochen, je nach Komplexität. Den Zeitplan bekommen Sie immer vorab.',
   },
   {
-    q: 'Muss ich technisches Wissen mitbringen?',
-    a: 'Nein. Du beschreibst dein Problem und das gewünschte Ergebnis in normaler Sprache, ich kümmere mich um die Technik. Am Ende bekommst du eine Lösung, die einfach funktioniert — plus eine verständliche Übergabe.',
+    q: 'Müssen wir technisches Wissen mitbringen?',
+    a: 'Nein. Sie beschreiben Ihr Problem und das gewünschte Ergebnis in normaler Sprache, ich kümmere mich um die Technik. Am Ende bekommen Sie eine Lösung, die einfach funktioniert — plus eine verständliche Übergabe.',
   },
   {
-    q: 'Welche Tools und Plattformen nutzt du?',
-    a: 'Make.com, n8n und Zapier für Automationen; Claude API, OpenAI und Groq für KI-Chatbots; Next.js, React und HTML/CSS für Websites; Shopify, PlentyONE, eBay- und Amazon-API für E-Commerce. Die Auswahl richtet sich nach deinem Problem, nicht nach meiner Gewohnheit.',
+    q: 'Welche Tools und Plattformen nutzen Sie?',
+    a: 'Make.com, n8n und Zapier für Automationen; Claude API, OpenAI und Groq für KI-Chatbots; Next.js, React und HTML/CSS für Websites; Shopify, PlentyONE, eBay- und Amazon-API für E-Commerce. Die Auswahl richtet sich nach Ihrem Problem, nicht nach meiner Gewohnheit.',
   },
   {
     q: 'Gibt es Support nach dem Projekt?',
     a: 'Ja. Ich bin auch nach dem Launch ansprechbar — für Fragen, kleine Anpassungen oder Erweiterungen. Kein Ticket-System, sondern direkter Kontakt per E-Mail oder WhatsApp.',
   },
   {
-    q: 'Arbeitest du auch mit kleinen Unternehmen?',
+    q: 'Arbeiten Sie auch mit kleinen Unternehmen?',
     a: 'Sehr gerne sogar. Kleine und mittlere Unternehmen profitieren am stärksten von Automatisierung, weil dort jede eingesparte Stunde unmittelbar spürbar ist. Es gibt kein Mindestbudget und keine Mindest-Teamgröße.',
   },
 ] as const

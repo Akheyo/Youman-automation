@@ -33,7 +33,7 @@ export default function LeistungenPage() {
       <PageHead
         crumb="Leistungen"
         eyebrow="Leistungen"
-        title="Was ich baue — und was du davon hast"
+        title="Was ich baue — und was Sie davon haben"
         lead="Vier Bereiche, die sich in der Praxis ständig überschneiden. Meistens beginnt ein Projekt in einem davon und wächst in die anderen hinein."
       />
 
@@ -94,7 +94,7 @@ export default function LeistungenPage() {
       <FaqSection items={faq} title="Häufige Fragen zur Zusammenarbeit" />
       <CtaBand
         title="Unsicher, welcher Bereich passt?"
-        text="Schreib mir, was heute nervt. Ich sortiere das Problem und sage dir, welcher Weg der kürzeste ist."
+        text="Schreiben Sie mir, was heute aufhält. Ich sortiere das Problem und sage Ihnen, welcher Weg der kürzeste ist."
       />
 
       <JsonLd data={breadcrumbJsonLd([{ name: 'Leistungen', path: '/leistungen' }])} />
