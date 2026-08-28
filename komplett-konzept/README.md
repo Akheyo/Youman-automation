@@ -11,18 +11,74 @@ und die Knöpfe, um einzugreifen.
 ## Wie es aufgebaut ist
 
 ```
-Hetzner-Server                          Supabase (Frankfurt)
+Vercel                                  Supabase (Frankfurt)
 ┌─────────────────────────┐             ┌──────────────────┐
-│  Caddy   →   App        │ ──────────► │   Postgres       │
-│  (HTTPS)     (Next.js)  │             │   (Datenbank)    │
+│  App (Next.js)          │ ──────────► │   Postgres       │
 └─────────────────────────┘             └──────────────────┘
 ```
 
-Auf dem Server laufen nur zwei Container. Die Datenbank liegt bei Supabase.
+Kein eigener Server nötig. Vercel hält keinen Zustand — alles Wichtige liegt im
+Git-Repo und bei Supabase. Ein Umzug auf einen anderen Vercel-Account oder
+später auf einen eigenen Server ist deshalb jederzeit möglich.
 
 ---
 
-## Auf einem frischen Server aufsetzen
+## Auf Vercel deployen
+
+### 1. Projekt anlegen
+
+Auf [vercel.com](https://vercel.com) → **Add New** → **Project** → dieses Repo
+auswählen.
+
+Dann **unbedingt** diese beiden Einstellungen prüfen, sonst baut Vercel das
+falsche Projekt:
+
+| Einstellung | Wert |
+|---|---|
+| **Root Directory** | `komplett-konzept` |
+| **Framework Preset** | Next.js |
+
+> Das Repo enthält mehrere Projekte. Ohne das gesetzte Root Directory landet
+> Vercel im übergeordneten Ordner und deployt eine andere Anwendung.
+
+### 2. Umgebungsvariablen setzen
+
+Unter **Environment Variables** drei Werte eintragen:
+
+| Name | Wert |
+|---|---|
+| `DATABASE_URL` | Supabase → **Connect** → **Pooler** (Port 6543), Passwort einsetzen |
+| `SESSION_SECRET` | 64 zufällige Zeichen. Erzeugen z. B. auf [generate-secret.vercel.app/64](https://generate-secret.vercel.app/64) |
+| `APP_URL` | Die spätere Adresse, z. B. `https://dein-projekt.vercel.app` |
+
+`APP_URL` muss mit `https://` beginnen — davon hängt ab, ob das Login-Cookie
+als sicher markiert wird.
+
+### 3. Deployen
+
+**Deploy** klicken. Der Build legt die Datenbanktabellen selbst an.
+
+### 4. Ersten Zugang anlegen
+
+Die Adresse im Browser öffnen. Solange es noch keinen Nutzer gibt, landest du
+automatisch auf der **Ersteinrichtung** und legst dort den ersten
+Administrator an. Danach ist diese Seite geschlossen; weitere Nutzer kommen
+über **Nutzer** im Dashboard dazu.
+
+### Auf einen anderen Vercel-Account umziehen
+
+Auf dem neuen Account **Add New → Project** mit demselben Repo, dieselben
+Einstellungen und Variablen. Nichts geht verloren — die Daten liegen bei
+Supabase, nicht bei Vercel. Nur eine eigene Domain muss man umhängen.
+
+---
+
+## Alternative: auf einem eigenen Server
+
+Nur nötig, wenn ihr Vercel nicht nutzen wollt. Läuft dann als zwei Container
+(App und Caddy als HTTPS-Proxy) per Docker Compose.
+
+### Auf einem frischen Server aufsetzen
 
 Gedacht für einen leeren Hetzner-Server mit Ubuntu. Wenn du noch nie einen
 Server aufgesetzt hast: die Befehle einfach der Reihe nach eintippen.
@@ -105,19 +161,17 @@ Läuft alles? Prüfen mit:
 docker compose logs -f app
 ```
 
-### 5. Dich selbst als Administrator anlegen
+### 5. Aufrufen und ersten Zugang anlegen
+
+Im Browser die Domain öffnen — oder, ohne Domain, `http://<Server-IP>`.
+Solange es noch keinen Nutzer gibt, landest du auf der Ersteinrichtung.
+
+Alternativ auf der Kommandozeile:
 
 ```bash
 docker compose exec app node scripts/create-admin.mjs \
   "deine@adresse.de" "Dein Name" admin
 ```
-
-Das Passwort wird abgefragt (mindestens 10 Zeichen).
-
-### 6. Aufrufen
-
-Im Browser die Domain öffnen — oder, ohne Domain, `http://<Server-IP>`.
-Anmelden mit der eben angelegten Adresse.
 
 ---
 

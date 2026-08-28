@@ -6,7 +6,9 @@ export function middleware(request: NextRequest) {
   const hatCookie = request.cookies.has('kk_session')
   const pfad = request.nextUrl.pathname
 
-  if (!hatCookie && pfad !== '/login') {
+  const offen = pfad === '/login' || pfad === '/einrichten'
+
+  if (!hatCookie && !offen) {
     const ziel = new URL('/login', request.url)
     return NextResponse.redirect(ziel)
   }

@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // standalone wird nur fuer den Docker-Betrieb gebraucht. Auf Vercel stoert es.
+  output: process.env.VERCEL ? undefined : 'standalone',
   poweredByHeader: false,
   reactStrictMode: true,
   experimental: {

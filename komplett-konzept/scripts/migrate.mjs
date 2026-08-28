@@ -11,9 +11,20 @@ const here = dirname(fileURLToPath(import.meta.url))
 const migrationsDir = join(here, '..', 'db', 'migrations')
 
 const url = process.env.DATABASE_URL
+
+// Auf Vercel laeuft dieses Skript im Build. Vorschau-Deployments duerfen die
+// Produktivdatenbank nicht anfassen - dort wird uebersprungen.
+const vercelUmgebung = process.env.VERCEL_ENV
+if (vercelUmgebung && vercelUmgebung !== 'production') {
+  console.log('[migrate] Vorschau-Deployment (' + vercelUmgebung + ') - uebersprungen.')
+  process.exit(0)
+}
+
 if (!url) {
-  console.error('[migrate] DATABASE_URL ist nicht gesetzt.')
-  process.exit(1)
+  // Ohne Datenbank laesst sich das Projekt trotzdem bauen; beim Start faellt es
+  // dann sowieso auf. So scheitert nicht jeder Build an einer fehlenden Variable.
+  console.warn('[migrate] DATABASE_URL ist nicht gesetzt - uebersprungen.')
+  process.exit(0)
 }
 
 const sql = postgres(url, { ...verbindungsOptionen(url), max: 1 })
