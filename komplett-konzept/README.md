@@ -27,13 +27,40 @@ Auf dem Server laufen nur zwei Container. Die Datenbank liegt bei Supabase.
 Gedacht für einen leeren Hetzner-Server mit Ubuntu. Wenn du noch nie einen
 Server aufgesetzt hast: die Befehle einfach der Reihe nach eintippen.
 
-### 1. Docker installieren
+### 0. Auf den Server verbinden
 
-Per SSH auf den Server, dann:
+**Alle folgenden Befehle laufen auf dem Server, nicht auf dem eigenen Rechner.**
+Zuerst also dorthin verbinden — unter Windows in der PowerShell, auf Mac und
+Linux im Terminal:
+
+```powershell
+ssh root@DEINE-SERVER-IP
+```
+
+Die IP steht in der [Hetzner Cloud Console](https://console.hetzner.cloud).
+Beim ersten Mal kommt die Rückfrage `Are you sure you want to continue
+connecting?` — mit `yes` bestätigen. Danach das Root-Passwort aus der
+Hetzner-Mail eingeben; beim Tippen bleibt es unsichtbar, das ist normal.
+
+Wenn die Eingabezeile so aussieht, bist du auf dem Server:
+
+```
+root@ubuntu-2gb-nbg1-1:~#
+```
+
+> **Noch kein Server?** Hetzner Cloud Console → *Server hinzufügen* →
+> Standort **Nürnberg** oder **Falkenstein**, Image **Ubuntu 24.04**,
+> Typ **CX22** (2 vCPU, 4 GB). Reicht für das Dashboard mit Luft nach oben.
+
+### 1. Docker installieren
 
 ```bash
 curl -fsSL https://get.docker.com | sh
 ```
+
+Läuft ein paar Minuten. Fehlermeldungen wie `sh: Die Benennung "sh" wurde nicht
+erkannt` bedeuten, dass der Befehl versehentlich auf dem eigenen Windows-Rechner
+gelandet ist statt auf dem Server — dann Schritt 0 nachholen.
 
 ### 2. Projekt holen
 
