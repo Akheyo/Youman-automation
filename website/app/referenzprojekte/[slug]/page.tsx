@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { Figure } from '@/components/Figure'
 import { Icon } from '@/components/Icon'
 import { PageHead } from '@/components/PageHead'
 import { Reveal } from '@/components/Reveal'
@@ -39,6 +40,10 @@ export default function ReferenzPage({ params }: { params: { slug: string } }) {
         title={referenz.title}
         lead={referenz.teaser}
       />
+
+      <div className="band">
+        <Figure bild={referenz.bild} priority sizes="100vw" />
+      </div>
 
       <div className="section">
         <div className="container">

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Figure } from '@/components/Figure'
 import { Icon } from '@/components/Icon'
 import { PageHead } from '@/components/PageHead'
 import { Reveal } from '@/components/Reveal'
@@ -28,21 +29,31 @@ export default function BranchenPage() {
         lead="Ein Bestandsabgleich im Onlinehandel hat mit einer Auftragserfassung in der Spedition wenig gemeinsam. Deshalb ist hier nach Branche sortiert, was ich dort konkret baue."
       />
 
+      <div className="band">
+        <Figure bild="branchenUebersicht" priority sizes="100vw" />
+      </div>
+
       <section className="section" aria-label="Branchenübersicht">
         <div className="container">
           <ul className="grid-cards grid-cards--3">
             {branchen.map((b, i) => (
-              <Reveal as="li" key={b.slug} index={i} className="card card--link">
-                <h2 className="card__title">
-                  <Link href={`/branchen/${b.slug}`} className="card__link">
-                    {b.title}
-                  </Link>
-                </h2>
-                <p className="card__text">{b.teaser}</p>
-                <span className="card__more">
-                  Anwendungsfälle
-                  <Icon name="arrow" size={15} />
-                </span>
+              <Reveal as="li" key={b.slug} index={i} className="card card--link card--bild">
+                <Figure
+                  bild={b.bild}
+                  sizes="(min-width: 1000px) 33vw, (min-width: 640px) 50vw, 100vw"
+                />
+                <div className="card__body">
+                  <h2 className="card__title">
+                    <Link href={`/branchen/${b.slug}`} className="card__link">
+                      {b.title}
+                    </Link>
+                  </h2>
+                  <p className="card__text">{b.teaser}</p>
+                  <span className="card__more">
+                    Anwendungsfälle
+                    <Icon name="arrow" size={15} />
+                  </span>
+                </div>
               </Reveal>
             ))}
           </ul>

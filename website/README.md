@@ -34,7 +34,7 @@ app/
   referenzprojekte/page.tsx     Projektübersicht
   referenzprojekte/[slug]/      vier Fallstudien
   leistungen/                   Leistungen im Detail (+ Service- und FAQ-JSON-LD)
-  ueber-mich/                   Profil, Arbeitsweise, Einordnung
+  ueber-uns/                    Profil, Arbeitsweise, Einordnung
   kontakt/                      Kontaktdaten und Anfrageformular
   impressum/                    § 5 DDG — PLATZHALTER, siehe unten
   datenschutz/                  Art. 13 DSGVO — PLATZHALTER, siehe unten
@@ -52,7 +52,9 @@ lib/
   site.ts               Marke, Navigation, Leistungen, FAQ, Kontaktdaten
   branchen.ts           sechs Branchen mit Painpoints, Lösungen, FAQ, SEO-Feldern
   referenzen.ts         vier Referenzprojekte als Fallstudien
+  bilder.ts             Bildregister: Motiv, Seitenverhältnis, Maße, Alternativtext
   seo.tsx               Metadaten-Helfer und strukturierte Daten
+public/bilder/          Bilddateien (siehe README dort)
 design-system/
   youman-automation/MASTER.md   verbindliche Design-Entscheidungen
 ```
@@ -60,6 +62,23 @@ design-system/
 Inhalte werden nicht in Komponenten geschrieben, sondern in `lib/` gepflegt.
 Eine neue Branche entsteht durch einen Eintrag in `lib/branchen.ts` — Seite,
 Navigation im Footer, Sitemap und strukturierte Daten folgen automatisch.
+
+## Bilder einsetzen
+
+Die Seite ist durchgehend bebildert. Solange keine Dateien vorliegen, steht an
+jeder Bildstelle ein markierter Platzhalter, der Motiv, Seitenverhältnis und
+empfohlene Breite nennt — auf der Seite selbst lesbar, nicht nur im Code.
+
+Ein Bild einsetzen:
+
+1. Datei nach `public/bilder/` legen, am besten als WebP
+2. In `lib/bilder.ts` beim passenden Eintrag `datei: '/bilder/name.webp'` ergänzen
+
+Der Platzhalter verschwindet automatisch. Das Layout springt nicht, weil das
+Seitenverhältnis vorab reserviert ist.
+
+Am schnellsten verschafft man sich einen Überblick mit `npm run dev` und einem
+Durchlauf durch die Seiten: Jeder Platzhalter sagt, was an seine Stelle gehört.
 
 ## SEO
 

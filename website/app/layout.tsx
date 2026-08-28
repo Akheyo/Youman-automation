@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google'
+import { Inter, Source_Serif_4 } from 'next/font/google'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { JsonLd, organizationJsonLd } from '@/lib/seo'
@@ -8,18 +8,17 @@ import './globals.css'
 import './ui.css'
 
 /* Selbst gehostet über next/font: keine externe Anfrage, kein Layout-Shift. */
-const plexSans = IBM_Plex_Sans({
+const sourceSerif = Source_Serif_4({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '600'],
   display: 'swap',
-  variable: '--font-plex-sans',
+  variable: '--font-source-serif',
 })
 
-const plexMono = IBM_Plex_Mono({
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '500'],
   display: 'swap',
-  variable: '--font-plex-mono',
+  variable: '--font-inter',
 })
 
 export const metadata: Metadata = {
@@ -71,7 +70,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" className={`${plexSans.variable} ${plexMono.variable}`}>
+    <html lang="de" className={`${sourceSerif.variable} ${inter.variable}`}>
       <body>
         <a className="skip-link" href="#main">
           Zum Inhalt springen

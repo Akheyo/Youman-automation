@@ -1,10 +1,16 @@
 # Youman — AI & Software · Design System (Master)
 
-Quelle: Skill `ui-ux-pro-max`, Abfrage
-`"B2B enterprise consultancy trustworthy corporate industrial" --design-system`
-mit `--variance 4 --motion 3 --density 6`.
-Ergänzend: `--domain typography`, `--domain color`, `--domain google-fonts`,
-`--stack nextjs`.
+Quelle: Skill `ui-ux-pro-max`. Farbe und Schriftgattung aus der Abfrage
+`"consulting corporate deep navy institutional professional services"
+--domain color` — Treffer „Research Lab / University Department", Anmerkung
+dort: *Institutional navy + research accent + serif headings*.
+Ergänzend `--domain typography`, `--domain google-fonts`, `--stack nextjs`.
+
+Gestalterische Richtung auf Wunsch am Register von mckinsey.de orientiert:
+tiefes Navy als Grundfläche, Serifen-Überschriften, großformatige Bilder an
+jeder Sektion. Die Seite selbst ließ sich nicht abrufen (503, Bot-Schutz);
+gearbeitet wurde mit den etablierten Merkmalen dieses Registers, nicht mit
+einer Kopie.
 
 Dieses Dokument ist die verbindliche Referenz. Seitenspezifische Abweichungen
 gehören nach `pages/<seite>.md` und überschreiben dort den Master.
@@ -17,16 +23,18 @@ Zielgruppe sind Geschäftsführungen und Betriebsleitungen im Mittelstand —
 E-Commerce, Logistik, Produktion, Großhandel. Die Seite muss vor allem
 **glaubwürdig** wirken, nicht originell. Deshalb:
 
-- **Navy statt Reinschwarz.** `#0f172a` als Grundton wirkt gesetzt, wo reines
-  Schwarz-Weiß schnell nach Galerie aussieht. Ein einziger Blauakzent trägt
-  Links, Fokus und Marker — mehr Farbe gibt es nicht.
-- **IBM Plex statt geometrischer Grotesk.** Plex Sans hat Gewicht und
-  Ingenieurs-Anmutung; Plex Mono setzt Label, Kennzahlen und Fachbegriffe.
-  Eine dünne, weit gesperrte Schrift las sich in der Vorgängerfassung
-  boutiquehaft — hier ist das Gegenteil gefragt.
-- **Dichte 6/10.** Kompakter Satz, engere Abstände. Substanz statt Weißraum.
-- **Bewegung 3/10.** Ein zurückhaltender Einblendeffekt beim Scrollen, sonst
-  nichts. Wer Vertrauen verkauft, animiert nicht.
+- **Tiefes Navy als Grundfläche.** `#0f172a` trägt Hero und CTA-Band als
+  durchgehend dunkle Zonen, nicht nur als Textfarbe. Ein einziger Blauakzent
+  führt Links, Fokus und Eyebrows — mehr Farbe gibt es nicht.
+- **Serifen-Überschriften.** Source Serif 4 gibt den Überschriften das Gewicht
+  einer Publikation statt einer Software-Landingpage. Inter trägt Fließtext und
+  Bedienelemente. Monospace kommt nicht mehr vor: neben einer Serif wirkt sie
+  technisch statt editorial.
+- **Bilder an jeder Sektion.** Hero, Branchenkacheln, Branchen-Detailseiten,
+  Leistungen, Referenzprojekte, Über uns. Solange keine Dateien vorliegen,
+  stehen dort markierte Platzhalter mit Motivbeschreibung und Maßangabe.
+- **Dichte 5/10, Bewegung 3/10.** Ruhig gesetzt, ein zurückhaltender
+  Einblendeffekt beim Scrollen, sonst nichts.
 
 ## Farben
 
@@ -35,7 +43,8 @@ Basis: Palette „Professional navy + blue CTA" aus dem Skill.
 | Token | Wert | Verwendung | Kontrast auf `--paper` |
 |---|---|---|---|
 | `--ink` | `#020617` | Fließtext, Überschriften | 19,3:1 |
-| `--ink-deep` | `#0f172a` | Primärfläche, CTA-Band | 17,4:1 |
+| `--ink-deep` | `#0f172a` | Hero, CTA-Band, dunkle Zonen | 17,4:1 |
+| `--navy` | `#1e3a5f` | institutionelles Navy | 9,7:1 |
 | `--ink-2` | `#1e293b` | Titel | 14,4:1 |
 | `--ink-3` | `#334155` | Sekundärtext, Lead | 10,4:1 |
 | `--ink-4` | `#475569` | gedämpfter Text | 7,5:1 |
@@ -47,6 +56,11 @@ Basis: Palette „Professional navy + blue CTA" aus dem Skill.
 | `--ok` | `#15803d` | Zustimmung im Vergleich | 4,8:1 |
 | `--danger` | `#b91c1c` | Formularfehler | 6,4:1 |
 
+Auf dunklem Grund gilt ein eigener Satz: `--on-dark` (Weiß), `--on-dark-2`
+(`#cbd5e1`, 11,4:1) für Fließtext, `--on-dark-3` (`#94a3b8`, 6,3:1) für Meta.
+Der Blauakzent trägt dort zu wenig Kontrast und wird durch `--on-dark-3`
+ersetzt.
+
 Farbe trägt nie allein eine Bedeutung: In der Vergleichstabelle steht neben
 jedem Wert ein eigenes Zeichen (Haken / Uhr / Minus).
 
@@ -54,22 +68,21 @@ jedem Wert ein eigenes Zeichen (Haken / Uhr / Minus).
 
 | Rolle | Schrift | Schnitte |
 |---|---|---|
-| Text und Titel | **IBM Plex Sans** | 400, 500, 600 |
-| Label, Kennzahlen, Fachbegriffe | **IBM Plex Mono** | 400, 500 |
+| Überschriften, Kennzahlen | **Source Serif 4** | 400, 600 |
+| Fließtext, Bedienelemente, Label | **Inter** | variabel |
 
-Verifizierte Paarung für „financial, trustworthy, professional, corporate,
-serious". Beide über `next/font/google` selbst gehostet: keine externe Anfrage,
-kein Layout-Shift, datenschutzseitig unkritisch.
+Beide über `next/font/google` selbst gehostet: keine externe Anfrage, kein
+Layout-Shift, datenschutzseitig unkritisch.
 
 Skala von `--t-2xs` (12px) bis `--t-4xl` (36–60px), Grundtext 16px,
 Zeilenhöhe 1.65. Überschriften laufen leicht negativ (−0.015em bis −0.025em),
-Label in Mono mit `--track-label: 0.14em`.
+Label in Inter 600 mit `--track-label: 0.14em`.
 
 ## Raster und Abstände
 
 - Container 1240px, schmal 720px, Gutter `clamp(20px, 4vw, 40px)`
-- Abstandsskala 4 → 104px (`--s-1` … `--s-10`), Dichte 6/10
-- Sektionen `clamp(56px, 6.5vw, 104px)` vertikal
+- Abstandsskala 4 → 120px (`--s-1` … `--s-10`), Dichte 5/10
+- Sektionen `clamp(64px, 6.5vw, 120px)` vertikal
 - Radien 2–5px — technisch, nicht weich
 
 ## Informationsarchitektur
@@ -98,6 +111,16 @@ Jede Branchenseite bedient einen eigenen Suchintent und folgt derselben
 Dramaturgie: Einordnung, Painpoints in der Sprache der Betroffenen, Lösungen,
 Referenz, branchenspezifische FAQ, CTA.
 
+## Bilder
+
+Jede Bildstelle steht in `lib/bilder.ts` mit Motivbeschreibung,
+Seitenverhältnis, empfohlener Breite und Alternativtext. Die Komponente
+`Figure` liefert das Bild aus, sobald `datei` gesetzt ist, und zeigt sonst
+einen markierten Platzhalter, der genau diese Angaben nennt.
+
+Das Seitenverhältnis wird in beiden Fällen vorab reserviert. Ein nachgereichtes
+Bild verschiebt deshalb kein Layout — Cumulative Layout Shift bleibt bei null.
+
 ## Verbindliche Regeln
 
 1. Keine Emojis als Icons — ausschließlich das SVG-Set in `components/Icon.tsx`.
@@ -124,9 +147,11 @@ gemeinsamer, per `requestAnimationFrame` gedrosselter Scroll-Sweep kann nichts
 
 ## Abgelehnte Alternativen
 
-- **Monochrom mit Jost Light** (Vorgängerfassung) — nah am Logo, wirkte in der
-  Anwendung aber boutiquehaft statt geschäftlich. Verworfen.
+- **Monochrom mit Jost Light** (erste Fassung) — nah am Logo, wirkte in der
+  Anwendung aber boutiquehaft statt geschäftlich.
+- **IBM Plex Sans plus Mono** (zweite Fassung) — seriös, aber im Register einer
+  Entwicklerfirma statt einer Beratung. Die Mono-Label wirkten technisch.
 - **Dark Mode / Theme-Umschalter** — verwässert die Aussage, verdoppelt die
-  Pflege. Die eine invertierte Fläche ist das CTA-Band.
-- **Serifen-Display** — hätte Autorität gebracht, aber gegen die geometrische
-  Wortmarke gearbeitet.
+  Pflege. Dunkel sind gezielt Hero und CTA-Band.
+- **Kein Bildmaterial** — trug die vorige Fassung, wirkt aber im
+  Beratungsregister leer. Bilder sind hier tragendes Element, nicht Dekoration.

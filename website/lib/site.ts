@@ -1,3 +1,5 @@
+import type { BildKey } from './bilder'
+
 export const site = {
   name: 'Youman',
   fullName: 'Youman — AI & Software',
@@ -21,7 +23,7 @@ export const nav = [
   { href: '/branchen', label: 'Branchen' },
   { href: '/leistungen', label: 'Leistungen' },
   { href: '/referenzprojekte', label: 'Referenzprojekte' },
-  { href: '/ueber-mich', label: 'Über mich' },
+  { href: '/ueber-uns', label: 'Über uns' },
   { href: '/kontakt', label: 'Kontakt' },
 ] as const
 
@@ -51,11 +53,13 @@ export type Service = {
   body: string
   outcomes: string[]
   stack: string[]
+  bild: BildKey
 }
 
 export const services: Service[] = [
   {
     slug: 'ki-automationen',
+    bild: 'leistungAutomation',
     index: '01',
     icon: 'workflow',
     title: 'KI-Automationen',
@@ -71,6 +75,7 @@ export const services: Service[] = [
   },
   {
     slug: 'ki-chatbots',
+    bild: 'leistungChatbot',
     index: '02',
     icon: 'chat',
     title: 'KI-Chatbots',
@@ -86,6 +91,7 @@ export const services: Service[] = [
   },
   {
     slug: 'websites',
+    bild: 'leistungWebsite',
     index: '03',
     icon: 'globe',
     title: 'Moderne Websites',
@@ -101,6 +107,7 @@ export const services: Service[] = [
   },
   {
     slug: 'e-commerce',
+    bild: 'leistungEcommerce',
     index: '04',
     icon: 'cart',
     title: 'E-Commerce-Lösungen',

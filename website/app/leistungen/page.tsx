@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Figure } from '@/components/Figure'
 import { Icon } from '@/components/Icon'
 import { PageHead } from '@/components/PageHead'
 import { Reveal } from '@/components/Reveal'
@@ -33,68 +34,58 @@ export default function LeistungenPage() {
       <PageHead
         crumb="Leistungen"
         eyebrow="Leistungen"
-        title="Was ich baue — und was Sie davon haben"
+        title="Was wir bauen — und was Sie davon haben"
         lead="Vier Bereiche, die sich in der Praxis ständig überschneiden. Meistens beginnt ein Projekt in einem davon und wächst in die anderen hinein."
       />
 
       <div className="section">
         <div className="container">
-          <div className="services" style={{ borderTop: 0 }}>
-            {services.map((service, i) => (
-              <Reveal key={service.slug} index={i} className="service" id={service.slug}>
-                <span className="service__index">{service.index}</span>
+          {services.map((service, i) => (
+            <Reveal key={service.slug} index={i} className="feature" id={service.slug}>
+              <div>
+                <p className="eyebrow">{service.index}</p>
+                <h2 className="feature__title" style={{ marginTop: 'var(--s-4)' }}>
+                  {service.title}
+                </h2>
+                <p className="feature__text">{service.body}</p>
 
-                <div className="service__head">
-                  <h2 className="service__title">
-                    <Icon name={service.icon} size={22} />
-                    <span style={{ display: 'block', marginTop: 'var(--s-3)' }}>
-                      {service.title}
+                <ul className="checklist" style={{ marginTop: 'var(--s-5)' }}>
+                  {service.outcomes.map((outcome) => (
+                    <li key={outcome}>
+                      <Icon name="check" size={16} />
+                      <span>{outcome}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="tags">
+                  {service.stack.map((item) => (
+                    <span className="tag" key={item}>
+                      {item}
                     </span>
-                  </h2>
-                  <p className="service__teaser" style={{ marginTop: 'var(--s-4)' }}>
-                    {service.body}
-                  </p>
-                  <div className="tags">
-                    {service.stack.map((item) => (
-                      <span className="tag" key={item}>
-                        {item}
-                      </span>
-                    ))}
-                  </div>
+                  ))}
                 </div>
 
-                <div className="service__body">
-                  <h3
-                    className="footer__heading"
-                    style={{ marginBottom: 'var(--s-4)' }}
-                  >
-                    Ergebnis
-                  </h3>
-                  <ul className="service__list">
-                    {service.outcomes.map((outcome) => (
-                      <li key={outcome}>
-                        <Icon name="check" size={16} />
-                        <span>{outcome}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p style={{ marginTop: 'var(--s-6)' }}>
-                    <Link href="/kontakt" className="link-arrow">
-                      Dazu anfragen
-                      <Icon name="arrow" size={16} />
-                    </Link>
-                  </p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+                <p style={{ marginTop: 'var(--s-6)' }}>
+                  <Link href="/kontakt" className="link-arrow">
+                    Dazu anfragen
+                    <Icon name="arrow" size={16} />
+                  </Link>
+                </p>
+              </div>
+
+              <div className="feature__media">
+                <Figure bild={service.bild} sizes="(min-width: 900px) 50vw, 100vw" />
+              </div>
+            </Reveal>
+          ))}
         </div>
       </div>
 
       <FaqSection items={faq} title="Häufige Fragen zur Zusammenarbeit" />
       <CtaBand
         title="Unsicher, welcher Bereich passt?"
-        text="Schreiben Sie mir, was heute aufhält. Ich sortiere das Problem und sage Ihnen, welcher Weg der kürzeste ist."
+        text="Schreiben Sie uns, was heute aufhält. Wir sortieren das Problem und sagen Ihnen, welcher Weg der kürzeste ist."
       />
 
       <JsonLd data={breadcrumbJsonLd([{ name: 'Leistungen', path: '/leistungen' }])} />

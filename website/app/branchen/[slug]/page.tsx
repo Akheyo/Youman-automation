@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { Figure } from '@/components/Figure'
 import { Icon } from '@/components/Icon'
 import { PageHead } from '@/components/PageHead'
 import { Reveal } from '@/components/Reveal'
@@ -46,6 +47,10 @@ export default function BranchePage({ params }: { params: { slug: string } }) {
         title={branche.title}
         lead={branche.teaser}
       />
+
+      <div className="band">
+        <Figure bild={branche.bild} priority sizes="100vw" />
+      </div>
 
       {/* ---------------------------------------------- Einordnung */}
       <section className="section section--tight" aria-labelledby="einordnung-title">

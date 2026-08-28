@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Figure } from '@/components/Figure'
 import { Icon } from '@/components/Icon'
 import { Reveal } from '@/components/Reveal'
 import { CtaBand } from '@/components/Sections'
@@ -21,9 +22,9 @@ export const metadata = pageMetadata({
   ],
 })
 
-const proof = [
+const kennzahlen = [
   { value: '24 h', label: 'Maximale Antwortzeit auf Anfragen' },
-  { value: '6', label: 'Branchen mit belegten Anwendungsfällen' },
+  { value: '6', label: 'Branchen mit ausgearbeiteten Anwendungsfällen' },
   { value: '1', label: 'Ansprechpartner vom Angebot bis zum Betrieb' },
 ]
 
@@ -51,54 +52,59 @@ export default function HomePage() {
   return (
     <>
       {/* ---------------------------------------------- Hero */}
-      <section className="hero" aria-labelledby="hero-title">
-        <div className="container hero__inner">
+      <section className="hero-ed on-dark" aria-labelledby="hero-title">
+        <div className="container hero-ed__inner">
           <div>
-            <Reveal className="hero__status">
+            <Reveal className="hero-ed__status">
               <span className="status-dot" aria-hidden="true" />
               Verfügbar für neue Projekte
             </Reveal>
 
             <Reveal index={1}>
-              <h1 className="hero__title" id="hero-title">
+              <h1 className="hero-ed__title" id="hero-title">
                 Prozesse, die heute Menschen kosten, laufen morgen allein.
               </h1>
-              <p className="hero__lead">
-                Ich verbinde Ihre Systeme, automatisiere wiederkehrende Abläufe und baue
-                KI-Anwendungen, die im Tagesgeschäft standhalten. Für Onlinehandel,
-                Logistik, Produktion und alle, die zu viel Zeit in Datenpflege stecken.
+              <p className="hero-ed__lead">
+                Wir verbinden Ihre Systeme, automatisieren wiederkehrende Abläufe und
+                bauen KI-Anwendungen, die im Tagesgeschäft standhalten — für
+                Onlinehandel, Logistik, Produktion und Großhandel.
               </p>
             </Reveal>
 
-            <Reveal index={2} className="hero__actions">
-              <Link href="/kontakt" className="btn btn--primary">
+            <Reveal index={2} className="hero-ed__actions">
+              <Link href="/kontakt" className="btn btn--invert">
                 Kostenloses Erstgespräch
                 <Icon name="arrow" size={16} />
               </Link>
-              <Link href="/branchen" className="btn btn--ghost">
+              <Link href="/branchen" className="btn btn--outline-invert">
                 Branchen ansehen
               </Link>
             </Reveal>
 
             <Reveal index={3}>
-              <p className="hero__note">
-                Erstgespräch unverbindlich · Antwort innerhalb von {site.responseTime}
+              <p className="hero-ed__note">
+                Unverbindlich · Antwort innerhalb von {site.responseTime}
               </p>
             </Reveal>
           </div>
 
-          <Reveal index={2} className="hero__aside">
-            <div className="proof">
-              <h2 className="proof__title">Zusammenarbeit in Zahlen</h2>
-              <dl className="proof__list">
-                {proof.map((item) => (
-                  <div className="proof__item" key={item.value}>
-                    <dd className="proof__value">{item.value}</dd>
-                    <dt className="proof__label">{item.label}</dt>
-                  </div>
-                ))}
-              </dl>
-            </div>
+          <Reveal index={2}>
+            <Figure
+              bild="heroStart"
+              priority
+              sizes="(min-width: 1000px) 45vw, 100vw"
+            />
+          </Reveal>
+        </div>
+
+        <div className="container figures-bar">
+          <Reveal as="dl" className="figures-bar__grid">
+            {kennzahlen.map((k) => (
+              <div className="figures-bar__item" key={k.value}>
+                <dt className="figures-bar__label">{k.label}</dt>
+                <dd className="figures-bar__value">{k.value}</dd>
+              </div>
+            ))}
           </Reveal>
         </div>
       </section>
@@ -119,24 +125,30 @@ export default function HomePage() {
 
           <ul className="grid-cards grid-cards--3">
             {branchen.map((b, i) => (
-              <Reveal as="li" key={b.slug} index={i} className="card card--link">
-                <h3 className="card__title">
-                  <Link href={`/branchen/${b.slug}`} className="card__link">
-                    {b.title}
-                  </Link>
-                </h3>
-                <p className="card__text">{b.teaser}</p>
-                <span className="card__more">
-                  Anwendungsfälle
-                  <Icon name="arrow" size={15} />
-                </span>
+              <Reveal as="li" key={b.slug} index={i} className="card card--link card--bild">
+                <Figure
+                  bild={b.bild}
+                  sizes="(min-width: 1000px) 33vw, (min-width: 640px) 50vw, 100vw"
+                />
+                <div className="card__body">
+                  <h3 className="card__title">
+                    <Link href={`/branchen/${b.slug}`} className="card__link">
+                      {b.title}
+                    </Link>
+                  </h3>
+                  <p className="card__text">{b.teaser}</p>
+                  <span className="card__more">
+                    Anwendungsfälle
+                    <Icon name="arrow" size={15} />
+                  </span>
+                </div>
               </Reveal>
             ))}
           </ul>
         </div>
       </section>
 
-      {/* ---------------------------------------------- Leistungen kompakt */}
+      {/* ---------------------------------------------- Leistungen */}
       <section className="section section--paper" aria-labelledby="leistungen-title">
         <div className="container">
           <Reveal className="section-head">
@@ -148,20 +160,23 @@ export default function HomePage() {
 
           <ul className="grid-cards">
             {services.map((service, i) => (
-              <Reveal as="li" key={service.slug} index={i} className="card card--link">
-                <span className="card__icon">
-                  <Icon name={service.icon} size={22} />
-                </span>
-                <h3 className="card__title">
-                  <Link href={`/leistungen#${service.slug}`} className="card__link">
-                    {service.title}
-                  </Link>
-                </h3>
-                <p className="card__text">{service.teaser}</p>
-                <span className="card__more">
-                  Details
-                  <Icon name="arrow" size={15} />
-                </span>
+              <Reveal as="li" key={service.slug} index={i} className="card card--link card--bild">
+                <Figure
+                  bild={service.bild}
+                  sizes="(min-width: 640px) 50vw, 100vw"
+                />
+                <div className="card__body">
+                  <h3 className="card__title">
+                    <Link href={`/leistungen#${service.slug}`} className="card__link">
+                      {service.title}
+                    </Link>
+                  </h3>
+                  <p className="card__text">{service.teaser}</p>
+                  <span className="card__more">
+                    Details
+                    <Icon name="arrow" size={15} />
+                  </span>
+                </div>
               </Reveal>
             ))}
           </ul>
@@ -180,20 +195,20 @@ export default function HomePage() {
 
           <ul className="grid-cards">
             {topReferenzen.map((r, i) => (
-              <Reveal as="li" key={r.slug} index={i} className="case">
-                <p className="case__kicker">{r.brancheLabel}</p>
-                <h3 className="case__title">
-                  <Link href={`/referenzprojekte/${r.slug}`} className="card__link">
-                    {r.title}
-                  </Link>
-                </h3>
-                <p className="case__text">{r.teaser}</p>
-                <div className="tags">
-                  {r.stack.slice(0, 4).map((t) => (
-                    <span className="tag" key={t}>
-                      {t}
-                    </span>
-                  ))}
+              <Reveal as="li" key={r.slug} index={i} className="card card--link card--bild">
+                <Figure bild={r.bild} sizes="(min-width: 640px) 50vw, 100vw" />
+                <div className="card__body">
+                  <p className="case__kicker">{r.brancheLabel}</p>
+                  <h3 className="card__title">
+                    <Link href={`/referenzprojekte/${r.slug}`} className="card__link">
+                      {r.title}
+                    </Link>
+                  </h3>
+                  <p className="card__text">{r.teaser}</p>
+                  <span className="card__more">
+                    Projekt ansehen
+                    <Icon name="arrow" size={15} />
+                  </span>
                 </div>
               </Reveal>
             ))}

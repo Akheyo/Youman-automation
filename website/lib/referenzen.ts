@@ -1,3 +1,5 @@
+import type { BildKey } from './bilder'
+
 /**
  * Referenzprojekte. Bewusst ohne erfundene Kennzahlen: was hier steht, ist die
  * Beschreibung des gebauten Systems. Konkrete Zahlen und Kundennamen gehören
@@ -21,11 +23,14 @@ export type Referenz = {
   /** Was sich dadurch geändert hat — qualitativ, nicht behauptet quantitativ. */
   ergebnis: string[]
   stack: string[]
+  /** Schlüssel aus dem Bildregister. */
+  bild: BildKey
 }
 
 export const referenzen: Referenz[] = [
   {
     slug: 'marktplatz-synchronisation',
+    bild: 'refMarktplatz',
     title: 'Marktplatz-Synchronisation',
     teaser:
       'Bestände und Preise über Shop, eBay und Amazon in einem Fluss statt in drei Nachtläufen.',
@@ -67,6 +72,7 @@ export const referenzen: Referenz[] = [
   },
   {
     slug: 'ki-kundenservice',
+    bild: 'refChatbot',
     title: 'KI-Kundenservice mit Wissensbasis',
     teaser:
       'Ein Chatbot, der aus den eigenen Dokumenten antwortet und sauber an Menschen übergibt.',
@@ -107,6 +113,7 @@ export const referenzen: Referenz[] = [
   },
   {
     slug: 'voice-to-task',
+    bild: 'refVoice',
     title: 'Sprachnotiz zu strukturierter Aufgabe',
     teaser:
       'Unterwegs diktiert, im Projektmanagement als saubere Aufgabe angelegt — mit Priorität und Zuordnung.',
@@ -147,6 +154,7 @@ export const referenzen: Referenz[] = [
   },
   {
     slug: 'unternehmenswebsite',
+    bild: 'refWebsite',
     title: 'Unternehmenswebsite mit Anfragestrecke',
     teaser:
       'Schnelle, barrierearme Website, deren Anfragen direkt im Vertriebsprozess landen.',

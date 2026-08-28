@@ -1,4 +1,5 @@
 import { ContactForm } from '@/components/ContactForm'
+import { Figure } from '@/components/Figure'
 import { Icon } from '@/components/Icon'
 import { PageHead } from '@/components/PageHead'
 import { Reveal } from '@/components/Reveal'
@@ -81,6 +82,10 @@ export default function KontaktPage() {
                   <Icon name="arrow" size={16} />
                 </a>
               </p>
+
+              <div style={{ marginTop: 'var(--s-7)' }}>
+                <Figure bild="kontakt" sizes="(min-width: 940px) 40vw, 100vw" />
+              </div>
             </Reveal>
 
             <Reveal index={1}>

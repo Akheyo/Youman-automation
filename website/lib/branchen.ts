@@ -1,3 +1,5 @@
+import type { BildKey } from './bilder'
+
 /**
  * Branchenseiten bilden das SEO-Cluster: /branchen ist der Hub, jede Branche
  * eine Spoke-Seite mit eigenem Suchintent. Painpoints sind bewusst konkret und
@@ -25,12 +27,15 @@ export type Branche = {
   systeme: string[]
   /** Slug aus referenzen.ts, sofern ein passendes Projekt vorliegt. */
   referenz?: string
+  /** Schlüssel aus dem Bildregister. */
+  bild: BildKey
   faq: { q: string; a: string }[]
 }
 
 export const branchen: Branche[] = [
   {
     slug: 'e-commerce',
+    bild: 'brancheECommerce',
     title: 'E-Commerce & Onlinehandel',
     teaser:
       'Bestände, Preise und Bestellungen über alle Kanäle synchron — ohne nächtliche Handarbeit.',
@@ -95,6 +100,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'spedition-und-logistik',
+    bild: 'brancheLogistik',
     title: 'Spedition & Logistik',
     teaser:
       'Aufträge, Statusmeldungen und Papiere fließen zwischen Auftraggeber, Fahrer und TMS — ohne Telefonkette.',
@@ -151,6 +157,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'produktion-und-fertigung',
+    bild: 'brancheProduktion',
     title: 'Produktion & Fertigung',
     teaser:
       'Aufträge, Rückmeldungen und Materialbedarf ohne Zettelwirtschaft zwischen Halle und Büro.',
@@ -205,6 +212,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'grosshandel-und-distribution',
+    bild: 'brancheGrosshandel',
     title: 'Großhandel & Distribution',
     teaser:
       'Artikeldaten, Preislisten und Kundenbestellungen laufen durch, statt in Postfächern zu warten.',
@@ -256,6 +264,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'handwerk-und-bau',
+    bild: 'brancheHandwerk',
     title: 'Handwerk & Bau',
     teaser:
       'Anfragen, Aufmaße und Rechnungen laufen mit, statt abends im Büro nachgearbeitet zu werden.',
@@ -306,6 +315,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'dienstleistung-und-agenturen',
+    bild: 'brancheDienstleistung',
     title: 'Dienstleistung & Agenturen',
     teaser:
       'Leads, Angebote und Projektabläufe automatisiert — damit abrechenbare Zeit abrechenbar bleibt.',
