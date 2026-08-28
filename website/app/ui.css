@@ -1836,3 +1836,36 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   color: var(--ink-3);
 }
 .mobile-nav__unterlink:hover { color: var(--ink); }
+
+/* ------------------------------------------------------------
+   Sprungmarken über den FAQ-Gruppen
+   ------------------------------------------------------------ */
+
+.faq-sprung {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 60;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.faq-sprung ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-6);
+  padding-block: var(--s-4);
+}
+
+.faq-sprung a {
+  display: inline-block;
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+  font-size: var(--t-base);
+  font-weight: 500;
+  color: var(--ink-3);
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.faq-sprung a:hover {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}

@@ -17,6 +17,7 @@ const statisch: Eintrag[] = [
   { path: '/leistungen', priority: 0.9, changeFrequency: 'monthly' },
   { path: '/referenzprojekte', priority: 0.8, changeFrequency: 'monthly' },
   { path: '/ueber-uns', priority: 0.6, changeFrequency: 'yearly' },
+  { path: '/faq', priority: 0.75, changeFrequency: 'monthly' },
   { path: '/kontakt', priority: 0.8, changeFrequency: 'monthly' },
   { path: '/impressum', priority: 0.2, changeFrequency: 'yearly' },
   { path: '/datenschutz', priority: 0.2, changeFrequency: 'yearly' },

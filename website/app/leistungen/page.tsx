@@ -11,7 +11,8 @@ import {
   pageMetadata,
   serviceJsonLd,
 } from '@/lib/seo'
-import { faq, services } from '@/lib/site'
+import { faqGruppe } from '@/lib/faq'
+import { services } from '@/lib/site'
 
 export const metadata = pageMetadata({
   title: 'Leistungen',
@@ -121,14 +122,18 @@ export default function LeistungenPage() {
         </div>
       </section>
 
-      <FaqSection items={faq} title="Häufige Fragen zur Zusammenarbeit" />
+      <FaqSection
+        items={faqGruppe('kosten-und-ablauf')!.fragen}
+        title="Kosten und Ablauf"
+        eyebrow="Häufige Fragen"
+      />
       <CtaBand
         title="Unsicher, welcher Bereich passt?"
         text="Schreiben Sie uns, was heute aufhält. Wir sortieren das Problem und sagen Ihnen, welcher Weg der kürzeste ist."
       />
 
       <JsonLd data={breadcrumbJsonLd([{ name: 'Leistungen', path: '/leistungen' }])} />
-      <JsonLd data={faqPageJsonLd(faq)} />
+      <JsonLd data={faqPageJsonLd(faqGruppe('kosten-und-ablauf')!.fragen)} />
       {services.map((service) => {
         const data = serviceJsonLd(service.slug)
         return data ? <JsonLd key={service.slug} data={data} /> : null

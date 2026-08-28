@@ -3,6 +3,8 @@ import { branchen } from '@/lib/branchen'
 import { nav, site } from '@/lib/site'
 import { Logo } from './Logo'
 
+const weitere = [{ href: '/faq', label: 'Häufige Fragen' }]
+
 const legal = [
   { href: '/impressum', label: 'Impressum' },
   { href: '/datenschutz', label: 'Datenschutz' },
@@ -55,15 +57,13 @@ export function Footer() {
           <nav aria-label="Footer-Navigation">
             <h2 className="footer__heading">Seiten</h2>
             <ul className="footer__list">
-              {nav
-                .filter((item) => item.href !== '/')
-                .map((item) => (
-                  <li key={item.href}>
-                    <Link href={item.href} className="footer__link">
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
+              {[...nav.filter((item) => item.href !== '/'), ...weitere].map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="footer__link">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
 
