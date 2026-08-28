@@ -1,0 +1,160 @@
+{
+  "name": "Dashboard-Erreichbarkeit",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "b1a1f0c2-0001-4a10-9a01-000000000001",
+      "name": "Alle 5 Minuten",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [-360, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "dashboardUrl",
+              "value": "https://HIER-DEINE-DASHBOARD-ADRESSE.vercel.app"
+            },
+            {
+              "name": "ingestToken",
+              "value": "HIER-DEN-INGEST-TOKEN-EINSETZEN"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1a1f0c2-0002-4a10-9a01-000000000002",
+      "name": "Einstellungen",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [-140, 300],
+      "notes": "Hier Adresse und Zugriffsschlüssel eintragen. Sonst nichts ändern."
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.dashboardUrl }}/api/health",
+        "options": {
+          "timeout": 15000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "b1a1f0c2-0003-4a10-9a01-000000000003",
+      "name": "Dashboard abfragen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [80, 300],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "notes": "Antwortet auch bei Fehlern, damit die Störung gemeldet werden kann."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.statusCode }}",
+              "operation": "equal",
+              "value2": 200
+            }
+          ]
+        }
+      },
+      "id": "b1a1f0c2-0004-4a10-9a01-000000000004",
+      "name": "Erreichbar?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Einstellungen').item.json.dashboardUrl }}/api/ingest/execution",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Einstellungen').item.json.ingestToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ automation: { key: 'dashboard-erreichbarkeit', name: 'Dashboard-Erreichbarkeit', description: 'Prüft alle 5 Minuten, ob das Dashboard antwortet.', category: 'Überwachung', source: 'n8n', schedule_label: 'alle 5 Minuten' }, status: 'success', trigger: 'schedule', items_processed: 1, output: { statusCode: $('Dashboard abfragen').item.json.statusCode }, logs: [{ level: 'info', message: 'Dashboard hat mit 200 geantwortet.' }] }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "b1a1f0c2-0005-4a10-9a01-000000000005",
+      "name": "Erfolg melden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [560, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Einstellungen').item.json.dashboardUrl }}/api/ingest/execution",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Einstellungen').item.json.ingestToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ automation: { key: 'dashboard-erreichbarkeit', name: 'Dashboard-Erreichbarkeit', description: 'Prüft alle 5 Minuten, ob das Dashboard antwortet.', category: 'Überwachung', source: 'n8n', schedule_label: 'alle 5 Minuten' }, status: 'failed', trigger: 'schedule', items_processed: 0, error: { code: 'HTTP_' + ($('Dashboard abfragen').item.json.statusCode || 0), message: 'Das Dashboard hat nicht mit 200 geantwortet (Status ' + ($('Dashboard abfragen').item.json.statusCode || 'keine Antwort') + ').', severity: 'critical' }, logs: [{ level: 'error', message: 'Abfrage fehlgeschlagen.' }] }) }}",
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "b1a1f0c2-0006-4a10-9a01-000000000006",
+      "name": "Störung melden",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [560, 400],
+      "onError": "continueRegularOutput",
+      "notes": "Läuft ins Leere, wenn das Dashboard komplett weg ist - deshalb zusätzlich der Hinweis daneben."
+    }
+  ],
+  "connections": {
+    "Alle 5 Minuten": {
+      "main": [[{ "node": "Einstellungen", "type": "main", "index": 0 }]]
+    },
+    "Einstellungen": {
+      "main": [[{ "node": "Dashboard abfragen", "type": "main", "index": 0 }]]
+    },
+    "Dashboard abfragen": {
+      "main": [[{ "node": "Erreichbar?", "type": "main", "index": 0 }]]
+    },
+    "Erreichbar?": {
+      "main": [
+        [{ "node": "Erfolg melden", "type": "main", "index": 0 }],
+        [{ "node": "Störung melden", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

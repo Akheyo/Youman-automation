@@ -270,10 +270,71 @@ db/migrations/     SQL, wird beim Start der Reihe nach angewendet
 scripts/           Migration, Beispieldaten, Admin anlegen, Sicherung
 ```
 
-### Wie Automationen später andocken
+### Wie Automationen andocken
 
-Die Ausführungsschicht braucht das Dashboard nicht zu kennen — sie schreibt
-direkt in dieselben Tabellen:
+Automationen melden ihre Läufe an eine Adresse. Sie brauchen dafür keinen
+Datenbankzugang — nur den Schlüssel aus `INGEST_TOKEN`.
+
+```
+POST /api/ingest/execution
+Authorization: Bearer <INGEST_TOKEN>
+Content-Type: application/json
+```
+
+```json
+{
+  "automation": {
+    "key": "lager-scan",
+    "name": "Lagerplatz-Scan",
+    "description": "Liest Lagerplätze aus Plenty.",
+    "category": "Lager",
+    "source": "n8n",
+    "schedule_label": "täglich 06:00"
+  },
+  "status": "success",
+  "items_processed": 412,
+  "duration_ms": 8300,
+  "output": { "gefunden": 412, "unklar": 17 },
+  "logs": [{ "level": "info", "message": "412 Artikel gelesen." }]
+}
+```
+
+Bei einer Störung stattdessen `"status": "failed"` und ein `error`-Block:
+
+```json
+{
+  "automation": { "key": "lager-scan" },
+  "status": "failed",
+  "error": {
+    "code": "AUTH_401",
+    "message": "Plenty-Zugang abgelaufen.",
+    "severity": "critical"
+  }
+}
+```
+
+Was dabei passiert: Die Automation wird beim ersten Mal automatisch angelegt,
+danach nur noch aktualisiert. Ein fehlgeschlagener Lauf setzt sie auf
+*gestört*, der nächste erfolgreiche wieder auf *aktiv*. Fehler erscheinen im
+Fehlerbereich, Logzeilen im Zeitstrahl der Ausführung.
+
+`status` kennt `queued`, `running`, `success`, `failed`, `cancelled` —
+eine lang laufende Automation kann sich also zuerst als `running` melden.
+
+### Fertiger n8n-Workflow
+
+Unter `n8n/dashboard-erreichbarkeit.json` liegt ein Workflow zum Einspielen:
+er fragt alle fünf Minuten das Dashboard ab und meldet das Ergebnis zurück.
+Damit siehst du im Dashboard, ob das Dashboard läuft — und hast gleichzeitig
+ein Beispiel, an dem sich weitere Automationen orientieren können.
+
+Einspielen: in n8n auf **Import from File**, danach im Knoten
+**Einstellungen** die Adresse des Dashboards und den `INGEST_TOKEN`
+eintragen. Sonst nichts ändern.
+
+### Die Tabellen dahinter
+
+Wer lieber direkt in die Datenbank schreibt, kann das auch:
 
 | Tabelle | Wofür |
 |---|---|
