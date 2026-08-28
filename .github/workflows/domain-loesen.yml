@@ -1,0 +1,66 @@
+# Einmal-Workflow: loest die eigene Domain aus den GitHub-Pages-Einstellungen.
+#
+# Warum ueberhaupt ein Workflow? Die eigene Domain steht nicht in einer Datei
+# im Repository, sondern in den Pages-Einstellungen. Das Entfernen von
+# public/CNAME aendert daran nichts: Bei einem Deploy ueber Actions setzt die
+# CNAME-Datei die Domain gar nicht, das ist das alte Verhalten beim Deploy aus
+# einem Branch.
+#
+# Solange die Einstellung steht, leitet GitHub ausserdem die github.io-Adresse
+# per 301 auf die eigene Domain um. Die Seite ist damit ueber keinen Weg ohne
+# die Domain erreichbar.
+#
+# Der Aufruf unten setzt cname auf null, was der API-Weg zum Entfernen ist.
+#
+# Nach erfolgreichem Lauf kann diese Datei geloescht werden.
+
+name: Eigene Domain aus den Pages-Einstellungen loesen
+
+on:
+  workflow_dispatch:
+
+permissions:
+  pages: write
+
+jobs:
+  loesen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stand vorher
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "--- Pages-Einstellungen vorher ---"
+          curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+               -H "Accept: application/vnd.github+json" \
+               "https://api.github.com/repos/${{ github.repository }}/pages" \
+            | grep -E '"(cname|html_url|status)"' || true
+
+      - name: Domain loesen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          code=$(curl -sS -o /tmp/antwort.txt -w '%{http_code}' -X PUT \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" \
+            -d '{"cname":null}')
+          echo "HTTP $code"
+          cat /tmp/antwort.txt
+          # 204 heisst uebernommen. Alles andere ist ein Fehlschlag, und der
+          # soll den Lauf rot faerben statt still durchzugehen.
+          if [ "$code" != "204" ]; then
+            echo "Fehlgeschlagen. Die Domain muss von Hand entfernt werden:"
+            echo "Settings -> Pages -> Custom domain leeren -> Save"
+            exit 1
+          fi
+
+      - name: Stand nachher
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "--- Pages-Einstellungen nachher ---"
+          curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+               -H "Accept: application/vnd.github+json" \
+               "https://api.github.com/repos/${{ github.repository }}/pages" \
+            | grep -E '"(cname|html_url|status)"' || true
