@@ -2225,63 +2225,6 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   .hero-voll__knopf { width: min(100%, 320px); }
 }
 
-/* --- Kennzahlenstreifen unter dem Hero --- */
-
-.kennzahlen {
-  border-bottom: 1px solid var(--line);
-  background: var(--paper);
-}
-
-.kennzahlen__grid {
-  display: grid;
-  grid-template-columns: 1fr;
-}
-
-.kennzahlen__item {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: var(--s-2);
-  padding-block: var(--s-6);
-  border-bottom: 1px solid var(--line);
-}
-.kennzahlen__item:last-child { border-bottom: 0; }
-
-.kennzahlen__wert {
-  margin: 0;
-  font-family: var(--font-serif);
-  font-size: var(--t-2xl);
-  font-weight: 600;
-  line-height: 1;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums lining-nums;
-}
-
-.kennzahlen__label {
-  font-size: var(--t-base);
-  line-height: 1.5;
-  color: var(--ink-4);
-}
-
-@media (min-width: 800px) {
-  .kennzahlen__grid { grid-template-columns: repeat(3, 1fr); }
-  .kennzahlen__item {
-    padding: var(--s-7) var(--s-6) var(--s-7) 0;
-    border-bottom: 0;
-    border-right: 1px solid var(--line);
-  }
-  .kennzahlen__item:last-child { border-right: 0; }
-  .kennzahlen__item + .kennzahlen__item { padding-left: var(--s-6); }
-}
-
-/* Im Hero bleibt der Platzhalter stumm: eine ruhige dunkle Fläche wirkt
-   fertig, durchschimmernder Hinweistext wirkt wie eine Baustelle. Was an
-   Medien fehlt, steht in public/videos/README.md und public/bilder/README.md. */
-.hero-voll .figure--leer {
-  background: var(--ink-deep);
-  border: 0;
-}
-.hero-voll .figure__hinweis { display: none; }
-
 /* --- Im Code erzeugter Hintergrund des Heros --- */
 
 .hero-anim {

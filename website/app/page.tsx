@@ -3,7 +3,7 @@ import { Figure } from '@/components/Figure'
 import { HeroVoll } from '@/components/HeroVoll'
 import { Icon } from '@/components/Icon'
 import { Reveal } from '@/components/Reveal'
-import { AussageBand, SplitRaster } from '@/components/Muster'
+import { AussageBand, IntroBand, SplitRaster } from '@/components/Muster'
 import { CtaBand } from '@/components/Sections'
 import { branchen } from '@/lib/branchen'
 import { referenzen } from '@/lib/referenzen'
@@ -24,11 +24,6 @@ export const metadata = pageMetadata({
   ],
 })
 
-const kennzahlen = [
-  { value: '24 h', label: 'Maximale Antwortzeit auf Anfragen' },
-  { value: '6', label: 'Branchen mit ausgearbeiteten Anwendungsfällen' },
-  { value: '1', label: 'Ansprechpartner vom Angebot bis zum Betrieb' },
-]
 
 /**
  * Aufbau nach dem Muster "Enterprise Gateway" aus dem UI/UX-Skill:
@@ -46,19 +41,16 @@ export default function HomePage() {
       {/* ---------------------------------------------- Hero */}
       <HeroVoll satz="Wir automatisieren Abläufe, die heute Menschen kosten — für Onlinehandel, Logistik, Produktion und Großhandel." />
 
-      {/* ---------------------------------------------- Kennzahlen */}
-      <section className="kennzahlen" aria-label="Zusammenarbeit in Zahlen">
-        <div className="container">
-          <Reveal as="dl" className="kennzahlen__grid">
-            {kennzahlen.map((k) => (
-              <div className="kennzahlen__item" key={k.value}>
-                <dt className="kennzahlen__label">{k.label}</dt>
-                <dd className="kennzahlen__wert">{k.value}</dd>
-              </div>
-            ))}
-          </Reveal>
-        </div>
-      </section>
+      {/* ---------------------------------------------- Was wir machen */}
+      <IntroBand
+        label="Was wir machen"
+        titel="Beratung und Umsetzung aus einer Hand."
+        text="Wir sehen uns an, wo in Ihrem Betrieb Arbeit entsteht, die niemand braucht, und bauen genau dafür eine Lösung. Sie setzt auf Ihr bestehendes ERP, Ihren Shop oder Ihr Warenwirtschaftssystem auf, statt es zu ersetzen."
+        links={services.map((service) => ({
+          href: `/leistungen#${service.slug}`,
+          label: service.title,
+        }))}
+      />
 
       {/* ---------------------------------------------- Branchen mit Bild */}
       <section className="section" aria-labelledby="branchen-title">
