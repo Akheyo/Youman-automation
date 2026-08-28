@@ -28,6 +28,8 @@ interface SyncInfo {
   status: string;
   ean: string;
   categoryCreated: boolean;
+  dateCategoryName?: string;
+  dateCategoryCreated?: boolean;
   eanAttached: boolean;
   invoiceAttached: boolean;
   invoiceLog?: string | null;
@@ -40,7 +42,7 @@ interface SyncInfo {
 const EMPTY = { company: '', location: '', contactInternal: '', contactExternal: '', notes: '', orderType: '' };
 
 /** Sichtbarer Build-Marker – so erkennt man sofort, ob die neue Version live ist. */
-const APP_BUILD = 'v1.6';
+const APP_BUILD = 'v1.7';
 
 export default function ProjektDashboard({
   initial,
@@ -151,8 +153,8 @@ export default function ProjektDashboard({
         <span className={styles.eyebrow}>PlentyONE · Projektanlage</span>
         <h1 className={styles.title}>Projektplanung</h1>
         <p className={styles.subtitle}>
-          Projekt erfassen → Unterkategorie <strong>„Firma&nbsp;Ort“</strong> in Plenty anlegen → Artikel mit
-          automatischer EAN-13 erzeugen.
+          Projekt erfassen → in Plenty <strong>„Firma&nbsp;Ort“</strong> und darunter
+          <strong> „Firma&nbsp;Ort&nbsp;Datum“</strong> anlegen → Artikel mit automatischer EAN-13 erzeugen.
         </p>
       </header>
 
@@ -459,6 +461,13 @@ function ResultCard({
           <dd>
             {projekt.category_name}
             {state === 'ok' && (sync.categoryCreated ? ' (neu)' : ' (vorhanden)')}
+            {sync.dateCategoryName && (
+              <>
+                {' → '}
+                {sync.dateCategoryName}
+                {state === 'ok' && (sync.dateCategoryCreated ? ' (neu)' : ' (vorhanden)')}
+              </>
+            )}
           </dd>
         </div>
         <div>

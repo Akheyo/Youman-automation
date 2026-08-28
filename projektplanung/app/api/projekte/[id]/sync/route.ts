@@ -45,7 +45,7 @@ export async function POST(_request: Request, { params }: { params: { id: string
     .update({
       ean: sync.ean,
       category_name: sync.categoryName,
-      plenty_category_id: sync.categoryId,
+      plenty_category_id: sync.dateCategoryId ?? sync.categoryId,
       plenty_item_id: sync.itemId,
       plenty_status: status,
       plenty_error: sync.error,
@@ -63,6 +63,8 @@ export async function POST(_request: Request, { params }: { params: { id: string
       status,
       ean: sync.ean,
       categoryCreated: sync.categoryCreated,
+      dateCategoryName: sync.dateCategoryName,
+      dateCategoryCreated: sync.dateCategoryCreated,
       eanAttached: sync.eanAttached,
       invoiceAttached: sync.invoiceAttached,
       invoiceStored: Boolean(row.invoice_path),

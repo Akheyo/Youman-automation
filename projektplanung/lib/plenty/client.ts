@@ -5,8 +5,9 @@
  *   1. Login (User/Passwort → Bearer-Token, modulweit gecached)
  *   2. Unterkategorie "Firma Ort" unter der Kategorie "Projekte" anlegen
  *      (oder wiederverwenden, falls sie schon existiert)
- *   3. Artikel in dieser Unterkategorie anlegen (Name, Beschreibung, Kategorie)
- *   4. EAN-13 erzeugen und als Barcode an die Hauptvariante hängen
+ *   3. Darunter "Firma Ort Datum" anlegen bzw. wiederverwenden
+ *   4. Artikel in dieser Datums-Kategorie anlegen (Name, Beschreibung)
+ *   5. EAN-13 erzeugen und als Barcode an die Hauptvariante hängen
  *
  * Ist Plenty nicht konfiguriert (Env-Variablen fehlen), wird der Sync
  * übersprungen — die App speichert das Projekt trotzdem und erzeugt lokal eine
@@ -586,6 +587,10 @@ export interface PlentySyncResult {
   categoryName: string;
   categoryId: number | null;
   categoryCreated: boolean;
+  /** Zweite Ebene: „Firma Ort Datum" – darin liegt der Artikel. */
+  dateCategoryName: string;
+  dateCategoryId: number | null;
+  dateCategoryCreated: boolean;
   itemId: number | null;
   variationId: number | null;
   eanAttached: boolean;
@@ -621,6 +626,9 @@ export async function syncProjektToPlenty(
     categoryName,
     categoryId: null,
     categoryCreated: false,
+    dateCategoryName: buildItemName(input, date),
+    dateCategoryId: null,
+    dateCategoryCreated: false,
     itemId: null,
     variationId: null,
     eanAttached: false,
@@ -647,13 +655,23 @@ export async function syncProjektToPlenty(
       categoryName,
     );
 
+    // Zweite Ebene: „Firma Ort Datum" unterhalb von „Firma Ort".
+    // Gleiche Firma am gleichen Tag landet in derselben Kategorie – der
+    // Namensvergleich in findChildCategory verhindert Doppelanlagen.
     const itemName = buildItemName(input, date);
-    // Artikel anlegen – Barcode wird nach Möglichkeit direkt eingebettet
-    // (läuft über das Artikel-Anlegen-Recht statt des separaten Barcode-Rechts).
-    const { itemId, variationId, eanAttached: inlineAttached } = await createItem(
+    const { id: dateCategoryId, created: dateCreated } = await ensureSubcategory(
       cfg,
       token,
       categoryId,
+      itemName,
+    );
+    // Artikel anlegen – Barcode wird nach Möglichkeit direkt eingebettet
+    // (läuft über das Artikel-Anlegen-Recht statt des separaten Barcode-Rechts).
+    // Der Artikel gehört in die Datums-Kategorie, nicht in „Firma Ort".
+    const { itemId, variationId, eanAttached: inlineAttached } = await createItem(
+      cfg,
+      token,
+      dateCategoryId,
       cfg.eanBarcodeId ? { barcodeId: cfg.eanBarcodeId, code: ean } : null,
     );
 
@@ -765,6 +783,8 @@ export async function syncProjektToPlenty(
       ok: true,
       categoryId,
       categoryCreated: created,
+      dateCategoryId,
+      dateCategoryCreated: dateCreated,
       itemId,
       variationId,
       eanAttached,
