@@ -11,6 +11,21 @@ const legal = [
 export function Footer() {
   return (
     <footer className="footer">
+      {/* Steht über der eigentlichen Fußzeile und damit auf jeder Seite. */}
+      <div className="footer__band">
+        <div className="container footer__band-inner">
+          <p className="footer__band-titel">{site.name} in Deutschland</p>
+          <div className="footer__band-aktionen">
+            <Link href="/kontakt" className="btn btn--primary">
+              Kontakt aufnehmen
+            </Link>
+            <Link href="/ueber-uns" className="btn-linie">
+              Über {site.name}
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <div className="container">
         <div className="footer__grid">
           <div>

@@ -124,8 +124,8 @@ export function FaqSection({
 }
 
 export function CtaBand({
-  title = 'Sprechen wir über Ihren Prozess.',
-  text = `Beschreiben Sie kurz, was heute von Hand läuft. Sie bekommen innerhalb von ${site.responseTime} eine ehrliche Einschätzung — auch dann, wenn sich Automatisierung nicht lohnt.`,
+  title = 'Konkreten Fall besprechen',
+  text = 'Wir sehen uns Ihren Prozess an und sagen Ihnen, was sich davon automatisieren lässt.',
 }: {
   title?: string
   text?: string
@@ -134,6 +134,7 @@ export function CtaBand({
     <section className="cta-band" aria-labelledby="cta-title">
       <div className="container cta-band__inner">
         <div>
+          <span className="cta-band__strich" aria-hidden="true" />
           <h2 className="cta-band__title" id="cta-title">
             {title}
           </h2>
@@ -141,12 +142,8 @@ export function CtaBand({
         </div>
         <div className="cta-band__actions">
           <Link href="/kontakt" className="btn btn--invert">
-            Projekt anfragen
-            <Icon name="arrow" size={16} />
+            Kontakt aufnehmen
           </Link>
-          <a href={`mailto:${site.email}`} className="btn btn--outline-invert">
-            E-Mail schreiben
-          </a>
         </div>
       </div>
     </section>

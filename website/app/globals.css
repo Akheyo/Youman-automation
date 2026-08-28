@@ -73,10 +73,10 @@
   --s-4: 16px;
   --s-5: 20px;
   --s-6: 32px;
-  --s-7: 44px;
-  --s-8: 64px;
-  --s-9: 88px;
-  --s-10: 120px;
+  --s-7: 48px;
+  --s-8: 72px;
+  --s-9: 100px;
+  --s-10: 136px;
 
   /* --- Radien: klein, technisch --- */
   --r-xs: 2px;
@@ -91,10 +91,12 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* --- Layout --- */
-  --container: 1240px;
-  --container-narrow: 720px;
+  /* Breiter als zuvor: bei 1240px stand auf großen Bildschirmen links und
+     rechts so viel Leerraum, dass der Inhalt eingequetscht wirkte. */
+  --container: 1440px;
+  --container-narrow: 780px;
   --header-h: 68px;
-  --gutter: clamp(20px, 4vw, 40px);
+  --gutter: clamp(24px, 5vw, 64px);
 
   --font-serif: var(--font-source-serif), "Source Serif 4", Georgia, "Times New Roman", serif;
   --font-sans: var(--font-inter), Inter, system-ui, -apple-system, sans-serif;
@@ -236,7 +238,7 @@ hr { border: 0; border-top: 1px solid var(--line); }
 .section-head {
   display: grid;
   gap: var(--s-4);
-  max-width: 680px;
+  max-width: 760px;
   margin-bottom: clamp(var(--s-6), 4vw, var(--s-7));
 }
 

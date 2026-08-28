@@ -1,4 +1,5 @@
 import { PageHead } from '@/components/PageHead'
+import { CtaBand } from '@/components/Sections'
 import { pageMetadata } from '@/lib/seo'
 import { site } from '@/lib/site'
 
@@ -120,6 +121,7 @@ export default function DatenschutzPage() {
           </p>
         </div>
       </section>
+      <CtaBand />
     </>
   )
 }

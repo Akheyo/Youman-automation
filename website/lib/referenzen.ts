@@ -25,9 +25,104 @@ export type Referenz = {
   stack: string[]
   /** Schlüssel aus dem Bildregister. */
   bild: BildKey
+  /** Kundenname, sofern die Nennung freigegeben ist. */
+  kunde?: string
+  /**
+   * Die eine belegte Zahl, die den Fall trägt. Nur setzen, wenn sie aus
+   * Projektunterlagen stammt — eine geschätzte Zahl ist schlechter als keine.
+   */
+  kennzahl?: { wert: string; beschreibung: string }
 }
 
 export const referenzen: Referenz[] = [
+  {
+    slug: 'drahtmueller-palettenoptimierung',
+    bild: 'refDrahtmueller',
+    title: 'Palettenoptimierung bei Drahtmüller',
+    teaser:
+      '2.556 aktive Palettentypen, jede Entscheidung ein Einzelfall — abgebildet als Modul am bestehenden ERP.',
+    metaTitle: 'Referenz: Palettenoptimierung in der Fertigung mit ERP-Anbindung',
+    metaDescription:
+      'Wie die Entscheidung zwischen Standard- und Sonderpaletten aus den Auftragsdaten abgeleitet und an das bestehende ERP-System angebunden wurde — ohne Systemablösung.',
+    brancheSlug: 'produktion-und-fertigung',
+    brancheLabel: 'Fertigung und Logistik',
+    kunde: 'Drahtmüller GmbH / Lichtgitter-Gruppe',
+    kennzahl: { wert: '2.556', beschreibung: 'Palettentypen waren aktiv im Einsatz' },
+    ausgangslage: [
+      'Bei jeder neuen Auftragssituation entstand hoher Planungsaufwand.',
+      'Wiederkehrende Palettenmaße waren nicht standardisiert.',
+      'Beschaffung und Disposition waren durch 2.556 aktive Palettentypen entsprechend komplex.',
+      'Zwischen Auftragseingang und Palettenplanung bestand keine direkte Verbindung im ERP-System.',
+    ],
+    vorgehen: [
+      {
+        title: 'Analyse',
+        text: 'Der Weg vom Auftragseingang bis zur Palettenentscheidung wurde vollständig aufgenommen: Auftragsdaten, Entscheidungsregeln, Maßlogiken und die Schnittstellen im laufenden Betrieb.',
+      },
+      {
+        title: 'Konzept',
+        text: 'Daraus entstand ein Lösungsentwurf, der die fachliche Logik für Standard- und Sonderpaletten ebenso berücksichtigt wie die technische Einbettung in die vorhandene ERP-Landschaft.',
+      },
+      {
+        title: 'Entwicklung',
+        text: 'Umgesetzt wurde nicht eine allgemeine Standardfunktion, sondern die präzise Abbildung des tatsächlichen Fachprozesses als eigenes Modul.',
+      },
+      {
+        title: 'Integration',
+        text: 'Das Modul wurde an das ERP angebunden: Auftragsdaten werden automatisch übernommen, verarbeitet und in den bestehenden Prozess zurückgegeben.',
+      },
+    ],
+    ergebnis: [
+      'Aus den Auftragsdaten wird abgeleitet, welche Standardpaletten verwendbar sind.',
+      'Ebenso, welche Sonderpaletten gefertigt werden müssen und wie viele Einheiten je Typ nötig sind.',
+      'Die Entscheidung hängt nicht mehr an der Erfahrung einzelner Personen.',
+    ],
+    stack: ['ERP-Anbindung', 'REST API', 'Regelwerk', 'Individualmodul'],
+  },
+  {
+    slug: 'absolar-warenwirtschaft',
+    bild: 'refSolar',
+    title: 'Warenwirtschaft für Solarprojekte',
+    teaser:
+      'Angebote, Lager und Baustellenplanung liefen getrennt — jetzt als ein Prozess von der Anfrage bis zur Baustelle.',
+    metaTitle: 'Referenz: Warenwirtschaftssystem für Photovoltaik-Projekte',
+    metaDescription:
+      'Wie aus getrennten Ständen in Lexware Office, einer eigenen Lagerdatenbank und der Baustellenplanung ein durchgängiger Prozess wurde — mit Anbindung an die Lexware-Office-API.',
+    brancheSlug: 'handwerk-und-bau',
+    brancheLabel: 'Photovoltaik',
+    kunde: 'A&B SolarEnergy',
+    ausgangslage: [
+      'Zwischen Angebot, Auftrag, Lager und Baustelle bestand keine zentrale Verbindung.',
+      'Kunden-, Projekt- und Materialinformationen wurden mehrfach gepflegt.',
+      'Die Übersicht über verfügbares und benötigtes Material war erschwert.',
+      'Zwischen Datenbank und kaufmännischem System konnten Abweichungen entstehen.',
+      'Die Vorbereitung von Baustellen kostete manuellen Abstimmungsaufwand.',
+    ],
+    vorgehen: [
+      {
+        title: 'Zentrale Datenbasis',
+        text: 'Kunden-, Projekt-, Angebots- und Materialinformationen werden in einer verbundenen Struktur geführt statt in getrennten Ständen.',
+      },
+      {
+        title: 'Lexware-Office-Anbindung',
+        text: 'Angebote, Kontakte und weitere kaufmännische Informationen werden über die öffentliche API von Lexware Office ausgetauscht.',
+      },
+      {
+        title: 'Automatische Projektübernahme',
+        text: 'Wird ein Angebot angenommen oder ein Auftrag bestätigt, entsteht daraus automatisch das Projekt mit dem zugehörigen Materialbedarf.',
+      },
+      {
+        title: 'Baustellenplanung',
+        text: 'Benötigte Komponenten und Mengen werden dem Projekt zugeordnet; Bestände und Projektstatus aktualisieren sich mit.',
+      },
+    ],
+    ergebnis: [
+      'Ein Ablauf von der Angebotserstellung bis zur Baustelle statt drei getrennter Systeme.',
+      'Materialbedarf je Projekt ist einsehbar, statt zusammengesucht zu werden.',
+      'Kaufmännische Daten bleiben mit dem Warenwirtschaftssystem synchron.',
+    ],
+    stack: ['Lexware Office API', 'Datenbank', 'Warenwirtschaft', 'Projektlogik'],
+  },
   {
     slug: 'marktplatz-synchronisation',
     bild: 'refMarktplatz',

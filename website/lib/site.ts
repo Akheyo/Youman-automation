@@ -18,14 +18,25 @@ export const site = {
   locale: 'de_DE',
 } as const
 
-export const nav = [
+export type NavEintrag = {
+  href: string
+  label: string
+  /** Untereinträge klappen im Kopfmenü auf. */
+  unter?: { href: string; label: string }[]
+}
+
+/**
+ * Die Untereinträge werden in components/Header.tsx aus branchen.ts und
+ * services zusammengesetzt — so kann eine neue Branche nicht im Menü fehlen.
+ */
+export const nav: NavEintrag[] = [
   { href: '/', label: 'Home' },
-  { href: '/branchen', label: 'Branchen' },
-  { href: '/leistungen', label: 'Leistungen' },
+  { href: '/branchen', label: 'Branchen', unter: [] },
+  { href: '/leistungen', label: 'Leistungen', unter: [] },
   { href: '/referenzprojekte', label: 'Referenzprojekte' },
   { href: '/ueber-uns', label: 'Über uns' },
   { href: '/kontakt', label: 'Kontakt' },
-] as const
+]
 
 export type IconName =
   | 'workflow'

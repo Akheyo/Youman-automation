@@ -1,4 +1,5 @@
 import { PageHead } from '@/components/PageHead'
+import { CtaBand } from '@/components/Sections'
 import { pageMetadata } from '@/lib/seo'
 import { site } from '@/lib/site'
 
@@ -97,6 +98,7 @@ export default function ImpressumPage() {
           </p>
         </div>
       </section>
+      <CtaBand />
     </>
   )
 }

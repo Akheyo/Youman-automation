@@ -386,7 +386,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--s-3);
-  padding: var(--s-6);
+  padding: var(--s-6) var(--s-6) var(--s-7);
   border: 1px solid var(--line);
   border-radius: var(--r-md);
   background: var(--paper);
@@ -1390,7 +1390,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: var(--track-tighter);
-  max-width: 16ch;
+  max-width: 18ch;
 }
 
 .intro-band__text {
@@ -1446,7 +1446,9 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 
 @media (min-width: 1000px) {
   .split-raster__inner {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    /* Das Raster braucht mehr Breite als die Überschrift, sonst bricht der
+       Text in den Zellen nach jedem dritten Wort um. */
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
   }
 }
 
@@ -1456,7 +1458,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   font-weight: 600;
   line-height: 1.18;
   letter-spacing: var(--track-tighter);
-  max-width: 18ch;
+  max-width: 20ch;
 }
 
 /* Knopf mit Linie unter der Beschriftung */
@@ -1494,7 +1496,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 }
 
 .raster__zelle {
-  padding: var(--s-6);
+  padding: var(--s-7) var(--s-6);
   border-right: 1px solid var(--ink);
   border-bottom: 1px solid var(--ink);
   background: var(--paper);
@@ -1689,3 +1691,135 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   .bereiche__link:focus-visible,
   .bereiche__link:active { transform: none; }
 }
+
+/* ------------------------------------------------------------
+   Abschlussband — steht am Ende jeder Inhaltsseite
+   ------------------------------------------------------------ */
+
+.cta-band__strich {
+  display: block;
+  width: 56px;
+  height: 2px;
+  margin-bottom: var(--s-5);
+  background: color-mix(in srgb, var(--paper) 55%, transparent);
+}
+
+.cta-band__title {
+  font-size: var(--t-3xl);
+  font-weight: 600;
+  letter-spacing: var(--track-tighter);
+  line-height: 1.15;
+  max-width: 20ch;
+}
+
+.cta-band__text {
+  /* Blocksatz wie im Einleitungsband — hält die Kante zur Überschrift. */
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
+/* --- Heller Streifen unter dem Band, Teil der Fußzeile --- */
+
+.footer__band {
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+  padding-block: var(--s-6);
+}
+
+.footer__band-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-5);
+}
+
+.footer__band-titel {
+  font-family: var(--font-sans);
+  font-size: var(--t-xl);
+  font-weight: 500;
+  letter-spacing: var(--track-tight);
+  color: var(--ink);
+}
+
+.footer__band-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+/* Im Streifen sitzt der Knopf in einer Zeile — kein Abstand nach oben. */
+.footer__band-aktionen .btn-linie { margin-top: 0; }
+
+/* ------------------------------------------------------------
+   Aufklappmenüs im Kopf
+   ------------------------------------------------------------ */
+
+.header__gruppe { position: relative; }
+
+.header__link--gruppe {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.header__chevron {
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform var(--dur) var(--ease);
+}
+.header__chevron.is-open { transform: translateY(1px) rotate(-135deg); }
+
+.header__untermenue {
+  position: absolute;
+  top: 100%;
+  left: calc(var(--s-4) * -1);
+  z-index: 120;
+  min-width: 280px;
+  padding: var(--s-3) 0;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 7px 7px 0 0 var(--ink);
+}
+
+.header__unterlink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-5);
+  font-size: var(--t-base);
+  color: var(--ink-3);
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.header__unterlink:hover {
+  background: var(--paper-3);
+  color: var(--ink);
+}
+
+.header__unterlink--alle {
+  margin-top: var(--s-2);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--line);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* --- Untereinträge im Mobilmenü --- */
+
+.mobile-nav__unter {
+  display: grid;
+  padding: var(--s-2) 0 var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--line);
+}
+
+.mobile-nav__unterlink {
+  display: block;
+  padding-block: var(--s-3);
+  font-size: var(--t-base);
+  color: var(--ink-3);
+}
+.mobile-nav__unterlink:hover { color: var(--ink); }
