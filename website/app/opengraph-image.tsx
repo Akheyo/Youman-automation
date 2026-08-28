@@ -16,7 +16,7 @@ export default function OpengraphImage() {
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
-          background: '#0f172a',
+          background: '#0a0a0a',
           padding: '80px',
           fontFamily: 'sans-serif',
         }}
@@ -34,7 +34,7 @@ export default function OpengraphImage() {
             >
               YOUMAN
             </div>
-            <div style={{ fontSize: 20, letterSpacing: 10, color: '#94a3b8' }}>
+            <div style={{ fontSize: 20, letterSpacing: 10, color: '#a8a8a8' }}>
               AI &amp; SOFTWARE
             </div>
           </div>
@@ -57,8 +57,8 @@ export default function OpengraphImage() {
             display: 'flex',
             justifyContent: 'space-between',
             fontSize: 24,
-            color: '#94a3b8',
-            borderTop: '1px solid #334155',
+            color: '#a8a8a8',
+            borderTop: '1px solid #2b2b2b',
             paddingTop: 32,
           }}
         >

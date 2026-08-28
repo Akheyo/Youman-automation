@@ -53,8 +53,10 @@ lib/
   branchen.ts           sechs Branchen mit Painpoints, Lösungen, FAQ, SEO-Feldern
   referenzen.ts         vier Referenzprojekte als Fallstudien
   bilder.ts             Bildregister: Motiv, Seitenverhältnis, Maße, Alternativtext
+  videos.ts             Videoregister für das Hero-Video
   seo.tsx               Metadaten-Helfer und strukturierte Daten
 public/bilder/          Bilddateien (siehe README dort)
+public/videos/          Videodateien (siehe README dort)
 design-system/
   youman-automation/MASTER.md   verbindliche Design-Entscheidungen
 ```
@@ -63,7 +65,7 @@ Inhalte werden nicht in Komponenten geschrieben, sondern in `lib/` gepflegt.
 Eine neue Branche entsteht durch einen Eintrag in `lib/branchen.ts` — Seite,
 Navigation im Footer, Sitemap und strukturierte Daten folgen automatisch.
 
-## Bilder einsetzen
+## Bilder und Video einsetzen
 
 Die Seite ist durchgehend bebildert. Solange keine Dateien vorliegen, steht an
 jeder Bildstelle ein markierter Platzhalter, der Motiv, Seitenverhältnis und
@@ -73,6 +75,17 @@ Ein Bild einsetzen:
 
 1. Datei nach `public/bilder/` legen, am besten als WebP
 2. In `lib/bilder.ts` beim passenden Eintrag `datei: '/bilder/name.webp'` ergänzen
+
+Das Hero-Video einsetzen:
+
+1. MP4 (H.264, ohne Ton) nach `public/videos/` legen, optional zusätzlich WebM
+2. Ein Standbild daraus nach `public/bilder/` legen
+3. In `lib/videos.ts` `datei`, optional `dateiWebm` und `standbild` eintragen
+
+Das Video läuft stumm in Schleife und hat einen Knopf zum Anhalten — der ist
+vorgeschrieben, weil Bewegung über fünf Sekunden anhaltbar sein muss
+(WCAG 2.2.2). Bei eingestellter reduzierter Bewegung wird nur das Standbild
+gezeigt. Details in `public/videos/README.md`.
 
 Der Platzhalter verschwindet automatisch. Das Layout springt nicht, weil das
 Seitenverhältnis vorab reserviert ist.

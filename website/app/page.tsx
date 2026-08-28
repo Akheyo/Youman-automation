@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Figure } from '@/components/Figure'
+import { HeroVideo } from '@/components/HeroVideo'
 import { Icon } from '@/components/Icon'
 import { Reveal } from '@/components/Reveal'
 import { CtaBand } from '@/components/Sections'
@@ -89,11 +90,7 @@ export default function HomePage() {
           </div>
 
           <Reveal index={2}>
-            <Figure
-              bild="heroStart"
-              priority
-              sizes="(min-width: 1000px) 45vw, 100vw"
-            />
+            <HeroVideo video="hero" />
           </Reveal>
         </div>
 

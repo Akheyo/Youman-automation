@@ -15,7 +15,7 @@ export default function Icon() {
           alignItems: 'center',
           justifyContent: 'center',
           gap: 6,
-          background: '#0f172a',
+          background: '#0a0a0a',
         }}
       >
         <div style={{ width: 4, height: 40, background: '#ffffff' }} />

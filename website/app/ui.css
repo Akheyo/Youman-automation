@@ -91,7 +91,7 @@
   bottom: -1px;
   width: 100%;
   height: 2px;
-  background: var(--accent);
+  background: var(--ink);
   transform: scaleX(0);
   transform-origin: right;
   transition: transform var(--dur) var(--ease);
@@ -204,9 +204,6 @@
 .btn--primary { background: var(--ink-deep); color: var(--on-ink); }
 .btn--primary:hover { background: var(--ink); }
 
-.btn--accent { background: var(--accent); color: var(--on-accent); }
-.btn--accent:hover { background: var(--accent-strong); }
-
 .btn--ghost { border-color: var(--line-strong); color: var(--ink); }
 .btn--ghost:hover { border-color: var(--ink-4); background: var(--paper-3); }
 
@@ -231,11 +228,14 @@
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--line-strong);
   font-size: var(--t-base);
-  font-weight: 500;
-  color: var(--accent);
+  font-weight: 600;
+  color: var(--ink);
+  transition: border-color var(--dur-fast) var(--ease);
 }
-.link-arrow:hover { color: var(--accent-strong); }
+.link-arrow:hover { border-color: var(--ink); }
 .link-arrow .icon { transition: transform var(--dur) var(--ease); }
 .link-arrow:hover .icon { transform: translateX(3px); }
 
@@ -286,7 +286,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--ok);
+  background: currentColor;
   flex: none;
 }
 
@@ -396,7 +396,7 @@
 }
 
 .card__icon {
-  color: var(--accent);
+  color: var(--ink);
   margin-bottom: var(--s-1);
 }
 
@@ -418,15 +418,23 @@
   align-items: center;
   gap: var(--s-2);
   font-size: var(--t-sm);
-  font-weight: 500;
-  color: var(--accent);
+  font-weight: 600;
+  color: var(--ink);
 }
+.card__more::before {
+  content: "";
+  width: 16px;
+  height: 1px;
+  background: currentColor;
+  transition: width var(--dur) var(--ease);
+}
+.card--link:hover .card__more::before { width: 26px; }
 .card__more .icon { transition: transform var(--dur) var(--ease); }
 
 /* Ganze Karte klickbar, Fokus bleibt am Link */
 .card--link:hover { border-color: var(--ink-4); background: var(--paper-2); }
 .card--link:hover .card__more .icon { transform: translateX(3px); }
-.card--link:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.card--link:focus-within { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
 
 .card__link::after {
   content: "";
@@ -479,7 +487,7 @@
   color: var(--ink-3);
   line-height: 1.6;
 }
-.service__list .icon { margin-top: 3px; color: var(--accent); }
+.service__list .icon { margin-top: 3px; color: var(--ink); }
 
 @media (min-width: 900px) {
   .service {
@@ -555,7 +563,7 @@
   font-family: var(--font-sans);
   font-weight: 600;
   font-size: var(--t-sm);
-  color: var(--accent);
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
@@ -592,7 +600,7 @@
   font-weight: 600;
   letter-spacing: var(--track-label);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--ink-4);
 }
 
 .case__title { font-size: var(--t-xl); }
@@ -643,7 +651,7 @@
   font-family: var(--font-sans);
   font-weight: 600;
   font-size: var(--t-sm);
-  color: var(--accent);
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
   padding-top: 3px;
 }
@@ -659,7 +667,7 @@
   color: var(--ink-3);
   line-height: 1.65;
 }
-.checklist .icon { margin-top: 3px; color: var(--accent); }
+.checklist .icon { margin-top: 3px; color: var(--ink); }
 
 /* ------------------------------------------------------------
    Akkordeon
@@ -684,7 +692,7 @@
   color: var(--ink);
   transition: color var(--dur-fast) var(--ease);
 }
-.accordion__trigger:hover { color: var(--accent); }
+.accordion__trigger:hover { color: var(--ink-3); }
 
 .accordion__sign {
   position: relative;
@@ -786,8 +794,12 @@
   color: var(--ink);
 }
 
-a.contact-item__value { color: var(--accent); }
-a.contact-item__value:hover { color: var(--accent-strong); text-decoration: underline; }
+a.contact-item__value {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--line-strong);
+}
+a.contact-item__value:hover { text-decoration-color: var(--ink); }
 
 /* ------------------------------------------------------------
    Formular
@@ -817,8 +829,8 @@ a.contact-item__value:hover { color: var(--accent-strong); text-decoration: unde
 }
 .field__input:hover { border-color: var(--ink-5); }
 .field__input:focus-visible {
-  border-color: var(--accent);
-  outline: 2px solid var(--accent);
+  border-color: var(--ink);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 1px;
 }
 
@@ -881,7 +893,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 .footer__list { display: grid; gap: var(--s-3); margin-top: var(--s-5); }
 
 .footer__link { font-size: var(--t-base); color: var(--ink-3); transition: color var(--dur-fast) var(--ease); }
-.footer__link:hover { color: var(--accent); }
+.footer__link:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
 .footer__bottom {
   display: flex;
@@ -927,7 +939,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   font-size: var(--t-xs);
   color: var(--ink-5);
 }
-.crumbs a:hover { color: var(--accent); }
+.crumbs a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .crumbs li { display: flex; align-items: center; gap: var(--s-2); }
 .crumbs li + li::before { content: "/"; color: var(--line-strong); }
 
@@ -946,7 +958,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 .notfound__code {
   font-family: var(--font-serif);
   font-size: var(--t-3xl);
-  color: var(--accent);
+  color: var(--ink-4);
 }
 .notfound__actions { display: flex; flex-wrap: wrap; gap: var(--s-3); justify-content: center; }
 
@@ -1003,7 +1015,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   background: var(--paper-2);
   white-space: nowrap;
 }
-.compare thead th[data-own="true"] { color: var(--accent); }
+.compare thead th[data-own="true"] { color: var(--ink); }
 
 .compare tbody th { font-weight: 500; color: var(--ink); white-space: nowrap; }
 
@@ -1019,7 +1031,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   align-items: start;
 }
 .cell .icon { margin-top: 2px; flex: none; }
-.cell--good .icon { color: var(--ok); }
+.cell--good .icon { color: var(--ink); }
 .cell--mid .icon { color: var(--ink-5); }
 .cell--bad .icon { color: var(--ink-5); }
 .cell--bad { color: var(--ink-5); }
@@ -1090,10 +1102,10 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   background:
     repeating-linear-gradient(
       135deg,
-      #16233a 0 10px,
-      #1b2b45 10px 20px
+      #141414 0 10px,
+      #1c1c1c 10px 20px
     );
-  border-color: #33415580;
+  border-color: #3a3a3a;
 }
 .on-dark .figure__hinweis { color: var(--on-dark-2); }
 .on-dark .figure__masse { color: var(--on-dark-3); }
@@ -1174,7 +1186,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   align-items: center;
   gap: var(--s-2);
   padding: var(--s-1) var(--s-3);
-  border: 1px solid #334155;
+  border: 1px solid #3a3a3a;
   border-radius: var(--r-full);
   font-size: var(--t-2xs);
   font-weight: 600;
@@ -1288,3 +1300,35 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 }
 
 .band .figure { border-radius: 0; }
+
+/* --- Video im Hero --- */
+
+.figure--video video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.figure__steuerung {
+  position: absolute;
+  right: var(--s-3);
+  bottom: var(--s-3);
+  padding: var(--s-2) var(--s-4);
+  border: 1px solid color-mix(in srgb, #ffffff 45%, transparent);
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, #0a0a0a 65%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #ffffff;
+  font-size: var(--t-2xs);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease);
+}
+.figure__steuerung:hover {
+  background: color-mix(in srgb, #0a0a0a 85%, transparent);
+}
