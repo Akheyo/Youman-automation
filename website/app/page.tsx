@@ -3,6 +3,12 @@ import { Figure } from '@/components/Figure'
 import { HeroVideo } from '@/components/HeroVideo'
 import { Icon } from '@/components/Icon'
 import { Reveal } from '@/components/Reveal'
+import {
+  AussageBand,
+  BereichsListe,
+  IntroBand,
+  SplitRaster,
+} from '@/components/Muster'
 import { CtaBand } from '@/components/Sections'
 import { branchen } from '@/lib/branchen'
 import { referenzen } from '@/lib/referenzen'
@@ -106,79 +112,45 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ---------------------------------------------- Was wir machen */}
+      <IntroBand
+        label="Was wir machen"
+        titel="Beratung und Software aus einer Hand."
+        text="Wir sehen uns an, wo in Ihrem Betrieb Arbeit entsteht, die niemand braucht — und bauen genau dafür eine Lösung. Sie setzt auf Ihr bestehendes ERP, Ihren Shop oder Ihr Warenwirtschaftssystem auf, statt es zu ersetzen."
+        links={services.map((service) => ({
+          href: `/leistungen#${service.slug}`,
+          label: service.title,
+        }))}
+      />
+
+      {/* ---------------------------------------------- Leistungen als Raster */}
+      <SplitRaster
+        label="Automatisierung. Software. Integration."
+        titel="Wir beraten, wo andere nur liefern — und bauen, was andere nur empfehlen."
+        aktion={{ href: '/leistungen', label: 'Wie wir arbeiten' }}
+        eintraege={services.map((service) => ({
+          nummer: service.index,
+          titel: service.title,
+          text: service.teaser,
+          href: `/leistungen#${service.slug}`,
+        }))}
+      />
+
+      {/* ---------------------------------------------- Aussage */}
+      <AussageBand
+        bild="statement"
+        zeilen={['Kein Systemwechsel.', 'Keine Medienbrüche.', 'Eine Oberfläche.']}
+        text="Ihre Mitarbeitenden sehen eine Oberfläche. Datenabruf, Berechnung und Abgleich mit dem bestehenden System laufen vollautomatisch im Hintergrund."
+      />
+
       {/* ---------------------------------------------- Branchen */}
-      <section className="section" aria-labelledby="branchen-title">
-        <div className="container">
-          <Reveal className="section-head">
-            <p className="eyebrow">Branchen</p>
-            <h2 className="section-title" id="branchen-title">
-              Automatisierung ist kein Selbstzweck
-            </h2>
-            <p className="lead">
-              Was sich lohnt, hängt vom Geschäft ab. Deshalb hier nach Branche sortiert —
-              mit den Problemen, die dort tatsächlich anfallen.
-            </p>
-          </Reveal>
-
-          <ul className="grid-cards grid-cards--3">
-            {branchen.map((b, i) => (
-              <Reveal as="li" key={b.slug} index={i} className="card card--link card--bild">
-                <Figure
-                  bild={b.bild}
-                  sizes="(min-width: 1000px) 33vw, (min-width: 640px) 50vw, 100vw"
-                />
-                <div className="card__body">
-                  <h3 className="card__title">
-                    <Link href={`/branchen/${b.slug}`} className="card__link">
-                      {b.title}
-                    </Link>
-                  </h3>
-                  <p className="card__text">{b.teaser}</p>
-                  <span className="card__more">
-                    Anwendungsfälle
-                    <Icon name="arrow" size={15} />
-                  </span>
-                </div>
-              </Reveal>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* ---------------------------------------------- Leistungen */}
-      <section className="section section--paper" aria-labelledby="leistungen-title">
-        <div className="container">
-          <Reveal className="section-head">
-            <p className="eyebrow">Leistungen</p>
-            <h2 className="section-title" id="leistungen-title">
-              Vier Bereiche, ein Ansprechpartner
-            </h2>
-          </Reveal>
-
-          <ul className="grid-cards">
-            {services.map((service, i) => (
-              <Reveal as="li" key={service.slug} index={i} className="card card--link card--bild">
-                <Figure
-                  bild={service.bild}
-                  sizes="(min-width: 640px) 50vw, 100vw"
-                />
-                <div className="card__body">
-                  <h3 className="card__title">
-                    <Link href={`/leistungen#${service.slug}`} className="card__link">
-                      {service.title}
-                    </Link>
-                  </h3>
-                  <p className="card__text">{service.teaser}</p>
-                  <span className="card__more">
-                    Details
-                    <Icon name="arrow" size={15} />
-                  </span>
-                </div>
-              </Reveal>
-            ))}
-          </ul>
-        </div>
-      </section>
+      <BereichsListe
+        label="Branchen"
+        eintraege={branchen.map((b) => ({
+          href: `/branchen/${b.slug}`,
+          label: b.title,
+        }))}
+      />
 
       {/* ---------------------------------------------- Referenzprojekte */}
       <section className="section" aria-labelledby="referenzen-title">

@@ -1098,7 +1098,8 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 }
 
 /* Auf dunklem Grund muss der Platzhalter mitziehen */
-.on-dark .figure--leer {
+.on-dark .figure--leer,
+.aussage .figure--leer {
   background:
     repeating-linear-gradient(
       135deg,
@@ -1107,9 +1108,21 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
     );
   border-color: #3a3a3a;
 }
-.on-dark .figure__hinweis { color: var(--on-dark-2); }
-.on-dark .figure__masse { color: var(--on-dark-3); }
-.on-dark .figure__marke { background: var(--on-dark); color: var(--ink-deep); }
+.on-dark .figure__hinweis,
+.aussage .figure__hinweis { color: var(--on-dark-2); }
+.on-dark .figure__masse,
+.aussage .figure__masse { color: var(--on-dark-3); }
+.on-dark .figure__marke,
+.aussage .figure__marke { background: var(--on-dark); color: var(--ink-deep); }
+
+/* Im Aussageband liegt der Platzhalter unter dem Verlauf und der Schrift.
+   Er rückt nach rechts, wo kein Text steht. */
+.aussage .figure__hinweis {
+  margin-left: auto;
+  margin-right: 0;
+  padding-right: var(--s-6);
+  text-align: right;
+}
 
 /* ============================================================
    Dunkle Sektionen — die editoriale Grundfläche
@@ -1331,4 +1344,348 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 }
 .figure__steuerung:hover {
   background: color-mix(in srgb, #0a0a0a 85%, transparent);
+}
+
+/* ============================================================
+   Sektionsmuster
+   ============================================================ */
+
+/* --- Gemeinsames Label über den Sektionen --- */
+
+.label {
+  font-family: var(--font-sans);
+  font-size: var(--t-2xs);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------
+   1 · Einleitungsband
+   ------------------------------------------------------------ */
+
+.intro-band {
+  padding-block: clamp(var(--s-8), 6vw, var(--s-10));
+  border-bottom: 1px solid var(--ink);
+}
+
+.intro-band__kopf { display: grid; gap: var(--s-5); }
+
+.intro-band__satz {
+  display: grid;
+  gap: var(--s-6);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .intro-band__satz {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+    gap: clamp(var(--s-7), 6vw, var(--s-10));
+  }
+}
+
+.intro-band__titel {
+  font-size: var(--t-3xl);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: var(--track-tighter);
+  max-width: 16ch;
+}
+
+.intro-band__text {
+  /* Blocksatz mit Silbentrennung — ohne Trennung reißen im Deutschen
+     zu große Lücken auf. */
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  color: var(--ink-3);
+  line-height: 1.75;
+  max-width: 60ch;
+}
+
+.intro-band__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4) clamp(var(--s-5), 3vw, var(--s-8));
+  margin-top: clamp(var(--s-6), 4vw, var(--s-8));
+  padding-top: clamp(var(--s-5), 3vw, var(--s-6));
+  border-top: 1px solid var(--ink);
+}
+
+.intro-band__link {
+  display: inline-block;
+  padding-bottom: 2px;
+  border-bottom: 1px solid transparent;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.intro-band__link:hover {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+/* ------------------------------------------------------------
+   2 · Überschrift links, nummeriertes Raster rechts
+   ------------------------------------------------------------ */
+
+.split-raster {
+  padding-block: clamp(var(--s-8), 6vw, var(--s-10));
+  background: var(--paper);
+}
+
+.split-raster__inner {
+  display: grid;
+  gap: clamp(var(--s-7), 5vw, var(--s-9));
+  align-items: start;
+}
+
+@media (min-width: 1000px) {
+  .split-raster__inner {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.split-raster__titel {
+  margin-top: var(--s-5);
+  font-size: var(--t-3xl);
+  font-weight: 600;
+  line-height: 1.18;
+  letter-spacing: var(--track-tighter);
+  max-width: 18ch;
+}
+
+/* Knopf mit Linie unter der Beschriftung */
+.btn-linie {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  margin-top: var(--s-6);
+  padding: var(--s-3) var(--s-6);
+  border: 1px solid var(--ink);
+  font-size: var(--t-base);
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+  transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.btn-linie:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* --- Das Raster: Zellen teilen sich Haarlinien --- */
+
+.raster {
+  display: grid;
+  grid-template-columns: 1fr;
+  border-top: 1px solid var(--ink);
+  border-left: 1px solid var(--ink);
+}
+
+@media (min-width: 560px) {
+  .raster { grid-template-columns: repeat(2, 1fr); }
+}
+
+.raster__zelle {
+  padding: var(--s-6);
+  border-right: 1px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  background: var(--paper);
+}
+
+.raster__nummer {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.raster__titel {
+  margin-top: var(--s-4);
+  font-size: var(--t-lg);
+  font-weight: 600;
+}
+
+.raster__link {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: transparent;
+  transition: text-decoration-color var(--dur-fast) var(--ease);
+}
+.raster__link:hover { text-decoration-color: currentColor; }
+
+.raster__text {
+  margin-top: var(--s-3);
+  font-size: var(--t-base);
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+
+/* ------------------------------------------------------------
+   3 · Aussageband mit Bild
+   ------------------------------------------------------------ */
+
+.aussage {
+  --aussage-spalte: 100%;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-height: clamp(360px, 46vw, 620px);
+}
+
+@media (min-width: 900px) {
+  /* 52 % der Bandbreite — mit Sicherheitsabstand innerhalb der
+     deckenden Zone des Verlaufs. */
+  .aussage { --aussage-spalte: 52%; }
+}
+
+.aussage__bild,
+.aussage__inhalt {
+  grid-area: 1 / 1;
+}
+
+.aussage__bild {
+  position: relative;
+  z-index: -1;
+  overflow: hidden;
+}
+.aussage__bild .figure {
+  border-radius: 0;
+}
+/* Der Verlauf muss die gesamte Textspalte tragen, nicht nur ihren Anfang.
+   Bis 58 % bleibt er nahezu deckend — dort endet die Textspalte (siehe
+   --aussage-spalte). Erst danach gibt er das Bild frei. Damit hält der
+   Kontrast auch, wenn später ein sehr helles Bild eingesetzt wird. */
+.aussage__bild::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(10, 10, 10, 0.95) 0%,
+    rgba(10, 10, 10, 0.93) 48%,
+    rgba(10, 10, 10, 0.72) 66%,
+    rgba(10, 10, 10, 0.35) 100%
+  );
+}
+
+/* Auf schmalen Displays liegt der Text über der ganzen Breite. */
+@media (max-width: 899px) {
+  .aussage__bild::after { background: rgba(10, 10, 10, 0.9); }
+}
+
+.aussage__inhalt {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-block: clamp(var(--s-8), 6vw, var(--s-10));
+}
+
+.aussage__titel {
+  display: grid;
+  /* Die Spalte darf nicht in den aufgehellten Teil des Verlaufs laufen. */
+  max-width: var(--aussage-spalte);
+  font-size: var(--t-3xl);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: var(--track-tighter);
+  color: #ffffff;
+}
+
+.aussage__text {
+  margin-top: var(--s-6);
+  max-width: min(48ch, var(--aussage-spalte));
+  font-size: var(--t-base);
+  line-height: 1.8;
+  color: #e0e0e0;
+}
+
+/* Auf dem Aussageband muss der Fokusring hell sein. */
+.aussage { --focus-ring: #ffffff; }
+
+/* ------------------------------------------------------------
+   4 · Bereichsliste mit hartem Versatzschatten beim Überfahren
+   ------------------------------------------------------------ */
+
+.bereiche {
+  padding-block: clamp(var(--s-7), 5vw, var(--s-9));
+  border-top: 1px solid var(--ink);
+}
+
+.bereiche__liste {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin-top: var(--s-5);
+}
+
+@media (min-width: 760px) {
+  .bereiche__liste { grid-template-columns: repeat(2, 1fr); }
+  /* Ein einzelner Rest am Ende nimmt die volle Breite ein. */
+  .bereiche__zelle:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+
+.bereiche__zelle {
+  /* Negativer Versatz lässt benachbarte Rahmen zu einer Linie verschmelzen. */
+  margin: -1px 0 0 -1px;
+}
+
+.bereiche__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: 72px;
+  padding: var(--s-5) var(--s-6);
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+  font-size: var(--t-md);
+  font-weight: 500;
+  color: var(--ink);
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.bereiche__pfeil {
+  flex: none;
+  color: var(--ink-4);
+  transition: transform var(--dur) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+/* Der Hover-Zustand: kräftiger Rahmen plus harter Schatten nach unten rechts.
+   z-index hebt den Eintrag über die Rahmen der Nachbarn. */
+.bereiche__link:hover,
+.bereiche__link:focus-visible {
+  z-index: 2;
+  border-color: var(--ink);
+  box-shadow: 7px 7px 0 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+.bereiche__link:hover .bereiche__pfeil,
+.bereiche__link:focus-visible .bereiche__pfeil {
+  color: var(--ink);
+  transform: translateX(3px);
+}
+
+.bereiche__link:active {
+  transform: translate(1px, 1px);
+  box-shadow: 4px 4px 0 0 var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bereiche__link,
+  .bereiche__link:hover,
+  .bereiche__link:focus-visible,
+  .bereiche__link:active { transform: none; }
 }

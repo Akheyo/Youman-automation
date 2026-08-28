@@ -8,6 +8,13 @@ type Props = {
   className?: string
   /** sizes für next/image — bestimmt, welche Auflösung geladen wird. */
   sizes?: string
+  /**
+   * Füllt den umgebenden Rahmen, statt ein eigenes Seitenverhältnis zu
+   * erzwingen. Nötig überall dort, wo die Höhe vom Layout kommt — sonst
+   * rechnet das Seitenverhältnis auf schmalen Displays eine Breite aus,
+   * die über den Bildschirm hinausragt.
+   */
+  fuellt?: boolean
 }
 
 /**
@@ -18,11 +25,13 @@ type Props = {
  * In beiden Fällen reserviert der Rahmen das Seitenverhältnis, damit beim
  * Nachrüsten echter Bilder nichts springt.
  */
-export function Figure({ bild, priority, className, sizes = '100vw' }: Props) {
+export function Figure({ bild, priority, className, sizes = '100vw', fuellt }: Props) {
   // `satisfies` im Register behält die engen Literaltypen; die Annotation
   // hier weitet sie auf Bild, damit das optionale `datei` sichtbar ist.
   const eintrag: Bild = bilder[bild]
-  const stil = { aspectRatio: eintrag.verhaeltnis.replace('/', ' / ') }
+  const stil = fuellt
+    ? { position: 'absolute' as const, inset: 0 }
+    : { aspectRatio: eintrag.verhaeltnis.replace('/', ' / ') }
 
   if (eintrag.datei) {
     return (

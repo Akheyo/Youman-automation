@@ -133,6 +133,14 @@ export const bilder = {
     breite: 1200,
   },
 
+  statement: {
+    motiv:
+      'Querformat, sehr breit. Ruhiger Arbeitsplatz oder Halle, eher dunkel belichtet — das Bild wird abgedunkelt und mit weißer Schrift überlagert. Motiv links freilassen, dort steht der Text.',
+    alt: 'Arbeitsplatz mit zwei Bildschirmen vor einer Produktionshalle',
+    verhaeltnis: '21/9',
+    breite: 1800,
+  },
+
   // --- Über uns / Kontakt ---
   portrait: {
     motiv:
