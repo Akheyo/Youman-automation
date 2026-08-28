@@ -360,16 +360,17 @@ function relativerDateiPfad(wert: string): string {
 }
 
 /**
- * Setzt genau EINEN Dateiwert der Form "<relationId>/<datei>".
+ * Sorgt dafür, dass genau ein Dateiwert der Form "<relationId>/<datei>" bleibt.
  *
- * Plenty legt beim ui.php-Upload einen eigenen Wert an – als vollständige
- * S3-URL. Beim Anzeigen stellt die Oberfläche ihren CDN-Vorspann davor, wodurch
- * die Adresse doppelt wird und in AccessDenied endet. Bei manuell angehängten
- * Dateien steht dort der relative Pfad, und der Link funktioniert.
+ * Plenty legt beim ui.php-Upload einen eigenen Wert als vollständige S3-URL an.
+ * Beim Anzeigen stellt die Oberfläche ihren CDN-Vorspann davor, wodurch die
+ * Adresse doppelt wird und in AccessDenied endet; bei manuell angehängten
+ * Dateien steht dort der relative Pfad und der Link funktioniert.
  *
- * Einzelne Einträge zu korrigieren reichte nicht: Es entstehen mehrere Werte je
- * Relation, und welchen die Oberfläche anzeigt, ist nicht vorhersagbar. Daher
- * werden alle vorhandenen gelöscht und genau einer neu angelegt.
+ * REIHENFOLGE IST ENTSCHEIDEND: Wird der letzte Wert gelöscht, entfernt Plenty
+ * die Relation gleich mit – ein anschließendes Anlegen scheitert dann mit 404
+ * und die Eigenschaft verschwindet ganz vom Artikel. Daher wird zuerst der
+ * richtige Wert angelegt und erst danach werden die falschen entfernt.
  */
 async function normalizeRelationFileValue(
   cfg: PlentyConfig,
@@ -390,10 +391,37 @@ async function normalizeRelationFileValue(
 
   // Plenty schreibt den Wert nach dem Upload verzögert – kurz abwarten.
   await new Promise((r) => setTimeout(r, 900));
+  const vorher = await werteLesen();
 
-  // 1) Alle vorhandenen Werte entfernen.
-  const vorhanden = await werteLesen();
-  for (const v of vorhanden) {
+  // 1) Richtigen Wert anlegen, falls er noch nicht dabei ist.
+  const schonDa = vorher.some((v) => v?.value === erwartet);
+  if (!schonDa) {
+    try {
+      const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify([
+          { id: null, propertyRelationId: relationId, lang: '0', value: erwartet, description: null },
+        ]),
+      });
+      notizen.push(`neu ${res.status}`);
+      // Ohne gültigen neuen Wert nichts löschen – sonst geht die Relation verloren.
+      if (!res.ok) return { log: notizen.join(' | '), wert: vorher.map((v) => v?.value).join(' + ') || null };
+    } catch {
+      notizen.push('neu Fehler');
+      return { log: notizen.join(' | '), wert: null };
+    }
+  } else {
+    notizen.push('bereits vorhanden');
+  }
+
+  // 2) Erst jetzt die vollständigen URLs entfernen.
+  for (const v of vorher) {
+    if (typeof v?.value !== 'string' || !v.value.startsWith('http')) continue;
     if (!Number.isFinite(Number(v?.id))) continue;
     try {
       const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values/${v.id}`, {
@@ -406,25 +434,7 @@ async function normalizeRelationFileValue(
     }
   }
 
-  // 2) Genau einen Wert mit relativem Pfad anlegen.
-  try {
-    const res = await fetch(`${cfg.baseUrl}/rest/properties/relations/values`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify([
-        { id: null, propertyRelationId: relationId, lang: '0', value: erwartet, description: null },
-      ]),
-    });
-    notizen.push(`neu ${res.status}`);
-  } catch {
-    notizen.push('neu Fehler');
-  }
-
-  // 3) Endstand lesen – das ist die einzige belastbare Aussage.
+  // 3) Endstand lesen – nur das zählt.
   const danach = await werteLesen();
   const wert = danach.map((v) => v?.value).filter(Boolean).join(' + ') || null;
   notizen.push(`${danach.length} Wert${danach.length === 1 ? '' : 'e'}`);
