@@ -18,6 +18,12 @@ export interface VariantenRohdaten {
   externeId?: string | null;
   name?: string | null;
   beschreibung?: string | null;
+  /** Verfügbarer Bestand (netStock), sofern der Scan ihn kennt. */
+  bestand?: number | null;
+  /** Physisch vorhandener Bestand (physicalStock). */
+  bestandPhysisch?: number | null;
+  /** Lager, in denen der Artikel liegt (Namen oder IDs, kommagetrennt). */
+  lager?: string | null;
 }
 
 export type BefundStatus = 'gefunden' | 'unsicher' | 'konflikt' | 'kein-treffer';
@@ -46,6 +52,9 @@ export interface Befund {
   status: BefundStatus;
   hinweis: string | null;
   kandidaten: Kandidat[];
+  bestand: number | null;
+  bestandPhysisch: number | null;
+  lager: string | null;
 }
 
 /** Felder in der Reihenfolge ihrer Verlässlichkeit. */
@@ -88,6 +97,9 @@ export function bewerteVariante(v: VariantenRohdaten): Befund {
     nummer: v.nummer ?? null,
     name: v.name ?? null,
     kandidaten,
+    bestand: v.bestand ?? null,
+    bestandPhysisch: v.bestandPhysisch ?? null,
+    lager: v.lager ?? null,
   };
 
   if (!vorschlag) {
@@ -167,9 +179,13 @@ export function alsCsv(befunde: Befund[]): string {
     const s = v === null || v === undefined ? '' : String(v);
     return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const kopf = ['Variante-ID', 'Artikel-ID', 'Variantennummer', 'Name', 'Lagerplatz', 'Klartext', 'Quelle', 'Status', 'Hinweis'];
+  const kopf = [
+    'Variante-ID', 'Artikel-ID', 'Variantennummer', 'Name', 'Bestand', 'Bestand physisch', 'Lager',
+    'Lagerplatz', 'Klartext', 'Quelle', 'Status', 'Hinweis',
+  ];
   const zeilen = befunde.map((b) =>
-    [b.variationId, b.itemId, b.nummer, b.name, b.code, b.klartext, b.quelle, b.status, b.hinweis]
+    [b.variationId, b.itemId, b.nummer, b.name, b.bestand, b.bestandPhysisch, b.lager,
+     b.code, b.klartext, b.quelle, b.status, b.hinweis]
       .map(feld)
       .join(';'),
   );

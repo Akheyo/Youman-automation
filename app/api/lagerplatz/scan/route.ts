@@ -36,6 +36,8 @@ export async function POST(request: Request) {
   };
 
   const ergebnis = await scanneLagerplaetze({
+    // Standard: nur Artikel mit Bestand. "alle" geht über den ganzen Artikelstamm.
+    quelle: body.quelle === 'alle' ? 'alle' : 'bestand',
     startSeite: zahl(body.startSeite, 1),
     maxSeiten: Math.min(20, zahl(body.maxSeiten, 8)),
     proSeite: Math.min(250, zahl(body.proSeite, 100)),
