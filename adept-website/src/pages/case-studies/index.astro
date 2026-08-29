@@ -2,7 +2,6 @@
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import Section from '../../components/Section.astro';
-import Bild from '../../components/Bild.astro';
 import { caseStudies } from '../../data/caseStudies';
 import { withBase } from '../../lib/url';
 
@@ -11,14 +10,12 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
 
 <Base
   title="Referenzprojekte: ERP-Module in der Praxis"
-  description="Abgeschlossene Projekte von adept&: Palettenoptimierung bei der Drahtmüller GmbH und ein integriertes Warenwirtschaftssystem für A&B SolarEnergy."
-  bild="referenzprojekte"
+  description="Abgeschlossene Projekte von youman: Palettenoptimierung bei der Drahtmüller GmbH und ein integriertes Warenwirtschaftssystem für A&B SolarEnergy."
   breadcrumb={brotkrumen}
 >
   <PageHeader
     kicker="Referenzprojekte"
-    bild="referenzprojekte"
-    title="Referenzprojekte"
+      title="Referenzprojekte"
     breadcrumb={brotkrumen}
   />
 
@@ -58,9 +55,9 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
         ergibt, etwa die Zahl der Palettentypen.
       </p>
       <p>
-        Beide Fälle folgen derselben Machart: ein eigenständiges Modul im adept&-Gerüst, über
+        Beide Fälle folgen derselben Machart: ein eigenständiges Modul als eigenständiges Modul, über
         eine Schnittstelle an das bestehende System gehängt, ohne Ablösung. Welche{' '}
-        <a href={withBase('/funktionen')} class="textverweis">Funktionsbereiche</a> dabei
+        <a href={withBase('/leistungen')} class="textverweis">Leistungen</a> dabei
         greifen und in welchen{' '}
         <a href={withBase('/branchen')} class="textverweis">Branchen</a> wir arbeiten, steht
         jeweils dort.
@@ -86,20 +83,13 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
     */}
     <ul class="divide-y divide-line border-y border-line">
       {
-        caseStudies.map((fall, i) => (
+        caseStudies.map((fall) => (
           <li>
             <a
               href={withBase(fall.href)}
-              class="hebt-sich group grid gap-8 bg-surface p-6 sm:p-8 md:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] md:gap-12 md:p-10"
+              class="hebt-sich group block bg-surface p-6 sm:p-8 md:p-10"
               data-reveal
             >
-              <Bild
-                name={fall.bild}
-                index={i}
-                ratio="4/3"
-                zoom
-                sizes="(min-width: 768px) 22rem, 100vw"
-              />
               <div class="flex flex-col justify-center">
                 <p class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-accent">
                   {fall.branche}

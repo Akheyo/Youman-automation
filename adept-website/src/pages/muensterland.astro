@@ -26,7 +26,7 @@ import { withBase } from '../lib/url';
  */
 
 const BESCHREIBUNG =
-  'ERP-Integration und individuelle Softwareentwicklung aus Borken: was ein Anbieter aus der Region praktisch ändert und wann Nähe tatsächlich zählt.';
+  'KI-Automation und Softwareentwicklung aus Borken: was ein Anbieter aus der Region praktisch ändert und an welchen Stellen die Nähe nichts ändert.';
 
 const naehe = [
   {
@@ -53,30 +53,28 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
 ---
 
 <Base
-  title="Softwareentwicklung und ERP im Münsterland"
+  title="Automation und Softwareentwicklung im Münsterland"
   description={BESCHREIBUNG}
-  bild="architektur"
-  breadcrumb={brotkrumen}
+    breadcrumb={brotkrumen}
 >
   <PageHeader
     kicker="Region"
-    bild="architektur"
-    title="Softwareentwicklung und ERP-Integration im Münsterland"
-    lead="adept& sitzt in Borken. Diese Seite beantwortet, was das praktisch ändert und wann es nichts ändert."
+        title="Automation und Softwareentwicklung im Münsterland"
+    lead="youman sitzt in Borken. Diese Seite beantwortet, was das praktisch ändert und wann es nichts ändert."
     breadcrumb={brotkrumen}
   />
 
   <Section>
     <div class="prose-measure space-y-5 text-lg text-ink-soft">
       <p>
-        Das Münsterland ist Fertigungsland. Metallverarbeitung, Maschinenbau, Kunststoff,
-        Lebensmittel, dazu eine Logistikdichte, die aus der Lage zwischen Ruhrgebiet und den
-        Niederlanden folgt. Das sind genau die Betriebe, in denen ein ERP-System seit Jahren
-        läuft und daneben trotzdem ein Teil der Arbeit von Hand erledigt wird, weil der
-        eigentliche Prozess nie in den Standard gepasst hat.
+        Das Münsterland ist Fertigungs- und Handelsland. Metallverarbeitung, Maschinenbau,
+        Kunststoff, Lebensmittel, dazu eine Logistikdichte, die aus der Lage zwischen
+        Ruhrgebiet und den Niederlanden folgt, und ein dichtes Netz aus Handwerk und
+        Großhandel. Das sind genau die Betriebe, in denen die Systeme laufen und daneben
+        trotzdem ein Teil der Arbeit von Hand erledigt wird.
       </p>
       <p>
-        adept& sitzt in Borken, im Kreis Borken, und arbeitet im gesamten deutschsprachigen
+        youman sitzt in Borken, im Kreis Borken, und arbeitet im gesamten deutschsprachigen
         Raum. Die Frage, ob der Anbieter aus der Region kommt, ist trotzdem nicht gleichgültig.
         Sie ist nur an anderer Stelle wichtig, als meistens angenommen wird.
       </p>
@@ -126,17 +124,13 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
       <h2 class="font-serif text-3xl text-ink">Woran wir hier arbeiten</h2>
       <p>
         Die Aufgaben unterscheiden sich nicht danach, wo ein Betrieb steht, sondern danach, was
-        er tut. Für produzierende Betriebe sind das meistens{' '}
-        <a href={withBase('/funktionen/produktion-und-feinplanung')} class="textverweis"
-          >Feinplanung und Produktionsplanung</a
-        >{' '}
-        sowie{' '}
-        <a href={withBase('/funktionen/supply-chain-und-materialsteuerung')} class="textverweis"
-          >Materialsteuerung</a
-        >, für logistiknahe Betriebe{' '}
-        <a href={withBase('/funktionen/logistik-und-versandsteuerung')} class="textverweis"
-          >Versandsteuerung und Verpackungslogik</a
-        >.
+        er tut. Für produzierende Betriebe ist das meistens{' '}
+        <a href={withBase('/leistungen/individuelle-software')} class="textverweis"
+          >individuelle Software</a
+        >, für Handel und Dienstleistung eher{' '}
+        <a href={withBase('/leistungen/ki-automationen')} class="textverweis">KI-Automation</a>
+        {' '}und{' '}
+        <a href={withBase('/leistungen/chatbots')} class="textverweis">Chatbots</a>.
       </p>
       <p>
         Ein abgeschlossenes Projekt aus der Region ist die{' '}
@@ -162,7 +156,7 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
     {
       anbieterVollstaendig && (
         <p class="mt-10 text-sm text-white/70">
-          adept&amp;, {anbieter.strasse}, {anbieter.plz} {anbieter.ort}
+          youman, {anbieter.strasse}, {anbieter.plz} {anbieter.ort}
         </p>
       )
     }

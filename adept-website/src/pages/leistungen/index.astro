@@ -1,0 +1,86 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import Section from '../../components/Section.astro';
+import { leistungen, anfrageHinweis } from '../../data/leistungen';
+import { withBase } from '../../lib/url';
+
+const brotkrumen = [{ label: 'Home', href: '/' }];
+---
+
+<Base
+  title="KI-Automation, Chatbots, Webseiten und Software"
+  description="Die fünf Leistungen von youman: KI-Automationen, Chatbots, Webseiten, E-Commerce-Lösungen und individuelle Software. Angebunden an das, was schon läuft."
+  breadcrumb={brotkrumen}
+>
+  <PageHeader
+    kicker="Leistungen"
+    title="Was wir bauen"
+    lead="Fünf Bereiche, gegliedert nach dem, was jemand sucht. Wer einen Chatbot braucht, sucht nach einem Chatbot, nicht nach einer Kategorie."
+    breadcrumb={brotkrumen}
+  />
+
+  <Section>
+    <div class="prose-measure space-y-6 text-lg text-ink-soft">
+      <p>
+        Die Bereiche greifen ineinander. Ein Chatbot ohne Anbindung an den tatsächlichen
+        Bestand gibt Auskünfte, die niemand geprüft hat. Eine Automation ohne festgelegte
+        Grenze entscheidet irgendwann Fälle, die sie nicht entscheiden sollte. In den meisten
+        Projekten beginnt es deshalb an einer Stelle und wächst von dort weiter.
+      </p>
+      <p>
+        Was auf diesen Seiten bewusst nicht steht, sind Preise und Laufzeiten. Beides hängt
+        daran, wie die vorhandenen Systeme aussehen und wie viel davon dokumentiert ist. Das
+        lässt sich in einem{' '}
+        <a href={withBase('/kontakt')} class="textverweis">Gespräch</a> in einer halben Stunde
+        klären, während eine Preisliste für keinen der Fälle stimmen würde.
+      </p>
+    </div>
+  </Section>
+
+  <Section tone="canvas">
+    <h2 class="sr-only">Leistungen im Überblick</h2>
+    <ul class="rasterfugen sm:grid-cols-2 lg:grid-cols-3">
+      {
+        leistungen.map((leistung) => (
+          <li class="hebt-sich bg-surface">
+            <a
+              href={withBase(`/leistungen/${leistung.slug}`)}
+              class="group flex h-full flex-col p-8 transition-colors duration-200"
+            >
+              <h3 class="flex items-start gap-2 text-xl text-ink group-hover:text-accent transition-colors duration-200">
+                <span>{leistung.title}</span>
+                <svg
+                  class="mt-1.5 size-4 shrink-0 text-accent transition-transform duration-200 group-hover:translate-x-1"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </h3>
+              <p class="prose-measure mt-3 text-ink-soft">{leistung.teaser}</p>
+            </a>
+          </li>
+        ))
+      }
+      <li class="bg-muted p-8">
+        <h3 class="text-xl text-ink">Nicht dabei?</h3>
+        <p class="prose-measure mt-3 text-ink-soft">
+          Dann fragen Sie an. Wir sagen Ihnen ehrlich, ob wir die Richtigen dafür sind.
+        </p>
+        <a
+          href={withBase('/kontakt')}
+          class="textverweis mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-ink"
+        >
+          Anfrage schreiben
+        </a>
+      </li>
+    </ul>
+    <p class="prose-measure mt-10 text-ink-soft">{anfrageHinweis}</p>
+  </Section>
+</Base>

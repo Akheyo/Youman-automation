@@ -21,11 +21,11 @@ const bereiche = mainNav.filter((item) => item.children);
       class="container-page flex flex-col gap-8 py-14 md:flex-row md:items-center md:justify-between"
     >
       <p class="font-display text-2xl md:text-3xl text-ink">
-        {site.name} in {site.region}
+        {site.name} · {site.claim}
       </p>
       <div class="flex flex-wrap gap-3">
         <Button href="/kontakt" variant="primary">Kontakt aufnehmen</Button>
-        <Button href="/ueber-uns" variant="secondary">Über adept&amp;</Button>
+        <Button href="/ueber-uns" variant="secondary">Über youman</Button>
       </div>
     </div>
   </div>
@@ -34,7 +34,7 @@ const bereiche = mainNav.filter((item) => item.children);
     <div class="container-page py-14">
       <div class="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <a href={withBase('/')} class="unterstrich inline-flex min-h-11 items-center rounded-sm" aria-label="adept&, zur Startseite">
+          <a href={withBase('/')} class="unterstrich inline-flex min-h-11 items-center rounded-sm" aria-label="youman, zur Startseite">
             <Logo class="text-3xl" />
           </a>
           <p class="prose-measure mt-4 text-sm text-muted-fg">
@@ -102,7 +102,7 @@ const bereiche = mainNav.filter((item) => item.children);
           keine, weil sie die Uebereinstimmung mit anderen Quellen bricht.
         */}
         <div class="text-sm text-muted-fg">
-          <p>© {jahr} adept&amp;</p>
+          <p>© {jahr} youman</p>
           {anbieterVollstaendig && (
             <address class="mt-1 not-italic">
               {anbieter.strasse}, {anbieter.plz} {anbieter.ort}

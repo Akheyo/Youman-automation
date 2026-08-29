@@ -1,9 +1,8 @@
 import type { APIRoute } from 'astro';
-import { site, kernleistungen } from '../data/site';
+import { site } from '../data/site';
 import { branchen } from '../data/branchen';
-import { funktionen } from '../data/funktionen';
+import { leistungen, anfrageHinweis } from '../data/leistungen';
 import { caseStudies } from '../data/caseStudies';
-import { news } from '../data/news';
 import { kontakt } from '../data/kontakt';
 import { anbieter, anbieterVollstaendig } from '../data/anbieter';
 import { indexierungErlaubt } from '../data/sichtbarkeit';
@@ -42,19 +41,17 @@ export const GET: APIRoute = ({ site: basis }) => {
     '',
     `${site.claim} ${site.subclaim}`,
     '',
-    '## Was adept& macht',
+    `## Was ${site.name} macht`,
     '',
-    ...kernleistungen.map((l) => `- **${l.title}**: ${l.description}`),
+    anfrageHinweis,
     '',
     '## Branchen',
     '',
-    ...branchen
-      .filter((b) => !b.platzhalter)
-      .map((b) => `- [${b.title}](${adresse(`/branchen/${b.slug}`)}): ${b.teaser}`),
+    ...branchen.map((b) => `- [${b.title}](${adresse(`/branchen/${b.slug}`)}): ${b.teaser}`),
     '',
-    '## Funktionsbereiche',
+    '## Leistungen',
     '',
-    ...funktionen.map((f) => `- [${f.title}](${adresse(`/funktionen/${f.slug}`)}): ${f.teaser}`),
+    ...leistungen.map((l) => `- [${l.title}](${adresse(`/leistungen/${l.slug}`)}): ${l.teaser}`),
     '',
     '## Referenzprojekte',
     '',
@@ -62,12 +59,6 @@ export const GET: APIRoute = ({ site: basis }) => {
       (c) => `- [${c.title}](${adresse(c.href)}): ${c.kunde}, ${c.branche}. ${c.excerpt}`,
     ),
   ];
-
-  const beitraege = news.filter((n) => !n.platzhalter);
-  if (beitraege.length) {
-    zeilen.push('', '## Beitraege', '');
-    for (const n of beitraege) zeilen.push(`- [${n.title}](${adresse(n.href)}): ${n.excerpt}`);
-  }
 
   zeilen.push('', '## Kontakt', '');
   if (anbieterVollstaendig)

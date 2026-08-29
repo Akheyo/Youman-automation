@@ -2,88 +2,62 @@
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import Section from '../../components/Section.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
 import { branchen } from '../../data/branchen';
+import { leistungen, anfrageHinweis } from '../../data/leistungen';
 import { withBase } from '../../lib/url';
+
+const brotkrumen = [{ label: 'Home', href: '/' }];
 ---
 
 <Base
-  title="Branchen: Fertigung, Logistik, Onlinehandel"
-  description="Wo adept& arbeitet: produktionsnahe und logistikintensive Branchen: Fertigung und Maschinenbau, Logistik, Handel, Automobilzulieferung."
-  bild="maschinenbau"
-  breadcrumb={[{ label: 'Home', href: '/' }]}
+  title="Branchen: Handel, Logistik, Produktion, Handwerk"
+  description="Wo youman arbeitet: E-Commerce, Spedition, Produktion, Großhandel, Handwerk und Dienstleistung. Je Branche die typischen Abläufe, an denen Arbeit hängen bleibt."
+  breadcrumb={brotkrumen}
 >
   <PageHeader
     kicker="Branchen"
-    bild="halle"
     title="Wo wir arbeiten"
-    lead="adept& arbeitet in produktionsnahen und logistikintensiven Branchen."
+    lead="Sechs Bereiche, in denen sich dieselbe Beobachtung wiederholt: Der Aufwand steckt nicht in der eigentlichen Leistung, sondern in dem, was drumherum von Hand erledigt wird."
+    breadcrumb={brotkrumen}
   />
 
-  {/*
-    Einleitung vor dem Kachelraster. Eine reine Kachelseite sagt einem Leser
-    nicht, wonach hier gegliedert wird und wann welcher Bereich der richtige
-    ist - und einer Suchmaschine gibt sie ausser vier Titeln nichts.
-  */}
   <Section>
     <div class="prose-measure space-y-6 text-lg text-ink-soft">
       <p>
-        adept& arbeitet dort, wo Ware gefertigt oder physisch bewegt wird. Die vier Bereiche
-        auf dieser Seite unterscheiden sich weniger in der eingesetzten Technik als in der
-        Frage, woran die Planung im Alltag scheitert: an der Variantenvielfalt in der
-        Fertigung, an der Verpackungs- und Palettenlogik im Versand, an der Kanal- und
-        Artikelpflege im Onlinehandel oder an der Termintreue über eine mehrstufige
-        Lieferkette.
+        Die Einteilung nach Branchen ist eine Abkürzung für Leser, keine Grenze. Wer einen
+        Handwerksbetrieb mit eigenem Onlineshop führt, erkennt sich in zwei Bereichen wieder,
+        und wer in keinem davon vorkommt, ist deshalb nicht ausgeschlossen.
       </p>
       <p>
-        Gemeinsam ist allen vier, dass ein ERP-System bereits läuft. Es ist selten das
-        Problem. Das Problem liegt in der Lücke zwischen dem, was das System vorsieht, und
-        dem, was der Betrieb tatsächlich tut: Sonderfälle, die in eine Tabelle ausweichen,
-        Absprachen, die niemand dokumentiert, Zwischenschritte, die per Zuruf laufen. Diese
-        Lücke lässt sich schließen, ohne das bestehende System abzulösen. Wie das in einem
-        abgeschlossenen Projekt aussah, steht in der{' '}
-        <a href={withBase('/case-studies/drahtmueller-palettenoptimierung')} class="textverweis"
-          >Palettenoptimierung bei der Drahtmüller GmbH</a
-        >: 2.556 aktive Palettentypen, für die es im Standard keine Logik gab.
-      </p>
-      <p>
-        Die Einordnung nach Branchen ist eine Abkürzung, keine Grenze. Wer in einer Fertigung
-        mit eigenem Versand sitzt, erkennt sich in zwei Bereichen wieder. Wenn Sie nicht
-        sicher sind, welcher der richtige ist, führt der Weg über die{' '}
-        <a href={withBase('/funktionen')} class="textverweis">Funktionsbereiche</a> schneller
-        zum Ziel. Dort ist nach Aufgabe gegliedert statt nach Wirtschaftszweig.
-      </p>
-      <p>
-        Jede Branchenseite nennt die typischen Problemstellungen in der Sprache der
-        Betroffenen, dazu die Funktionsbereiche, die dort üblicherweise greifen, und, wo
-        vorhanden, das passende Referenzprojekt. Wo für eine Branche noch keine
-        freigegebenen Problemstellungen aus Projekten vorliegen, steht das ausdrücklich auf
-        der Seite. An solchen Stellen schreiben wir lieber nichts als etwas Allgemeines: ein
-        beliebiger Painpoint entwertet die konkreten daneben.
-      </p>
-      <p>
-        Räumlich ist das kein Einzugsgebiet: adept& arbeitet im gesamten deutschsprachigen
-        Raum. Der Sitz in Borken macht bei der Analyse und bei der Einführung im Betrieb
-        trotzdem einen Unterschied, weil beides schlecht aus der Ferne funktioniert. Woran
-        genau das liegt, steht auf der Seite{' '}
-        <a href={withBase('/muensterland')} class="textverweis">Münsterland</a>.
+        Gemeinsam ist allen sechs, dass die Systeme grundsätzlich laufen. Das Problem liegt in
+        der Lücke zwischen dem, was ein System vorsieht, und dem, was der Betrieb tatsächlich
+        tut: Angaben, die zweimal erfasst werden, Entscheidungen, die nur eine Person treffen
+        kann, Auskünfte, die jeden Tag neu gegeben werden. Diese Lücke lässt sich schließen,
+        ohne das Bestehende abzulösen.
       </p>
     </div>
   </Section>
 
+  {/*
+    Die sechs Branchen als Kacheln. Ohne Bild: die Seite kommt bewusst ohne
+    Bildmaterial aus, und ein Stockfoto je Branche haette hier ohnehin nur
+    Flaeche gefuellt, ohne etwas zu sagen.
+  */}
   <Section tone="canvas">
     <h2 class="sr-only">Branchen im Überblick</h2>
-    <ul class="rasterfugen sm:grid-cols-2">
+    <ul class="rasterfugen sm:grid-cols-2 lg:grid-cols-3">
       {
         branchen.map((branche) => (
           <li class="hebt-sich bg-surface">
             <a
               href={withBase(`/branchen/${branche.slug}`)}
-              class="group flex h-full flex-col p-8 transition-colors duration-200 md:p-10"
+              class="group flex h-full flex-col p-8 transition-colors duration-200"
             >
-              <h3 class="flex items-start gap-2 text-2xl text-ink group-hover:text-accent transition-colors duration-200">
+              <h3 class="flex items-start gap-2 text-xl text-ink group-hover:text-accent transition-colors duration-200">
                 <span>{branche.title}</span>
                 <svg
-                  class="mt-2 size-4 shrink-0 text-accent transition-transform duration-200 group-hover:translate-x-1"
+                  class="mt-1.5 size-4 shrink-0 text-accent transition-transform duration-200 group-hover:translate-x-1"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -96,15 +70,81 @@ import { withBase } from '../../lib/url';
                 </svg>
               </h3>
               <p class="prose-measure mt-3 text-ink-soft">{branche.teaser}</p>
-              {branche.platzhalter && (
-                <span class="mt-5 inline-flex w-fit border border-muted-fg/50 bg-muted px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-widest text-muted-fg">
-                  Platzhalter
-                </span>
-              )}
+              <span class="mt-6 inline-flex items-center gap-3 text-sm font-semibold text-ink">
+                <span class="h-px w-6 bg-accent" aria-hidden="true"></span>
+                Anwendungsfälle
+              </span>
             </a>
           </li>
         ))
       }
     </ul>
+  </Section>
+
+  {/*
+    Leistungen als Aufklapper unter den Branchen.
+
+    Ausdruecklich zu, solange niemand klickt: Die Seite soll den Ueberblick
+    ueber die Bereiche geben, nicht fuenf Beschreibungen gleichzeitig zeigen.
+
+    <details> und <summary> statt eigener Klapplogik. Das bringt
+    Tastaturbedienung, Vorlesbarkeit und die Suchfunktion des Browsers ohne
+    eine Zeile JavaScript mit, und es funktioniert auch dann, wenn Skripte
+    nicht laufen.
+  */}
+  <Section>
+    <SectionHeading
+      kicker="Leistungen"
+      title="Was wir in diesen Branchen bauen"
+      lead="Fünf Bereiche. Aufklappen zeigt, was jeweils dahintersteckt."
+    />
+
+    <ul class="mt-12 divide-y divide-line border-y border-line">
+      {
+        leistungen.map((leistung) => (
+          <li>
+            <details class="group">
+              <summary class="flex cursor-pointer items-center justify-between gap-6 py-6 marker:content-none [&::-webkit-details-marker]:hidden">
+                <span class="flex flex-col gap-1.5">
+                  <span class="text-lg text-ink">{leistung.title}</span>
+                  <span class="prose-measure text-sm text-ink-soft">{leistung.teaser}</span>
+                </span>
+                <svg
+                  class="size-5 shrink-0 text-accent transition-transform duration-200 group-open:rotate-45"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </summary>
+
+              <div class="pb-8">
+                <p class="prose-measure text-ink-soft">{leistung.intro}</p>
+                <ul class="mt-6 rasterfugen sm:grid-cols-2">
+                  {leistung.bausteine.map((baustein) => (
+                    <li class="bg-surface p-6">
+                      <h3 class="text-base text-ink">{baustein.titel}</h3>
+                      <p class="mt-2 text-sm text-ink-soft">{baustein.text}</p>
+                    </li>
+                  ))}
+                </ul>
+                <a
+                  href={withBase(`/leistungen/${leistung.slug}`)}
+                  class="textverweis mt-6 inline-flex min-h-11 items-center text-sm font-semibold text-ink"
+                >
+                  Zur Leistung {leistung.title}
+                </a>
+              </div>
+            </details>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="prose-measure mt-10 text-ink-soft">{anfrageHinweis}</p>
   </Section>
 </Base>

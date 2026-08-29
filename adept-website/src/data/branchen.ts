@@ -1,144 +1,151 @@
-import type { BildKey } from './images';
+/**
+ * Die sechs Branchen von youman.
+ *
+ * Gegliedert danach, welche Arbeit dort taeglich anfaellt, nicht nach
+ * Wirtschaftszweig-Systematik. Die Einteilung ist eine Abkuerzung fuer
+ * Leser, keine Grenze: gearbeitet wird auch ausserhalb.
+ *
+ * Die Problemstellungen sind benannte Fachprobleme, keine Aussagen ueber
+ * konkrete Projekte. Deshalb ohne Zahlen und ohne Erfolgsbehauptung. Was
+ * ein Projekt gebracht hat, steht ausschliesslich in den Referenzprojekten,
+ * wo es belegt ist.
+ */
 
 export type Branche = {
   slug: string;
   title: string;
-  /** Kurzzeile für Übersicht und Karten. */
+  /** Kurzzeile fuer Uebersicht und Kacheln. */
   teaser: string;
-  /**
-   * Titel fuer die Suche, wo der Branchenname allein zu wenig traegt.
-   * "Logistik & Versand" ist der Name des Bereichs, gesucht wird aber nach
-   * dem Bereich plus "Software" oder "ERP". Der sichtbare Titel im
-   * Kopfbereich bleibt unveraendert.
-   */
+  /** Titel fuer die Suche, wo der Branchenname allein zu wenig traegt. */
   seoTitel?: string;
-  /**
-   * Einordnung der Branche. Bewusst allgemein gehalten: konkrete Painpoints
-   * aus adept&-Projekten liegen für diese Branche noch nicht vor.
-   */
+  /** Beschreibung fuer die Suche. */
+  seoBeschreibung?: string;
+  /** Einordnung der Branche auf der Unterseite. */
   intro: string;
-  /**
-   * Konkrete operative Problemstellungen dieser Branche, in der Sprache der
-   * Betroffenen. Sie sind der eigentliche Grund, warum jemand die Seite
-   * liest: Wer sein eigenes Problem wiedererkennt, liest weiter.
-   *
-   * Es werden hier keine erfunden. Fehlt die Liste, entfällt der Abschnitt
-   * ersatzlos – ein allgemein gehaltener Painpoint ist schlechter als
-   * keiner, weil er die konkreten mit entwertet.
-   */
-  painpoints?: string[];
-  /** Slugs aus funktionen.ts, die für diese Branche typischerweise greifen. */
-  funktionen: string[];
-  /**
-   * true = für diese Branche liegen noch keine freigegebenen Inhalte vor.
-   * Die Seite zeigt dann einen unmissverständlich markierten Platzhalter.
-   */
-  platzhalter: boolean;
-  /** Slug einer Referenz aus caseStudies.ts, falls vorhanden. */
+  /** Typische Problemstellungen in der Sprache der Betroffenen. */
+  painpoints: string[];
+  /** Slugs aus leistungen.ts, die hier typischerweise greifen. */
+  leistungen: string[];
+  /** Slug eines Referenzprojekts aus caseStudies.ts, falls vorhanden. */
   referenz?: string;
-  /**
-   * Einleitender Halbsatz, an den im Fliesstext der Verweis auf das
-   * Referenzprojekt angehaengt wird. Bewusst je Branche eigen formuliert:
-   * ein fuer alle Seiten gleicher Satz liest sich wie ein Baustein und
-   * wird ueberlesen. Der Verweis gehoert in den Text, nicht auf einen Knopf.
-   */
+  /** Einleitender Halbsatz, an den im Fliesstext der Verweis angehaengt wird. */
   referenzHinweis?: string;
-  /** Schlüssel aus dem Bildregister. */
-  bild?: BildKey;
 };
 
 export const branchen: Branche[] = [
   {
-    slug: 'fertigung-und-maschinenbau',
+    slug: 'e-commerce-und-onlinehandel',
+    title: 'E-Commerce & Onlinehandel',
+    teaser: 'Bestände, Preise und Bestellungen über alle Kanäle synchron, ohne nächtliche Handarbeit.',
+    seoTitel: 'KI und Automation für den Onlinehandel',
+    seoBeschreibung:
+      'Artikelpflege, Bestandsabgleich, Retouren und Kundenanfragen automatisiert, über Shop und Marktplätze hinweg. Lösungen von youman.',
+    intro:
+      'Im Onlinehandel entsteht der Aufwand selten beim Verkaufen, sondern davor und danach. Artikeldaten wollen für jeden Kanal einzeln gepflegt werden, Bestände laufen zwischen Shop, Marktplatz und Lager auseinander, und Retouren kommen zurück, ohne dass jemand sie im Bestand nachträgt. Das sind keine Softwareprobleme, sondern Ablaufprobleme, die sich mit Software lösen lassen.',
     painpoints: [
-      'Stücklisten und Arbeitspläne für Varianten werden kopiert und angepasst. Nach einigen Jahren lässt sich nicht mehr sagen, welche Variante von welcher abstammt.',
-      'Der Liefertermin wird zugesagt, bevor feststeht, ob die Maschine zu dem Zeitpunkt frei ist. Die Rückfrage läuft über den Fertigungsleiter, der es im Kopf hat.',
-      'Eine Konstruktionsänderung erreicht die Fertigung per Mail. Ob sie bei allen laufenden Aufträgen angekommen ist, prüft niemand systematisch.',
-      'Nacharbeit taucht in keiner Kalkulation auf. Was ein Teil tatsächlich gekostet hat, weiß man erst, wenn jemand von Hand nachrechnet.',
-      'Bei Einzelstücken und Kleinserien passt die Vorkalkulation nie ganz. Der Aufschlag ist ein Erfahrungswert, den eine einzige Person im Haus verantwortet.',
+      'Eine Preisänderung bedeutet dieselbe Arbeit in drei oder vier Systemen.',
+      'Jeder Marktplatz verlangt eigene Pflichtfelder. Was bei einem durchgeht, wird beim nächsten abgelehnt.',
+      'Verkauft wird Ware, die nicht mehr da ist, weil der Bestand zu spät aktualisiert wurde.',
+      'Kundenanfragen zu Lieferstatus und Rückgabe kommen jeden Tag neu und werden jeden Tag neu von Hand beantwortet.',
+      'Was ein Auftrag nach Verpackung, Versand, Retoure und Gebühren eingebracht hat, steht nirgends zusammen.',
     ],
+    leistungen: ['e-commerce', 'ki-automationen', 'chatbots'],
+  },
+  {
+    slug: 'spedition-und-logistik',
+    title: 'Spedition & Logistik',
+    teaser: 'Aufträge, Statusmeldungen und Papiere fließen zwischen Auftraggeber, Fahrer und System.',
+    seoTitel: 'Automation für Spedition und Logistik',
+    seoBeschreibung:
+      'Auftragsannahme, Statusmeldungen und Frachtpapiere automatisiert statt per Telefonkette. Individuelle Lösungen von youman.',
+    intro:
+      'In der Logistik ist die Ware selten das Problem, die Information über die Ware schon. Aufträge kommen in fünf Formaten, Statusmeldungen laufen über Anrufe, und Papiere entstehen an einer Stelle, an der jemand von Hand abtippt, was woanders längst digital vorliegt. Jede dieser Übergaben ist eine Stelle, an der etwas verloren geht.',
+    painpoints: [
+      'Aufträge kommen per Mail, PDF, Portal und Telefon, und jemand überträgt sie in ein einziges System.',
+      'Der Auftraggeber fragt nach dem Stand, und die Antwort entsteht über eine Kette von Anrufen.',
+      'Frachtpapiere werden aus Angaben zusammengesetzt, die schon dreimal irgendwo stehen.',
+      'Abweichungen fallen erst auf, wenn jemand zufällig hinschaut, nicht wenn sie entstehen.',
+      'Ob eine Tour pünktlich war, lässt sich nachträglich nicht sagen, weil der zugesagte Termin nirgends festgehalten wurde.',
+    ],
+    leistungen: ['ki-automationen', 'individuelle-software', 'chatbots'],
+  },
+  {
+    slug: 'produktion-und-fertigung',
+    title: 'Produktion & Fertigung',
+    teaser: 'Aufträge, Rückmeldungen und Materialbedarf ohne Zettelwirtschaft zwischen Halle und Büro.',
+    seoTitel: 'Software und Automation für die Fertigung',
+    seoBeschreibung:
+      'Planung, Rückmeldungen und Materialbedarf digital statt auf Zetteln. Individuelle Software und Automation für produzierende Betriebe von youman.',
+    intro:
+      'Zwischen Halle und Büro liegt in vielen Betrieben eine Lücke, die mit Papier gefüllt wird. Der Plan hängt aus, Rückmeldungen kommen auf Zetteln zurück, und was tatsächlich passiert ist, weiß man am Monatsende ungefähr. Diese Lücke lässt sich schließen, ohne die vorhandene Systemlandschaft anzutasten.',
+    painpoints: [
+      'Geplant wird tatsächlich in einer Tabelle auf einem einzelnen Rechner, nicht im System.',
+      'Eine Eilbestellung kommt herein, und was sie an anderer Stelle verschiebt, zeigt sich erst, wenn dort etwas zu spät kommt.',
+      'Rückmeldungen aus der Fertigung werden auf Zetteln notiert und später eingetippt, wenn überhaupt.',
+      'Stillstände und Nacharbeit tauchen in keiner Kalkulation auf. Was ein Teil gekostet hat, weiß man erst beim Nachrechnen.',
+      'Schichtleitung und Werksleitung schauen auf verschiedene Zahlen, weil sich jede ihre eigene Auswertung gebaut hat.',
+    ],
+    leistungen: ['individuelle-software', 'ki-automationen'],
     referenz: 'drahtmueller-palettenoptimierung',
     referenzHinweis:
       'Wie sich eine solche Sonderlogik abbilden lässt, ohne die vorhandene Systemlandschaft anzutasten, zeigt das Projekt',
-    bild: 'maschinenbau',
-    title: 'Fertigung und Maschinenbau',
-    teaser: 'Variantenreiche Fertigung planbar machen, ohne das ERP zu ersetzen.',
-    intro:
-      'In der variantenreichen Fertigung entstehen die teuersten Entscheidungen selten im ERP-System, sondern daneben: in Excel-Listen, Zurufen und Erfahrungswissen einzelner Personen. adept& bildet genau diese operative Logik als Modul ab und bindet es an das bestehende System an.',
-    funktionen: ['produktion-und-feinplanung', 'supply-chain-und-materialsteuerung', 'reporting-und-operative-transparenz'],
-    platzhalter: false,
   },
   {
-    slug: 'logistik-und-versand',
-    seoTitel: 'ERP-Software für Logistik und Versand',
+    slug: 'grosshandel-und-distribution',
+    title: 'Großhandel & Distribution',
+    teaser: 'Artikeldaten, Preislisten und Kundenbestellungen laufen durch, statt in Postfächern zu warten.',
+    seoTitel: 'Automation für Großhandel und Distribution',
+    seoBeschreibung:
+      'Bestellungen, Preislisten und Artikeldaten automatisiert erfassen und weitergeben, statt sie aus Mails abzutippen. Lösungen von youman.',
+    intro:
+      'Im Großhandel kommt die Bestellung selten in dem Format, in dem sie gebraucht wird. Sie kommt als Mail, als PDF, als Tabelle im Anhang, gelegentlich als Foto. Am Ende sitzt jemand und überträgt sie. Das ist die Stelle, an der sich am schnellsten etwas ändern lässt, weil die Regeln dahinter klar sind, sobald man sie einmal aufschreibt.',
     painpoints: [
-      'Welche Ware auf welche Palette darf, steht in keiner hinterlegten Regel. Es steht im Kopf des Kollegen, der die Ladung seit Jahren stellt.',
-      'Zwei Lieferungen an denselben Kunden gehen am selben Tag getrennt raus, weil die Aufträge in zwei Vorgängen liefen und niemand sie zusammengeführt hat.',
-      'Kundenspezifische Versandvorgaben zu Etikett, Avis und Zeitfenster stehen in einer Datei neben dem System. Wer sie nicht kennt, liefert falsch an.',
-      'Die Ladungssicherung richtet sich danach, was der Fahrer akzeptiert. Bei einem neuen Fahrer wird diskutiert statt verladen.',
-      'Ob eine Sendung pünktlich war, lässt sich nachträglich nicht sagen, weil der zugesagte Termin nirgends festgehalten wurde.',
-      'Retouren und Reklamationen laufen neben dem System. Die Ware steht im Wareneingang, im Bestand fehlt sie weiterhin, und der Kunde fragt nach.',
+      'Bestellungen kommen in jedem denkbaren Format und werden von Hand ins System übertragen.',
+      'Kundenspezifische Preise und Staffeln stehen in einer Liste neben dem System. Wer sie nicht kennt, rechnet falsch.',
+      'Artikeldaten von Lieferanten kommen in deren Struktur und werden für die eigene neu aufgebaut.',
+      'Verfügbarkeitsauskünfte kosten jedes Mal einen Blick in zwei Systeme.',
+      'Bestand ist da, aber längst reserviert. Verfügbar und vorhanden werden verwechselt, und die Zusage platzt.',
     ],
-    bild: 'logistik',
-    title: 'Logistik & Versand',
-    teaser: 'Verpackungs-, Paletten- und Versandlogik direkt am Auftragseingang.',
-    intro:
-      'Zwischen Auftragseingang und Versandentscheidung liegt in logistikintensiven Betrieben häufig eine Lücke, die manuell geschlossen wird. adept& digitalisiert diese Entscheidungslogik und führt die Ergebnisse in den bestehenden Prozess zurück.',
-    funktionen: ['logistik-und-versandsteuerung', 'supply-chain-und-materialsteuerung', 'systemintegration-und-erp-anbindung'],
-    platzhalter: false,
-    referenz: 'drahtmueller-palettenoptimierung',
-    referenzHinweis:
-      'Genau daran hat adept& in der Fertigung von Gitterrosten gearbeitet, nachzulesen im Projekt',
+    leistungen: ['ki-automationen', 'e-commerce', 'individuelle-software'],
   },
   {
-    slug: 'onlinehandel',
+    slug: 'handwerk-und-bau',
+    title: 'Handwerk & Bau',
+    teaser: 'Anfragen, Aufmaße und Rechnungen laufen mit, statt abends im Büro nachgearbeitet zu werden.',
+    seoTitel: 'Digitalisierung für Handwerk und Bau',
+    seoBeschreibung:
+      'Anfragen, Aufmaße, Nachträge und Rechnungen ohne Büroabend. Software und Automation für Handwerksbetriebe von youman.',
+    intro:
+      'Die Arbeit auf der Baustelle ist selten das Problem. Das Problem ist der Abend danach, an dem Aufmaße abgetippt, Nachträge zusammengesucht und Rechnungen geschrieben werden. Was auf der Baustelle ohnehin festgehalten wird, muss dafür nur einmal an der richtigen Stelle landen.',
+    painpoints: [
+      'Anfragen kommen über Telefon, Mail und Formular, und keine Liste zeigt, welche noch offen ist.',
+      'Aufmaße entstehen auf Papier und werden abends ein zweites Mal erfasst.',
+      'Nachträge werden mündlich vereinbart und tauchen bei der Abrechnung nicht mehr auf.',
+      'Zwischen Angebot, Auftrag und Rechnung liegen drei getrennte Stände derselben Zahlen.',
+      'Wer wann auf welcher Baustelle war, lässt sich nachträglich nur über Erinnerung klären.',
+    ],
+    leistungen: ['individuelle-software', 'ki-automationen', 'webseiten'],
+  },
+  {
+    slug: 'dienstleistung-und-agenturen',
+    title: 'Dienstleistung & Agenturen',
+    teaser: 'Leads, Angebote und Projektabläufe automatisiert, damit abrechenbare Zeit abrechenbar bleibt.',
+    seoTitel: 'Automation für Dienstleister und Agenturen',
+    seoBeschreibung:
+      'Leads, Angebote, Projektabläufe und Zeiterfassung automatisiert, damit abrechenbare Zeit nicht in Verwaltung verschwindet. Lösungen von youman.',
+    intro:
+      'Bei Dienstleistern ist Zeit das Produkt, und genau davon verschwindet der größte Teil in Verwaltung. Angebote werden aus alten Angeboten zusammengebaut, Zeiten am Freitag rekonstruiert, und Projektstände existieren in drei Köpfen unterschiedlich. Das ist der Bereich, in dem Automation am direktesten auf den Umsatz durchschlägt.',
+    painpoints: [
+      'Anfragen kommen an, und die Nachfassung hängt daran, ob jemand daran denkt.',
+      'Angebote entstehen durch Kopieren älterer Angebote, samt der Fehler darin.',
+      'Zeiten werden am Ende der Woche aus dem Gedächtnis nachgetragen und sind entsprechend ungenau.',
+      'Der Projektstand ist in drei Köpfen unterschiedlich, und keiner davon steht schriftlich.',
+      'Wie viel eine Kundenbeziehung nach allem Aufwand tatsächlich eingebracht hat, weiß niemand.',
+    ],
+    leistungen: ['ki-automationen', 'webseiten', 'individuelle-software'],
     referenz: 'absolar-warenwirtschaft',
     referenzHinweis:
-      'Dass sich getrennte Datenstände zu einem durchgängigen Prozess zusammenführen lassen, zeigt ein Projekt aus einer anderen Branche mit derselben Ausgangslage:',
-    // Kartons auf Rollenförderern in einem Verteilzentrum. Vorher stand hier
-    // 'versandzentrum', das aber schon der Logistik-Beitrag trägt. Dasselbe
-    // Bild auf zwei Seiten schwächt beide.
-    bild: 'handel',
-    // Beide Begriffe im Titel, wie bei den anderen Branchen auch. Sie meinen
-    // dasselbe, werden aber unterschiedlich gesucht: "E-Commerce" von
-    // Agenturen und Dienstleistern, "Onlinehandel" von Haendlern selbst.
-    title: 'E-Commerce & Onlinehandel',
-    teaser: 'Artikelpflege, Listings und Retouren automatisiert und angebunden an Ihren Bestand.',
-    intro:
-      'Im Onlinehandel entsteht der Aufwand selten beim Verkaufen, sondern davor und danach: Artikeldaten für jeden Kanal einzeln pflegen, Listings je Marktplatz neu aufbauen, Retouren wieder in den Bestand bringen. Wir kennen die gängigen Marktplätze aus der Praxis, darunter Amazon und eBay, und wissen, an welchen Eigenheiten dort Arbeit hängen bleibt. adept& bildet diese Abläufe als Modul ab und hängt sie an das System, das die Bestände ohnehin führt. Für den Fahrzeughandel gilt dasselbe, dort mit Fahrzeugbörsen statt Marktplätzen.',
-    painpoints: [
-      'Artikeldaten werden für jeden Kanal von Hand gepflegt. Eine Preisänderung oder ein neues Foto bedeutet dieselbe Arbeit drei- oder viermal.',
-      'Ein neues Produkt online zu stellen dauert länger, als es sollte: Texte, Merkmale, Kategorien und Bilder werden je Marktplatz neu zusammengesucht und in dessen Format gebracht.',
-      'Jeder Marktplatz verlangt eigene Pflichtfelder und Kategoriebäume. Was bei Amazon durchgeht, wird bei eBay abgelehnt, und umgekehrt.',
-      'Bestände in Shop, Marktplatz und Lager laufen auseinander. Verkauft wird Ware, die nicht mehr da ist. Storno, Nachbestellung und eine schlechtere Bewertung kommen dazu.',
-      'Retouren laufen neben dem System. Wareneingang, Zustandsprüfung und Wiedereinlagerung hängen nicht am Bestand, und die Ware fehlt im Verkauf, obwohl sie im Regal steht.',
-      'Ob eine Retoure zurück in den Verkauf geht, als B-Ware neu gelistet oder abgeschrieben wird, entscheidet Erfahrung statt einer hinterlegten Regel.',
-      'Was ein Auftrag am Ende wirklich eingebracht hat, nach Verpackung, Versand, Retoure und Marktplatzgebühr, steht nirgends zusammen.',
-      'Im Fahrzeughandel dasselbe mit größeren Beträgen: Inserate liegen in mehreren Börsen, ein verkauftes Fahrzeug steht tagelang weiter online, und Standzeit sowie gebundenes Kapital je Fahrzeug sind nicht auf Knopfdruck sichtbar.',
-    ],
-    funktionen: ['systemintegration-und-erp-anbindung', 'logistik-und-versandsteuerung', 'reporting-und-operative-transparenz'],
-    platzhalter: false,
-  },
-  {
-    slug: 'automobil-und-zulieferer',
-    painpoints: [
-      'Lieferabrufe kommen als EDI-Nachricht und werden von Hand in die Planung übertragen, weil das Format nicht zum eigenen System passt.',
-      'Schwankt ein Abruf, fällt das erst beim nächsten Blick in die Datei auf. Eine Warnung gibt es nicht.',
-      'Rückverfolgbarkeit ist gefordert, entsteht aber aus Chargenzetteln und Tabellen. Im Reklamationsfall dauert die Auskunft Tage statt Minuten.',
-      'Sonderfahrten werden entschieden, ohne dass jemand vorher ausrechnet, was sie kosten. Sie erscheinen später als Sammelposten auf der Kostenstelle.',
-      'Der Abruf des Kunden und der eigene Bestand liegen in zwei Systemen. Wer die Deckung sehen will, baut sich dafür eine Tabelle.',
-      'Werkzeug- und Vorrichtungsstandzeiten werden getrennt gepflegt. Dass ein Werkzeug demnächst fällig ist, erfährt die Planung nicht rechtzeitig.',
-    ],
-    referenz: 'drahtmueller-palettenoptimierung',
-    referenzHinweis:
-      'Wie ein solcher Engpass in einem produzierenden Betrieb konkret gelöst wurde, steht im Projekt',
-    bild: 'automobil',
-    title: 'Automobil und Zulieferer',
-    teaser: 'Termintreue und Materialverfügbarkeit über die gesamte Lieferkette.',
-    intro:
-      'Zulieferbetriebe arbeiten unter engen Abruf- und Termintreue-Vorgaben. Kritisch ist dabei weniger das Fehlen von Daten als deren Zusammenführung zu einer belastbaren Entscheidung. adept& bündelt Auftrags-, Material- und Kapazitätsdaten in einer Oberfläche und synchronisiert sie automatisch mit dem ERP-System.',
-    funktionen: ['produktion-und-feinplanung', 'supply-chain-und-materialsteuerung', 'systemintegration-und-erp-anbindung'],
-    platzhalter: false,
+      'Dass sich getrennte Datenstände zu einem durchgängigen Prozess zusammenführen lassen, zeigt das Projekt',
   },
 ];
 

@@ -1,27 +1,51 @@
 ---
 /**
- * Wortmarke adept&.
+ * Wortmarke youman.
  *
- * PLATZHALTER: Die offizielle Logodatei (SVG) liegt noch nicht vor. Bis dahin
- * wird die Wortmarke als Text in der Display-Schrift gesetzt – geometrische,
- * kleingeschriebene Sans in Anthrazit, wie im gelieferten Logobild.
- * Sobald das SVG da ist: diesen Block durch das <img>/Inline-SVG ersetzen,
- * die Props (`variant`, `class`) bleiben gleich.
+ * Als Text gesetzt, nicht als Bilddatei: Die Marke ist reine Typografie,
+ * eine weit laufende Versalzeile mit senkrechtem Strich davor. Als Text
+ * bleibt sie bei jeder Groesse scharf, laesst sich vorlesen, kostet keine
+ * zusaetzliche Anfrage und passt zu der Entscheidung, ohne Bildmaterial
+ * auszukommen.
+ *
+ * Der Strich ist dekorativ und deshalb ein Pseudo-Element ohne eigenen Sinn.
  */
 interface Props {
-  /** "dark" = Anthrazit auf hellem Grund, "light" = Weiß auf dunklem Grund */
+  /** "dark" = Schwarz auf hellem Grund, "light" = Weiss auf dunklem Grund */
   variant?: 'dark' | 'light';
+  /** true = mit Unterzeile "AI & Software" */
+  mitClaim?: boolean;
+  /**
+   * Element fuer die Wortmarke. Auf der Startseite ist sie die Ueberschrift
+   * der Seite und muss deshalb ein h1 sein: eine Seite ohne h1 ist fuer
+   * Screenreader und Suchmaschinen kopflos. Ueberall sonst bleibt es ein
+   * span, sonst gaebe es mehrere h1 je Seite.
+   */
+  as?: 'span' | 'h1';
   class?: string;
 }
 
-const { variant = 'dark', class: className = '' } = Astro.props;
+const { variant = 'dark', mitClaim = false, as: Tag = 'span', class: className = '' } = Astro.props;
+const farbe = variant === 'dark' ? 'text-brand' : 'text-white';
 ---
 
-<span
-  class:list={[
-    'font-display font-semibold tracking-tight leading-none select-none',
-    variant === 'dark' ? 'text-brand' : 'text-white',
-    className,
-  ]}
-  aria-hidden="true">adept&amp;</span
->
+<Tag class:list={['inline-flex items-center gap-3 select-none', farbe, className]}>
+  <span
+    class:list={[
+      'block w-px self-stretch',
+      variant === 'dark' ? 'bg-brand' : 'bg-white',
+    ]}
+    aria-hidden="true"></span>
+  <span class="flex flex-col justify-center gap-1">
+    <span class="font-display text-[1.35em] font-light uppercase leading-none tracking-[0.08em] sm:tracking-[0.14em] md:tracking-[0.18em]"
+      >youman</span
+    >
+    {
+      mitClaim && (
+        <span class="font-display text-[0.42em] font-normal uppercase leading-none tracking-[0.16em] opacity-70 sm:tracking-[0.26em] md:tracking-[0.34em]">
+          AI &amp; Software
+        </span>
+      )
+    }
+  </span>
+</Tag>

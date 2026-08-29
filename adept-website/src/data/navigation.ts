@@ -1,7 +1,4 @@
-export type NavChild = {
-  label: string;
-  href: string;
-};
+export type NavChild = { label: string; href: string };
 
 export type NavItem = {
   label: string;
@@ -11,10 +8,7 @@ export type NavItem = {
    * true = erscheint nur im Footer, nicht in der Hauptnavigation.
    *
    * Fuer Seiten, die einen Verweis brauchen, damit sie nicht ohne Verweis
-   * dastehen, aber in der obersten Ebene zu prominent waeren. Die
-   * Regionalseite ist so ein Fall: adept& arbeitet im gesamten DACH-Raum,
-   * und ein Ortsname neben "Branchen" und "Funktionen" wuerde das Gegenteil
-   * nahelegen.
+   * dastehen, aber in der obersten Ebene zu prominent waeren.
    */
   nurFooter?: boolean;
 };
@@ -22,40 +16,35 @@ export type NavItem = {
 /**
  * Hauptnavigation.
  *
- * Das Briefing nennt: Branchen · Funktionen · News · Über uns · Kontakt,
- * Dropdown nur bei "Branchen" und "Funktionen".
- *
- * Abweichung: "Case Studies" ist dazugekommen. Als das Briefing entstand, gab
- * es einen einzigen Fall, der unter News lief. Inzwischen sind es zwei mit
- * eigener Übersichtsseite – ohne Navigationspunkt wären sie nur über die
- * Startseite erreichbar. Die Zeile lässt sich ersatzlos streichen, wenn die
- * Navigation dem Briefing wortgleich folgen soll.
+ * "Pressemitteilungen" ist entfallen: ein Newsbereich, der nicht gepflegt
+ * wird, schadet mehr als er nuetzt.
  */
 export const mainNav: NavItem[] = [
   { label: 'Home', href: '/' },
   {
-    label: 'Branchen',
-    href: '/branchen',
+    label: 'Leistungen',
+    href: '/leistungen',
     children: [
-      { label: 'Fertigung und Maschinenbau', href: '/branchen/fertigung-und-maschinenbau' },
-      { label: 'Logistik & Versand', href: '/branchen/logistik-und-versand' },
-      { label: 'E-Commerce & Onlinehandel', href: '/branchen/onlinehandel' },
-      { label: 'Automobil und Zulieferer', href: '/branchen/automobil-und-zulieferer' },
+      { label: 'KI-Automationen', href: '/leistungen/ki-automationen' },
+      { label: 'Chatbots', href: '/leistungen/chatbots' },
+      { label: 'Webseiten', href: '/leistungen/webseiten' },
+      { label: 'E-Commerce-Lösungen', href: '/leistungen/e-commerce' },
+      { label: 'Individuelle Software', href: '/leistungen/individuelle-software' },
     ],
   },
   {
-    label: 'Funktionen',
-    href: '/funktionen',
+    label: 'Branchen',
+    href: '/branchen',
     children: [
-      { label: 'Produktion & Feinplanung', href: '/funktionen/produktion-und-feinplanung' },
-      { label: 'Logistik & Versandsteuerung', href: '/funktionen/logistik-und-versandsteuerung' },
-      { label: 'Supply Chain & Materialsteuerung', href: '/funktionen/supply-chain-und-materialsteuerung' },
-      { label: 'Reporting & operative Transparenz', href: '/funktionen/reporting-und-operative-transparenz' },
-      { label: 'Systemintegration & ERP-Anbindung', href: '/funktionen/systemintegration-und-erp-anbindung' },
+      { label: 'E-Commerce & Onlinehandel', href: '/branchen/e-commerce-und-onlinehandel' },
+      { label: 'Spedition & Logistik', href: '/branchen/spedition-und-logistik' },
+      { label: 'Produktion & Fertigung', href: '/branchen/produktion-und-fertigung' },
+      { label: 'Großhandel & Distribution', href: '/branchen/grosshandel-und-distribution' },
+      { label: 'Handwerk & Bau', href: '/branchen/handwerk-und-bau' },
+      { label: 'Dienstleistung & Agenturen', href: '/branchen/dienstleistung-und-agenturen' },
     ],
   },
   { label: 'Referenzprojekte', href: '/case-studies' },
-  { label: 'News', href: '/news' },
   { label: 'Über uns', href: '/ueber-uns' },
   { label: 'Münsterland', href: '/muensterland', nurFooter: true },
   { label: 'Kontakt', href: '/kontakt' },

@@ -2,143 +2,100 @@
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
 import Section from '../components/Section.astro';
-import Bild from '../components/Bild.astro';
 import SectionHeading from '../components/SectionHeading.astro';
-import PlaceholderNote from '../components/PlaceholderNote.astro';
 import Button from '../components/Button.astro';
-import { kernleistungen, prozess, technischeLeistungen } from '../data/site';
+import { site, prozess } from '../data/site';
+import { anbieter } from '../data/anbieter';
 import { withBase } from '../lib/url';
 
 /**
- * Geschichte und Werte, wie geliefert. Angepasst wurden ausschließlich
- * Zeichensetzung und Absatzgrenzen; an den Aussagen ist nichts geändert.
+ * Die Geschichte stammt aus dem freigegebenen Text der Gruender.
+ *
+ * Angepasst wurde die Einordnung: Der urspruengliche Text erklaerte die
+ * Luecke ausschliesslich am ERP-System. Das war zu eng, denn dieselbe Luecke
+ * entsteht ueberall dort, wo ein Ablauf nicht in den Standard passt. An den
+ * Aussagen ueber die Personen ist nichts geaendert.
+ *
+ * Die Nachnamen stehen abgekuerzt, wie im gelieferten Text. Vollstaendig
+ * stehen sie im Impressum, wo sie hingehoeren.
  */
 const geschichte = [
-  'Jedes Unternehmen, das ein ERP-System einführt, macht früher oder später dieselbe Erfahrung: Das System deckt vieles ab, aber nicht alles. Was übrig bleibt, sind die Prozesse, die sich nicht ins Schema pressen lassen, und die am Ende doch wieder in Excel-Tabellen und persönlichen Absprachen landen. Genau dort setzt adept& an, gegründet 2026 von zwei Personen mit komplementären Blickwinkeln auf exakt dieses Problem.',
+  'Jedes Unternehmen macht früher oder später dieselbe Erfahrung: Die eingesetzten Systeme decken vieles ab, aber nicht alles. Was übrig bleibt, sind die Abläufe, die sich nicht ins Schema pressen lassen, und die am Ende wieder in Tabellen und persönlichen Absprachen landen. Genau dort setzt youman an, gegründet 2026 von zwei Personen mit gegensätzlichen Blickwinkeln auf dasselbe Problem.',
   'Isho I. sieht die Lücke aus der Beratungsperspektive. Als Wirtschaftsingenieur im TMT-Sektor tätig und mit Zertifizierungen in Business Process Modeling und Unternehmensanalytik ausgestattet, beobachtet er dasselbe Muster immer wieder: Unternehmen mit solider Systemlandschaft, die im operativen Alltag trotzdem an denselben Stellen hängen bleiben.',
-  'Amanuel K. kennt das Problem von der anderen Seite. Lange bevor adept& existiert, baut er in seinem eigenen beruflichen Umfeld bereits Workflow-Automatisierungen und Softwaremodule, um genau solche Lücken zu schließen.',
-  'Die Beobachtung des einen trifft auf die Lösungskompetenz des anderen, und daraus entsteht eine gemeinsame Überzeugung: Was hier fehlt, muss gebaut werden, nicht nur beschrieben.',
-  'Unterschiedlich in der Aufgabe, identisch im Anspruch: Kein bestehendes System wird ersetzt. Jedes Modul entsteht dort, wo ein Unternehmen es tatsächlich braucht.',
+  'Amanuel K. kennt das Problem von der anderen Seite. Lange bevor youman existiert, baut er in seinem eigenen beruflichen Umfeld bereits Workflow-Automatisierungen und Softwaremodule, um genau solche Lücken zu schließen.',
+  'Die Beobachtung des einen trifft auf die Umsetzungskompetenz des anderen, und daraus entsteht eine gemeinsame Überzeugung: Was hier fehlt, muss gebaut werden, nicht nur beschrieben.',
+  'Unterschiedlich in der Aufgabe, identisch im Anspruch: Kein bestehendes System wird ersetzt. Jede Lösung entsteht dort, wo ein Unternehmen sie tatsächlich braucht.',
 ];
 
 const werte = [
   {
     titel: 'Ehrlichkeit',
-    text: 'Wir kommunizieren Risiken, Aufwände und Grenzen einer Lösung offen und ungeschönt, auch wenn das kurzfristig unbequem ist. Verlässliche Zusammenarbeit beginnt mit einer ehrlichen Einschätzung.',
+    text: 'Wir nennen Risiken, Aufwände und Grenzen einer Lösung offen, auch wenn das kurzfristig unbequem ist. Wenn ein Vorhaben sich nicht lohnt, sagen wir das, bevor es beauftragt wird.',
   },
   {
     titel: 'Transparenz',
-    text: 'Jeder Schritt unserer Arbeit ist für den Kunden nachvollziehbar, von der Analyse bis zur Umsetzung. Keine Blackbox, keine verborgene Komplexität.',
+    text: 'Sie sehen, woran gearbeitet wird und wo es steht. Keine Blackbox, aus der nach Monaten ein fertiges Ergebnis fällt.',
   },
   {
-    titel: 'Exzellenz',
-    text: 'Wir liefern keine Zwischenlösung, sondern die technisch fundierteste Antwort auf ein konkretes operatives Problem. Unser Anspruch ist Substanz, kein oberflächliches Ergebnis.',
+    titel: 'Verlässlichkeit',
+    text: 'Zusagen werden gehalten oder rechtzeitig zurückgezogen. Ein zu spät gemeldeter Verzug ist teurer als ein früh gemeldeter.',
   },
   {
-    titel: 'Professionalität',
-    text: 'Jedes Projekt erhält dieselbe Sorgfalt, unabhängig von Umfang oder Größe. Klare Zusagen, verbindliche Umsetzung, saubere Kommunikation.',
+    titel: 'Nachvollziehbarkeit',
+    text: 'Was wir bauen, ist dokumentiert und übergebbar. Sie sollen nicht von uns abhängig sein, sondern uns behalten, weil es passt.',
   },
 ];
 
-const werteSchluss =
-  'Im Zentrum jedes Projekts steht ein Anspruch: Unsere Kunden sollen durch unsere Arbeit einen echten, messbaren und dauerhaften Mehrwert erzielen, keine kurzfristige Verbesserung, sondern eine Lösung, die im operativen Alltag Bestand hat.';
+const brotkrumen = [{ label: 'Home', href: '/' }];
 ---
 
 <Base
-  title="Über uns: Prozessberatung und Individualsoftware"
-  description="adept& ist ein Beratungs- und Softwareunternehmen: Managementberatung plus individuelle Softwareentwicklung aus einer Hand."
-  bild="buero"
-  breadcrumb={[{ label: 'Home', href: '/' }]}
+  title="Über uns: KI-Automation und Softwareentwicklung"
+  description="youman verbindet Prozessanalyse mit Softwareentwicklung. Gegründet 2026 von zwei Personen, die dasselbe Problem aus zwei Richtungen kennen."
+  breadcrumb={brotkrumen}
 >
   <PageHeader
     kicker="Über uns"
-    bild="architektur"
-    title="Wer hinter adept& steht"
-    lead="Wir beraten, wo andere nur liefern und wir bauen, was andere nur empfehlen."
-    breadcrumb={[{ label: 'Home', href: '/' }]}
+    title={`Wer hinter ${site.name} steht`}
+    lead="Zwei Blickwinkel auf dasselbe Problem: die Analyse, warum ein Ablauf hakt, und die Fähigkeit, das Fehlende zu bauen."
+    breadcrumb={brotkrumen}
   />
 
   <Section>
     <div class="prose-measure space-y-5 text-lg text-ink-soft">
       <p>
-        adept& ist ein Beratungs- und Softwareunternehmen. Wir verbinden klassische
-        Managementberatung mit individueller Softwareentwicklung aus einer Hand, ohne Kompromisse.
+        {site.name} ist kein reines Beratungshaus, das Empfehlungen ausspricht. Und kein
+        Anbieter, der ein fertiges Produkt verkauft, in das der Betrieb hineinpassen muss. Wir
+        tun beides: Wir analysieren den Ablauf, und wir bauen die Lösung dafür.
       </p>
       <p>
-        Wir sind kein reines Beratungshaus, das Empfehlungen ausspricht. Und kein klassisches
-        Softwareunternehmen, das ein Standardprodukt verkauft. Wir tun beides:
-        <strong class="text-ink">Wir analysieren das Problem und wir bauen die Lösung.</strong>
+        Der Unterschied zeigt sich in der Praxis daran, wer die Verantwortung trägt, wenn
+        etwas nicht funktioniert. Bei getrennten Rollen zeigen Beratung und Umsetzung
+        aufeinander. Bei uns gibt es diese Trennung nicht.
       </p>
     </div>
   </Section>
 
   <Section tone="canvas">
-    <SectionHeading
-      kicker="Was wir tun"
-      title="Eine einzige, dedizierte Softwareoberfläche"
-      lead="Unternehmen arbeiten täglich mit einer Vielzahl an Tools, Systemen und manuellen Prozessen und verlieren dabei Zeit, Übersicht und Effizienz."
-    />
-    <div class="prose-measure mt-8 space-y-5 text-ink-soft">
-      <p>
-        Wir analysieren zunächst das operative Problem des Kunden. Anschließend entwickeln wir eine
-        maßgeschneiderte Lösung, die direkt in adept& eingebettet wird. Das Ergebnis ist eine
-        Anwendung, die exakt auf den jeweiligen Use Case zugeschnitten ist und gleichzeitig nahtlos
-        mit dem bestehenden ERP- oder SAP-System des Kunden zusammenarbeitet.
-      </p>
+    <SectionHeading kicker={site.name} title="Geschichte" />
+    <div class="prose-measure mt-10 space-y-5 text-ink-soft">
+      {geschichte.map((absatz) => <p>{absatz}</p>)}
     </div>
-    <p class="mt-10 font-serif text-2xl md:text-3xl text-ink">
-      Kein Systemwechsel. Keine Medienbrüche. Eine Oberfläche.
-    </p>
   </Section>
 
   <Section>
     <SectionHeading
-      kicker="Was ist adept&"
-      title="Eine modulare Plattform als Arbeitsgerüst"
-      lead="Stellen Sie sich adept& wie ein Betriebssystem vor: Es bildet das stabile Gerüst. Je nach Kundenanforderung wird eine spezifische Lösung als Modul in dieses Gerüst eingebettet, zum Beispiel eine Logistiksoftware, eine Produktionsplanung oder ein Reporting-Tool."
+      kicker="Vorgehen"
+      title="Wie ein Projekt abläuft"
+      lead="Vier Schritte. Nach dem zweiten wissen Sie, ob sich das Vorhaben lohnt."
     />
-    <ul class="mt-12 grid gap-x-10 gap-y-6 md:grid-cols-2">
-      {
-        technischeLeistungen.map((leistung) => (
-          <li class="border-t border-line pt-6">
-            <span class="text-ink">{leistung}</span>
-          </li>
-        ))
-      }
-    </ul>
-    <p class="prose-measure mt-10 text-ink-soft">
-      Der Mitarbeiter beim Kunden sieht nur eine Oberfläche. Datenabruf, Berechnung und
-      Synchronisation mit dem ERP-System geschehen vollautomatisch im Hintergrund.
-    </p>
-    <p class="prose-measure mt-5 text-ink-soft">
-      Unser Sitz ist Borken, gearbeitet wird im gesamten deutschsprachigen Raum. Was die
-      räumliche Nähe an einem Projekt praktisch ändert und an welchen Stellen sie nichts
-      ändert, haben wir auf der Seite{' '}
-      <a href={withBase('/muensterland')} class="textverweis">Münsterland</a> aufgeschrieben.
-    </p>
-  </Section>
-
-  <Section tone="dark">
-    <SectionHeading kicker="Kernleistungen" title="Vier Leistungen, ein Ansprechpartner" tone="dark" />
-    <ul class="mt-12 grid gap-px bg-white/15 md:grid-cols-2">
-      {
-        kernleistungen.map((leistung) => (
-          <li class="bg-ink-deep p-8">
-            <h3 class="text-xl text-white">{leistung.title}</h3>
-            <p class="mt-3 text-white/80">{leistung.description}</p>
-          </li>
-        ))
-      }
-    </ul>
-  </Section>
-
-  <Section>
-    <SectionHeading kicker="Unser Prozess" title="Von der Analyse bis zum Rollout" />
-    <ol class="mt-12 rasterfugen md:grid-cols-3 lg:grid-cols-5">
+    <ol class="mt-12 rasterfugen sm:grid-cols-2 lg:grid-cols-4" data-reveal>
       {
         prozess.map((schritt) => (
-          <li class="bg-surface p-6">
-            <p class="font-display text-3xl font-semibold text-accent">{schritt.step}</p>
+          <li class="bg-surface p-7">
+            <span class="font-display text-sm font-semibold tabular-nums text-accent">
+              {schritt.step}
+            </span>
             <h3 class="mt-3 text-lg text-ink">{schritt.title}</h3>
             <p class="mt-2 text-sm text-ink-soft">{schritt.description}</p>
           </li>
@@ -147,44 +104,35 @@ const werteSchluss =
     </ol>
   </Section>
 
-  {/* Bild und Platzhalter nebeneinander: das Motiv liegt vor, der Text noch
-      nicht. So ist der Abschnitt nicht leer, ohne dass etwas behauptet wird,
-      was nicht geschrieben wurde. */}
-  <Section id="geschichte" tone="canvas">
-    <SectionHeading kicker="adept&" title="Geschichte" />
-    <div class="mt-10 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
-      <Bild name="geschichte" ratio="16/9" sizes="(min-width: 1024px) 45vw, 100vw" />
-      <div class="prose-measure space-y-5 text-lg text-ink-soft">
-        {geschichte.map((absatz) => <p>{absatz}</p>)}
-      </div>
-    </div>
-  </Section>
-
-  <Section id="werte">
-    <SectionHeading kicker="adept&" title="Werte" />
-    <div class="mt-10 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
-      <Bild name="werte" ratio="16/9" sizes="(min-width: 1024px) 45vw, 100vw" />
-      <dl class="space-y-7">
-        {
-          werte.map((wert) => (
-            <div class="border-t border-line pt-6">
-              <dt class="text-xl text-ink">{wert.titel}</dt>
-              <dd class="prose-measure mt-2.5 text-ink-soft">{wert.text}</dd>
-            </div>
-          ))
-        }
-      </dl>
-    </div>
-    <p class="prose-measure mt-12 text-lg text-ink-soft">{werteSchluss}</p>
-  </Section>
-
   <Section tone="canvas">
+    <SectionHeading kicker={site.name} title="Werte" />
+    <dl class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
+      {
+        werte.map((wert) => (
+          <div class="bg-surface p-7">
+            <dt class="text-lg text-ink">{wert.titel}</dt>
+            <dd class="prose-measure mt-2.5 text-ink-soft">{wert.text}</dd>
+          </div>
+        ))
+      }
+    </dl>
+    <p class="prose-measure mt-12 text-lg text-ink-soft">
+      Unser Sitz ist {anbieter.ort}, gearbeitet wird im gesamten deutschsprachigen Raum. Was
+      die räumliche Nähe an einem Projekt praktisch ändert und an welchen Stellen sie nichts
+      ändert, haben wir auf der Seite{' '}
+      <a href={withBase('/muensterland')} class="textverweis">Münsterland</a> aufgeschrieben.
+    </p>
+  </Section>
+
+  <Section tone="dark">
     <div class="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
       <SectionHeading
-        title="Sprechen wir über Ihren Engpass"
-        lead="Schildern Sie uns die Situation. Wir sagen Ihnen, ob sich das als Modul abbilden lässt."
+        title="Klingt nach der richtigen Herangehensweise?"
+        lead="Dann beschreiben Sie uns kurz, woran es bei Ihnen hängt."
+        tone="dark"
+        class="max-w-2xl"
       />
-      <Button href="/kontakt" variant="primary" class="shrink-0">Kontakt aufnehmen</Button>
+      <Button href="/kontakt" variant="ghost" class="shrink-0">Kontakt aufnehmen</Button>
     </div>
   </Section>
 </Base>

@@ -3,7 +3,6 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { withBase } from '../lib/url';
-import { bild } from '../lib/images';
 import { site } from '../data/site';
 import { kontakt } from '../data/kontakt';
 import { anbieter, anbieterVollstaendig } from '../data/anbieter';
@@ -24,19 +23,12 @@ import { indexierungErlaubt } from '../data/sichtbarkeit';
 import schriftSerif from '@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2?url';
 import schriftDisplay from '@fontsource-variable/lexend/files/lexend-latin-wght-normal.woff2?url';
 import schriftSans from '@fontsource-variable/source-sans-3/files/source-sans-3-latin-wght-normal.woff2?url';
-import type { BildKey } from '../data/images';
 
 interface Props {
   title: string;
   description?: string;
   /** Wenn true, wird die Seite von Suchmaschinen ausgeschlossen. */
   noindex?: boolean;
-  /**
-   * Bild für die Vorschau beim Teilen. Ohne Angabe greift das Standbild des
-   * Hero-Videos. Ein seitenspezifisches Bild ist deutlich klickstärker als
-   * überall dasselbe.
-   */
-  bild?: BildKey;
   /**
    * Brotkrumenpfad ohne die aktuelle Seite. Erzeugt die BreadcrumbList für
    * Suchmaschinen; Google zeigt daraus den Pfad statt der nackten URL an.
@@ -61,7 +53,6 @@ const {
   title,
   description = site.description,
   noindex = false,
-  bild: bildKey,
   breadcrumb = [],
   artikel,
   dienstleistung,
@@ -79,8 +70,14 @@ const canonical = new URL(Astro.url.pathname, basis);
 // Daten nicht zulässig, manche Dienste ignorieren sie stillschweigend.
 const absolut = (pfad: string) => new URL(pfad, basis).href;
 
-const seitenbild = bildKey ? bild(bildKey) : null;
-const ogImage = absolut(seitenbild ? seitenbild.quelle.src : withBase('/hero-poster.jpg'));
+/*
+ * Kein og:image.
+ *
+ * Die Seite kommt ohne Bildmaterial aus, also gibt es auch kein Motiv fuer
+ * die Vorschau beim Teilen. Ein Verweis auf eine Datei, die es nicht gibt,
+ * waere schlechter als gar keine Angabe: Dienste zeigen dann einen kaputten
+ * Platzhalter statt eine schlichte Textvorschau.
+ */
 
 const organisation = {
   /*
@@ -100,12 +97,13 @@ const organisation = {
    */
   '@type': anbieterVollstaendig ? ['Organization', 'ProfessionalService'] : 'Organization',
   '@id': absolut(withBase('/')) + '#organisation',
-  name: 'adept&',
+  name: 'youman',
   url: absolut(withBase('/')),
-  // Fuer Suchmaschinen die Wortmarke, nicht das Favicon: das Favicon ist
-  // nur das kaufmaennische Und und ausserhalb des Browser-Tabs nicht als
-  // Absender zu erkennen.
-  logo: absolut(withBase('/logo-adept.png')),
+  /*
+   * Kein logo-Feld. Es gibt keine Logodatei mehr: die Wortmarke ist Text.
+   * Ein Verweis auf eine nicht vorhandene Datei waere schlechter als das
+   * Weglassen, weil Google das Feld dann als fehlerhaft meldet.
+   */
   description: site.description,
   slogan: site.claim,
   areaServed: { '@type': 'Country', name: 'Deutschland' },
@@ -189,7 +187,6 @@ const artikelObjekt = artikel
       '@type': 'Article',
       headline: artikel.titel,
       description: artikel.beschreibung,
-      image: ogImage,
       inLanguage: 'de-DE',
       mainEntityOfPage: canonical.href,
       author: { '@id': absolut(withBase('/')) + '#organisation' },
@@ -267,17 +264,14 @@ const strukturierteDaten = {
     <meta name="theme-color" content="#000000" />
 
     <meta property="og:type" content={artikel ? 'article' : 'website'} />
-    <meta property="og:site_name" content="adept&" />
+    <meta property="og:site_name" content="youman" />
     <meta property="og:locale" content="de_DE" />
     <meta property="og:title" content={seitentitel} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical.href} />
-    <meta property="og:image" content={ogImage} />
-    <meta property="og:image:alt" content={seitenbild?.alt ?? `${site.name} ${site.region}`} />
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content={seitentitel} />
     <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content={ogImage} />
 
     {indexierungErlaubt && <link rel="sitemap" href={withBase('/sitemap-index.xml')} />}
 

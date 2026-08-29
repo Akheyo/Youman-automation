@@ -28,7 +28,7 @@ import { kontakt } from './kontakt';
 
 export const anbieter = {
   /** Geschäftsbezeichnung, unter der die Seite auftritt. */
-  bezeichnung: 'adept&',
+  bezeichnung: 'youman',
 
   /**
    * Rechtsform, sobald eine Gesellschaft besteht – z. B. 'GbR'.

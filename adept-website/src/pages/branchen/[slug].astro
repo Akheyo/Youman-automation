@@ -3,10 +3,9 @@ import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import Section from '../../components/Section.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
-import PlaceholderNote from '../../components/PlaceholderNote.astro';
 import Button from '../../components/Button.astro';
 import { branchen } from '../../data/branchen';
-import { funktionen } from '../../data/funktionen';
+import { leistungen } from '../../data/leistungen';
 import { caseStudyNach } from '../../data/caseStudies';
 import { withBase } from '../../lib/url';
 
@@ -19,61 +18,25 @@ export function getStaticPaths() {
 
 const { branche } = Astro.props;
 
-const passendeFunktionen = branche.funktionen.flatMap((slug) => {
-  const treffer = funktionen.find((f) => f.slug === slug);
-  return treffer ? [treffer] : [];
-});
-
+const passendeLeistungen = leistungen.filter((l) => branche.leistungen.includes(l.slug));
 const referenz = branche.referenz ? caseStudyNach(branche.referenz) : undefined;
+
+const brotkrumen = [
+  { label: 'Home', href: '/' },
+  { label: 'Branchen', href: '/branchen' },
+];
 ---
 
 <Base
   title={branche.seoTitel ?? branche.title}
-  description={branche.platzhalter
-    ? `${branche.title}: Inhalte für diese Branche werden derzeit erarbeitet.`
-    : `${branche.teaser} adept& baut dafür Module und bindet sie an das bestehende ERP-System an.`}
-  bild={branche.bild}
-  breadcrumb={[
-    { label: 'Home', href: '/' },
-    { label: 'Branchen', href: '/branchen' },
-  ]}
+  description={branche.seoBeschreibung ?? branche.teaser}
+  breadcrumb={brotkrumen}
 >
-  <PageHeader
-    kicker="Branchen"
-    bild={branche.bild}
-    title={branche.title}
-    lead={branche.platzhalter ? undefined : branche.teaser}
-    breadcrumb={[
-      { label: 'Home', href: '/' },
-      { label: 'Branchen', href: '/branchen' },
-    ]}
-  />
+  <PageHeader kicker="Branchen" title={branche.title} lead={branche.teaser} breadcrumb={brotkrumen} />
 
   <Section>
-    {
-      branche.platzhalter ? (
-        <PlaceholderNote title="Platzhalter: Branchentexte fehlen noch">
-          <p>
-            Für <strong>{branche.title}</strong> liegen bislang keine freigegebenen operativen
-            Painpoints aus adept&-Projekten vor. Sobald drei bis fünf konkrete Problemstellungen
-            benannt sind, wird dieser Abschnitt ersetzt.
-          </p>
-          <p class="mt-3">
-            Bis dahin bleibt diese Seite bewusst ohne inhaltliche Aussage. Es werden keine
-            Herausforderungen, Zahlen oder Referenzen erfunden.
-          </p>
-        </PlaceholderNote>
-      ) : (
-        <p class="prose-measure text-lg text-ink-soft">{branche.intro}</p>
-      )
-    }
+    <p class="prose-measure text-lg text-ink-soft">{branche.intro}</p>
 
-    {/*
-      Verweis auf das Referenzprojekt im Fliesstext. Er stand vorher weiter
-      unten auf einem eigenen Knopf. Ein Verweis mitten im Text wird gelesen
-      und zaehlt fuer Suchmaschinen mehr als einer in einem Randbereich, der
-      auf jeder Seite gleich aussieht.
-    */}
     {
       referenz && branche.referenzHinweis && (
         <p class="prose-measure mt-6 text-lg text-ink-soft">
@@ -84,51 +47,46 @@ const referenz = branche.referenz ? caseStudyNach(branche.referenz) : undefined;
     }
   </Section>
 
-  {/*
-    Painpoints. Steht bewusst VOR den Funktionen: erst das Problem, dann die
-    Antwort. Wer sein eigenes Problem oben wiedererkennt, liest den Rest.
-    Fehlt die Liste, entfällt der Abschnitt ersatzlos.
-  */}
-  {
-    branche.painpoints && branche.painpoints.length > 0 && (
-      <Section tone="canvas">
-        <SectionHeading
-          kicker="Woran es hakt"
-          title="Typische Problemstellungen in dieser Branche"
-          lead="Wenn Ihnen davon etwas bekannt vorkommt, lohnt sich ein Gespräch. Genau an solchen Stellen setzen wir an."
-        />
-        <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
-          {branche.painpoints.map((punkt, i) => (
-            <li class="flex gap-5 bg-surface p-7">
-              <span class="font-display text-sm font-semibold tabular-nums text-accent">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <span class="text-ink-soft">{punkt}</span>
-            </li>
-          ))}
-        </ul>
-      </Section>
-    )
-  }
-
-  <Section tone={branche.painpoints && branche.painpoints.length > 0 ? 'light' : 'canvas'}>
+  {/* Erst das Problem, dann die Antwort. Wer sein eigenes Problem oben
+      wiedererkennt, liest den Rest. */}
+  <Section tone="canvas">
     <SectionHeading
-      kicker="Passende Funktionen"
-      title="Was wir in dieser Branche bauen"
-      lead="Die folgenden Funktionsbereiche greifen hier typischerweise. Jede Lösung entsteht als eigenes Modul im adept&-Gerüst."
+      kicker="Woran es hakt"
+      title="Typische Problemstellungen in dieser Branche"
+      lead="Wenn Ihnen davon etwas bekannt vorkommt, lohnt sich ein Gespräch. Genau an solchen Stellen setzen wir an."
     />
-    <ul class="mt-12 rasterfugen md:grid-cols-3">
+    <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
       {
-        passendeFunktionen.map((funktion) => (
-          <li class="hebt-sich bg-canvas">
+        branche.painpoints.map((punkt, i) => (
+          <li class="flex gap-5 bg-surface p-7">
+            <span class="font-display text-sm font-semibold tabular-nums text-accent">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <p class="text-ink-soft">{punkt}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section>
+    <SectionHeading
+      kicker="Leistungen"
+      title="Was hier üblicherweise greift"
+      lead="Meistens beginnt es an einer Stelle und wächst von dort, sobald es dort trägt."
+    />
+    <ul class="mt-12 rasterfugen sm:grid-cols-3">
+      {
+        passendeLeistungen.map((leistung) => (
+          <li class="hebt-sich bg-surface">
             <a
-              href={withBase(`/funktionen/${funktion.slug}`)}
-              class="group flex h-full flex-col p-8 transition-colors duration-200"
+              href={withBase(`/leistungen/${leistung.slug}`)}
+              class="group flex h-full flex-col p-7 transition-colors duration-200"
             >
               <h3 class="text-lg text-ink group-hover:text-accent transition-colors duration-200">
-                {funktion.title}
+                {leistung.title}
               </h3>
-              <p class="mt-3 text-sm text-ink-soft">{funktion.teaser}</p>
+              <p class="mt-3 text-sm text-ink-soft">{leistung.teaser}</p>
             </a>
           </li>
         ))
@@ -140,8 +98,9 @@ const referenz = branche.referenz ? caseStudyNach(branche.referenz) : undefined;
     <div class="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
       <SectionHeading
         title="Passt das zu Ihrer Situation?"
-        lead="Schildern Sie uns den Engpass. Wir sagen Ihnen, ob sich das als Modul abbilden lässt."
+        lead="Schildern Sie kurz, wo es klemmt. Wir sagen Ihnen, ob sich das automatisieren lässt."
         tone="dark"
+        class="max-w-2xl"
       />
       <Button href="/kontakt" variant="ghost" class="shrink-0">Kontakt aufnehmen</Button>
     </div>

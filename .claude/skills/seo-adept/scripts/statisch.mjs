@@ -166,8 +166,12 @@ for (const s of seiten) {
 
   if (!s.robots) melde(p, 'kein robots-Meta');
 
-  if (!s.ogBild) melde(p, 'kein og:image');
-  else if (!/^https?:\/\//i.test(s.ogBild)) melde(p, 'og:image ist nicht absolut');
+  // og:image ist kein Pflichtfeld. Die Seite kommt bewusst ohne Bildmaterial
+  // aus, also gibt es kein Motiv fuer die Vorschau beim Teilen. Gemeldet wird
+  // deshalb nur ein vorhandenes, aber unbrauchbares Bild: ein relativer Pfad
+  // funktioniert in OpenGraph nicht und wird von Diensten stillschweigend
+  // ignoriert. Das Fehlen ist eine Entscheidung, ein relativer Pfad ein Fehler.
+  if (s.ogBild && !/^https?:\/\//i.test(s.ogBild)) melde(p, 'og:image ist nicht absolut');
   if (!s.ogTitel) melde(p, 'kein og:title');
 
   const h1 = s.ueberschriften.filter((h) => h.stufe === 1);

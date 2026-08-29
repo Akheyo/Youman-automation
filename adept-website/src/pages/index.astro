@@ -1,304 +1,161 @@
 ---
 import Base from '../layouts/Base.astro';
-import HeroVideo from '../components/HeroVideo.astro';
 import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
-import TeaserCard from '../components/TeaserCard.astro';
-import Bild from '../components/Bild.astro';
 import Button from '../components/Button.astro';
-import { news } from '../data/news';
+import Logo from '../components/Logo.astro';
+import { site } from '../data/site';
+import { leistungen, anfrageHinweis } from '../data/leistungen';
 import { branchen } from '../data/branchen';
-import { funktionen } from '../data/funktionen';
-import { site, kernleistungen } from '../data/site';
+import { caseStudies } from '../data/caseStudies';
 import { withBase } from '../lib/url';
-
-/**
- * Reihenfolge der Startseite:
- * Hero > Einordnung > Pressemitteilungen > Was wir tun > Claim > adept&
- * > Branchen und Funktionen.
- *
- * Die Case Studies sind auf Wunsch von der Startseite genommen. Sie bleiben
- * unter /case-studies erreichbar und stehen dort als Referenzprojekte.
- */
-
-// Beide Abschnitte sind auf /ueber-uns ausformuliert.
-const ueberKacheln = [
-  { title: 'Geschichte', href: '/ueber-uns', bild: 'geschichte' as const },
-  { title: 'Werte', href: '/ueber-uns', bild: 'werte' as const },
-];
 ---
 
-<Base title={site.name} description={site.startseitenBeschreibung} bild="halle">
-  {/* Das Video ist ohne eingebrannte Schrift geliefert – "adept&" und
-      "Deutschland" stehen deshalb wieder als echter Text darüber. Die leichte
-      Verlangsamung nimmt den drei Einstellungen die Hektik, ohne dass das
-      Video neu gerendert werden muss. */}
-  <HeroVideo
-    title={site.name}
-    subtitle={site.region}
-    claim={site.claim}
-    videoSrc="/hero.mp4"
-    poster="/hero-poster.jpg"
-    playbackRate={0.85}
-    sprungziel="#einordnung"
-  />
-
+<Base title={site.name} description={site.startseitenBeschreibung}>
   {/*
-    ---------------------------------------------------- Einordnung
-
-    Der erste Bildschirm zeigte bisher nur den Namen. Wer adept& nicht kennt,
-    wusste danach immer noch nicht, womit das Unternehmen sein Geld verdient –
-    die Erklaerung stand erst weit unten in "Wir beraten, wo andere nur
-    liefern". Dieses Band schliesst die Luecke: zwei Saetze, direkt unter dem
-    Hero, ohne dem ausfuehrlichen Abschnitt etwas wegzunehmen.
-
-    Kein <Section>, sondern eigenes Markup: die Standardhoehe waere fuer so
-    wenig Text zu viel. Das Band soll knapp wirken, nicht wie ein Kapitel.
+    Der Hero traegt die Wortmarke statt eines Videos. Ohne Bildmaterial muss
+    die Typografie die Wirkung uebernehmen, deshalb hier die einzige Stelle,
+    an der die Marke gross gesetzt wird. Kein Video heisst auch: nichts, was
+    nachlaedt, nichts, was springt, und mehrere Megabyte weniger.
   */}
-  <section id="einordnung" class="border-y border-line bg-surface py-14 md:py-20">
+  <section class="on-dark relative isolate flex min-h-[calc(100svh-5rem)] flex-col justify-center bg-ink-deep py-24 text-white">
     <div class="container-page">
-      <div
-        class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-end lg:gap-20"
-        data-reveal
-      >
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Was wir machen</p>
-          <h2 class="mt-4 text-3xl sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
-            Beratung und Software aus einer Hand.
-          </h2>
-        </div>
-        {/* "woran es im Betrieb hakt" war zu unbestimmt – das kann alles
-            heißen. Jetzt stehen die Handgriffe da, um die es tatsächlich
-            geht: planen, rechnen, übertragen. Bewusst nicht
-            "Automatisierungstechnik": der Begriff meint in der Industrie
-            Steuerungen und Sensorik, also Hardware, und würde die
-            falschen Anfragen anziehen. */}
-        <p class="prose-measure text-lg text-ink-soft lg:text-xl">
-          Wir analysieren Ihre Herausforderungen im Betrieb und bauen eine maßgeschneiderte Lösung.
-          Sie kooperiert mit Ihrem bestehenden ERP- oder SAP-System integrativ.
-        </p>
-      </div>
+      <Logo as="h1" variant="light" mitClaim class="text-[2.25rem] sm:text-6xl lg:text-8xl" />
 
-      {/* Die vier Leistungen als reine Wortmarke, ohne Kacheln: weiter unten
-          stehen dieselben vier Punkte ausfuehrlich. Hier genuegt der Umriss. */}
-      <ul
-        class="mt-10 flex flex-wrap gap-x-8 gap-y-3 border-t border-line pt-6 font-sans text-xs uppercase tracking-[0.16em] text-ink-soft sm:text-sm md:mt-12"
-        data-reveal
-      >
-        {kernleistungen.map((leistung) => <li>{leistung.title}</li>)}
-      </ul>
+      <p class="prose-measure mt-12 text-xl text-white/85 sm:text-2xl">
+        Wir automatisieren, was in Ihrem Betrieb jeden Tag Zeit kostet: Anfragen, die von Hand
+        sortiert werden, Angaben, die zweimal erfasst werden, Auskünfte, die immer wieder
+        dieselben sind.
+      </p>
+
+      <div class="mt-12 flex flex-wrap gap-4">
+        <Button href="/kontakt" variant="ghost">Gespräch vereinbaren</Button>
+        <Button href="/leistungen" variant="ghost">Leistungen ansehen</Button>
+      </div>
     </div>
   </section>
 
-  {/* -------------------------------------------------- Pressemitteilungen */}
-  <Section tone="canvas">
-    <div class="flex flex-wrap items-end justify-between gap-6">
-      <SectionHeading kicker="Aktuelles" title="Pressemitteilungen" />
-      <Button href="/news" variant="secondary">Alle Beiträge</Button>
-    </div>
-
-    <ul class="mt-12 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3" data-reveal-gruppe>
-      {
-        news.map((item, index) => (
-          <li data-reveal style={`--reveal-index:${index}`}>
-            <TeaserCard
-              title={item.title}
-              href={item.href}
-              kicker={item.kicker}
-              date={item.date}
-              excerpt={item.excerpt}
-              bild={item.bild}
-              index={index + 1}
-              platzhalter={item.platzhalter}
-            />
-          </li>
-        ))
-      }
-    </ul>
-  </Section>
-
-  {/* ---------------------------------------------------- Was wir tun */}
-  <Section tone="canvas">
-    <div class="grid gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-24" data-reveal>
-      <div>
-        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-          {site.claim}
-        </p>
-        <h2 class="mt-5 text-3xl sm:text-4xl lg:text-5xl">
-          Wir beraten, wo andere nur liefern und wir bauen, was andere nur empfehlen.
-        </h2>
-        <Button href="/ueber-uns" variant="secondary" class="mt-9">
-          Wie wir arbeiten
-        </Button>
-      </div>
-
-      <ol class="grid gap-px self-start bg-line sm:grid-cols-2">
-        {
-          kernleistungen.map((leistung, i) => (
-            <li class="bg-surface p-7">
-              <p class="font-display text-sm font-semibold tabular-nums text-accent">
-                {String(i + 1).padStart(2, '0')}
-              </p>
-              <h3 class="mt-3 text-lg text-ink">{leistung.title}</h3>
-              <p class="mt-2.5 text-sm leading-relaxed text-ink-soft">{leistung.description}</p>
-            </li>
-          ))
-        }
-      </ol>
+  {/* Einordnung direkt unter dem Hero: Wer hier landet, soll nach zwei
+      Saetzen wissen, worum es geht. */}
+  <Section>
+    <div class="prose-measure space-y-6 text-lg text-ink-soft">
+      <p>
+        {site.name} verbindet zwei Dinge, die sonst getrennt eingekauft werden: Wir sehen uns
+        den Ablauf an, um den es geht, und wir bauen anschließend die Lösung dafür. Kein
+        Beratungshaus, das Empfehlungen ausspricht, und kein Anbieter, der ein fertiges Produkt
+        verkauft, in das der Betrieb hineinpassen muss.
+      </p>
+      <p>
+        Das Ergebnis hängt an dem, was schon läuft, und ersetzt es nicht. Buchhaltung, Lager
+        und Stammdaten bleiben, wo sie sind. Dazu kommt genau das Stück, das bisher von Hand
+        erledigt wurde.
+      </p>
     </div>
   </Section>
 
-  {/* ---------------------------------------------------- Claim-Bahn */}
-  <section class="on-dark relative isolate overflow-hidden bg-ink-deep text-white">
-    <div class="absolute inset-0 -z-10">
-      <Bild name="oberflaeche" ratio="fill" parallax sizes="100vw" class="size-full" />
-      <div class="absolute inset-0 bg-ink-deep/20" aria-hidden="true"></div>
-      {/* Kraeftiger Verlauf nur ueber der linken Haelfte, wo der Text steht */}
-      <div
-        class="absolute inset-0 bg-gradient-to-r from-ink-deep from-30% via-ink-deep/90 via-55% to-transparent"
-        aria-hidden="true"
-      >
-      </div>
-    </div>
-    <div class="container-page py-24 md:py-36">
-      <p class="max-w-2xl font-serif text-4xl leading-[1.05] sm:text-6xl lg:text-7xl" data-reveal>
-        Kein Systemwechsel.<br />Keine Medienbrüche.<br /><span class="text-accent-on-dark"
-          >Eine Oberfläche.</span
-        >
-      </p>
-      <p class="max-w-xl mt-8 text-lg text-white/80" data-reveal>
-        Der Mitarbeiter beim Kunden sieht nur eine Oberfläche. Datenabruf, Berechnung und
-        Synchronisation mit dem ERP-System laufen vollautomatisch im Hintergrund.
-      </p>
-    </div>
-  </section>
-
-  {/*
-    ---------------------------------------------------- Über adept&
-
-    Heller Grund, nicht dunkel: der Abschnitt steht jetzt direkt unter der
-    dunklen Claim-Bahn. Zwei dunkle Bänder hintereinander verschmelzen zu
-    einem langen Block, die Kante dazwischen verschwindet.
-  */}
   <Section tone="canvas">
     <SectionHeading
-      title="Über adept&"
-      lead="Wir sind kein reines Beratungshaus, das Empfehlungen ausspricht. Und kein klassisches Softwareunternehmen, das ein Standardprodukt verkauft. Wir tun beides: Wir analysieren das Problem und wir bauen die Lösung."
-      align="center"
+      kicker="Leistungen"
+      title="Was wir bauen"
+      lead="Fünf Bereiche, gegliedert nach dem, was gesucht wird."
     />
-
-    <ul class="mt-14 grid gap-6 sm:grid-cols-2" data-reveal>
+    <ul class="mt-12 rasterfugen sm:grid-cols-2 lg:grid-cols-3" data-reveal>
       {
-        ueberKacheln.map((kachel, i) => (
-          <li>
+        leistungen.map((leistung) => (
+          <li class="hebt-sich bg-surface">
             <a
-              href={withBase(kachel.href)}
-              class="hebt-sich streift group relative block overflow-hidden"
+              href={withBase(`/leistungen/${leistung.slug}`)}
+              class="group flex h-full flex-col p-8 transition-colors duration-200"
             >
-              <Bild
-                name={kachel.bild}
-                index={i}
-                ratio="16/9"
-                scrim="unten"
-                zoom
-                sizes="(min-width: 640px) 50vw, 100vw"
-              >
-                <span class="absolute bottom-6 left-6 font-serif text-2xl font-medium text-white md:text-3xl">
-                  {kachel.title}
-                </span>
-              </Bild>
+              <h3 class="text-xl text-ink group-hover:text-accent transition-colors duration-200">
+                {leistung.title}
+              </h3>
+              <p class="prose-measure mt-3 text-ink-soft">{leistung.teaser}</p>
             </a>
           </li>
         ))
       }
+      <li class="bg-muted p-8">
+        <h3 class="text-xl text-ink">Nicht dabei?</h3>
+        <p class="prose-measure mt-3 text-ink-soft">
+          Dann fragen Sie an. Wir sagen Ihnen ehrlich, ob wir die Richtigen dafür sind.
+        </p>
+        <a
+          href={withBase('/kontakt')}
+          class="textverweis mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-ink"
+        >
+          Anfrage schreiben
+        </a>
+      </li>
     </ul>
   </Section>
-{/* ---------------------------------------------------- Branchen und Funktionen */}
-  <Section tone="light">
+
+  <Section>
     <SectionHeading
       kicker="Branchen"
       title="Wo wir arbeiten"
-      lead="adept& arbeitet in produktionsnahen und logistikintensiven Branchen."
+      lead="Eine Abkürzung für Leser, keine Grenze. Wer hier nicht vorkommt, ist nicht ausgeschlossen."
     />
-
-    <ul class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4" data-reveal>
+    <ul class="mt-12 rasterfugen sm:grid-cols-2 lg:grid-cols-3" data-reveal>
       {
-        branchen.map((branche, i) => (
-          <li>
+        branchen.map((branche) => (
+          <li class="hebt-sich bg-surface">
             <a
               href={withBase(`/branchen/${branche.slug}`)}
-              class="hebt-sich streift group relative block overflow-hidden"
+              class="group flex h-full flex-col p-7 transition-colors duration-200"
             >
-              <Bild
-                name={branche.bild}
-                index={i}
-                ratio="4/3"
-                scrim="unten"
-                zoom
-                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-              >
-                <div class="absolute inset-x-0 bottom-0 p-5">
-                  <h3 class="text-lg font-medium text-white">{branche.title}</h3>
-                  <span
-                    class="mt-1.5 inline-flex items-center gap-1.5 text-sm text-white/85"
-                    aria-hidden="true"
-                  >
-                    Ansehen
-                    <svg
-                      class="size-3.5 transition-transform duration-200 group-hover:translate-x-1"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2.5"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path d="m9 18 6-6-6-6" />
-                    </svg>
-                  </span>
-                </div>
-              </Bild>
+              <h3 class="text-lg text-ink group-hover:text-accent transition-colors duration-200">
+                {branche.title}
+              </h3>
+              <p class="mt-3 text-sm text-ink-soft">{branche.teaser}</p>
             </a>
           </li>
         ))
       }
     </ul>
-
-    <div class="mt-16 border-t border-line pt-10">
-      <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-        Funktionsbereiche
-      </h3>
-      {/* Letzter Eintrag ueberspannt beide Spalten: bei fuenf Eintraegen bliebe
-           sonst eine leere Zelle im Raster stehen. */}
-      <ul class="mt-6 rasterfugen md:grid-cols-2 [&>li:last-child]:md:col-span-2">
-        {
-          funktionen.map((funktion) => (
-            <li class="hebt-sich bg-surface">
-              <a
-                href={withBase(`/funktionen/${funktion.slug}`)}
-                class="group flex h-full items-start justify-between gap-4 p-6 transition-colors duration-200"
-              >
-                <span class="font-medium text-ink transition-colors duration-200 group-hover:text-accent">
-                  {funktion.title}
-                </span>
-                <svg
-                  class="mt-1 size-4 shrink-0 text-accent transition-transform duration-200 group-hover:translate-x-1"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m9 18 6-6-6-6" />
-                </svg>
-              </a>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
   </Section>
 
-  </Base>
+  <Section tone="canvas">
+    <SectionHeading
+      kicker="Referenzprojekte"
+      title="Abgeschlossene Projekte"
+      lead="Beide mit Namen des Kunden. Ohne Einsparquoten, weil dafür nichts Belegtes vorliegt."
+    />
+    <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
+      {
+        caseStudies.map((fall) => (
+          <li class="hebt-sich bg-surface">
+            <a
+              href={withBase(fall.href)}
+              class="group flex h-full flex-col p-8 transition-colors duration-200"
+            >
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+                {fall.branche}
+              </p>
+              <h3 class="mt-3 text-xl text-ink group-hover:text-accent transition-colors duration-200">
+                {fall.title}
+              </h3>
+              <p class="prose-measure mt-3 text-ink-soft">{fall.excerpt}</p>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section>
+    <p class="prose-measure text-lg text-ink-soft">{anfrageHinweis}</p>
+  </Section>
+
+  <Section tone="dark">
+    <div class="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+      <SectionHeading
+        title="Wo klemmt es bei Ihnen?"
+        lead="Beschreiben Sie kurz einen Vorgang, der zu viel Zeit kostet. Das reicht für eine erste Einschätzung."
+        tone="dark"
+        class="max-w-2xl"
+      />
+      <Button href="/kontakt" variant="ghost" class="shrink-0">Gespräch vereinbaren</Button>
+    </div>
+  </Section>
+</Base>
