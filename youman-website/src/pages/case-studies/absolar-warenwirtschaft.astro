@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
+import Bildplatz from '../../components/Bildplatz.astro';
 import Section from '../../components/Section.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Button from '../../components/Button.astro';
@@ -87,17 +88,23 @@ const brotkrumen = [
 <Base
   title={fall.title}
   description="Wie youman für A&B SolarEnergy Lager, Angebote aus Lexware Office und Baustellenplanung zu einem durchgängigen Warenwirtschaftsprozess verbunden hat."
-  bild={fall.bild}
   breadcrumb={brotkrumen}
   artikel={{ titel: fall.title, beschreibung: "Wie youman für A&B SolarEnergy Lager, Angebote aus Lexware Office und Baustellenplanung zu einem durchgängigen Warenwirtschaftsprozess verbunden hat.", datum: fall.date }}
 >
   <PageHeader
     kicker="Referenzprojekt"
-    bild={fall.bild}
     title="Aufbau eines integrierten Warenwirtschaftssystems für Solarprojekte"
     lead={`${fall.kunde}, ${fall.branche}`}
     breadcrumb={brotkrumen}
   />
+
+  <Section tone="canvas">
+    <Bildplatz
+      bezeichnung="Lager und Kommissionierung"
+      verhaeltnis="16 / 9"
+      sizes="(min-width: 1280px) 1200px, 100vw"
+    />
+  </Section>
 
   <Section>
     <div class="grid gap-12 lg:grid-cols-[2fr_1fr] lg:gap-20">

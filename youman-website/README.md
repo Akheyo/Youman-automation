@@ -32,12 +32,25 @@ durch, und eine Prüfung gegen den Quelltext übersieht ihn.
 | `navigation.ts` | Kopf- und Fußnavigation |
 | `sichtbarkeit.ts` | Schalter für die Indexierung |
 
-## Ohne Bildmaterial
+## Bilder
 
-Die Seite kommt bewusst ohne Fotos und ohne Video aus. Die Wirkung trägt die
-Typografie. Das hat drei Folgen, die beim Weiterbauen wichtig sind:
+Zurzeit liegt kein eigenes Bildmaterial vor. Statt Fotos steht an den dafür
+vorgesehenen Stellen `Bildplatz.astro`: eine Fläche im späteren
+Seitenverhältnis mit der Angabe, was dort hingehört.
 
-- Es gibt keine `Bild`-Komponente und kein Bildregister mehr.
+Ein Bild wird eingesetzt, indem es unter `src/assets/img/` abgelegt und an
+denselben Bildplatz übergeben wird:
+
+```astro
+import motiv from '../assets/img/motiv.webp';
+<Bildplatz bild={motiv} alt="Was zu sehen ist" bezeichnung="…" />
+```
+
+Weil die Fläche vorher schon die richtige Höhe hat, verschiebt das
+Nachrüsten nichts, der Layout-Sprung bleibt bei 0.
+
+Zwei Dinge bleiben davon unberührt:
+
 - Es gibt **kein `og:image`**. Beim Teilen erscheint eine reine Textvorschau.
   Ein Verweis auf eine nicht vorhandene Datei wäre schlechter als keine
   Angabe, weil Dienste dann einen kaputten Platzhalter zeigen.

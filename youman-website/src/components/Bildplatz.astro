@@ -1,0 +1,83 @@
+---
+/**
+ * Reservierte Fläche für ein Bild.
+ *
+ * Solange keine Datei vorliegt, steht hier ein ruhiger Platzhalter mit der
+ * Angabe, was an diese Stelle gehört. Sobald ein Bild da ist, wird es über
+ * `bild` und `alt` übergeben und ersetzt den Platzhalter, ohne dass sich das
+ * Layout ändert: Die Fläche hat schon vorher exakt das Seitenverhältnis des
+ * späteren Bildes. Deshalb springt beim Nachrüsten nichts (CLS bleibt 0).
+ *
+ * Bild einsetzen:
+ *   import motiv from '../assets/img/motiv.webp';
+ *   <Bildplatz bild={motiv} alt="Was zu sehen ist" bezeichnung="…" />
+ *
+ * Der Platzhalter ist bewusst keine gestrichelte Warnbox: Er steht auf einer
+ * öffentlichen Seite und soll nicht nach Baustelle aussehen. Er ist eine
+ * leere Fläche mit Beschriftung.
+ */
+import { Image } from 'astro:assets';
+
+interface Props {
+  /** Was an diese Stelle gehört, in wenigen Worten. */
+  bezeichnung: string;
+  /** Seitenverhältnis, CSS-Schreibweise. Bestimmt die reservierte Höhe. */
+  verhaeltnis?: string;
+  /** Sobald vorhanden: das importierte Bild. */
+  bild?: ImageMetadata;
+  /** Bildbeschreibung. Pflicht, sobald `bild` gesetzt ist. */
+  alt?: string;
+  /** Angezeigte Breiten, für die Astro Varianten erzeugt. */
+  sizes?: string;
+  class?: string;
+}
+
+const {
+  bezeichnung,
+  verhaeltnis = '3 / 2',
+  bild,
+  alt = '',
+  sizes = '(min-width: 1024px) 50vw, 100vw',
+  class: className = '',
+} = Astro.props;
+---
+
+<figure
+  class:list={['relative overflow-hidden bg-muted', className]}
+  style={`aspect-ratio: ${verhaeltnis};`}
+>
+  {
+    bild ? (
+      <Image
+        src={bild}
+        alt={alt}
+        sizes={sizes}
+        widths={[480, 768, 1024, 1440]}
+        loading="lazy"
+        decoding="async"
+        class="absolute inset-0 size-full object-cover"
+      />
+    ) : (
+      <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
+        <svg
+          class="size-8 shrink-0 text-muted-fg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="3" y="4" width="18" height="16" rx="1" />
+          <circle cx="8.5" cy="9.5" r="1.5" />
+          <path d="m3 16.5 4.5-4.5 4 4 3-3L21 18" />
+        </svg>
+        <figcaption class="text-sm text-muted-fg">
+          <span class="block font-semibold text-ink">{bezeichnung}</span>
+          <span class="mt-1 block">Bildplatz, Format {verhaeltnis.replace(' / ', ':')}</span>
+        </figcaption>
+      </div>
+    )
+  }
+</figure>

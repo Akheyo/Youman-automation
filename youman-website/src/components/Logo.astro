@@ -8,7 +8,7 @@
  * zusaetzliche Anfrage und passt zu der Entscheidung, ohne Bildmaterial
  * auszukommen.
  *
- * Der Strich ist dekorativ und deshalb ein Pseudo-Element ohne eigenen Sinn.
+ * Der Strich links ist dekorativ und deshalb aria-hidden.
  */
 interface Props {
   /** "dark" = Schwarz auf hellem Grund, "light" = Weiss auf dunklem Grund */
@@ -25,7 +25,7 @@ interface Props {
   class?: string;
 }
 
-const { variant = 'dark', mitClaim = false, as: Tag = 'span', class: className = '' } = Astro.props;
+const { variant = 'dark', mitClaim = false, as: Tag = 'span', class: className = '' }: Props = Astro.props;
 const farbe = variant === 'dark' ? 'text-brand' : 'text-white';
 ---
 

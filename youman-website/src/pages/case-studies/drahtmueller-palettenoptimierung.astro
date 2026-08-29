@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
+import Bildplatz from '../../components/Bildplatz.astro';
 import Section from '../../components/Section.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Button from '../../components/Button.astro';
@@ -51,7 +52,6 @@ const vorgehen = [
 <Base
   title="Palettenoptimierung bei der Drahtmüller GmbH"
   description="2.556 aktive Palettentypen, jede Entscheidung ein Einzelfall: Wie ein Modul von youman die Palettenlogik an das ERP-System anbindet, ohne Systemablösung."
-  bild="gitter"
   breadcrumb={[
     { label: 'Home', href: '/' },
     { label: 'Referenzprojekte', href: '/case-studies' },
@@ -65,7 +65,6 @@ const vorgehen = [
 >
   <PageHeader
     kicker="Referenzprojekt"
-    bild="gitter"
     title="Palettenoptimierung bei der Drahtmüller GmbH"
     lead="Drahtmüller GmbH / Lichtgitter-Gruppe, Palettenoptimierung und Logistiksoftware via youman"
     breadcrumb={[
@@ -73,6 +72,14 @@ const vorgehen = [
       { label: 'Referenzprojekte', href: '/case-studies' },
     ]}
   />
+
+  <Section tone="canvas">
+    <Bildplatz
+      bezeichnung="Gitterroste in Transportgestellen"
+      verhaeltnis="16 / 9"
+      sizes="(min-width: 1280px) 1200px, 100vw"
+    />
+  </Section>
 
   <Section>
     <div class="grid gap-12 lg:grid-cols-[2fr_1fr] lg:gap-20">

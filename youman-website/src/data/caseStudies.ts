@@ -1,5 +1,3 @@
-import type { BildKey } from './images';
-
 export type CaseStudy = {
   slug: string;
   /** Überschrift auf Kachel und Detailseite. */
@@ -11,7 +9,8 @@ export type CaseStudy = {
   date: string | null;
   excerpt: string;
   href: string;
-  bild: BildKey;
+  /** Was auf dem Bild zu diesem Projekt zu sehen sein soll, solange keines vorliegt. */
+  bildhinweis: string;
   /**
    * Die eine Zahl, die den Fall trägt. Nur setzen, wenn sie belegt ist –
    * lieber keine Zahl als eine geschätzte.
@@ -22,10 +21,8 @@ export type CaseStudy = {
 /**
  * Case Studies – abgeschlossene Kundenprojekte.
  *
- * Bewusst getrennt von `news.ts`: eine Case Study belegt, was das Unternehmen
- * kann, eine Meldung berichtet, was es gerade tut. Beides in einer Liste zu
- * führen hat dazu geführt, dass der einzige belastbare Beleg zwischen drei
- * leeren Platzhalter-Kacheln stand.
+ * Die einzigen Seiten, die belegen statt behaupten. Entsprechend streng ist,
+ * was hier stehen darf: nur Angaben aus den Projektunterlagen.
  *
  * Quellen: die beiden gelieferten Case-Study-Unterlagen zu Drahtmüller und ABSolar.
  * Nicht enthalten: Einsparungs- und Prozentangaben, die dort nicht stehen,
@@ -41,7 +38,7 @@ export const caseStudies: CaseStudy[] = [
     excerpt:
       '2.556 aktive Palettentypen, jede Entscheidung ein Einzelfall: Wie ein Modul von youman die Palettenlogik an das ERP-System anbindet, ohne Systemablösung.',
     href: '/case-studies/drahtmueller-palettenoptimierung',
-    bild: 'gitter',
+    bildhinweis: 'Gitterroste in Transportgestellen',
     kennzahl: {
       wert: '2.556',
       beschreibung: 'verschiedene Palettentypen waren im aktiven Einsatz',
@@ -58,7 +55,7 @@ export const caseStudies: CaseStudy[] = [
     href: '/case-studies/absolar-warenwirtschaft',
     // Kein Photovoltaik-Motiv im Register. "logistik" trifft den Kern des
     // Falls – Lager und Materialfluss – bis ein passendes Bild vorliegt.
-    bild: 'logistik',
+    bildhinweis: 'Lager und Kommissionierung',
   },
 ];
 

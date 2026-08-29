@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
+import Bildplatz from '../components/Bildplatz.astro';
 import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import Button from '../components/Button.astro';
@@ -58,6 +59,14 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
     lead="Analyse und Umsetzung in einer Hand: erst verstehen, warum ein Ablauf hakt, dann das Fehlende bauen."
     breadcrumb={brotkrumen}
   />
+
+  <Section tone="canvas">
+    <Bildplatz
+      bezeichnung="Die Menschen hinter youman"
+      verhaeltnis="16 / 9"
+      sizes="(min-width: 1280px) 1200px, 100vw"
+    />
+  </Section>
 
   <Section>
     <div class="prose-measure space-y-5 text-lg text-ink-soft">
