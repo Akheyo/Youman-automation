@@ -1448,8 +1448,9 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 .intro-band__titel {
   font-size: var(--t-3xl);
   font-weight: 500;
-  line-height: 1.15;
+  line-height: 1.10;
   letter-spacing: -0.005em;
+  font-variation-settings: "opsz" 48;
   /* Zwei Zeilen statt drei: bei 18ch brach der Satz eine Zeile zu früh. */
   max-width: 24ch;
 }
@@ -1810,7 +1811,9 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   font-size: var(--t-3xl);
   font-weight: 500;
   letter-spacing: -0.005em;
-  line-height: 1.15;
+  line-height: 1.10;
+  /* Auf Schwarz eine Stufe robuster, wie im Hero. */
+  font-variation-settings: "opsz" 40;
   max-width: 20ch;
 }
 
@@ -2204,10 +2207,19 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 
 .hero-voll__satz {
   margin-top: clamp(var(--s-6), 5vh, var(--s-8));
-  max-width: 22ch;
-  font-size: clamp(1.5rem, 1.1rem + 1.9vw, 2.5rem);
-  font-weight: 400;
-  line-height: 1.3;
+  /* 28ch statt 20ch: auf 56px brach der Satz sonst auf sechs Zeilen und
+     drückte den Knopf an den unteren Rand. */
+  max-width: 28ch;
+  /* Die Leitaussage stand auf 40px in einem bildschirmfüllenden schwarzen
+     Feld und ging darin unter. */
+  font-size: var(--t-4xl);
+  /* 500 wie alle Überschriften. Weiße Schrift auf Schwarz wirkt optisch
+     dünner als schwarze auf Weiß, 400 franste hier sichtbar aus. */
+  font-weight: 500;
+  /* Und eine niedrigere optische Größe, damit die Haarstriche auf dem
+     dunklen Grund tragen. */
+  font-variation-settings: "opsz" 40;
+  line-height: 1.16;
   letter-spacing: -0.005em;
   color: #ffffff;
   text-wrap: balance;
