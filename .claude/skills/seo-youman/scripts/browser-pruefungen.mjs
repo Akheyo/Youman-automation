@@ -9,8 +9,8 @@
  *
  * Aufruf aus dem Projektstamm, mit laufendem Vorschauserver:
  *
- *   cd adept-website && npm run build && npx astro preview --port 4321 &
- *   node .claude/skills/seo-adept/scripts/browser-pruefungen.mjs
+ *   cd youman-website && npm run build && npx astro preview --port 4321 &
+ *   node .claude/skills/seo-youman/scripts/browser-pruefungen.mjs
  *
  * Rückgabewert 0 heißt sauber, 1 heißt es gibt Befunde.
  */

@@ -8,10 +8,10 @@ und ob die Seite heimlich Verbindungen nach außen aufbaut.
 ## Aufruf
 
 ```bash
-cd adept-website && npm run build
+cd youman-website && npm run build
 npx astro preview --port 4321 &
 cd ..
-node .claude/skills/seo-adept/scripts/browser-pruefungen.mjs
+node .claude/skills/seo-youman/scripts/browser-pruefungen.mjs
 ```
 
 Läuft kein Vorschauserver, bricht das Skript mit dem Befehl ab, der fehlt,
@@ -21,7 +21,7 @@ statt mit einem Verbindungsfehler. Dauer etwa drei bis fünf Minuten für
 ## Voraussetzungen
 
 `playwright` und `axe-core` stehen als devDependency in
-`adept-website/package.json` und kommen mit `npm install` mit. Das war nicht
+`youman-website/package.json` und kommen mit `npm install` mit. Das war nicht
 immer so: anfangs lagen sie nur im Sitzungsverzeichnis, und die Skripte
 waren in der nächsten Sitzung kaputt.
 

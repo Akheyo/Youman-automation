@@ -9,22 +9,20 @@ import { anbieter } from '../data/anbieter';
 import { withBase } from '../lib/url';
 
 /**
- * Die Geschichte stammt aus dem freigegebenen Text der Gruender.
+ * Die Geschichte stammt aus dem freigegebenen Text.
  *
- * Angepasst wurde die Einordnung: Der urspruengliche Text erklaerte die
- * Luecke ausschliesslich am ERP-System. Das war zu eng, denn dieselbe Luecke
- * entsteht ueberall dort, wo ein Ablauf nicht in den Standard passt. An den
- * Aussagen ueber die Personen ist nichts geaendert.
+ * Angepasst gegenueber der ersten Fassung: Der urspruengliche Text erklaerte
+ * die Luecke ausschliesslich am ERP-System, das war zu eng. Und er war auf
+ * zwei Gruender geschrieben. Beides ist hier korrigiert.
  *
- * Die Nachnamen stehen abgekuerzt, wie im gelieferten Text. Vollstaendig
- * stehen sie im Impressum, wo sie hingehoeren.
+ * Was NICHT drinsteht: eine erfundene Begruendung fuer die Aenderung. Es
+ * steht schlicht, was gilt.
  */
 const geschichte = [
-  'Jedes Unternehmen macht früher oder später dieselbe Erfahrung: Die eingesetzten Systeme decken vieles ab, aber nicht alles. Was übrig bleibt, sind die Abläufe, die sich nicht ins Schema pressen lassen, und die am Ende wieder in Tabellen und persönlichen Absprachen landen. Genau dort setzt youman an, gegründet 2026 von zwei Personen mit gegensätzlichen Blickwinkeln auf dasselbe Problem.',
-  'Isho I. sieht die Lücke aus der Beratungsperspektive. Als Wirtschaftsingenieur im TMT-Sektor tätig und mit Zertifizierungen in Business Process Modeling und Unternehmensanalytik ausgestattet, beobachtet er dasselbe Muster immer wieder: Unternehmen mit solider Systemlandschaft, die im operativen Alltag trotzdem an denselben Stellen hängen bleiben.',
-  'Amanuel K. kennt das Problem von der anderen Seite. Lange bevor youman existiert, baut er in seinem eigenen beruflichen Umfeld bereits Workflow-Automatisierungen und Softwaremodule, um genau solche Lücken zu schließen.',
-  'Die Beobachtung des einen trifft auf die Umsetzungskompetenz des anderen, und daraus entsteht eine gemeinsame Überzeugung: Was hier fehlt, muss gebaut werden, nicht nur beschrieben.',
-  'Unterschiedlich in der Aufgabe, identisch im Anspruch: Kein bestehendes System wird ersetzt. Jede Lösung entsteht dort, wo ein Unternehmen sie tatsächlich braucht.',
+  'Jedes Unternehmen macht früher oder später dieselbe Erfahrung: Die eingesetzten Systeme decken vieles ab, aber nicht alles. Was übrig bleibt, sind die Abläufe, die sich nicht ins Schema pressen lassen, und die am Ende wieder in Tabellen und persönlichen Absprachen landen.',
+  'Genau dort setzt youman an, gegründet 2026. Der Anlass war keine Marktlücke auf dem Papier, sondern eine Beobachtung aus der eigenen Arbeit: Lange bevor youman existiert, entstehen im beruflichen Umfeld von Amanuel K. bereits Workflow-Automatisierungen und Softwaremodule, um genau solche Lücken zu schließen. Immer dieselbe Sorte Problem, immer dieselbe Sorte Lösung.',
+  'Daraus wurde eine Überzeugung, die bis heute die Arbeitsweise bestimmt: Was hier fehlt, muss gebaut werden, nicht nur beschrieben. Eine Empfehlung, die niemand umsetzt, hat den Betrieb keinen Schritt weitergebracht.',
+  'Der Anspruch dabei bleibt gleich: Kein bestehendes System wird ersetzt. Jede Lösung entsteht dort, wo ein Unternehmen sie tatsächlich braucht, und hängt an dem, was ohnehin schon läuft.',
 ];
 
 const werte = [
@@ -51,13 +49,13 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
 
 <Base
   title="Über uns: KI-Automation und Softwareentwicklung"
-  description="youman verbindet Prozessanalyse mit Softwareentwicklung. Gegründet 2026 von zwei Personen, die dasselbe Problem aus zwei Richtungen kennen."
+  description="youman verbindet Prozessanalyse mit Softwareentwicklung: erst verstehen, warum ein Ablauf hakt, dann das Fehlende bauen. Gegründet 2026 in Borken."
   breadcrumb={brotkrumen}
 >
   <PageHeader
     kicker="Über uns"
     title={`Wer hinter ${site.name} steht`}
-    lead="Zwei Blickwinkel auf dasselbe Problem: die Analyse, warum ein Ablauf hakt, und die Fähigkeit, das Fehlende zu bauen."
+    lead="Analyse und Umsetzung in einer Hand: erst verstehen, warum ein Ablauf hakt, dann das Fehlende bauen."
     breadcrumb={brotkrumen}
   />
 
@@ -70,8 +68,8 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
       </p>
       <p>
         Der Unterschied zeigt sich in der Praxis daran, wer die Verantwortung trägt, wenn
-        etwas nicht funktioniert. Bei getrennten Rollen zeigen Beratung und Umsetzung
-        aufeinander. Bei uns gibt es diese Trennung nicht.
+        etwas nicht funktioniert. Wo Beratung und Umsetzung getrennt eingekauft werden,
+        zeigen im Zweifel beide aufeinander. Hier gibt es diese Trennung nicht.
       </p>
     </div>
   </Section>

@@ -1,22 +1,22 @@
 ---
-name: seo-adept
-description: Prüfregeln und Prüfskripte für die Suchmaschinentauglichkeit, Auszeichnung und Barrierefreiheit der adept&-Website. Immer verwenden, sobald an dieser Website etwas geändert wird, das im ausgelieferten HTML landet, also bei neuen oder geänderten Seiten, Texten, Überschriften, Titeln, Beschreibungen, Bildern, Verweisen, strukturierten Daten, robots-Angaben oder der Sitemap. Auch verwenden, wenn nach SEO, Indexierung, Google, Sichtbarkeit, Meta-Angaben, Rich Results, Barrierefreiheit oder Ladeverhalten gefragt wird, und vor jedem Commit, der Seiteninhalte betrifft.
+name: seo-youman
+description: Prüfregeln und Prüfskripte für die Suchmaschinentauglichkeit, Auszeichnung und Barrierefreiheit der youman-Website. Immer verwenden, sobald an dieser Website etwas geändert wird, das im ausgelieferten HTML landet, also bei neuen oder geänderten Seiten, Texten, Überschriften, Titeln, Beschreibungen, Bildern, Verweisen, strukturierten Daten, robots-Angaben oder der Sitemap. Auch verwenden, wenn nach SEO, Indexierung, Google, Sichtbarkeit, Meta-Angaben, Rich Results, Barrierefreiheit oder Ladeverhalten gefragt wird, und vor jedem Commit, der Seiteninhalte betrifft.
 ---
 
-# SEO und Auslieferungsqualität der adept&-Website
+# SEO und Auslieferungsqualität der youman-Website
 
 Diese Website hat eine Eigenart, die den Umgang mit ihr bestimmt: Fast alles
 Sichtbare entsteht aus Daten. Titel, Beschreibungen, strukturierte Daten,
 Bilder und die Navigation werden aus `src/data/*.ts` erzeugt. Ein Tippfehler
 in einer Datendatei schlägt deshalb auf mehreren Seiten gleichzeitig durch,
 und eine Prüfung gegen den Quelltext übersieht ihn. **Geprüft wird immer
-gegen das gebaute HTML in `adept-website/dist`, nie gegen die Quelle.**
+gegen das gebaute HTML in `youman-website/dist`, nie gegen die Quelle.**
 
 ## Der Ablauf
 
 ```bash
-cd adept-website && npm run build && cd ..
-node .claude/skills/seo-adept/scripts/statisch.mjs adept-website/dist
+cd youman-website && npm run build && cd ..
+node .claude/skills/seo-youman/scripts/statisch.mjs youman-website/dist
 ```
 
 Das Skript gibt eine Übersicht aller Seiten mit Titel- und
@@ -28,9 +28,9 @@ Die Prüfungen, die einen Browser brauchen, laufen getrennt, weil sie einen
 Vorschauserver voraussetzen und einige Minuten dauern:
 
 ```bash
-cd adept-website && npx astro preview --port 4321 &
+cd youman-website && npx astro preview --port 4321 &
 cd ..
-node .claude/skills/seo-adept/scripts/browser-pruefungen.mjs
+node .claude/skills/seo-youman/scripts/browser-pruefungen.mjs
 ```
 
 Darin: axe-core gegen WCAG 2.1 A und AA, waagerechter Überlauf bei fünf

@@ -5,7 +5,7 @@
  *
  * 1. Playwright lag nur im Sitzungsverzeichnis. Die Skripte liefen einmal
  *    und waren in der nächsten Sitzung kaputt. Es wird jetzt aus den
- *    Abhängigkeiten von adept-website aufgelöst, wo es als devDependency
+ *    Abhängigkeiten von youman-website aufgelöst, wo es als devDependency
  *    steht und mit `npm install` mitkommt.
  *
  * 2. Der Chromium-Pfad war fest verdrahtet, samt Versionsnummer im
@@ -17,7 +17,7 @@ import { createRequire } from 'node:module';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-const PROJEKT = '/home/user/Youman-automation/adept-website/';
+const PROJEKT = '/home/user/Youman-automation/youman-website/';
 const require = createRequire(PROJEKT);
 
 let chromium;
@@ -26,7 +26,7 @@ try {
 } catch {
   console.error(
     'FEHLER: playwright nicht gefunden.\n' +
-      '  cd adept-website && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install -D playwright axe-core',
+      '  cd youman-website && PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install -D playwright axe-core',
   );
   process.exit(1);
 }
@@ -97,7 +97,7 @@ export async function serverPruefen(basis = 'http://127.0.0.1:4321') {
   }
   console.error(
     `FEHLER: unter ${basis} antwortet nichts.\n` +
-      '  cd adept-website && npm run build && npx astro preview --port 4321',
+      '  cd youman-website && npm run build && npx astro preview --port 4321',
   );
   process.exit(1);
 }

@@ -20,7 +20,7 @@ const ausUmgebung = (name: string, vorgabe: string | null = null): string | null
  * nichts eingerichtet werden muss. Die jeweilige Umgebungsvariable
  * überschreibt sie weiterhin.
  */
-const EMAIL = 'info@adeptandpartners.de';
+const EMAIL = 'info@youman-automation.com';
 const TELEFON = '+49 155 67541365';
 const TERMINLINK = 'https://calendar.app.google/y5qSCJaxnksqtutT7';
 

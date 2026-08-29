@@ -16,7 +16,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, resolve, dirname } from 'node:path';
 
-const WURZEL = resolve(process.argv[2] ?? 'adept-website/dist');
+const WURZEL = resolve(process.argv[2] ?? 'youman-website/dist');
 
 /* ------------------------------------------------------------------ Regeln */
 
@@ -55,7 +55,7 @@ const ohneSkripte = (html) =>
  * HTML-Entitaeten aufloesen, bevor gezaehlt wird.
  *
  * Ohne das zaehlt "&amp;" als fuenf Zeichen statt als eines, und ein Titel
- * mit dem Firmennamen "adept&" wirkt vier Zeichen laenger, als er ist. Der
+ * mit einem kaufmaennischen Und wirkt vier Zeichen laenger, als er ist. Der
  * erste Lauf dieser Pruefung ist genau darueber gestolpert.
  */
 const NAMEN = {

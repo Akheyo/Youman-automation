@@ -8,7 +8,7 @@
 import { readdirSync, statSync, existsSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
-export function seitenPfade(distVerzeichnis = 'adept-website/dist') {
+export function seitenPfade(distVerzeichnis = 'youman-website/dist') {
   const wurzel = resolve(distVerzeichnis);
   if (!existsSync(wurzel)) {
     console.error(`FEHLER: ${wurzel} gibt es nicht. Zuerst "npm run build" ausfuehren.`);

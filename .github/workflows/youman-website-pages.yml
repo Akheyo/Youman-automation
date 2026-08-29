@@ -1,6 +1,6 @@
-name: adept& Website auf GitHub Pages
+name: youman Website auf GitHub Pages
 
-# Baut den Ordner adept-website/ und veröffentlicht ihn über GitHub Pages.
+# Baut den Ordner youman-website/ und veröffentlicht ihn über GitHub Pages.
 #
 # Die Adresse ergibt sich aus den Pages-Einstellungen des Repos: mit
 # eingetragener eigener Domain läuft die Seite dort, sonst unter
@@ -10,7 +10,7 @@ name: adept& Website auf GitHub Pages
 # erhalten bleibt.
 #
 # Sobald die Seite ein eigenes Repo hat, greift stattdessen
-# adept-website/.github/workflows/deploy.yml und diese Datei kann weg.
+# youman-website/.github/workflows/deploy.yml und diese Datei kann weg.
 
 on:
   push:
@@ -18,8 +18,8 @@ on:
       - main
       - claude/new-session-b4oeuo
     paths:
-      - 'adept-website/**'
-      - '.github/workflows/adept-website-pages.yml'
+      - 'youman-website/**'
+      - '.github/workflows/youman-website-pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: adept-website
+        working-directory: youman-website
     steps:
       - uses: actions/checkout@v4
 
@@ -44,7 +44,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: adept-website/package-lock.json
+          cache-dependency-path: youman-website/package-lock.json
 
       - name: Pages konfigurieren
         id: pages
@@ -75,7 +75,7 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: adept-website/dist
+          path: youman-website/dist
 
   deploy:
     needs: build

@@ -4,7 +4,7 @@ import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 
 // Beide Werte kommen aus der Umgebung, damit derselbe Build sowohl unter
-// https://akheyo.github.io/<repo>/ als auch unter www.adeptandpartners.de läuft.
+// https://akheyo.github.io/<repo>/ als auch unter einer eigenen Domain laeuft.
 // Siehe README.md -> "Deployment".
 // `||` statt `??`: configure-pages liefert bei einer eigenen Domain einen
 // leeren String, der hier zu "/" werden muss.
@@ -14,7 +14,7 @@ import tailwindcss from '@tailwindcss/vite';
 // Links, in OpenGraph und in der Sitemap - Suchmaschinen bekaemen damit die
 // unverschluesselte Variante als offizielle Adresse. Das Schema wird deshalb
 // erzwungen; GitHub Pages liefert die eigene Domain ohnehin ueber https aus.
-const SITE = (process.env.SITE_URL || 'https://www.adeptandpartners.de').replace(
+const SITE = (process.env.SITE_URL || 'https://akheyo.github.io').replace(
   /^http:\/\//,
   'https://',
 );

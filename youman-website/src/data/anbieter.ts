@@ -46,7 +46,6 @@ export const anbieter = {
    */
   personen: [
     { name: 'Amanuel Kheyo', telefon: '+49 155 67541365' },
-    { name: 'Isho Isho', telefon: '+49 179 3282742' },
   ],
 
   /** Ladungsfähige Anschrift – ein Postfach genügt nicht. */

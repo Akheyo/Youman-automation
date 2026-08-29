@@ -27,7 +27,7 @@ export type CaseStudy = {
  * führen hat dazu geführt, dass der einzige belastbare Beleg zwischen drei
  * leeren Platzhalter-Kacheln stand.
  *
- * Quellen: "Case Study Draht Müller.adept.pdf" und "ABSolar.CaseStudy.pdf".
+ * Quellen: die beiden gelieferten Case-Study-Unterlagen zu Drahtmüller und ABSolar.
  * Nicht enthalten: Einsparungs- und Prozentangaben, die dort nicht stehen,
  * sowie Kundenstimmen – dafür liegt nichts Freigegebenes vor.
  */
