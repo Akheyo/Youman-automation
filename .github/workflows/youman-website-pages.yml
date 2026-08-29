@@ -6,8 +6,9 @@ name: youman Website auf GitHub Pages
 # eingetragener eigener Domain läuft die Seite dort, sonst unter
 # https://akheyo.github.io/Youman-automation/
 #
-# public/CNAME bleibt bewusst im Build, damit die eingestellte eigene Domain
-# erhalten bleibt.
+# Eine eigene Domain steht in den Pages-Einstellungen, nicht in einer Datei
+# im Repository. Bei einem Deploy ueber Actions setzt eine CNAME-Datei die
+# Domain nicht.
 #
 # Sobald die Seite ein eigenes Repo hat, greift stattdessen
 # youman-website/.github/workflows/deploy.yml und diese Datei kann weg.
