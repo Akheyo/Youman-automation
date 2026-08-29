@@ -12,9 +12,11 @@
  *   import motiv from '../assets/img/motiv.webp';
  *   <Bildplatz bild={motiv} alt="Was zu sehen ist" bezeichnung="…" />
  *
- * Der Platzhalter ist bewusst keine gestrichelte Warnbox: Er steht auf einer
- * öffentlichen Seite und soll nicht nach Baustelle aussehen. Er ist eine
- * leere Fläche mit Beschriftung.
+ * Der Platzhalter ist eine umrandete Fläche mit feiner Schraffur. Beides ist
+ * nötig, damit er als reservierte Fläche gelesen wird: Ohne Rand und Muster
+ * sieht ein heller Kasten auf weißem Grund nach Weißraum aus, nicht nach
+ * "hier fehlt ein Bild". Eine gestrichelte Warnbox ist es trotzdem nicht,
+ * die Seite ist öffentlich und soll nicht nach Baustelle aussehen.
  */
 import { Image } from 'astro:assets';
 
@@ -43,7 +45,7 @@ const {
 ---
 
 <figure
-  class:list={['relative overflow-hidden bg-muted', className]}
+  class:list={['relative overflow-hidden', bild ? '' : 'border border-line bg-muted', className]}
   style={`aspect-ratio: ${verhaeltnis};`}
 >
   {
@@ -58,9 +60,15 @@ const {
         class="absolute inset-0 size-full object-cover"
       />
     ) : (
-      <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
+      <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
+        {/*
+          Schraffur nur als Hintergrund, nicht als eigenes Element mit Inhalt:
+          sie traegt keine Information und darf von Vorlesewerkzeugen nicht
+          angesagt werden.
+        */}
+        <span class="bildplatz-schraffur absolute inset-0" aria-hidden="true" />
         <svg
-          class="size-8 shrink-0 text-muted-fg"
+          class="relative size-12 shrink-0 text-ink"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -73,11 +81,29 @@ const {
           <circle cx="8.5" cy="9.5" r="1.5" />
           <path d="m3 16.5 4.5-4.5 4 4 3-3L21 18" />
         </svg>
-        <figcaption class="text-sm text-muted-fg">
-          <span class="block font-semibold text-ink">{bezeichnung}</span>
-          <span class="mt-1 block">Bildplatz, Format {verhaeltnis.replace(' / ', ':')}</span>
+        <figcaption class="relative">
+          <span class="block text-base font-semibold text-ink md:text-lg">{bezeichnung}</span>
+          <span class="mt-1 block text-sm text-muted-fg">
+            Bildplatz, Format {verhaeltnis.replace(' / ', ':')}
+          </span>
         </figcaption>
       </div>
     )
   }
 </figure>
+
+<style>
+  /*
+    Feine Diagonalschraffur. Sehr schwach gehalten: Sie soll die Flaeche als
+    reserviert kennzeichnen, nicht mit der Beschriftung darauf konkurrieren.
+  */
+  .bildplatz-schraffur {
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgb(0 0 0 / 0.05) 0,
+      rgb(0 0 0 / 0.05) 1px,
+      transparent 1px,
+      transparent 9px
+    );
+  }
+</style>
