@@ -404,7 +404,7 @@
 
 .card__title {
   font-size: var(--t-lg);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .card__text {
@@ -716,7 +716,7 @@
   text-align: left;
   cursor: pointer;
   font-size: var(--t-lg);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--ink);
   transition: color var(--dur-fast) var(--ease);
 }
@@ -1447,10 +1447,9 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 
 .intro-band__titel {
   font-size: var(--t-3xl);
-  font-weight: 500;
-  line-height: 1.10;
-  letter-spacing: -0.005em;
-  font-variation-settings: "opsz" 48;
+  font-weight: 600;
+  line-height: 1.14;
+  letter-spacing: -0.012em;
   /* Zwei Zeilen statt drei: bei 18ch brach der Satz eine Zeile zu früh. */
   max-width: 24ch;
 }
@@ -1525,7 +1524,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 .split-raster__titel {
   margin-top: var(--s-5);
   font-size: var(--t-3xl);
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.18;
   letter-spacing: -0.005em;
   max-width: 20ch;
@@ -1602,7 +1601,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 .raster__titel {
   margin-top: var(--s-4);
   font-size: var(--t-lg);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .raster__link {
@@ -1692,7 +1691,7 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   /* Die Spalte darf nicht in den aufgehellten Teil des Verlaufs laufen. */
   max-width: var(--aussage-spalte);
   font-size: var(--t-3xl);
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.005em;
   color: #ffffff;
@@ -1809,11 +1808,11 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
 
 .cta-band__title {
   font-size: var(--t-3xl);
-  font-weight: 500;
-  letter-spacing: -0.005em;
-  line-height: 1.10;
-  /* Auf Schwarz eine Stufe robuster, wie im Hero. */
-  font-variation-settings: "opsz" 40;
+  /* Auf Schwarz einen Schnitt kräftiger als auf Weiß: helle Schrift auf
+     dunklem Grund wirkt optisch dünner. */
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  line-height: 1.14;
   max-width: 20ch;
 }
 
@@ -2213,14 +2212,11 @@ textarea.field__input { min-height: 140px; padding-block: var(--s-4); resize: ve
   /* Die Leitaussage stand auf 40px in einem bildschirmfüllenden schwarzen
      Feld und ging darin unter. */
   font-size: var(--t-4xl);
-  /* 500 wie alle Überschriften. Weiße Schrift auf Schwarz wirkt optisch
-     dünner als schwarze auf Weiß, 400 franste hier sichtbar aus. */
-  font-weight: 500;
-  /* Und eine niedrigere optische Größe, damit die Haarstriche auf dem
-     dunklen Grund tragen. */
-  font-variation-settings: "opsz" 40;
-  line-height: 1.16;
-  letter-spacing: -0.005em;
+  /* 600 wie alle Überschriften. Weiße Schrift auf Schwarz wirkt optisch
+     dünner als schwarze auf Weiß, ein leichterer Schnitt franst hier aus. */
+  font-weight: 600;
+  line-height: 1.18;
+  letter-spacing: -0.012em;
   color: #ffffff;
   text-wrap: balance;
 }

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Lexend, Newsreader, Source_Sans_3 } from 'next/font/google'
+import { Lexend, Source_Sans_3, Spectral } from 'next/font/google'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { JsonLd, organizationJsonLd } from '@/lib/seo'
@@ -8,19 +8,15 @@ import './globals.css'
 import './ui.css'
 
 /* Selbst gehostet über next/font: keine externe Anfrage, kein Layout-Shift. */
-/* Newsreader bringt eine optische Größenachse mit: große Überschriften
-   bekommen feinere Striche, kleiner Text kräftigere. Das ist echter
-   Satz statt bloßer Skalierung. */
-const newsreader = Newsreader({
+/* Spectral: Antiqua mit kühlem, leicht technischem Ton — sachlich statt
+   literarisch. Keine variable Achse, deshalb feste Schnitte: 400 für
+   Fließtext-Serife, 500 und 600 für Überschriften. */
+const spectral = Spectral({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-newsreader',
-  axes: ['opsz'],
-  /* Next.js kennt für Newsreader keine Metriken zur automatischen
-     Anpassung der Ersatzschrift; deshalb wird sie hier ausdrücklich
-     benannt und die Anpassung abgeschaltet, statt eine Warnung zu lassen. */
+  variable: '--font-spectral',
+  weight: ['400', '500', '600'],
   fallback: ['Georgia', 'Times New Roman', 'serif'],
-  adjustFontFallback: false,
 })
 
 const sourceSans = Source_Sans_3({
@@ -85,7 +81,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de" className={`${newsreader.variable} ${sourceSans.variable} ${lexend.variable}`}>
+    <html lang="de" className={`${spectral.variable} ${sourceSans.variable} ${lexend.variable}`}>
       <body>
         <a className="skip-link" href="#main">
           Zum Inhalt springen
