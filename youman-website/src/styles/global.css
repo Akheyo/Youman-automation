@@ -38,9 +38,9 @@
     Aufforderungen. Die Abstände sind bewusst klein: Größere würden die
     Seite in Streifen zerlegen, kleinere die Gliederung aufheben.
   */
-  --color-ink: #000000; /* Fließtext, Überschriften. Auf canvas 14.2:1 */
+  --color-ink: #000000; /* Fließtext, Überschriften. Auf canvas 11.2:1 */
   --color-ink-deep: #000000; /* schwarze Gegenfläche: Hero, Seitenköpfe, Aufforderung */
-  --color-ink-soft: #2e2e2e; /* Sekundärtext. Auf canvas 9.2:1 */
+  --color-ink-soft: #2e2e2e; /* Sekundärtext. Auf canvas 7.2:1 */
 
   /* Kein Akzent im eigentlichen Sinn: Schwarz führt, Grau ist der Hover. */
   --color-accent: #000000;
@@ -54,10 +54,12 @@
   */
   --color-accent-fg: #ffffff;
 
-  --color-canvas: #d4d4d4; /* Grundfläche, mittleres Grau */
-  --color-surface: #e4e4e4; /* Karten und erhobene Sektionen */
-  --color-muted: #c4c4c4; /* Bildplätze, gedämpfte Kacheln */
-  --color-muted-fg: #4a4a4a; /* auf der dunkelsten Fläche 5.1:1 */
+  --color-canvas: #bdbdbd; /* Grundfläche, mittleres Grau */
+  --color-surface: #cfcfcf; /* Karten und erhobene Sektionen */
+  --color-muted: #adadad; /* Bildplätze, gedämpfte Kacheln */
+  /* Eine Stufe dunkler als zuvor: Auf #adadad reichte #4a4a4a nur noch für
+     3.9:1 und wäre damit unter die Grenze gefallen. */
+  --color-muted-fg: #3a3a3a; /* auf der dunkelsten Fläche 5.1:1 */
   --color-line: #000000; /* Trennung durch Linie statt durch Farbfläche */
 
   /* Wortmarke */

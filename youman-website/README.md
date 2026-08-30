@@ -39,9 +39,9 @@ Gliederung.
 
 | Token | Wert | Rolle |
 | --- | --- | --- |
-| `--color-canvas` | `#d4d4d4` | Grundfläche, mittleres Grau |
-| `--color-surface` | `#e4e4e4` | Karten, Kopfleiste, Fußzeile |
-| `--color-muted` | `#c4c4c4` | Bildplätze, gedämpfte Kacheln |
+| `--color-canvas` | `#bdbdbd` | Grundfläche, mittleres Grau |
+| `--color-surface` | `#cfcfcf` | Karten, Kopfleiste, Fußzeile |
+| `--color-muted` | `#adadad` | Bildplätze, gedämpfte Kacheln |
 | `--color-ink-deep` | `#000000` | schwarze Gegenfläche: Hero, Seitenköpfe, Aufforderungen |
 | `--color-ink` | `#000000` | Fließtext und Überschriften |
 | `--color-line` | `#000000` | Linien und Kachelraster |
