@@ -12,6 +12,12 @@
  *   import motiv from '../assets/img/motiv.webp';
  *   <Bildplatz bild={motiv} alt="Was zu sehen ist" bezeichnung="…" />
  *
+ * Der Platzhalter ist fuer Vorlesewerkzeuge ausgeblendet. Er richtet sich an
+ * die, die die Seite bauen, nicht an die, die sie lesen; in einer Kachel, die
+ * selbst ein Verweis ist, waere seine Beschriftung sonst Teil des
+ * Verweisnamens und wuerde vor jedem Kacheltitel mit vorgelesen. Sobald ein
+ * Bild gesetzt ist, traegt dessen alt-Text die Bedeutung.
+ *
  * Der Platzhalter ist eine umrandete Fläche mit feiner Schraffur. Beides ist
  * nötig, damit er als reservierte Fläche gelesen wird: Ohne Rand und Muster
  * sieht ein heller Kasten auf weißem Grund nach Weißraum aus, nicht nach
@@ -60,7 +66,10 @@ const {
         class="absolute inset-0 size-full object-cover"
       />
     ) : (
-      <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
+      <div
+        class="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center"
+        aria-hidden="true"
+      >
         {/*
           Schraffur nur als Hintergrund, nicht als eigenes Element mit Inhalt:
           sie traegt keine Information und darf von Vorlesewerkzeugen nicht

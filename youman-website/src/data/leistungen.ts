@@ -18,6 +18,8 @@ export type Baustein = {
 export type Leistung = {
   slug: string;
   title: string;
+  /** Was auf dem Bild zu dieser Leistung zu sehen sein soll, solange keines vorliegt. */
+  bildhinweis: string;
   /** Kurzzeile fuer Uebersichten und Kacheln. */
   teaser: string;
   /** Titel fuer die Suche, wo der Bereichsname allein zu wenig traegt. */
@@ -41,6 +43,7 @@ export type Leistung = {
 export const leistungen: Leistung[] = [
   {
     slug: 'ki-automationen',
+    bildhinweis: 'Arbeitsplatz, an dem ein Ablauf durchläuft',
     title: 'KI-Automationen',
     teaser: 'Wiederkehrende Arbeit, die heute Menschen erledigen, läuft künftig von selbst.',
     seoTitel: 'KI-Automation für Unternehmen',
@@ -76,6 +79,7 @@ export const leistungen: Leistung[] = [
   },
   {
     slug: 'chatbots',
+    bildhinweis: 'Chatfenster im laufenden Gespräch',
     title: 'Chatbots',
     teaser: 'Auskunft rund um die Uhr, auf Grundlage Ihrer eigenen Unterlagen.',
     seoTitel: 'Chatbots für Website und Kundenservice',
@@ -111,6 +115,7 @@ export const leistungen: Leistung[] = [
   },
   {
     slug: 'webseiten',
+    bildhinweis: 'Dieselbe Seite auf mehreren Geräten',
     title: 'Webseiten',
     teaser: 'Schnell, barrierefrei und auffindbar. Kein Baukasten, kein Ladebalken.',
     seoTitel: 'Webseiten entwickeln lassen, schnell und auffindbar',
@@ -146,6 +151,7 @@ export const leistungen: Leistung[] = [
   },
   {
     slug: 'e-commerce',
+    bildhinweis: 'Kommissionierung und Versandvorbereitung',
     title: 'E-Commerce-Lösungen',
     teaser: 'Artikel, Bestände und Bestellungen laufen über alle Kanäle synchron.',
     seoTitel: 'E-Commerce-Lösungen und Marktplatz-Anbindung',
@@ -181,6 +187,7 @@ export const leistungen: Leistung[] = [
   },
   {
     slug: 'individuelle-software',
+    bildhinweis: 'Bildschirm mit einer eigenen Anwendung',
     title: 'Individuelle Software',
     teaser: 'Für den Ablauf, für den es kein fertiges Programm gibt.',
     seoTitel: 'Individuelle Software entwickeln lassen',

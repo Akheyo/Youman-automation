@@ -14,6 +14,8 @@
 export type Branche = {
   slug: string;
   title: string;
+  /** Was auf dem Bild zu dieser Branche zu sehen sein soll, solange keines vorliegt. */
+  bildhinweis: string;
   /** Kurzzeile fuer Uebersicht und Kacheln. */
   teaser: string;
   /** Titel fuer die Suche, wo der Branchenname allein zu wenig traegt. */
@@ -35,6 +37,7 @@ export type Branche = {
 export const branchen: Branche[] = [
   {
     slug: 'e-commerce-und-onlinehandel',
+    bildhinweis: 'Versandvorbereitung im Lager',
     title: 'E-Commerce & Onlinehandel',
     teaser: 'Bestände, Preise und Bestellungen über alle Kanäle synchron, ohne nächtliche Handarbeit.',
     seoTitel: 'KI und Automation für den Onlinehandel',
@@ -53,6 +56,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'spedition-und-logistik',
+    bildhinweis: 'Lkw an der Verladerampe',
     title: 'Spedition & Logistik',
     teaser: 'Aufträge, Statusmeldungen und Papiere fließen zwischen Auftraggeber, Fahrer und System.',
     seoTitel: 'Automation für Spedition und Logistik',
@@ -71,6 +75,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'produktion-und-fertigung',
+    bildhinweis: 'Fertigungshalle im Betrieb',
     title: 'Produktion & Fertigung',
     teaser: 'Aufträge, Rückmeldungen und Materialbedarf ohne Zettelwirtschaft zwischen Halle und Büro.',
     seoTitel: 'Software und Automation für die Fertigung',
@@ -92,6 +97,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'grosshandel-und-distribution',
+    bildhinweis: 'Hochregallager',
     title: 'Großhandel & Distribution',
     teaser: 'Artikeldaten, Preislisten und Kundenbestellungen laufen durch, statt in Postfächern zu warten.',
     seoTitel: 'Automation für Großhandel und Distribution',
@@ -110,6 +116,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'handwerk-und-bau',
+    bildhinweis: 'Werkstatt oder Baustelle',
     title: 'Handwerk & Bau',
     teaser: 'Anfragen, Aufmaße und Rechnungen laufen mit, statt abends im Büro nachgearbeitet zu werden.',
     seoTitel: 'Digitalisierung für Handwerk und Bau',
@@ -128,6 +135,7 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'dienstleistung-und-agenturen',
+    bildhinweis: 'Besprechung am Bildschirm',
     title: 'Dienstleistung & Agenturen',
     teaser: 'Leads, Angebote und Projektabläufe automatisiert, damit abrechenbare Zeit abrechenbar bleibt.',
     seoTitel: 'Automation für Dienstleister und Agenturen',
