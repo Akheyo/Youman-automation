@@ -34,26 +34,29 @@ durch, und eine Prüfung gegen den Quelltext übersieht ihn.
 
 ## Farben
 
-Der Satz ist dunkel: heller Text auf Schwarz und Grau, kein Buntton.
-Drei Flächenstufen tragen die Gliederung.
+Monochrom auf hellgrauem Grund, kein Buntton. Drei Flächenstufen tragen die
+Gliederung.
 
 | Token | Wert | Rolle |
 | --- | --- | --- |
-| `--color-ink-deep` | `#000000` | tiefste Ebene: Hero, Seitenköpfe, Aufforderungen |
-| `--color-canvas` | `#0d0d0d` | Grundfläche |
-| `--color-surface` | `#161616` | Karten und erhobene Sektionen |
-| `--color-muted` | `#1c1c1c` | Bildplätze, gedämpfte Kacheln |
-| `--color-ink` | `#f2f2f2` | Fließtext und Überschriften |
-| `--color-line` | `#6b6b6b` | Linien und Kachelraster |
+| `--color-canvas` | `#e9e9e9` | Grundfläche, helles Grau |
+| `--color-surface` | `#f4f4f4` | Karten, Kopfleiste, Fußzeile |
+| `--color-muted` | `#dedede` | Bildplätze, gedämpfte Kacheln |
+| `--color-ink-deep` | `#000000` | schwarze Gegenfläche: Hero, Seitenköpfe, Aufforderungen |
+| `--color-ink` | `#000000` | Fließtext und Überschriften |
+| `--color-line` | `#000000` | Linien und Kachelraster |
 
 Zwei Fallstricke, die beim Weiterbauen zählen:
 
-- `--color-accent` ist **weiß**. Text auf einer Akzentfläche muss deshalb
-  `text-accent-fg` tragen, nicht `text-white`, sonst steht Weiß auf Weiß.
-  Genau das ist beim Umstellen zweimal passiert, einmal am Absendeknopf des
-  Formulars.
-- Ein harter Versatzschatten (`hebt-sich`) und der Schatten der Kopfleiste
-  nehmen `--color-line`. Schwarz wäre auf schwarzem Grund keiner.
+- Text auf einer Akzentfläche trägt `text-accent-fg`, nie `text-white`.
+  Sonst kippt jeder Knopf, sobald der Akzent einmal hell wird: Weiß auf
+  Weiß, ein leerer Kasten. Genau das ist beim Umstellen auf einen dunklen
+  Satz passiert, unter anderem am Absendeknopf des Formulars.
+- Der harte Versatzschatten (`hebt-sich`) und der Schatten der Kopfleiste
+  nehmen `--color-line` statt eines festen Schwarz, damit sie einem
+  Palettenwechsel folgen.
+- Die `ghost`-Schaltfläche steht ausschließlich in den schwarzen Sektionen
+  und ist deshalb fest weiß. Sie folgt der Palette bewusst nicht.
 
 ## Bilder
 
