@@ -11,9 +11,13 @@
   Richtung "Monochrom Streng" – Eintrag "Minimalist Monochrome" in der
   Stildatenbank des Skills `ui-ux-pro-max`, ausgewählt aus dreißig Entwürfen.
 
-  Nur Schwarz und Weiß, keine Akzentfarbe. Die Fotos sind damit das einzige
-  Bunte auf der Seite. Gegliedert wird durch Linie, Fläche und Weißraum,
-  nicht durch Farbe.
+  Nur Schwarz, Grau und Weiß, keine Akzentfarbe. Gegliedert wird durch Linie,
+  Fläche und Leerraum, nicht durch Farbe.
+
+  Der Satz ist dunkel: heller Text auf schwarzem und grauem Grund. Drei
+  Flächenstufen tragen die Gliederung, die im hellen Satz die Weißräume
+  getragen haben - Schwarz für die tiefsten Abschnitte, zwei Grautöne
+  darüber.
 
   Abweichung vom Skill-Vorschlag: Der Eintrag paart Monochrom mit Space
   Grotesk und Inter. Die Schriften bleiben stattdessen bei Newsreader für
@@ -25,30 +29,46 @@
 */
 @theme {
   /*
-    Monochrom. Nur Schwarz und Weiß, keine Akzentfarbe.
+    Monochrom und dunkel. Kein Buntton, nirgends.
 
-    Farbe entsteht ausschließlich durch die Fotos - sie sind damit das einzige
-    Bunte auf der Seite und stehen entsprechend heraus. Der Preis dafür ist,
-    dass Verweise nicht mehr über die Farbe erkennbar sind; sie tragen deshalb
-    durchgehend einen Unterstrich.
+    Die drei Flächen sind bewusst nah beieinander und trotzdem
+    unterscheidbar: Schwarz ist die tiefste Ebene (Kopfzeilen, Hero,
+    Aufforderungen), `canvas` die Grundfläche, `surface` die erhobene Fläche
+    darüber. Ein größerer Abstand zwischen ihnen würde die Seite in Streifen
+    zerlegen, ein kleinerer die Gliederung aufheben.
+
+    Reines Weiß als Textfarbe ist vermieden: Auf fast schwarzem Grund
+    flimmern die Buchstabenkanten (Halation). #f2f2f2 nimmt dem die Spitze,
+    ohne dass es grau wirkt.
   */
-  --color-ink: #000000; /* Fließtext, Überschriften */
-  --color-ink-deep: #000000; /* dunkle Sektionen, Navigations-Panels */
-  --color-ink-soft: #2e2e2e; /* Sekundärtext auf Weiß, Kontrast 13.9:1 */
+  --color-ink: #f2f2f2; /* Fließtext, Überschriften. Auf canvas 17.4:1 */
+  --color-ink-deep: #000000; /* tiefste Ebene: Hero, Kopfzeilen, Aufforderung */
+  --color-ink-soft: #b8b8b8; /* Sekundärtext. Auf der hellsten Fläche 8.6:1 */
 
-  /* Kein Akzent im eigentlichen Sinn: Schwarz führt, Grau ist der Hover. */
-  --color-accent: #000000;
-  --color-accent-hover: #3d3d3d;
+  /* Kein Akzent im eigentlichen Sinn: Weiß führt, Grau ist der Hover. */
+  --color-accent: #ffffff;
+  --color-accent-hover: #c9c9c9;
   --color-accent-on-dark: #ffffff;
+  /*
+    Schriftfarbe auf einer Akzentfläche. Nötig, seit der Akzent selbst weiß
+    ist: ein weißer Knopf mit weißer Schrift wäre leer. Das ist kein
+    Feinschliff, sondern der Unterschied zwischen lesbar und unsichtbar.
+  */
+  --color-accent-fg: #000000;
 
-  --color-canvas: #ffffff; /* Grundfläche */
-  --color-surface: #ffffff; /* Karten und helle Sektionen - bewusst gleich */
-  --color-muted: #f4f4f4;
-  --color-muted-fg: #4f4f4f; /* Kontrast auf Weiß: 8.2:1 */
-  --color-line: #000000; /* Trennung durch Linie statt durch Farbfläche */
+  --color-canvas: #0d0d0d; /* Grundfläche */
+  --color-surface: #161616; /* Karten und erhobene Sektionen */
+  --color-muted: #1c1c1c;
+  --color-muted-fg: #9a9a9a; /* auf muted 6.1:1 */
+  /*
+    Linien tragen die Gliederung, deshalb hell genug für die 3:1 aus
+    WCAG 1.4.11: gegen die hellste Fläche 3.2:1. Ein dunkleres Grau sähe
+    ruhiger aus und würde die Kachelraster unsichtbar machen.
+  */
+  --color-line: #6b6b6b;
 
   /* Wortmarke */
-  --color-brand: #000000;
+  --color-brand: #ffffff;
 
   /* Ueberschriften: redaktionelle Serife. Georgia als Ersatz, weil sie auf
      Windows und macOS vorhanden ist und aehnliche Proportionen hat - der
@@ -66,6 +86,10 @@
 
 @layer base {
   html {
+    /* Sagt dem Browser, dass die Seite dunkel ist. Ohne das bleiben
+       Scrollbalken, Auswahllisten und die Standard-Formularelemente hell
+       und stehen als weisse Kaesten im Satz. */
+    color-scheme: dark;
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
     /* Die Kopfleiste klebt oben. Ohne diesen Abstand landet ein Sprungziel
@@ -132,19 +156,13 @@
   }
 
   /*
-    Sicherheitsnetz fuer dunkle Sektionen.
+    Sicherheitsnetz fuer die tiefschwarzen Sektionen.
 
-    `SectionHeading` und einige Textbausteine tragen eine eigene
-    tone-Eigenschaft. Wird sie in einer dunklen Sektion vergessen, rendert
-    der Text in `text-ink-soft`, also #2e2e2e auf Schwarz: ein Kontrast von
-    1.54:1 statt der geforderten 4.5:1. Das ist praktisch unlesbar, faellt
-    beim Schreiben aber nicht auf, weil die Ueberschrift daneben weiss ist.
-
-    Genau das ist auf drei neuen Seiten passiert. Statt sich darauf zu
-    verlassen, dass die Eigenschaft immer gesetzt wird, faengt die dunkle
-    Sektion die beiden Sekundaerfarben hier ab. Ein ausdrueckliches
-    tone="dark" bleibt richtig und bleibt wirksam; das hier verhindert nur,
-    dass sein Fehlen unlesbaren Text erzeugt.
+    Seit die ganze Seite dunkel ist, ist ein vergessenes tone="dark" kein
+    Unfall mehr - `text-ink-soft` ist ohnehin hell und bleibt lesbar. Die
+    Regel hebt die beiden Sekundaerfarben auf schwarzem Grund trotzdem
+    leicht an, weil dort mehr Kontrast zur Verfuegung steht als auf der
+    Grundflaeche und der Text sonst matter wirkt als noetig.
   */
   .on-dark .text-ink-soft,
   .on-dark .text-muted-fg {
@@ -152,8 +170,8 @@
   }
 
   /*
-    Es gibt keine Akzentfarbe mehr, an der ein Verweis zu erkennen wäre –
-    Schwarz auf Weiß ist auch die Farbe des Fließtextes. Die Form übernimmt
+    Es gibt keine Akzentfarbe, an der ein Verweis zu erkennen wäre –
+    Weiß auf Schwarz ist auch die Farbe des Fließtextes. Die Form übernimmt
     das: jeder Verweis im Text trägt einen Unterstrich, der beim Überfahren
     dicker wird. Ohne ihn wären Verweise für Menschen mit Farbfehlsichtigkeit
     nicht auffindbar – und hier für alle anderen ebenso wenig.
@@ -171,7 +189,7 @@
 
   ::selection {
     background-color: var(--color-accent);
-    color: #ffffff;
+    color: var(--color-accent-fg);
   }
 }
 
@@ -277,10 +295,11 @@ summary::-webkit-details-marker {
 
     /* Kein weicher Schatten, sondern ein harter Versatz: eine zweite Kante,
        die hinter der Karte hervortritt. Weichzeichnung hat in einem
-       monochromen Satz keine Entsprechung. */
+       monochromen Satz keine Entsprechung. Im dunklen Satz ist die Kante
+       hell - ein schwarzer Schatten auf schwarzem Grund waere keiner. */
     &:hover {
       transform: translate(-3px, -3px);
-      box-shadow: 6px 6px 0 0 #000000;
+      box-shadow: 6px 6px 0 0 var(--color-line);
       /* In den fugenlosen Rastern (gap-px auf schwarzem Grund) beruehren
          sich die Kacheln. Ohne das schoebe sich die angehobene Kachel
          unter ihre Nachbarn und der Schatten waere halb abgeschnitten.
@@ -442,7 +461,7 @@ summary::-webkit-details-marker {
     box-shadow: 0 0 0 0 rgb(0 0 0 / 0);
   }
   to {
-    box-shadow: 0 2px 0 0 #000000;
+    box-shadow: 0 2px 0 0 var(--color-line);
   }
 }
 

@@ -32,6 +32,29 @@ durch, und eine Prüfung gegen den Quelltext übersieht ihn.
 | `navigation.ts` | Kopf- und Fußnavigation |
 | `sichtbarkeit.ts` | Schalter für die Indexierung |
 
+## Farben
+
+Der Satz ist dunkel: heller Text auf Schwarz und Grau, kein Buntton.
+Drei Flächenstufen tragen die Gliederung.
+
+| Token | Wert | Rolle |
+| --- | --- | --- |
+| `--color-ink-deep` | `#000000` | tiefste Ebene: Hero, Seitenköpfe, Aufforderungen |
+| `--color-canvas` | `#0d0d0d` | Grundfläche |
+| `--color-surface` | `#161616` | Karten und erhobene Sektionen |
+| `--color-muted` | `#1c1c1c` | Bildplätze, gedämpfte Kacheln |
+| `--color-ink` | `#f2f2f2` | Fließtext und Überschriften |
+| `--color-line` | `#6b6b6b` | Linien und Kachelraster |
+
+Zwei Fallstricke, die beim Weiterbauen zählen:
+
+- `--color-accent` ist **weiß**. Text auf einer Akzentfläche muss deshalb
+  `text-accent-fg` tragen, nicht `text-white`, sonst steht Weiß auf Weiß.
+  Genau das ist beim Umstellen zweimal passiert, einmal am Absendeknopf des
+  Formulars.
+- Ein harter Versatzschatten (`hebt-sich`) und der Schatten der Kopfleiste
+  nehmen `--color-line`. Schwarz wäre auf schwarzem Grund keiner.
+
 ## Bilder
 
 Zurzeit liegt kein eigenes Bildmaterial vor. Statt Fotos steht an den dafür
