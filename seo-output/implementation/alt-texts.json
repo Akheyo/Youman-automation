@@ -1,0 +1,12 @@
+{
+  "__hinweis__": "Alt-Texte für Bilder. Der Dry-Run listet Bilder ohne Alt-Text mit ID und Dateiname. Danach hier eintragen. Entweder per Media-ID (byId) oder per Dateiname (byFilename).",
+  "byId": {
+    "12": "Photovoltaikanlage auf Einfamilienhaus in Borken, montiert von A&B Solarenergy",
+    "34": "Team von A&B Solarenergy vor Firmensitz in Borken"
+  },
+  "byFilename": {
+    "hero.jpg": "Solaranlage auf Hausdach im Münsterland – A&B Solarenergy",
+    "referenz-1.jpg": "Fertige PV-Anlage mit Stromspeicher, Referenzprojekt Borken",
+    "wallbox.jpg": "Installierte Wallbox zum Laden des E-Autos mit Solarstrom"
+  }
+}

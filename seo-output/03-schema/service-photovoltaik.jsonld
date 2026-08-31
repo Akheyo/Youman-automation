@@ -1,0 +1,25 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": "https://ab-solarenergy.de/photovoltaik/#service",
+  "serviceType": "Photovoltaik-Installation",
+  "name": "Photovoltaikanlagen in Borken",
+  "description": "Planung, Lieferung und Montage von Photovoltaikanlagen für Privathaushalte und Gewerbe in Borken und im Münsterland – inklusive Beratung, Auslegung, Inbetriebnahme und Anmeldung beim Netzbetreiber.",
+  "url": "https://ab-solarenergy.de/photovoltaik/",
+  "provider": { "@id": "https://ab-solarenergy.de/#localbusiness" },
+  "areaServed": [
+    { "@type": "City", "name": "Borken" },
+    { "@type": "AdministrativeArea", "name": "Kreis Borken" },
+    { "@type": "AdministrativeArea", "name": "Münsterland" }
+  ],
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Leistungen A&B Solarenergy",
+    "itemListElement": [
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Photovoltaikanlage – Aufdach" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Stromspeicher / Nachrüstung" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Wallbox-Installation" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Wartung & Service" } }
+    ]
+  }
+}
