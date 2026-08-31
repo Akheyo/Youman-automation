@@ -11,11 +11,22 @@
  * wo es belegt ist.
  */
 
+import eCommerce from '../assets/img/branche-e-commerce-und-onlinehandel.png';
+import spedition from '../assets/img/branche-spedition-und-logistik.png';
+import produktion from '../assets/img/branche-produktion-und-fertigung.png';
+import grosshandel from '../assets/img/branche-grosshandel-und-distribution.png';
+import handwerk from '../assets/img/branche-handwerk-und-bau.png';
+import dienstleistung from '../assets/img/branche-dienstleistung-und-agenturen.png';
+
 export type Branche = {
   slug: string;
   title: string;
   /** Was auf dem Bild zu dieser Branche zu sehen sein soll, solange keines vorliegt. */
   bildhinweis: string;
+  /** Das Motiv. Steht hier und nicht in der Seite, damit es an allen Stellen dasselbe ist. */
+  bild: ImageMetadata;
+  /** Bildbeschreibung: was zu sehen ist, nicht die Wiederholung des Titels. */
+  bildAlt: string;
   /** Kurzzeile fuer Uebersicht und Kacheln. */
   teaser: string;
   /** Titel fuer die Suche, wo der Branchenname allein zu wenig traegt. */
@@ -37,6 +48,9 @@ export type Branche = {
 export const branchen: Branche[] = [
   {
     slug: 'e-commerce-und-onlinehandel',
+    bild: eCommerce,
+    bildAlt:
+      'Packtisch in einem Versandlager: Kartons mit Versandetiketten, Handscanner, Etikettendrucker und ein Bildschirm mit der Bestellübersicht, an der Wand ein DHL-Schild.',
     bildhinweis: 'Versandvorbereitung im Lager',
     title: 'E-Commerce & Onlinehandel',
     teaser: 'Bestände, Preise und Bestellungen über alle Kanäle synchron, ohne nächtliche Handarbeit.',
@@ -56,6 +70,9 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'spedition-und-logistik',
+    bild: spedition,
+    bildAlt:
+      'Lkw mit geöffneter Plane an der Verladerampe, davor palettierte Ware auf einem Hubwagen, daneben ein Bildschirm mit Tourenliste und Karte.',
     bildhinweis: 'Lkw an der Verladerampe',
     title: 'Spedition & Logistik',
     teaser: 'Aufträge, Statusmeldungen und Papiere fließen zwischen Auftraggeber, Fahrer und System.',
@@ -75,6 +92,9 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'produktion-und-fertigung',
+    bild: produktion,
+    bildAlt:
+      'Fertigungshalle mit einer eingehausten Montageanlage, davor ein Arbeitsplatz mit Bildschirm, Scanner und Materialkisten.',
     bildhinweis: 'Fertigungshalle im Betrieb',
     title: 'Produktion & Fertigung',
     teaser: 'Aufträge, Rückmeldungen und Materialbedarf ohne Zettelwirtschaft zwischen Halle und Büro.',
@@ -97,6 +117,9 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'grosshandel-und-distribution',
+    bild: grosshandel,
+    bildAlt:
+      'Gang in einem Hochregallager mit palettierter Ware, davor ein Kommissionierwagen und ein Packtisch mit Bildschirm und Etikettendrucker.',
     bildhinweis: 'Hochregallager',
     title: 'Großhandel & Distribution',
     teaser: 'Artikeldaten, Preislisten und Kundenbestellungen laufen durch, statt in Postfächern zu warten.',
@@ -116,6 +139,9 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'handwerk-und-bau',
+    bild: handwerk,
+    bildAlt:
+      'Innenausbau im Rohbau: auf einem Arbeitstisch liegt ein Bauplan mit einem Tablet darauf, dahinter Ständerwerk, Leiter und Kappsäge.',
     bildhinweis: 'Werkstatt oder Baustelle',
     title: 'Handwerk & Bau',
     teaser: 'Anfragen, Aufmaße und Rechnungen laufen mit, statt abends im Büro nachgearbeitet zu werden.',
@@ -135,6 +161,9 @@ export const branchen: Branche[] = [
   },
   {
     slug: 'dienstleistung-und-agenturen',
+    bild: dienstleistung,
+    bildAlt:
+      'Besprechungsraum mit zwei Laptops und Notizblöcken, an der Wand ein Bildschirm mit einem Ablaufdiagramm von der Anfrage bis zur Datenbank, daneben ein Flipchart.',
     bildhinweis: 'Besprechung am Bildschirm',
     title: 'Dienstleistung & Agenturen',
     teaser: 'Leads, Angebote und Projektabläufe automatisiert, damit abrechenbare Zeit abrechenbar bleibt.',

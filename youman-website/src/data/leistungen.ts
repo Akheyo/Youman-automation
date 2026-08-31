@@ -9,6 +9,12 @@
  * dahinter waere eine Behauptung.
  */
 
+import kiAutomationen from '../assets/img/leistung-ki-automationen.png';
+import chatbots from '../assets/img/leistung-chatbots.png';
+import webseiten from '../assets/img/leistung-webseiten.png';
+import eCommerce from '../assets/img/leistung-e-commerce.png';
+import individuelleSoftware from '../assets/img/leistung-individuelle-software.png';
+
 export type Baustein = {
   titel: string;
   /** Kurze, sachliche Erlaeuterung. Erscheint erst beim Aufklappen. */
@@ -20,6 +26,14 @@ export type Leistung = {
   title: string;
   /** Was auf dem Bild zu dieser Leistung zu sehen sein soll, solange keines vorliegt. */
   bildhinweis: string;
+  /** Das Motiv. Steht hier und nicht in der Seite, damit es an allen Stellen dasselbe ist. */
+  bild: ImageMetadata;
+  /**
+   * Bildbeschreibung. Sie ist das, was statt des Bildes gehoert wird, und
+   * das Einzige, was eine Suchmaschine ueber den Inhalt erfaehrt. Deshalb
+   * beschreibt sie, was zu sehen ist, und wiederholt nicht den Titel.
+   */
+  bildAlt: string;
   /** Kurzzeile fuer Uebersichten und Kacheln. */
   teaser: string;
   /** Titel fuer die Suche, wo der Bereichsname allein zu wenig traegt. */
@@ -43,6 +57,9 @@ export type Leistung = {
 export const leistungen: Leistung[] = [
   {
     slug: 'ki-automationen',
+    bild: kiAutomationen,
+    bildAlt:
+      'Laptop auf einem Schreibtisch, darauf ein Automationswerkzeug mit einem E-Commerce-Bestellprozess: Bestellung speichern, Zahlung prüfen, Lagerbestand prüfen, Versandlabel erstellen, Bestätigung senden.',
     bildhinweis: 'Arbeitsplatz, an dem ein Ablauf durchläuft',
     title: 'KI-Automationen',
     teaser: 'Wiederkehrende Arbeit, die heute Menschen erledigen, läuft künftig von selbst.',
@@ -79,6 +96,9 @@ export const leistungen: Leistung[] = [
   },
   {
     slug: 'chatbots',
+    bild: chatbots,
+    bildAlt:
+      'Chatfenster im Browser. Auf die Frage, wie sich ein Prozess automatisieren lässt, antwortet der Assistent mit fünf nummerierten Schritten und bietet drei Anschlussfragen an.',
     bildhinweis: 'Chatfenster im laufenden Gespräch',
     title: 'Chatbots',
     teaser: 'Auskunft rund um die Uhr, auf Grundlage Ihrer eigenen Unterlagen.',
@@ -115,6 +135,9 @@ export const leistungen: Leistung[] = [
   },
   {
     slug: 'webseiten',
+    bild: webseiten,
+    bildAlt:
+      'Dieselbe Unternehmensseite nebeneinander auf einem Laptop und einem Tablet, davor ein Skizzenblock mit dem Aufbau der Seite.',
     bildhinweis: 'Dieselbe Seite auf mehreren Geräten',
     title: 'Webseiten',
     teaser: 'Schnell, barrierefrei und auffindbar. Kein Baukasten, kein Ladebalken.',
@@ -151,6 +174,9 @@ export const leistungen: Leistung[] = [
   },
   {
     slug: 'e-commerce',
+    bild: eCommerce,
+    bildAlt:
+      'Produktseite eines Onlineshops auf einem Laptop, daneben ein Einkaufswagen mit Paketen und ein Telefon mit derselben Artikelübersicht.',
     bildhinweis: 'Kommissionierung und Versandvorbereitung',
     title: 'E-Commerce-Lösungen',
     teaser: 'Artikel, Bestände und Bestellungen laufen über alle Kanäle synchron.',
@@ -187,6 +213,9 @@ export const leistungen: Leistung[] = [
   },
   {
     slug: 'individuelle-software',
+    bild: individuelleSoftware,
+    bildAlt:
+      'Bildschirm mit einer Projektübersicht: Projekte mit Kunde, Status und Fortschritt, daneben eine Aufgabenliste und die Details eines ausgewählten Projekts.',
     bildhinweis: 'Bildschirm mit einer eigenen Anwendung',
     title: 'Individuelle Software',
     teaser: 'Für den Ablauf, für den es kein fertiges Programm gibt.',

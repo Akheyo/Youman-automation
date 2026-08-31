@@ -12,38 +12,40 @@ Astro erzeugt daraus selbst die kleineren Varianten. Es rechnet dabei nur
 herunter, nie hoch: Ein 600 px breites Original bleibt auf großen Bildschirmen
 unscharf.
 
-## Welche Dateien gebraucht werden
+## Was schon da ist
 
-15 Motive. Mit diesen Namen abgelegt, lassen sie sich ohne Rückfrage
-einsetzen; ein Motiv reicht jeweils für alle Stellen, an denen dieselbe
+13 von 15 Motiven liegen vor. Sie sind in `leistungen.ts`, `branchen.ts` und
+`caseStudies.ts` eingetragen und erscheinen dadurch überall, wo dieselbe
 Leistung, Branche oder Referenz vorkommt.
+
+| Datei | Inhalt |
+| --- | --- |
+| `leistung-ki-automationen` | Automationswerkzeug mit einem Bestellprozess |
+| `leistung-chatbots` | Chatfenster im laufenden Gespräch |
+| `leistung-webseiten` | Seite auf Laptop und Tablet |
+| `leistung-e-commerce` | Produktseite eines Onlineshops |
+| `leistung-individuelle-software` | Projektübersicht auf einem Bildschirm |
+| `branche-e-commerce-und-onlinehandel` | Packtisch im Versandlager |
+| `branche-spedition-und-logistik` | Lkw an der Verladerampe |
+| `branche-produktion-und-fertigung` | Fertigungshalle mit Montageanlage |
+| `branche-grosshandel-und-distribution` | Gang im Hochregallager |
+| `branche-handwerk-und-bau` | Bauplan und Tablet im Rohbau |
+| `branche-dienstleistung-und-agenturen` | Besprechungsraum mit Ablaufdiagramm |
+| `referenz-drahtmueller` | Schema der Palettenlogik |
+| `referenz-absolar` | Schema von Angebot bis Baustelle |
+
+Die beiden Referenzbilder sind Schemata, keine Fotos. In den kleinen Kacheln
+sind ihre Beschriftungen zu klein zum Lesen; auf den Detailseiten stehen sie
+über die volle Breite und sind dort lesbar.
+
+## Was noch fehlt
 
 | Dateiname | Was zu sehen sein soll | Format |
 | --- | --- | --- |
-| `start` | ein Motiv aus der Arbeit | 16:9 |
-| `leistung-ki-automationen` | Arbeitsplatz, an dem ein Ablauf durchläuft | 3:2 |
-| `leistung-chatbots` | Chatfenster im laufenden Gespräch | 3:2 |
-| `leistung-webseiten` | dieselbe Seite auf mehreren Geräten | 3:2 |
-| `leistung-e-commerce` | Kommissionierung und Versandvorbereitung | 3:2 |
-| `leistung-individuelle-software` | Bildschirm mit einer eigenen Anwendung | 3:2 |
-| `branche-e-commerce-und-onlinehandel` | Versandvorbereitung im Lager | 3:2 |
-| `branche-spedition-und-logistik` | Lkw an der Verladerampe | 3:2 |
-| `branche-produktion-und-fertigung` | Fertigungshalle im Betrieb | 3:2 |
-| `branche-grosshandel-und-distribution` | Hochregallager | 3:2 |
-| `branche-handwerk-und-bau` | Werkstatt oder Baustelle | 3:2 |
-| `branche-dienstleistung-und-agenturen` | Besprechung am Bildschirm | 3:2 |
-| `referenz-drahtmueller` | Gitterroste in Transportgestellen | 16:9 |
-| `referenz-absolar` | Lager und Kommissionierung | 16:9 |
+| `start` | ein Motiv aus der Arbeit, für die Startseite | 16:9 |
 | `ueber-uns` | die Menschen hinter youman | 16:9 |
 
-Endung `.webp` oder `.jpg`, beides geht. Das Format muss nicht genau
-stimmen, es wird mittig zugeschnitten. Wo der Ausschnitt schiefgeht, lässt
-sich das an der Stelle nachstellen.
-
-Die Beschriftung eines Bildplatzes kommt aus den Daten, nicht aus der
-Seite: `bildhinweis` in `leistungen.ts`, `branchen.ts` und
-`caseStudies.ts`. Ein Motiv einmal gesetzt, erscheint es dadurch überall,
-wo dieselbe Leistung, Branche oder Referenz auftaucht.
+An diesen beiden Stellen steht weiterhin der Platzhalter.
 
 ## Was noch dazugehört
 

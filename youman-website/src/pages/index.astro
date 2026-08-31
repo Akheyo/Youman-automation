@@ -82,6 +82,8 @@ import { withBase } from '../lib/url';
               class="group flex h-full flex-col transition-colors duration-200"
             >
               <Bildplatz
+                bild={leistung.bild}
+                alt={leistung.bildAlt}
                 bezeichnung={leistung.bildhinweis}
                 verhaeltnis="3 / 2"
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
@@ -126,6 +128,8 @@ import { withBase } from '../lib/url';
               class="group flex h-full flex-col transition-colors duration-200"
             >
               <Bildplatz
+                bild={branche.bild}
+                alt={branche.bildAlt}
                 bezeichnung={branche.bildhinweis}
                 verhaeltnis="3 / 2"
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
@@ -158,6 +162,8 @@ import { withBase } from '../lib/url';
               class="group flex h-full flex-col transition-colors duration-200"
             >
               <Bildplatz
+                bild={fall.bild}
+                alt={fall.bildAlt}
                 bezeichnung={fall.bildhinweis}
                 verhaeltnis="16 / 9"
                 sizes="(min-width: 640px) 50vw, 100vw"
