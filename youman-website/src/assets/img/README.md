@@ -12,22 +12,42 @@ Astro erzeugt daraus selbst die kleineren Varianten. Es rechnet dabei nur
 herunter, nie hoch: Ein 600 px breites Original bleibt auf großen Bildschirmen
 unscharf.
 
-Reservierte Plätze zurzeit:
+## Welche Dateien gebraucht werden
 
-| Seite | Was dorthin gehört | Format |
+15 Motive. Mit diesen Namen abgelegt, lassen sie sich ohne Rückfrage
+einsetzen; ein Motiv reicht jeweils für alle Stellen, an denen dieselbe
+Leistung, Branche oder Referenz vorkommt.
+
+| Dateiname | Was zu sehen sein soll | Format |
 | --- | --- | --- |
-| Startseite | ein Motiv aus der Arbeit | 16:9 |
-| Startseite, „Was wir bauen" | je Leistung ein Motiv (5) | 3:2 |
-| Startseite, „Wo wir arbeiten" | je Branche ein Motiv (6) | 3:2 |
-| Startseite, „Abgeschlossene Projekte" | je Projekt ein Motiv (2) | 16:9 |
-| Leistungen, Übersicht | dieselben fünf Motive | 3:2 |
-| Branchen, Übersicht | dieselben sechs Motive | 3:2 |
-| Referenzprojekte, Übersicht | dieselben zwei Motive | 4:3 |
-| Drahtmüller | Gitterroste in Transportgestellen | 16:9 |
-| A&B SolarEnergy | Lager und Kommissionierung | 16:9 |
-| Über uns | die Menschen hinter youman | 16:9 |
+| `start` | ein Motiv aus der Arbeit | 16:9 |
+| `leistung-ki-automationen` | Arbeitsplatz, an dem ein Ablauf durchläuft | 3:2 |
+| `leistung-chatbots` | Chatfenster im laufenden Gespräch | 3:2 |
+| `leistung-webseiten` | dieselbe Seite auf mehreren Geräten | 3:2 |
+| `leistung-e-commerce` | Kommissionierung und Versandvorbereitung | 3:2 |
+| `leistung-individuelle-software` | Bildschirm mit einer eigenen Anwendung | 3:2 |
+| `branche-e-commerce-und-onlinehandel` | Versandvorbereitung im Lager | 3:2 |
+| `branche-spedition-und-logistik` | Lkw an der Verladerampe | 3:2 |
+| `branche-produktion-und-fertigung` | Fertigungshalle im Betrieb | 3:2 |
+| `branche-grosshandel-und-distribution` | Hochregallager | 3:2 |
+| `branche-handwerk-und-bau` | Werkstatt oder Baustelle | 3:2 |
+| `branche-dienstleistung-und-agenturen` | Besprechung am Bildschirm | 3:2 |
+| `referenz-drahtmueller` | Gitterroste in Transportgestellen | 16:9 |
+| `referenz-absolar` | Lager und Kommissionierung | 16:9 |
+| `ueber-uns` | die Menschen hinter youman | 16:9 |
+
+Endung `.webp` oder `.jpg`, beides geht. Das Format muss nicht genau
+stimmen, es wird mittig zugeschnitten. Wo der Ausschnitt schiefgeht, lässt
+sich das an der Stelle nachstellen.
 
 Die Beschriftung eines Bildplatzes kommt aus den Daten, nicht aus der
 Seite: `bildhinweis` in `leistungen.ts`, `branchen.ts` und
 `caseStudies.ts`. Ein Motiv einmal gesetzt, erscheint es dadurch überall,
 wo dieselbe Leistung, Branche oder Referenz auftaucht.
+
+## Was noch dazugehört
+
+Zu jedem Bild braucht es eine Bildbeschreibung (`alt`). Sie ist keine
+Formsache: Sie ist das, was blinde Besucher statt des Bildes hören, und
+das, was Google über den Bildinhalt erfährt. Sie wird beim Einsetzen
+geschrieben, nicht vom Dateinamen abgeleitet.
