@@ -1,0 +1,217 @@
+---
+/**
+ * Bildfolge hinter der Wortmarke im Hero.
+ *
+ * Drei Dinge sind hier nicht Feinschliff, sondern Bedingung:
+ *
+ * 1. Der Inhalt haengt nicht am Skript. Ohne JavaScript steht das erste Bild
+ *    da und bleibt stehen. Wortmarke, Text und Schaltflaechen sind ohnehin
+ *    echtes HTML.
+ * 2. Der Wechsel laesst sich anhalten. Etwas, das von allein laeuft, laenger
+ *    als fuenf Sekunden dauert und neben anderem Inhalt steht, braucht eine
+ *    Moeglichkeit zum Anhalten (WCAG 2.2.2). Ein Karussell ohne Pause ist
+ *    ein Verstoss, kein Geschmacksthema.
+ * 3. Bei eingestellter reduzierter Bewegung laeuft nichts von selbst. Die
+ *    Punkte bleiben trotzdem bedienbar, wer will, blaettert von Hand.
+ *
+ * Die Bilder sind Stimmung, keine Information: Sie tragen ein leeres alt und
+ * werden Vorlesewerkzeugen damit nicht angesagt. Der Hero sagt in Text, worum
+ * es geht.
+ */
+import { Image } from 'astro:assets';
+import hero1 from '../assets/img/hero-1.jpg';
+import hero2 from '../assets/img/hero-2.jpg';
+import hero3 from '../assets/img/hero-3.jpg';
+import hero4 from '../assets/img/hero-4.jpg';
+import hero5 from '../assets/img/hero-5.jpg';
+
+const bilder = [hero1, hero2, hero3, hero4, hero5];
+---
+
+<div class="absolute inset-0 -z-10 overflow-hidden bg-ink-deep" data-hero-buehne>
+  {
+    bilder.map((bild, i) => (
+      <Image
+        src={bild}
+        alt=""
+        widths={[640, 960, 1280, 1920, 2560]}
+        sizes="100vw"
+        loading={i === 0 ? 'eager' : 'lazy'}
+        decoding={i === 0 ? 'sync' : 'async'}
+        fetchpriority={i === 0 ? 'high' : 'auto'}
+        class:list={['hero-bild absolute inset-0 size-full object-cover', i === 0 && 'ist-aktiv']}
+        data-hero-bild
+      />
+    ))
+  }
+  {/*
+    Der Schleier ist links am dichtesten, weil dort die Wortmarke steht. Ohne
+    ihn haengt die Lesbarkeit vom Bild ab: Zwei der fuenf Motive sind hell,
+    weisse Schrift darauf waere unlesbar.
+  */}
+  <div class="hero-schleier absolute inset-0" aria-hidden="true"></div>
+</div>
+
+<div class="pointer-events-none absolute inset-x-0 bottom-0 z-10" data-hero-bedienung hidden>
+  <div class="container-page flex items-center justify-end gap-1 pb-6 md:pb-10">
+    <ul class="flex items-center">
+      {
+        bilder.map((_, i) => (
+          <li>
+            <button
+              type="button"
+              class="hero-punkt pointer-events-auto grid size-11 place-items-center"
+              aria-label={`Bild ${i + 1} von ${bilder.length}`}
+              aria-current={i === 0 ? 'true' : 'false'}
+              data-hero-punkt={i}
+            >
+              <span class="block h-0.5 w-6 bg-white/45 transition-colors duration-200"></span>
+            </button>
+          </li>
+        ))
+      }
+    </ul>
+    <button
+      type="button"
+      class="pointer-events-auto ml-2 grid size-11 place-items-center text-white/70 transition-colors duration-200 hover:text-white"
+      data-hero-pause
+      aria-label="Bildwechsel anhalten"
+    >
+      {/*
+        Die beiden Zeichen haengen an einem span, nicht am path: Das
+        hidden-Attribut wirkt zuverlaessig nur auf HTML-Elementen, innerhalb
+        von SVG blendet es je nach Browser nichts aus.
+      */}
+      <span data-hero-symbol-pause>
+        <svg class="block size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M7 4h4v16H7zM13 4h4v16h-4z"></path>
+        </svg>
+      </span>
+      <span data-hero-symbol-weiter hidden>
+        <svg class="block size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M6 4l14 8-14 8z"></path>
+        </svg>
+      </span>
+    </button>
+  </div>
+</div>
+
+<style>
+  .hero-bild {
+    opacity: 0;
+  }
+
+  .hero-bild.ist-aktiv {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-bild {
+      transition: opacity 1.1s ease-in-out;
+    }
+  }
+
+  /*
+    Die Werte links sind hoch angesetzt: Auf einem weissen Motiv braucht
+    weisse Schrift rund 82 % Abdeckung, um 4.5:1 zu erreichen. Rechts, wo
+    kein Text steht, bleibt das Bild offen.
+  */
+  .hero-schleier {
+    background-image: linear-gradient(
+      100deg,
+      rgb(0 0 0 / 0.93) 0%,
+      rgb(0 0 0 / 0.88) 34%,
+      rgb(0 0 0 / 0.7) 58%,
+      rgb(0 0 0 / 0.5) 80%,
+      rgb(0 0 0 / 0.45) 100%
+    );
+  }
+
+  /* Auf schmalen Geräten liegt der Text über der ganzen Breite. */
+  @media (width < 64rem) {
+    .hero-schleier {
+      background-image: linear-gradient(
+        170deg,
+        rgb(0 0 0 / 0.88) 0%,
+        rgb(0 0 0 / 0.86) 60%,
+        rgb(0 0 0 / 0.8) 100%
+      );
+    }
+  }
+
+  .hero-punkt[aria-current='true'] span,
+  .hero-punkt:hover span {
+    background-color: #ffffff;
+  }
+</style>
+
+<script>
+  const buehne = document.querySelector<HTMLElement>('[data-hero-buehne]');
+  const bedienung = document.querySelector<HTMLElement>('[data-hero-bedienung]');
+
+  if (buehne && bedienung) {
+    const bilder = [...buehne.querySelectorAll<HTMLElement>('[data-hero-bild]')];
+    const punkte = [...bedienung.querySelectorAll<HTMLButtonElement>('[data-hero-punkt]')];
+    const pausenKnopf = bedienung.querySelector<HTMLButtonElement>('[data-hero-pause]');
+    const symbolPause = bedienung.querySelector<HTMLElement>('[data-hero-symbol-pause]');
+    const symbolWeiter = bedienung.querySelector<HTMLElement>('[data-hero-symbol-weiter]');
+
+    if (bilder.length > 1 && pausenKnopf) {
+      // Die Bedienung erscheint erst jetzt: Ohne Skript wechselt nichts, dann
+      // waeren Punkte und Pausetaste Knoepfe ohne Wirkung.
+      bedienung.hidden = false;
+
+      const ruhig = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const ABSTAND = 6500;
+      let aktuell = 0;
+      let uhr: number | undefined;
+      let laeuft = false;
+
+      const zeige = (index: number) => {
+        aktuell = (index + bilder.length) % bilder.length;
+        bilder.forEach((b, i) => b.classList.toggle('ist-aktiv', i === aktuell));
+        punkte.forEach((p, i) => p.setAttribute('aria-current', i === aktuell ? 'true' : 'false'));
+      };
+
+      const anhalten = () => {
+        laeuft = false;
+        window.clearInterval(uhr);
+        pausenKnopf.setAttribute('aria-label', 'Bildwechsel fortsetzen');
+        symbolPause?.setAttribute('hidden', '');
+        symbolWeiter?.removeAttribute('hidden');
+      };
+
+      const starten = () => {
+        if (ruhig.matches) return;
+        laeuft = true;
+        window.clearInterval(uhr);
+        uhr = window.setInterval(() => zeige(aktuell + 1), ABSTAND);
+        pausenKnopf.setAttribute('aria-label', 'Bildwechsel anhalten');
+        symbolWeiter?.setAttribute('hidden', '');
+        symbolPause?.removeAttribute('hidden');
+      };
+
+      punkte.forEach((p, i) =>
+        p.addEventListener('click', () => {
+          zeige(i);
+          // Ein Klick auf einen Punkt ist eine Entscheidung. Danach weiter
+          // automatisch zu wechseln, nimmt sie wieder zurueck.
+          anhalten();
+        }),
+      );
+
+      pausenKnopf.addEventListener('click', () => (laeuft ? anhalten() : starten()));
+
+      // Im nicht sichtbaren Tab weiterzuzaehlen kostet nur Rechenzeit.
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) window.clearInterval(uhr);
+        else if (laeuft) starten();
+      });
+
+      ruhig.addEventListener('change', () => (ruhig.matches ? anhalten() : starten()));
+
+      if (ruhig.matches) anhalten();
+      else starten();
+    }
+  }
+</script>

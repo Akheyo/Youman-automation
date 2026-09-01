@@ -188,7 +188,10 @@ for (const s of seiten) {
   }
 
   for (const bild of s.bilder) {
-    if (!/\balt=/.test(bild)) melde(p, `Bild ohne alt: ${bild.slice(0, 70)}`);
+    // Ein leeres alt ist die richtige Auszeichnung fuer ein schmueckendes
+    // Bild, und der Browser schreibt es als blosses `alt` ohne Wert. Nur auf
+    // `alt=` zu pruefen meldet genau diese korrekte Form als Fehler.
+    if (!/\balt(=|[\s>])/.test(bild)) melde(p, `Bild ohne alt: ${bild.slice(0, 70)}`);
   }
 
   for (const roh of s.strukturiert) {

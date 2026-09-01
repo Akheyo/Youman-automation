@@ -4,6 +4,7 @@ import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import Button from '../components/Button.astro';
 import Logo from '../components/Logo.astro';
+import HeroSlider from '../components/HeroSlider.astro';
 import Bildplatz from '../components/Bildplatz.astro';
 import { site } from '../data/site';
 import { leistungen, anfrageHinweis } from '../data/leistungen';
@@ -14,12 +15,15 @@ import { withBase } from '../lib/url';
 
 <Base title={site.name} description={site.startseitenBeschreibung}>
   {/*
-    Der Hero traegt die Wortmarke statt eines Videos. Ohne Bildmaterial muss
-    die Typografie die Wirkung uebernehmen, deshalb hier die einzige Stelle,
-    an der die Marke gross gesetzt wird. Kein Video heisst auch: nichts, was
-    nachlaedt, nichts, was springt, und mehrere Megabyte weniger.
+    Der Hero traegt die Wortmarke gross - die einzige Stelle, an der das
+    passiert. Dahinter laeuft eine Bildfolge, kein Video: Bilder laden in der
+    Groesse, die der Bildschirm braucht, das erste ist sofort da, und der
+    Wechsel laesst sich anhalten. Ein Video waere mehrere Megabyte, liesse
+    sich schlechter anhalten und braechte hier nichts dazu.
   */}
   <section class="on-dark relative isolate flex min-h-[calc(100svh-5rem)] flex-col justify-center bg-ink-deep py-24 text-white">
+    <HeroSlider />
+
     <div class="container-page">
       <Logo as="h1" variant="light" mitClaim class="text-[2.25rem] sm:text-6xl lg:text-8xl" />
 

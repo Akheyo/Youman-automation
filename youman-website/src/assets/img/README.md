@@ -33,6 +33,7 @@ Leistung, Branche oder Referenz vorkommt.
 | `branche-dienstleistung-und-agenturen` | Besprechungsraum mit Ablaufdiagramm |
 | `referenz-drahtmueller` | Schema der Palettenlogik |
 | `referenz-absolar` | Schema von Angebot bis Baustelle |
+| `hero-1` bis `hero-5` | Bildfolge hinter der Wortmarke im Hero |
 
 Die beiden Referenzbilder sind Schemata, keine Fotos. In den kleinen Kacheln
 sind ihre Beschriftungen zu klein zum Lesen; auf den Detailseiten stehen sie
@@ -42,10 +43,31 @@ sind ihre Beschriftungen zu klein zum Lesen; auf den Detailseiten stehen sie
 
 | Dateiname | Was zu sehen sein soll | Format |
 | --- | --- | --- |
-| `start` | ein Motiv aus der Arbeit, für die Startseite | 16:9 |
+| `start` | ein Motiv aus der Arbeit, für den Bildplatz unter der Einleitung | 16:9 |
 | `ueber-uns` | die Menschen hinter youman | 16:9 |
 
-An diesen beiden Stellen steht weiterhin der Platzhalter.
+An diesen beiden Stellen steht weiterhin der Platzhalter. Der Bildplatz auf
+der Startseite ist nicht der Hero: Der liegt darüber und läuft bereits.
+
+## Die Bildfolge im Hero
+
+`hero-1` bis `hero-5`, in dieser Reihenfolge, Wechsel alle 6,5 Sekunden.
+Reihenfolge und Anzahl stehen in `components/HeroSlider.astro`.
+
+Drei Dinge sind dort Bedingung, nicht Feinschliff:
+
+- Ohne JavaScript steht das erste Bild da und bleibt stehen. Die Bedienung
+  wird erst vom Skript eingeblendet, damit keine wirkungslosen Knöpfe
+  dastehen.
+- Der Wechsel lässt sich anhalten. Etwas, das von allein läuft und länger als
+  fünf Sekunden dauert, braucht das (WCAG 2.2.2).
+- Bei eingestellter reduzierter Bewegung läuft nichts von selbst; die Punkte
+  bleiben bedienbar.
+
+Der Schleier über den Bildern ist links am dichtesten, weil dort die
+Wortmarke steht. Gemessen über alle fünf Bilder liegt der schlechteste
+Kontrast bei 7,3:1 gegen die geforderten 4,5:1. Ein helleres Motiv als
+`hero-5` würde diesen Abstand aufbrauchen.
 
 ## Was noch dazugehört
 
