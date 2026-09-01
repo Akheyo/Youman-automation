@@ -1,13 +1,23 @@
 ---
 import { withBase } from '../lib/url';
 
+/**
+ * Schaltflaeche als Verweis.
+ *
+ * Der Pfeil rueckt beim Ueberfahren ein Stueck nach rechts. Das ist die
+ * einzige Bewegung daran und sie sagt etwas: Es geht weiter, die Flaeche ist
+ * kein Schalter, der etwas auf dieser Seite tut. Bei reduzierter Bewegung
+ * steht er still, sichtbar bleibt er.
+ */
 interface Props {
   href: string;
   variant?: 'primary' | 'secondary' | 'ghost';
+  /** false, wenn der Pfeil nicht passt, etwa bei sehr schmalen Flaechen. */
+  pfeil?: boolean;
   class?: string;
 }
 
-const { href, variant = 'primary', class: className = '' } = Astro.props;
+const { href, variant = 'primary', pfeil = true, class: className = '' } = Astro.props;
 
 const styles = {
   primary: 'bg-accent text-accent-fg hover:bg-accent-hover border border-transparent',
@@ -19,10 +29,39 @@ const styles = {
 <a
   href={withBase(href)}
   class:list={[
-    'druckt-sich inline-flex min-h-11 items-center justify-center gap-2 px-6 py-3 text-[0.9375rem] font-medium transition-colors duration-200',
+    'gruppe-knopf druckt-sich inline-flex min-h-11 items-center justify-center gap-2.5 px-6 py-3 text-[0.9375rem] font-medium transition-colors duration-200',
     styles[variant],
     className,
   ]}
 >
   <slot />
+  {
+    pfeil && (
+      <svg
+        class="knopf-pfeil size-4 shrink-0"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M5 12h13M13 6l6 6-6 6" />
+      </svg>
+    )
+  }
 </a>
+
+<style>
+  @media (prefers-reduced-motion: no-preference) {
+    .knopf-pfeil {
+      transition: translate 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .gruppe-knopf:hover .knopf-pfeil,
+    .gruppe-knopf:focus-visible .knopf-pfeil {
+      translate: 3px 0;
+    }
+  }
+</style>

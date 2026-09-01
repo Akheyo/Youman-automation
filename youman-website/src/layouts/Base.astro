@@ -1,4 +1,5 @@
 ---
+import { getImage } from 'astro:assets';
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -47,6 +48,12 @@ interface Props {
    * Angaben ueber die Seite, aber keine ueber die Leistung.
    */
   dienstleistung?: { name: string; beschreibung: string };
+  /**
+   * Motiv für die Vorschau beim Teilen. Daraus entsteht ein Bild im Format
+   * 1200 mal 630, das ist das Seitenverhältnis, das Facebook, LinkedIn,
+   * WhatsApp und X erwarten. Ohne Angabe erscheint eine reine Textvorschau.
+   */
+  bild?: ImageMetadata;
 }
 
 const {
@@ -55,6 +62,7 @@ const {
   noindex = false,
   breadcrumb = [],
   artikel,
+  bild,
   dienstleistung,
 } = Astro.props;
 
@@ -71,13 +79,20 @@ const canonical = new URL(Astro.url.pathname, basis);
 const absolut = (pfad: string) => new URL(pfad, basis).href;
 
 /*
- * Kein og:image.
+ * Vorschaubild fuers Teilen.
  *
- * Die Seite kommt ohne Bildmaterial aus, also gibt es auch kein Motiv fuer
- * die Vorschau beim Teilen. Ein Verweis auf eine Datei, die es nicht gibt,
- * waere schlechter als gar keine Angabe: Dienste zeigen dann einen kaputten
- * Platzhalter statt eine schlichte Textvorschau.
+ * Erzeugt wird ein eigener Zuschnitt auf 1200 mal 630. Das Motiv selbst hat
+ * ein anderes Seitenverhaeltnis; wuerde man es unveraendert angeben, schnitte
+ * jeder Dienst anders zu und das Ergebnis waere Zufall. JPEG statt WebP, weil
+ * einige Vorschauen WebP bis heute nicht darstellen.
+ *
+ * Ohne Motiv bleibt es bei einer reinen Textvorschau. Ein Verweis auf eine
+ * Datei, die es nicht gibt, waere schlechter als gar keine Angabe: Dienste
+ * zeigen dann einen kaputten Platzhalter.
  */
+const vorschau = bild
+  ? await getImage({ src: bild, width: 1200, height: 630, format: 'jpeg', fit: 'cover' })
+  : null;
 
 const organisation = {
   /*
@@ -269,9 +284,14 @@ const strukturierteDaten = {
     <meta property="og:title" content={seitentitel} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical.href} />
-    <meta name="twitter:card" content="summary" />
+    {vorschau && <meta property="og:image" content={absolut(vorschau.src)} />}
+    {vorschau && <meta property="og:image:width" content="1200" />}
+    {vorschau && <meta property="og:image:height" content="630" />}
+    {vorschau && <meta property="og:image:alt" content={seitentitel} />}
+    <meta name="twitter:card" content={vorschau ? 'summary_large_image' : 'summary'} />
     <meta name="twitter:title" content={seitentitel} />
     <meta name="twitter:description" content={description} />
+    {vorschau && <meta name="twitter:image" content={absolut(vorschau.src)} />}
 
     {indexierungErlaubt && <link rel="sitemap" href={withBase('/sitemap-index.xml')} />}
 

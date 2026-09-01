@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
 import Bildplatz from '../components/Bildplatz.astro';
+import Textspalten from '../components/Textspalten.astro';
 import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import Button from '../components/Button.astro';
@@ -60,37 +61,45 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
     breadcrumb={brotkrumen}
   />
 
+  {/*
+    Bild und Einleitung nebeneinander. Untereinander stand das Bild als
+    breites Band allein da und der Text darunter fuellte nur die linke
+    Haelfte; nebeneinander tragen sich beide.
+  */}
   <Section tone="canvas">
-    <Bildplatz
-      bezeichnung="Die Menschen hinter youman"
-      verhaeltnis="16 / 9"
-      sizes="(min-width: 1280px) 1200px, 100vw"
-    />
-  </Section>
-
-  <Section>
-    <div class="prose-measure space-y-5 text-lg text-ink-soft">
-      <p>
-        {site.name} ist kein reines Beratungshaus, das Empfehlungen ausspricht. Und kein
-        Anbieter, der ein fertiges Produkt verkauft, in das der Betrieb hineinpassen muss. Wir
-        tun beides: Wir analysieren den Ablauf, und wir bauen die Lösung dafür.
-      </p>
-      <p>
-        Der Unterschied zeigt sich in der Praxis daran, wer die Verantwortung trägt, wenn
-        etwas nicht funktioniert. Wo Beratung und Umsetzung getrennt eingekauft werden,
-        zeigen im Zweifel beide aufeinander. Hier gibt es diese Trennung nicht.
-      </p>
+    <div class="grid items-center gap-10 lg:grid-cols-12 lg:gap-16">
+      <div class="lg:col-span-7">
+        <Bildplatz
+          bezeichnung="Die Menschen hinter youman"
+          verhaeltnis="4 / 3"
+          sizes="(min-width: 1024px) 55vw, 100vw"
+        />
+      </div>
+      <div class="space-y-5 text-lg text-ink-soft lg:col-span-5">
+        <p>
+          {site.name} ist kein reines Beratungshaus, das Empfehlungen ausspricht. Und kein
+          Anbieter, der ein fertiges Produkt verkauft, in das der Betrieb hineinpassen muss.
+          Wir tun beides: Wir analysieren den Ablauf, und wir bauen die Lösung dafür.
+        </p>
+        <p>
+          Der Unterschied zeigt sich in der Praxis daran, wer die Verantwortung trägt, wenn
+          etwas nicht funktioniert. Wo Beratung und Umsetzung getrennt eingekauft werden,
+          zeigen im Zweifel beide aufeinander. Hier gibt es diese Trennung nicht.
+        </p>
+      </div>
     </div>
   </Section>
 
-  <Section tone="canvas">
-    <SectionHeading kicker={site.name} title="Geschichte" />
-    <div class="prose-measure mt-10 space-y-5 text-ink-soft">
-      {geschichte.map((absatz) => <p>{absatz}</p>)}
-    </div>
+  <Section>
+    <Textspalten>
+      <SectionHeading slot="titel" kicker={site.name} title="Geschichte" />
+      <div class="prose-measure space-y-5 text-ink-soft">
+        {geschichte.map((absatz) => <p>{absatz}</p>)}
+      </div>
+    </Textspalten>
   </Section>
 
-  <Section>
+  <Section tone="canvas">
     <SectionHeading
       kicker="Vorgehen"
       title="Wie ein Projekt abläuft"
@@ -100,9 +109,7 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
       {
         prozess.map((schritt) => (
           <li class="bg-surface p-7">
-            <span class="font-display text-sm font-semibold tabular-nums text-accent">
-              {schritt.step}
-            </span>
+            <span class="zaehlziffer block text-3xl leading-none">{schritt.step}</span>
             <h3 class="mt-3 text-lg text-ink">{schritt.title}</h3>
             <p class="mt-2 text-sm text-ink-soft">{schritt.description}</p>
           </li>
@@ -111,7 +118,7 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
     </ol>
   </Section>
 
-  <Section tone="canvas">
+  <Section>
     <SectionHeading kicker={site.name} title="Werte" />
     <dl class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
       {

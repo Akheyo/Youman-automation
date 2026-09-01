@@ -4,6 +4,7 @@ import PageHeader from '../../components/PageHeader.astro';
 import Section from '../../components/Section.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Button from '../../components/Button.astro';
+import Bildplatz from '../../components/Bildplatz.astro';
 import { leistungen } from '../../data/leistungen';
 import { branchen } from '../../data/branchen';
 import { prozess } from '../../data/site';
@@ -31,6 +32,7 @@ const brotkrumen = [
   description={leistung.seoBeschreibung ?? leistung.teaser}
   breadcrumb={brotkrumen}
   dienstleistung={{ name: leistung.title, beschreibung: leistung.teaser }}
+  bild={leistung.bild}
 >
   <PageHeader
     kicker="Leistungen"
@@ -39,8 +41,24 @@ const brotkrumen = [
     breadcrumb={brotkrumen}
   />
 
+  {/*
+    Motiv und Einleitung nebeneinander. Das Bild liegt schon in den Daten,
+    stand auf der Detailseite aber bisher nicht: Wer hierher durchklickt, hat
+    es auf der Kachel gesehen und findet es hier wieder.
+  */}
   <Section>
-    <p class="prose-measure text-lg text-ink-soft">{leistung.intro}</p>
+    <div class="grid items-center gap-10 lg:grid-cols-12 lg:gap-16">
+      <div class="lg:col-span-7">
+        <Bildplatz
+          bild={leistung.bild}
+          alt={leistung.bildAlt}
+          bezeichnung={leistung.bildhinweis}
+          verhaeltnis="3 / 2"
+          sizes="(min-width: 1024px) 55vw, 100vw"
+        />
+      </div>
+      <p class="text-lg text-ink-soft lg:col-span-5">{leistung.intro}</p>
+    </div>
   </Section>
 
   <Section tone="canvas">
@@ -53,7 +71,7 @@ const brotkrumen = [
       {
         leistung.painpoints.map((punkt, i) => (
           <li class="flex gap-5 bg-surface p-7">
-            <span class="font-display text-sm font-semibold tabular-nums text-accent">
+            <span class="zaehlziffer shrink-0 text-2xl leading-none">
               {String(i + 1).padStart(2, '0')}
             </span>
             <p class="text-ink-soft">{punkt}</p>
@@ -105,9 +123,7 @@ const brotkrumen = [
       {
         prozess.map((schritt) => (
           <li class="bg-surface p-7">
-            <span class="font-display text-sm font-semibold tabular-nums text-accent">
-              {schritt.step}
-            </span>
+            <span class="zaehlziffer block text-3xl leading-none">{schritt.step}</span>
             <h3 class="mt-3 text-lg text-ink">{schritt.title}</h3>
             <p class="mt-2 text-sm text-ink-soft">{schritt.description}</p>
           </li>

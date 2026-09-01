@@ -598,3 +598,45 @@ summary::-webkit-details-marker {
     }
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Bilder in Kacheln
+
+   Beim Ueberfahren zieht das Motiv langsam heran. Skaliert wird nur das Bild
+   innerhalb seines Rahmens, nicht die Kachel: Ein Layout, das sich beim
+   Zeigen bewegt, macht das Klicken schwerer, und die Kachel hebt sich ohnehin
+   schon ueber `hebt-sich` an.
+
+   `will-change` steht bewusst nicht da. Es reserviert dauerhaft eine eigene
+   Ebene, und auf einer Seite mit einem Dutzend Kacheln kostet das mehr, als
+   die weichere Bewegung wert waere.
+--------------------------------------------------------------------------- */
+@utility bild-zieht-heran {
+  overflow: hidden;
+
+  & img {
+    @media (prefers-reduced-motion: no-preference) {
+      transition: scale 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  }
+
+  .group:hover & img,
+  .group:focus-visible & img {
+    @media (prefers-reduced-motion: no-preference) {
+      scale: 1.045;
+    }
+  }
+}
+
+/*
+  Ziffern in Aufzaehlungen: gross, leicht, in der Anmutung einer Seitenzahl.
+  Sie sollen den Blick fuehren, nicht mit dem Text konkurrieren, deshalb ein
+  helles Grau statt Schwarz.
+*/
+@utility zaehlziffer {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  color: color-mix(in oklab, var(--color-ink) 38%, transparent);
+}

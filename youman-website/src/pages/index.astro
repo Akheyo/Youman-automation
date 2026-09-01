@@ -11,9 +11,11 @@ import { leistungen, anfrageHinweis } from '../data/leistungen';
 import { branchen } from '../data/branchen';
 import { caseStudies } from '../data/caseStudies';
 import { withBase } from '../lib/url';
+// Fuer die Vorschau beim Teilen: dasselbe Motiv, mit dem der Hero anfaengt.
+import heroVorschau from '../assets/img/hero-1.jpg';
 ---
 
-<Base title={site.name} description={site.startseitenBeschreibung}>
+<Base title={site.name} description={site.startseitenBeschreibung} bild={heroVorschau}>
   {/*
     Der Hero traegt die Wortmarke gross - die einzige Stelle, an der das
     passiert. Dahinter laeuft eine Bildfolge, kein Video: Bilder laden in der

@@ -2,6 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import Section from '../../components/Section.astro';
+import Textspalten from '../../components/Textspalten.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
 import Bildplatz from '../../components/Bildplatz.astro';
 import { caseStudies } from '../../data/caseStudies';
 import { withBase } from '../../lib/url';
@@ -26,53 +28,56 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
     Luecke wirkt statt wie eine Entscheidung.
   */}
   <Section>
-    <div class="prose-measure space-y-6 text-lg text-ink-soft">
-      <p>
-        Zwei abgeschlossene Projekte, beide mit Namen des Kunden. In beiden Fällen lief ein
-        System, das seine Aufgabe erfüllte. Daneben lag der Teil der Arbeit, für den es
-        keine Vorlage gab: in Tabellen, in Erfahrungswerten einzelner Mitarbeiter, in
-        Absprachen, die niemand aufgeschrieben hatte.
-      </p>
-      <p>
-        Bei der{' '}
-        <a href={withBase('/case-studies/drahtmueller-palettenoptimierung')} class="textverweis"
-          >Drahtmüller GmbH</a
-        >{' '}
-        waren das 2.556 aktive Palettentypen. Weil die Gitterroste nach Kundenmaß gefertigt
-        werden, muss auch die Palette dazu passen. Jede Entscheidung ist ein Einzelfall,
-        den der Standard nicht abbildet. Bei{' '}
-        <a href={withBase('/case-studies/absolar-warenwirtschaft')} class="textverweis"
-          >A&amp;B SolarEnergy</a
-        >{' '}
-        lagen Angebote in Lexware Office, Lagerdaten in einer eigenen Datenbank und die
-        Baustellenplanung wieder woanders. Drei Stände, die niemand gegeneinander abglich,
-        bis es an der Baustelle auffiel.
-      </p>
-      <p>
-        Jede Darstellung nennt Ausgangslage, Vorgehen und was danach anders war. Was sie
-        nicht nennt, sind Einsparquoten, Amortisationszeiten und Kundenstimmen. Solche
-        Angaben ließen sich leicht schreiben, wären aber nicht belegt. In den Unterlagen zu
-        beiden Projekten stehen sie nicht. Genannt wird nur, was sich aus dem Projekt selbst
-        ergibt, etwa die Zahl der Palettentypen.
-      </p>
-      <p>
-        Beide Fälle folgen derselben Machart: ein eigenständiges Modul, über
-        eine Schnittstelle an das bestehende System gehängt, ohne Ablösung. Welche{' '}
-        <a href={withBase('/leistungen')} class="textverweis">Leistungen</a> dabei
-        greifen und in welchen{' '}
-        <a href={withBase('/branchen')} class="textverweis">Branchen</a> wir arbeiten, steht
-        jeweils dort.
-      </p>
-      <p>
-        Zwei Projekte sind keine lange Liste, und wir tun nicht so, als wäre sie länger.
-        Aufgenommen wird hier nur, was abgeschlossen ist und wofür der Kunde der Nennung
-        ausdrücklich zugestimmt hat. Laufende Projekte fehlen deshalb, ebenso solche, über
-        die wir vertraglich nicht sprechen dürfen. Wenn Ihre Ausgangslage einem der beiden
-        Fälle ähnelt, bringt ein{' '}
-        <a href={withBase('/kontakt')} class="textverweis">Gespräch</a> Ihnen mehr als jede
-        weitere Referenz auf dieser Seite.
-      </p>
-    </div>
+    <Textspalten>
+      <SectionHeading slot="titel" kicker="Zur Einordnung" title="Was hier steht und was nicht" as="h2" />
+      <div class="prose-measure space-y-6 text-lg text-ink-soft">
+        <p>
+          Zwei abgeschlossene Projekte, beide mit Namen des Kunden. In beiden Fällen lief ein
+          System, das seine Aufgabe erfüllte. Daneben lag der Teil der Arbeit, für den es
+          keine Vorlage gab: in Tabellen, in Erfahrungswerten einzelner Mitarbeiter, in
+          Absprachen, die niemand aufgeschrieben hatte.
+        </p>
+        <p>
+          Bei der{' '}
+          <a href={withBase('/case-studies/drahtmueller-palettenoptimierung')} class="textverweis"
+            >Drahtmüller GmbH</a
+          >{' '}
+          waren das 2.556 aktive Palettentypen. Weil die Gitterroste nach Kundenmaß gefertigt
+          werden, muss auch die Palette dazu passen. Jede Entscheidung ist ein Einzelfall,
+          den der Standard nicht abbildet. Bei{' '}
+          <a href={withBase('/case-studies/absolar-warenwirtschaft')} class="textverweis"
+            >A&amp;B SolarEnergy</a
+          >{' '}
+          lagen Angebote in Lexware Office, Lagerdaten in einer eigenen Datenbank und die
+          Baustellenplanung wieder woanders. Drei Stände, die niemand gegeneinander abglich,
+          bis es an der Baustelle auffiel.
+        </p>
+        <p>
+          Jede Darstellung nennt Ausgangslage, Vorgehen und was danach anders war. Was sie
+          nicht nennt, sind Einsparquoten, Amortisationszeiten und Kundenstimmen. Solche
+          Angaben ließen sich leicht schreiben, wären aber nicht belegt. In den Unterlagen zu
+          beiden Projekten stehen sie nicht. Genannt wird nur, was sich aus dem Projekt selbst
+          ergibt, etwa die Zahl der Palettentypen.
+        </p>
+        <p>
+          Beide Fälle folgen derselben Machart: ein eigenständiges Modul, über
+          eine Schnittstelle an das bestehende System gehängt, ohne Ablösung. Welche{' '}
+          <a href={withBase('/leistungen')} class="textverweis">Leistungen</a> dabei
+          greifen und in welchen{' '}
+          <a href={withBase('/branchen')} class="textverweis">Branchen</a> wir arbeiten, steht
+          jeweils dort.
+        </p>
+        <p>
+          Zwei Projekte sind keine lange Liste, und wir tun nicht so, als wäre sie länger.
+          Aufgenommen wird hier nur, was abgeschlossen ist und wofür der Kunde der Nennung
+          ausdrücklich zugestimmt hat. Laufende Projekte fehlen deshalb, ebenso solche, über
+          die wir vertraglich nicht sprechen dürfen. Wenn Ihre Ausgangslage einem der beiden
+          Fälle ähnelt, bringt ein{' '}
+          <a href={withBase('/kontakt')} class="textverweis">Gespräch</a> Ihnen mehr als jede
+          weitere Referenz auf dieser Seite.
+        </p>
+      </div>
+    </Textspalten>
   </Section>
 
   <Section tone="canvas">

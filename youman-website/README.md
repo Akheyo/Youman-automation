@@ -77,9 +77,10 @@ Nachrüsten nichts, der Layout-Sprung bleibt bei 0.
 
 Zwei Dinge bleiben davon unberührt:
 
-- Es gibt **kein `og:image`**. Beim Teilen erscheint eine reine Textvorschau.
-  Ein Verweis auf eine nicht vorhandene Datei wäre schlechter als keine
-  Angabe, weil Dienste dann einen kaputten Platzhalter zeigen.
+- Das **`og:image`** entsteht aus dem Motiv der Seite: `Base` schneidet es
+  auf 1200 mal 630 zu und liefert JPEG aus, weil einige Vorschauen WebP bis
+  heute nicht darstellen. Seiten ohne Motiv bekommen keins; ein Verweis auf
+  eine nicht vorhandene Datei wäre schlechter als keine Angabe.
 - Die Wortmarke ist Text, keine Datei. Sie bleibt dadurch bei jeder Größe
   scharf und ist vorlesbar.
 

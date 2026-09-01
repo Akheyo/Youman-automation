@@ -2,6 +2,8 @@
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import Section from '../../components/Section.astro';
+import Textspalten from '../../components/Textspalten.astro';
+import SectionHeading from '../../components/SectionHeading.astro';
 import Bildplatz from '../../components/Bildplatz.astro';
 import { leistungen, anfrageHinweis } from '../../data/leistungen';
 import { withBase } from '../../lib/url';
@@ -22,21 +24,24 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
   />
 
   <Section>
-    <div class="prose-measure space-y-6 text-lg text-ink-soft">
-      <p>
-        Die Bereiche greifen ineinander. Ein Chatbot ohne Anbindung an den tatsächlichen
-        Bestand gibt Auskünfte, die niemand geprüft hat. Eine Automation ohne festgelegte
-        Grenze entscheidet irgendwann Fälle, die sie nicht entscheiden sollte. In den meisten
-        Projekten beginnt es deshalb an einer Stelle und wächst von dort weiter.
-      </p>
-      <p>
-        Was auf diesen Seiten bewusst nicht steht, sind Preise und Laufzeiten. Beides hängt
-        daran, wie die vorhandenen Systeme aussehen und wie viel davon dokumentiert ist. Das
-        lässt sich in einem{' '}
-        <a href={withBase('/kontakt')} class="textverweis">Gespräch</a> in einer halben Stunde
-        klären, während eine Preisliste für keinen der Fälle stimmen würde.
-      </p>
-    </div>
+    <Textspalten>
+      <SectionHeading slot="titel" kicker="Zur Einordnung" title="Wie die Bereiche zusammenhängen" as="h2" />
+      <div class="prose-measure space-y-6 text-lg text-ink-soft">
+        <p>
+          Die Bereiche greifen ineinander. Ein Chatbot ohne Anbindung an den tatsächlichen
+          Bestand gibt Auskünfte, die niemand geprüft hat. Eine Automation ohne festgelegte
+          Grenze entscheidet irgendwann Fälle, die sie nicht entscheiden sollte. In den meisten
+          Projekten beginnt es deshalb an einer Stelle und wächst von dort weiter.
+        </p>
+        <p>
+          Was auf diesen Seiten bewusst nicht steht, sind Preise und Laufzeiten. Beides hängt
+          daran, wie die vorhandenen Systeme aussehen und wie viel davon dokumentiert ist. Das
+          lässt sich in einem{' '}
+          <a href={withBase('/kontakt')} class="textverweis">Gespräch</a> in einer halben Stunde
+          klären, während eine Preisliste für keinen der Fälle stimmen würde.
+        </p>
+      </div>
+    </Textspalten>
   </Section>
 
   <Section tone="canvas">

@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import Section from '../../components/Section.astro';
+import Bildplatz from '../../components/Bildplatz.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Button from '../../components/Button.astro';
 import { branchen } from '../../data/branchen';
@@ -31,20 +32,36 @@ const brotkrumen = [
   title={branche.seoTitel ?? branche.title}
   description={branche.seoBeschreibung ?? branche.teaser}
   breadcrumb={brotkrumen}
+  bild={branche.bild}
 >
   <PageHeader kicker="Branchen" title={branche.title} lead={branche.teaser} breadcrumb={brotkrumen} />
 
   <Section>
-    <p class="prose-measure text-lg text-ink-soft">{branche.intro}</p>
-
-    {
-      referenz && branche.referenzHinweis && (
-        <p class="prose-measure mt-6 text-lg text-ink-soft">
-          {branche.referenzHinweis}{' '}
-          <a href={withBase(referenz.href)} class="textverweis">{referenz.title}</a>.
-        </p>
-      )
-    }
+    <div class="grid items-center gap-10 lg:grid-cols-12 lg:gap-16">
+      <div class="lg:col-span-7">
+        <Bildplatz
+          bild={branche.bild}
+          alt={branche.bildAlt}
+          bezeichnung={branche.bildhinweis}
+          verhaeltnis="3 / 2"
+          sizes="(min-width: 1024px) 55vw, 100vw"
+        />
+      </div>
+      <div class="space-y-6 text-lg text-ink-soft lg:col-span-5">
+        <p>{branche.intro}</p>
+        {
+          referenz && branche.referenzHinweis && (
+            <p>
+              {branche.referenzHinweis}{' '}
+              <a href={withBase(referenz.href)} class="textverweis">
+                {referenz.title}
+              </a>
+              .
+            </p>
+          )
+        }
+      </div>
+    </div>
   </Section>
 
   {/* Erst das Problem, dann die Antwort. Wer sein eigenes Problem oben
@@ -59,7 +76,7 @@ const brotkrumen = [
       {
         branche.painpoints.map((punkt, i) => (
           <li class="flex gap-5 bg-surface p-7">
-            <span class="font-display text-sm font-semibold tabular-nums text-accent">
+            <span class="zaehlziffer shrink-0 text-2xl leading-none">
               {String(i + 1).padStart(2, '0')}
             </span>
             <p class="text-ink-soft">{punkt}</p>

@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import Section from '../../components/Section.astro';
+import Textspalten from '../../components/Textspalten.astro';
 import Bildplatz from '../../components/Bildplatz.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import { branchen } from '../../data/branchen';
@@ -24,20 +25,23 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
   />
 
   <Section>
-    <div class="prose-measure space-y-6 text-lg text-ink-soft">
-      <p>
-        Die Einteilung nach Branchen ist eine Abkürzung für Leser, keine Grenze. Wer einen
-        Handwerksbetrieb mit eigenem Onlineshop führt, erkennt sich in zwei Bereichen wieder,
-        und wer in keinem davon vorkommt, ist deshalb nicht ausgeschlossen.
-      </p>
-      <p>
-        Gemeinsam ist allen sechs, dass die Systeme grundsätzlich laufen. Das Problem liegt in
-        der Lücke zwischen dem, was ein System vorsieht, und dem, was der Betrieb tatsächlich
-        tut: Angaben, die zweimal erfasst werden, Entscheidungen, die nur eine Person treffen
-        kann, Auskünfte, die jeden Tag neu gegeben werden. Diese Lücke lässt sich schließen,
-        ohne das Bestehende abzulösen.
-      </p>
-    </div>
+    <Textspalten>
+      <SectionHeading slot="titel" kicker="Zur Einordnung" title="Warum genau diese sechs" as="h2" />
+      <div class="prose-measure space-y-6 text-lg text-ink-soft">
+        <p>
+          Die Einteilung nach Branchen ist eine Abkürzung für Leser, keine Grenze. Wer einen
+          Handwerksbetrieb mit eigenem Onlineshop führt, erkennt sich in zwei Bereichen wieder,
+          und wer in keinem davon vorkommt, ist deshalb nicht ausgeschlossen.
+        </p>
+        <p>
+          Gemeinsam ist allen sechs, dass die Systeme grundsätzlich laufen. Das Problem liegt in
+          der Lücke zwischen dem, was ein System vorsieht, und dem, was der Betrieb tatsächlich
+          tut: Angaben, die zweimal erfasst werden, Entscheidungen, die nur eine Person treffen
+          kann, Auskünfte, die jeden Tag neu gegeben werden. Diese Lücke lässt sich schließen,
+          ohne das Bestehende abzulösen.
+        </p>
+      </div>
+    </Textspalten>
   </Section>
 
   {/*

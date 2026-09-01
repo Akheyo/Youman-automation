@@ -1,0 +1,28 @@
+---
+/**
+ * Zweispaltiger Textabschnitt: links die Überschrift, rechts der Fließtext.
+ *
+ * Der Grund ist nicht Zierde. Der Fließtext ist auf 68 Zeichen begrenzt,
+ * weil längere Zeilen schlechter zu lesen sind. Steht er allein unter einer
+ * Überschrift, bleibt auf breiten Bildschirmen die halbe Fläche leer und die
+ * Seite wirkt unfertig. Die Überschrift daneben füllt sie mit etwas, das
+ * dort hingehört, und der Blick findet Abschnittstitel und Text auf einen
+ * Griff.
+ *
+ * Unter 1024 px stapelt sich beides, dort ist für zwei Spalten kein Platz.
+ */
+interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+---
+
+<div class:list={['grid gap-8 lg:grid-cols-12 lg:gap-16', className]}>
+  <div class="lg:col-span-4">
+    <slot name="titel" />
+  </div>
+  <div class="lg:col-span-7 lg:col-start-6">
+    <slot />
+  </div>
+</div>

@@ -50,7 +50,11 @@ const {
 ---
 
 <figure
-  class:list={['relative overflow-hidden', bild ? '' : 'bildplatz', className]}
+  class:list={[
+    'relative overflow-hidden',
+    bild ? 'bild-zieht-heran' : 'bildplatz',
+    className,
+  ]}
   style={`aspect-ratio: ${verhaeltnis};`}
 >
   {
