@@ -210,25 +210,26 @@
 }
 
 /*
-  Textmaß für Fließtext.
+  Textmaß für Fließtext, dazu Blocksatz.
 
-  Kein Blocksatz mehr. Er stand hier lange und war der groesste Grund dafuer,
-  dass die Seite unruhig wirkte: Deutsche Komposita wie
-  "Warenwirtschaftssystem" lassen sich kaum umbrechen, der Browser verteilt
-  die fehlende Breite auf die Wortzwischenraeume, und in schmalen Spalten
-  reissen dadurch weisse Baender durch den Absatz. In den zweispaltigen
-  Abschnitten, wo der Text nur ein knappes Drittel der Breite hat, war das
-  auf jeder Seite zu sehen.
+  Blocksatz braucht im Deutschen zwei Dinge, sonst reißen weiße Bänder durch
+  den Absatz: Silbentrennung und eine Spalte, die breit genug ist. Ohne
+  Trennung verteilt der Browser die fehlende Breite auf die Wortzwischenräume,
+  und lange Komposita wie "Warenwirtschaftssystem" machen daraus Lücken von
+  halber Wortbreite.
 
-  Flattersatz hat eine unruhige rechte Kante, dafuer gleichmaessige
-  Wortabstaende. Bei dieser Spaltenbreite ist das die ruhigere Wahl.
-
-  Die Silbentrennung bleibt: Sie greift nur, wenn ein Wort wirklich nicht
-  passt, und verhindert einzelne weit ueberstehende Zeilen.
+  `hyphens: auto` greift, weil das Dokument lang="de" trägt; der Browser
+  trennt dann nach deutschen Regeln. `hyphenate-limit-chars: 6 3 3` verhindert
+  die hässlichen Fälle: Wörter unter sechs Zeichen werden gar nicht getrennt,
+  und vor wie nach dem Trennstrich stehen mindestens drei Buchstaben. Ohne
+  diese Grenze trennt der Browser auch "we-gen".
 */
 @utility prose-measure {
   max-width: 68ch;
+  text-align: justify;
+  text-justify: inter-word;
   hyphens: auto;
+  hyphenate-limit-chars: 6 3 3;
 }
 
 .text-center .prose-measure,
@@ -338,48 +339,6 @@ summary::-webkit-details-marker {
   }
 }
 
-/* Schaltflächen bekommen einen sehr kleinen Impuls. */
-@utility druckt-sich {
-  @media (prefers-reduced-motion: no-preference) {
-    transition: transform 0.2s ease-out;
-
-    &:hover {
-      transform: translateY(-2px);
-    }
-
-    &:active {
-      transform: translateY(0);
-    }
-  }
-}
-
-/*
-  Scrollgesteuerte Bewegung: Hintergrundbilder fahren beim Durchscrollen
-  minimal auseinander. Nutzt die native CSS-Scroll-Timeline, damit dafür kein
-  JavaScript und kein Scroll-Listener nötig ist. Browser ohne Unterstützung
-  zeigen das Bild einfach unbewegt.
-*/
-@utility faehrt-heran {
-  @media (prefers-reduced-motion: no-preference) {
-    @supports (animation-timeline: view()) {
-      animation: langsam-heranfahren linear both;
-      animation-timeline: view();
-      animation-range: cover 0% cover 100%;
-    }
-  }
-}
-
-@keyframes langsam-heranfahren {
-  from {
-    scale: 1.12;
-    translate: 0 -1.5%;
-  }
-  to {
-    scale: 1;
-    translate: 0 1.5%;
-  }
-}
-
 /*
   Ruhiger Verlauf auf der Grundfläche statt eines Musters.
 
@@ -469,56 +428,6 @@ summary::-webkit-details-marker {
   }
 }
 
-/*
-  Akzentlinie ueber einer Abschnittsueberschrift, die beim Hereinscrollen
-  aufwaechst. Sie ersetzt keine Information, sondern markiert den Anfang eines
-  Abschnitts – faellt sie aus, fehlt nichts.
-*/
-@utility linie-waechst {
-  transform-origin: left center;
-
-  @media (prefers-reduced-motion: no-preference) {
-    @supports (animation-timeline: view()) {
-      scale: 0 1;
-      animation: linie-aufziehen linear both;
-      animation-timeline: view();
-      animation-range: cover 8% cover 32%;
-    }
-  }
-}
-
-@keyframes linie-aufziehen {
-  to {
-    scale: 1 1;
-  }
-}
-
-/*
-  Bilder werden beim Hereinscrollen aufgewischt statt eingeblendet. Der
-  Ausgangszustand ist bewusst nicht `opacity: 0` – bleibt die Animation aus,
-  steht das Bild einfach vollstaendig da.
-*/
-@utility wischt-auf {
-  @media (prefers-reduced-motion: no-preference) {
-    @supports (animation-timeline: view()) {
-      animation: bild-aufwischen linear both;
-      animation-timeline: view();
-      animation-range: cover 2% cover 30%;
-    }
-  }
-}
-
-@keyframes bild-aufwischen {
-  from {
-    clip-path: inset(0 0 42% 0);
-    opacity: 0.55;
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-    opacity: 1;
-  }
-}
-
 /* ---------------------------------------------------------------------------
    Zustaende beim Ueberfahren
 --------------------------------------------------------------------------- */
@@ -569,36 +478,6 @@ summary::-webkit-details-marker {
 
   @media (prefers-reduced-motion: no-preference) {
     transition: background-size 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-}
-
-/*
-  Ein feiner Lichtstreifen wandert einmal ueber die Kachel. Rein dekorativ und
-  deshalb an ein Pseudo-Element gebunden, das nichts ueberdeckt.
-*/
-@utility streift {
-  @media (prefers-reduced-motion: no-preference) {
-    position: relative;
-    overflow: hidden;
-
-    &::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background: linear-gradient(
-        105deg,
-        transparent 38%,
-        rgb(255 255 255 / 0.16) 50%,
-        transparent 62%
-      );
-      translate: -120% 0;
-      transition: translate 0.75s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    &:hover::after {
-      translate: 120% 0;
-    }
   }
 }
 
