@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
 import Bildplatz from '../components/Bildplatz.astro';
+import Kicker from '../components/Kicker.astro';
 import Textspalten from '../components/Textspalten.astro';
 import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
@@ -67,15 +68,17 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
     Haelfte; nebeneinander tragen sich beide.
   */}
   <Section tone="canvas">
-    <div class="grid items-center gap-10 lg:grid-cols-12 lg:gap-16">
-      <div class="lg:col-span-7">
+    <div class="grid items-center gap-10 lg:grid-cols-12 lg:gap-12">
+      <div class="lg:col-span-6">
         <Bildplatz
           bezeichnung="Die Menschen hinter youman"
-          verhaeltnis="4 / 3"
-          sizes="(min-width: 1024px) 55vw, 100vw"
+          verhaeltnis="16 / 9"
+          sizes="(min-width: 1024px) 48vw, 100vw"
         />
       </div>
-      <div class="space-y-5 text-lg text-ink-soft lg:col-span-5">
+      <div class="lg:col-span-5 lg:col-start-8">
+        <Kicker class="mb-5">Analyse und Umsetzung</Kicker>
+        <div class="space-y-5 text-lg text-ink-soft">
         <p>
           {site.name} ist kein reines Beratungshaus, das Empfehlungen ausspricht. Und kein
           Anbieter, der ein fertiges Produkt verkauft, in das der Betrieb hineinpassen muss.
@@ -86,6 +89,7 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
           etwas nicht funktioniert. Wo Beratung und Umsetzung getrennt eingekauft werden,
           zeigen im Zweifel beide aufeinander. Hier gibt es diese Trennung nicht.
         </p>
+        </div>
       </div>
     </div>
   </Section>

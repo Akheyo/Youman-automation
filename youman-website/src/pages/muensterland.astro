@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import PageHeader from '../components/PageHeader.astro';
 import Section from '../components/Section.astro';
+import Textspalten from '../components/Textspalten.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import Button from '../components/Button.astro';
 import { anbieter, anbieterVollstaendig } from '../data/anbieter';
@@ -59,26 +60,29 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
 >
   <PageHeader
     kicker="Region"
-        title="Automation und Softwareentwicklung im Münsterland"
+    title="Automation und Softwareentwicklung im Münsterland"
     lead="youman sitzt in Borken. Diese Seite beantwortet, was das praktisch ändert und wann es nichts ändert."
     breadcrumb={brotkrumen}
   />
 
   <Section>
-    <div class="prose-measure space-y-5 text-lg text-ink-soft">
-      <p>
-        Das Münsterland ist Fertigungs- und Handelsland. Metallverarbeitung, Maschinenbau,
-        Kunststoff, Lebensmittel, dazu eine Logistikdichte, die aus der Lage zwischen
-        Ruhrgebiet und den Niederlanden folgt, und ein dichtes Netz aus Handwerk und
-        Großhandel. Das sind genau die Betriebe, in denen die Systeme laufen und daneben
-        trotzdem ein Teil der Arbeit von Hand erledigt wird.
-      </p>
-      <p>
-        youman sitzt in Borken, im Kreis Borken, und arbeitet im gesamten deutschsprachigen
-        Raum. Die Frage, ob der Anbieter aus der Region kommt, ist trotzdem nicht gleichgültig.
-        Sie ist nur an anderer Stelle wichtig, als meistens angenommen wird.
-      </p>
-    </div>
+    <Textspalten>
+      <SectionHeading slot="titel" kicker="Zur Einordnung" title="Wo youman sitzt und wo gearbeitet wird" as="h2" />
+        <div class="prose-measure space-y-5 text-lg text-ink-soft">
+        <p>
+          Das Münsterland ist Fertigungs- und Handelsland. Metallverarbeitung, Maschinenbau,
+          Kunststoff, Lebensmittel, dazu eine Logistikdichte, die aus der Lage zwischen
+          Ruhrgebiet und den Niederlanden folgt, und ein dichtes Netz aus Handwerk und
+          Großhandel. Das sind genau die Betriebe, in denen die Systeme laufen und daneben
+          trotzdem ein Teil der Arbeit von Hand erledigt wird.
+        </p>
+        <p>
+          youman sitzt in Borken, im Kreis Borken, und arbeitet im gesamten deutschsprachigen
+          Raum. Die Frage, ob der Anbieter aus der Region kommt, ist trotzdem nicht gleichgültig.
+          Sie ist nur an anderer Stelle wichtig, als meistens angenommen wird.
+        </p>
+        </div>
+    </Textspalten>
   </Section>
 
   <Section tone="canvas">
@@ -103,43 +107,47 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
   </Section>
 
   <Section>
-    <div class="prose-measure space-y-5 text-lg text-ink-soft">
-      <h2 class="font-serif text-3xl text-ink">Und wo sie nichts ändert</h2>
-      <p>
-        Eine Regionalseite, die nur Vorteile aufzählt, ist eine Anzeige. Deshalb der andere
-        Teil:
-      </p>
-      <ul class="space-y-3">
-        {ehrlich.map((punkt) => <li>{punkt}</li>)}
-      </ul>
-      <p>
-        Wer einen Anbieter sucht, sollte ihn nach dem Verständnis für seinen Ablauf auswählen,
-        nicht nach der Entfernung. Die Nähe ist ein Vorteil obendrauf, kein Argument für sich.
-      </p>
-    </div>
+    <Textspalten>
+      <SectionHeading slot="titel" kicker="Ehrlich gesagt" title="Und wo sie nichts ändert" as="h2" />
+        <div class="prose-measure space-y-5 text-lg text-ink-soft">
+        <p>
+          Eine Regionalseite, die nur Vorteile aufzählt, ist eine Anzeige. Deshalb der andere
+          Teil:
+        </p>
+        <ul class="space-y-3">
+          {ehrlich.map((punkt) => <li>{punkt}</li>)}
+        </ul>
+        <p>
+          Wer einen Anbieter sucht, sollte ihn nach dem Verständnis für seinen Ablauf auswählen,
+          nicht nach der Entfernung. Die Nähe ist ein Vorteil obendrauf, kein Argument für sich.
+        </p>
+        </div>
+    </Textspalten>
   </Section>
 
   <Section tone="canvas">
-    <div class="prose-measure space-y-5 text-lg text-ink-soft">
-      <h2 class="font-serif text-3xl text-ink">Woran wir hier arbeiten</h2>
-      <p>
-        Die Aufgaben unterscheiden sich nicht danach, wo ein Betrieb steht, sondern danach, was
-        er tut. Für produzierende Betriebe ist das meistens{' '}
-        <a href={withBase('/leistungen/individuelle-software')} class="textverweis"
-          >individuelle Software</a
-        >, für Handel und Dienstleistung eher{' '}
-        <a href={withBase('/leistungen/ki-automationen')} class="textverweis">KI-Automation</a>
-        {' '}und{' '}
-        <a href={withBase('/leistungen/chatbots')} class="textverweis">Chatbots</a>.
-      </p>
-      <p>
-        Ein abgeschlossenes Projekt aus der Region ist die{' '}
-        <a href={withBase('/case-studies/drahtmueller-palettenoptimierung')} class="textverweis"
-          >Palettenoptimierung bei der Drahtmüller GmbH</a
-        >, einem Hersteller von Gitterrosten nach Kundenmaß. 2.556 aktive Palettentypen, bei
-        denen jede Zuordnung vorher Erfahrungssache war.
-      </p>
-    </div>
+    <Textspalten>
+      <SectionHeading slot="titel" kicker="In der Praxis" title="Woran wir hier arbeiten" as="h2" />
+        <div class="prose-measure space-y-5 text-lg text-ink-soft">
+        <p>
+          Die Aufgaben unterscheiden sich nicht danach, wo ein Betrieb steht, sondern danach, was
+          er tut. Für produzierende Betriebe ist das meistens{' '}
+          <a href={withBase('/leistungen/individuelle-software')} class="textverweis"
+            >individuelle Software</a
+          >, für Handel und Dienstleistung eher{' '}
+          <a href={withBase('/leistungen/ki-automationen')} class="textverweis">KI-Automation</a>
+          {' '}und{' '}
+          <a href={withBase('/leistungen/chatbots')} class="textverweis">Chatbots</a>.
+        </p>
+        <p>
+          Ein abgeschlossenes Projekt aus der Region ist die{' '}
+          <a href={withBase('/case-studies/drahtmueller-palettenoptimierung')} class="textverweis"
+            >Palettenoptimierung bei der Drahtmüller GmbH</a
+          >, einem Hersteller von Gitterrosten nach Kundenmaß. 2.556 aktive Palettentypen, bei
+          denen jede Zuordnung vorher Erfahrungssache war.
+        </p>
+        </div>
+    </Textspalten>
   </Section>
 
   <Section tone="dark">

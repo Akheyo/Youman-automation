@@ -210,24 +210,27 @@
 }
 
 /*
-  Textmaß für Fließtext, dazu Blocksatz.
+  Textmaß für Fließtext.
 
-  Blocksatz ohne Silbentrennung reißt im Deutschen breite Lücken zwischen die
-  Wörter, besonders auf dem Handy und bei langen Komposita wie
-  "Warenwirtschaftssystem". `hyphens: auto` greift, weil das Dokument
-  lang="de" trägt; der Browser trennt dann nach deutschen Regeln.
+  Kein Blocksatz mehr. Er stand hier lange und war der groesste Grund dafuer,
+  dass die Seite unruhig wirkte: Deutsche Komposita wie
+  "Warenwirtschaftssystem" lassen sich kaum umbrechen, der Browser verteilt
+  die fehlende Breite auf die Wortzwischenraeume, und in schmalen Spalten
+  reissen dadurch weisse Baender durch den Absatz. In den zweispaltigen
+  Abschnitten, wo der Text nur ein knappes Drittel der Breite hat, war das
+  auf jeder Seite zu sehen.
+
+  Flattersatz hat eine unruhige rechte Kante, dafuer gleichmaessige
+  Wortabstaende. Bei dieser Spaltenbreite ist das die ruhigere Wahl.
+
+  Die Silbentrennung bleibt: Sie greift nur, wenn ein Wort wirklich nicht
+  passt, und verhindert einzelne weit ueberstehende Zeilen.
 */
 @utility prose-measure {
   max-width: 68ch;
-  text-align: justify;
   hyphens: auto;
 }
 
-/*
-  Zentrierte Abschnitte behalten ihre Ausrichtung: Blocksatz würde die
-  Zentrierung aufheben, und bei zwei, drei Zeilen sähe das aus wie ein
-  Fehler.
-*/
 .text-center .prose-measure,
 .text-center p {
   text-align: center;

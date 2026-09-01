@@ -1,0 +1,31 @@
+---
+/**
+ * Kurze Zeile mit Strich davor, in Versalien und gesperrt.
+ *
+ * Sie steht über Textblöcken, die keine eigene Überschrift tragen. Ohne sie
+ * hängt ein Absatz neben einem Bild in der Luft: Das Auge findet keinen
+ * Anfang und liest die beiden Hälften als zwei Dinge, die zufällig
+ * nebeneinander liegen. Der Strich gibt dem Text eine Kante, an der er
+ * beginnt, und bindet ihn optisch an das Bild daneben.
+ */
+interface Props {
+  /** "hell" für dunkle Abschnitte. */
+  tone?: 'dunkel' | 'hell';
+  class?: string;
+}
+
+const { tone = 'dunkel', class: className = '' } = Astro.props;
+---
+
+<p
+  class:list={[
+    'flex items-center gap-3 text-xs font-semibold tracking-[0.18em] uppercase',
+    tone === 'hell' ? 'text-accent-on-dark' : 'text-ink',
+    className,
+  ]}
+>
+  <span
+    class:list={['block h-px w-8 shrink-0', tone === 'hell' ? 'bg-white/50' : 'bg-ink/40']}
+    aria-hidden="true"></span>
+  <slot />
+</p>

@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import Bildplatz from '../../components/Bildplatz.astro';
 import Section from '../../components/Section.astro';
+import Textspalten from '../../components/Textspalten.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Button from '../../components/Button.astro';
 import { caseStudyNach } from '../../data/caseStudies';
@@ -104,7 +105,8 @@ const brotkrumen = [
       alt={fall.bildAlt}
       bezeichnung="Lager und Kommissionierung"
       verhaeltnis="16 / 9"
-      sizes="(min-width: 1280px) 1200px, 100vw"
+      sizes="(min-width: 1024px) 64rem, 100vw"
+      class="mx-auto max-w-5xl border border-line"
     />
   </Section>
 
@@ -154,21 +156,23 @@ const brotkrumen = [
 
   {/* ------------------------------------------------------- Über den Kunden */}
   <Section tone="canvas">
-    <SectionHeading kicker="Ausgangslage" title="Über den Kunden" />
-    <div class="prose-measure mt-8 space-y-5 text-lg text-ink-soft">
-      <p>
-        A&B SolarEnergy ist im Bereich Solarenergie und Photovoltaik tätig und plant sowie
-        realisiert kundenindividuelle Solarprojekte. Für die Abwicklung dieser Projekte müssen
-        Kundendaten, Angebote, Auftragsinformationen, Baustellenplanung, Materialbedarf und
-        Lagerbestände zuverlässig miteinander verbunden werden.
+    <Textspalten>
+      <SectionHeading slot="titel" kicker="Ausgangslage" title="Über den Kunden" />
+      <div class="prose-measure space-y-5 text-lg text-ink-soft">
+        <p>
+          A&B SolarEnergy ist im Bereich Solarenergie und Photovoltaik tätig und plant sowie
+          realisiert kundenindividuelle Solarprojekte. Für die Abwicklung dieser Projekte müssen
+          Kundendaten, Angebote, Auftragsinformationen, Baustellenplanung, Materialbedarf und
+          Lagerbestände zuverlässig miteinander verbunden werden.
       </p>
-      <p>
-        Da jedes Projekt unterschiedliche Komponenten und Mengen erfordert, ist eine aktuelle und
-        konsistente Materialübersicht ein wichtiger Bestandteil des operativen Geschäfts. Die
-        Warenwirtschaft muss dabei nicht nur Bestände abbilden, sondern auch den Zusammenhang
-        zwischen Angebot, Auftrag, Baustelle und Materialverbrauch herstellen.
-      </p>
-    </div>
+        <p>
+          Da jedes Projekt unterschiedliche Komponenten und Mengen erfordert, ist eine aktuelle und
+          konsistente Materialübersicht ein wichtiger Bestandteil des operativen Geschäfts. Die
+          Warenwirtschaft muss dabei nicht nur Bestände abbilden, sondern auch den Zusammenhang
+          zwischen Angebot, Auftrag, Baustelle und Materialverbrauch herstellen.
+        </p>
+      </div>
+    </Textspalten>
   </Section>
 
   {/* ------------------------------------------------------ Herausforderung */}
