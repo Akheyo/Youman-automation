@@ -43,11 +43,11 @@ sind ihre Beschriftungen zu klein zum Lesen; auf den Detailseiten stehen sie
 
 | Dateiname | Was zu sehen sein soll | Format |
 | --- | --- | --- |
-| `start` | ein Motiv aus der Arbeit, für den Bildplatz unter der Einleitung | 16:9 |
 | `ueber-uns` | die Menschen hinter youman | 16:9 |
 
-An diesen beiden Stellen steht weiterhin der Platzhalter. Der Bildplatz auf
-der Startseite ist nicht der Hero: Der liegt darüber und läuft bereits.
+Das ist die letzte Stelle mit einem Platzhalter. Der Bildplatz auf der
+Startseite unter der Einleitung ist entfallen; die Bildfolge im Hero
+darüber deckt das ab.
 
 ## Die Bildfolge im Hero
 

@@ -58,20 +58,7 @@ import { withBase } from '../lib/url';
     </div>
   </Section>
 
-  {/*
-    Bildplatz statt Bild. Die Flaeche steht schon in ihrem spaeteren
-    Seitenverhaeltnis, damit das Nachruesten das Layout nicht verschiebt.
-    In `Bildplatz.astro` steht, wie ein Bild eingesetzt wird.
-  */}
   <Section tone="canvas">
-    <Bildplatz
-      bezeichnung="Startseite: ein Motiv aus der Arbeit"
-      verhaeltnis="16 / 9"
-      sizes="(min-width: 1280px) 1200px, 100vw"
-    />
-  </Section>
-
-  <Section>
     <SectionHeading
       kicker="Leistungen"
       title="Was wir bauen"
@@ -117,7 +104,7 @@ import { withBase } from '../lib/url';
     </ul>
   </Section>
 
-  <Section tone="canvas">
+  <Section>
     <SectionHeading
       kicker="Branchen"
       title="Wo wir arbeiten"
@@ -151,7 +138,7 @@ import { withBase } from '../lib/url';
     </ul>
   </Section>
 
-  <Section>
+  <Section tone="canvas">
     <SectionHeading
       kicker="Referenzprojekte"
       title="Abgeschlossene Projekte"
@@ -188,7 +175,7 @@ import { withBase } from '../lib/url';
     </ul>
   </Section>
 
-  <Section tone="canvas">
+  <Section>
     <p class="prose-measure text-lg text-ink-soft">{anfrageHinweis}</p>
   </Section>
 
