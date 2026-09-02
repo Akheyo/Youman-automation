@@ -196,3 +196,20 @@ export function BrandMark({ className }: IconProps) {
     </svg>
   );
 }
+
+export function IconCamera(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M3.5 8.5h3l1.5-2.5h8l1.5 2.5h3v10h-17v-10Z" />
+      <circle cx="12" cy="13" r="3.4" />
+    </Svg>
+  );
+}
+
+export function IconStar(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8L12 4Z" />
+    </Svg>
+  );
+}

@@ -3,22 +3,21 @@
 /**
  * Sapore Grill — Seitenabschnitte ausserhalb der Bestellstrecke.
  *
- * Bewusst als Client-Komponenten: Kopfzeile (mobiles Menue), Hero und
- * Oeffnungszeiten zeigen einen Live-Status ("Jetzt geoeffnet"), der erst nach
- * dem Mounten berechnet wird — sonst weicht der Server-HTML von der Uhrzeit im
- * Browser ab (Hydration-Mismatch).
+ * Client-Komponenten, weil Kopfzeile (mobiles Menue), Hero und Oeffnungszeiten
+ * einen Live-Status zeigen, der erst nach dem Mounten berechnet wird — sonst
+ * weicht das Server-HTML von der Uhrzeit im Browser ab.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { BUSINESS, DELIVERY } from '@/lib/sapore/menu';
 import styles from './sapore.module.css';
+import Figure from './Figure';
 import {
   BrandMark,
   IconBag,
   IconCheck,
   IconClock,
   IconClose,
-  IconFlame,
   IconInstagram,
   IconLeaf,
   IconMenuBars,
@@ -29,15 +28,15 @@ import {
 
 const NAV = [
   { href: '#speisekarte', label: 'Speisekarte' },
-  { href: '#bestellen', label: 'Bestellen' },
-  { href: '#ablauf', label: 'So geht’s' },
+  { href: '#spezialitaeten', label: 'Spezialitäten' },
+  { href: '#ablauf', label: 'Bestellen' },
   { href: '#zeiten', label: 'Öffnungszeiten' },
   { href: '#kontakt', label: 'Kontakt' },
 ];
 
 const WEEKDAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
 
-/** Ist jetzt geoeffnet? Taeglich 11–22 Uhr, gerechnet in lokaler Zeit. */
+/** Ist jetzt geoeffnet? Taeglich 11–22 Uhr, in lokaler Zeit gerechnet. */
 function computeOpen(now: Date): { open: boolean; label: string } {
   const hour = now.getHours() + now.getMinutes() / 60;
   const open = hour >= BUSINESS.opensAt && hour < BUSINESS.closesAt;
@@ -45,7 +44,7 @@ function computeOpen(now: Date): { open: boolean; label: string } {
     const closesIn = Math.round((BUSINESS.closesAt - hour) * 60);
     return {
       open: true,
-      label: closesIn <= 60 ? `Jetzt geöffnet — noch ${closesIn} Min.` : 'Jetzt geöffnet',
+      label: closesIn <= 60 ? `Geöffnet — noch ${closesIn} Minuten` : 'Jetzt geöffnet',
     };
   }
   return {
@@ -54,8 +53,8 @@ function computeOpen(now: Date): { open: boolean; label: string } {
   };
 }
 
-/** Kleiner Statuspunkt, den Hero, Zeiten-Abschnitt und Fusszeile teilen. */
-export function OpenBadge() {
+/** Statuszeile, die Hero und Oeffnungszeiten teilen. */
+export function OpenStatus() {
   const [state, setState] = useState<{ open: boolean; label: string } | null>(null);
 
   useEffect(() => {
@@ -67,15 +66,14 @@ export function OpenBadge() {
 
   if (!state) {
     return (
-      <span className={styles.badge}>
-        <IconClock className={styles.iconSm} />
+      <span>
         Täglich {BUSINESS.opensAt}:00 – {BUSINESS.closesAt}:00 Uhr
       </span>
     );
   }
 
   return (
-    <span className={`${styles.badge} ${state.open ? styles.badgeOpen : styles.badgeClosed}`}>
+    <span className={state.open ? styles.statusOpen : styles.statusClosed}>
       <span className={styles.dot} />
       {state.label}
     </span>
@@ -103,7 +101,7 @@ export function Reveal({ children, className = '' }: { children: React.ReactNode
           }
         });
       },
-      { threshold: 0.12, rootMargin: '0px 0px -60px 0px' },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' },
     );
     observer.observe(node);
     return () => observer.disconnect();
@@ -120,103 +118,124 @@ export function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className={styles.header}>
-      <div className={styles.shell}>
-        <div className={styles.headerInner}>
-          <a href="#top" className={styles.brand}>
-            <BrandMark className={styles.brandMark} />
-            <span className={styles.brandText}>
-              <span className={styles.brandName}>{BUSINESS.name}</span>
-              <span className={styles.brandSub}>Borken</span>
+    <>
+      <div className={styles.utility}>
+        <div className={styles.shell}>
+          <div className={styles.utilityInner}>
+            <span className={styles.utilityItem}>
+              <IconClock className={styles.iconSm} />
+              Täglich {BUSINESS.opensAt}:00 – {BUSINESS.closesAt}:00 Uhr
             </span>
-          </a>
-
-          <nav className={styles.nav} aria-label="Hauptnavigation">
-            {NAV.map((item) => (
-              <a key={item.href} href={item.href} className={styles.navLink}>
-                {item.label}
-              </a>
-            ))}
-          </nav>
-
-          <div className={styles.headerActions}>
-            <a
-              href={`tel:${BUSINESS.phoneHref}`}
-              className={`${styles.btn} ${styles.btnPrimary} ${styles.headerPhone}`}
-            >
-              <IconPhone className={styles.icon} />
+            <span className={`${styles.utilitySep} ${styles.utilityAddress}`} aria-hidden="true">
+              ·
+            </span>
+            <span className={`${styles.utilityItem} ${styles.utilityAddress}`}>
+              <IconPin className={styles.iconSm} />
+              {BUSINESS.street}, {BUSINESS.zip} {BUSINESS.city}
+            </span>
+            <span className={styles.utilitySep} aria-hidden="true">
+              ·
+            </span>
+            <a href={`tel:${BUSINESS.phoneHref}`} className={styles.utilityItem}>
+              <IconPhone className={styles.iconSm} />
               {BUSINESS.phone}
             </a>
-            <button
-              type="button"
-              className={styles.burger}
-              onClick={() => setOpen((v) => !v)}
-              aria-expanded={open}
-              aria-controls="sapore-mobile-nav"
-              aria-label={open ? 'Menü schließen' : 'Menü öffnen'}
-            >
-              {open ? <IconClose className={styles.icon} /> : <IconMenuBars className={styles.icon} />}
-            </button>
           </div>
         </div>
+      </div>
 
-        {open ? (
-          <nav id="sapore-mobile-nav" className={styles.mobileNav} aria-label="Menü">
-            {NAV.map((item) => (
+      <header className={styles.header}>
+        <div className={styles.shell}>
+          <div className={styles.headerInner}>
+            <a href="#top" className={styles.brand}>
+              <BrandMark className={styles.brandMark} />
+              <span className={styles.brandText}>
+                <span className={styles.brandName}>{BUSINESS.name}</span>
+                <span className={styles.brandSub}>Döner · Pizza · Borken</span>
+              </span>
+            </a>
+
+            <nav className={styles.nav} aria-label="Hauptnavigation">
+              {NAV.map((item) => (
+                <a key={item.href} href={item.href} className={styles.navLink}>
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+
+            <div className={styles.headerActions}>
               <a
-                key={item.href}
-                href={item.href}
+                href="#speisekarte"
+                className={`${styles.btn} ${styles.btnPrimary} ${styles.headerPhone}`}
+              >
+                Online bestellen
+              </a>
+              <button
+                type="button"
+                className={styles.burger}
+                onClick={() => setOpen((v) => !v)}
+                aria-expanded={open}
+                aria-controls="sapore-mobile-nav"
+                aria-label={open ? 'Menü schließen' : 'Menü öffnen'}
+              >
+                {open ? <IconClose className={styles.icon} /> : <IconMenuBars className={styles.icon} />}
+              </button>
+            </div>
+          </div>
+
+          {open ? (
+            <nav id="sapore-mobile-nav" className={styles.mobileNav} aria-label="Menü">
+              {NAV.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className={styles.mobileNavLink}
+                  onClick={() => setOpen(false)}
+                >
+                  {item.label}
+                </a>
+              ))}
+              <a
+                href={`tel:${BUSINESS.phoneHref}`}
                 className={styles.mobileNavLink}
                 onClick={() => setOpen(false)}
               >
-                {item.label}
+                Anrufen: {BUSINESS.phone}
               </a>
-            ))}
-            <a
-              href={`tel:${BUSINESS.phoneHref}`}
-              className={styles.mobileNavLink}
-              onClick={() => setOpen(false)}
-            >
-              Anrufen: {BUSINESS.phone}
-            </a>
-          </nav>
-        ) : null}
-      </div>
-    </header>
+            </nav>
+          ) : null}
+        </div>
+      </header>
+    </>
   );
 }
 
 export function Hero() {
   return (
     <section className={styles.hero} id="top">
-      <div className={styles.heroGlow} aria-hidden="true" />
-      <div className={styles.heroGrain} aria-hidden="true" />
       <div className={styles.shell}>
         <div className={styles.heroInner}>
           <div>
-            <div className={styles.heroBadges}>
-              <OpenBadge />
-              <span className={styles.badge}>
-                <IconFlame className={styles.iconSm} />
-                Neu eröffnet in Borken
-              </span>
-            </div>
+            <p className={styles.heroStatus}>
+              <OpenStatus />
+              <span>Seit September in Borken</span>
+            </p>
 
             <h1 className={styles.heroTitle}>
-              Ihr neuer
-              <em>Genuss-Hotspot</em>
+              Steakdöner, Pizza und Imbiss
+              <em>frisch zubereitet in Borken</em>
             </h1>
 
             <p className={styles.heroText}>
-              Steakdöner vom Jungbullen, Gemüse Kebap, knusprige Pizza, frische Salate und
-              deftige Imbiss-Teller. Täglich frisch zubereitet — zum Abholen oder direkt zu
-              Ihnen nach Hause geliefert.
+              Bei Sapore Grill kommt ausschließlich Fleisch vom Jungbullen auf den Spieß —
+              kein Hack, nichts Gepresstes. Dazu knusprige Pizza aus dem Ofen, täglich frisch
+              geschnittene Salate und deftige Imbiss-Teller. Zum Abholen oder zur Lieferung.
             </p>
 
             <div className={styles.heroCtas}>
               <a href="#speisekarte" className={`${styles.btn} ${styles.btnPrimary}`}>
                 <IconBag className={styles.icon} />
-                Jetzt online bestellen
+                Speisekarte &amp; Bestellung
               </a>
               <a href={`tel:${BUSINESS.phoneHref}`} className={`${styles.btn} ${styles.btnGhost}`}>
                 <IconPhone className={styles.icon} />
@@ -226,10 +245,10 @@ export function Hero() {
 
             <ul className={styles.heroFacts}>
               {[
-                '100 % Jungbullen-Fleisch',
-                'Kein Hack, kein Gepresstes',
-                'Täglich frisch geschnitten',
-                'Alles auch zum Mitnehmen',
+                '100 % Fleisch vom Jungbullen — kein Hack, kein Gepresstes',
+                'Täglich frisch geschnittenes Gemüse und Salate',
+                'Sieben Tage die Woche durchgehend warme Küche',
+                'Alle Speisen auch zum Mitnehmen',
               ].map((fact) => (
                 <li key={fact} className={styles.fact}>
                   <IconCheck className={`${styles.iconSm} ${styles.factIcon}`} />
@@ -239,56 +258,54 @@ export function Hero() {
             </ul>
           </div>
 
-          <div className={styles.heroCard}>
-            <h2 className={styles.heroCardTitle}>Auf einen Blick</h2>
-            <div className={styles.infoList}>
-              <div className={styles.infoRow}>
-                <span className={styles.infoIcon}>
-                  <IconPin className={styles.icon} />
-                </span>
-                <div>
-                  <div className={styles.infoLabel}>Adresse</div>
-                  <div className={styles.infoValue}>{BUSINESS.street}</div>
-                  <div className={styles.infoNote}>
-                    {BUSINESS.zip} {BUSINESS.city}
+          <div>
+            <Figure
+              src="/sapore/hero.jpg"
+              alt="Frisch zubereiteter Steakdöner vom Jungbullen bei Sapore Grill in Borken"
+              need="Ihr bestes Produktfoto: ein frisch belegter Steakdöner, seitlich fotografiert"
+              hint="Hochformat, mindestens 1200 × 1500 px"
+              ratio="4 / 5"
+              priority
+            />
+
+            <div className={styles.heroCard} style={{ marginTop: 24 }}>
+              <h2 className={styles.heroCardTitle}>Auf einen Blick</h2>
+              <div className={styles.infoList}>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoIcon}>
+                    <IconPin className={styles.iconSm} />
+                  </span>
+                  <div>
+                    <div className={styles.infoLabel}>Adresse</div>
+                    <span className={styles.infoValue}>{BUSINESS.street}</span>
+                    <div className={styles.infoNote}>
+                      {BUSINESS.zip} {BUSINESS.city}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className={styles.infoRow}>
-                <span className={styles.infoIcon}>
-                  <IconClock className={styles.icon} />
-                </span>
-                <div>
-                  <div className={styles.infoLabel}>Öffnungszeiten</div>
-                  <div className={styles.infoValue}>Montag – Sonntag</div>
-                  <div className={styles.infoNote}>
-                    {BUSINESS.opensAt}:00 – {BUSINESS.closesAt}:00 Uhr, durchgehend warm
+                <div className={styles.infoRow}>
+                  <span className={styles.infoIcon}>
+                    <IconClock className={styles.iconSm} />
+                  </span>
+                  <div>
+                    <div className={styles.infoLabel}>Öffnungszeiten</div>
+                    <span className={styles.infoValue}>Montag bis Sonntag</span>
+                    <div className={styles.infoNote}>
+                      {BUSINESS.opensAt}:00 – {BUSINESS.closesAt}:00 Uhr, durchgehend warm
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className={styles.infoRow}>
-                <span className={styles.infoIcon}>
-                  <IconPhone className={styles.icon} />
-                </span>
-                <div>
-                  <div className={styles.infoLabel}>Telefon</div>
-                  <a href={`tel:${BUSINESS.phoneHref}`} className={styles.infoValue}>
-                    {BUSINESS.phone}
-                  </a>
-                  <div className={styles.infoNote}>Bestellung auch telefonisch</div>
-                </div>
-              </div>
-
-              <div className={styles.infoRow}>
-                <span className={styles.infoIcon}>
-                  <IconMoped className={styles.icon} />
-                </span>
-                <div>
-                  <div className={styles.infoLabel}>Lieferung</div>
-                  <div className={styles.infoValue}>Ca. {DELIVERY.etaDelivery}</div>
-                  <div className={styles.infoNote}>Abholung ca. {DELIVERY.etaPickup}</div>
+                <div className={styles.infoRow}>
+                  <span className={styles.infoIcon}>
+                    <IconMoped className={styles.iconSm} />
+                  </span>
+                  <div>
+                    <div className={styles.infoLabel}>Lieferung &amp; Abholung</div>
+                    <span className={styles.infoValue}>Lieferung ca. {DELIVERY.etaDelivery}</span>
+                    <div className={styles.infoNote}>Abholung ca. {DELIVERY.etaPickup}</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -301,10 +318,10 @@ export function Hero() {
 
 export function TrustStrip() {
   const items = [
-    { value: '100 %', label: 'Jungbullen-Fleisch' },
-    { value: 'Täglich', label: 'frische Zubereitung' },
-    { value: '11–22', label: 'Uhr, 7 Tage die Woche' },
-    { value: 'Liefern', label: '& Abholen möglich' },
+    { value: '100 %', label: 'Fleisch vom Jungbullen, kein Hack' },
+    { value: 'Täglich frisch', label: 'Gemüse und Salate am selben Tag geschnitten' },
+    { value: '11 – 22 Uhr', label: 'Sieben Tage die Woche geöffnet' },
+    { value: 'Liefern & Abholen', label: 'Online bestellen oder telefonisch' },
   ];
 
   return (
@@ -312,7 +329,7 @@ export function TrustStrip() {
       <div className={styles.shell}>
         <div className={styles.trustGrid}>
           {items.map((item) => (
-            <div key={item.label} className={styles.trustItem}>
+            <div key={item.value} className={styles.trustItem}>
               <span className={styles.trustValue}>{item.value}</span>
               <span className={styles.trustLabel}>{item.label}</span>
             </div>
@@ -328,25 +345,37 @@ export function Specials() {
     <section className={styles.section} id="spezialitaeten">
       <div className={styles.shell}>
         <Reveal className={styles.sectionHead}>
-          <p className={styles.eyebrow}>Unsere Aushängeschilder</p>
-          <h2 className={styles.h2}>Steakdöner &amp; Gemüse Kebap</h2>
+          <p className={styles.eyebrow}>Unsere Spezialitäten</p>
+          <div className={styles.rule} />
+          <h2 className={styles.h2}>Steakdöner und Gemüse Kebap</h2>
           <p className={styles.lead}>
-            Zwei Spezialitäten, für die sich der Weg lohnt — beide frisch am Spieß und im
-            Fladen, wie es sein soll.
+            Zwei Gerichte stehen für das, wofür Sapore Grill steht: ehrliche Zutaten,
+            sauber verarbeitet, jeden Tag neu.
           </p>
         </Reveal>
 
         <div className={styles.specialGrid}>
           <Reveal>
             <article className={styles.special}>
+              <Figure
+                className={styles.specialFigure}
+                src="/sapore/steakdoener.jpg"
+                alt="Steakdöner vom Jungbullen mit Salat, Tomate und Zwiebeln im Fladenbrot"
+                need="Steakdöner im Anschnitt — Fleisch und Salat gut sichtbar"
+                ratio="3 / 2"
+              />
               <span className={styles.specialTag}>Der Klassiker</span>
               <h3 className={styles.specialTitle}>Steakdöner vom Jungbullen</h3>
               <p className={styles.specialText}>
-                Echte Steakstreifen statt Formfleisch — am Spieß gegrillt, saftig
-                aufgeschnitten und mit frischem Salat, Tomate und Zwiebel serviert.
+                Echte Steakstreifen statt Formfleisch: am Spieß gegrillt, frisch
+                aufgeschnitten und mit Salat, Tomate und Zwiebeln im Fladenbrot serviert.
               </p>
               <ul className={styles.specialList}>
-                {['100 % Fleisch vom Jungbullen', 'Kein Hack, kein Gepresstes', 'Saucen nach Wahl'].map((li) => (
+                {[
+                  '100 % Fleisch vom Jungbullen',
+                  'Kein Hack, nichts Gepresstes',
+                  'Sauce nach Wahl, auch scharf',
+                ].map((li) => (
                   <li key={li}>
                     <IconCheck className={`${styles.iconSm} ${styles.check}`} />
                     {li}
@@ -358,14 +387,25 @@ export function Specials() {
 
           <Reveal>
             <article className={styles.special}>
-              <span className={styles.specialTag}>Fleischlos glücklich</span>
+              <Figure
+                className={styles.specialFigure}
+                src="/sapore/gemuese-kebap.jpg"
+                alt="Gemüse Kebap mit gegrilltem Gemüse, Grillkäse und Kräutersauce"
+                need="Gemüse Kebap mit sichtbarem Grillgemüse und Käse"
+                ratio="3 / 2"
+              />
+              <span className={styles.specialTag}>Vegetarisch</span>
               <h3 className={styles.specialTitle}>Gemüse Kebap</h3>
               <p className={styles.specialText}>
                 Gegrilltes Gemüse, Grillkäse und Kräutersauce im knusprigen Fladen — die
-                vegetarische Alternative, die satt macht.
+                fleischlose Alternative, die tatsächlich satt macht.
               </p>
               <ul className={styles.specialList}>
-                {['Frisches Grillgemüse', 'Täglich frisch geschnitten', 'Auch als Dürüm möglich'].map((li) => (
+                {[
+                  'Frisches Grillgemüse der Saison',
+                  'Täglich frisch geschnitten',
+                  'Auch als Dürüm erhältlich',
+                ].map((li) => (
                   <li key={li}>
                     <IconLeaf className={`${styles.iconSm} ${styles.check}`} />
                     {li}
@@ -380,30 +420,87 @@ export function Specials() {
   );
 }
 
-export function Steps() {
-  const steps = [
+export function Gallery() {
+  const shots = [
     {
-      title: 'Gerichte auswählen',
-      text: 'Kategorie antippen, Gerichte in den Warenkorb legen. Die Menge passen Sie direkt im Warenkorb an.',
+      src: '/sapore/galerie-pizza.jpg',
+      alt: 'Frisch gebackene Pizza mit Tomatensauce, Mozzarella und Basilikum',
+      need: 'Pizza aus dem Ofen, von oben fotografiert',
     },
     {
-      title: 'Liefern oder abholen',
-      text: `Abholung ist ab dem ersten Euro möglich. Für die Lieferung gilt ein Mindestbestellwert von ${DELIVERY.minOrder.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}.`,
+      src: '/sapore/galerie-salat.jpg',
+      alt: 'Frischer gemischter Salat mit Feta, Tomaten, Gurken und Oliven',
+      need: 'Salatschale, von schräg oben',
     },
     {
-      title: 'Bestellung abschicken',
-      text: 'Kontaktdaten eintragen, absenden — wir bestätigen Ihre Bestellung telefonisch und legen los.',
+      src: '/sapore/galerie-imbiss.jpg',
+      alt: 'Imbiss-Teller mit Currywurst, Pommes Frites und Gyros mit Tzatziki',
+      need: 'Imbiss-Teller komplett angerichtet',
+    },
+    {
+      src: '/sapore/galerie-laden.jpg',
+      alt: 'Verkaufsraum von Sapore Grill an der Johann-Walling-Straße in Borken',
+      need: 'Innenaufnahme oder Außenansicht des Ladens',
     },
   ];
 
   return (
-    <section className={`${styles.section} ${styles.sectionAlt}`} id="ablauf">
+    <section className={`${styles.section} ${styles.sectionAlt}`} id="eindruecke">
+      <div className={styles.shell}>
+        <Reveal className={styles.sectionHead}>
+          <p className={styles.eyebrow}>Eindrücke</p>
+          <div className={styles.rule} />
+          <h2 className={styles.h2}>Ein Blick auf unsere Küche</h2>
+          <p className={styles.lead}>
+            Pizza aus dem Ofen, frische Salate, deftige Teller — und der Laden an der{' '}
+            {BUSINESS.street}.
+          </p>
+        </Reveal>
+
+        <Reveal>
+          <div className={styles.galleryGrid}>
+            {shots.map((shot) => (
+              <Figure
+                key={shot.src}
+                src={shot.src}
+                alt={shot.alt}
+                need={shot.need}
+                hint="Quadratisch, mindestens 1000 × 1000 px"
+                ratio="1 / 1"
+              />
+            ))}
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+export function Steps() {
+  const steps = [
+    {
+      title: 'Gerichte auswählen',
+      text: 'Kategorie wählen und Gerichte in den Warenkorb legen. Mengen passen Sie dort jederzeit an.',
+    },
+    {
+      title: 'Liefern oder abholen',
+      text: `Abholung ist ohne Mindestbestellwert möglich. Für die Lieferung gilt ein Mindestbestellwert von ${DELIVERY.minOrder.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}.`,
+    },
+    {
+      title: 'Bestellung abschicken',
+      text: 'Kontaktdaten eintragen und absenden. Wir bestätigen telefonisch und beginnen mit der Zubereitung.',
+    },
+  ];
+
+  return (
+    <section className={styles.section} id="ablauf">
       <div className={styles.shell}>
         <Reveal className={styles.sectionHead}>
           <p className={styles.eyebrow}>So bestellen Sie</p>
+          <div className={styles.rule} />
           <h2 className={styles.h2}>In drei Schritten zum Essen</h2>
           <p className={styles.lead}>
-            Online in einer Minute bestellt — oder ganz klassisch per Telefon unter{' '}
+            Online in etwa einer Minute bestellt — oder klassisch per Telefon unter{' '}
             {BUSINESS.phone}.
           </p>
         </Reveal>
@@ -412,7 +509,7 @@ export function Steps() {
           {steps.map((step, index) => (
             <Reveal key={step.title}>
               <article className={styles.step}>
-                <span className={styles.stepNum}>{index + 1}</span>
+                <span className={styles.stepNum}>Schritt {index + 1}</span>
                 <h3 className={styles.stepTitle}>{step.title}</h3>
                 <p className={styles.stepText}>{step.text}</p>
               </article>
@@ -430,20 +527,21 @@ export function Hours() {
   useEffect(() => setToday(new Date().getDay()), []);
 
   return (
-    <section className={styles.section} id="zeiten">
+    <section className={`${styles.section} ${styles.sectionAlt}`} id="zeiten">
       <div className={styles.shell}>
         <div className={styles.hoursGrid}>
           <Reveal>
-            <p className={styles.eyebrow}>Immer für Sie da</p>
-            <h2 className={styles.h2}>Öffnungszeiten</h2>
+            <p className={styles.eyebrow}>Öffnungszeiten</p>
+            <div className={styles.rule} />
+            <h2 className={styles.h2}>Sieben Tage die Woche für Sie da</h2>
             <p className={styles.lead}>
-              Sieben Tage die Woche, durchgehend warme Küche von {BUSINESS.opensAt}:00 bis{' '}
-              {BUSINESS.closesAt}:00 Uhr. Auch an Feiertagen — kurzfristige Änderungen geben
-              wir auf Instagram bekannt.
+              Durchgehend warme Küche von {BUSINESS.opensAt}:00 bis {BUSINESS.closesAt}:00 Uhr,
+              auch an Wochenenden und Feiertagen. Kurzfristige Änderungen geben wir auf
+              Instagram bekannt.
             </p>
-            <div style={{ marginTop: 24, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-              <OpenBadge />
-            </div>
+            <p className={styles.heroStatus} style={{ marginTop: 24, marginBottom: 0 }}>
+              <OpenStatus />
+            </p>
           </Reveal>
 
           <Reveal>
@@ -471,19 +569,18 @@ export function Hours() {
 }
 
 export function Contact() {
-  const mapQuery = encodeURIComponent(
-    `${BUSINESS.street}, ${BUSINESS.zip} ${BUSINESS.city}`,
-  );
+  const mapQuery = encodeURIComponent(`${BUSINESS.street}, ${BUSINESS.zip} ${BUSINESS.city}`);
 
   return (
-    <section className={`${styles.section} ${styles.sectionAlt}`} id="kontakt">
+    <section className={styles.section} id="kontakt">
       <div className={styles.shell}>
         <Reveal className={styles.sectionHead}>
-          <p className={styles.eyebrow}>Besuchen Sie uns</p>
-          <h2 className={styles.h2}>Kontakt &amp; Anfahrt</h2>
+          <p className={styles.eyebrow}>Kontakt</p>
+          <div className={styles.rule} />
+          <h2 className={styles.h2}>So finden Sie uns</h2>
           <p className={styles.lead}>
-            Mitten in Borken an der {BUSINESS.street} — kommen Sie vorbei, rufen Sie an oder
-            folgen Sie uns auf Instagram.
+            Sapore Grill liegt an der {BUSINESS.street} in {BUSINESS.city}. Kommen Sie vorbei,
+            rufen Sie an oder folgen Sie uns auf Instagram.
           </p>
         </Reveal>
 
@@ -497,11 +594,11 @@ export function Contact() {
                 rel="noopener noreferrer"
               >
                 <span className={styles.infoIcon}>
-                  <IconPin className={styles.icon} />
+                  <IconPin className={styles.iconSm} />
                 </span>
                 <div>
                   <div className={styles.infoLabel}>Adresse</div>
-                  <div className={styles.infoValue}>{BUSINESS.street}</div>
+                  <span className={styles.infoValue}>{BUSINESS.street}</span>
                   <div className={styles.infoNote}>
                     {BUSINESS.zip} {BUSINESS.city} — Route planen
                   </div>
@@ -510,12 +607,14 @@ export function Contact() {
 
               <a className={styles.contactCard} href={`tel:${BUSINESS.phoneHref}`}>
                 <span className={styles.infoIcon}>
-                  <IconPhone className={styles.icon} />
+                  <IconPhone className={styles.iconSm} />
                 </span>
                 <div>
                   <div className={styles.infoLabel}>Telefon</div>
-                  <div className={styles.infoValue}>{BUSINESS.phone}</div>
-                  <div className={styles.infoNote}>Täglich {BUSINESS.opensAt}:00 – {BUSINESS.closesAt}:00 Uhr</div>
+                  <span className={styles.infoValue}>{BUSINESS.phone}</span>
+                  <div className={styles.infoNote}>
+                    Täglich {BUSINESS.opensAt}:00 – {BUSINESS.closesAt}:00 Uhr
+                  </div>
                 </div>
               </a>
 
@@ -526,12 +625,12 @@ export function Contact() {
                 rel="noopener noreferrer"
               >
                 <span className={styles.infoIcon}>
-                  <IconInstagram className={styles.icon} />
+                  <IconInstagram className={styles.iconSm} />
                 </span>
                 <div>
                   <div className={styles.infoLabel}>Instagram</div>
-                  <div className={styles.infoValue}>@{BUSINESS.instagram}</div>
-                  <div className={styles.infoNote}>Aktuelle Angebote und Neuigkeiten</div>
+                  <span className={styles.infoValue}>@{BUSINESS.instagram}</span>
+                  <div className={styles.infoNote}>Angebote und Neuigkeiten</div>
                 </div>
               </a>
             </div>
@@ -545,6 +644,10 @@ export function Contact() {
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
+            <p className={styles.figureCaption}>
+              Kartenausschnitt {BUSINESS.city}. Für die Routenplanung auf die Adresse links
+              tippen.
+            </p>
           </Reveal>
         </div>
       </div>
@@ -558,17 +661,20 @@ export function FinalCta() {
       <div className={styles.shell}>
         <Reveal>
           <div className={styles.finalCta}>
-            <h2 className={styles.finalTitle}>Hunger? Wir grillen schon.</h2>
+            <h2 className={styles.finalTitle}>Frisch. Lecker. Qualität.</h2>
             <p className={styles.finalText}>
-              Frisch, lecker, Qualität — täglich von {BUSINESS.opensAt}:00 bis{' '}
-              {BUSINESS.closesAt}:00 Uhr. Online bestellen oder einfach anrufen.
+              Täglich von {BUSINESS.opensAt}:00 bis {BUSINESS.closesAt}:00 Uhr für Sie da —
+              online bestellen oder einfach anrufen.
             </p>
             <div className={styles.finalCtas}>
-              <a href="#speisekarte" className={`${styles.btn} ${styles.btnGold}`}>
+              <a href="#speisekarte" className={`${styles.btn} ${styles.btnOnDark}`}>
                 <IconBag className={styles.icon} />
                 Zur Speisekarte
               </a>
-              <a href={`tel:${BUSINESS.phoneHref}`} className={`${styles.btn} ${styles.btnGhost}`}>
+              <a
+                href={`tel:${BUSINESS.phoneHref}`}
+                className={`${styles.btn} ${styles.btnGhostOnDark}`}
+              >
                 <IconPhone className={styles.icon} />
                 {BUSINESS.phone}
               </a>
@@ -590,17 +696,17 @@ export function Footer() {
               <BrandMark className={styles.brandMark} />
               <span className={styles.brandText}>
                 <span className={styles.brandName}>{BUSINESS.name}</span>
-                <span className={styles.brandSub}>{BUSINESS.claim}</span>
+                <span className={styles.brandSub}>{BUSINESS.tagline}</span>
               </span>
             </a>
             <p className={styles.noticeText}>
-              {BUSINESS.tagline}. Täglich frisch zubereitet in Borken — zum Abholen oder
-              zur Lieferung nach Hause.
+              Döner, Pizza, Imbiss und Salate in {BUSINESS.city}. Täglich frisch zubereitet —
+              zum Abholen oder zur Lieferung nach Hause.
             </p>
           </div>
 
           <div>
-            <h3 className={styles.footerTitle}>Kontakt</h3>
+            <h2 className={styles.footerTitle}>Kontakt</h2>
             <ul className={styles.footerList}>
               <li>{BUSINESS.street}</li>
               <li>
@@ -625,7 +731,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className={styles.footerTitle}>Seite</h3>
+            <h2 className={styles.footerTitle}>Seite</h2>
             <ul className={styles.footerList}>
               {NAV.map((item) => (
                 <li key={item.href}>
@@ -642,7 +748,9 @@ export function Footer() {
           <span>
             © {new Date().getFullYear()} {BUSINESS.name}, {BUSINESS.city}
           </span>
-          <span>Täglich {BUSINESS.opensAt}:00 – {BUSINESS.closesAt}:00 Uhr geöffnet</span>
+          <span>
+            Täglich {BUSINESS.opensAt}:00 – {BUSINESS.closesAt}:00 Uhr geöffnet
+          </span>
         </div>
       </div>
     </footer>

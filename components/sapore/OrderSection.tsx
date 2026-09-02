@@ -262,10 +262,11 @@ export default function OrderSection() {
       <div className={styles.shell}>
         <Reveal className={styles.sectionHead}>
           <p className={styles.eyebrow}>Speisekarte</p>
+          <div className={styles.rule} />
           <h2 className={styles.h2}>Aussuchen, bestellen, genießen</h2>
           <p className={styles.lead}>
             Alles frisch zubereitet — zum Abholen an der {BUSINESS.street} oder zur Lieferung
-            nach Hause.
+            nach Hause. Bestellungen nehmen wir online und telefonisch entgegen.
           </p>
         </Reveal>
 
@@ -313,7 +314,7 @@ export default function OrderSection() {
               <ul className={styles.items}>
                 {activeCategory.items.map((item) => (
                   <li key={item.id} className={styles.item}>
-                    <div>
+                    <div className={styles.itemHead}>
                       <h3 className={styles.itemName}>
                         {item.name}
                         {item.tags?.map((tag) => (
@@ -331,10 +332,11 @@ export default function OrderSection() {
                           </span>
                         ))}
                       </h3>
-                      <p className={styles.itemDesc}>{item.description}</p>
-                    </div>
-                    <div className={styles.itemSide}>
+                      <span className={styles.leader} aria-hidden="true" />
                       <span className={styles.price}>{formatPrice(item.price)}</span>
+                    </div>
+                    <div className={styles.itemFoot}>
+                      <p className={styles.itemDesc}>{item.description}</p>
                       <button type="button" className={styles.addBtn} onClick={() => add(item.id)}>
                         <IconPlus className={styles.iconSm} />
                         <span className={styles.srOnly}>{item.name} </span>
@@ -440,7 +442,7 @@ export default function OrderSection() {
               <>
                 {cart.entries.length === 0 ? (
                   <div className={styles.cartEmpty}>
-                    <IconCart className={`${styles.icon} ${styles.cartEmptyIcon}`} />
+                    <IconCart className={styles.cartEmptyIcon} />
                     <p className={styles.noticeText}>
                       Noch nichts ausgewählt. Tippen Sie links auf „Hinzufügen“.
                     </p>
@@ -798,9 +800,13 @@ export default function OrderSection() {
           <IconCart className={styles.icon} />
           Warenkorb ({cart.count})
         </a>
-        <a href={`tel:${BUSINESS.phoneHref}`} className={`${styles.btn} ${styles.btnGhost}`}>
+        <a
+          href={`tel:${BUSINESS.phoneHref}`}
+          className={`${styles.btn} ${styles.btnGhost} ${styles.mobileBarPhone}`}
+        >
           <IconPhone className={styles.icon} />
-          <span className={styles.srOnly}>Anrufen: {BUSINESS.phone}</span>
+          Anrufen
+          <span className={styles.srOnly}>: {BUSINESS.phone}</span>
         </a>
       </div>
     </section>
