@@ -4,7 +4,7 @@
 
 Geprüft wurde der gebaute Auslieferungsstand unter `/home/user/Youman-automation/youman-website/dist` (23 HTML-Seiten) sowie der Vorschauserver unter `http://localhost:4321`. Ein Abgleich hat gezeigt, dass der Vorschauserver exakt den `dist`-Ordner ausliefert, es gibt keine Abweichung zwischen beiden.
 
-youman ist ein einpersonengeführter Dienstleister ohne Ladengeschäft (Amanuel Kheyo, Sitz Dülmener Weg 86a, 46325 Borken), gegründet 2026, mit Tätigkeit im gesamten deutschsprachigen Raum und ausdrücklichem regionalem Schwerpunkt im Münsterland. Für diesen Geschäftstyp zählt lokale Auffindbarkeit vor allem über drei Kanäle: die eigene Website (NAP-Konsistenz, strukturierte Daten, eine ehrliche Regionalseite), das Google-Unternehmensprofil und Zitationen in Verzeichnissen. Von diesen drei Kanälen ließ sich in dieser Prüfung nur der erste tatsächlich untersuchen.
+youman ist ein einpersonengeführter Dienstleister ohne Ladengeschäft (Amanuel Kheyo, Sitz Karl-Leisner-Straße 6, 46325 Borken), gegründet 2026, mit Tätigkeit im gesamten deutschsprachigen Raum und ausdrücklichem regionalem Schwerpunkt im Münsterland. Für diesen Geschäftstyp zählt lokale Auffindbarkeit vor allem über drei Kanäle: die eigene Website (NAP-Konsistenz, strukturierte Daten, eine ehrliche Regionalseite), das Google-Unternehmensprofil und Zitationen in Verzeichnissen. Von diesen drei Kanälen ließ sich in dieser Prüfung nur der erste tatsächlich untersuchen.
 
 ## Was nicht geprüft werden konnte
 
@@ -18,11 +18,11 @@ youman ist ein einpersonengeführter Dienstleister ohne Ladengeschäft (Amanuel 
 
 | Quelle | Name | Adresse | Telefon | E-Mail |
 |---|---|---|---|---|
-| Footer (alle 22 indexierbaren Seiten) | youman | Dülmener Weg 86a, 46325 Borken | +49 155 67541365 | (nicht im Footer) |
-| Impressum | youman / Amanuel Kheyo | Dülmener Weg 86a, 46325 Borken, Deutschland | +49 155 67541365 | info@youman-automation.com |
+| Footer (alle 22 indexierbaren Seiten) | youman | Karl-Leisner-Straße 6, 46325 Borken | +49 155 67541365 | (nicht im Footer) |
+| Impressum | youman / Amanuel Kheyo | Karl-Leisner-Straße 6, 46325 Borken, Deutschland | +49 155 67541365 | info@youman-automation.com |
 | JSON-LD (alle Seiten, `@type: Organization, ProfessionalService`) | youman | streetAddress/postalCode/addressLocality identisch, addressCountry DE | +49 155 67541365 | info@youman-automation.com |
 | Kontaktseite | youman | (nicht im Hauptkontaktblock, siehe Befund) | +49 155 67541365 | info@youman-automation.com |
-| Regionalseite /muensterland (Abschlussblock) | youman | Dülmener Weg 86a, 46325 Borken | (nicht dort, aber im Footer der Seite) | (nicht dort) |
+| Regionalseite /muensterland (Abschlussblock) | youman | Karl-Leisner-Straße 6, 46325 Borken | (nicht dort, aber im Footer der Seite) | (nicht dort) |
 
 Ergebnis: Über alle 22 geprüften Seiten hinweg ist der NAP-Kern (Name, Straße, PLZ, Ort, Telefonnummer, E-Mail) wortgleich. Keine Diskrepanz gefunden, weder in der Schreibweise noch im Format. Das ist kein Zufall, sondern folgt aus der Architektur: Alle Angaben stammen aus genau zwei Datendateien (`src/data/anbieter.ts` und `src/data/kontakt.ts`), auf die Footer, Impressum, JSON-LD und Regionalseite gleichermaßen zugreifen. Eine künftige Änderung (z. B. Umzug) müsste nur an einer Stelle gepflegt werden und würde automatisch überall konsistent durchschlagen. Das ist strukturell einer der stärksten Befunde dieser Prüfung.
 
@@ -68,7 +68,7 @@ Beleg: Titel der Startseite „KI-Automation, Chatbots und Software | youman“,
 Beleg: `src/components/Header.astro`, die rechte Handlungsaufforderung führt ausschließlich zu `/kontakt`, es gibt keinen `tel:`-Link in der Kopfzeile. Für mobile Nutzer aus einer lokalen Suche, die direkt anrufen statt ein Formular ausfüllen wollen, ist das ein kleiner Reibungspunkt. Kein Muss, aber ein leicht umsetzbarer Zusatznutzen.
 
 **10. Kein Foto von Person oder Standort auf der Website.**
-Beleg: `src/pages/ueber-uns.astro:91-95`, dort steht ein `Bildplatz`-Platzhalter „Die Menschen hinter youman“ ohne übergebenes `bild`-Attribut. Andere Bereiche (Leistungen, Branchen, Referenzen) verwenden bereits echte Bilddateien unter `src/assets/img`, hier fehlt sie noch. Für die Website selbst ist das ein allgemeiner Trust-Punkt, für die spätere GBP-Einrichtung wird es konkret relevant: Ein Profil ganz ohne Fotos wirkt unfertig, und Bildmaterial (Person, Arbeitsplatz, ggf. das Gebäude am Dülmener Weg) sollte vor der Profileinrichtung vorbereitet werden.
+Beleg: `src/pages/ueber-uns.astro:91-95`, dort steht ein `Bildplatz`-Platzhalter „Die Menschen hinter youman“ ohne übergebenes `bild`-Attribut. Andere Bereiche (Leistungen, Branchen, Referenzen) verwenden bereits echte Bilddateien unter `src/assets/img`, hier fehlt sie noch. Für die Website selbst ist das ein allgemeiner Trust-Punkt, für die spätere GBP-Einrichtung wird es konkret relevant: Ein Profil ganz ohne Fotos wirkt unfertig, und Bildmaterial (Person, Arbeitsplatz, ggf. das Gebäude an der Karl-Leisner-Straße) sollte vor der Profileinrichtung vorbereitet werden.
 
 **11. Adresse steht auf der Kontaktseite nicht im Hauptkontaktblock.**
 Beleg: `src/pages/kontakt.astro:62-105`, der Abschnitt „Direkter Draht“ zeigt Terminlink, E-Mail und Telefon, aber keine Adresse. Sie erscheint auf derselben Seite erst im Footer und in einem weiter unten stehenden Kasten „Vor Ort“ (Zeilen 334-341), der auf `/muensterland` verweist. Für jemanden, der aus einer lokalen Suche gezielt auf die Kontaktseite kommt und dort sofort die Anschrift sehen möchte, ist das ein unnötiger Umweg. Eine Ergänzung im oberen Kontaktblock wäre eine kleine, risikoarme Verbesserung.
@@ -110,7 +110,7 @@ Einziger Schwachpunkt, siehe Befund 2: Der Text auf dieser Seite spricht explizi
 Es existiert noch kein Profil. Für einen Dienstleister ohne Ladengeschäft ist dessen Einrichtung der wirkungsvollste einzelne Schritt, den dieser Bericht empfehlen kann, wichtiger als jede weitere Feinjustierung an der Website. Die folgenden Angaben lassen sich aus dem vorhandenen Quellcode direkt entnehmen und sind bereits konsistent, das Profil müsste sie nur unverändert übernehmen:
 
 - **Unternehmensname:** youman (`src/data/anbieter.ts:31`)
-- **Adresse:** Dülmener Weg 86a, 46325 Borken, Deutschland (`src/data/anbieter.ts:52-55`). Zu entscheiden ist, ob die Adresse öffentlich auf der Karte erscheinen soll oder ob das Profil als reines Dienstleistungsgebiet-Unternehmen eingerichtet wird, bei dem die Adresse nur zur Verifizierung dient und nicht öffentlich angezeigt wird. Google bietet diese Option ausdrücklich für Anbieter ohne Kundenverkehr vor Ort an, was hier zutrifft.
+- **Adresse:** Karl-Leisner-Straße 6, 46325 Borken, Deutschland (`src/data/anbieter.ts:52-55`). Zu entscheiden ist, ob die Adresse öffentlich auf der Karte erscheinen soll oder ob das Profil als reines Dienstleistungsgebiet-Unternehmen eingerichtet wird, bei dem die Adresse nur zur Verifizierung dient und nicht öffentlich angezeigt wird. Google bietet diese Option ausdrücklich für Anbieter ohne Kundenverkehr vor Ort an, was hier zutrifft.
 - **Telefonnummer:** +49 155 67541365 (`src/data/kontakt.ts:24`), muss exakt in diesem Format im Profil stehen, damit keine Abweichung zur Website entsteht.
 - **Website-URL:** https://www.youman-automation.de
 - **E-Mail:** info@youman-automation.com, sofern im Profil ein Kontaktfeld dafür vorgesehen ist.

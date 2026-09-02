@@ -98,8 +98,17 @@ export const anbieter = {
     },
   ],
 
-  /** Ladungsfähige Anschrift – ein Postfach genügt nicht. */
-  strasse: 'Dülmener Weg 86a',
+  /**
+   * Ladungsfähige Anschrift – ein Postfach genügt nicht.
+   *
+   * Diese eine Stelle ist die Quelle für alle Nennungen der Anschrift:
+   * Impressum, Datenschutz, Fußzeile, die Regionalseite, llms.txt und die
+   * strukturierten Daten. Das ist Absicht. Eine Adresse, die an sechs
+   * Stellen von Hand steht, weicht früher oder später an einer davon ab,
+   * und genau diese Abweichung ist es, die Google bei ortsbezogenen
+   * Suchen als widersprüchliche Angabe wertet.
+   */
+  strasse: 'Karl-Leisner-Straße 6',
   plz: '46325' as string | null,
   ort: 'Borken' as string | null,
   /**
