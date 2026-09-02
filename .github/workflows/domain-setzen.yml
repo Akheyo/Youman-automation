@@ -36,6 +36,18 @@
 #              Erzwingen mit 422 ab.
 #   erzwingen  "ja" ueberspringt die DNS-Pruefung. Nur, wenn man genau
 #              weiss, warum die Pruefung falsch liegt.
+#   warten     Minuten, die auf die DNS-Umstellung gewartet wird. Mit einem
+#              Wert groesser 0 laesst sich der Workflow VOR der Umstellung
+#              beim Anbieter starten: Er prueft jede Minute und setzt die
+#              Domain, sobald die Eintraege stehen. 0 heisst einmal pruefen
+#              und sonst abbrechen. Sinnvoll sind 30 bis 60; ein Lauf darf
+#              hoechstens sechs Stunden dauern.
+#
+# Der Umzug von einem anderen Anbieter: Beim Domainanbieter zeigen die
+# Eintraege dann noch dorthin und muessen ERSETZT werden, nicht ergaenzt.
+# Zwei CNAME-Eintraege fuer denselben Namen sind nicht zulaessig, und ein
+# alter A-Eintrag neben den GitHub-Adressen schickt jeden zweiten Besucher
+# zum alten Ziel.
 #
 # Am Ende stoesst der Workflow den Pages-Deploy neu an, damit canonical,
 # og:url und Sitemap die Domain tragen: Die Seite bezieht ihre Adresse beim
@@ -69,6 +81,10 @@ on:
         description: 'DNS-Pruefung ueberspringen (ja/nein)'
         required: false
         default: 'nein'
+      warten:
+        description: 'Minuten auf die DNS-Umstellung warten (0 = einmal pruefen)'
+        required: false
+        default: '0'
 
 permissions:
   pages: write
@@ -92,36 +108,75 @@ jobs:
 
       - name: DNS pruefen
         if: inputs.erzwingen != 'ja'
+        timeout-minutes: 360
+        env:
+          WARTEN: ${{ inputs.warten }}
         run: |
-          echo "--- DNS fuer $DOMAIN ---"
-          cname=$(dig +short "$DOMAIN" CNAME | tr -d '\n')
-          a=$(dig +short "$DOMAIN" A | tr '\n' ' ')
-          echo "CNAME: ${cname:-keiner}"
-          echo "A:     ${a:-keine}"
+          # Gefragt wird ein oeffentlicher Resolver statt des lokalen. Der
+          # Resolver des Runners haelt Antworten bis zum Ablauf ihrer TTL
+          # fest, und beim Umzug einer Domain ist genau die alte Antwort das
+          # Falsche. 1.1.1.1 und 8.8.8.8, damit ein Ausfall eines der beiden
+          # den Lauf nicht scheitern laesst.
+          pruefe() {
+            local name="$1" typ="$2" wert=""
+            for resolver in 1.1.1.1 8.8.8.8; do
+              wert=$(dig +short +time=3 +tries=1 "@$resolver" "$name" "$typ" 2>/dev/null | tr '\n' ' ')
+              [ -n "$wert" ] && break
+            done
+            echo "$wert"
+          }
+
           apex=$(echo "$DOMAIN" | sed 's/^www\.//')
-          echo "--- DNS fuer $apex (ohne www) ---"
-          dig +short "$apex" A | sed 's/^/A:     /' || true
+          grenze=$(( $(date +%s) + ${WARTEN:-0} * 60 ))
+          versuch=0
 
-          ok=nein
-          case "$cname" in
-            *github.io.) ok=ja ;;
-          esac
-          # Ohne CNAME reicht es, wenn die A-Eintraege zu GitHub Pages
-          # zeigen (185.199.108.0/22).
-          case " $a " in
-            *" 185.199.108."*|*" 185.199.109."*|*" 185.199.110."*|*" 185.199.111."*) ok=ja ;;
-          esac
+          while :; do
+            versuch=$((versuch + 1))
+            cname=$(pruefe "$DOMAIN" CNAME)
+            a=$(pruefe "$DOMAIN" A)
+            apex_a=$(pruefe "$apex" A)
 
-          if [ "$ok" != "ja" ]; then
-            echo
-            echo "ABBRUCH: $DOMAIN zeigt noch nicht auf GitHub Pages."
-            echo "Beim Domainanbieter eintragen (siehe Kopf dieser Datei):"
-            echo "  $DOMAIN  CNAME  ${{ github.repository_owner }}.github.io"
-            echo "Dann einige Minuten warten und diesen Workflow erneut starten."
-            echo "Die Domain wurde NICHT gesetzt, die Seite bleibt unter github.io erreichbar."
-            exit 1
-          fi
-          echo "DNS in Ordnung."
+            echo "--- Versuch $versuch, $(date -u +%H:%M:%SZ) ---"
+            echo "$DOMAIN  CNAME: ${cname:-keiner}"
+            echo "$DOMAIN  A:     ${a:-keine}"
+            echo "$apex  A:     ${apex_a:-keine}"
+
+            ok=nein
+            case "$cname" in
+              *github.io.*) ok=ja ;;
+            esac
+            # Ohne CNAME reicht es, wenn die A-Eintraege zu GitHub Pages
+            # zeigen (185.199.108.0/22).
+            case " $a " in
+              *" 185.199.108."*|*" 185.199.109."*|*" 185.199.110."*|*" 185.199.111."*) ok=ja ;;
+            esac
+
+            if [ "$ok" = "ja" ]; then
+              echo "DNS in Ordnung."
+              # Der Eintrag ohne www ist kein Abbruchgrund, aber sein Fehlen
+              # faellt sonst erst auf, wenn jemand die Adresse ohne www
+              # eingibt und im Leeren landet.
+              case " $apex_a " in
+                *" 185.199.10"*|*" 185.199.11"*) : ;;
+                *) echo "HINWEIS: $apex zeigt nicht auf GitHub Pages. Ohne die vier A-Eintraege fuehrt die Adresse ohne www ins Leere." ;;
+              esac
+              break
+            fi
+
+            if [ "$(date +%s)" -ge "$grenze" ]; then
+              echo
+              echo "ABBRUCH: $DOMAIN zeigt noch nicht auf GitHub Pages."
+              echo "Beim Domainanbieter ERSETZEN (siehe Kopf dieser Datei):"
+              echo "  $DOMAIN  CNAME  ${{ github.repository_owner }}.github.io"
+              echo "  $apex  A  185.199.108.153 / .109.153 / .110.153 / .111.153"
+              echo "Dann diesen Workflow erneut starten, gern mit warten=60."
+              echo "Die Domain wurde NICHT gesetzt, die Seite bleibt unter github.io erreichbar."
+              exit 1
+            fi
+
+            echo "Noch nicht umgestellt. Naechste Pruefung in 60 Sekunden."
+            sleep 60
+          done
 
       - name: Domain setzen
         run: |
