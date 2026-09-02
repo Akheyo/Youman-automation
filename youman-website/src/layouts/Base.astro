@@ -277,6 +277,22 @@ const personenKnoten = anbieter.personen.map((person) => ({
   worksFor: { '@id': absolut(withBase('/')) + '#organisation' },
   ...(person.telefon ? { telephone: person.telefon } : {}),
   ...(person.profile && person.profile.length ? { sameAs: person.profile } : {}),
+  /*
+   * Ausbildung als eigener Knoten, nicht als Fliesstext. Ein
+   * EducationalOccupationalCredential sagt einer Suchmaschine, dass hier
+   * ein anerkannter Abschluss gemeint ist und nicht eine Selbstauskunft.
+   */
+  ...(person.ausbildung
+    ? {
+        hasCredential: {
+          '@type': 'EducationalOccupationalCredential',
+          credentialCategory: 'Berufsausbildung',
+          name: person.ausbildung,
+        },
+      }
+    : {}),
+  ...(person.werdegang ? { description: person.werdegang } : {}),
+  ...(person.kann && person.kann.length ? { knowsAbout: person.kann } : {}),
 }));
 
 /*

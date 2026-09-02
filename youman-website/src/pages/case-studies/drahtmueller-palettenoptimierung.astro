@@ -67,7 +67,9 @@ const vorgehen = [
     titel: 'Palettenoptimierung bei der Drahtmüller GmbH',
     beschreibung:
       '2.556 aktive Palettentypen, jede Entscheidung ein Einzelfall: Wie ein Modul von youman die Palettenlogik an das ERP-System anbindet, ohne Systemablösung.',
-    datum: null,
+    // Aus den Daten, nicht hier fest verdrahtet: Sonst weicht die
+    // Auszeichnung von dem ab, was die Seite sichtbar zeigt.
+    datum: fall.date,
   }}
   bild={fall.bild}
 >
@@ -128,6 +130,21 @@ const vorgehen = [
             <dt class="font-semibold text-ink">Anbindung</dt>
             <dd class="text-ink-soft">API-Schnittstelle zum bestehenden ERP-System</dd>
           </div>
+          {/*
+            Das Abschlussjahr, sichtbar und maschinenlesbar. Es steht in
+            caseStudies.ts und geht von dort auch als datePublished in die
+            strukturierten Daten. Wer wissen will, ob eine Referenz noch
+            aktuell ist, sucht genau diese Angabe, und sie darf nicht nur
+            im Quelltext stehen.
+          */}
+          {fall.date && (
+            <div>
+              <dt class="font-semibold text-ink">Abgeschlossen</dt>
+              <dd class="text-ink-soft">
+                <time datetime={fall.date}>{fall.date}</time>
+              </dd>
+            </div>
+          )}
         </dl>
       </aside>
     </div>

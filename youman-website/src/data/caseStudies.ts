@@ -8,7 +8,14 @@ export type CaseStudy = {
   /** Name des Kunden, wie er genannt werden darf. */
   kunde: string;
   branche: string;
-  /** ISO-Datum. null, solange kein freigegebenes Datum vorliegt. */
+  /**
+   * Abschluss des Projekts als ISO-Datum. Das Jahr allein genügt und ist
+   * nach ISO 8601 gültig; Google nimmt es als datePublished an.
+   *
+   * null, solange kein freigegebenes Datum vorliegt. Ein geschätztes
+   * Datum wäre schlechter als keines, weil es an genau der Stelle steht,
+   * an der Aktualität geprüft wird.
+   */
   date: string | null;
   excerpt: string;
   href: string;
@@ -54,7 +61,7 @@ export const caseStudies: CaseStudy[] = [
     title: 'Palettenoptimierung bei der Drahtmüller GmbH',
     kunde: 'Drahtmüller GmbH / Lichtgitter-Gruppe',
     branche: 'Fertigung und Logistik',
-    date: null,
+    date: '2026',
     excerpt:
       '2.556 aktive Palettentypen, jede Entscheidung ein Einzelfall: Wie ein Modul von youman die Palettenlogik an das ERP-System anbindet, ohne Systemablösung.',
     href: '/case-studies/drahtmueller-palettenoptimierung',
@@ -75,7 +82,7 @@ export const caseStudies: CaseStudy[] = [
     title: 'Warenwirtschaftssystem für Solarprojekte',
     kunde: 'A&B SolarEnergy',
     branche: 'Photovoltaik',
-    date: null,
+    date: '2026',
     excerpt:
       'Angebote in Lexware Office, Lagerdaten in einer eigenen Datenbank, Baustellenplanung daneben: Wie aus drei getrennten Ständen ein durchgängiger Prozess von der Anfrage bis zur Baustelle wurde.',
     href: '/case-studies/absolar-warenwirtschaft',

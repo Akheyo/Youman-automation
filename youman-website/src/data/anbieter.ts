@@ -66,6 +66,35 @@ export const anbieter = {
        * Verweis ins Leere ist schlechter als keiner.
        */
       profile: [] as string[],
+      /**
+       * Ausbildung und Werdegang, in der Sprache der Person selbst.
+       *
+       * Das ist der Beleg für den ersten Buchstaben in E-E-A-T, die
+       * eigene Erfahrung: Wer die Probleme, die er löst, im eigenen
+       * Geschäft gehabt hat, spricht anders darüber als jemand, der sie
+       * aus zweiter Hand kennt. Google bewertet diesen Unterschied seit
+       * dem Update von 2022 ausdrücklich.
+       *
+       * Angaben aus erster Hand, nichts hinzugefügt: gelernter Kaufmann
+       * im E-Commerce, ein eigenes vollständig automatisiertes Geschäft
+       * im Onlinehandel. Kein Zeitraum und kein Firmenname, weil beides
+       * nicht vorliegt.
+       */
+      ausbildung: 'Kaufmann im E-Commerce',
+      werdegang:
+        'Das Interesse an Technik war vor der Ausbildung da. Aus beidem zusammen entstand ein eigenes Geschäft im Onlinehandel, Schritt für Schritt automatisiert, bis es ohne tägliches Zutun lief. Genau dort sind die Workflow-Automatisierungen und Softwaremodule entstanden, aus denen später youman wurde.',
+      /**
+       * Fachgebiete der Person. Gehen als knowsAbout in die strukturierten
+       * Daten. Jeder Eintrag muss durch die Ausbildung oder durch das
+       * eigene Geschäft gedeckt sein, sonst ist er eine Behauptung.
+       */
+      kann: [
+        'E-Commerce',
+        'Onlinehandel',
+        'Prozessautomatisierung',
+        'Workflow-Automatisierung',
+        'Softwareentwicklung',
+      ],
     },
   ],
 

@@ -14,8 +14,10 @@ import Kachel from '../../components/Kachel.astro';
  * Quelle: "ABSolar.CaseStudy.pdf".
  *
  * Bewusst nicht übernommen:
- * - Das Veröffentlichungsdatum. In der Vorlage steht dort noch der Platzhalter
- *   "[Enter Desired Publish Date]".
+ * - Das Veröffentlichungsdatum aus der Vorlage. Dort steht noch der
+ *   Platzhalter "[Enter Desired Publish Date]". Das Abschlussjahr stammt
+ *   stattdessen aus erster Hand und steht in caseStudies.ts; ein genaueres
+ *   Datum als das Jahr liegt nicht vor und wird nicht erfunden.
  * - Die Quellenmarke "[web:6]" hinter der Lexware-Aussage. Sie stammt aus der
  *   Textproduktion und gehört nicht auf eine Kundenseite.
  * - Einsparungs- oder Prozentangaben über die im Dokument genannten hinaus.
@@ -155,6 +157,15 @@ const brotkrumen = [
             <dt class="font-semibold text-ink">Bestandssystem</dt>
             <dd class="text-ink-soft">Vorhandene Datenbank und Lexware Office, beide bleiben</dd>
           </div>
+          {/* Siehe Drahtmüller-Seite: sichtbar und maschinenlesbar, aus derselben Quelle. */}
+          {fall.date && (
+            <div>
+              <dt class="font-semibold text-ink">Abgeschlossen</dt>
+              <dd class="text-ink-soft">
+                <time datetime={fall.date}>{fall.date}</time>
+              </dd>
+            </div>
+          )}
         </dl>
       </aside>
     </div>
