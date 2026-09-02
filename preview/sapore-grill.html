@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Entwurfs-Vorschau der Website fuer Sapore Grill in Borken.">
+<title>Sapore Grill Borken — Entwurfs-Vorschau</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&amp;display=swap">
+</head>
+<body>
+<style>
+/* =============================================================================
+ * Sapore Grill — Design-System
+ *
+ * Ruhige, redaktionelle Gestaltung: warmes Weiss als Grund, tiefes Schwarzbraun
+ * als Textfarbe, ein einziger Gold-Akzent. Keine Verlaeufe, kein Leuchten —
+ * Struktur entsteht ueber Weissraum, Haarlinien und Typografie.
+ * Anzeige: Playfair Display. Fliesstext: Inter.
+ *
+ * Mobile-first; Breakpoints bei 640/900/1200px.
+ * ========================================================================== */
+
+
+.page {
+  --paper: #faf9f7;
+  --paper-2: #f4f2ee;
+  --white: #ffffff;
+  --ink: #1c1917;
+  --ink-soft: #44403c;
+  --muted: #6b6560;
+  --line: #e3dfd8;
+  --line-strong: #cdc7bd;
+
+  --gold: #8a6321;
+  --gold-tint: #f6f0e4;
+  --red: #9b2c22;
+  --green: #2f6b46;
+
+  --radius: 6px;
+  --radius-lg: 10px;
+
+  --s1: 8px;
+  --s2: 16px;
+  --s3: 24px;
+  --s4: 40px;
+  --s5: 72px;
+  --s6: 112px;
+
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.65;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page *,
+.page *::before,
+.page *::after {
+  box-sizing: border-box;
+}
+
+.page :focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.shell {
+  width: 100%;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding-left: var(--s3);
+  padding-right: var(--s3);
+}
+
+/* --- Typografie --------------------------------------------------------- */
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin: 0 0 var(--s2);
+}
+
+.h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4.2vw, 2.75rem);
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  margin: 0 0 var(--s2);
+}
+
+.lead {
+  color: var(--muted);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  max-width: 60ch;
+  margin: 0;
+}
+
+.section {
+  padding: var(--s5) 0;
+  position: relative;
+}
+
+.sectionAlt {
+  background: var(--paper-2);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.sectionHead {
+  margin-bottom: var(--s4);
+  max-width: 62ch;
+}
+
+/* Feine Trennlinie unter Abschnittstiteln — ersetzt farbige Flaechen. */
+.rule {
+  width: 56px;
+  height: 2px;
+  background: var(--gold);
+  margin: 0 0 var(--s3);
+}
+
+/* --- Schaltflaechen ----------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 13px 24px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  font-family: var(--font);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btnPrimary {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.btnPrimary:hover {
+  background: #000;
+}
+
+.btnGold {
+  background: var(--gold);
+  color: var(--white);
+}
+
+.btnGold:hover {
+  background: #6f4f1a;
+}
+
+.btnGhost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.btnGhost:hover {
+  background: var(--white);
+  border-color: var(--ink);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnBlock {
+  width: 100%;
+}
+
+.icon {
+  width: 19px;
+  height: 19px;
+  flex: none;
+}
+
+.iconSm {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+/* --- Kopfzeile ---------------------------------------------------------- */
+
+/* Schmale Servicezeile ueber der Navigation: Zeiten und Telefon. */
+.utility {
+  background: var(--ink);
+  color: #d6d1ca;
+  font-size: 0.8125rem;
+}
+
+.utilityInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s3);
+  min-height: 40px;
+  text-align: center;
+}
+
+.utilityItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.utilityItem:hover {
+  color: var(--white);
+}
+
+.utilitySep {
+  color: #6b6560;
+  display: none;
+}
+
+/* Adresse erst ab Tablet-Breite — auf dem Handy bliebe fuer drei Angaben zu
+   wenig Platz und alle drei wuerden mehrzeilig umbrechen. */
+.utilityAddress {
+  display: none;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: rgba(250, 249, 247, 0.94);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.headerInner {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  min-height: 76px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: auto;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.brandMark {
+  width: 40px;
+  height: 40px;
+  flex: none;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.brandName {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.brandSub {
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.nav {
+  display: none;
+  gap: var(--s4);
+}
+
+.navLink {
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  padding: 6px 0;
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.navLink:hover {
+  color: var(--ink);
+  border-bottom-color: var(--gold);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.headerPhone {
+  display: none;
+}
+
+.burger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.burger:hover {
+  border-color: var(--ink);
+}
+
+.mobileNav {
+  display: grid;
+  padding-bottom: var(--s2);
+  border-top: 1px solid var(--line);
+}
+
+.mobileNavLink {
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 500;
+  padding: 15px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* --- Hero --------------------------------------------------------------- */
+
+.hero {
+  padding: var(--s4) 0 var(--s5);
+  border-bottom: 1px solid var(--line);
+}
+
+.heroInner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s5);
+  align-items: start;
+}
+
+.heroStatus {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px var(--s2);
+  margin-bottom: var(--s3);
+  font-size: 0.8125rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.statusOpen {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--green);
+}
+
+.statusClosed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--red);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.heroTitle {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 7vw, 4.25rem);
+  line-height: 1.08;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--s3);
+  text-wrap: balance;
+}
+
+.heroTitle em {
+  display: block;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--gold);
+}
+
+.heroText {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+  max-width: 52ch;
+  margin: 0 0 var(--s4);
+}
+
+.heroCtas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: var(--s4);
+}
+
+.heroFacts {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+  max-width: 520px;
+}
+
+.fact {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+
+.factIcon {
+  color: var(--gold);
+  flex: none;
+}
+
+/* Infokarte im Hero: Adresse, Zeiten, Telefon, Lieferung. */
+.heroCard {
+  border: 1px solid var(--line);
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: var(--s4);
+  align-self: start;
+}
+
+.heroCardTitle {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 500;
+  margin: 0 0 var(--s3);
+  padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--line);
+}
+
+.infoList {
+  display: grid;
+  gap: var(--s3);
+  margin: 0;
+}
+
+.infoRow {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.infoIcon {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: var(--radius);
+  display: grid;
+  place-items: center;
+  background: var(--gold-tint);
+  color: var(--gold);
+}
+
+.infoLabel {
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.infoValue {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  display: block;
+}
+
+a.infoValue:hover {
+  color: var(--gold);
+}
+
+.infoNote {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* --- Kennzahlenband ----------------------------------------------------- */
+
+.trust {
+  background: var(--ink);
+  color: var(--white);
+  padding: var(--s5) 0;
+}
+
+.trustGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s4);
+}
+
+.trustItem {
+  text-align: center;
+  padding: 0 var(--s2);
+}
+
+.trustValue {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: var(--white);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.trustLabel {
+  font-size: 0.875rem;
+  color: #b3ada5;
+  line-height: 1.5;
+}
+
+/* --- Spezialitaeten ----------------------------------------------------- */
+
+.specialGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s4);
+}
+
+.special {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--s4);
+  transition: border-color 0.22s ease;
+}
+
+.special:hover {
+  border-color: var(--line-strong);
+}
+
+.specialTag {
+  display: block;
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.specialTitle {
+  font-family: var(--font-display);
+  font-size: 1.625rem;
+  font-weight: 500;
+  margin: 0 0 12px;
+}
+
+.specialText {
+  color: var(--muted);
+  margin: 0 0 var(--s3);
+  line-height: 1.7;
+}
+
+.specialList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.specialList li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+
+.check {
+  color: var(--gold);
+  flex: none;
+}
+
+/* --- Hinweisblock ------------------------------------------------------- */
+
+.notice {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--gold);
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: var(--s3);
+  margin-bottom: var(--s4);
+}
+
+.noticeTitle {
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.noticeText {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* --- Speisekarte -------------------------------------------------------- */
+
+.menuLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s5);
+  align-items: start;
+}
+
+.menuLayout > * {
+  min-width: 0;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--s3);
+  max-width: 100%;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--s4);
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab {
+  flex: none;
+  min-height: 48px;
+  padding: 12px 2px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tabActive {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--gold);
+}
+
+.categoryNote {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  font-style: italic;
+  margin: 0 0 var(--s4);
+}
+
+.items {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+/* Speisekarten-Zeile: Name und Preis auf einer Linie, verbunden durch eine
+   feine Fuehrungslinie — wie auf einer gedruckten Karte. */
+.item {
+  display: grid;
+  gap: 6px;
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.itemHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.itemName {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.leader {
+  flex: 1;
+  border-bottom: 1px dotted var(--line-strong);
+  min-width: 16px;
+  transform: translateY(-4px);
+}
+
+.price {
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.itemFoot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s2);
+  align-items: end;
+}
+
+.itemDesc {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 56ch;
+}
+
+.tag {
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 2px;
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.tagBeliebt {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.tagVegetarisch {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 9px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  flex: none;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.addBtn:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--white);
+}
+
+/* --- Warenkorb ---------------------------------------------------------- */
+
+.cart {
+  border: 1px solid var(--line);
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: var(--s3);
+}
+
+.cartHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--s3);
+}
+
+.cartTitle {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin: 0;
+  margin-right: auto;
+}
+
+.cartCount {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 13px;
+  background: var(--ink);
+  color: var(--white);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  display: inline-grid;
+  place-items: center;
+}
+
+.modeSwitch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: var(--s3);
+}
+
+.modeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  border: none;
+  background: var(--white);
+  color: var(--muted);
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.modeBtn:first-child {
+  border-right: 1px solid var(--line-strong);
+}
+
+.modeBtn:hover {
+  color: var(--ink);
+}
+
+.modeBtnActive {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.modeBtnActive:hover {
+  color: var(--white);
+}
+
+.cartEmpty {
+  text-align: center;
+  padding: var(--s4) var(--s2);
+}
+
+.cartEmptyIcon {
+  color: var(--line-strong);
+  width: 32px;
+  height: 32px;
+  margin-bottom: var(--s2);
+}
+
+.cartLines {
+  display: grid;
+  margin: 0 0 var(--s3);
+  padding: 0;
+  list-style: none;
+  max-height: 340px;
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+}
+
+.line {
+  display: grid;
+  gap: 8px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.lineName {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+.lineFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.linePrice {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.stepBtn {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.stepBtn:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--white);
+}
+
+.stepValue {
+  min-width: 32px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+
+.totals {
+  display: grid;
+  gap: 10px;
+  padding-top: var(--s2);
+  border-top: 1px solid var(--line);
+  margin-bottom: var(--s3);
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s2);
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+
+.totalRowMain {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ink);
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.totalRowMain span:last-child {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+}
+
+.hintWarn {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--red);
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  padding: 12px 14px;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  margin-bottom: var(--s2);
+}
+
+.hintOk {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--green);
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  padding: 12px 14px;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  margin-bottom: var(--s2);
+}
+
+/* --- Formular ----------------------------------------------------------- */
+
+.form {
+  display: grid;
+  gap: var(--s3);
+}
+
+.formGrid {
+  display: grid;
+  gap: var(--s2);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.optional {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 13px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  /* 4.6:1 auf Weiss — Platzhalter bleiben lesbar. */
+  color: #767068;
+}
+
+.input:hover,
+.textarea:hover,
+.select:hover {
+  border-color: var(--muted);
+}
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  border-color: var(--ink);
+}
+
+.textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.inputError {
+  border-color: var(--red);
+}
+
+.errorText {
+  color: var(--red);
+  font-size: 0.8125rem;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.helper {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.checkboxRow {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  margin-top: 2px;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+
+.errorSummary {
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--red);
+  background: var(--paper-2);
+  padding: var(--s2) var(--s3);
+}
+
+.errorSummaryTitle {
+  color: var(--ink);
+  font-weight: 600;
+  margin: 0 0 8px;
+  font-size: 0.9375rem;
+}
+
+.errorSummaryList {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+.errorSummaryList a {
+  color: var(--red);
+}
+
+/* --- Bestaetigung ------------------------------------------------------- */
+
+.success {
+  text-align: center;
+  padding: var(--s2) 0;
+}
+
+.successIcon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  background: var(--gold-tint);
+  color: var(--gold);
+  margin-bottom: var(--s3);
+}
+
+.successTitle {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  margin: 0 0 8px;
+}
+
+.orderNo {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+
+.summaryBox {
+  text-align: left;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: var(--s2) 0;
+  margin: var(--s3) 0;
+  display: grid;
+  gap: 10px;
+  font-size: 0.9375rem;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s2);
+  color: var(--muted);
+}
+
+.summaryRow span:last-child {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.successActions {
+  display: grid;
+  gap: 10px;
+}
+
+/* --- Ablauf ------------------------------------------------------------- */
+
+.steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s4);
+}
+
+.step {
+  padding-top: var(--s3);
+  border-top: 2px solid var(--ink);
+}
+
+.stepNum {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+  display: block;
+  margin-bottom: 10px;
+}
+
+.stepTitle {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 500;
+  margin: 0 0 8px;
+}
+
+.stepText {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* --- Oeffnungszeiten ---------------------------------------------------- */
+
+.hoursGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s5);
+  align-items: start;
+}
+
+.hoursTable {
+  display: grid;
+  border-top: 1px solid var(--line);
+}
+
+.hourRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+
+.hourRowToday {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.hourDay {
+  color: inherit;
+}
+
+/* --- Kontakt ------------------------------------------------------------ */
+
+.mapFrame {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--paper-2);
+  display: block;
+}
+
+.contactCards {
+  display: grid;
+  border-top: 1px solid var(--line);
+}
+
+.contactCard {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: var(--s3) 0;
+  border-bottom: 1px solid var(--line);
+  color: inherit;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+a.contactCard:hover {
+  opacity: 0.7;
+}
+
+/* --- Abschluss ---------------------------------------------------------- */
+
+.finalCta {
+  background: var(--ink);
+  color: var(--white);
+  border-radius: var(--radius-lg);
+  padding: var(--s5) var(--s3);
+  text-align: center;
+}
+
+.finalTitle {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4.5vw, 2.75rem);
+  font-weight: 500;
+  color: var(--white);
+  margin: 0 0 var(--s2);
+  text-wrap: balance;
+}
+
+.finalText {
+  color: #b3ada5;
+  max-width: 50ch;
+  margin: 0 auto var(--s4);
+  line-height: 1.7;
+}
+
+.finalCtas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btnOnDark {
+  background: var(--white);
+  color: var(--ink);
+}
+
+.btnOnDark:hover {
+  background: #e8e5e0;
+}
+
+.btnGhostOnDark {
+  background: transparent;
+  color: var(--white);
+  border-color: #4a453f;
+}
+
+.btnGhostOnDark:hover {
+  background: transparent;
+  border-color: var(--white);
+}
+
+/* --- Fusszeile ---------------------------------------------------------- */
+
+.footer {
+  border-top: 1px solid var(--line);
+  background: var(--paper-2);
+  padding: var(--s5) 0 var(--s4);
+}
+
+.footerGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s4);
+  margin-bottom: var(--s4);
+}
+
+.footerTitle {
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  margin: 0 0 var(--s2);
+}
+
+.footerList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+}
+
+.footerLink {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.footerLink:hover {
+  color: var(--gold);
+}
+
+.footerBottom {
+  border-top: 1px solid var(--line);
+  padding-top: var(--s3);
+  display: grid;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+/* --- Mobiler Bestellbalken ---------------------------------------------- */
+
+.mobileBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 70;
+  display: flex;
+  gap: 10px;
+  padding: 12px var(--s3) calc(12px + env(safe-area-inset-bottom));
+  background: var(--white);
+  border-top: 1px solid var(--line-strong);
+}
+
+.mobileBar .btn {
+  flex: 1;
+}
+
+.mobileBarPhone {
+  flex: 0 0 auto !important;
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
+.mobileBarSpacer {
+  height: 84px;
+}
+
+/* --- Einblenden --------------------------------------------------------- */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.revealIn {
+  opacity: 1;
+  transform: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Bildplaetze -------------------------------------------------------- */
+
+.figure {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+}
+
+.figureImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Platzhalter: ruhig gehalten, damit die Seite auch ohne Fotos serioes wirkt. */
+.figurePh {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: var(--s3);
+  text-align: center;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      var(--paper-2),
+      var(--paper-2) 12px,
+      #efece6 12px,
+      #efece6 24px
+    );
+}
+
+.figurePhIcon {
+  width: 26px;
+  height: 26px;
+  color: var(--line-strong);
+  margin-bottom: 2px;
+}
+
+.figurePhNeed {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 34ch;
+  line-height: 1.5;
+}
+
+.figurePhPath {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.figurePhPath code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+.figurePhHint {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* Bildunterschrift im redaktionellen Stil. */
+.figureCaption {
+  font-size: 0.8125rem;
+  color: var(--muted);
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+
+/* --- Galerie ------------------------------------------------------------ */
+
+.galleryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s2);
+}
+
+.specialFigure {
+  margin-bottom: var(--s3);
+}
+
+/* --- Auszeichnung (Zitat) ----------------------------------------------- */
+
+.quote {
+  border-left: 2px solid var(--gold);
+  padding-left: var(--s3);
+  margin: 0;
+}
+
+.quoteText {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.6vw, 1.625rem);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--ink);
+  margin: 0 0 var(--s2);
+  text-wrap: balance;
+}
+
+.quoteBy {
+  font-size: 0.8125rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* --- Breakpoints -------------------------------------------------------- */
+
+@media (min-width: 640px) {
+  .utilitySep {
+    display: inline;
+  }
+
+  .trustGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footerBottom {
+    grid-auto-flow: column;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+@media (min-width: 900px) {
+  .shell {
+    padding-left: var(--s4);
+    padding-right: var(--s4);
+  }
+
+  .section {
+    padding: var(--s6) 0;
+  }
+
+  .hero {
+    padding: var(--s6) 0 var(--s5);
+  }
+
+  .sectionHead {
+    margin-bottom: var(--s5);
+  }
+
+  .finalCta {
+    padding: var(--s6) var(--s3);
+  }
+
+  .itemFoot {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--s3);
+  }
+
+  .utilityAddress {
+    display: inline-flex;
+  }
+
+  .nav {
+    display: flex;
+  }
+
+  .headerPhone {
+    display: inline-flex;
+  }
+
+  .burger {
+    display: none;
+  }
+
+  .mobileBar,
+  .mobileBarSpacer {
+    display: none;
+  }
+
+  .heroInner {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+    gap: var(--s5);
+  }
+
+  .trustGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .trustItem {
+    border-left: 1px solid #3a3532;
+  }
+
+  .trustItem:first-child {
+    border-left: none;
+  }
+
+  .specialGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hoursGrid,
+  .contactGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .footerGrid {
+    grid-template-columns: 1.6fr 1fr 1fr;
+  }
+
+  .galleryGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .menuLayout {
+    grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.9fr);
+  }
+
+  .cart {
+    position: sticky;
+    top: 100px;
+  }
+}
+
+/* --- Bewegung reduzieren ------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .page *,
+  .page *::before,
+  .page *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- Nur fuer diese Vorschau -------------------------------------------- */
+
+:root { color-scheme: light; }
+
+body {
+  background: #faf9f7;
+  margin: 0;
+}
+
+.previewBar {
+  background: #241f1b;
+  color: #e6e1d9;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  padding: 10px 24px;
+  text-align: center;
+}
+
+.previewBar strong { color: #f0d9a8; font-weight: 600; }
+
+.mapPlaceholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background:
+    repeating-linear-gradient(45deg, var(--paper-2), var(--paper-2) 12px, #efece6 12px, #efece6 24px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  padding: var(--s3);
+}
+
+.mapPlaceholder p { margin: 0; }
+
+</style>
+
+<div class="previewBar">
+  <strong>Entwurfs-Vorschau</strong> — so sieht die Seite von Sapore Grill aus. Speisekarte und
+  Preise sind Platzhalter; abgeschickte Bestellungen gehen hier noch nirgends hin.
+</div>
+
+<div class="page">
+  <div class="utility">
+    <div class="shell">
+      <div class="utilityInner">
+        <span class="utilityItem">
+          <svg class="iconSm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 1.8"></path></svg>
+          Täglich 11:00 – 22:00 Uhr
+        </span>
+        <span class="utilitySep utilityAddress" aria-hidden="true">·</span>
+        <span class="utilityItem utilityAddress">
+          <svg class="iconSm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.4 7-10.5a7 7 0 1 0-14 0C5 15.6 12 21 12 21Z"></path><circle cx="12" cy="10.5" r="2.6"></circle></svg>
+          Johann-Walling-Straße 10, 46325 Borken
+        </span>
+        <span class="utilitySep" aria-hidden="true">·</span>
+        <a href="tel:+4928614303" class="utilityItem">
+          <svg class="iconSm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3.5h3l1.5 3.7-1.9 1.1a11 11 0 0 0 4.8 4.8l1.1-1.9 3.7 1.5v3a2 2 0 0 1-2.2 2 16.5 16.5 0 0 1-13.8-13.8 2 2 0 0 1 2-2.2Z"></path></svg>
+          02861 4303
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <header class="header">
+    <div class="shell">
+      <div class="headerInner">
+        <a href="#top" class="brand">
+          <svg class="brandMark" viewBox="0 0 48 48" aria-hidden="true">
+            <circle cx="24" cy="24" r="22.5" fill="#171512" stroke="#d9a441" stroke-width="1.5"></circle>
+            <path d="M24 8.5c2.6 3.4 4.2 6.4 4.2 9.6 0 1.6-.4 3-1.1 4.3.9-.4 1.6-1.1 2.1-2 1.4 1.7 2.2 3.7 2.2 5.8 0 4.6-3.3 8.3-7.4 8.3s-7.4-3.7-7.4-8.3c0-3.5 1.9-6.7 4.6-9-.3 1.5 0 2.8.8 3.7-.5-4.4.9-8.6 2-12.4Z" fill="#e0322d"></path>
+            <path d="M17 38.5h14" stroke="#d9a441" stroke-width="2" stroke-linecap="round"></path>
+            <path d="M20 34.8v3.7M28 34.8v3.7" stroke="#d9a441" stroke-width="1.6" stroke-linecap="round"></path>
+          </svg>
+          <span class="brandText">
+            <span class="brandName">Sapore Grill</span>
+            <span class="brandSub">Döner · Pizza · Borken</span>
+          </span>
+        </a>
+
+        <nav class="nav" aria-label="Hauptnavigation">
+          <a href="#speisekarte" class="navLink">Speisekarte</a>
+          <a href="#spezialitaeten" class="navLink">Spezialitäten</a>
+          <a href="#ablauf" class="navLink">Bestellen</a>
+          <a href="#zeiten" class="navLink">Öffnungszeiten</a>
+          <a href="#kontakt" class="navLink">Kontakt</a>
+        </nav>
+
+        <div class="headerActions">
+          <a href="#speisekarte" class="btn btnPrimary headerPhone">Online bestellen</a>
+          <button type="button" class="burger" id="burger" aria-expanded="false" aria-controls="mobileNav" aria-label="Menü öffnen">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M4.5 7h15M4.5 12h15M4.5 17h15"></path></svg>
+          </button>
+        </div>
+      </div>
+      <nav id="mobileNav" class="mobileNav" aria-label="Menü" hidden>
+        <a href="#speisekarte" class="mobileNavLink">Speisekarte</a>
+        <a href="#spezialitaeten" class="mobileNavLink">Spezialitäten</a>
+        <a href="#ablauf" class="mobileNavLink">Bestellen</a>
+        <a href="#zeiten" class="mobileNavLink">Öffnungszeiten</a>
+        <a href="#kontakt" class="mobileNavLink">Kontakt</a>
+        <a href="tel:+4928614303" class="mobileNavLink">Anrufen: 02861 4303</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="top">
+      <div class="shell">
+        <div class="heroInner">
+          <div>
+            <p class="heroStatus">
+              <span id="heroStatus">Täglich 11:00 – 22:00 Uhr</span>
+              <span>Seit September in Borken</span>
+            </p>
+
+            <h1 class="heroTitle">Steakdöner, Pizza und Imbiss<em>frisch zubereitet in Borken</em></h1>
+
+            <p class="heroText">
+              Bei Sapore Grill kommt ausschließlich Fleisch vom Jungbullen auf den Spieß — kein
+              Hack, nichts Gepresstes. Dazu knusprige Pizza aus dem Ofen, täglich frisch
+              geschnittene Salate und deftige Imbiss-Teller. Zum Abholen oder zur Lieferung.
+            </p>
+
+            <div class="heroCtas">
+              <a href="#speisekarte" class="btn btnPrimary">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l-1 12.5h-11L5.5 8Z"></path><path d="M9 8V6.5a3 3 0 0 1 6 0V8"></path></svg>
+                Speisekarte &amp; Bestellung
+              </a>
+              <a href="tel:+4928614303" class="btn btnGhost">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3.5h3l1.5 3.7-1.9 1.1a11 11 0 0 0 4.8 4.8l1.1-1.9 3.7 1.5v3a2 2 0 0 1-2.2 2 16.5 16.5 0 0 1-13.8-13.8 2 2 0 0 1 2-2.2Z"></path></svg>
+                02861 4303
+              </a>
+            </div>
+
+            <ul class="heroFacts" id="heroFacts"></ul>
+          </div>
+
+          <div>
+            <div class="figure" style="aspect-ratio: 4 / 5">
+              <div class="figurePh" role="img" aria-label="Frisch zubereiteter Steakdöner vom Jungbullen">
+                <svg class="figurePhIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5h3l1.5-2.5h8l1.5 2.5h3v10h-17v-10Z"></path><circle cx="12" cy="13" r="3.4"></circle></svg>
+                <p class="figurePhNeed">Ihr bestes Produktfoto: ein frisch belegter Steakdöner, seitlich fotografiert</p>
+                <p class="figurePhPath">Ablegen unter <code>public/sapore/hero.jpg</code></p>
+                <p class="figurePhHint">Hochformat, mindestens 1200 × 1500 px</p>
+              </div>
+            </div>
+
+            <div class="heroCard" style="margin-top: 24px">
+              <h2 class="heroCardTitle">Auf einen Blick</h2>
+              <div class="infoList" id="heroInfo"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="trust">
+      <div class="shell">
+        <div class="trustGrid" id="trustGrid"></div>
+      </div>
+    </div>
+
+    <section class="section" id="spezialitaeten">
+      <div class="shell">
+        <div class="sectionHead">
+          <p class="eyebrow">Unsere Spezialitäten</p>
+          <div class="rule"></div>
+          <h2 class="h2">Steakdöner und Gemüse Kebap</h2>
+          <p class="lead">
+            Zwei Gerichte stehen für das, wofür Sapore Grill steht: ehrliche Zutaten, sauber
+            verarbeitet, jeden Tag neu.
+          </p>
+        </div>
+        <div class="specialGrid" id="specialGrid"></div>
+      </div>
+    </section>
+
+    <section class="section" id="speisekarte">
+      <div class="shell">
+        <div class="sectionHead">
+          <p class="eyebrow">Speisekarte</p>
+          <div class="rule"></div>
+          <h2 class="h2">Aussuchen, bestellen, genießen</h2>
+          <p class="lead">
+            Alles frisch zubereitet — zum Abholen an der Johann-Walling-Straße 10 oder zur
+            Lieferung nach Hause. Bestellungen nehmen wir online und telefonisch entgegen.
+          </p>
+        </div>
+
+        <div class="notice" role="note">
+          <svg class="icon check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 11v5.5M12 7.8v.6"></path></svg>
+          <div>
+            <strong class="noticeTitle">Platzhalter-Speisekarte</strong>
+            <p class="noticeText">
+              Gerichte und Preise sind vorläufig und dienen nur zur Ansicht. Verbindlich sind
+              die Angaben im Laden und am Telefon unter 02861 4303. Sobald die echte Karte
+              vorliegt, wird sie hier eingesetzt.
+            </p>
+          </div>
+        </div>
+
+        <div class="menuLayout" id="bestellen">
+          <div>
+            <div class="tabs" role="tablist" aria-label="Kategorien der Speisekarte" id="tabs"></div>
+            <div id="panel" role="tabpanel">
+              <p class="categoryNote" id="categoryNote"></p>
+              <ul class="items" id="items"></ul>
+            </div>
+          </div>
+
+          <div class="cart" id="warenkorb">
+            <div class="cartHead">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 4.5h2l2.2 10.2h9l1.8-7.2H6.2"></path><circle cx="9.5" cy="19" r="1.4"></circle><circle cx="16.5" cy="19" r="1.4"></circle></svg>
+              <h3 class="cartTitle">Ihre Bestellung</h3>
+              <span class="cartCount" id="cartCount" aria-live="polite">0</span>
+            </div>
+
+            <div class="modeSwitch" role="group" aria-label="Liefern oder abholen">
+              <button type="button" class="modeBtn modeBtnActive" data-mode="abholen" aria-pressed="true">
+                <svg class="iconSm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l-1 12.5h-11L5.5 8Z"></path><path d="M9 8V6.5a3 3 0 0 1 6 0V8"></path></svg>
+                Abholen
+              </button>
+              <button type="button" class="modeBtn" data-mode="liefern" aria-pressed="false">
+                <svg class="iconSm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17" r="2.8"></circle><circle cx="18" cy="17" r="2.8"></circle><path d="M8.3 17h6.9M15.2 17l-2.4-8.5H10"></path><path d="M12.8 8.5h4.4l1.4 5.7"></path></svg>
+                Liefern
+              </button>
+            </div>
+
+            <div id="cartBody"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section sectionAlt" id="eindruecke">
+      <div class="shell">
+        <div class="sectionHead">
+          <p class="eyebrow">Eindrücke</p>
+          <div class="rule"></div>
+          <h2 class="h2">Ein Blick auf unsere Küche</h2>
+          <p class="lead">
+            Pizza aus dem Ofen, frische Salate, deftige Teller — und der Laden an der
+            Johann-Walling-Straße 10.
+          </p>
+        </div>
+        <div class="galleryGrid" id="galleryGrid"></div>
+      </div>
+    </section>
+
+    <section class="section" id="ablauf">
+      <div class="shell">
+        <div class="sectionHead">
+          <p class="eyebrow">So bestellen Sie</p>
+          <div class="rule"></div>
+          <h2 class="h2">In drei Schritten zum Essen</h2>
+          <p class="lead">
+            Online in etwa einer Minute bestellt — oder klassisch per Telefon unter 02861 4303.
+          </p>
+        </div>
+        <div class="steps" id="steps"></div>
+      </div>
+    </section>
+
+    <section class="section sectionAlt" id="zeiten">
+      <div class="shell">
+        <div class="hoursGrid">
+          <div>
+            <p class="eyebrow">Öffnungszeiten</p>
+            <div class="rule"></div>
+            <h2 class="h2">Sieben Tage die Woche für Sie da</h2>
+            <p class="lead">
+              Durchgehend warme Küche von 11:00 bis 22:00 Uhr, auch an Wochenenden und
+              Feiertagen. Kurzfristige Änderungen geben wir auf Instagram bekannt.
+            </p>
+            <p class="heroStatus" style="margin-top: 24px; margin-bottom: 0">
+              <span id="hoursStatus">Täglich 11:00 – 22:00 Uhr</span>
+            </p>
+          </div>
+          <div class="hoursTable" id="hoursTable"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="kontakt">
+      <div class="shell">
+        <div class="sectionHead">
+          <p class="eyebrow">Kontakt</p>
+          <div class="rule"></div>
+          <h2 class="h2">So finden Sie uns</h2>
+          <p class="lead">
+            Sapore Grill liegt an der Johann-Walling-Straße 10 in Borken. Kommen Sie vorbei,
+            rufen Sie an oder folgen Sie uns auf Instagram.
+          </p>
+        </div>
+
+        <div class="hoursGrid contactGrid">
+          <div class="contactCards" id="contactCards"></div>
+          <div>
+            <div class="mapPlaceholder">
+              <svg class="figurePhIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-5.4 7-10.5a7 7 0 1 0-14 0C5 15.6 12 21 12 21Z"></path><circle cx="12" cy="10.5" r="2.6"></circle></svg>
+              <p class="figurePhNeed">Johann-Walling-Straße 10, 46325 Borken</p>
+              <p class="figurePhHint">Auf der fertigen Seite steht hier die eingebundene Karte.</p>
+              <p style="margin-top: 6px">
+                <a class="footerLink" href="https://www.openstreetmap.org/search?query=Johann-Walling-Stra%C3%9Fe%2010%2C%2046325%20Borken" target="_blank" rel="noopener noreferrer">Route planen</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shell">
+        <div class="finalCta">
+          <h2 class="finalTitle">Frisch. Lecker. Qualität.</h2>
+          <p class="finalText">
+            Täglich von 11:00 bis 22:00 Uhr für Sie da — online bestellen oder einfach anrufen.
+          </p>
+          <div class="finalCtas">
+            <a href="#speisekarte" class="btn btnOnDark">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 8h13l-1 12.5h-11L5.5 8Z"></path><path d="M9 8V6.5a3 3 0 0 1 6 0V8"></path></svg>
+              Zur Speisekarte
+            </a>
+            <a href="tel:+4928614303" class="btn btnGhostOnDark">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3.5h3l1.5 3.7-1.9 1.1a11 11 0 0 0 4.8 4.8l1.1-1.9 3.7 1.5v3a2 2 0 0 1-2.2 2 16.5 16.5 0 0 1-13.8-13.8 2 2 0 0 1 2-2.2Z"></path></svg>
+              02861 4303
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="shell">
+      <div class="footerGrid">
+        <div>
+          <a href="#top" class="brand" style="margin-bottom: 16px">
+            <svg class="brandMark" viewBox="0 0 48 48" aria-hidden="true">
+              <circle cx="24" cy="24" r="22.5" fill="#171512" stroke="#d9a441" stroke-width="1.5"></circle>
+              <path d="M24 8.5c2.6 3.4 4.2 6.4 4.2 9.6 0 1.6-.4 3-1.1 4.3.9-.4 1.6-1.1 2.1-2 1.4 1.7 2.2 3.7 2.2 5.8 0 4.6-3.3 8.3-7.4 8.3s-7.4-3.7-7.4-8.3c0-3.5 1.9-6.7 4.6-9-.3 1.5 0 2.8.8 3.7-.5-4.4.9-8.6 2-12.4Z" fill="#e0322d"></path>
+              <path d="M17 38.5h14" stroke="#d9a441" stroke-width="2" stroke-linecap="round"></path>
+              <path d="M20 34.8v3.7M28 34.8v3.7" stroke="#d9a441" stroke-width="1.6" stroke-linecap="round"></path>
+            </svg>
+            <span class="brandText">
+              <span class="brandName">Sapore Grill</span>
+              <span class="brandSub">Döner · Pizza · Imbiss · Salate</span>
+            </span>
+          </a>
+          <p class="noticeText">
+            Döner, Pizza, Imbiss und Salate in Borken. Täglich frisch zubereitet — zum Abholen
+            oder zur Lieferung nach Hause.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="footerTitle">Kontakt</h2>
+          <ul class="footerList">
+            <li>Johann-Walling-Straße 10</li>
+            <li>46325 Borken</li>
+            <li><a class="footerLink" href="tel:+4928614303">02861 4303</a></li>
+            <li><a class="footerLink" href="https://www.instagram.com/saporegrill_offiziell/" target="_blank" rel="noopener noreferrer">@saporegrill_offiziell</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h2 class="footerTitle">Seite</h2>
+          <ul class="footerList">
+            <li><a class="footerLink" href="#speisekarte">Speisekarte</a></li>
+            <li><a class="footerLink" href="#spezialitaeten">Spezialitäten</a></li>
+            <li><a class="footerLink" href="#ablauf">Bestellen</a></li>
+            <li><a class="footerLink" href="#zeiten">Öffnungszeiten</a></li>
+            <li><a class="footerLink" href="#kontakt">Kontakt</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footerBottom">
+        <span>© 2026 Sapore Grill, Borken</span>
+        <span>Täglich 11:00 – 22:00 Uhr geöffnet</span>
+      </div>
+    </div>
+  </footer>
+
+  <div class="mobileBar">
+    <a href="#warenkorb" class="btn btnPrimary">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 4.5h2l2.2 10.2h9l1.8-7.2H6.2"></path><circle cx="9.5" cy="19" r="1.4"></circle><circle cx="16.5" cy="19" r="1.4"></circle></svg>
+      Warenkorb (<span id="barCount">0</span>)
+    </a>
+    <a href="tel:+4928614303" class="btn btnGhost mobileBarPhone">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.3 3.5h3l1.5 3.7-1.9 1.1a11 11 0 0 0 4.8 4.8l1.1-1.9 3.7 1.5v3a2 2 0 0 1-2.2 2 16.5 16.5 0 0 1-13.8-13.8 2 2 0 0 1 2-2.2Z"></path></svg>
+      Anrufen
+    </a>
+  </div>
+  <div class="mobileBarSpacer" aria-hidden="true"></div>
+</div>
+
+<script>
+/* Vorschau-Logik: Speisekarte, Warenkorb, Liefern/Abholen und Bestellformular.
+   Auf der fertigen Next.js-Seite uebernimmt das React; hier reicht Vanilla-JS,
+   damit die Vorschau ohne Server vollstaendig bedienbar bleibt. */
+(function () {
+  'use strict';
+
+  var PHONE = '02861 4303';
+  var DELIVERY = { minOrder: 15, fee: 2.5, freeFrom: 30, etaDelivery: '30–45 Min.', etaPickup: '15–20 Min.', zips: ['46325'] };
+
+  var MENU = [
+    { id: 'doener', name: 'Döner & Kebap', note: '100 % Jungbullen-Fleisch. Kein Hack, kein Gepresstes.', items: [
+      { id: 'steakdoener', name: 'Steakdöner vom Jungbullen', description: 'Saftige Steakstreifen, frischer Salat, Tomate, Zwiebel und Sauce nach Wahl.', price: 8.5, tags: ['beliebt'] },
+      { id: 'gemuese-kebap', name: 'Gemüse Kebap', description: 'Gegrilltes Gemüse, Grillkäse, frischer Salat und Kräutersauce.', price: 7.5, tags: ['vegetarisch', 'neu'] },
+      { id: 'duerum-steak', name: 'Dürüm Steakdöner', description: 'Steakstreifen im dünnen Fladen gerollt, mit Salat und Sauce.', price: 9 },
+      { id: 'doener-box', name: 'Döner Box', description: 'Pommes mit Fleisch, Salat und Sauce — die handliche Portion.', price: 7 },
+      { id: 'kebap-teller', name: 'Kebap Teller', description: 'Große Portion Fleisch mit Pommes oder Reis, Salat und Tzatziki.', price: 13.5 }
+    ]},
+    { id: 'pizza', name: 'Knusprige Pizza', note: 'Frisch belegt und im Steinofen gebacken.', items: [
+      { id: 'pizza-margherita', name: 'Pizza Margherita', description: 'Tomatensauce, Mozzarella, Basilikum.', price: 8, tags: ['vegetarisch'] },
+      { id: 'pizza-salami', name: 'Pizza Salami', description: 'Tomatensauce, Mozzarella, Salami.', price: 9 },
+      { id: 'pizza-funghi', name: 'Pizza Funghi', description: 'Tomatensauce, Mozzarella, frische Champignons.', price: 9, tags: ['vegetarisch'] },
+      { id: 'pizza-sapore', name: 'Pizza Sapore Spezial', description: 'Tomatensauce, Mozzarella, Kalbfleisch, Paprika, Zwiebeln.', price: 11.5, tags: ['beliebt'] },
+      { id: 'pizza-vegetaria', name: 'Pizza Vegetaria', description: 'Tomatensauce, Mozzarella, Paprika, Zwiebeln, Mais, Champignons.', price: 9.5, tags: ['vegetarisch'] }
+    ]},
+    { id: 'imbiss', name: 'Deftiger Imbiss', note: 'Für den großen Hunger zwischendurch.', items: [
+      { id: 'imbiss-teller', name: 'Imbiss-Teller', description: 'Currywurst, Pommes Frites, Mayonnaise und eine Portion Gyros mit Tzatziki.', price: 12.5, tags: ['beliebt'] },
+      { id: 'currywurst-pommes', name: 'Currywurst mit Pommes', description: 'Currywurst mit hauseigener Sauce und knusprigen Pommes.', price: 7.5 },
+      { id: 'pommes', name: 'Pommes Frites', description: 'Knusprig frittiert, mit Ketchup oder Mayonnaise.', price: 3.5, tags: ['vegetarisch'] },
+      { id: 'nuggets', name: 'Chicken Nuggets', description: '6 Stück mit Pommes und Dip nach Wahl.', price: 7 }
+    ]},
+    { id: 'salate', name: 'Frische Salate', note: 'Täglich frisch geschnitten.', items: [
+      { id: 'salat-feta', name: 'Gemischter Salat mit Feta', description: 'Blattsalat, Tomate, Gurke, Oliven, rote Zwiebeln und Feta.', price: 8.5, tags: ['vegetarisch'] },
+      { id: 'salat-hirten', name: 'Hirtensalat', description: 'Tomate, Gurke, Paprika, Zwiebeln, Feta und Petersilie.', price: 8, tags: ['vegetarisch'] },
+      { id: 'salat-haehnchen', name: 'Salat mit Hähnchen', description: 'Gemischter Salat mit gegrillten Hähnchenstreifen und Joghurt-Dressing.', price: 10 }
+    ]},
+    { id: 'getraenke', name: 'Getränke', note: 'Gekühlt, auch zum Mitnehmen.', items: [
+      { id: 'softdrink', name: 'Softdrink 0,33 l', description: 'Cola, Fanta, Sprite oder Eistee.', price: 2 },
+      { id: 'ayran', name: 'Ayran 0,25 l', description: 'Klassisch gesalzenes Joghurtgetränk.', price: 1.5 },
+      { id: 'wasser', name: 'Wasser 0,5 l', description: 'Still oder mit Kohlensäure.', price: 1.5 }
+    ]}
+  ];
+
+  var SVG = {
+    check: '<path d="m5 12.5 4.5 4.5L19 7.5"></path>',
+    leaf: '<path d="M4.5 19.5C4 14 6.5 9 11 6.6c2.4-1.3 5.3-1.6 8.5-1.1.5 3.2.2 6.1-1.1 8.5C16 18.5 11 21 5.5 20.5"></path><path d="M5.5 19.5C8 15 12 11.5 17 9.5"></path>',
+    pin: '<path d="M12 21s7-5.4 7-10.5a7 7 0 1 0-14 0C5 15.6 12 21 12 21Z"></path><circle cx="12" cy="10.5" r="2.6"></circle>',
+    clock: '<circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 1.8"></path>',
+    phone: '<path d="M6.3 3.5h3l1.5 3.7-1.9 1.1a11 11 0 0 0 4.8 4.8l1.1-1.9 3.7 1.5v3a2 2 0 0 1-2.2 2 16.5 16.5 0 0 1-13.8-13.8 2 2 0 0 1 2-2.2Z"></path>',
+    moped: '<circle cx="5.5" cy="17" r="2.8"></circle><circle cx="18" cy="17" r="2.8"></circle><path d="M8.3 17h6.9M15.2 17l-2.4-8.5H10"></path><path d="M12.8 8.5h4.4l1.4 5.7"></path>',
+    instagram: '<rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="3.8"></circle><circle cx="16.9" cy="7.1" r="1" fill="currentColor" stroke="none"></circle>',
+    plus: '<path d="M12 5.5v13M5.5 12h13"></path>',
+    minus: '<path d="M5.5 12h13"></path>',
+    trash: '<path d="M4.5 6.5h15M9.5 6.5V4.8h5v1.7M6.8 6.5l.9 12.2h8.6l.9-12.2"></path>',
+    alert: '<path d="M12 4.5 21 19.5H3L12 4.5Z"></path><path d="M12 10v3.8M12 16.4v.4"></path>',
+    info: '<circle cx="12" cy="12" r="8.5"></circle><path d="M12 11v5.5M12 7.8v.6"></path>',
+    cart: '<path d="M3.5 4.5h2l2.2 10.2h9l1.8-7.2H6.2"></path><circle cx="9.5" cy="19" r="1.4"></circle><circle cx="16.5" cy="19" r="1.4"></circle>',
+    camera: '<path d="M3.5 8.5h3l1.5-2.5h8l1.5 2.5h3v10h-17v-10Z"></path><circle cx="12" cy="13" r="3.4"></circle>',
+    copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2.5"></rect><path d="M15.5 5.5h-9a2 2 0 0 0-2 2v9"></path>'
+  };
+
+  function icon(name, cls) {
+    return '<svg class="' + cls + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + SVG[name] + '</svg>';
+  }
+
+  function euro(v) {
+    return v.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function find(id) {
+    for (var i = 0; i < MENU.length; i++) {
+      for (var j = 0; j < MENU[i].items.length; j++) {
+        if (MENU[i].items[j].id === id) return MENU[i].items[j];
+      }
+    }
+    return null;
+  }
+
+  var state = { category: MENU[0].id, lines: {}, mode: 'abholen', done: null, errors: {} };
+
+  /* --- Statische Abschnitte ------------------------------------------- */
+
+  document.getElementById('heroFacts').innerHTML = [
+    '100 % Fleisch vom Jungbullen — kein Hack, kein Gepresstes',
+    'Täglich frisch geschnittenes Gemüse und Salate',
+    'Sieben Tage die Woche durchgehend warme Küche',
+    'Alle Speisen auch zum Mitnehmen'
+  ].map(function (f) {
+    return '<li class="fact">' + icon('check', 'iconSm factIcon') + esc(f) + '</li>';
+  }).join('');
+
+  document.getElementById('heroInfo').innerHTML = [
+    { i: 'pin', l: 'Adresse', v: 'Johann-Walling-Straße 10', n: '46325 Borken' },
+    { i: 'clock', l: 'Öffnungszeiten', v: 'Montag bis Sonntag', n: '11:00 – 22:00 Uhr, durchgehend warm' },
+    { i: 'moped', l: 'Lieferung & Abholung', v: 'Lieferung ca. ' + DELIVERY.etaDelivery, n: 'Abholung ca. ' + DELIVERY.etaPickup }
+  ].map(function (r) {
+    return '<div class="infoRow"><span class="infoIcon">' + icon(r.i, 'iconSm') + '</span><div>' +
+      '<div class="infoLabel">' + esc(r.l) + '</div><span class="infoValue">' + esc(r.v) +
+      '</span><div class="infoNote">' + esc(r.n) + '</div></div></div>';
+  }).join('');
+
+  document.getElementById('trustGrid').innerHTML = [
+    ['100 %', 'Fleisch vom Jungbullen, kein Hack'],
+    ['Täglich frisch', 'Gemüse und Salate am selben Tag geschnitten'],
+    ['11 – 22 Uhr', 'Sieben Tage die Woche geöffnet'],
+    ['Liefern & Abholen', 'Online bestellen oder telefonisch']
+  ].map(function (t) {
+    return '<div class="trustItem"><span class="trustValue">' + esc(t[0]) +
+      '</span><span class="trustLabel">' + esc(t[1]) + '</span></div>';
+  }).join('');
+
+  function figure(need, path, hint, ratio) {
+    return '<div class="figure" style="aspect-ratio: ' + ratio + '">' +
+      '<div class="figurePh" role="img" aria-label="' + esc(need) + '">' +
+      icon('camera', 'figurePhIcon') +
+      '<p class="figurePhNeed">' + esc(need) + '</p>' +
+      '<p class="figurePhPath">Ablegen unter <code>public' + esc(path) + '</code></p>' +
+      '<p class="figurePhHint">' + esc(hint) + '</p></div></div>';
+  }
+
+  document.getElementById('specialGrid').innerHTML = [
+    { fig: ['Steakdöner im Anschnitt — Fleisch und Salat gut sichtbar', '/sapore/steakdoener.jpg'],
+      tag: 'Der Klassiker', title: 'Steakdöner vom Jungbullen',
+      text: 'Echte Steakstreifen statt Formfleisch: am Spieß gegrillt, frisch aufgeschnitten und mit Salat, Tomate und Zwiebeln im Fladenbrot serviert.',
+      li: ['100 % Fleisch vom Jungbullen', 'Kein Hack, nichts Gepresstes', 'Sauce nach Wahl, auch scharf'], ic: 'check' },
+    { fig: ['Gemüse Kebap mit sichtbarem Grillgemüse und Käse', '/sapore/gemuese-kebap.jpg'],
+      tag: 'Vegetarisch', title: 'Gemüse Kebap',
+      text: 'Gegrilltes Gemüse, Grillkäse und Kräutersauce im knusprigen Fladen — die fleischlose Alternative, die tatsächlich satt macht.',
+      li: ['Frisches Grillgemüse der Saison', 'Täglich frisch geschnitten', 'Auch als Dürüm erhältlich'], ic: 'leaf' }
+  ].map(function (s) {
+    return '<article class="special">' +
+      '<div class="specialFigure">' + figure(s.fig[0], s.fig[1], 'Querformat, mindestens 1600 px breit', '3 / 2') + '</div>' +
+      '<span class="specialTag">' + esc(s.tag) + '</span>' +
+      '<h3 class="specialTitle">' + esc(s.title) + '</h3>' +
+      '<p class="specialText">' + esc(s.text) + '</p>' +
+      '<ul class="specialList">' + s.li.map(function (l) {
+        return '<li>' + icon(s.ic, 'iconSm check') + esc(l) + '</li>';
+      }).join('') + '</ul></article>';
+  }).join('');
+
+  document.getElementById('galleryGrid').innerHTML = [
+    ['Pizza aus dem Ofen, von oben fotografiert', '/sapore/galerie-pizza.jpg'],
+    ['Salatschale, von schräg oben', '/sapore/galerie-salat.jpg'],
+    ['Imbiss-Teller komplett angerichtet', '/sapore/galerie-imbiss.jpg'],
+    ['Innenaufnahme oder Außenansicht des Ladens', '/sapore/galerie-laden.jpg']
+  ].map(function (g) {
+    return figure(g[0], g[1], 'Quadratisch, mindestens 1000 × 1000 px', '1 / 1');
+  }).join('');
+
+  document.getElementById('steps').innerHTML = [
+    ['Gerichte auswählen', 'Kategorie wählen und Gerichte in den Warenkorb legen. Mengen passen Sie dort jederzeit an.'],
+    ['Liefern oder abholen', 'Abholung ist ohne Mindestbestellwert möglich. Für die Lieferung gilt ein Mindestbestellwert von ' + euro(DELIVERY.minOrder) + '.'],
+    ['Bestellung abschicken', 'Kontaktdaten eintragen und absenden. Wir bestätigen telefonisch und beginnen mit der Zubereitung.']
+  ].map(function (s, i) {
+    return '<article class="step"><span class="stepNum">Schritt ' + (i + 1) + '</span>' +
+      '<h3 class="stepTitle">' + esc(s[0]) + '</h3><p class="stepText">' + esc(s[1]) + '</p></article>';
+  }).join('');
+
+  var DAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+  var todayIdx = new Date().getDay();
+  document.getElementById('hoursTable').innerHTML = DAYS.map(function (d, i) {
+    return '<div class="hourRow' + (i === todayIdx ? ' hourRowToday' : '') + '"><span class="hourDay">' +
+      esc(d) + (i === todayIdx ? '<span class="srOnly"> (heute)</span>' : '') +
+      '</span><span>11:00 – 22:00 Uhr</span></div>';
+  }).join('');
+
+  document.getElementById('contactCards').innerHTML = [
+    { href: 'https://www.openstreetmap.org/search?query=Johann-Walling-Stra%C3%9Fe%2010%2C%2046325%20Borken', i: 'pin', l: 'Adresse', v: 'Johann-Walling-Straße 10', n: '46325 Borken — Route planen', blank: true },
+    { href: 'tel:+4928614303', i: 'phone', l: 'Telefon', v: PHONE, n: 'Täglich 11:00 – 22:00 Uhr' },
+    { href: 'https://www.instagram.com/saporegrill_offiziell/', i: 'instagram', l: 'Instagram', v: '@saporegrill_offiziell', n: 'Angebote und Neuigkeiten', blank: true }
+  ].map(function (c) {
+    return '<a class="contactCard" href="' + c.href + '"' + (c.blank ? ' target="_blank" rel="noopener noreferrer"' : '') + '>' +
+      '<span class="infoIcon">' + icon(c.i, 'iconSm') + '</span><div>' +
+      '<div class="infoLabel">' + esc(c.l) + '</div><span class="infoValue">' + esc(c.v) +
+      '</span><div class="infoNote">' + esc(c.n) + '</div></div></a>';
+  }).join('');
+
+  /* --- Öffnungsstatus -------------------------------------------------- */
+
+  function updateStatus() {
+    var now = new Date();
+    var h = now.getHours() + now.getMinutes() / 60;
+    var open = h >= 11 && h < 22;
+    var label, cls;
+    if (open) {
+      var mins = Math.round((22 - h) * 60);
+      label = mins <= 60 ? 'Geöffnet — noch ' + mins + ' Minuten' : 'Jetzt geöffnet';
+      cls = 'statusOpen';
+    } else {
+      label = h < 11 ? 'Öffnet um 11:00 Uhr' : 'Für heute geschlossen';
+      cls = 'statusClosed';
+    }
+    var html = '<span class="' + cls + '"><span class="dot"></span>' + label + '</span>';
+    document.getElementById('heroStatus').outerHTML = '<span id="heroStatus">' + html + '</span>';
+    document.getElementById('hoursStatus').outerHTML = '<span id="hoursStatus">' + html + '</span>';
+  }
+  updateStatus();
+  setInterval(updateStatus, 60000);
+
+  /* --- Speisekarte ----------------------------------------------------- */
+
+  var tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = MENU.map(function (c) {
+    return '<button type="button" role="tab" data-cat="' + c.id + '" id="tab-' + c.id +
+      '" aria-controls="panel" aria-selected="' + (c.id === state.category) + '" class="tab' +
+      (c.id === state.category ? ' tabActive' : '') + '">' + esc(c.name) + '</button>';
+  }).join('');
+
+  function renderMenu() {
+    var cat = MENU.filter(function (c) { return c.id === state.category; })[0];
+    Array.prototype.forEach.call(tabsEl.children, function (b) {
+      var on = b.getAttribute('data-cat') === state.category;
+      b.className = 'tab' + (on ? ' tabActive' : '');
+      b.setAttribute('aria-selected', on);
+    });
+    document.getElementById('panel').setAttribute('aria-labelledby', 'tab-' + cat.id);
+    document.getElementById('categoryNote').textContent = cat.note;
+    document.getElementById('items').innerHTML = cat.items.map(function (it) {
+      var tags = (it.tags || []).map(function (t) {
+        var extra = t === 'beliebt' ? ' tagBeliebt' : t === 'vegetarisch' ? ' tagVegetarisch' : '';
+        return '<span class="tag' + extra + '">' + esc(t) + '</span>';
+      }).join('');
+      return '<li class="item"><div class="itemHead">' +
+        '<h3 class="itemName">' + esc(it.name) + tags + '</h3>' +
+        '<span class="leader" aria-hidden="true"></span>' +
+        '<span class="price">' + euro(it.price) + '</span></div>' +
+        '<div class="itemFoot"><p class="itemDesc">' + esc(it.description) + '</p>' +
+        '<button type="button" class="addBtn" data-add="' + it.id + '">' + icon('plus', 'iconSm') +
+        '<span class="srOnly">' + esc(it.name) + ' </span>Hinzufügen</button></div></li>';
+    }).join('');
+  }
+
+  tabsEl.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-cat]');
+    if (!b) return;
+    state.category = b.getAttribute('data-cat');
+    renderMenu();
+  });
+
+  document.getElementById('items').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-add]');
+    if (!b) return;
+    var id = b.getAttribute('data-add');
+    state.lines[id] = Math.min((state.lines[id] || 0) + 1, 99);
+    state.done = null;
+    renderCart();
+  });
+
+  /* --- Warenkorb ------------------------------------------------------- */
+
+  function totals() {
+    var entries = Object.keys(state.lines).map(function (id) {
+      return { item: find(id), qty: state.lines[id] };
+    }).filter(function (e) { return e.item; });
+    var count = entries.reduce(function (s, e) { return s + e.qty; }, 0);
+    var subtotal = entries.reduce(function (s, e) { return s + e.item.price * e.qty; }, 0);
+    var feeApplies = state.mode === 'liefern' && subtotal > 0 && subtotal < DELIVERY.freeFrom;
+    var fee = feeApplies ? DELIVERY.fee : 0;
+    return {
+      entries: entries, count: count, subtotal: subtotal, fee: fee, feeApplies: feeApplies,
+      total: subtotal + fee,
+      belowMin: state.mode === 'liefern' && subtotal > 0 && subtotal < DELIVERY.minOrder
+    };
+  }
+
+  function field(id, label, opts) {
+    opts = opts || {};
+    var err = state.errors[id];
+    return '<div class="field"><label class="label" for="sapore-' + id + '">' + esc(label) +
+      (opts.optional ? ' <span class="optional">(optional)</span>' : '') + '</label>' +
+      '<input id="sapore-' + id + '" class="input' + (err ? ' inputError' : '') + '"' +
+      (opts.type ? ' type="' + opts.type + '"' : '') +
+      (opts.inputmode ? ' inputmode="' + opts.inputmode + '"' : '') +
+      (opts.maxlength ? ' maxlength="' + opts.maxlength + '"' : '') +
+      ' value="' + esc(opts.value || '') + '"' +
+      ' placeholder="' + esc(opts.placeholder || '') + '"' +
+      ' aria-invalid="' + (err ? 'true' : 'false') + '"' +
+      (err ? ' aria-describedby="sapore-' + id + '-err"' : '') + '>' +
+      (err ? '<span class="errorText" id="sapore-' + id + '-err">' + icon('alert', 'iconSm') + esc(err) + '</span>'
+           : (opts.helper ? '<span class="helper">' + esc(opts.helper) + '</span>' : '')) +
+      '</div>';
+  }
+
+  var form = { name: '', phone: '', email: '', street: '', zip: '', city: 'Borken', time: 'sofort', note: '', consent: false };
+
+  function renderCart() {
+    var t = totals();
+    document.getElementById('cartCount').innerHTML = t.count + '<span class="srOnly"> Artikel im Warenkorb</span>';
+    document.getElementById('barCount').textContent = t.count;
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-mode]'), function (b) {
+      var on = b.getAttribute('data-mode') === state.mode;
+      b.className = 'modeBtn' + (on ? ' modeBtnActive' : '');
+      b.setAttribute('aria-pressed', on);
+    });
+
+    var body = document.getElementById('cartBody');
+
+    if (state.done) {
+      body.innerHTML = '<div class="success">' +
+        '<span class="successIcon">' + icon('check', 'icon') + '</span>' +
+        '<h4 class="successTitle">Bestellung eingegangen</h4>' +
+        '<p class="noticeText">Ihre Bestellnummer: <span class="orderNo">' + esc(state.done.no) + '</span></p>' +
+        '<div class="summaryBox">' +
+        '<div class="summaryRow"><span>Art</span><span>' + (state.done.mode === 'liefern' ? 'Lieferung' : 'Abholung') + '</span></div>' +
+        '<div class="summaryRow"><span>Voraussichtlich</span><span>ca. ' + esc(state.done.eta) + '</span></div>' +
+        '<div class="summaryRow"><span>Summe</span><span>' + euro(state.done.total) + '</span></div></div>' +
+        '<p class="hintWarn">' + icon('info', 'iconSm') +
+        'Dies ist eine Entwurfs-Vorschau: die Bestellung wurde nicht an den Betrieb übermittelt.</p>' +
+        '<div class="successActions">' +
+        '<a href="tel:+4928614303" class="btn btnPrimary">' + icon('phone', 'icon') + PHONE + ' anrufen</a>' +
+        '<button type="button" class="btn btnGhost" data-reset>Neue Bestellung starten</button>' +
+        '</div></div>';
+      return;
+    }
+
+    var html = '';
+
+    if (t.entries.length === 0) {
+      html += '<div class="cartEmpty">' + icon('cart', 'cartEmptyIcon') +
+        '<p class="noticeText">Noch nichts ausgewählt. Tippen Sie oben auf „Hinzufügen“.</p></div>';
+    } else {
+      html += '<ul class="cartLines">' + t.entries.map(function (e) {
+        return '<li class="line"><p class="lineName">' + esc(e.item.name) + '</p>' +
+          '<div class="lineFoot"><span class="linePrice">' + e.qty + ' × ' + euro(e.item.price) +
+          ' = ' + euro(e.item.price * e.qty) + '</span><div class="stepper">' +
+          '<button type="button" class="stepBtn" data-dec="' + e.item.id + '" aria-label="Eine Portion ' + esc(e.item.name) + ' entfernen">' + icon('minus', 'iconSm') + '</button>' +
+          '<span class="stepValue">' + e.qty + '</span>' +
+          '<button type="button" class="stepBtn" data-inc="' + e.item.id + '" aria-label="Eine Portion ' + esc(e.item.name) + ' hinzufügen">' + icon('plus', 'iconSm') + '</button>' +
+          '<button type="button" class="stepBtn" data-del="' + e.item.id + '" aria-label="' + esc(e.item.name) + ' komplett entfernen">' + icon('trash', 'iconSm') + '</button>' +
+          '</div></div></li>';
+      }).join('') + '</ul>';
+
+      html += '<div class="totals"><div class="totalRow"><span>Zwischensumme</span><span>' + euro(t.subtotal) + '</span></div>';
+      if (state.mode === 'liefern') {
+        html += '<div class="totalRow"><span>Liefergebühr</span><span>' + (t.feeApplies ? euro(t.fee) : 'kostenlos') + '</span></div>';
+      }
+      html += '<div class="totalRow totalRowMain"><span>Gesamt</span><span>' + euro(t.total) + '</span></div></div>';
+
+      if (t.belowMin) {
+        html += '<p class="hintWarn">' + icon('alert', 'iconSm') + 'Noch ' + euro(DELIVERY.minOrder - t.subtotal) +
+          ' bis zum Mindestbestellwert von ' + euro(DELIVERY.minOrder) + '. Abholung ist ohne Mindestwert möglich.</p>';
+      }
+      if (state.mode === 'liefern' && t.feeApplies) {
+        html += '<p class="hintOk">' + icon('info', 'iconSm') + 'Ab ' + euro(DELIVERY.freeFrom) +
+          ' liefern wir kostenfrei — es fehlen noch ' + euro(DELIVERY.freeFrom - t.subtotal) + '.</p>';
+      }
+    }
+
+    var errKeys = Object.keys(state.errors);
+    html += '<form class="form" id="orderForm" novalidate>';
+    if (errKeys.length) {
+      html += '<div class="errorSummary" role="alert" tabindex="-1" id="errSummary">' +
+        '<p class="errorSummaryTitle">Bitte prüfen Sie ' +
+        (errKeys.length === 1 ? 'eine Angabe' : errKeys.length + ' Angaben') + ':</p>' +
+        '<ul class="errorSummaryList">' + errKeys.map(function (k) {
+          return '<li>' + (k === 'cart' ? esc(state.errors[k]) :
+            '<a href="#sapore-' + k + '">' + esc(state.errors[k]) + '</a>') + '</li>';
+        }).join('') + '</ul></div>';
+    }
+
+    html += '<div class="formGrid">' +
+      field('name', 'Name', { value: form.name, placeholder: 'Vor- und Nachname' }) +
+      field('phone', 'Telefon', { value: form.phone, type: 'tel', inputmode: 'tel', placeholder: '0170 1234567', helper: 'Für die Bestätigung Ihrer Bestellung.' }) +
+      field('email', 'E-Mail', { value: form.email, type: 'email', optional: true, placeholder: 'name@beispiel.de' });
+
+    if (state.mode === 'liefern') {
+      html += field('street', 'Straße und Hausnummer', { value: form.street, placeholder: 'Musterstraße 12' }) +
+        field('zip', 'Postleitzahl', { value: form.zip, inputmode: 'numeric', maxlength: 5, placeholder: '46325', helper: 'Liefergebiet: ' + DELIVERY.zips.join(', ') + ' Borken' }) +
+        field('city', 'Ort', { value: form.city });
+    } else {
+      html += '<div class="field"><span class="helper">Abholung: Johann-Walling-Straße 10, 46325 Borken — ca. ' +
+        DELIVERY.etaPickup + ' nach der Bestellung.</span></div>';
+    }
+
+    html += '<div class="field"><label class="label" for="sapore-time">Wunschzeit</label>' +
+      '<select id="sapore-time" class="select"><option value="sofort">So schnell wie möglich</option>' +
+      ['17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00'].map(function (s) {
+        return '<option value="' + s + '"' + (form.time === s ? ' selected' : '') + '>' + s + ' Uhr</option>';
+      }).join('') + '</select></div>';
+
+    html += '<div class="field"><label class="label" for="sapore-note">Anmerkung <span class="optional">(optional)</span></label>' +
+      '<textarea id="sapore-note" class="textarea" maxlength="500" placeholder="Z. B. ohne Zwiebeln, scharfe Sauce, bitte klingeln bei …">' + esc(form.note) + '</textarea></div>';
+
+    html += '</div>';
+
+    html += '<label class="checkboxRow" for="sapore-consent"><input id="sapore-consent" type="checkbox" class="checkbox"' +
+      (form.consent ? ' checked' : '') + '><span>Meine Daten dürfen zur Bearbeitung dieser Bestellung verwendet werden. ' +
+      'Sie werden nicht an Dritte weitergegeben.</span></label>';
+    if (state.errors.consent) {
+      html += '<span class="errorText">' + icon('alert', 'iconSm') + esc(state.errors.consent) + '</span>';
+    }
+
+    html += '<button type="submit" class="btn btnPrimary btnBlock">' + icon('check', 'icon') +
+      (state.mode === 'liefern' ? 'Lieferung bestellen' : 'Abholung bestellen') +
+      (t.total > 0 ? ' — ' + euro(t.total) : '') + '</button>';
+    html += '<p class="helper">Die Bestellung wird telefonisch bestätigt. Bezahlt wird bei Abholung bzw. bei Lieferung.</p>';
+    html += '</form>';
+
+    body.innerHTML = html;
+  }
+
+  function collect() {
+    ['name', 'phone', 'email', 'street', 'zip', 'city', 'note'].forEach(function (k) {
+      var el = document.getElementById('sapore-' + k);
+      if (el) form[k] = el.value;
+    });
+    var t = document.getElementById('sapore-time');
+    if (t) form.time = t.value;
+    var c = document.getElementById('sapore-consent');
+    if (c) form.consent = c.checked;
+  }
+
+  function validate() {
+    var e = {};
+    var t = totals();
+    if (form.name.trim().length < 2) e.name = 'Bitte geben Sie Ihren Namen an.';
+    if (!/^[\d\s+()/-]{6,}$/.test(form.phone.trim())) e.phone = 'Bitte eine erreichbare Telefonnummer angeben.';
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) {
+      e.email = 'Diese E-Mail-Adresse sieht nicht gültig aus.';
+    }
+    if (state.mode === 'liefern') {
+      if (form.street.trim().length < 4) e.street = 'Bitte Straße und Hausnummer angeben.';
+      if (!/^\d{5}$/.test(form.zip.trim())) e.zip = 'Bitte eine 5-stellige Postleitzahl angeben.';
+      else if (DELIVERY.zips.indexOf(form.zip.trim()) === -1) {
+        e.zip = 'Wir liefern derzeit nur nach ' + DELIVERY.zips.join(', ') + '. Abholung ist überall möglich.';
+      }
+      if (form.city.trim().length < 2) e.city = 'Bitte den Ort angeben.';
+    }
+    if (!form.consent) e.consent = 'Bitte bestätigen Sie die Verarbeitung Ihrer Daten.';
+    if (t.count === 0) e.cart = 'Ihr Warenkorb ist noch leer.';
+    else if (t.belowMin) e.cart = 'Mindestbestellwert für Lieferung: ' + euro(DELIVERY.minOrder) + '.';
+    return e;
+  }
+
+  document.getElementById('cartBody').addEventListener('click', function (e) {
+    var inc = e.target.closest('[data-inc]');
+    var dec = e.target.closest('[data-dec]');
+    var del = e.target.closest('[data-del]');
+    var reset = e.target.closest('[data-reset]');
+    if (inc) { state.lines[inc.getAttribute('data-inc')]++; renderCart(); return; }
+    if (dec) {
+      var idD = dec.getAttribute('data-dec');
+      if (--state.lines[idD] <= 0) delete state.lines[idD];
+      renderCart(); return;
+    }
+    if (del) { delete state.lines[del.getAttribute('data-del')]; renderCart(); return; }
+    if (reset) { state.done = null; state.errors = {}; renderCart(); }
+  });
+
+  document.getElementById('cartBody').addEventListener('submit', function (e) {
+    e.preventDefault();
+    collect();
+    state.errors = validate();
+    if (Object.keys(state.errors).length) {
+      renderCart();
+      var s = document.getElementById('errSummary');
+      if (s) { s.focus(); s.scrollIntoView({ block: 'center' }); }
+      return;
+    }
+    var t = totals();
+    state.done = {
+      no: 'SG-' + Math.floor(1000 + Math.random() * 9000),
+      mode: state.mode,
+      total: t.total,
+      eta: state.mode === 'liefern' ? DELIVERY.etaDelivery : DELIVERY.etaPickup
+    };
+    state.lines = {};
+    state.errors = {};
+    renderCart();
+    document.getElementById('warenkorb').scrollIntoView({ block: 'center' });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-mode]'), function (b) {
+    b.addEventListener('click', function () {
+      collect();
+      state.mode = b.getAttribute('data-mode');
+      state.errors = {};
+      renderCart();
+    });
+  });
+
+  /* --- Mobiles Menü ---------------------------------------------------- */
+
+  var burger = document.getElementById('burger');
+  var mobileNav = document.getElementById('mobileNav');
+  burger.addEventListener('click', function () {
+    var open = mobileNav.hidden;
+    mobileNav.hidden = !open;
+    burger.setAttribute('aria-expanded', open);
+    burger.setAttribute('aria-label', open ? 'Menü schließen' : 'Menü öffnen');
+  });
+  mobileNav.addEventListener('click', function (e) {
+    if (e.target.closest('a')) {
+      mobileNav.hidden = true;
+      burger.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  renderMenu();
+  renderCart();
+})();
+
+</script>
+
+</body>
+</html>
