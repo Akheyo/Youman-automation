@@ -1,0 +1,428 @@
+{
+  "summary": {
+    "health_score": 75,
+    "business_type": "B2B-Dienstleister, Software und KI-Automation, Ein-Personen-Unternehmen mit regionalem Schwerpunkt (Borken, Muensterland), taetig im deutschsprachigen Raum",
+    "audit_date": "2026-09-02",
+    "pages_audited": 23,
+    "pages_indexable": 20,
+    "top_findings": [
+      "Sechs Branchenseiten mit 222 bis 259 Woertern, strukturell identisch aufgebaut, vier davon ohne Referenzbezug",
+      "Die Uebersicht der Leistungen hat 217 Woerter und ist die duennste indexierbare Seite",
+      "Die Startseite laedt alle fuenf Hero-Motive sofort, 488 kB mobil und 976 kB am Rechner",
+      "Kein Google-Unternehmensprofil vorhanden, groesster Einzelhebel fuer lokale Sichtbarkeit",
+      "Keine Seite im Frage-Antwort-Format, damit keine zitierfaehige Antwort fuer KI-Suchsysteme"
+    ],
+    "quick_wins": [
+      "Bildfeld ins Article-Objekt eintragen, Bild wird im Layout bereits berechnet",
+      "Widerspruch beim Wirkungsraum aufloesen, Auszeichnung sagt Deutschland, Text sagt DACH",
+      "Beschreibung der Kontaktseite von 89 auf 120 bis 160 Zeichen verlaengern",
+      "Die beiden Referenzseiten intern anbinden, sie haben nur vier und fuenf Verweise",
+      "Einwilligungsbox im Kontaktformular auf mindestens 24 mal 24 Bildpunkte vergroessern"
+    ]
+  },
+  "categories": [
+    {
+      "name": "Technical SEO",
+      "score": 85,
+      "weight": 0.22,
+      "what_works": [
+        "Statisches Pruefskript meldet ueber alle 23 Seiten null Befunde",
+        "Kein waagerechter Ueberlauf zwischen 320 und 1440 Bildpunkten",
+        "Vollstaendig vorgerendertes HTML, kein JavaScript noetig",
+        "Keine Anfragen an fremde Hosts, keine Cookies",
+        "Saubere Trennung von Sitemap, noindex und kanonischen Adressen",
+        "axe-core null Verstoesse gegen WCAG 2.1 A und AA (die Anforderung an die Mindestgroesse von Bedienzielen aus 2022 prueft diese Fassung nicht mit)"
+      ],
+      "findings": [
+        {
+          "title": "Jede Seite ist unter zwei Adressen erreichbar",
+          "severity": "Medium",
+          "description": "Interne Verweise zeigen auf die Form ohne abschliessenden Schraegstrich, die kanonische Adresse traegt einen. Es gibt keine Weiterleitung, nur die kanonische Angabe vereinheitlicht das.",
+          "recommendation": "Interne Verweise auf die kanonische Form angleichen."
+        },
+        {
+          "title": "IndexNow ist nicht eingerichtet",
+          "severity": "Medium",
+          "description": "Weder Schluessel noch Anstoss im Veroeffentlichungsablauf. Bing und Microsoft Copilot erfahren Aenderungen spaeter als noetig.",
+          "recommendation": "Schluesseldatei ablegen und einen Ping-Schritt in den Pages-Workflow aufnehmen."
+        },
+        {
+          "title": "Einwilligungsbox im Kontaktformular misst 20 mal 20 Bildpunkte",
+          "severity": "Medium",
+          "description": "Die seit 2022 geltende Anforderung an die Mindestgroesse von Bedienzielen verlangt 24 mal 24. Das Kaestchen steht unmittelbar vor dem Absenden einer Anfrage. axe-core in der geprueften Fassung deckt dieses Kriterium nicht ab, deshalb erschien es dort nicht.",
+          "recommendation": "Auf mindestens 24 mal 24 Bildpunkte vergroessern, besser 44 mal 44."
+        },
+        {
+          "title": "Drei weitere Bedienziele unter der Mindestgroesse",
+          "severity": "Low",
+          "description": "Brotkrumen-Verweis 'Home' 35 Bildpunkte breit, Telefonverweis in der Fusszeile 20 Bildpunkte hoch, Datenschutzhinweis auf der Kontaktseite in 12 Bildpunkten.",
+          "recommendation": "Trefferflaechen vergroessern, Hinweistext auf mindestens 14 Bildpunkte anheben."
+        },
+        {
+          "title": "Beschreibung der Kontaktseite mit 89 Zeichen die kuerzeste im Bestand",
+          "severity": "Low",
+          "description": "Liegt unter der Schwelle, ab der Google die eigene Beschreibung uebernimmt. Betrifft die am staerksten verlinkte Seite des Auftritts mit 189 eingehenden Verweisen.",
+          "recommendation": "Auf 120 bis 160 Zeichen verlaengern."
+        },
+        {
+          "title": "Referenzseiten mit sehr wenig interner Verlinkung",
+          "severity": "Low",
+          "description": "Vier und fuenf eingehende Verweise gegenueber 189 auf der Kontaktseite. Kein Querverweis zwischen den beiden Projekten.",
+          "recommendation": "Querverweise zwischen den Projekten und von den passenden Leistungs- und Branchenseiten setzen."
+        },
+        {
+          "title": "Regionalseite nur in der Fusszeile verlinkt",
+          "severity": "Low",
+          "description": "25 eingehende Verweise, damit am Rand der internen Struktur.",
+          "recommendation": "Verweise von der Startseite und von Ueber uns ergaenzen."
+        },
+        {
+          "title": "Keine meta-basierten Sicherheitsangaben gesetzt",
+          "severity": "Low",
+          "description": "GitHub Pages laesst keine eigenen HTTP-Kopfzeilen zu, aber Referrer-Policy und eine Inhaltsrichtlinie waeren als Meta-Element moeglich.",
+          "recommendation": "Beide als Meta-Element in das Layout aufnehmen."
+        },
+        {
+          "title": "Kanonische Angabe auf der Fehlerseite verweist auf sich selbst",
+          "severity": "Low",
+          "description": "Die 404-Seite traegt eine kanonische Angabe, obwohl sie auf noindex steht.",
+          "recommendation": "Kanonische Angabe dort weglassen."
+        }
+      ]
+    },
+    {
+      "name": "Content Quality",
+      "score": 62,
+      "weight": 0.23,
+      "what_works": [
+        "Kasten 'Was hier bewusst fehlt' auf der Referenzuebersicht benennt offen, was nicht belegt ist",
+        "Die einzige Zahl im Auftritt, 2.556 Palettentypen, ist auf vier Seiten identisch verwendet",
+        "Adresse und Telefon ueber alle 22 indexierbaren Seiten wortgleich",
+        "Datenschutzerklaerung erkennbar selbst geprueft statt aus einer Vorlage kopiert",
+        "Keine erfundenen Mitarbeiterzahlen, Umsaetze oder Kundenzahlen",
+        "Sichtbare Selbstkorrektur: die Kontaktseite wuchs von 116 auf 411 Woerter"
+      ],
+      "findings": [
+        {
+          "title": "Sechs Branchenseiten sind duenn und einander strukturell sehr aehnlich",
+          "severity": "High",
+          "description": "Alle zwischen 222 und 259 Woertern, gleicher Bauplan aus Einleitung, fuenf Problemstellungen und Leistungsverweis. Nur zwei von sechs nennen ein echtes Referenzprojekt.",
+          "recommendation": "Je Seite etwas ergaenzen, das nur dort steht: ein benanntes System, ein konkreter Ablauf, eine Eigenheit der Branche. Ziel 500 bis 700 Woerter mit echtem Inhalt."
+        },
+        {
+          "title": "Die Uebersicht der Leistungen ist die duennste indexierbare Seite",
+          "severity": "High",
+          "description": "217 Woerter, obwohl der Titel den gesamten Leistungsumfang beansprucht.",
+          "recommendation": "Einordnung ergaenzen: wie die fuenf Bereiche zusammenhaengen und womit ein Projekt ueblicherweise anfaengt."
+        },
+        {
+          "title": "Wiederkehrende Textbloecke senken den Anteil eigenen Inhalts",
+          "severity": "Medium",
+          "description": "Der Vierschritt-Prozess und der Kasten zu Preisen stehen wortgleich auf mehreren ohnehin knappen Seiten.",
+          "recommendation": "Auf den duennen Seiten durch seitenspezifischen Inhalt ersetzen."
+        },
+        {
+          "title": "Fachkenntnis steht auf schmaler Beweisgrundlage",
+          "severity": "Medium",
+          "description": "Keine Profile, kein ausgeschriebener Werdegang, und der Name erscheint einmal als 'Amanuel K.' und einmal ausgeschrieben.",
+          "recommendation": "Ein Profil verknuepfen und einen Absatz zum Werdegang ergaenzen. Namensschreibung vereinheitlichen."
+        },
+        {
+          "title": "Zwei Referenzprojekte tragen fast die gesamte Autoritaet",
+          "severity": "Medium",
+          "description": "Weitere belegte Projekte fehlen, und die beiden vorhandenen sind die einzigen Seiten, die etwas belegen statt zu behaupten.",
+          "recommendation": "Weitere abgeschlossene Projekte aufnehmen, sobald eine Freigabe des Kunden vorliegt."
+        },
+        {
+          "title": "Referenzprojekte ohne Datumsangabe",
+          "severity": "Medium",
+          "description": "Beiden fehlt jedes Aktualitaetssignal.",
+          "recommendation": "Jahresangabe ergaenzen, sofern belegt. Nicht schaetzen."
+        },
+        {
+          "title": "Uneinheitliche Bezeichnung bei nur einer Person",
+          "severity": "Low",
+          "description": "Die Formulierung spricht von 'den Menschen hinter youman', tatsaechlich steht eine Person dahinter.",
+          "recommendation": "Formulierung an die Tatsache angleichen."
+        },
+        {
+          "title": "Keine Frage-Antwort-Passagen trotz geeigneter Inhalte",
+          "severity": "Low",
+          "description": "Mehrere Stellen beantworten faktisch eine Frage, sind aber nicht als solche formuliert.",
+          "recommendation": "Kompakten Frage-Antwort-Bereich anlegen."
+        }
+      ]
+    },
+    {
+      "name": "On-Page SEO",
+      "score": 84,
+      "weight": 0.2,
+      "what_works": [
+        "Genau eine Hauptueberschrift je Seite auf allen 23 Seiten",
+        "Keine uebersprungenen Gliederungsstufen",
+        "Keine doppelten Titel oder Beschreibungen unter den indexierbaren Seiten",
+        "Kein toter interner Verweis",
+        "Titellaengen zwischen 18 und 60 Zeichen, alle innerhalb der Anzeigegrenze"
+      ],
+      "findings": [
+        {
+          "title": "Interne Verweise sind sehr ungleich verteilt",
+          "severity": "Medium",
+          "description": "Kontakt 189, Ueber uns 93, Startseite 91, Leistungs- und Branchenseiten je 73 bis 79, Muensterland 25, die beiden Referenzprojekte nur 5 und 4. Ausgerechnet die Seiten mit dem staerksten Inhalt haengen am Rand.",
+          "recommendation": "Verweise auf die Referenzprojekte und die Regionalseite ergaenzen."
+        },
+        {
+          "title": "Beschreibung der Kontaktseite unter der Wirksamkeitsschwelle",
+          "severity": "Low",
+          "description": "89 Zeichen, alle uebrigen Seiten liegen zwischen 117 und 164.",
+          "recommendation": "Auf 120 bis 160 Zeichen verlaengern."
+        }
+      ]
+    },
+    {
+      "name": "Schema / Structured Data",
+      "score": 78,
+      "weight": 0.1,
+      "what_works": [
+        "Alle JSON-LD-Bloecke sind gueltiges JSON, jedes Objekt traegt einen Typ",
+        "Alle Verweise zwischen den Knoten loesen korrekt auf",
+        "Dienstleistung und Beitrag haengen nur an den passenden Seitentypen",
+        "Keine erfundenen Felder: keine Sternebewertung, keine Oeffnungszeiten, kein Preis, kein Verweis auf eine fehlende Logodatei"
+      ],
+      "findings": [
+        {
+          "title": "Dem Article-Objekt fehlt das Bildfeld",
+          "severity": "High",
+          "description": "Das Bild wird im Layout bereits fuer die Teilen-Vorschau berechnet und von beiden Referenzseiten uebergeben, ist aber nicht in das Objekt eingetragen. Google fuehrt das Feld als Pflichtangabe.",
+          "recommendation": "Die vorhandene Variable als Bildfeld in das Article-Objekt eintragen. Eine Zeile, keine neuen Daten noetig."
+        },
+        {
+          "title": "Wirkungsraum widerspricht dem Seitentext",
+          "severity": "Medium",
+          "description": "Die Auszeichnung sagt durchgehend Deutschland, der Text sagt an drei Stellen DACH-Raum.",
+          "recommendation": "Auszeichnung um Oesterreich und die Schweiz erweitern, oder den Text zuruecknehmen."
+        },
+        {
+          "title": "Brotkrumen: Zwischenglieder ohne abschliessenden Schraegstrich",
+          "severity": "Medium",
+          "description": "Die Zwischenstationen werden von Hand ohne Schraegstrich angegeben, die tatsaechlichen Adressen tragen einen.",
+          "recommendation": "In den drei betroffenen Seitenvorlagen angleichen."
+        },
+        {
+          "title": "Impressum und Datenschutz ohne Brotkrumen-Auszeichnung",
+          "severity": "Low",
+          "description": "Beide zeigen eine Brotkrumennavigation, geben die Eigenschaft aber nicht an das Layout weiter.",
+          "recommendation": "Eigenschaft durchreichen."
+        }
+      ]
+    },
+    {
+      "name": "Performance (CWV)",
+      "score": 72,
+      "weight": 0.1,
+      "what_works": [
+        "Layout-Sprung auf allen 23 Seiten bei 0,000",
+        "Das ladezeitbestimmende Bild ist korrekt bevorzugt behandelt",
+        "Alle 78 Bildelemente tragen Breite und Hoehe",
+        "Schriften selbst gehostet, vorab angemeldet, mit Austauschverhalten",
+        "Keine Anfragen an fremde Hosts beim Laden"
+      ],
+      "findings": [
+        {
+          "title": "Die Startseite laedt alle fuenf Hero-Motive beim ersten Aufruf",
+          "severity": "High",
+          "description": "Vier davon sind als verzoegert markiert, aber alle fuenf liegen uebereinander im sichtbaren Bereich, deshalb greift die Markierung nicht. Ergebnis 488 kB mobil und 976 kB am Rechner, gegenueber 195 bis 336 kB auf jeder anderen Seite.",
+          "recommendation": "Zahl der Motive senken oder die Bilder per Skript nachladen, sobald das erste angezeigt wird."
+        },
+        {
+          "title": "Fallback der Hero-Bilder groesser als jede angebotene Groesse",
+          "severity": "Medium",
+          "description": "Bei einem Motiv 1345 kB gegenueber 406 kB fuer die groesste Fassung in der Auswahlliste. Kein aktueller Browser laedt die Datei, gemessen null von 46 Anfragen. Rund 3,6 MB toter Ballast im Auslieferungsstand.",
+          "recommendation": "In der Bildkomponente die groesste genutzte Breite als Obergrenze setzen."
+        }
+      ]
+    },
+    {
+      "name": "AI Search Readiness",
+      "score": 68,
+      "weight": 0.1,
+      "what_works": [
+        "robots.txt sperrt keinen KI-Crawler",
+        "llms.txt vorhanden und aus denselben Daten gebaut wie die Seiten",
+        "Vollstaendig vorgerendertes HTML, kein JavaScript noetig",
+        "Referenzprojekte enthalten konkrete, zitierfaehige Einzelaussagen"
+      ],
+      "findings": [
+        {
+          "title": "Keine Seite im Frage-Antwort-Format",
+          "severity": "High",
+          "description": "Die Fragen in den Ueberschriften sind Aufforderungen, keine Informationsfragen. Ohne Antwort auf der Seite: Kosten, Dauer, Unterschied zwischen Chatbot und Automation, Anbindung an SAP oder Lexware, Eignung fuer kleine Betriebe, Einzugsgebiet.",
+          "recommendation": "Fuenf bis acht Fragen mit Antwort und passender Auszeichnung anlegen."
+        },
+        {
+          "title": "Passagenlaenge unter dem fuer Zitate guenstigen Bereich",
+          "severity": "Medium",
+          "description": "Die Absaetze sind im Mittel 15 Woerter lang, guenstig waeren 130 bis 170 Woerter am Stueck.",
+          "recommendation": "Auf den Fachseiten laengere zusammenhaengende Passagen bilden."
+        },
+        {
+          "title": "Referenzbeitraege ohne Datumsangaben",
+          "severity": "Medium",
+          "description": "Weder Veroeffentlichungs- noch Aenderungsdatum in den strukturierten Daten.",
+          "recommendation": "Jahresangabe ergaenzen, sofern belegt."
+        }
+      ]
+    },
+    {
+      "name": "Images",
+      "score": 76,
+      "weight": 0.05,
+      "what_works": [
+        "Alternativtexte zentral hinterlegt, beschreibend, ohne Wiederholung des Titels",
+        "Hero-Bilder bewusst mit leerem Alternativtext als schmueckende Bilder",
+        "77 von 78 Bildern laden verzoegert, nur das ladezeitbestimmende nicht",
+        "Responsive Bildquellen mit Breitenangaben durchgaengig vorhanden",
+        "Breite und Hoehe ueberall gesetzt"
+      ],
+      "findings": [
+        {
+          "title": "Fallback in Kameraaufloesung statt begrenzt",
+          "severity": "Medium",
+          "description": "Bis 6000 mal 4000 Bildpunkte je Motiv, zusammen rund 3,6 MB, die kein Browser laedt.",
+          "recommendation": "Obergrenze auf die groesste genutzte Breite setzen."
+        },
+        {
+          "title": "Elf Motive liegen als PNG vor, obwohl es Fotos sind",
+          "severity": "Medium",
+          "description": "In den Quelldateien rund zehnmal so schwer je Bildpunkt wie die Hero-Fotos, zusammen etwa 21 MB zusaetzlich im Projektarchiv. Auf die Auslieferung wirkt es sich kaum aus, weil alles zu WebP umgerechnet wird.",
+          "recommendation": "Quelldateien als JPEG oder WebP ablegen, um Archivgroesse und Bauzeit zu senken."
+        }
+      ]
+    },
+    {
+      "name": "Local SEO",
+      "score": 70,
+      "weight": 0.0,
+      "what_works": [
+        "Name, Adresse und Telefon ueber alle 22 indexierbaren Seiten wortgleich",
+        "Adresse wird nur gerendert, wenn sie vollstaendig vorliegt",
+        "Genau eine Regionalseite mit eigener Aussage statt vervielfaeltigter Ortsseiten",
+        "Regionalseite benennt ausdruecklich, wo Naehe nichts aendert",
+        "Ortsbezuege im Text wirken an keiner Stelle aufgesetzt"
+      ],
+      "findings": [
+        {
+          "title": "Kein Google-Unternehmensprofil vorhanden",
+          "severity": "High",
+          "description": "Fuer einen Dienstleister ohne Ladengeschaeft der wirkungsvollste einzelne Hebel fuer lokale Sichtbarkeit. Alle noetigen Angaben liegen im Projekt bereits vor und sind untereinander stimmig.",
+          "recommendation": "Profil anlegen und die vorhandenen Angaben unveraendert uebernehmen. Entscheiden, ob die Adresse oeffentlich erscheint oder das Profil als Dienstleistungsgebiet laeuft."
+        },
+        {
+          "title": "Region fehlt in der Anschrift der strukturierten Daten",
+          "severity": "Medium",
+          "description": "Das Feld fuer das Bundesland ist nicht gesetzt, obwohl Nordrhein-Westfalen belegt ist.",
+          "recommendation": "Feld ergaenzen."
+        },
+        {
+          "title": "Geokoordinaten fehlen",
+          "severity": "Low",
+          "description": "Bewusst weggelassen, aber unabhaengig vom Unternehmensprofil nachholbar.",
+          "recommendation": "Koordinaten der Anschrift eintragen, sobald das Profil steht."
+        },
+        {
+          "title": "Impressum rechtlich unvollstaendig",
+          "severity": "Medium",
+          "description": "Nur Tatsachenangaben, Rechtstexte stehen als Platzhalter aus. Deshalb korrekt auf noindex.",
+          "recommendation": "Vor staerkerer lokaler Bewerbung durch die Rechtsberatung ergaenzen lassen."
+        }
+      ]
+    },
+    {
+      "name": "Visual / Mobile",
+      "score": 82,
+      "weight": 0.0,
+      "what_works": [
+        "Kein waagerechter Ueberlauf in keiner der 35 geprueften Kombinationen",
+        "Hauptueberschrift und mindestens eine Schaltflaeche oberhalb der Falz auf allen sieben Seiten",
+        "Kopfleiste und Vollbildmenue arbeiten sauber bei 375 und 768 Bildpunkten"
+      ],
+      "findings": [
+        {
+          "title": "Einwilligungsbox 20 mal 20 Bildpunkte",
+          "severity": "Medium",
+          "description": "Unter der geforderten Mindestgroesse von 24 mal 24, an der empfindlichsten Stelle des Auftritts.",
+          "recommendation": "Vergroessern."
+        },
+        {
+          "title": "Drei kleine Bedienziele und ein zu kleiner Hinweistext",
+          "severity": "Low",
+          "description": "Brotkrumen 'Home' 35 Bildpunkte breit, Telefonverweis 20 Bildpunkte hoch, Datenschutzhinweis 12 Bildpunkte gross.",
+          "recommendation": "Trefferflaechen und Schriftgroesse anheben."
+        }
+      ]
+    }
+  ],
+  "action_plan": {
+    "phases": [
+      {
+        "name": "Phase 1: sofort",
+        "timeframe": "eine Stunde",
+        "items": [
+          "Bildfeld ins Article-Objekt eintragen",
+          "Widerspruch beim Wirkungsraum aufloesen",
+          "Beschreibung der Kontaktseite verlaengern",
+          "Region in die Anschrift eintragen",
+          "Schraegstriche in den Brotkrumen angleichen"
+        ]
+      },
+      {
+        "name": "Phase 2: diese Woche",
+        "timeframe": "je ein bis drei Stunden",
+        "items": [
+          "Hero auf zwei bis drei Motive kuerzen oder das Laden staffeln",
+          "Fallback der Hero-Bilder begrenzen",
+          "Die beiden Referenzseiten intern anbinden",
+          "Die Regionalseite aus der Fusszeile holen",
+          "Datum an die Referenzprojekte, sofern belegt"
+        ]
+      },
+      {
+        "name": "Phase 3: dieser Monat",
+        "timeframe": "der eigentliche Hebel",
+        "items": [
+          "Google-Unternehmensprofil einrichten",
+          "Die sechs Branchenseiten inhaltlich trennen",
+          "Die Uebersicht der Leistungen ausbauen",
+          "Frage-Antwort-Bereich mit fuenf bis acht Fragen anlegen",
+          "Fachkenntnis belegen: Profil verknuepfen, Werdegang ergaenzen"
+        ]
+      },
+      {
+        "name": "Phase 4: laufend",
+        "timeframe": "fortlaufend",
+        "items": [
+          "Sitemap in der Search Console einreichen",
+          "Live-Seite nach dem Umzug gegenpruefen",
+          "IndexNow einrichten",
+          "Impressum vervollstaendigen",
+          "Pruefung bei jeder Aenderung an Seiten mitlaufen lassen"
+        ]
+      }
+    ]
+  },
+  "not_verifiable": {
+    "reason": "Die Netzwerkrichtlinie dieser Sitzung blockiert alle externen Hosts. Geprueft wurde der gebaute Auslieferungsstand, erzeugt mit denselben Einstellungen wie die Veroeffentlichung.",
+    "items": [
+      "Die tatsaechlich ausgelieferte Live-Seite samt HTTP-Kopfzeilen und HTTPS-Erzwingung",
+      "Felddaten zu den Core Web Vitals aus echten Nutzerbesuchen",
+      "Indexierungsstand und Suchleistung aus der Google Search Console",
+      "Verweise von fremden Seiten",
+      "Erwaehnungen und Zitate in KI-Systemen",
+      "Bewertungen und Eintraege in Verzeichnissen"
+    ]
+  },
+  "artifacts": {
+    "findings_dir": "findings/",
+    "screenshots_dir": "screenshots/"
+  }
+}

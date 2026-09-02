@@ -47,3 +47,10 @@ __pycache__/
 *.pyc
 *.gml
 *.xml.gz
+
+# Isolierte Laufzeit des SEO-Skills. Wird mit "claude-seo setup" erzeugt,
+# enthaelt ein Python-venv und einen eigenen Chromium: mehrere hundert
+# Megabyte, maschinenabhaengig und jederzeit neu herstellbar.
+.claude/skills/seo/.venv/
+.claude/skills/seo/ms-playwright/
+.claude/skills/seo/runtime-state.json
