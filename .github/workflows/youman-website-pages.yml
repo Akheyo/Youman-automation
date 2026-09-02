@@ -35,6 +35,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      adressen: ${{ steps.adressen.outputs.anzahl }}
+      schluessel: ${{ steps.schluessel.outputs.wert }}
     defaults:
       run:
         working-directory: youman-website
@@ -81,17 +84,37 @@ jobs:
       - name: Sitemap merken
         id: adressen
         # Die Liste der Adressen aus der Sitemap, fuer die Meldung an
-        # IndexNow im naechsten Job. Sie steht hier, weil der Deploy-Job den
-        # gebauten Ordner nicht mehr hat.
+        # IndexNow im letzten Job. Sie entsteht hier, weil weder der
+        # Deploy-Job noch der IndexNow-Job den gebauten Ordner hat.
+        #
+        # Der Pfad ist relativ zu youman-website, nicht zum Repository:
+        # Dieser Job hat working-directory auf youman-website gesetzt. Beim
+        # ersten Versuch stand hier der Pfad vom Repositorystamm aus, damit
+        # suchte der Schritt unter youman-website/youman-website und fand
+        # nichts. Er meldete das korrekt als "keine Sitemap" und wurde
+        # uebersprungen, ohne den Lauf rot zu faerben.
         run: |
-          if [ -f youman-website/dist/sitemap-0.xml ]; then
-            grep -o '<loc>[^<]*</loc>' youman-website/dist/sitemap-0.xml \
+          if [ -f dist/sitemap-0.xml ]; then
+            grep -o '<loc>[^<]*</loc>' dist/sitemap-0.xml \
               | sed 's|<loc>||; s|</loc>||' > /tmp/adressen.txt
             echo "anzahl=$(wc -l < /tmp/adressen.txt)" >> "$GITHUB_OUTPUT"
+            echo "Adressen fuer IndexNow: $(wc -l < /tmp/adressen.txt)"
+            head -3 /tmp/adressen.txt
           else
             echo "anzahl=0" >> "$GITHUB_OUTPUT"
+            echo "Keine Sitemap gebaut. Das ist richtig, solange die Seite auf noindex steht."
           fi
-          cat /tmp/adressen.txt 2>/dev/null || echo "keine Sitemap, Seite steht auf noindex"
+
+      - name: Schluessel merken
+        id: schluessel
+        # Der IndexNow-Job hat keinen Checkout, deshalb wird der Schluessel
+        # hier ausgelesen und als Ausgabe weitergereicht. Er ist kein
+        # Geheimnis: Er steht ohnehin oeffentlich unter /<schluessel>.txt,
+        # genau das ist der Nachweis.
+        run: |
+          wert=$(grep -oE "'[A-Za-z0-9-]{8,128}'" src/data/indexnow.ts | tr -d "'" | head -1)
+          echo "wert=$wert" >> "$GITHUB_OUTPUT"
+          echo "Schluessel: $wert"
 
       - uses: actions/upload-artifact@v4
         if: steps.adressen.outputs.anzahl != '0'
@@ -126,9 +149,12 @@ jobs:
   # Deploy rot zu faerben. Die Seite ist dann trotzdem veroeffentlicht.
   # ---------------------------------------------------------------------
   indexnow:
-    needs: deploy
+    needs: [build, deploy]
+    if: needs.build.outputs.adressen != '0' && needs.build.outputs.adressen != ''
     runs-on: ubuntu-latest
     continue-on-error: true
+    env:
+      SCHLUESSEL: ${{ needs.build.outputs.schluessel }}
     steps:
       - uses: actions/download-artifact@v4
         id: laden
@@ -148,8 +174,8 @@ jobs:
           # unter github.io liegt.
           erste=$(head -1 "$datei")
           gastgeber=$(echo "$erste" | sed -E 's|^https?://([^/]+).*|\1|')
-          schluessel=$(grep -oE "'[A-Za-z0-9-]{8,128}'" youman-website/src/data/indexnow.ts 2>/dev/null | tr -d "'" | head -1)
-          schluessel=${schluessel:-a7f3c2e9b41d4856ae0f92c7d3b18e64}
+          schluessel="$SCHLUESSEL"
+          [ -n "$schluessel" ] || { echo "Kein Schluessel uebergeben, nichts zu melden."; exit 0; }
 
           echo "Gastgeber: $gastgeber"
           echo "Adressen:  $(wc -l < "$datei")"
