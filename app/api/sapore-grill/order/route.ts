@@ -5,14 +5,17 @@
  * Mindestbestellwert rechnet der Server aus der eigenen Karte nach, damit eine
  * manipulierte Anfrage keine falschen Summen erzeugt.
  *
- * Zustellung der Bestellung: Ist `SAPORE_ORDER_WEBHOOK` gesetzt, geht die
- * Bestellung dorthin (z. B. n8n, Make, Bestell-Drucker). Ohne Webhook wird sie
- * protokolliert und die Bestellnummer trotzdem zurueckgegeben — die Seite bittet
- * den Gast dann um die telefonische Bestaetigung.
+ * Reihenfolge: erst speichern, dann melden. Die Datenbank ist die Quelle der
+ * Wahrheit — die Bestellung erscheint in der Kuechenansicht, auch wenn Telegram
+ * oder ein Webhook gerade nicht erreichbar ist. Faellt das Speichern aus
+ * (Supabase noch nicht eingerichtet), bekommt der Gast trotzdem seine
+ * Bestellnummer und die Bitte, telefonisch zu bestaetigen.
  */
 
 import { NextResponse } from 'next/server';
-import { BUSINESS, DELIVERY, findItem, formatPrice } from '@/lib/sapore/menu';
+import { DELIVERY, findItem, formatPrice } from '@/lib/sapore/menu';
+import { markForwarded, storeOrder, type Order } from '@/lib/sapore/orders';
+import { notifyNewOrder } from '@/lib/sapore/notify';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -118,46 +121,45 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (subtotal < DELIVERY.freeFrom) fee = DELIVERY.fee;
   }
 
-  const order = {
-    orderNo: orderNumber(),
-    receivedAt: new Date().toISOString(),
-    business: BUSINESS.name,
+  const order: Order = {
+    order_no: orderNumber(),
     mode,
-    lines,
+    items: lines,
     subtotal,
     fee,
     total: Math.round((subtotal + fee) * 100) / 100,
-    customer: { name, phone, email, street, zip, city },
-    time: text(body.time, 20) || 'sofort',
+    customer_name: name,
+    customer_phone: phone,
+    customer_email: email,
+    street,
+    zip,
+    city,
+    wish_time: text(body.time, 20) || 'sofort',
     note: text(body.note, 500),
-    eta: mode === 'liefern' ? DELIVERY.etaDelivery : DELIVERY.etaPickup,
   };
 
-  const webhook = process.env.SAPORE_ORDER_WEBHOOK;
-  if (webhook) {
-    try {
-      const response = await fetch(webhook, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(order),
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!response.ok) {
-        console.error('[sapore] Webhook antwortete mit', response.status);
-      }
-    } catch (error) {
-      // Der Gast soll trotzdem eine Bestellnummer bekommen und anrufen koennen.
-      console.error('[sapore] Webhook nicht erreichbar:', error);
-    }
-  } else {
-    console.info('[sapore] Bestellung eingegangen (kein Webhook konfiguriert):', order.orderNo);
+  // 1. Speichern — ab hier ist die Bestellung nicht mehr verlierbar.
+  const stored = await storeOrder(order);
+  if (stored.error) {
+    console.error('[sapore] Bestellung', order.order_no, 'nicht gespeichert:', stored.error);
+  }
+
+  // 2. Melden. Ein Fehler hier darf die Bestellung nicht scheitern lassen; er
+  //    wird an der Zeile vermerkt, damit im Laden nachvollziehbar bleibt, warum
+  //    keine Meldung ankam.
+  const notifyError = await notifyNewOrder(order);
+  if (stored.id) {
+    await markForwarded(stored.id, notifyError);
+  }
+  if (!stored.id && !notifyError) {
+    console.info('[sapore] Bestellung eingegangen:', order.order_no);
   }
 
   return NextResponse.json({
     ok: true,
-    orderNo: order.orderNo,
+    orderNo: order.order_no,
     total: order.total,
-    eta: order.eta,
-    forwarded: Boolean(webhook),
+    eta: mode === 'liefern' ? DELIVERY.etaDelivery : DELIVERY.etaPickup,
+    stored: Boolean(stored.id),
   });
 }

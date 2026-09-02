@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: '*',
         allow: '/',
         // Keep the logged-in app area and APIs out of the index.
-        disallow: ['/felix', '/dashboard', '/sales', '/leads', '/follow-ups', '/verlaeufe', '/einstellungen', '/api/', '/auth/', '/passwort-neu'],
+        disallow: ['/felix', '/dashboard', '/sales', '/leads', '/follow-ups', '/verlaeufe', '/einstellungen', '/api/', '/auth/', '/passwort-neu', '/sapore-grill/kueche'],
       },
     ],
     sitemap: `${SITE}/sitemap.xml`,

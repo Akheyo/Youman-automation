@@ -1,0 +1,433 @@
+/* =============================================================================
+ * Sapore Grill — Kuechenansicht fuer das Geraet im Laden.
+ *
+ * Bewusst dunkel und kontraststark: der Bildschirm wird aus einigen Metern
+ * Entfernung und im Vorbeigehen gelesen, nicht am Schreibtisch. Grosse Flaechen,
+ * grosse Schrift, keine feinen Linien. Der Status steckt in Form UND Farbe
+ * (Streifen links, Beschriftung), damit er auch ohne Farbunterscheidung lesbar
+ * bleibt.
+ * ========================================================================== */
+
+.page {
+  --bg: #14120f;
+  --panel: #1e1b17;
+  --panel-2: #272320;
+  --line: #3a352f;
+  --text: #f7f4ef;
+  --dim: #b0a89d;
+
+  --neu: #f0a04b;
+  --arbeit: #6ba3e0;
+  --fertig: #5cbd7d;
+
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  padding-bottom: 48px;
+}
+
+.page *,
+.page *::before,
+.page *::after {
+  box-sizing: border-box;
+}
+
+.page :focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 2px;
+}
+
+.shell {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* --- Kopfzeile ---------------------------------------------------------- */
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 0;
+  margin-bottom: 24px;
+}
+
+.barInner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  margin-right: auto;
+}
+
+.titleSub {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--dim);
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.liveDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--fertig);
+  flex: none;
+}
+
+.liveDotStale {
+  background: var(--neu);
+}
+
+.barBtn {
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.barBtn:hover {
+  border-color: var(--dim);
+}
+
+.barBtnOn {
+  background: var(--fertig);
+  border-color: var(--fertig);
+  color: #0d2415;
+}
+
+/* --- Spalten ------------------------------------------------------------ */
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.column {
+  min-width: 0;
+}
+
+.columnHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--line);
+}
+
+.columnTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.columnCount {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 14px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 700;
+  display: inline-grid;
+  place-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.cards {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+/* --- Bestellkarte ------------------------------------------------------- */
+
+.card {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.cardNeu { border-left-color: var(--neu); }
+.cardArbeit { border-left-color: var(--arbeit); }
+.cardFertig { border-left-color: var(--fertig); }
+
+/* Frische Bestellung: ruhiges Pulsieren, damit sie im Vorbeigehen auffaellt. */
+.cardFresh {
+  animation: pulse 1.6s ease-in-out 4;
+}
+
+@keyframes pulse {
+  0%, 100% { background: var(--panel); }
+  50% { background: #2e2519; }
+}
+
+.cardTop {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.orderNo {
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.mode {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+}
+
+.modeLiefern { color: var(--arbeit); }
+.modeAbholen { color: var(--fertig); }
+
+.age {
+  margin-left: auto;
+  font-size: 0.9375rem;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.ageLate {
+  color: var(--neu);
+  font-weight: 700;
+}
+
+.lines {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.lines li {
+  display: flex;
+  gap: 12px;
+  font-size: 1.0625rem;
+}
+
+.qty {
+  min-width: 34px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.meta {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  margin-top: 12px;
+  display: grid;
+  gap: 4px;
+  font-size: 0.9375rem;
+  color: var(--dim);
+}
+
+.metaStrong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.note {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #33291a;
+  border: 1px solid #57452a;
+  color: #f4dfbb;
+  font-size: 0.9375rem;
+}
+
+.total {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.action {
+  flex: 1;
+  min-width: 140px;
+  min-height: 52px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.action:hover { background: #322d28; }
+
+.actionPrimary {
+  background: var(--fertig);
+  border-color: var(--fertig);
+  color: #0d2415;
+}
+
+.actionPrimary:hover { background: #4dae6e; }
+
+.actionQuiet {
+  flex: 0 0 auto;
+  min-width: 0;
+  color: var(--dim);
+}
+
+.action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* --- Leerzustaende und Meldungen ---------------------------------------- */
+
+.empty {
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--dim);
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  font-size: 0.9375rem;
+}
+
+.alert {
+  border-radius: 10px;
+  border: 1px solid var(--neu);
+  background: #33291a;
+  color: #f6e3c4;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.alert code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: #241d12;
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+/* --- Anmeldung ---------------------------------------------------------- */
+
+.login {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 64px 20px;
+}
+
+.loginTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.loginText {
+  color: var(--dim);
+  margin: 0 0 24px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.loginForm {
+  display: grid;
+  gap: 12px;
+}
+
+.input {
+  width: 100%;
+  min-height: 52px;
+  padding: 13px 15px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1.0625rem;
+}
+
+.input:focus { border-color: var(--text); }
+
+.error {
+  color: var(--neu);
+  font-size: 0.9375rem;
+  margin: 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Breakpoints -------------------------------------------------------- */
+
+@media (min-width: 900px) {
+  .columns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardFresh { animation: none; }
+  .page * { transition-duration: 0.01ms !important; }
+}
