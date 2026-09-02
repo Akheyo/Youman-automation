@@ -7,11 +7,26 @@ import Button from '../components/Button.astro';
 import Logo from '../components/Logo.astro';
 import HeroSlider from '../components/HeroSlider.astro';
 import Kachel from '../components/Kachel.astro';
+import Merksatz from '../components/Merksatz.astro';
+import Fakten from '../components/Fakten.astro';
 import { site, prozess } from '../data/site';
 import { leistungen } from '../data/leistungen';
 import { branchen } from '../data/branchen';
 import { caseStudies } from '../data/caseStudies';
+import { anbieter } from '../data/anbieter';
 import { withBase } from '../lib/url';
+
+/*
+ * Die Faktenleiste unter der Einleitung. Nur Belegbares: Gruendungsjahr und
+ * Sitz aus den Impressumsdaten, die Zahl der Bereiche und der Referenzen aus
+ * den Daten, die auch die Seiten erzeugen. Keine Prozentwerte.
+ */
+const fakten = [
+  { wert: site.gruendungsjahr, label: 'Gegründet' },
+  ...(anbieter.ort ? [{ wert: anbieter.ort, label: 'Sitz' }] : []),
+  { wert: String(leistungen.length), label: 'Leistungsbereiche' },
+  { wert: String(caseStudies.length), label: 'Referenzen mit Namen' },
+];
 // Fuer die Vorschau beim Teilen: dasselbe Motiv, mit dem der Hero anfaengt.
 import heroVorschau from '../assets/img/hero-1.jpg';
 
@@ -84,20 +99,29 @@ import heroVorschau from '../assets/img/hero-1.jpg';
   <Section>
     <Textspalten>
       <SectionHeading slot="titel" kicker={site.name} title="Analyse und Umsetzung in einer Hand" />
-      <div class="prose-measure space-y-6 text-lg text-ink-soft">
-        <p>
+      <div class="space-y-6">
+        <p class="vorspann">
           {site.name} verbindet zwei Dinge, die sonst getrennt eingekauft werden: Wir sehen uns
-          den Ablauf an, um den es geht, und wir bauen anschließend die Lösung dafür. Kein
-          Beratungshaus, das Empfehlungen ausspricht, und kein Anbieter, der ein fertiges Produkt
-          verkauft, in das der Betrieb hineinpassen muss.
+          den Ablauf an, um den es geht, und wir bauen anschließend die Lösung dafür.
         </p>
-        <p>
-          Das Ergebnis hängt an dem, was schon läuft, und ersetzt es nicht. Buchhaltung, Lager
-          und Stammdaten bleiben, wo sie sind. Dazu kommt genau das Stück, das bisher von Hand
-          erledigt wurde.
+        <p class="prose-measure text-lg text-ink-soft">
+          Kein Beratungshaus, das Empfehlungen ausspricht, und kein Anbieter, der ein fertiges
+          Produkt verkauft, in das der Betrieb hineinpassen muss. Das Ergebnis hängt an dem, was
+          schon läuft, und ersetzt es nicht. Buchhaltung, Lager und Stammdaten bleiben, wo sie
+          sind.
         </p>
+        <Merksatz class="my-10">
+          Dazu kommt genau das Stück, das bisher von Hand erledigt wurde.
+        </Merksatz>
+        <ul class="liste-strich prose-measure space-y-3 text-ink-soft">
+          <li>Erst der Ablauf, dann die Technik: Wir schauen zu, bevor wir bauen.</li>
+          <li>Anbindung statt Ablösung: Was läuft, bleibt. Es bekommt nur ein Stück dazu.</li>
+          <li>Übergabe an den Menschen: Für jeden Fall ist festgelegt, wann nicht mehr automatisch entschieden wird.</li>
+        </ul>
       </div>
     </Textspalten>
+
+    <Fakten eintraege={fakten} class="mt-16 md:mt-20" />
   </Section>
 
   <Section tone="canvas">

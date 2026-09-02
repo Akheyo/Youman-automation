@@ -5,6 +5,7 @@ import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import PlaceholderNote from '../components/PlaceholderNote.astro';
 import Button from '../components/Button.astro';
+import Kasten from '../components/Kasten.astro';
 import { kontakt, formularBereit, istWeb3Forms } from '../data/kontakt';
 import { withBase } from '../lib/url';
 
@@ -270,29 +271,29 @@ const feldKlasse =
       lead="Kein Vertriebsprozess mit mehreren Stufen. Drei Schritte, und nach dem zweiten wissen Sie, ob sich ein Projekt lohnt."
     />
     <ol class="mt-12 rasterfugen sm:grid-cols-3" data-reveal>
-      <li class="bg-surface p-7">
+      <li class="bg-surface p-7 md:p-8">
         <span class="zaehlziffer block text-3xl leading-none">01</span>
-        <h3 class="mt-3 text-lg text-ink">Erste Einschätzung</h3>
-        <p class="prose-measure mt-3 text-ink-soft">
+        <h3 class="mt-4 text-xl text-ink">Erste Einschätzung</h3>
+        <p class="mt-3 text-pretty text-ink-soft">
           Wir lesen die Anfrage und antworten mit einer ersten Einordnung: ob das, was Sie
           beschreiben, in unser Feld fällt und woran wir bei einer ähnlichen Aufgabe zuerst
           denken würden. Stellt sich heraus, dass jemand anderes besser passt, sagen wir das
           und nennen, wonach Sie suchen sollten.
         </p>
       </li>
-      <li class="bg-surface p-7">
+      <li class="bg-surface p-7 md:p-8">
         <span class="zaehlziffer block text-3xl leading-none">02</span>
-        <h3 class="mt-3 text-lg text-ink">Gespräch, 30 Minuten</h3>
-        <p class="prose-measure mt-3 text-ink-soft">
+        <h3 class="mt-4 text-xl text-ink">Gespräch, 30 Minuten</h3>
+        <p class="mt-3 text-pretty text-ink-soft">
           Unverbindlich und ohne Präsentation. Wir fragen nach dem tatsächlichen Ablauf, nach
           den Stellen, an denen von Hand nachgeholfen wird, und nach dem System, das darunter
           liegt. Nach dem Budget fragen wir in diesem Gespräch nicht.
         </p>
       </li>
-      <li class="bg-surface p-7">
+      <li class="bg-surface p-7 md:p-8">
         <span class="zaehlziffer block text-3xl leading-none">03</span>
-        <h3 class="mt-3 text-lg text-ink">Aufwand und Zuschnitt</h3>
-        <p class="prose-measure mt-3 text-ink-soft">
+        <h3 class="mt-4 text-xl text-ink">Aufwand und Zuschnitt</h3>
+        <p class="mt-3 text-pretty text-ink-soft">
           Erst danach lässt sich sagen, was ein Modul umfassen müsste und in welcher
           Größenordnung der Aufwand liegt. Wenn ein kleinerer Zuschnitt den größeren Teil des
           Problems löst, schlagen wir den vor.
@@ -300,35 +301,45 @@ const feldKlasse =
       </li>
     </ol>
 
-    <div class="prose-measure mt-16">
-      <h3 class="text-2xl text-ink">Was in die erste Nachricht gehört</h3>
-      <p class="prose-measure mt-4 text-ink-soft">
-        Vier Angaben reichen, damit die Antwort mehr ist als eine Rückfrage:
-      </p>
-      <ul class="mt-6 space-y-3 text-ink-soft">
-        <li>Welches ERP-System im Einsatz ist, oder dass keines läuft.</li>
-        <li>
-          An welcher Stelle es klemmt, möglichst an einem konkreten Vorgang statt allgemein.
-          Ein Satz wie „die Versandpapiere entstehen jeden Morgen von Hand aus zwei Listen"
-          sagt mehr als eine Seite Prozessbeschreibung.
-        </li>
-        <li>Wer im Betrieb damit arbeitet und wie viele Personen betroffen sind.</li>
-        <li>Ob es dafür schon eine Behelfslösung gibt, etwa eine gewachsene Tabelle.</li>
-      </ul>
-      <p class="prose-measure mt-6 text-ink-soft">
-        Was nicht nötig ist: ein Lastenheft, eine fertige Anforderungsliste oder eine
-        Vorstellung davon, wie die Lösung aussehen soll. Das herauszufinden ist unsere
-        Aufgabe, nicht Ihre Vorleistung. Wenn Sie nicht sicher sind, ob Ihr Fall passt,
-        helfen die typischen Problemstellungen auf den{' '}
-        <a href={withBase('/leistungen')} class="textverweis">Leistungsseiten</a> beim
-        Einordnen.
-      </p>
-      <p class="prose-measure mt-6 text-ink-soft">
-        Wir sitzen in Borken und arbeiten im gesamten deutschsprachigen Raum. Wenn Sie aus der
-        Nähe kommen, ist ein Termin im Betrieb meist der schnellste Weg. Was die räumliche
-        Nähe praktisch ändert und wann sie nichts ändert, steht auf der Seite{' '}
-        <a href={withBase('/muensterland')} class="textverweis">Münsterland</a>.
-      </p>
+    <div class="mt-16 grid gap-10 border-t border-line pt-12 lg:grid-cols-12 lg:gap-16">
+      <div class="lg:col-span-7">
+        <h3 class="text-2xl text-ink">Was in die erste Nachricht gehört</h3>
+        <p class="vorspann mt-4">
+          Vier Angaben reichen, damit die Antwort mehr ist als eine Rückfrage.
+        </p>
+        <ol class="liste-nummern mt-8 space-y-5 text-ink-soft">
+          <li class="text-pretty">Welches ERP-System im Einsatz ist, oder dass keines läuft.</li>
+          <li class="text-pretty">
+            An welcher Stelle es klemmt, möglichst an einem konkreten Vorgang statt allgemein.
+            Ein Satz wie „die Versandpapiere entstehen jeden Morgen von Hand aus zwei Listen"
+            sagt mehr als eine Seite Prozessbeschreibung.
+          </li>
+          <li class="text-pretty">Wer im Betrieb damit arbeitet und wie viele Personen betroffen sind.</li>
+          <li class="text-pretty">Ob es dafür schon eine Behelfslösung gibt, etwa eine gewachsene Tabelle.</li>
+        </ol>
+      </div>
+      <div class="space-y-6 lg:col-span-4 lg:col-start-9">
+        <Kasten titel="Was nicht nötig ist" tone="muted">
+          <p>
+            Ein Lastenheft, eine fertige Anforderungsliste oder eine Vorstellung davon, wie die
+            Lösung aussehen soll. Das herauszufinden ist unsere Aufgabe, nicht Ihre Vorleistung.
+          </p>
+          <p class="mt-3">
+            Wenn Sie nicht sicher sind, ob Ihr Fall passt, helfen die typischen
+            Problemstellungen auf den{' '}
+            <a href={withBase('/leistungen')} class="textverweis">Leistungsseiten</a> beim
+            Einordnen.
+          </p>
+        </Kasten>
+        <Kasten titel="Vor Ort" tone="muted">
+          <p>
+            Wir sitzen in Borken und arbeiten im gesamten deutschsprachigen Raum. Wenn Sie aus
+            der Nähe kommen, ist ein Termin im Betrieb meist der schnellste Weg. Was die Nähe
+            praktisch ändert, steht auf der Seite{' '}
+            <a href={withBase('/muensterland')} class="textverweis">Münsterland</a>.
+          </p>
+        </Kasten>
+      </div>
     </div>
   </Section>
 </Base>

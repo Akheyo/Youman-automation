@@ -1,0 +1,30 @@
+---
+/**
+ * Randbemerkung: was neben dem Text steht und nicht darin.
+ *
+ * Eine Kante oben, eine Ueberschrift in Versalien, darunter der Inhalt.
+ * Die Flaeche ist eine Stufe dunkler als die Sektion, in der der Kasten
+ * steht: auf `surface` liegt er auf `canvas`, auf `canvas` auf `muted`.
+ */
+interface Props {
+  titel: string;
+  /** Flaeche, passend zur Sektion. */
+  tone?: 'canvas' | 'muted' | 'dunkel';
+  class?: string;
+}
+
+const { titel, tone = 'canvas', class: className = '' } = Astro.props;
+
+const flaechen = {
+  canvas: 'bg-canvas text-ink',
+  muted: 'bg-muted text-ink',
+  dunkel: 'on-dark bg-white/8 text-white',
+} as const;
+---
+
+<aside class:list={['kasten', flaechen[tone], className]}>
+  <p class:list={['zwischenzeile', tone === 'dunkel' ? 'text-white' : 'text-ink']}>{titel}</p>
+  <div class:list={['mt-4 text-pretty', tone === 'dunkel' ? 'text-white/85' : 'text-ink-soft']}>
+    <slot />
+  </div>
+</aside>

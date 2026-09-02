@@ -1,0 +1,23 @@
+---
+/**
+ * Ein Satz, der aus dem Text herausgestellt wird.
+ *
+ * Kein Zitat, deshalb kein <blockquote>: Es ist der Kernsatz des Abschnitts
+ * in eigener Groesse. Steht er zwischen zwei Absaetzen, gibt er dem Auge
+ * einen Halt, an dem es den Abschnitt in zwei Haelften liest.
+ */
+interface Props {
+  /** Kleine Zeile ueber dem Satz, etwa "Kurz gesagt". */
+  kicker?: string;
+  class?: string;
+}
+
+const { kicker, class: className = '' } = Astro.props;
+---
+
+<div class:list={['merksatz', className]}>
+  {/* Keine eigene Farbe: die Zeile erbt die des Merksatzes und wirkt
+      ueber die Deckkraft leichter. So stimmt sie auf hell wie auf dunkel. */}
+  {kicker && <p class="zwischenzeile mb-4 font-sans opacity-80">{kicker}</p>}
+  <p><slot /></p>
+</div>

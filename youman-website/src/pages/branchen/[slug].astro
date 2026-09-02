@@ -6,10 +6,13 @@ import Bildplatz from '../../components/Bildplatz.astro';
 import Kicker from '../../components/Kicker.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Button from '../../components/Button.astro';
+import Kachel from '../../components/Kachel.astro';
+import Kasten from '../../components/Kasten.astro';
 import { branchen } from '../../data/branchen';
 import { leistungen } from '../../data/leistungen';
 import { caseStudyNach } from '../../data/caseStudies';
 import { withBase } from '../../lib/url';
+import { ersterSatz } from '../../lib/text';
 
 export function getStaticPaths() {
   return branchen.map((branche) => ({
@@ -22,6 +25,7 @@ const { branche } = Astro.props;
 
 const passendeLeistungen = leistungen.filter((l) => branche.leistungen.includes(l.slug));
 const referenz = branche.referenz ? caseStudyNach(branche.referenz) : undefined;
+const einleitung = ersterSatz(branche.intro);
 
 const brotkrumen = [
   { label: 'Home', href: '/' },
@@ -50,22 +54,35 @@ const brotkrumen = [
       </div>
       <div class="lg:col-span-5 lg:col-start-8">
         <Kicker>Worum es geht</Kicker>
-        <div class="prose-measure mt-5 space-y-5 text-lg text-ink-soft">
-        <p>{branche.intro}</p>
-        {
-          referenz && branche.referenzHinweis && (
-            <p>
+        <p class="vorspann mt-5">{einleitung.satz}</p>
+        {einleitung.rest && <p class="prose-measure mt-5 text-ink-soft">{einleitung.rest}</p>}
+      </div>
+    </div>
+    {
+      referenz && branche.referenzHinweis && (
+        <Kasten titel="Aus der Praxis" class="mt-14 lg:mt-16">
+          <div class="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
+            <p class="text-lg text-ink">
               {branche.referenzHinweis}{' '}
               <a href={withBase(referenz.href)} class="textverweis">
                 {referenz.title}
               </a>
               .
             </p>
-          )
-        }
-        </div>
-      </div>
-    </div>
+            {referenz.kennzahl && (
+              <p class="flex items-end gap-3 md:border-l md:border-line md:pl-6">
+                <span class="font-display text-4xl font-normal tabular-nums leading-none text-ink">
+                  {referenz.kennzahl.wert}
+                </span>
+                <span class="max-w-40 text-sm leading-snug text-muted-fg">
+                  {referenz.kennzahl.beschreibung}
+                </span>
+              </p>
+            )}
+          </div>
+        </Kasten>
+      )
+    }
   </Section>
 
   {/* Erst das Problem, dann die Antwort. Wer sein eigenes Problem oben
@@ -81,7 +98,7 @@ const brotkrumen = [
         branche.painpoints.map((punkt, i, alle) => (
           <li
             class:list={[
-              'flex items-baseline gap-5 bg-surface p-7 md:p-8',
+              'flex items-start gap-5 bg-surface p-7 md:p-8',
               /*
                 Ungerade Zahl in zwei Spalten: Der letzte Eintrag zieht sich
                 ueber die Reihe, sonst bleibt daneben ein Loch stehen. Das
@@ -91,10 +108,10 @@ const brotkrumen = [
               i === alle.length - 1 && alle.length % 2 === 1 && 'sm:col-span-2',
             ]}
           >
-            <span class="zaehlziffer shrink-0 text-2xl leading-none">
+            <span class="zaehlziffer shrink-0 text-3xl leading-none">
               {String(i + 1).padStart(2, '0')}
             </span>
-            <p class="prose-measure text-ink-soft">{punkt}</p>
+            <p class="text-pretty pt-1 text-ink-soft">{punkt}</p>
           </li>
         ))
       }
@@ -107,20 +124,18 @@ const brotkrumen = [
       title="Was hier üblicherweise greift"
       lead="Meistens beginnt es an einer Stelle und wächst von dort, sobald es dort trägt."
     />
-    <ul class="mt-12 rasterfugen sm:grid-cols-3">
+    <ul class="mt-12 rasterfugen sm:grid-cols-2 lg:grid-cols-3">
       {
         passendeLeistungen.map((leistung) => (
-          <li class="hebt-sich bg-surface">
-            <a
-              href={withBase(`/leistungen/${leistung.slug}`)}
-              class="group flex h-full flex-col p-7 transition-colors duration-200"
-            >
-              <h3 class="text-lg text-ink group-hover:text-accent transition-colors duration-200">
-                {leistung.title}
-              </h3>
-              <p class="mt-3 text-sm text-ink-soft">{leistung.teaser}</p>
-            </a>
-          </li>
+          <Kachel
+            href={`/leistungen/${leistung.slug}`}
+            title={leistung.title}
+            teaser={leistung.teaser}
+            bild={leistung.bild}
+            bildAlt={leistung.bildAlt}
+            bildhinweis={leistung.bildhinweis}
+            groesse="klein"
+          />
         ))
       }
     </ul>
@@ -134,7 +149,7 @@ const brotkrumen = [
         tone="dark"
         class="max-w-2xl"
       />
-      <Button href="/kontakt" variant="ghost" class="shrink-0">Kontakt aufnehmen</Button>
+      <Button href="/kontakt" variant="invers" class="shrink-0">Kontakt aufnehmen</Button>
     </div>
   </Section>
 </Base>

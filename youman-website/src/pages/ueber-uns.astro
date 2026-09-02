@@ -7,6 +7,8 @@ import Textspalten from '../components/Textspalten.astro';
 import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import Button from '../components/Button.astro';
+import Merksatz from '../components/Merksatz.astro';
+import Fakten from '../components/Fakten.astro';
 import { site, prozess } from '../data/site';
 import { anbieter } from '../data/anbieter';
 import { withBase } from '../lib/url';
@@ -21,11 +23,27 @@ import { withBase } from '../lib/url';
  * Was NICHT drinsteht: eine erfundene Begruendung fuer die Aenderung. Es
  * steht schlicht, was gilt.
  */
-const geschichte = [
-  'Jedes Unternehmen macht früher oder später dieselbe Erfahrung: Die eingesetzten Systeme decken vieles ab, aber nicht alles. Was übrig bleibt, sind die Abläufe, die sich nicht ins Schema pressen lassen, und die am Ende wieder in Tabellen und persönlichen Absprachen landen.',
-  'Genau dort setzt youman an, gegründet 2026. Der Anlass war keine Marktlücke auf dem Papier, sondern eine Beobachtung aus der eigenen Arbeit: Lange bevor youman existiert, entstehen im beruflichen Umfeld von Amanuel K. bereits Workflow-Automatisierungen und Softwaremodule, um genau solche Lücken zu schließen. Immer dieselbe Sorte Problem, immer dieselbe Sorte Lösung.',
-  'Daraus wurde eine Überzeugung, die bis heute die Arbeitsweise bestimmt: Was hier fehlt, muss gebaut werden, nicht nur beschrieben. Eine Empfehlung, die niemand umsetzt, hat den Betrieb keinen Schritt weitergebracht.',
-  'Der Anspruch dabei bleibt gleich: Kein bestehendes System wird ersetzt. Jede Lösung entsteht dort, wo ein Unternehmen sie tatsächlich braucht, und hängt an dem, was ohnehin schon läuft.',
+const geschichte = {
+  vorspann:
+    'Jedes Unternehmen macht früher oder später dieselbe Erfahrung: Die eingesetzten Systeme decken vieles ab, aber nicht alles.',
+  anfang: [
+    'Was übrig bleibt, sind die Abläufe, die sich nicht ins Schema pressen lassen, und die am Ende wieder in Tabellen und persönlichen Absprachen landen.',
+    'Genau dort setzt youman an, gegründet 2026. Der Anlass war keine Marktlücke auf dem Papier, sondern eine Beobachtung aus der eigenen Arbeit: Lange bevor youman existiert, entstehen im beruflichen Umfeld von Amanuel K. bereits Workflow-Automatisierungen und Softwaremodule, um genau solche Lücken zu schließen. Immer dieselbe Sorte Problem, immer dieselbe Sorte Lösung.',
+  ],
+  /* Der Satz, der bleiben soll. Er steht als Merksatz zwischen den Absaetzen,
+     nicht zusaetzlich im Fliesstext. */
+  merksatz: 'Was hier fehlt, muss gebaut werden, nicht nur beschrieben.',
+  ende: [
+    'Daraus wurde eine Überzeugung, die bis heute die Arbeitsweise bestimmt. Eine Empfehlung, die niemand umsetzt, hat den Betrieb keinen Schritt weitergebracht.',
+    'Der Anspruch dabei bleibt gleich: Kein bestehendes System wird ersetzt. Jede Lösung entsteht dort, wo ein Unternehmen sie tatsächlich braucht, und hängt an dem, was ohnehin schon läuft.',
+  ],
+};
+
+const fakten = [
+  { wert: site.gruendungsjahr, label: 'Gegründet' },
+  ...(anbieter.ort ? [{ wert: anbieter.ort, label: 'Sitz' }] : []),
+  { wert: 'DACH', label: 'Arbeitsraum' },
+  { wert: String(prozess.length), label: 'Schritte je Projekt' },
 ];
 
 const werte = [
@@ -78,27 +96,29 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
       </div>
       <div class="lg:col-span-5 lg:col-start-8">
         <Kicker class="mb-5">Analyse und Umsetzung</Kicker>
-        <div class="prose-measure space-y-5 text-lg text-ink-soft">
-        <p>
+        <p class="vorspann">
           {site.name} ist kein reines Beratungshaus, das Empfehlungen ausspricht. Und kein
           Anbieter, der ein fertiges Produkt verkauft, in das der Betrieb hineinpassen muss.
-          Wir tun beides: Wir analysieren den Ablauf, und wir bauen die Lösung dafür.
         </p>
-        <p>
-          Der Unterschied zeigt sich in der Praxis daran, wer die Verantwortung trägt, wenn
-          etwas nicht funktioniert. Wo Beratung und Umsetzung getrennt eingekauft werden,
-          zeigen im Zweifel beide aufeinander. Hier gibt es diese Trennung nicht.
+        <p class="prose-measure mt-5 text-ink-soft">
+          Wir tun beides: Wir analysieren den Ablauf, und wir bauen die Lösung dafür. Der
+          Unterschied zeigt sich in der Praxis daran, wer die Verantwortung trägt, wenn etwas
+          nicht funktioniert. Wo Beratung und Umsetzung getrennt eingekauft werden, zeigen im
+          Zweifel beide aufeinander. Hier gibt es diese Trennung nicht.
         </p>
-        </div>
       </div>
     </div>
+    <Fakten eintraege={fakten} class="mt-16 md:mt-20" />
   </Section>
 
   <Section>
     <Textspalten>
       <SectionHeading slot="titel" kicker={site.name} title="Geschichte" />
-      <div class="prose-measure space-y-5 text-ink-soft">
-        {geschichte.map((absatz) => <p>{absatz}</p>)}
+      <div class="space-y-5">
+        <p class="vorspann">{geschichte.vorspann}</p>
+        {geschichte.anfang.map((absatz) => <p class="prose-measure text-ink-soft">{absatz}</p>)}
+        <Merksatz class="my-10">{geschichte.merksatz}</Merksatz>
+        {geschichte.ende.map((absatz) => <p class="prose-measure text-ink-soft">{absatz}</p>)}
       </div>
     </Textspalten>
   </Section>
@@ -126,20 +146,26 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
     <SectionHeading kicker={site.name} title="Werte" />
     <dl class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
       {
-        werte.map((wert) => (
-          <div class="bg-surface p-7">
-            <dt class="text-lg text-ink">{wert.titel}</dt>
-            <dd class="prose-measure mt-2.5 text-ink-soft">{wert.text}</dd>
+        werte.map((wert, i) => (
+          <div class="bg-surface p-7 md:p-8">
+            <span class="zaehlziffer block text-3xl leading-none" aria-hidden="true">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <dt class="mt-4 font-serif text-xl text-ink">{wert.titel}</dt>
+            <dd class="mt-2.5 text-pretty text-ink-soft">{wert.text}</dd>
           </div>
         ))
       }
     </dl>
-    <p class="prose-measure mt-12 text-lg text-ink-soft">
-      Unser Sitz ist {anbieter.ort}, gearbeitet wird im gesamten deutschsprachigen Raum. Was
-      die räumliche Nähe an einem Projekt praktisch ändert und an welchen Stellen sie nichts
-      ändert, haben wir auf der Seite{' '}
-      <a href={withBase('/muensterland')} class="textverweis">Münsterland</a> aufgeschrieben.
-    </p>
+    <div class="mt-12 border-t border-line pt-8 md:flex md:items-baseline md:gap-12">
+      <p class="zwischenzeile shrink-0 text-ink">Standort</p>
+      <p class="prose-measure mt-3 text-lg text-ink-soft md:mt-0">
+        Unser Sitz ist {anbieter.ort}, gearbeitet wird im gesamten deutschsprachigen Raum. Was
+        die räumliche Nähe an einem Projekt praktisch ändert und an welchen Stellen sie nichts
+        ändert, haben wir auf der Seite{' '}
+        <a href={withBase('/muensterland')} class="textverweis">Münsterland</a> aufgeschrieben.
+      </p>
+    </div>
   </Section>
 
   <Section tone="dark">
@@ -150,7 +176,7 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
         tone="dark"
         class="max-w-2xl"
       />
-      <Button href="/kontakt" variant="ghost" class="shrink-0">Kontakt aufnehmen</Button>
+      <Button href="/kontakt" variant="invers" class="shrink-0">Kontakt aufnehmen</Button>
     </div>
   </Section>
 </Base>

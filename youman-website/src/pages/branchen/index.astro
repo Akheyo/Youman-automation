@@ -3,7 +3,8 @@ import Base from '../../layouts/Base.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import Section from '../../components/Section.astro';
 import Textspalten from '../../components/Textspalten.astro';
-import Bildplatz from '../../components/Bildplatz.astro';
+import Kachel from '../../components/Kachel.astro';
+import Kasten from '../../components/Kasten.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import { branchen } from '../../data/branchen';
 import { leistungen, anfrageHinweis } from '../../data/leistungen';
@@ -27,18 +28,26 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
   <Section>
     <Textspalten>
       <SectionHeading slot="titel" kicker="Zur Einordnung" title="Warum genau diese sechs" as="h2" />
-      <div class="prose-measure space-y-6 text-lg text-ink-soft">
-        <p>
-          Die Einteilung nach Branchen ist eine Abkürzung für Leser, keine Grenze. Wer einen
-          Handwerksbetrieb mit eigenem Onlineshop führt, erkennt sich in zwei Bereichen wieder,
-          und wer in keinem davon vorkommt, ist deshalb nicht ausgeschlossen.
+      <div class="space-y-6">
+        <p class="vorspann">
+          Die Einteilung nach Branchen ist eine Abkürzung für Leser, keine Grenze.
         </p>
-        <p>
-          Gemeinsam ist allen sechs, dass die Systeme grundsätzlich laufen. Das Problem liegt in
-          der Lücke zwischen dem, was ein System vorsieht, und dem, was der Betrieb tatsächlich
-          tut: Angaben, die zweimal erfasst werden, Entscheidungen, die nur eine Person treffen
-          kann, Auskünfte, die jeden Tag neu gegeben werden. Diese Lücke lässt sich schließen,
-          ohne das Bestehende abzulösen.
+        <p class="prose-measure initiale text-lg text-ink-soft">
+          Wer einen Handwerksbetrieb mit eigenem Onlineshop führt, erkennt sich in zwei
+          Bereichen wieder, und wer in keinem davon vorkommt, ist deshalb nicht ausgeschlossen.
+          Gemeinsam ist allen sechs, dass die Systeme grundsätzlich laufen.
+        </p>
+        <p class="prose-measure text-lg text-ink-soft">
+          Das Problem liegt in der Lücke zwischen dem, was ein System vorsieht, und dem, was der
+          Betrieb tatsächlich tut:
+        </p>
+        <ul class="liste-strich prose-measure space-y-3 text-ink-soft">
+          <li>Angaben, die zweimal erfasst werden.</li>
+          <li>Entscheidungen, die nur eine Person treffen kann.</li>
+          <li>Auskünfte, die jeden Tag neu gegeben werden.</li>
+        </ul>
+        <p class="prose-measure text-lg text-ink-soft">
+          Diese Lücke lässt sich schließen, ohne das Bestehende abzulösen.
         </p>
       </div>
     </Textspalten>
@@ -55,42 +64,14 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
     <ul class="rasterfugen sm:grid-cols-2 lg:grid-cols-3">
       {
         branchen.map((branche) => (
-          <li class="hebt-sich bg-surface">
-            <a
-              href={withBase(`/branchen/${branche.slug}`)}
-              class="group flex h-full flex-col transition-colors duration-200"
-            >
-              <Bildplatz
-                bild={branche.bild}
-                alt={branche.bildAlt}
-                bezeichnung={branche.bildhinweis}
-                verhaeltnis="3 / 2"
-                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-              />
-              <div class="flex flex-1 flex-col p-8">
-                <h3 class="flex items-start gap-2 text-xl text-ink group-hover:text-accent transition-colors duration-200">
-                  <span>{branche.title}</span>
-                  <svg
-                    class="mt-1.5 size-4 shrink-0 text-accent transition-transform duration-200 group-hover:translate-x-1"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m9 18 6-6-6-6" />
-                  </svg>
-                </h3>
-                <p class="prose-measure mt-3 text-ink-soft">{branche.teaser}</p>
-                <span class="mt-6 inline-flex items-center gap-3 text-sm font-semibold text-ink">
-                  <span class="h-px w-6 bg-accent" aria-hidden="true"></span>
-                  Anwendungsfälle
-                </span>
-              </div>
-            </a>
-          </li>
+          <Kachel
+            href={`/branchen/${branche.slug}`}
+            title={branche.title}
+            teaser={branche.teaser}
+            bild={branche.bild}
+            bildAlt={branche.bildAlt}
+            bildhinweis={branche.bildhinweis}
+          />
         ))
       }
     </ul>
@@ -116,13 +97,18 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
 
     <ul class="mt-12 divide-y divide-line border-y border-line">
       {
-        leistungen.map((leistung) => (
+        leistungen.map((leistung, i) => (
           <li>
             <details class="group">
               <summary class="flex cursor-pointer items-center justify-between gap-6 py-6 marker:content-none [&::-webkit-details-marker]:hidden">
-                <span class="flex flex-col gap-1.5">
-                  <span class="text-lg text-ink">{leistung.title}</span>
-                  <span class="prose-measure text-sm text-ink-soft">{leistung.teaser}</span>
+                <span class="flex items-baseline gap-5">
+                  <span class="zaehlziffer shrink-0 text-xl leading-none">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span class="flex flex-col gap-1.5">
+                    <span class="text-lg text-ink">{leistung.title}</span>
+                    <span class="text-sm text-ink-soft">{leistung.teaser}</span>
+                  </span>
                 </span>
                 <svg
                   class="size-5 shrink-0 text-accent transition-transform duration-200 group-open:rotate-45"
@@ -137,13 +123,13 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
                 </svg>
               </summary>
 
-              <div class="pb-8">
+              <div class="pb-8 lg:pl-12">
                 <p class="prose-measure text-ink-soft">{leistung.intro}</p>
                 <ul class="mt-6 rasterfugen sm:grid-cols-2">
                   {leistung.bausteine.map((baustein) => (
                     <li class="bg-surface p-6">
-                      <h3 class="text-base text-ink">{baustein.titel}</h3>
-                      <p class="mt-2 text-sm text-ink-soft">{baustein.text}</p>
+                      <h3 class="font-serif text-lg text-ink">{baustein.titel}</h3>
+                      <p class="mt-2 text-pretty text-sm text-ink-soft">{baustein.text}</p>
                     </li>
                   ))}
                 </ul>
@@ -160,6 +146,14 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
       }
     </ul>
 
-    <p class="prose-measure mt-10 text-ink-soft">{anfrageHinweis}</p>
+    <Kasten titel="Nicht dabei?" class="mt-12">
+      <p>{anfrageHinweis}</p>
+      <a
+        href={withBase('/kontakt')}
+        class="textverweis mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-ink"
+      >
+        Anfrage schreiben
+      </a>
+    </Kasten>
   </Section>
 </Base>

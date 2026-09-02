@@ -5,6 +5,7 @@ import Section from '../../components/Section.astro';
 import Textspalten from '../../components/Textspalten.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Bildplatz from '../../components/Bildplatz.astro';
+import Kasten from '../../components/Kasten.astro';
 import { caseStudies } from '../../data/caseStudies';
 import { withBase } from '../../lib/url';
 
@@ -30,14 +31,17 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
   <Section>
     <Textspalten>
       <SectionHeading slot="titel" kicker="Zur Einordnung" title="Was hier steht und was nicht" as="h2" />
-      <div class="prose-measure space-y-6 text-lg text-ink-soft">
-        <p>
+      <div class="space-y-6">
+        <p class="vorspann">
           Zwei abgeschlossene Projekte, beide mit Namen des Kunden. In beiden Fällen lief ein
-          System, das seine Aufgabe erfüllte. Daneben lag der Teil der Arbeit, für den es
-          keine Vorlage gab: in Tabellen, in Erfahrungswerten einzelner Mitarbeiter, in
-          Absprachen, die niemand aufgeschrieben hatte.
+          System, das seine Aufgabe erfüllte.
         </p>
-        <p>
+        <p class="prose-measure initiale text-lg text-ink-soft">
+          Daneben lag der Teil der Arbeit, für den es keine Vorlage gab: in Tabellen, in
+          Erfahrungswerten einzelner Mitarbeiter, in Absprachen, die niemand aufgeschrieben
+          hatte.
+        </p>
+        <p class="prose-measure text-lg text-ink-soft">
           Bei der{' '}
           <a href={withBase('/case-studies/drahtmueller-palettenoptimierung')} class="textverweis"
             >Drahtmüller GmbH</a
@@ -52,14 +56,22 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
           Baustellenplanung wieder woanders. Drei Stände, die niemand gegeneinander abglich,
           bis es an der Baustelle auffiel.
         </p>
-        <p>
-          Jede Darstellung nennt Ausgangslage, Vorgehen und was danach anders war. Was sie
-          nicht nennt, sind Einsparquoten, Amortisationszeiten und Kundenstimmen. Solche
-          Angaben ließen sich leicht schreiben, wären aber nicht belegt. In den Unterlagen zu
-          beiden Projekten stehen sie nicht. Genannt wird nur, was sich aus dem Projekt selbst
-          ergibt, etwa die Zahl der Palettentypen.
-        </p>
-        <p>
+        <Kasten titel="Was hier bewusst fehlt" class="!my-10">
+          <p>
+            Jede Darstellung nennt Ausgangslage, Vorgehen und was danach anders war. Drei Dinge
+            stehen nirgends, weil sie in den Unterlagen zu beiden Projekten nicht belegt sind:
+          </p>
+          <ul class="liste-strich mt-4 space-y-2">
+            <li>Einsparquoten</li>
+            <li>Amortisationszeiten</li>
+            <li>Kundenstimmen</li>
+          </ul>
+          <p class="mt-4">
+            Genannt wird nur, was sich aus dem Projekt selbst ergibt, etwa die Zahl der
+            Palettentypen.
+          </p>
+        </Kasten>
+        <p class="prose-measure text-lg text-ink-soft">
           Beide Fälle folgen derselben Machart: ein eigenständiges Modul, über
           eine Schnittstelle an das bestehende System gehängt, ohne Ablösung. Welche{' '}
           <a href={withBase('/leistungen')} class="textverweis">Leistungen</a> dabei
@@ -67,7 +79,7 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
           <a href={withBase('/branchen')} class="textverweis">Branchen</a> wir arbeiten, steht
           jeweils dort.
         </p>
-        <p>
+        <p class="prose-measure text-lg text-ink-soft">
           Zwei Projekte sind keine lange Liste, und wir tun nicht so, als wäre sie länger.
           Aufgenommen wird hier nur, was abgeschlossen ist und wofür der Kunde der Nennung
           ausdrücklich zugestimmt hat. Laufende Projekte fehlen deshalb, ebenso solche, über

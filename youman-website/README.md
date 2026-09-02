@@ -65,13 +65,33 @@ Zwei Fallstricke, die beim Weiterbauen zählen:
   die Lücken zu schließen. Einleitungszeilen unter Überschriften und der
   Text in Kacheln stehen immer linksbündig, aus demselben Grund.
 
+## Textbausteine
+
+Ein Absatz nach dem anderen liest sich wie ein Aktenvermerk. Deshalb gibt es
+in `global.css` Bausteine, die einem Textabschnitt Anfang, Betonung und
+Rhythmus geben. Alle monochrom, die Form macht die Arbeit.
+
+| Baustein | Was es ist | Einsatz |
+| --- | --- | --- |
+| `vorspann` | erster Absatz in der Serife, eine Stufe größer | genau einmal je Abschnitt, direkt unter der Überschrift |
+| `initiale` | großer Anfangsbuchstabe | nur am ersten Fließtextabsatz nach einem Vorspann |
+| `Merksatz.astro` | herausgestellter Satz hinter dickem Strich | der eine Satz, der bleiben soll; steht statt der Stelle im Text, nicht zusätzlich |
+| `Kasten.astro` | Randbemerkung mit Kante oben | was neben dem Text steht: Preise, Ausnahmen, ein Verweis aus der Praxis |
+| `Fakten.astro` | Faktenleiste mit großen Werten | nur belegte Angaben, keine Prozentwerte |
+| `liste-strich` | Liste mit Strich statt Punkt | Aufzählungen im Fließtext |
+| `liste-nummern` | Liste mit zweistelligen Ziffern | Abläufe und Reihenfolgen |
+| `zwischenzeile` | kurze Versalzeile mit Strich davor | gliedert, ohne Überschrift zu sein |
+
+Zwei Regeln dazu: Der erste Satz eines Einleitungstexts aus `src/data/` wird
+mit `ersterSatz()` aus `lib/text.ts` als Vorspann abgetrennt; die Texte sind
+so geschrieben, dass der erste Satz die Aussage trägt. Und Kästen und Listen
+stehen immer linksbündig, auch in einem Blocksatz-Absatz.
+
 ## Kacheln
 
-Die Raster auf der Startseite (Leistungen, Branchen, Referenzprojekte)
-bestehen aus `Kachel.astro`: Bild, Titel mit Pfeil, Kurzzeile, die ganze
-Fläche ist der Verweis. Die Übersichtsseiten unter `/leistungen` und
-`/branchen` tragen ihr Kachel-Markup noch selbst; wer dort etwas ändert,
-sollte es auf die Komponente umstellen, statt beides zu pflegen.
+Alle Raster mit Bild, Titel und Kurzzeile (Startseite, Übersichten,
+Querverweise auf den Detailseiten) bestehen aus `Kachel.astro`: die ganze
+Fläche ist der Verweis, der Pfeil am Titel zeigt es an.
 
 ## Bilder
 

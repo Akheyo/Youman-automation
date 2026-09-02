@@ -1,0 +1,31 @@
+---
+/**
+ * Faktenleiste: zwei bis fuenf Angaben in einer Reihe, gross gesetzt.
+ *
+ * Nur fuer Angaben, die belegt sind: Gruendungsjahr, Sitz, Zahl der
+ * Leistungsbereiche. Keine geschaetzten Prozentwerte, keine "ueber 100
+ * zufriedene Kunden". Eine Zahl in dieser Groesse behauptet etwas, und die
+ * Seite verspricht, dass alles hier stimmt.
+ */
+interface Props {
+  eintraege: { wert: string; label: string }[];
+  tone?: 'hell' | 'dunkel';
+  class?: string;
+}
+
+const { eintraege, tone = 'hell', class: className = '' } = Astro.props;
+---
+
+<dl
+  class:list={['fakten', className]}
+  style={`--fakten-spalten: ${Math.min(Math.max(eintraege.length, 2), 5)}`}
+>
+  {
+    eintraege.map((eintrag) => (
+      <div class:list={tone === 'dunkel' ? 'bg-ink-deep' : 'bg-surface'}>
+        <dt class:list={tone === 'dunkel' ? 'text-white/70' : 'text-muted-fg'}>{eintrag.label}</dt>
+        <dd class:list={tone === 'dunkel' ? 'text-white' : 'text-ink'}>{eintrag.wert}</dd>
+      </div>
+    ))
+  }
+</dl>

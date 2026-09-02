@@ -6,6 +6,7 @@ import Section from '../../components/Section.astro';
 import Textspalten from '../../components/Textspalten.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Button from '../../components/Button.astro';
+import Merksatz from '../../components/Merksatz.astro';
 import { caseStudyNach } from '../../data/caseStudies';
 
 /**
@@ -112,14 +113,17 @@ const brotkrumen = [
 
   <Section>
     <div class="grid gap-12 lg:grid-cols-[2fr_1fr] lg:gap-20">
-      <div class="prose-measure space-y-5 text-lg text-ink-soft">
-        <p>
+      <div class="space-y-5">
+        <p class="vorspann">
           A&B SolarEnergy verfügte über eine operative Datenbank zur Verwaltung von Lagerbeständen,
           hatte jedoch noch kein durchgängiges Warenwirtschaftssystem für Angebote, Materialplanung
-          und Baustellenabwicklung. Angebote wurden unter anderem in Lexware Office erstellt,
-          während Lager- und Projektdaten separat gepflegt wurden.
+          und Baustellenabwicklung.
         </p>
-        <p>
+        <p class="prose-measure initiale text-lg text-ink-soft">
+          Angebote wurden unter anderem in Lexware Office erstellt, während Lager- und Projektdaten
+          separat gepflegt wurden.
+        </p>
+        <p class="prose-measure text-lg text-ink-soft">
           youman entwickelte ein kundenspezifisches Warenwirtschaftssystem, das die bestehende
           Datenbank mit den kaufmännischen Prozessen und der Materialplanung verbindet. Sobald ein
           Angebot erstellt, versendet und unterschrieben wurde oder eine Baustelle geplant wird,
@@ -128,8 +132,8 @@ const brotkrumen = [
         </p>
       </div>
 
-      <aside class="border-t-2 border-accent bg-canvas p-8">
-        <h2 class="font-sans text-sm font-semibold text-ink">Projekt im Überblick</h2>
+      <aside class="kasten bg-canvas">
+        <h2 class="zwischenzeile font-sans text-ink">Projekt im Überblick</h2>
         <dl class="mt-6 space-y-4 border-t border-line pt-6 text-sm">
           <div>
             <dt class="font-semibold text-ink">Kunde</dt>
@@ -158,14 +162,17 @@ const brotkrumen = [
   <Section tone="canvas">
     <Textspalten>
       <SectionHeading slot="titel" kicker="Ausgangslage" title="Über den Kunden" />
-      <div class="prose-measure space-y-5 text-lg text-ink-soft">
-        <p>
+      <div class="space-y-5">
+        <p class="vorspann">
           A&B SolarEnergy ist im Bereich Solarenergie und Photovoltaik tätig und plant sowie
-          realisiert kundenindividuelle Solarprojekte. Für die Abwicklung dieser Projekte müssen
-          Kundendaten, Angebote, Auftragsinformationen, Baustellenplanung, Materialbedarf und
-          Lagerbestände zuverlässig miteinander verbunden werden.
-      </p>
-        <p>
+          realisiert kundenindividuelle Solarprojekte.
+        </p>
+        <p class="prose-measure text-lg text-ink-soft">
+          Für die Abwicklung dieser Projekte müssen Kundendaten, Angebote, Auftragsinformationen,
+          Baustellenplanung, Materialbedarf und Lagerbestände zuverlässig miteinander verbunden
+          werden.
+        </p>
+        <p class="prose-measure text-lg text-ink-soft">
           Da jedes Projekt unterschiedliche Komponenten und Mengen erfordert, ist eine aktuelle und
           konsistente Materialübersicht ein wichtiger Bestandteil des operativen Geschäfts. Die
           Warenwirtschaft muss dabei nicht nur Bestände abbilden, sondern auch den Zusammenhang
@@ -186,11 +193,11 @@ const brotkrumen = [
     <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
       {
         folgen.map((punkt, i) => (
-          <li class="flex gap-5 bg-surface p-7">
-            <span class="zaehlziffer shrink-0 text-2xl leading-none">
+          <li class="flex items-start gap-5 bg-surface p-7 md:p-8">
+            <span class="zaehlziffer shrink-0 text-3xl leading-none">
               {String(i + 1).padStart(2, '0')}
             </span>
-            <span class="text-ink-soft">{punkt}</span>
+            <span class="text-pretty pt-1 text-ink-soft">{punkt}</span>
           </li>
         ))
       }
@@ -205,14 +212,22 @@ const brotkrumen = [
       lead="youman entwickelte ein integriertes Warenwirtschaftssystem, das auf der bestehenden Datenbank aufsetzt. Die Informationen werden nicht mehr isoliert gepflegt, sondern entlang des Geschäftsprozesses miteinander verknüpft."
     />
 
-    <ol class="mt-12 space-y-px bg-line" data-reveal>
+    {/*
+      Ablauf als Kette: jede Stufe eine Zeile, links die Ziffer, dazwischen
+      eine senkrechte Linie, die die Stufen verbindet. Eine Liste, die als
+      Ablauf gelesen wird, nicht als Aufzaehlung.
+    */}
+    <ol class="mt-12 max-w-3xl border-l border-line" data-reveal>
       {
         ablauf.map((schritt, i) => (
-          <li class="flex gap-6 bg-surface p-7">
-            <span class="font-display text-lg font-semibold tabular-nums text-accent">
+          <li class="relative pb-8 pl-10 last:pb-0">
+            <span
+              class="absolute -left-px top-0 flex size-8 -translate-x-1/2 items-center justify-center bg-canvas font-display text-sm tabular-nums text-ink ring-1 ring-line"
+              aria-hidden="true"
+            >
               {String(i + 1).padStart(2, '0')}
             </span>
-            <span class="text-ink-soft">{schritt}</span>
+            <p class="text-pretty pt-1 text-ink-soft">{schritt}</p>
           </li>
         ))
       }
@@ -230,18 +245,16 @@ const brotkrumen = [
     <ul class="mt-12 rasterfugen md:grid-cols-2" data-reveal>
       {
         anpassungen.map((punkt) => (
-          <li class="bg-surface p-7">
-            <h3 class="text-lg text-ink">{punkt.title}</h3>
-            <p class="mt-2.5 text-sm leading-relaxed text-ink-soft">{punkt.text}</p>
+          <li class="bg-surface p-7 md:p-8">
+            <h3 class="font-serif text-xl text-ink">{punkt.title}</h3>
+            <p class="mt-2.5 text-pretty text-ink-soft">{punkt.text}</p>
           </li>
         ))
       }
     </ul>
 
     <div class="mt-14 border-t border-line pt-10">
-      <h3 class="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-        Eingesetzte Technologien
-      </h3>
+      <h3 class="zwischenzeile font-sans text-ink">Eingesetzte Technologien</h3>
       <ul class="mt-6 flex flex-wrap gap-2">
         {
           technologien.map((t) => (
@@ -251,7 +264,7 @@ const brotkrumen = [
       </ul>
     </div>
 
-    <p class="prose-measure mt-12 border-l-2 border-line pl-6 text-sm text-muted-fg">
+    <p class="prose-measure mt-12 border-l-2 border-line pl-6 text-sm text-muted-fg" style="text-align:left">
       Lexware Office unterstützt laut Herstellerangabe unter anderem das Lesen, Anlegen und
       Abschließen von Angeboten, das Lesen und Anlegen von Auftragsbestätigungen sowie das Lesen,
       Anlegen und Abschließen von Rechnungen. Die Schnittstelle ist eine REST-API und setzt einen
@@ -263,16 +276,18 @@ const brotkrumen = [
   {/* ------------------------------------------------------------ Ergebnis */}
   <Section tone="dark">
     <SectionHeading kicker="Ergebnis" title="Ein System statt drei Ständen" tone="dark" />
-    <p class="prose-measure mt-8 text-lg text-white/80">
+    <p class="vorspann mt-8 max-w-3xl">
       Ein kundenspezifisches Warenwirtschaftssystem, das die bestehende Datenbank als operative
       Grundlage nutzt und gleichzeitig die kaufmännischen Abläufe in Lexware Office mit Lager- und
-      Baustellenprozessen verbindet. Lager, Angebote und Baustellenplanung sind zentral verbunden,
-      die Medienbrüche zwischen Datenbank, Warenwirtschaft und Lexware Office entfallen für die
-      definierten Kernprozesse.
+      Baustellenprozessen verbindet.
     </p>
+    <Merksatz class="mt-10 max-w-3xl">
+      Lager, Angebote und Baustellenplanung sind zentral verbunden, die Medienbrüche entfallen
+      für die definierten Kernprozesse.
+    </Merksatz>
 
     <div class="mt-12 flex flex-wrap gap-4">
-      <Button href="/kontakt" variant="ghost">Ähnlichen Fall besprechen</Button>
+      <Button href="/kontakt" variant="invers">Ähnlichen Fall besprechen</Button>
       <Button href="/case-studies" variant="ghost">Alle Referenzprojekte</Button>
     </div>
   </Section>

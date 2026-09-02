@@ -6,6 +6,7 @@ import Section from '../../components/Section.astro';
 import Textspalten from '../../components/Textspalten.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Button from '../../components/Button.astro';
+import Merksatz from '../../components/Merksatz.astro';
 import { caseStudyNach } from '../../data/caseStudies';
 
 /**
@@ -91,13 +92,15 @@ const vorgehen = [
 
   <Section>
     <div class="grid gap-12 lg:grid-cols-[2fr_1fr] lg:gap-20">
-      <div class="prose-measure space-y-5 text-lg text-ink-soft">
-        <p>
-          Drahtmüller produziert Gitterdrähte nach kundenindividuellen Maßen. Dadurch entstehen auch
-          bei den Versandpaletten stark variierende Anforderungen, da Paletten passgenau zur
-          jeweiligen Produktion gefertigt oder beschafft werden müssen.
+      <div class="space-y-5">
+        <p class="vorspann">
+          Drahtmüller produziert Gitterdrähte nach kundenindividuellen Maßen.
         </p>
-        <p>
+        <p class="prose-measure initiale text-lg text-ink-soft">
+          Dadurch entstehen auch bei den Versandpaletten stark variierende Anforderungen, da
+          Paletten passgenau zur jeweiligen Produktion gefertigt oder beschafft werden müssen.
+        </p>
+        <p class="prose-measure text-lg text-ink-soft">
           youman entwickelte für diesen Engpass ein kundenspezifisches Palettenoptimierungs-Modul,
           das direkt an das vorhandene ERP-System angebunden ist und relevante Auftragsdaten
           automatisiert verarbeitet. Die Case Study zeigt exemplarisch, wie sich operative
@@ -105,8 +108,8 @@ const vorgehen = [
         </p>
       </div>
 
-      <aside class="border-t-2 border-accent bg-canvas p-8">
-        <p class="font-display text-5xl font-semibold text-ink">2.556</p>
+      <aside class="kasten bg-canvas">
+        <p class="font-display text-5xl font-normal tabular-nums text-ink">2.556</p>
         <p class="mt-2 text-sm text-ink-soft">
           verschiedene Palettentypen waren im aktiven Einsatz.
         </p>
@@ -134,18 +137,22 @@ const vorgehen = [
       title="Jeder Auftrag ein Einzelfall"
       lead="Bei Drahtmüller musste für viele Kundenaufträge individuell entschieden werden, welche Paletten benötigt werden und ob bestehende Varianten wiederverwendet werden können. Da jeder Auftrag andere Abmessungen aufweist, entstand eine hohe Zahl an Sonderfällen, die im Tagesgeschäft manuell bewertet und eingeplant werden mussten."
     />
-    <ul class="mt-12 rasterfugen md:grid-cols-2">
+    <ul class="mt-12 rasterfugen md:grid-cols-2" data-reveal>
       {
-        folgen.map((folge) => (
-          <li class="prose-measure bg-canvas p-6 text-ink-soft">{folge}</li>
+        folgen.map((folge, i) => (
+          <li class="flex items-start gap-5 bg-surface p-7 md:p-8">
+            <span class="zaehlziffer shrink-0 text-3xl leading-none">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <p class="text-pretty pt-1 text-ink-soft">{folge}</p>
+          </li>
         ))
       }
     </ul>
-    <p class="prose-measure mt-10 text-ink-soft">
-      Gerade in einem variantengetriebenen Produktions- und Logistikumfeld führt eine solche Struktur
-      schnell dazu, dass operative Entscheidungen unnötig aufwendig, fehleranfällig und schwer
-      skalierbar werden.
-    </p>
+    <Merksatz class="mt-14 max-w-4xl">
+      In einem variantengetriebenen Umfeld werden operative Entscheidungen so unnötig aufwendig,
+      fehleranfällig und schwer skalierbar.
+    </Merksatz>
   </Section>
 
   <Section>
@@ -155,14 +162,16 @@ const vorgehen = [
         kicker="Herausforderung"
         title="Nicht das ERP fehlte, sondern die Logik davor"
       />
-      <div class="prose-measure space-y-5 text-lg text-ink-soft">
-        <p>
+      <div class="space-y-5">
+        <p class="vorspann">
           Die zentrale Herausforderung bestand nicht im Fehlen eines ERP-Systems, sondern in der
-          fehlenden operativen Logik zwischen Auftragseingang und Palettenentscheidung. Wiederkehrende
-          Maße wurden nicht systematisch als Standardfälle erkannt, sodass viele Vorgänge immer wieder
-          als Einzelfall behandelt werden mussten.
+          fehlenden operativen Logik zwischen Auftragseingang und Palettenentscheidung.
         </p>
-        <p>
+        <p class="prose-measure text-lg text-ink-soft">
+          Wiederkehrende Maße wurden nicht systematisch als Standardfälle erkannt, sodass viele
+          Vorgänge immer wieder als Einzelfall behandelt werden mussten.
+        </p>
+        <p class="prose-measure text-lg text-ink-soft">
           Gesucht war deshalb keine zusätzliche Inselsoftware, sondern eine Lösung, die sich in die
           bestehende Systemlandschaft einfügt und genau den Prozess digitalisiert, der im Tagesgeschäft
           den größten Engpass verursacht.
@@ -182,26 +191,17 @@ const vorgehen = [
     <div class="mt-14 grid gap-12 lg:grid-cols-2 lg:gap-20">
       <div>
         <h3 class="text-lg text-white">Die Kernfunktion berechnet automatisch:</h3>
-        <ul class="mt-6 space-y-4">
-          {
-            berechnung.map((punkt) => (
-              <li class="border-t border-white/20 pt-4 text-white/85">
-                <span>{punkt}</span>
-              </li>
-            ))
-          }
-        </ul>
+        <ol class="liste-nummern mt-6 space-y-4 text-white/85">
+          {berechnung.map((punkt) => <li>{punkt}</li>)}
+        </ol>
       </div>
 
-      <div class="border-l-2 border-accent-on-dark pl-8">
-        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent-on-dark">
-          Die entscheidende Logik
-        </p>
-        <p class="mt-4 font-serif text-2xl leading-snug text-white">
+      <div>
+        <Merksatz kicker="Die entscheidende Logik">
           Ab einer Mindestbestellmenge von fünf identischen Maßen klassifiziert die Software eine
           Palette automatisch als Standardpalette und führt sie dauerhaft im Sortiment.
-        </p>
-        <p class="mt-5 text-white/80">
+        </Merksatz>
+        <p class="mt-6 text-white/80">
           Seltener auftretende Maße werden weiterhin als Sonderpaletten behandelt, durch die neue
           Systematik jedoch deutlich strukturierter abgebildet.
         </p>
@@ -218,32 +218,37 @@ const vorgehen = [
     <ol class="mt-12 rasterfugen md:grid-cols-2 xl:grid-cols-4">
       {
         vorgehen.map((schritt) => (
-          <li class="bg-surface p-8">
-            <p class="font-display text-3xl font-semibold text-accent">{schritt.step}</p>
-            <h3 class="mt-3 text-lg text-ink">{schritt.title}</h3>
-            <p class="mt-3 text-sm text-ink-soft">{schritt.text}</p>
+          <li class="bg-surface p-7 md:p-8">
+            <span class="zaehlziffer block text-3xl leading-none">{schritt.step}</span>
+            <h3 class="mt-4 text-xl text-ink">{schritt.title}</h3>
+            <p class="mt-3 text-pretty text-sm text-ink-soft">{schritt.text}</p>
           </li>
         ))
       }
     </ol>
   </Section>
 
-  <Section tone="canvas">
+  {/*
+    Hier stand vorher ein halbes SectionHeading ohne oeffnendes Tag, und
+    Astro gab die Attribute als Text aus: kicker="Ergebnis" title=... stand
+    lesbar auf der Seite. Jetzt wieder ein vollstaendiger Kopf.
+  */}
   <Section tone="dark">
+    <SectionHeading
       kicker="Ergebnis"
       title="Aus manueller Bewertung wird ein strukturierter Prozess"
       tone="dark"
     />
-    <div class="prose-measure mt-8 space-y-5 text-lg text-white/80">
-      <p>
-        Mit dem neuen Modul wurde die zuvor manuelle Palettenlogik in einen klar strukturierten,
-        systemisch unterstützten Prozess überführt. Wiederkehrende Maße können automatisiert erkannt
-        und als Standardfälle behandelt werden, während Sonderfälle gezielter und nachvollziehbarer
-        gesteuert werden.
-      </p>
-    </div>
+    <p class="vorspann mt-8 max-w-3xl">
+      Mit dem neuen Modul wurde die zuvor manuelle Palettenlogik in einen klar strukturierten,
+      systemisch unterstützten Prozess überführt.
+    </p>
+    <p class="prose-measure mt-5 text-lg text-white/80">
+      Wiederkehrende Maße können automatisiert erkannt und als Standardfälle behandelt werden,
+      während Sonderfälle gezielter und nachvollziehbarer gesteuert werden.
+    </p>
     <div class="mt-10 flex flex-wrap gap-3">
-      <Button href="/kontakt" variant="ghost">Ähnlichen Fall besprechen</Button>
+      <Button href="/kontakt" variant="invers">Ähnlichen Fall besprechen</Button>
       <Button href="/leistungen/individuelle-software" variant="ghost">
         Individuelle Software
       </Button>

@@ -4,7 +4,8 @@ import PageHeader from '../../components/PageHeader.astro';
 import Section from '../../components/Section.astro';
 import Textspalten from '../../components/Textspalten.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
-import Bildplatz from '../../components/Bildplatz.astro';
+import Kachel from '../../components/Kachel.astro';
+import Kasten from '../../components/Kasten.astro';
 import { leistungen, anfrageHinweis } from '../../data/leistungen';
 import { withBase } from '../../lib/url';
 
@@ -26,20 +27,22 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
   <Section>
     <Textspalten>
       <SectionHeading slot="titel" kicker="Zur Einordnung" title="Wie die Bereiche zusammenhängen" as="h2" />
-      <div class="prose-measure space-y-6 text-lg text-ink-soft">
-        <p>
-          Die Bereiche greifen ineinander. Ein Chatbot ohne Anbindung an den tatsächlichen
-          Bestand gibt Auskünfte, die niemand geprüft hat. Eine Automation ohne festgelegte
-          Grenze entscheidet irgendwann Fälle, die sie nicht entscheiden sollte. In den meisten
-          Projekten beginnt es deshalb an einer Stelle und wächst von dort weiter.
+      <div class="space-y-6">
+        <p class="vorspann">Die Bereiche greifen ineinander.</p>
+        <p class="prose-measure initiale text-lg text-ink-soft">
+          Ein Chatbot ohne Anbindung an den tatsächlichen Bestand gibt Auskünfte, die niemand
+          geprüft hat. Eine Automation ohne festgelegte Grenze entscheidet irgendwann Fälle, die
+          sie nicht entscheiden sollte. In den meisten Projekten beginnt es deshalb an einer
+          Stelle und wächst von dort weiter.
         </p>
-        <p>
-          Was auf diesen Seiten bewusst nicht steht, sind Preise und Laufzeiten. Beides hängt
-          daran, wie die vorhandenen Systeme aussehen und wie viel davon dokumentiert ist. Das
-          lässt sich in einem{' '}
-          <a href={withBase('/kontakt')} class="textverweis">Gespräch</a> in einer halben Stunde
-          klären, während eine Preisliste für keinen der Fälle stimmen würde.
-        </p>
+        <Kasten titel="Preise und Laufzeiten" class="!mt-10">
+          <p>
+            Beides steht auf diesen Seiten bewusst nicht. Es hängt daran, wie die vorhandenen
+            Systeme aussehen und wie viel davon dokumentiert ist. Das lässt sich in einem{' '}
+            <a href={withBase('/kontakt')} class="textverweis">Gespräch</a> in einer halben
+            Stunde klären, während eine Preisliste für keinen der Fälle stimmen würde.
+          </p>
+        </Kasten>
       </div>
     </Textspalten>
   </Section>
@@ -49,45 +52,19 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
     <ul class="rasterfugen sm:grid-cols-2 lg:grid-cols-3">
       {
         leistungen.map((leistung) => (
-          <li class="hebt-sich bg-surface">
-            <a
-              href={withBase(`/leistungen/${leistung.slug}`)}
-              class="group flex h-full flex-col transition-colors duration-200"
-            >
-              <Bildplatz
-                bild={leistung.bild}
-                alt={leistung.bildAlt}
-                bezeichnung={leistung.bildhinweis}
-                verhaeltnis="3 / 2"
-                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-              />
-              <div class="flex flex-1 flex-col p-8">
-                <h3 class="flex items-start gap-2 text-xl text-ink group-hover:text-accent transition-colors duration-200">
-                  <span>{leistung.title}</span>
-                  <svg
-                    class="mt-1.5 size-4 shrink-0 text-accent transition-transform duration-200 group-hover:translate-x-1"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m9 18 6-6-6-6" />
-                  </svg>
-                </h3>
-                <p class="prose-measure mt-3 text-ink-soft">{leistung.teaser}</p>
-              </div>
-            </a>
-          </li>
+          <Kachel
+            href={`/leistungen/${leistung.slug}`}
+            title={leistung.title}
+            teaser={leistung.teaser}
+            bild={leistung.bild}
+            bildAlt={leistung.bildAlt}
+            bildhinweis={leistung.bildhinweis}
+          />
         ))
       }
-      <li class="flex flex-col justify-center bg-muted p-8">
+      <li class="flex flex-col justify-center bg-muted p-7 sm:p-8">
         <h3 class="text-xl text-ink">Nicht dabei?</h3>
-        <p class="prose-measure mt-3 text-ink-soft">
-          Dann fragen Sie an. Wir sagen Ihnen ehrlich, ob wir die Richtigen dafür sind.
-        </p>
+        <p class="mt-3 text-pretty text-ink-soft">{anfrageHinweis}</p>
         <a
           href={withBase('/kontakt')}
           class="textverweis mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-ink"
@@ -96,6 +73,5 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
         </a>
       </li>
     </ul>
-    <p class="prose-measure mt-10 text-ink-soft">{anfrageHinweis}</p>
   </Section>
 </Base>
