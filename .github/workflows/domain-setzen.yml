@@ -1,0 +1,164 @@
+# Setzt die eigene Domain in den GitHub-Pages-Einstellungen.
+#
+# Warum ein Workflow? Die eigene Domain steht nicht in einer Datei im
+# Repository, sondern in den Pages-Einstellungen. Eine CNAME-Datei in
+# public/ aendert daran nichts: Bei einem Deploy ueber Actions liest GitHub
+# sie nicht, das ist das alte Verhalten beim Deploy aus einem Branch. Der
+# Weg ohne Klickerei ist die Pages-API, und die erreicht der Workflow-Token
+# mit der Berechtigung pages: write. So wurde die alte Domain auch geloest
+# (domain-loesen.yml, inzwischen entfernt).
+#
+# Reihenfolge, die zaehlt: ERST die DNS-Eintraege beim Domainanbieter, DANN
+# dieser Workflow. Sobald die Domain hier steht, leitet GitHub die
+# github.io-Adresse per 301 auf die Domain um. Zeigt die Domain dann noch
+# ins Leere, ist die Seite ueber keinen Weg mehr erreichbar. Der Workflow
+# prueft deshalb vorher, ob die DNS-Eintraege stimmen, und bricht sonst ab.
+#
+# Was beim Domainanbieter stehen muss:
+#
+#   www.youman-automation.de   CNAME   akheyo.github.io
+#   youman-automation.de       A       185.199.108.153
+#   youman-automation.de       A       185.199.109.153
+#   youman-automation.de       A       185.199.110.153
+#   youman-automation.de       A       185.199.111.153
+#
+# Die vier A-Eintraege fuer die Adresse ohne www sind nicht Pflicht, aber
+# ohne sie fuehrt youman-automation.de ins Leere; mit ihnen leitet GitHub
+# von dort auf www weiter.
+#
+# Drei Eingaben:
+#
+#   domain     Vorgabe www.youman-automation.de. Nur aendern, wenn die
+#              Domain wirklich eine andere ist.
+#   https      "ja" erzwingt HTTPS. Erst beim ZWEITEN Lauf setzen: GitHub
+#              stellt das Zertifikat nach dem Setzen der Domain aus, das
+#              dauert Minuten bis eine Stunde. Vorher lehnt die API das
+#              Erzwingen mit 422 ab.
+#   erzwingen  "ja" ueberspringt die DNS-Pruefung. Nur, wenn man genau
+#              weiss, warum die Pruefung falsch liegt.
+#
+# Am Ende stoesst der Workflow den Pages-Deploy neu an, damit canonical,
+# og:url und Sitemap die Domain tragen: Die Seite bezieht ihre Adresse beim
+# Bauen aus configure-pages, ein alter Build kennt die Domain nicht.
+
+name: Eigene Domain in den Pages-Einstellungen setzen
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: 'Domain, unter der die Seite laufen soll'
+        required: true
+        default: 'www.youman-automation.de'
+      https:
+        description: 'HTTPS erzwingen (ja/nein). Erst beim zweiten Lauf, wenn das Zertifikat da ist.'
+        required: false
+        default: 'nein'
+      erzwingen:
+        description: 'DNS-Pruefung ueberspringen (ja/nein)'
+        required: false
+        default: 'nein'
+
+permissions:
+  pages: write
+  actions: write
+
+jobs:
+  setzen:
+    runs-on: ubuntu-latest
+    env:
+      DOMAIN: ${{ inputs.domain }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      API: https://api.github.com/repos/${{ github.repository }}/pages
+    steps:
+      - name: Stand vorher
+        run: |
+          echo "--- Pages-Einstellungen vorher ---"
+          curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+               -H "Accept: application/vnd.github+json" "$API" \
+            | grep -E '"(cname|html_url|status|https_enforced|protected_domain_state)"' || true
+
+      - name: DNS pruefen
+        if: inputs.erzwingen != 'ja'
+        run: |
+          echo "--- DNS fuer $DOMAIN ---"
+          cname=$(dig +short "$DOMAIN" CNAME | tr -d '\n')
+          a=$(dig +short "$DOMAIN" A | tr '\n' ' ')
+          echo "CNAME: ${cname:-keiner}"
+          echo "A:     ${a:-keine}"
+          apex=$(echo "$DOMAIN" | sed 's/^www\.//')
+          echo "--- DNS fuer $apex (ohne www) ---"
+          dig +short "$apex" A | sed 's/^/A:     /' || true
+
+          ok=nein
+          case "$cname" in
+            *github.io.) ok=ja ;;
+          esac
+          # Ohne CNAME reicht es, wenn die A-Eintraege zu GitHub Pages
+          # zeigen (185.199.108.0/22).
+          case " $a " in
+            *" 185.199.108."*|*" 185.199.109."*|*" 185.199.110."*|*" 185.199.111."*) ok=ja ;;
+          esac
+
+          if [ "$ok" != "ja" ]; then
+            echo
+            echo "ABBRUCH: $DOMAIN zeigt noch nicht auf GitHub Pages."
+            echo "Beim Domainanbieter eintragen (siehe Kopf dieser Datei):"
+            echo "  $DOMAIN  CNAME  ${{ github.repository_owner }}.github.io"
+            echo "Dann einige Minuten warten und diesen Workflow erneut starten."
+            echo "Die Domain wurde NICHT gesetzt, die Seite bleibt unter github.io erreichbar."
+            exit 1
+          fi
+          echo "DNS in Ordnung."
+
+      - name: Domain setzen
+        run: |
+          code=$(curl -sS -o /tmp/antwort.txt -w '%{http_code}' -X PUT \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" "$API" \
+            -d "{\"cname\":\"$DOMAIN\"}")
+          echo "HTTP $code"
+          cat /tmp/antwort.txt; echo
+          # 204 heisst uebernommen. Alles andere faerbt den Lauf rot.
+          if [ "$code" != "204" ]; then
+            echo "Fehlgeschlagen. Die Domain muss von Hand gesetzt werden:"
+            echo "Settings -> Pages -> Custom domain -> $DOMAIN -> Save"
+            exit 1
+          fi
+
+      - name: HTTPS erzwingen
+        if: inputs.https == 'ja'
+        run: |
+          code=$(curl -sS -o /tmp/antwort.txt -w '%{http_code}' -X PUT \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" "$API" \
+            -d '{"https_enforced":true}')
+          echo "HTTP $code"
+          cat /tmp/antwort.txt; echo
+          if [ "$code" != "204" ]; then
+            echo "HTTPS liess sich noch nicht erzwingen. Meist fehlt das Zertifikat noch;"
+            echo "in einer Stunde erneut mit https=ja starten. Die Domain selbst ist gesetzt."
+            exit 1
+          fi
+
+      - name: Stand nachher
+        run: |
+          echo "--- Pages-Einstellungen nachher ---"
+          curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+               -H "Accept: application/vnd.github+json" "$API" \
+            | grep -E '"(cname|html_url|status|https_enforced|protected_domain_state)"' || true
+
+      - name: Pages-Deploy neu anstossen
+        run: |
+          code=$(curl -sS -o /tmp/antwort.txt -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/youman-website-pages.yml/dispatches" \
+            -d "{\"ref\":\"${{ github.ref_name }}\"}")
+          echo "HTTP $code"
+          cat /tmp/antwort.txt; echo
+          if [ "$code" != "204" ]; then
+            echo "Der Deploy liess sich nicht anstossen. Von Hand: Actions -> youman Website auf GitHub Pages -> Run workflow."
+            exit 1
+          fi
+          echo "Deploy laeuft. Danach tragen canonical, og:url und Sitemap die Domain."

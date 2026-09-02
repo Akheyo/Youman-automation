@@ -161,6 +161,17 @@ Pages → Custom domain gesetzt, nicht über eine CNAME-Datei. Bei einem Deploy
 über Actions setzt die CNAME-Datei die Domain nicht; das ist das alte
 Verhalten beim Deploy aus einem Branch.
 
+Ohne Klickerei geht es über `.github/workflows/domain-setzen.yml` (Actions →
+"Eigene Domain in den Pages-Einstellungen setzen" → Run workflow). Der
+Workflow prüft zuerst, ob die DNS-Einträge beim Domainanbieter auf GitHub
+Pages zeigen, setzt dann die Domain über die Pages-API und stößt den Deploy
+neu an, damit canonical, og:url und Sitemap die Domain tragen. Die nötigen
+DNS-Einträge stehen im Kopf der Datei. HTTPS erzwingen geht erst in einem
+zweiten Lauf mit `https=ja`, sobald GitHub das Zertifikat ausgestellt hat.
+
+Die Domain ist `www.youman-automation.de`; die Adresse ohne `www` leitet
+GitHub dorthin weiter, sobald ihre A-Einträge gesetzt sind.
+
 | Variable | Zweck |
 | --- | --- |
 | `SITE_URL`, `SITE_BASE` | kommen aus `configure-pages` |
