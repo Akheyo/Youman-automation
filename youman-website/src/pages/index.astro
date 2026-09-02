@@ -2,62 +2,102 @@
 import Base from '../layouts/Base.astro';
 import Section from '../components/Section.astro';
 import SectionHeading from '../components/SectionHeading.astro';
+import Textspalten from '../components/Textspalten.astro';
 import Button from '../components/Button.astro';
 import Logo from '../components/Logo.astro';
 import HeroSlider from '../components/HeroSlider.astro';
-import Bildplatz from '../components/Bildplatz.astro';
-import { site } from '../data/site';
-import { leistungen, anfrageHinweis } from '../data/leistungen';
+import Kachel from '../components/Kachel.astro';
+import { site, prozess } from '../data/site';
+import { leistungen } from '../data/leistungen';
 import { branchen } from '../data/branchen';
 import { caseStudies } from '../data/caseStudies';
 import { withBase } from '../lib/url';
 // Fuer die Vorschau beim Teilen: dasselbe Motiv, mit dem der Hero anfaengt.
 import heroVorschau from '../assets/img/hero-1.jpg';
+
+/*
+ * Reihenfolge der Abschnitte, nach dem Muster "Vertrauen und Umsetzung" aus
+ * der Musterdatenbank des Skills ui-ux-pro-max: Hero mit Aussage, dann
+ * Einordnung, dann das Angebot, dann der Beleg, dann die Zielgruppen, dann
+ * das Vorgehen, dann die Aufforderung.
+ *
+ * Vorher stand das Vorgehen nur auf "Ueber uns", und die Referenzen kamen
+ * nach den Branchen. Wer die Seite von oben nach unten liest, will aber erst
+ * wissen, ob das funktioniert (Referenzen), und dann, ob es fuer ihn ist
+ * (Branchen).
+ */
 ---
 
 <Base title={site.name} description={site.startseitenBeschreibung} bild={heroVorschau}>
   {/*
-    Der Hero traegt die Wortmarke gross - die einzige Stelle, an der das
+    Der Hero traegt die Wortmarke gross, die einzige Stelle, an der das
     passiert. Dahinter laeuft eine Bildfolge, kein Video: Bilder laden in der
     Groesse, die der Bildschirm braucht, das erste ist sofort da, und der
     Wechsel laesst sich anhalten. Ein Video waere mehrere Megabyte, liesse
     sich schlechter anhalten und braechte hier nichts dazu.
+
+    Die Ueberschrift der Seite ist nicht mehr die Wortmarke, sondern der
+    Satz darunter. Ein Firmenname sagt einem Besucher, der die Firma nicht
+    kennt, nichts darueber, was hier angeboten wird; genau das muss die
+    erste Ueberschrift aber leisten, fuer Menschen wie fuer Suchmaschinen.
+    Die Wortmarke bleibt als Bildmarke gross stehen, ist aber kein h1 mehr.
+
+    Die Hoehe zieht die Kopfleiste ab (5 rem, ab md 6 rem), damit der Hero
+    genau eine Bildschirmhoehe fuellt und die naechste Sektion mit ihrer
+    Kante gerade noch anschneidet.
   */}
-  <section class="on-dark relative isolate flex min-h-[calc(100svh-5rem)] flex-col justify-center bg-ink-deep py-24 text-white">
+  <section
+    class="on-dark relative isolate flex min-h-[calc(100svh-5rem)] flex-col justify-center bg-ink-deep py-20 text-white md:min-h-[calc(100svh-6rem)] md:py-24"
+  >
     <HeroSlider />
 
     <div class="container-page">
-      <Logo as="h1" variant="light" mitClaim class="text-[2.25rem] sm:text-6xl lg:text-8xl" />
+      <Logo variant="light" mitClaim class="text-[2rem] sm:text-5xl lg:text-7xl" />
 
-      <p class="prose-measure mt-12 text-xl text-white/85 sm:text-2xl">
-        Wir automatisieren, was in Ihrem Betrieb jeden Tag Zeit kostet: Anfragen, die von Hand
-        sortiert werden, Angaben, die zweimal erfasst werden, Auskünfte, die immer wieder
-        dieselben sind.
+      <h1 class="mt-10 max-w-4xl text-3xl text-white sm:text-4xl lg:text-5xl">
+        {site.subclaim.replace('was jeden Tag', 'was in Ihrem Betrieb jeden Tag')}
+      </h1>
+
+      <p class="prose-measure mt-6 text-lg text-white/85 sm:text-xl">
+        Anfragen, die von Hand sortiert werden. Angaben, die zweimal erfasst werden. Auskünfte,
+        die immer wieder dieselben sind. Wir sehen uns den Ablauf an und bauen, was dort fehlt.
       </p>
 
-      <div class="mt-12 flex flex-wrap gap-4">
-        <Button href="/kontakt" variant="ghost">Gespräch vereinbaren</Button>
+      {/*
+        Eine Hauptschaltflaeche, eine Nebenschaltflaeche. Vorher standen zwei
+        gleich gestaltete Umrissknoepfe nebeneinander, und nichts sagte,
+        welcher der wichtigere ist.
+      */}
+      <div class="mt-10 flex flex-wrap gap-4">
+        <Button href="/kontakt" variant="invers">Gespräch vereinbaren</Button>
         <Button href="/leistungen" variant="ghost">Leistungen ansehen</Button>
       </div>
     </div>
   </section>
 
-  {/* Einordnung direkt unter dem Hero: Wer hier landet, soll nach zwei
-      Saetzen wissen, worum es geht. */}
+  {/*
+    Einordnung direkt unter dem Hero: Wer hier landet, soll nach zwei
+    Saetzen wissen, worum es geht. Zweispaltig wie auf den Unterseiten,
+    weil ein Absatz mit 68 Zeichen Breite allein auf einem breiten Bildschirm
+    die rechte Haelfte leer laesst.
+  */}
   <Section>
-    <div class="prose-measure space-y-6 text-lg text-ink-soft">
-      <p>
-        {site.name} verbindet zwei Dinge, die sonst getrennt eingekauft werden: Wir sehen uns
-        den Ablauf an, um den es geht, und wir bauen anschließend die Lösung dafür. Kein
-        Beratungshaus, das Empfehlungen ausspricht, und kein Anbieter, der ein fertiges Produkt
-        verkauft, in das der Betrieb hineinpassen muss.
-      </p>
-      <p>
-        Das Ergebnis hängt an dem, was schon läuft, und ersetzt es nicht. Buchhaltung, Lager
-        und Stammdaten bleiben, wo sie sind. Dazu kommt genau das Stück, das bisher von Hand
-        erledigt wurde.
-      </p>
-    </div>
+    <Textspalten>
+      <SectionHeading slot="titel" kicker={site.name} title="Analyse und Umsetzung in einer Hand" />
+      <div class="prose-measure space-y-6 text-lg text-ink-soft">
+        <p>
+          {site.name} verbindet zwei Dinge, die sonst getrennt eingekauft werden: Wir sehen uns
+          den Ablauf an, um den es geht, und wir bauen anschließend die Lösung dafür. Kein
+          Beratungshaus, das Empfehlungen ausspricht, und kein Anbieter, der ein fertiges Produkt
+          verkauft, in das der Betrieb hineinpassen muss.
+        </p>
+        <p>
+          Das Ergebnis hängt an dem, was schon läuft, und ersetzt es nicht. Buchhaltung, Lager
+          und Stammdaten bleiben, wo sie sind. Dazu kommt genau das Stück, das bisher von Hand
+          erledigt wurde.
+        </p>
+      </div>
+    </Textspalten>
   </Section>
 
   <Section tone="canvas">
@@ -69,32 +109,28 @@ import heroVorschau from '../assets/img/hero-1.jpg';
     <ul class="mt-12 rasterfugen sm:grid-cols-2 lg:grid-cols-3" data-reveal>
       {
         leistungen.map((leistung) => (
-          <li class="hebt-sich bg-surface">
-            <a
-              href={withBase(`/leistungen/${leistung.slug}`)}
-              class="group flex h-full flex-col transition-colors duration-200"
-            >
-              <Bildplatz
-                bild={leistung.bild}
-                alt={leistung.bildAlt}
-                bezeichnung={leistung.bildhinweis}
-                verhaeltnis="3 / 2"
-                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-              />
-              <div class="flex flex-1 flex-col p-8">
-                <h3 class="text-xl text-ink group-hover:text-accent transition-colors duration-200">
-                  {leistung.title}
-                </h3>
-                <p class="prose-measure mt-3 text-ink-soft">{leistung.teaser}</p>
-              </div>
-            </a>
-          </li>
+          <Kachel
+            href={`/leistungen/${leistung.slug}`}
+            title={leistung.title}
+            teaser={leistung.teaser}
+            bild={leistung.bild}
+            bildAlt={leistung.bildAlt}
+            bildhinweis={leistung.bildhinweis}
+          />
         ))
       }
-      <li class="flex flex-col justify-center bg-muted p-8">
+      {/*
+        Die sechste Zelle: Wer etwas sucht, das hier nicht steht, soll nicht
+        den Eindruck bekommen, es sei ausgeschlossen. Das ist ausdruecklich
+        gewuenscht. Vorher stand derselbe Gedanke zusaetzlich als einzelner
+        Absatz in einer eigenen Sektion weiter unten; die Kachel reicht.
+      */}
+      <li class="flex flex-col justify-center bg-muted p-7 sm:p-8">
         <h3 class="text-xl text-ink">Nicht dabei?</h3>
-        <p class="prose-measure mt-3 text-ink-soft">
-          Dann fragen Sie an. Wir sagen Ihnen ehrlich, ob wir die Richtigen dafür sind.
+        <p class="mt-3 text-pretty text-ink-soft">
+          Diese fünf Bereiche decken das meiste ab, was angefragt wird, sind aber keine
+          abschließende Liste. Fragen Sie an. Wir sagen Ihnen ehrlich, ob wir die Richtigen dafür
+          sind.
         </p>
         <a
           href={withBase('/kontakt')}
@@ -108,33 +144,24 @@ import heroVorschau from '../assets/img/hero-1.jpg';
 
   <Section>
     <SectionHeading
-      kicker="Branchen"
-      title="Wo wir arbeiten"
-      lead="Eine Abkürzung für Leser, keine Grenze. Wer hier nicht vorkommt, ist nicht ausgeschlossen."
+      kicker="Referenzprojekte"
+      title="Abgeschlossene Projekte"
+      lead="Beide mit Namen des Kunden und mit dem, was dort tatsächlich gebaut wurde."
     />
-    <ul class="mt-12 rasterfugen sm:grid-cols-2 lg:grid-cols-3" data-reveal>
+    <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
       {
-        branchen.map((branche) => (
-          <li class="hebt-sich bg-surface">
-            <a
-              href={withBase(`/branchen/${branche.slug}`)}
-              class="group flex h-full flex-col transition-colors duration-200"
-            >
-              <Bildplatz
-                bild={branche.bild}
-                alt={branche.bildAlt}
-                bezeichnung={branche.bildhinweis}
-                verhaeltnis="3 / 2"
-                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-              />
-              <div class="flex flex-1 flex-col p-7">
-                <h3 class="text-lg text-ink group-hover:text-accent transition-colors duration-200">
-                  {branche.title}
-                </h3>
-                <p class="prose-measure mt-3 text-sm text-ink-soft">{branche.teaser}</p>
-              </div>
-            </a>
-          </li>
+        caseStudies.map((fall) => (
+          <Kachel
+            href={fall.href}
+            kicker={fall.branche}
+            title={fall.title}
+            teaser={fall.excerpt}
+            bild={fall.bild}
+            bildAlt={fall.bildAlt}
+            bildhinweis={fall.bildhinweis}
+            verhaeltnis="16 / 9"
+            sizes="(min-width: 640px) 50vw, 100vw"
+          />
         ))
       }
     </ul>
@@ -142,43 +169,54 @@ import heroVorschau from '../assets/img/hero-1.jpg';
 
   <Section tone="canvas">
     <SectionHeading
-      kicker="Referenzprojekte"
-      title="Abgeschlossene Projekte"
-      lead="Beide mit Namen des Kunden. Ohne Einsparquoten, weil dafür nichts Belegtes vorliegt."
+      kicker="Branchen"
+      title="Wo wir arbeiten"
+      lead="Eine Abkürzung für Leser, keine Grenze. Wer hier nicht vorkommt, ist nicht ausgeschlossen."
     />
-    <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
+    <ul class="mt-12 rasterfugen sm:grid-cols-2 lg:grid-cols-3" data-reveal>
       {
-        caseStudies.map((fall) => (
-          <li class="hebt-sich bg-surface">
-            <a
-              href={withBase(fall.href)}
-              class="group flex h-full flex-col transition-colors duration-200"
-            >
-              <Bildplatz
-                bild={fall.bild}
-                alt={fall.bildAlt}
-                bezeichnung={fall.bildhinweis}
-                verhaeltnis="16 / 9"
-                sizes="(min-width: 640px) 50vw, 100vw"
-              />
-              <div class="flex flex-1 flex-col p-8">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
-                  {fall.branche}
-                </p>
-                <h3 class="mt-3 text-xl text-ink group-hover:text-accent transition-colors duration-200">
-                  {fall.title}
-                </h3>
-                <p class="prose-measure mt-3 text-ink-soft">{fall.excerpt}</p>
-              </div>
-            </a>
-          </li>
+        branchen.map((branche) => (
+          <Kachel
+            href={`/branchen/${branche.slug}`}
+            title={branche.title}
+            teaser={branche.teaser}
+            bild={branche.bild}
+            bildAlt={branche.bildAlt}
+            bildhinweis={branche.bildhinweis}
+            groesse="klein"
+          />
         ))
       }
     </ul>
   </Section>
 
+  {/*
+    Das Vorgehen stand bisher nur auf "Ueber uns". Wer auf der Startseite bis
+    hierher gelesen hat, fragt sich als Naechstes, wie so ein Projekt
+    anfaengt, und die Antwort darauf gehoert vor die Aufforderung, nicht
+    zwei Klicks weiter.
+  */}
   <Section>
-    <p class="prose-measure text-lg text-ink-soft">{anfrageHinweis}</p>
+    <SectionHeading
+      kicker="Vorgehen"
+      title="Wie ein Projekt abläuft"
+      lead="Vier Schritte. Nach dem zweiten wissen Sie, ob sich das Vorhaben lohnt."
+    />
+    <ol class="mt-12 rasterfugen sm:grid-cols-2 lg:grid-cols-4" data-reveal>
+      {
+        prozess.map((schritt) => (
+          <li class="bg-surface p-6 sm:p-7">
+            <span class="zaehlziffer block text-3xl leading-none">{schritt.step}</span>
+            <h3 class="mt-3 text-lg text-ink">{schritt.title}</h3>
+            <p class="mt-2 text-sm text-pretty text-ink-soft">{schritt.description}</p>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="mt-10 text-lg text-ink-soft">
+      Wer dahintersteht und woran wir uns dabei messen lassen, steht auf der Seite{' '}
+      <a href={withBase('/ueber-uns')} class="textverweis">Über uns</a>.
+    </p>
   </Section>
 
   <Section tone="dark">
@@ -189,7 +227,7 @@ import heroVorschau from '../assets/img/hero-1.jpg';
         tone="dark"
         class="max-w-2xl"
       />
-      <Button href="/kontakt" variant="ghost" class="shrink-0">Gespräch vereinbaren</Button>
+      <Button href="/kontakt" variant="invers" class="shrink-0">Gespräch vereinbaren</Button>
     </div>
   </Section>
 </Base>

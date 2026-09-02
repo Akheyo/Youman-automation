@@ -1,0 +1,91 @@
+---
+/**
+ * Verweiskachel mit Bild, Titel und Kurzzeile.
+ *
+ * Die Startseite zeigt drei Raster aus solchen Kacheln (Leistungen, Branchen,
+ * Referenzprojekte). Vorher stand das Markup dreimal ausgeschrieben da, und
+ * die Kacheln unterschieden sich in Kleinigkeiten, die niemand so gewollt
+ * hatte: mal mit Pfeil, mal ohne, mal 32 px Innenabstand, mal 28.
+ *
+ * Die ganze Kachel ist der Verweis, nicht nur der Titel. Auf dem Handy ist
+ * das die groessere Trefferflaeche, am Rechner zeigt der Pfeil neben dem
+ * Titel an, dass es weitergeht, und `hebt-sich` hebt die Kachel beim
+ * Ueberfahren an.
+ *
+ * Der Text in der Kachel steht linksbuendig, nicht im Blocksatz: Die Spalte
+ * ist in einem Dreierraster nur rund 35 Zeichen breit, und Blocksatz reisst
+ * dort weisse Baender durch jeden zweiten Satz.
+ */
+import Bildplatz from './Bildplatz.astro';
+import { withBase } from '../lib/url';
+
+interface Props {
+  href: string;
+  title: string;
+  teaser: string;
+  /** Kleine Zeile ueber dem Titel, etwa die Branche eines Referenzprojekts. */
+  kicker?: string;
+  bild?: ImageMetadata;
+  bildAlt?: string;
+  bildhinweis: string;
+  verhaeltnis?: string;
+  sizes?: string;
+  /** Titelgroesse. "klein" fuer dichtere Raster wie die sechs Branchen. */
+  groesse?: 'normal' | 'klein';
+}
+
+const {
+  href,
+  title,
+  teaser,
+  kicker,
+  bild,
+  bildAlt = '',
+  bildhinweis,
+  verhaeltnis = '3 / 2',
+  sizes = '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw',
+  groesse = 'normal',
+} = Astro.props;
+---
+
+<li class="hebt-sich bg-surface">
+  <a href={withBase(href)} class="group flex h-full flex-col">
+    <Bildplatz
+      bild={bild}
+      alt={bildAlt}
+      bezeichnung={bildhinweis}
+      verhaeltnis={verhaeltnis}
+      sizes={sizes}
+    />
+    <div class:list={['flex flex-1 flex-col', groesse === 'klein' ? 'p-6 sm:p-7' : 'p-7 sm:p-8']}>
+      {
+        kicker && (
+          <p class="mb-3 text-xs font-semibold tracking-[0.18em] text-accent uppercase">{kicker}</p>
+        )
+      }
+      <h3
+        class:list={[
+          'flex items-start gap-2 text-ink transition-colors duration-200 group-hover:text-accent',
+          groesse === 'klein' ? 'text-lg' : 'text-xl',
+        ]}
+      >
+        <span>{title}</span>
+        <svg
+          class="mt-1.5 size-4 shrink-0 text-accent transition-transform duration-200 group-hover:translate-x-1"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </h3>
+      <p class:list={['mt-3 text-pretty text-ink-soft', groesse === 'klein' && 'text-sm']}>
+        {teaser}
+      </p>
+    </div>
+  </a>
+</li>

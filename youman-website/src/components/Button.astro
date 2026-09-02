@@ -11,7 +11,13 @@ import { withBase } from '../lib/url';
  */
 interface Props {
   href: string;
-  variant?: 'primary' | 'secondary' | 'ghost';
+  /**
+   * "invers" ist die Hauptschaltflaeche in den schwarzen Sektionen: weiss
+   * gefuellt, damit sie sich von der umrissenen "ghost"-Variante daneben
+   * abhebt. Zwei gleich aussehende Schaltflaechen nebeneinander lassen
+   * offen, welche die wichtigere ist.
+   */
+  variant?: 'primary' | 'secondary' | 'ghost' | 'invers';
   /** false, wenn der Pfeil nicht passt, etwa bei sehr schmalen Flaechen. */
   pfeil?: boolean;
   class?: string;
@@ -23,6 +29,7 @@ const styles = {
   primary: 'bg-accent text-accent-fg hover:bg-accent-hover border border-transparent',
   secondary: 'bg-transparent text-accent border border-accent hover:bg-accent hover:text-accent-fg',
   ghost: 'bg-transparent text-white border border-white/60 hover:bg-white hover:text-ink-deep',
+  invers: 'bg-white text-ink-deep border border-white hover:bg-surface hover:border-surface',
 } as const;
 ---
 

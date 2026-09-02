@@ -56,7 +56,22 @@ Zwei Fallstricke, die beim Weiterbauen zählen:
   nehmen `--color-line` statt eines festen Schwarz, damit sie einem
   Palettenwechsel folgen.
 - Die `ghost`-Schaltfläche steht ausschließlich in den schwarzen Sektionen
-  und ist deshalb fest weiß. Sie folgt der Palette bewusst nicht.
+  und ist deshalb fest weiß. Sie folgt der Palette bewusst nicht. Ihr
+  Gegenstück dort ist `invers`, weiß gefüllt: die Hauptschaltfläche einer
+  schwarzen Sektion. Stehen zwei Schaltflächen nebeneinander, ist genau eine
+  davon `invers`, sonst bleibt offen, welche die wichtigere ist.
+- Blocksatz (`prose-measure`) greift erst ab 640 px Breite. Darunter fasst
+  eine Zeile zu wenige Wörter, und die Silbentrennung reicht nicht mehr, um
+  die Lücken zu schließen. Einleitungszeilen unter Überschriften und der
+  Text in Kacheln stehen immer linksbündig, aus demselben Grund.
+
+## Kacheln
+
+Die Raster auf der Startseite (Leistungen, Branchen, Referenzprojekte)
+bestehen aus `Kachel.astro`: Bild, Titel mit Pfeil, Kurzzeile, die ganze
+Fläche ist der Verweis. Die Übersichtsseiten unter `/leistungen` und
+`/branchen` tragen ihr Kachel-Markup noch selbst; wer dort etwas ändert,
+sollte es auf die Komponente umstellen, statt beides zu pflegen.
 
 ## Bilder
 

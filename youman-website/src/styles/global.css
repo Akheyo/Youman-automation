@@ -213,7 +213,8 @@
   Textmaß für Fließtext, dazu Blocksatz.
 
   Blocksatz braucht im Deutschen zwei Dinge, sonst reißen weiße Bänder durch
-  den Absatz: Silbentrennung und eine Spalte, die breit genug ist. Ohne
+  den Absatz: Silbentrennung und eine Spalte, die breit genug ist. Das
+  Zweite entscheidet die Breite des Bildschirms, siehe unten. Ohne
   Trennung verteilt der Browser die fehlende Breite auf die Wortzwischenräume,
   und lange Komposita wie "Warenwirtschaftssystem" machen daraus Lücken von
   halber Wortbreite.
@@ -226,10 +227,20 @@
 */
 @utility prose-measure {
   max-width: 68ch;
-  text-align: justify;
-  text-justify: inter-word;
   hyphens: auto;
   hyphenate-limit-chars: 6 3 3;
+
+  /*
+    Blocksatz erst ab 640 px. Darunter fasst eine Zeile bei 18 bis 20 px
+    Schrift nur 30 bis 40 Zeichen, und dann reicht auch die Silbentrennung
+    nicht mehr: Der Browser dehnt die Wortzwischenraeume auf das Doppelte,
+    und der Absatz bekommt Loecher. Auf dem Handy steht der Text deshalb
+    linksbuendig.
+  */
+  @media (width >= 40rem) {
+    text-align: justify;
+    text-justify: inter-word;
+  }
 }
 
 .text-center .prose-measure,

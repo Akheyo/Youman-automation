@@ -62,7 +62,14 @@ const {
     lead && (
       <p
         class:list={[
-          'mt-5 text-lg prose-measure',
+          /*
+            Kein Blocksatz in der Einleitungszeile. Sie ist ein bis zwei
+            Zeilen lang, und bei zwei Zeilen dehnt der Browser die erste auf
+            volle Breite, sobald das letzte Wort nicht mehr hineinpasst:
+            ein einzelner Satz mit fingerbreiten Luecken. Die Breite bleibt
+            dieselbe wie im Fliesstext.
+          */
+          'mt-5 max-w-[68ch] text-lg text-pretty hyphens-auto',
           align === 'center' && 'mx-auto',
           tone === 'dark' ? 'text-white/80' : 'text-ink-soft',
         ]}
