@@ -180,18 +180,45 @@ jobs:
 
       - name: Domain setzen
         run: |
+          # Steht die Domain schon (etwa von Hand eingetragen), ist hier
+          # nichts zu tun. Der Lauf geht dann trotzdem weiter und stoesst
+          # den Deploy an, damit die Seite die Domain in canonical, og:url
+          # und Sitemap traegt.
+          steht=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+                       -H "Accept: application/vnd.github+json" "$API" \
+                  | sed -n 's/.*"cname": *"\([^"]*\)".*/\1/p')
+          if [ "$steht" = "$DOMAIN" ]; then
+            echo "Domain steht bereits auf $DOMAIN, nichts zu setzen."
+            exit 0
+          fi
+
           code=$(curl -sS -o /tmp/antwort.txt -w '%{http_code}' -X PUT \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" "$API" \
             -d "{\"cname\":\"$DOMAIN\"}")
           echo "HTTP $code"
           cat /tmp/antwort.txt; echo
-          # 204 heisst uebernommen. Alles andere faerbt den Lauf rot.
-          if [ "$code" != "204" ]; then
-            echo "Fehlgeschlagen. Die Domain muss von Hand gesetzt werden:"
-            echo "Settings -> Pages -> Custom domain -> $DOMAIN -> Save"
-            exit 1
+
+          if [ "$code" = "204" ]; then
+            echo "Domain gesetzt."
+            exit 0
           fi
+
+          echo
+          if [ "$code" = "403" ]; then
+            # Erwarteter Fall, kein Fehler in diesem Workflow: GitHub laesst
+            # das Setzen einer eigenen Domain ueber den Workflow-Token nicht
+            # zu, es verlangt dafuer Adminrechte am Repository. Das Loesen
+            # einer Domain war frueher erlaubt (domain-loesen.yml), das
+            # Setzen ist es nicht.
+            echo "GitHub laesst das Setzen der Domain ueber den Workflow-Token nicht zu"
+            echo "(403, Adminrechte noetig). Das ist keine Fehlkonfiguration hier."
+          fi
+          echo "Von Hand eintragen, es ist ein Feld:"
+          echo "  Settings -> Pages -> Custom domain -> $DOMAIN -> Save"
+          echo "Danach diesen Workflow erneut starten. Er erkennt die gesetzte"
+          echo "Domain und stoesst nur noch den Deploy an."
+          exit 1
 
       - name: HTTPS erzwingen
         if: inputs.https == 'ja'
