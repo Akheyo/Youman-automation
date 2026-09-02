@@ -63,7 +63,7 @@ export const leistungen: Leistung[] = [
     bildhinweis: 'Arbeitsplatz, an dem ein Ablauf durchläuft',
     title: 'KI-Automationen',
     teaser: 'Wiederkehrende Arbeit, die heute Menschen erledigen, läuft künftig von selbst.',
-    seoTitel: 'KI-Automation für Unternehmen',
+    seoTitel: 'KI-Automation für Mittelstand und Industrie',
     seoBeschreibung:
       'Automatisierte Bearbeitung von Anfragen, Dokumenten und Datenpflege. youman baut KI-Automationen, die an Ihre bestehenden Systeme angebunden sind.',
     intro:
@@ -143,7 +143,7 @@ export const leistungen: Leistung[] = [
     teaser: 'Schnell, barrierefrei und auffindbar. Kein Baukasten, kein Ladebalken.',
     seoTitel: 'Webseiten entwickeln lassen, schnell und auffindbar',
     seoBeschreibung:
-      'Moderne Webseiten ohne Baukasten: kurze Ladezeiten, sauberer Aufbau für Suchmaschinen, barrierefrei nach WCAG. Entwickelt von youman.',
+      'Webseiten ohne Baukasten: kurze Ladezeiten, sauberer Aufbau für Suchmaschinen, barrierefrei nach WCAG 2.1. Gemessen wird vor der Übergabe, nicht behauptet.',
     intro:
       'Die meisten Webseiten scheitern nicht am Aussehen, sondern an drei Dingen: Sie laden zu langsam, sie sind für Suchmaschinen schlecht lesbar, und mit Tastatur oder Screenreader sind sie kaum bedienbar. Das sind messbare Größen, keine Geschmacksfragen, und wir messen sie vor der Übergabe.',
     painpoints: [
@@ -221,7 +221,7 @@ export const leistungen: Leistung[] = [
     teaser: 'Für den Ablauf, für den es kein fertiges Programm gibt.',
     seoTitel: 'Individuelle Software entwickeln lassen',
     seoBeschreibung:
-      'Software für Abläufe, die kein Standardprogramm abbildet. Angebunden an vorhandene Systeme, ohne diese abzulösen. Entwickelt von youman.',
+      'Software für Abläufe, die kein Standardprogramm abbildet. Angebunden an ERP, Warenwirtschaft oder Datenbank, ohne das Bestehende abzulösen. Entwickelt von youman.',
     intro:
       'In fast jedem Betrieb gibt es eine Datei, die nicht im Handbuch steht und an der trotzdem ein Teil des Tagesgeschäfts hängt. Sie ist entstanden, weil jemand eine Aufgabe erledigen musste, für die es keine Vorlage gab. Was darin steckt, ist die Beschreibung einer fehlenden Software, und genau die bauen wir.',
     painpoints: [

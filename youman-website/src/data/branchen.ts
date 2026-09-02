@@ -39,6 +39,28 @@ export type Branche = {
   painpoints: string[];
   /** Slugs aus leistungen.ts, die hier typischerweise greifen. */
   leistungen: string[];
+  /**
+   * Die Systeme, die in dieser Branche üblicherweise laufen.
+   *
+   * Das ist Marktwissen, keine Aussage über eigene Projekte: Diese
+   * Programme sind in der jeweiligen Branche verbreitet, das lässt sich
+   * nachprüfen. Es steht hier, weil eine Branchenseite ohne einen einzigen
+   * Systemnamen austauschbar ist. Wer in seinem Betrieb eines davon
+   * einsetzt, erkennt sofort, ob hier jemand seine Welt kennt.
+   *
+   * Keine Behauptung über Erfahrung damit. Wo youman ein System
+   * tatsächlich angebunden hat, steht das in den Referenzprojekten und
+   * nirgends sonst.
+   */
+  systeme: { name: string; was: string }[];
+  /**
+   * Ein typischer Ablauf der Branche, aufgelöst in seine Übergaben.
+   *
+   * Der Punkt sind die Übergabestellen: Dort geht Information verloren,
+   * dort wird abgetippt, dort entsteht die Arbeit, um die es auf dieser
+   * Seite geht. Ein Ablauf ohne benannte Übergaben wäre eine Aufzählung.
+   */
+  ablauf: { titel: string; einleitung: string; schritte: { schritt: string; uebergabe: string }[] };
   /** Slug eines Referenzprojekts aus caseStudies.ts, falls vorhanden. */
   referenz?: string;
   /** Einleitender Halbsatz, an den im Fliesstext der Verweis angehaengt wird. */
@@ -56,7 +78,7 @@ export const branchen: Branche[] = [
     teaser: 'Bestände, Preise und Bestellungen über alle Kanäle synchron, ohne nächtliche Handarbeit.',
     seoTitel: 'KI und Automation für den Onlinehandel',
     seoBeschreibung:
-      'Artikelpflege, Bestandsabgleich, Retouren und Kundenanfragen automatisiert, über Shop und Marktplätze hinweg. Lösungen von youman.',
+      'Artikelpflege, Bestandsabgleich und Retouren über Shop und Marktplätze: wo bei Shopware, JTL und Amazon Arbeit hängen bleibt und was davon automatisierbar ist.',
     intro:
       'Im Onlinehandel entsteht der Aufwand selten beim Verkaufen, sondern davor und danach. Artikeldaten wollen für jeden Kanal einzeln gepflegt werden, Bestände laufen zwischen Shop, Marktplatz und Lager auseinander, und Retouren kommen zurück, ohne dass jemand sie im Bestand nachträgt. Das sind keine Softwareprobleme, sondern Ablaufprobleme, die sich mit Software lösen lassen.',
     painpoints: [
@@ -66,6 +88,39 @@ export const branchen: Branche[] = [
       'Kundenanfragen zu Lieferstatus und Rückgabe kommen jeden Tag neu und werden jeden Tag neu von Hand beantwortet.',
       'Was ein Auftrag nach Verpackung, Versand, Retoure und Gebühren eingebracht hat, steht nirgends zusammen.',
     ],
+    systeme: [
+      { name: 'Shopware, Shopify oder WooCommerce', was: 'der eigene Shop, meist die führende Quelle für Artikeldaten' },
+      { name: 'JTL-Wawi oder plentymarkets', was: 'Warenwirtschaft, oft mit eigener Logik für Bestände und Retouren' },
+      { name: 'Amazon SP-API und eBay', was: 'Marktplätze mit je eigenen Pflichtfeldern und Kategoriebäumen' },
+      { name: 'DHL, DPD, GLS über deren Versandschnittstellen', was: 'Labelerzeugung und Sendungsverfolgung' },
+    ],
+    ablauf: {
+      titel: 'Von der Bestellung bis zur Retoure',
+      einleitung:
+        'Der Verkauf selbst ist der kürzeste Teil. Aufwand entsteht an den Übergaben davor und danach, und zwar jedes Mal an denselben vier Stellen.',
+      schritte: [
+        {
+          schritt: 'Artikel anlegen und in die Kanäle bringen',
+          uebergabe:
+            'Jeder Kanal verlangt andere Pflichtfelder: Amazon eine Browse Node, eBay eine Kategorie-ID, der eigene Shop womöglich beides nicht. Wer einmal pflegt und dreimal überträgt, hat drei Stände.',
+        },
+        {
+          schritt: 'Bestellung kommt herein',
+          uebergabe:
+            'Sie liegt zuerst beim Kanal, nicht in der Warenwirtschaft. Zwischen Eingang und Bestandsbuchung vergeht Zeit, und genau in dieser Lücke wird Ware verkauft, die schon weg ist.',
+        },
+        {
+          schritt: 'Kommissionieren und versenden',
+          uebergabe:
+            'Das Versandlabel entsteht aus Adressdaten, die aus dem Kanal kommen, und aus Gewichten, die aus der Warenwirtschaft kommen. Stimmt eines von beidem nicht, fällt es erst beim Dienstleister auf.',
+        },
+        {
+          schritt: 'Retoure kommt zurück',
+          uebergabe:
+            'Die Ware steht im Wareneingang, der Bestand kennt sie nicht. Ob sie zurück in den Verkauf geht, als B-Ware gelistet oder abgeschrieben wird, entscheidet meist eine Person nach Augenmaß.',
+        },
+      ],
+    },
     leistungen: ['e-commerce', 'ki-automationen', 'chatbots'],
   },
   {
@@ -78,7 +133,7 @@ export const branchen: Branche[] = [
     teaser: 'Aufträge, Statusmeldungen und Papiere fließen zwischen Auftraggeber, Fahrer und System.',
     seoTitel: 'Automation für Spedition und Logistik',
     seoBeschreibung:
-      'Auftragsannahme, Statusmeldungen und Frachtpapiere automatisiert statt per Telefonkette. Individuelle Lösungen von youman.',
+      'Auftragsannahme, Statusmeldungen und Frachtpapiere automatisiert statt per Telefonkette. Vom EDIFACT-Auftrag bis zum Ablieferbeleg, mit den üblichen Bruchstellen.',
     intro:
       'In der Logistik ist die Ware selten das Problem, die Information über die Ware schon. Aufträge kommen in fünf Formaten, Statusmeldungen laufen über Anrufe, und Papiere entstehen an einer Stelle, an der jemand von Hand abtippt, was woanders längst digital vorliegt. Jede dieser Übergaben ist eine Stelle, an der etwas verloren geht.',
     painpoints: [
@@ -88,6 +143,39 @@ export const branchen: Branche[] = [
       'Abweichungen fallen erst auf, wenn jemand zufällig hinschaut, nicht wenn sie entstehen.',
       'Ob eine Tour pünktlich war, lässt sich nachträglich nicht sagen, weil der zugesagte Termin nirgends festgehalten wurde.',
     ],
+    systeme: [
+      { name: 'Transportmanagement wie CarLo, TIS oder Winsped', was: 'Auftragsverwaltung und Tourenplanung' },
+      { name: 'EDIFACT-Nachrichten, vor allem IFTMIN und IFTSTA', was: 'Auftrag und Statusmeldung zwischen Auftraggeber und Spediteur' },
+      { name: 'ATLAS', was: 'die Zollabwicklung, sobald eine Sendung die EU verlässt oder erreicht' },
+      { name: 'Telematik von Webfleet, Trimble oder dem Fahrzeughersteller', was: 'Position, Fahrzeiten und Ankunftsprognose' },
+    ],
+    ablauf: {
+      titel: 'Von der Auftragsannahme bis zum Ablieferbeleg',
+      einleitung:
+        'Die Ware macht selten Probleme. Die Information über die Ware schon, und immer an denselben Übergaben.',
+      schritte: [
+        {
+          schritt: 'Auftrag kommt an',
+          uebergabe:
+            'Mal als EDIFACT-Nachricht aus dem System des Auftraggebers, mal als PDF im Postfach, mal als Anruf. Nur die erste Form landet ohne Abtippen im eigenen System.',
+        },
+        {
+          schritt: 'Tour planen und disponieren',
+          uebergabe:
+            'Der Plan entsteht aus Aufträgen, Fahrzeugen und Lenkzeiten. Ändert sich einer der drei, ändert sich der Plan, und die Fahrer erfahren es über einen Anruf statt über das System.',
+        },
+        {
+          schritt: 'Status melden',
+          uebergabe:
+            'Der Auftraggeber will wissen, wo die Sendung ist. Die Telematik weiß es, das Transportmanagement weiß es womöglich auch, aber die Statusnachricht schreibt trotzdem jemand von Hand.',
+        },
+        {
+          schritt: 'Ablieferbeleg zurückführen',
+          uebergabe:
+            'Der Beleg entsteht auf Papier oder als Foto auf dem Telefon des Fahrers. Bis er als Anhang an der Rechnung hängt, hat ihn mindestens eine Person angefasst.',
+        },
+      ],
+    },
     leistungen: ['ki-automationen', 'individuelle-software', 'chatbots'],
   },
   {
@@ -110,6 +198,39 @@ export const branchen: Branche[] = [
       'Stillstände und Nacharbeit tauchen in keiner Kalkulation auf. Was ein Teil gekostet hat, weiß man erst beim Nachrechnen.',
       'Schichtleitung und Werksleitung schauen auf verschiedene Zahlen, weil sich jede ihre eigene Auswertung gebaut hat.',
     ],
+    systeme: [
+      { name: 'ERP wie SAP, proALPHA, abas oder Infor', was: 'Aufträge, Stücklisten, Beschaffung' },
+      { name: 'MES und Betriebsdatenerfassung', was: 'was in der Halle tatsächlich passiert, Stückzahlen, Störungen, Rüstzeiten' },
+      { name: 'CAD und CAM', was: 'Geometrie und Fertigungsprogramme, oft die eigentliche Quelle der Maße' },
+      { name: 'Messmittel und Prüfprotokolle', was: 'Qualitätsdaten, häufig noch auf Papier oder in einer Tabelle' },
+    ],
+    ablauf: {
+      titel: 'Vom Auftrag bis zur Rückmeldung',
+      einleitung:
+        'Zwischen Büro und Halle liegt in vielen Betrieben eine Lücke, die mit Papier gefüllt wird. Sie hat vier erkennbare Stellen.',
+      schritte: [
+        {
+          schritt: 'Auftrag einplanen',
+          uebergabe:
+            'Das ERP kennt Termin und Menge. Die tatsächliche Reihenfolge entsteht danach, oft in einer Tabelle auf einem einzelnen Rechner, weil dort Rüstzeiten und Maschinenbelegung zusammenkommen.',
+        },
+        {
+          schritt: 'Material bereitstellen',
+          uebergabe:
+            'Der Bedarf steht in der Stückliste, der Bestand im Lager. Was reserviert ist und was verfügbar, unterscheidet sich, und die Differenz merkt jemand erst an der Maschine.',
+        },
+        {
+          schritt: 'Fertigen und rückmelden',
+          uebergabe:
+            'Stückzahl, Ausschuss und Stillstand werden auf einem Zettel notiert und später eingetippt, wenn überhaupt. Was nicht rückgemeldet wird, taucht in keiner Nachkalkulation auf.',
+        },
+        {
+          schritt: 'Prüfen und dokumentieren',
+          uebergabe:
+            'Das Prüfprotokoll entsteht neben dem System. Bei einer Reklamation muss es jemand suchen, statt es zum Auftrag zu öffnen.',
+        },
+      ],
+    },
     leistungen: ['individuelle-software', 'ki-automationen'],
     referenz: 'drahtmueller-palettenoptimierung',
     referenzHinweis:
@@ -125,7 +246,7 @@ export const branchen: Branche[] = [
     teaser: 'Artikeldaten, Preislisten und Kundenbestellungen laufen durch, statt in Postfächern zu warten.',
     seoTitel: 'Automation für Großhandel und Distribution',
     seoBeschreibung:
-      'Bestellungen, Preislisten und Artikeldaten automatisiert erfassen und weitergeben, statt sie aus Mails abzutippen. Lösungen von youman.',
+      'Bestellungen, Preislisten und Artikeldaten automatisiert erfassen statt aus Mails abzutippen. Von der EDI-Bestellung bis zur elektronischen Rechnung nach ZUGFeRD.',
     intro:
       'Im Großhandel kommt die Bestellung selten in dem Format, in dem sie gebraucht wird. Sie kommt als Mail, als PDF, als Tabelle im Anhang, gelegentlich als Foto. Am Ende sitzt jemand und überträgt sie. Das ist die Stelle, an der sich am schnellsten etwas ändern lässt, weil die Regeln dahinter klar sind, sobald man sie einmal aufschreibt.',
     painpoints: [
@@ -135,6 +256,39 @@ export const branchen: Branche[] = [
       'Verfügbarkeitsauskünfte kosten jedes Mal einen Blick in zwei Systeme.',
       'Bestand ist da, aber längst reserviert. Verfügbar und vorhanden werden verwechselt, und die Zusage platzt.',
     ],
+    systeme: [
+      { name: 'ERP wie Sage, SAP Business One oder Microsoft Dynamics', was: 'Artikel, Preise, Aufträge, Lager' },
+      { name: 'EDI mit ORDERS, DESADV und INVOIC', was: 'Bestellung, Lieferavis und Rechnung im Austausch mit größeren Kunden' },
+      { name: 'BMEcat und ETIM', was: 'Artikeldaten und Klassifizierung, wie Lieferanten sie liefern' },
+      { name: 'ZUGFeRD oder XRechnung', was: 'die elektronische Rechnung, seit 2025 im B2B verpflichtend zu empfangen' },
+    ],
+    ablauf: {
+      titel: 'Von der Bestellung bis zur Rechnung',
+      einleitung:
+        'Die Bestellung kommt selten in dem Format, in dem sie gebraucht wird. Was danach passiert, hängt an vier Übergaben.',
+      schritte: [
+        {
+          schritt: 'Bestellung erfassen',
+          uebergabe:
+            'Als EDI-Nachricht läuft sie durch. Als Mail, PDF, Tabelle im Anhang oder Foto sitzt jemand davor und überträgt sie. Die Regeln dafür sind klar, sobald man sie einmal aufschreibt.',
+        },
+        {
+          schritt: 'Preis bestimmen',
+          uebergabe:
+            'Kundenspezifische Preise und Staffeln stehen oft in einer Liste neben dem System. Wer sie nicht kennt, rechnet falsch, und die Differenz fällt erst bei der Rechnungsprüfung auf.',
+        },
+        {
+          schritt: 'Verfügbarkeit zusagen',
+          uebergabe:
+            'Bestand ist da, aber längst reserviert. Verfügbar und vorhanden werden verwechselt, weil zwei Systeme gefragt werden müssen, um die Antwort zu bekommen.',
+        },
+        {
+          schritt: 'Liefern und abrechnen',
+          uebergabe:
+            'Lieferavis und Rechnung entstehen aus Angaben, die schon dreimal irgendwo stehen. Beim elektronischen Format entscheidet ein einziges falsches Feld darüber, ob die Rechnung angenommen wird.',
+        },
+      ],
+    },
     leistungen: ['ki-automationen', 'e-commerce', 'individuelle-software'],
   },
   {
@@ -147,7 +301,7 @@ export const branchen: Branche[] = [
     teaser: 'Anfragen, Aufmaße und Rechnungen laufen mit, statt abends im Büro nachgearbeitet zu werden.',
     seoTitel: 'Digitalisierung für Handwerk und Bau',
     seoBeschreibung:
-      'Anfragen, Aufmaße, Nachträge und Rechnungen ohne Büroabend. Software und Automation für Handwerksbetriebe von youman.',
+      'Anfragen, Aufmaße, Nachträge und Rechnungen ohne Büroabend: Wo im Handwerk Arbeit hängen bleibt, welche Systeme dort laufen und was sich davon automatisieren lässt.',
     intro:
       'Die Arbeit auf der Baustelle ist selten das Problem. Das Problem ist der Abend danach, an dem Aufmaße abgetippt, Nachträge zusammengesucht und Rechnungen geschrieben werden. Was auf der Baustelle ohnehin festgehalten wird, muss dafür nur einmal an der richtigen Stelle landen.',
     painpoints: [
@@ -157,6 +311,39 @@ export const branchen: Branche[] = [
       'Zwischen Angebot, Auftrag und Rechnung liegen drei getrennte Stände derselben Zahlen.',
       'Wer wann auf welcher Baustelle war, lässt sich nachträglich nur über Erinnerung klären.',
     ],
+    systeme: [
+      { name: 'Handwerkersoftware wie Streit, pds, Label oder TopKontor', was: 'Angebot, Auftrag, Aufmaß, Rechnung' },
+      { name: 'GAEB-Dateien', was: 'Leistungsverzeichnisse im Austausch mit Architekten und öffentlichen Auftraggebern' },
+      { name: 'DATEV oder Lexware', was: 'die Buchhaltung, meist beim Steuerberater und getrennt vom Rest' },
+      { name: 'Zeiterfassung auf dem Telefon', was: 'wer wann auf welcher Baustelle war, oft die einzige digitale Spur' },
+    ],
+    ablauf: {
+      titel: 'Von der Anfrage bis zur Schlussrechnung',
+      einleitung:
+        'Die Arbeit auf der Baustelle ist selten das Problem. Der Abend danach ist es, und dafür gibt es vier Gründe.',
+      schritte: [
+        {
+          schritt: 'Anfrage aufnehmen',
+          uebergabe:
+            'Sie kommt über Telefon, Mail oder Formular. Ohne eine Liste, die alle drei zusammenführt, hängt die Nachfassung daran, ob jemand daran denkt.',
+        },
+        {
+          schritt: 'Aufmaß nehmen',
+          uebergabe:
+            'Auf der Baustelle entsteht es auf Papier. Abends wird es ein zweites Mal erfasst. Bei einem Leistungsverzeichnis nach GAEB muss es zusätzlich in dessen Struktur passen.',
+        },
+        {
+          schritt: 'Nachträge vereinbaren',
+          uebergabe:
+            'Sie werden mündlich abgesprochen, auf der Baustelle, zwischen Tür und Angel. Was nicht am selben Tag festgehalten wird, taucht bei der Abrechnung nicht mehr auf.',
+        },
+        {
+          schritt: 'Abrechnen',
+          uebergabe:
+            'Zwischen Angebot, Auftrag und Rechnung liegen drei getrennte Stände derselben Zahlen. Welcher stimmt, klärt sich beim Nachrechnen, nicht vorher.',
+        },
+      ],
+    },
     leistungen: ['individuelle-software', 'ki-automationen', 'webseiten'],
   },
   {
@@ -179,6 +366,39 @@ export const branchen: Branche[] = [
       'Der Projektstand ist in drei Köpfen unterschiedlich, und keiner davon steht schriftlich.',
       'Wie viel eine Kundenbeziehung nach allem Aufwand tatsächlich eingebracht hat, weiß niemand.',
     ],
+    systeme: [
+      { name: 'CRM wie HubSpot, Pipedrive oder Zoho', was: 'Anfragen, Angebote, Nachfassung' },
+      { name: 'Projekt- und Zeiterfassung wie Jira, Asana, Harvest oder Clockify', was: 'was tatsächlich gearbeitet wurde' },
+      { name: 'Lexware Office, sevDesk oder DATEV', was: 'Rechnung und Buchhaltung' },
+      { name: 'Google Workspace oder Microsoft 365', was: 'Dokumente und Kalender, oft die eigentliche Ablage' },
+    ],
+    ablauf: {
+      titel: 'Vom Erstkontakt bis zur Rechnung',
+      einleitung:
+        'Bei Dienstleistern ist Zeit das Produkt. Genau davon verschwindet der größte Teil an vier Übergaben.',
+      schritte: [
+        {
+          schritt: 'Anfrage aufnehmen',
+          uebergabe:
+            'Sie landet im Postfach einer Person, nicht im System. Ob nachgefasst wird, hängt daran, ob diese Person daran denkt und Zeit hat.',
+        },
+        {
+          schritt: 'Angebot schreiben',
+          uebergabe:
+            'Meistens durch Kopieren eines älteren Angebots, samt der Fehler darin. Die Kalkulation dahinter steht in einer Tabelle, die niemand außer dem Ersteller versteht.',
+        },
+        {
+          schritt: 'Arbeiten und Zeiten erfassen',
+          uebergabe:
+            'Die Zeiten werden am Freitag aus dem Gedächtnis nachgetragen. Was dabei verloren geht, wird nie abgerechnet und taucht in keiner Auswertung auf.',
+        },
+        {
+          schritt: 'Abrechnen und auswerten',
+          uebergabe:
+            'Die Rechnung entsteht aus Zeiten, das Ergebnis aus Rechnung minus Aufwand. Solange die Zeiten ungenau sind, ist auch das Ergebnis eine Schätzung.',
+        },
+      ],
+    },
     leistungen: ['ki-automationen', 'webseiten', 'individuelle-software'],
     referenz: 'absolar-warenwirtschaft',
     referenzHinweis:

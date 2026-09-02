@@ -46,14 +46,27 @@ export const mainNav: NavItem[] = [
   },
   { label: 'Referenzprojekte', href: '/case-studies' },
   { label: 'Fragen', href: '/fragen' },
-  { label: 'Über uns', href: '/ueber-uns' },
   /*
-   * Nicht mehr nur in der Fusszeile. Die Seite hatte damit 25 eingehende
-   * Verweise, waehrend jede Branchenseite 74 bekam. Fuer einen Anbieter,
-   * dessen staerkstes Unterscheidungsmerkmal die Naehe ist, war das die
-   * falsche Gewichtung.
+   * Muensterland haengt unter "Ueber uns" statt in der obersten Ebene.
+   *
+   * Zwei Gruende. Erstens die Sache: Wo jemand sitzt, gehoert zu dem, wer
+   * er ist, nicht daneben. Zweitens der Platz: Mit Muensterland als
+   * eigenem Punkt hatte die oberste Ebene acht Eintraege, und "Ueber uns"
+   * brach bei 1440 Bildpunkten auf zwei Zeilen um.
+   *
+   * Als Unterpunkt bleibt die Seite auf jeder Seite verlinkt. Vorher stand
+   * sie nur in der Fusszeile und kam auf 25 eingehende Verweise, waehrend
+   * jede Branchenseite 74 bekam. Fuer einen Anbieter, dessen staerkstes
+   * Unterscheidungsmerkmal die Naehe ist, war das die falsche Gewichtung.
    */
-  { label: 'Münsterland', href: '/muensterland' },
+  {
+    label: 'Über uns',
+    href: '/ueber-uns',
+    children: [
+      { label: 'Wer hinter youman steht', href: '/ueber-uns' },
+      { label: 'Münsterland', href: '/muensterland' },
+    ],
+  },
   { label: 'Kontakt', href: '/kontakt' },
 ];
 

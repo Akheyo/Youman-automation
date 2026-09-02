@@ -118,6 +118,71 @@ const brotkrumen = [
     </ul>
   </Section>
 
+  {/*
+    Die Systeme der Branche und ein typischer Ablauf.
+    
+    Das ist der Abschnitt, der diese sechs Seiten voneinander unterscheidet.
+    Vorher trugen alle sechs denselben Bauplan aus Einleitung, fuenf
+    Problemstellungen und Leistungsverweis, und lagen zwischen 222 und 259
+    Woertern. Aus Sicht einer Suchmaschine waren das sechs Varianten
+    derselben Seite.
+
+    Was hier steht, ist Marktwissen und keine Aussage ueber eigene
+    Projekte: Diese Programme sind in der jeweiligen Branche verbreitet,
+    diese Uebergaben gibt es dort. Wo youman ein System tatsaechlich
+    angebunden hat, steht das in den Referenzprojekten und nirgends sonst.
+  */}
+  <Section>
+    <SectionHeading
+      as="h2"
+      kicker="Die Systemlandschaft"
+      title="Was in dieser Branche üblicherweise läuft"
+      lead="Kein Anspruch auf Vollständigkeit, und keine Aussage darüber, was bei Ihnen steht. Eine Einordnung, damit klar ist, wovon hier die Rede ist."
+    />
+    <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
+      {
+        branche.systeme.map((eintrag) => (
+          <li class="bg-surface p-7 md:p-8">
+            <h3 class="font-serif text-xl text-ink">{eintrag.name}</h3>
+            <p class="mt-2.5 text-pretty text-ink-soft">{eintrag.was}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+
+  <Section tone="canvas">
+    <SectionHeading
+      as="h2"
+      kicker="Der Ablauf"
+      title={branche.ablauf.titel}
+      lead={branche.ablauf.einleitung}
+    />
+    {/*
+      Der Ablauf als Kette, jede Stufe mit ihrer Uebergabe. Die Uebergabe
+      ist der Punkt: Dort geht Information verloren, dort wird abgetippt,
+      dort entsteht die Arbeit. Ein Ablauf ohne benannte Uebergaben waere
+      eine Aufzaehlung.
+    */}
+    <ol class="mt-12 max-w-4xl border-l border-line" data-reveal>
+      {
+        branche.ablauf.schritte.map((stufe, i) => (
+          <li class="relative pb-10 pl-10 last:pb-0 sm:pl-12">
+            <span
+              class="absolute -left-px top-0 flex size-8 -translate-x-1/2 items-center justify-center bg-canvas font-display text-sm tabular-nums text-ink ring-1 ring-line"
+              aria-hidden="true"
+            >
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <h3 class="pt-0.5 font-serif text-xl text-ink">{stufe.schritt}</h3>
+            <p class="zwischenzeile mt-4 text-muted-fg">Was an der Übergabe passiert</p>
+            <p class="prose-measure mt-2 text-ink-soft">{stufe.uebergabe}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </Section>
+
   <Section>
     <SectionHeading
       kicker="Leistungen"
