@@ -6,6 +6,7 @@ import Textspalten from '../../components/Textspalten.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Kachel from '../../components/Kachel.astro';
 import Kasten from '../../components/Kasten.astro';
+import Merksatz from '../../components/Merksatz.astro';
 import { leistungen, anfrageHinweis } from '../../data/leistungen';
 import { withBase } from '../../lib/url';
 
@@ -32,10 +33,67 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
         <p class="prose-measure initiale text-lg text-ink-soft">
           Ein Chatbot ohne Anbindung an den tatsächlichen Bestand gibt Auskünfte, die niemand
           geprüft hat. Eine Automation ohne festgelegte Grenze entscheidet irgendwann Fälle, die
-          sie nicht entscheiden sollte. In den meisten Projekten beginnt es deshalb an einer
-          Stelle und wächst von dort weiter.
+          sie nicht entscheiden sollte. Und eine Webseite, die Anfragen einsammelt, ohne dass
+          jemand sie sortiert, verschiebt die Arbeit nur nach hinten. In den meisten Projekten
+          beginnt es deshalb an einer Stelle und wächst von dort weiter, sobald es dort trägt.
         </p>
-        <Kasten titel="Preise und Laufzeiten" class="!mt-10">
+        <Merksatz class="my-10">
+          Gebaut wird an dem Vorgang, der heute die meiste Zeit kostet. Nicht an dem, der sich
+          am leichtesten automatisieren ließe.
+        </Merksatz>
+        <p class="prose-measure text-lg text-ink-soft">
+          Der Unterschied klingt klein und entscheidet über das Ergebnis. Was sich leicht
+          automatisieren lässt, ist meistens schon geordnet: klare Regeln, saubere Daten, ein
+          System, das die Aufgabe vorgesehen hat. Genau dort ist wenig zu holen. Die Stellen mit
+          dem größten Ertrag sind die unordentlichen, an denen jemand entscheidet, ohne dass die
+          Regel dafür irgendwo steht.
+        </p>
+      </div>
+    </Textspalten>
+  </Section>
+
+  {/*
+    Womit ein Projekt anfaengt. Die Frage kommt in jedem Erstgespraech und
+    stand bisher nur auf "Ueber uns", also zwei Klicks entfernt von der
+    Seite, auf der sie gestellt wird.
+  */}
+  <Section tone="canvas">
+    <SectionHeading
+      as="h2"
+      kicker="Reihenfolge"
+      title="Womit ein Projekt anfängt"
+      lead="Nie mit der Technik. Immer mit dem Ablauf, um den es geht."
+    />
+    <div class="mt-12 grid gap-10 lg:grid-cols-12 lg:gap-16">
+      <div class="lg:col-span-7">
+        <ol class="liste-nummern space-y-6 text-ink-soft">
+          <li class="text-pretty">
+            <b class="text-ink">Der Vorgang wird angesehen, nicht beschrieben.</b> Wer verstehen
+            will, warum an einer Stelle von Hand nachgeholfen wird, muss danebenstehen, während
+            es passiert. Am Bildschirm allein lässt sich das zur Hälfte verstehen.
+          </li>
+          <li class="text-pretty">
+            <b class="text-ink">Die Regeln werden aufgeschrieben.</b> Das ist der Teil, der am
+            meisten bringt und am wenigsten nach Technik aussieht: Was heute im Kopf entschieden
+            wird, steht danach nachlesbar da. Oft zeigt sich hier schon, dass zwei Personen
+            unterschiedlich entscheiden.
+          </li>
+          <li class="text-pretty">
+            <b class="text-ink">Die Grenze wird festgelegt.</b> Für jeden Fall wird bestimmt, ab
+            wann nicht mehr automatisch entschieden wird. Unsichere Fälle landen bei einer
+            Person statt im Nichts. Ohne diese Grenze entscheidet eine Automation irgendwann
+            etwas, das sie nicht entscheiden sollte.
+          </li>
+          <li class="text-pretty">
+            <b class="text-ink">Gebaut wird an einer Stelle.</b> Erst wenn das dort trägt, kommt
+            die nächste dazu. Ein Vorhaben, das an fünf Stellen gleichzeitig beginnt, ist an
+            allen fünf gleichzeitig nicht fertig.
+          </li>
+        </ol>
+      </div>
+
+      <div class="space-y-6 lg:col-span-4 lg:col-start-9">
+        <Kasten titel="Preise und Laufzeiten" tone="muted">
           <p>
             Beides steht auf diesen Seiten bewusst nicht. Es hängt daran, wie die vorhandenen
             Systeme aussehen und wie viel davon dokumentiert ist. Das lässt sich in einem{' '}
@@ -43,11 +101,19 @@ const brotkrumen = [{ label: 'Home', href: '/' }];
             Stunde klären, während eine Preisliste für keinen der Fälle stimmen würde.
           </p>
         </Kasten>
+        <Kasten titel="Was bleibt, wie es ist" tone="muted">
+          <p>
+            Buchhaltung, Lager und Stammdaten bleiben, wo sie sind. Was gebaut wird, hängt am
+            bestehenden System und ersetzt es nicht. Wie das in der Praxis aussieht, zeigen die{' '}
+            <a href={withBase('/case-studies')} class="textverweis">Referenzprojekte</a>: In
+            beiden Fällen lief ein System weiter und bekam ein Stück dazu.
+          </p>
+        </Kasten>
       </div>
-    </Textspalten>
+    </div>
   </Section>
 
-  <Section tone="canvas">
+  <Section>
     <h2 class="sr-only">Leistungen im Überblick</h2>
     <ul class="rasterfugen sm:grid-cols-2 lg:grid-cols-3">
       {

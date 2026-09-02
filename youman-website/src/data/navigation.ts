@@ -45,8 +45,15 @@ export const mainNav: NavItem[] = [
     ],
   },
   { label: 'Referenzprojekte', href: '/case-studies' },
+  { label: 'Fragen', href: '/fragen' },
   { label: 'Über uns', href: '/ueber-uns' },
-  { label: 'Münsterland', href: '/muensterland', nurFooter: true },
+  /*
+   * Nicht mehr nur in der Fusszeile. Die Seite hatte damit 25 eingehende
+   * Verweise, waehrend jede Branchenseite 74 bekam. Fuer einen Anbieter,
+   * dessen staerkstes Unterscheidungsmerkmal die Naehe ist, war das die
+   * falsche Gewichtung.
+   */
+  { label: 'Münsterland', href: '/muensterland' },
   { label: 'Kontakt', href: '/kontakt' },
 ];
 

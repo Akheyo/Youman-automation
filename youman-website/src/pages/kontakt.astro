@@ -30,7 +30,7 @@ const feldKlasse =
 
 <Base
   title="Kontakt und unverbindliches Erstgespräch"
-  description="Schildern Sie uns Ihren operativen Engpass. Wir melden uns mit einer ersten Einschätzung."
+  description="Beschreiben Sie kurz, welcher Vorgang zu viel Zeit kostet. Sie bekommen eine erste Einschätzung, ob sich das automatisieren lässt, und was es braucht."
   breadcrumb={brotkrumen}
 >
   <PageHeader
@@ -53,7 +53,7 @@ const feldKlasse =
             <Button href={kontakt.terminlink} class="mt-5">
               Termin auswählen
             </Button>
-            <p class="mt-4 text-xs text-muted-fg">
+            <p class="mt-4 text-sm text-muted-fg">
               Die Terminauswahl öffnet Google Kalender. Dabei werden Daten an Google übertragen.
             </p>
           </div>
@@ -194,13 +194,21 @@ const feldKlasse =
                 <input id="webseite" name="webseite" type="text" tabindex="-1" autocomplete="off" />
               </div>
 
+              {/*
+                size-6 statt size-5: 24 mal 24 Bildpunkte sind die
+                Untergrenze fuer ein Bedienziel. Mit 20 lag das Kaestchen
+                darunter, und zwar an der empfindlichsten Stelle der Seite,
+                unmittelbar vor dem Absenden. Ein Kommentar innerhalb des
+                Tags waere hier uebrigens kein Kommentar, sondern ein
+                Attribut: Astro braucht die geschweiften Klammern.
+              */}
               <div class="flex gap-3">
                 <input
                   id="einwilligung"
                   name="einwilligung"
                   type="checkbox"
                   required
-                  class="mt-1 size-5 shrink-0 border border-line accent-accent"
+                  class="mt-0.5 size-6 shrink-0 cursor-pointer border border-line accent-accent"
                 />
                 <label for="einwilligung" class="text-sm text-ink-soft">
                   Ich habe die{' '}
@@ -325,8 +333,9 @@ const feldKlasse =
             Lösung aussehen soll. Das herauszufinden ist unsere Aufgabe, nicht Ihre Vorleistung.
           </p>
           <p class="mt-3">
-            Wenn Sie nicht sicher sind, ob Ihr Fall passt, helfen die typischen
-            Problemstellungen auf den{' '}
+            Wenn Sie nicht sicher sind, ob Ihr Fall passt, helfen die{' '}
+            <a href={withBase('/fragen')} class="textverweis">häufigen Fragen</a> und die
+            typischen Problemstellungen auf den{' '}
             <a href={withBase('/leistungen')} class="textverweis">Leistungsseiten</a> beim
             Einordnen.
           </p>

@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { site } from '../data/site';
 import { branchen } from '../data/branchen';
 import { leistungen, anfrageHinweis } from '../data/leistungen';
+import { fragen } from '../data/fragen';
 import { caseStudies } from '../data/caseStudies';
 import { kontakt } from '../data/kontakt';
 import { anbieter, anbieterVollstaendig } from '../data/anbieter';
@@ -58,6 +59,15 @@ export const GET: APIRoute = ({ site: basis }) => {
     ...caseStudies.map(
       (c) => `- [${c.title}](${adresse(c.href)}): ${c.kunde}, ${c.branche}. ${c.excerpt}`,
     ),
+    '',
+    // Die Fragen samt Antworten ausgeschrieben, nicht nur als Verweis. Ein
+    // System, das aus dieser Datei eine Auskunft bauen will, hat die Antwort
+    // damit unmittelbar vorliegen und muss keine Seite nachladen.
+    '## Häufige Fragen',
+    '',
+    `Vollständig unter ${adresse('/fragen')}`,
+    '',
+    ...fragen.flatMap((f) => [`### ${f.frage}`, '', f.antwort, '']),
   ];
 
   zeilen.push('', '## Kontakt', '');

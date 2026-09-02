@@ -55,7 +55,22 @@ export default defineConfig({
        * ein Widerspruch.
        */
       filter: (seite) =>
-        INDEXIERUNG_ERLAUBT && !/\/(impressum|datenschutz)\/?$/.test(seite),
+        INDEXIERUNG_ERLAUBT &&
+        !/\/(impressum|datenschutz)\/?$/.test(seite) &&
+        // Die Nachweisdatei fuer IndexNow ist kein Inhalt und gehoert nicht
+        // in die Sitemap. Sie liegt unter /<schluessel>.txt.
+        !/\.txt$/.test(seite),
+      /*
+       * lastmod fuer alle Adressen, gesetzt auf den Zeitpunkt des Builds.
+       *
+       * Bewusst grob: Ein Datum je Seite waere genauer, muesste aber
+       * gepflegt werden, und ein falsches lastmod ist schlechter als ein
+       * grobes. Der Build laeuft nur, wenn sich etwas geaendert hat, die
+       * Angabe ist also nie zu alt. Google behandelt lastmod ohnehin als
+       * Hinweis und ignoriert ihn, sobald er unglaubwuerdig wird, etwa wenn
+       * alle Seiten taeglich behaupten, neu zu sein.
+       */
+      lastmod: new Date(),
     }),
   ],
   vite: {

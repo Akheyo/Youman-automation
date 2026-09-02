@@ -7,7 +7,8 @@ import Textspalten from '../../components/Textspalten.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Button from '../../components/Button.astro';
 import Merksatz from '../../components/Merksatz.astro';
-import { caseStudyNach } from '../../data/caseStudies';
+import { caseStudyNach, andereReferenzen } from '../../data/caseStudies';
+import Kachel from '../../components/Kachel.astro';
 
 /**
  * Quelle: die gelieferte Case-Study-Unterlage zu Drahtmüller und "Überblick wer wir sind.pdf".
@@ -16,6 +17,7 @@ import { caseStudyNach } from '../../data/caseStudies';
  */
 
 const fall = caseStudyNach('drahtmueller-palettenoptimierung')!;
+const weitere = andereReferenzen('drahtmueller-palettenoptimierung');
 
 const folgen = [
   'Hoher Planungsaufwand bei jeder neuen Auftragssituation.',
@@ -59,7 +61,7 @@ const vorgehen = [
   description="2.556 aktive Palettentypen, jede Entscheidung ein Einzelfall: Wie ein Modul von youman die Palettenlogik an das ERP-System anbindet, ohne Systemablösung."
   breadcrumb={[
     { label: 'Home', href: '/' },
-    { label: 'Referenzprojekte', href: '/case-studies' },
+    { label: 'Referenzprojekte', href: '/case-studies/' },
   ]}
   artikel={{
     titel: 'Palettenoptimierung bei der Drahtmüller GmbH',
@@ -75,7 +77,7 @@ const vorgehen = [
     lead="Drahtmüller GmbH / Lichtgitter-Gruppe, Palettenoptimierung und Logistiksoftware via youman"
     breadcrumb={[
       { label: 'Home', href: '/' },
-      { label: 'Referenzprojekte', href: '/case-studies' },
+      { label: 'Referenzprojekte', href: '/case-studies/' },
     ]}
   />
 
@@ -227,6 +229,35 @@ const vorgehen = [
       }
     </ol>
   </Section>
+
+  {/*
+    Das jeweils andere Projekt. Beide Fallseiten hingen vorher mit vier und
+    fuenf eingehenden Verweisen am Rand der Seite, ohne Verbindung
+    untereinander. Wer einen Fall gelesen hat, ist genau der Leser fuer den
+    zweiten.
+  */}
+  {
+    weitere.length > 0 && (
+      <Section>
+        <SectionHeading kicker="Weiteres Projekt" title="Auch abgeschlossen" />
+        <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
+          {weitere.map((fall) => (
+            <Kachel
+              href={fall.href}
+              kicker={fall.branche}
+              title={fall.title}
+              teaser={fall.excerpt}
+              bild={fall.bild}
+              bildAlt={fall.bildAlt}
+              bildhinweis={fall.bildhinweis}
+              verhaeltnis="16 / 9"
+              sizes="(min-width: 640px) 50vw, 100vw"
+            />
+          ))}
+        </ul>
+      </Section>
+    )
+  }
 
   {/*
     Hier stand vorher ein halbes SectionHeading ohne oeffnendes Tag, und

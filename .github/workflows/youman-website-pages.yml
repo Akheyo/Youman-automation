@@ -78,6 +78,28 @@ jobs:
         with:
           path: youman-website/dist
 
+      - name: Sitemap merken
+        id: adressen
+        # Die Liste der Adressen aus der Sitemap, fuer die Meldung an
+        # IndexNow im naechsten Job. Sie steht hier, weil der Deploy-Job den
+        # gebauten Ordner nicht mehr hat.
+        run: |
+          if [ -f youman-website/dist/sitemap-0.xml ]; then
+            grep -o '<loc>[^<]*</loc>' youman-website/dist/sitemap-0.xml \
+              | sed 's|<loc>||; s|</loc>||' > /tmp/adressen.txt
+            echo "anzahl=$(wc -l < /tmp/adressen.txt)" >> "$GITHUB_OUTPUT"
+          else
+            echo "anzahl=0" >> "$GITHUB_OUTPUT"
+          fi
+          cat /tmp/adressen.txt 2>/dev/null || echo "keine Sitemap, Seite steht auf noindex"
+
+      - uses: actions/upload-artifact@v4
+        if: steps.adressen.outputs.anzahl != '0'
+        with:
+          name: adressen
+          path: /tmp/adressen.txt
+          retention-days: 1
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -87,3 +109,68 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  # ---------------------------------------------------------------------
+  # IndexNow: meldet die veroeffentlichten Adressen an Bing und die uebrigen
+  # teilnehmenden Suchmaschinen, statt auf den naechsten Crawl zu warten.
+  #
+  # Google nimmt nicht teil, dort bleibt es bei Sitemap und Crawl. Fuer
+  # youman zaehlt vor allem Bing, weil Microsoft Copilot seine Antworten aus
+  # dem Bing-Index speist.
+  #
+  # Laeuft nach dem Deploy, nicht davor: Gemeldet werden darf erst, was
+  # tatsaechlich abrufbar ist. Eine Meldung auf eine Adresse, die noch 404
+  # liefert, wird als Fehler gewertet.
+  #
+  # continue-on-error: Eine fehlgeschlagene Meldung ist kein Grund, den
+  # Deploy rot zu faerben. Die Seite ist dann trotzdem veroeffentlicht.
+  # ---------------------------------------------------------------------
+  indexnow:
+    needs: deploy
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/download-artifact@v4
+        id: laden
+        continue-on-error: true
+        with:
+          name: adressen
+          path: /tmp/adressen
+
+      - name: Adressen melden
+        if: steps.laden.outcome == 'success'
+        run: |
+          datei=/tmp/adressen/adressen.txt
+          [ -s "$datei" ] || { echo "Keine Adressen, nichts zu melden."; exit 0; }
+
+          # Der Gastgeber ergibt sich aus der ersten Adresse. So stimmt er
+          # automatisch, egal ob die Seite unter der eigenen Domain oder
+          # unter github.io liegt.
+          erste=$(head -1 "$datei")
+          gastgeber=$(echo "$erste" | sed -E 's|^https?://([^/]+).*|\1|')
+          schluessel=$(grep -oE "'[A-Za-z0-9-]{8,128}'" youman-website/src/data/indexnow.ts 2>/dev/null | tr -d "'" | head -1)
+          schluessel=${schluessel:-a7f3c2e9b41d4856ae0f92c7d3b18e64}
+
+          echo "Gastgeber: $gastgeber"
+          echo "Adressen:  $(wc -l < "$datei")"
+
+          # Als JSON-Liste in einem Aufruf, nicht einzeln: IndexNow nimmt bis
+          # zu 10 000 Adressen auf einmal entgegen, und viele Einzelaufrufe
+          # gelten als Missbrauch.
+          liste=$(sed 's/.*/"&"/' "$datei" | paste -sd, -)
+          koerper="{\"host\":\"$gastgeber\",\"key\":\"$schluessel\",\"keyLocation\":\"https://$gastgeber/$schluessel.txt\",\"urlList\":[$liste]}"
+
+          code=$(curl -sS -o /tmp/antwort.txt -w '%{http_code}' -X POST \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            --data "$koerper" \
+            https://api.indexnow.org/IndexNow)
+
+          echo "HTTP $code"
+          cat /tmp/antwort.txt 2>/dev/null; echo
+          # 200 heisst angenommen, 202 heisst angenommen und wird geprueft.
+          case "$code" in
+            200|202) echo "Gemeldet." ;;
+            422) echo "Abgelehnt: Der Schluessel unter https://$gastgeber/$schluessel.txt passt nicht zur Meldung." ;;
+            403) echo "Abgelehnt: Schluesseldatei nicht erreichbar oder Inhalt falsch." ;;
+            *) echo "Unerwartete Antwort. Die Seite ist trotzdem veroeffentlicht." ;;
+          esac

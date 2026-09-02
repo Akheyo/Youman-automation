@@ -7,7 +7,8 @@ import Textspalten from '../../components/Textspalten.astro';
 import SectionHeading from '../../components/SectionHeading.astro';
 import Button from '../../components/Button.astro';
 import Merksatz from '../../components/Merksatz.astro';
-import { caseStudyNach } from '../../data/caseStudies';
+import { caseStudyNach, andereReferenzen } from '../../data/caseStudies';
+import Kachel from '../../components/Kachel.astro';
 
 /**
  * Quelle: "ABSolar.CaseStudy.pdf".
@@ -23,6 +24,7 @@ import { caseStudyNach } from '../../data/caseStudies';
  */
 
 const fall = caseStudyNach('absolar-warenwirtschaft')!;
+const weitere = andereReferenzen('absolar-warenwirtschaft');
 
 const folgen = [
   'Keine zentrale Verbindung zwischen Angebot, Auftrag, Lager und Baustelle.',
@@ -83,7 +85,7 @@ const technologien = [
 
 const brotkrumen = [
   { label: 'Home', href: '/' },
-  { label: 'Referenzprojekte', href: '/case-studies' },
+  { label: 'Referenzprojekte', href: '/case-studies/' },
 ];
 ---
 
@@ -272,6 +274,33 @@ const brotkrumen = [
       hängt daher von der gebuchten Lexware-Office-Version und den freigeschalteten Funktionen ab.
     </p>
   </Section>
+
+  {/*
+    Das jeweils andere Projekt. Beide Fallseiten hingen vorher mit vier und
+    fuenf eingehenden Verweisen am Rand, ohne Verbindung untereinander.
+  */}
+  {
+    weitere.length > 0 && (
+      <Section>
+        <SectionHeading kicker="Weiteres Projekt" title="Auch abgeschlossen" />
+        <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
+          {weitere.map((fall) => (
+            <Kachel
+              href={fall.href}
+              kicker={fall.branche}
+              title={fall.title}
+              teaser={fall.excerpt}
+              bild={fall.bild}
+              bildAlt={fall.bildAlt}
+              bildhinweis={fall.bildhinweis}
+              verhaeltnis="16 / 9"
+              sizes="(min-width: 640px) 50vw, 100vw"
+            />
+          ))}
+        </ul>
+      </Section>
+    )
+  }
 
   {/* ------------------------------------------------------------ Ergebnis */}
   <Section tone="dark">

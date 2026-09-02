@@ -18,24 +18,91 @@
  * werden Vorlesewerkzeugen damit nicht angesagt. Der Hero sagt in Text, worum
  * es geht.
  */
-import { Image } from 'astro:assets';
+import { getImage } from 'astro:assets';
 import hero1 from '../assets/img/hero-1.jpg';
 import hero2 from '../assets/img/hero-2.jpg';
 import hero3 from '../assets/img/hero-3.jpg';
 import hero4 from '../assets/img/hero-4.jpg';
 import hero5 from '../assets/img/hero-5.jpg';
 
-const bilder = [hero1, hero2, hero3, hero4, hero5];
+const quellen = [hero1, hero2, hero3, hero4, hero5];
+
+/*
+ * Warum die Bilder hier von Hand ausgegeben werden statt ueber die
+ * Image-Komponente:
+ *
+ * Alle fuenf Motive liegen uebereinander im sichtbaren Bereich. Damit greift
+ * loading="lazy" nicht: Der Browser sieht fuenf Bilder im Blickfeld und laedt
+ * alle sofort. Gemessen waren das 488 kB auf dem Handy und 976 kB am
+ * Rechner, waehrend jede andere Seite zwischen 195 und 336 kB liegt. Vier
+ * davon sieht beim ersten Aufruf niemand.
+ *
+ * Die vier Folgemotive tragen ihre Adressen deshalb in data-Attributen. Das
+ * Skript unten setzt sie erst, nachdem das erste Bild fertig ist. Ohne
+ * JavaScript bleibt es beim ersten Motiv, und das ist richtig so: Ohne
+ * Skript wechselt ohnehin nichts.
+ *
+ * Der zweite Grund: Die Image-Komponente setzt als src das Motiv in
+ * Kameraaufloesung, bis 6000 mal 4000 Bildpunkte und 1345 kB. Kein aktueller
+ * Browser laedt diese Datei, weil srcset gewinnt, aber sie lag als rund
+ * 3,6 MB im Auslieferungsstand. Mit einem eigenen width-Wert ist der
+ * Rueckfall jetzt die 1280er Fassung.
+ */
+/*
+ * Bis 1920, nicht bis 2560.
+ *
+ * Ueber dem Motiv liegt ein Schleier, der links 93 Prozent deckt und rechts
+ * noch 45. Was dahinter an Feinzeichnung steckt, sieht niemand. Die
+ * 2560er Fassung war je Motiv 330 bis 406 kB schwer und wurde auf grossen
+ * Bildschirmen tatsaechlich geladen. Auf einem 4K-Schirm wird jetzt die
+ * 1920er hochskaliert; hinter dem Schleier ist das nicht zu unterscheiden.
+ */
+const BREITEN = [640, 960, 1280, 1920];
+
+const bilder = await Promise.all(
+  quellen.map(async (quelle) => {
+    const bild = await getImage({
+      src: quelle,
+      width: 1280,
+      widths: BREITEN,
+      sizes: '100vw',
+      format: 'webp',
+      /*
+       * 68 statt der Vorgabe 80. Derselbe Grund wie bei der Breite: Der
+       * Schleier darueber deckt zwischen 45 und 93 Prozent. Verglichen
+       * wurden beide Fassungen nebeneinander bei 1920 Bildpunkten, ein
+       * Unterschied war unter dem Schleier nicht auszumachen. Das schwerste
+       * Motiv faellt damit von 273 auf rund 180 kB.
+       */
+      quality: 68,
+    });
+    return {
+      src: bild.src,
+      srcset: bild.srcSet.attribute,
+      breite: bild.attributes.width ?? 1280,
+      hoehe: bild.attributes.height,
+    };
+  }),
+);
+
+// Ein Bildpunkt, durchsichtig. Steht als Platzhalter im src der vier
+// Folgemotive: Ein img ganz ohne src ist nicht zulaessig.
+const LEER =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 ---
 
 <div class="absolute inset-0 -z-10 overflow-hidden bg-ink-deep" data-hero-buehne>
   {
     bilder.map((bild, i) => (
-      <Image
-        src={bild}
+      <img
+        src={i === 0 ? bild.src : LEER}
+        srcset={i === 0 ? bild.srcset : undefined}
+        sizes={i === 0 ? '100vw' : undefined}
+        data-quelle={i === 0 ? undefined : bild.src}
+        data-quellsatz={i === 0 ? undefined : bild.srcset}
         alt=""
-        widths={[640, 960, 1280, 1920, 2560]}
-        sizes="100vw"
+        width={bild.breite}
+        height={bild.hoehe}
         loading={i === 0 ? 'eager' : 'lazy'}
         decoding={i === 0 ? 'sync' : 'async'}
         fetchpriority={i === 0 ? 'high' : 'auto'}
@@ -161,6 +228,48 @@ const bilder = [hero1, hero2, hero3, hero4, hero5];
       // waeren Punkte und Pausetaste Knoepfe ohne Wirkung.
       bedienung.hidden = false;
 
+      /*
+       * Die vier Folgemotive tragen ihre Adressen in data-Attributen und
+       * werden einzeln geholt, immer nur das naechste.
+       *
+       * Der erste Versuch hier war, nach dem Laden des ersten Bildes alle
+       * vier auf einmal nachzuschieben. Das verlagert die Last zwar hinter
+       * das erste Bild, laedt aber weiterhin knapp ein Megabyte fuer
+       * jemanden, der nach drei Sekunden weiterklickt und nie mehr als ein
+       * Motiv sieht.
+       *
+       * Jetzt wird beim Anzeigen von Bild i das Bild i+1 vorbereitet. Der
+       * Wechsel bleibt fluessig, weil das naechste Motiv 6,5 Sekunden Zeit
+       * hat, und wer die Seite frueh verlaesst, hat genau ein Bild geladen.
+       */
+      const holen = (index: number) => {
+        const bild = bilder[index % bilder.length] as HTMLImageElement | undefined;
+        const quelle = bild?.dataset.quelle;
+        if (!bild || !quelle) return;
+        const satz = bild.dataset.quellsatz;
+        if (satz) bild.setAttribute('srcset', satz);
+        bild.setAttribute('sizes', '100vw');
+        bild.setAttribute('src', quelle);
+        delete bild.dataset.quelle;
+        delete bild.dataset.quellsatz;
+      };
+
+      const erstes = bilder[0] as HTMLImageElement;
+      const zweitesVorbereiten = () => {
+        // requestIdleCallback kennt Safari erst seit 2022, deshalb der
+        // Rueckfall auf einen kurzen Zeitgeber.
+        const ruhe = (
+          window as Window & {
+            requestIdleCallback?: (r: () => void, o?: { timeout: number }) => void;
+          }
+        ).requestIdleCallback;
+        if (ruhe) ruhe(() => holen(1), { timeout: 3000 });
+        else window.setTimeout(() => holen(1), 1200);
+      };
+
+      if (erstes.complete) zweitesVorbereiten();
+      else erstes.addEventListener('load', zweitesVorbereiten, { once: true });
+
       const ruhig = window.matchMedia('(prefers-reduced-motion: reduce)');
       const ABSTAND = 6500;
       let aktuell = 0;
@@ -171,6 +280,10 @@ const bilder = [hero1, hero2, hero3, hero4, hero5];
         aktuell = (index + bilder.length) % bilder.length;
         bilder.forEach((b, i) => b.classList.toggle('ist-aktiv', i === aktuell));
         punkte.forEach((p, i) => p.setAttribute('aria-current', i === aktuell ? 'true' : 'false'));
+        // Das aktuelle Bild kann noch geparkt sein, wenn jemand einen Punkt
+        // anklickt statt zu warten. Und das naechste wird schon vorbereitet.
+        holen(aktuell);
+        holen(aktuell + 1);
       };
 
       const anhalten = () => {

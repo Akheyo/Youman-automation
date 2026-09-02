@@ -54,6 +54,17 @@ interface Props {
    * WhatsApp und X erwarten. Ohne Angabe erscheint eine reine Textvorschau.
    */
   bild?: ImageMetadata;
+  /**
+   * Fragen und Antworten der Seite. Erzeugt ein FAQPage-Objekt.
+   *
+   * Nur setzen, wenn die Fragen auch sichtbar auf der Seite stehen: Eine
+   * Auszeichnung ohne den zugehörigen Text ist nach Googles Richtlinien
+   * unzulässig, und der Nutzen entfällt ohnehin, sobald jemand nachsieht.
+   *
+   * Die Antworten sind Klartext, keine Auszeichnung. Was hier steht, muss
+   * durch den Rest der Seite gedeckt sein.
+   */
+  fragen?: { frage: string; antwort: string }[];
 }
 
 const {
@@ -64,6 +75,7 @@ const {
   artikel,
   bild,
   dienstleistung,
+  fragen = [],
 } = Astro.props;
 
 // Gesperrt ist eine Seite, wenn sie es selbst verlangt oder wenn die
@@ -121,7 +133,19 @@ const organisation = {
    */
   description: site.description,
   slogan: site.claim,
-  areaServed: { '@type': 'Country', name: 'Deutschland' },
+  /*
+   * Drei Laender, nicht eins. Der Text sagt auf /ueber-uns und /muensterland
+   * ausdruecklich "im gesamten deutschsprachigen Raum" und nennt DACH als
+   * Arbeitsraum. Die Auszeichnung sagte dagegen nur Deutschland und
+   * unterbot damit eine Angabe, die auf der Seite selbst steht. Ein
+   * Widerspruch zwischen Text und Auszeichnung ist an genau der Stelle
+   * schaedlich, an der Google Verlaesslichkeit prueft.
+   */
+  areaServed: [
+    { '@type': 'Country', name: 'Deutschland' },
+    { '@type': 'Country', name: 'Österreich' },
+    { '@type': 'Country', name: 'Schweiz' },
+  ],
   knowsAbout: [
     'ERP-Integration',
     'SAP-Integration',
@@ -158,20 +182,41 @@ const organisation = {
           streetAddress: anbieter.strasse,
           postalCode: anbieter.plz,
           addressLocality: anbieter.ort,
+          // Das Bundesland stand bisher nicht drin. Es ist durch die
+          // Postleitzahl eindeutig belegt und hilft bei ortsbezogenen
+          // Suchen, die auf die Region statt auf den Ort zielen.
+          addressRegion: anbieter.bundesland,
           addressCountry: 'DE',
         },
       }
     : {}),
   ...(site.gruendungsjahr ? { foundingDate: site.gruendungsjahr } : {}),
+  /*
+   * Der Gruender als eigener Knoten mit @id statt als eingebetteter Name.
+   *
+   * Der Unterschied ist nicht kosmetisch: Ein Name in einem Feld ist eine
+   * Zeichenkette, ein Knoten mit @id ist eine Person, auf die sich andere
+   * Angaben beziehen koennen. Sobald ein Profil vorliegt, kommt es als
+   * sameAs dazu, und die Person wird fuer Suchmaschinen ueberpruefbar. Das
+   * ist der Hebel fuer die Fachkenntnis, die Google unter E-E-A-T bewertet.
+   *
+   * sameAs steht bewusst noch nicht drin: Es gibt bisher kein Profil, auf
+   * das verwiesen werden koennte, und ein Verweis ins Leere waere schlechter
+   * als keiner.
+   */
   ...(anbieter.personen.length
-    ? { founder: anbieter.personen.map((person) => ({ '@type': 'Person', name: person.name })) }
+    ? {
+        founder: anbieter.personen.map((person) => ({
+          '@id': absolut(withBase('/ueber-uns')) + '#' + person.kennung,
+        })),
+      }
     : {}),
   ...(kontakt.email || kontakt.telefon
     ? {
         contactPoint: {
           '@type': 'ContactPoint',
           contactType: 'sales',
-          areaServed: 'DE',
+          areaServed: ['DE', 'AT', 'CH'],
           availableLanguage: 'German',
           ...(kontakt.email ? { email: kontakt.email } : {}),
           ...(kontakt.telefon ? { telephone: kontakt.telefon } : {}),
@@ -206,11 +251,33 @@ const artikelObjekt = artikel
       mainEntityOfPage: canonical.href,
       author: { '@id': absolut(withBase('/')) + '#organisation' },
       publisher: { '@id': absolut(withBase('/')) + '#organisation' },
+      /*
+       * image ist bei Article eine Pflichtangabe. Das Bild wird oben fuer
+       * die Teilen-Vorschau ohnehin schon auf 1200 mal 630 zugeschnitten,
+       * es war nur nie in dieses Objekt eingetragen. Ohne das Feld ist der
+       * Beitrag nicht fuer erweiterte Suchergebnisse zugelassen.
+       */
+      ...(vorschau ? { image: absolut(vorschau.src) } : {}),
       // datePublished wird bewusst weggelassen, solange kein freigegebenes
       // Datum vorliegt – ein erfundenes Datum wäre schlimmer als keines.
       ...(artikel.datum ? { datePublished: artikel.datum } : {}),
     }
   : null;
+
+/*
+ * Die Personen hinter youman als eigene Knoten. Sie stehen im Graph neben
+ * der Organisation, nicht in ihr, damit sie sich einzeln referenzieren
+ * lassen.
+ */
+const personenKnoten = anbieter.personen.map((person) => ({
+  '@type': 'Person',
+  '@id': absolut(withBase('/ueber-uns')) + '#' + person.kennung,
+  name: person.name,
+  ...(person.rolle ? { jobTitle: person.rolle } : {}),
+  worksFor: { '@id': absolut(withBase('/')) + '#organisation' },
+  ...(person.telefon ? { telephone: person.telefon } : {}),
+  ...(person.profile && person.profile.length ? { sameAs: person.profile } : {}),
+}));
 
 /*
  * Ein WebSite-Knoten sagt Google, wie die Seite heisst. Ohne ihn leitet
@@ -238,17 +305,47 @@ const dienstleistungsObjekt = dienstleistung
       serviceType: dienstleistung.name,
       description: dienstleistung.beschreibung,
       provider: { '@id': absolut(withBase('/')) + '#organisation' },
-      areaServed: { '@type': 'Country', name: 'Deutschland' },
+      areaServed: [
+        { '@type': 'Country', name: 'Deutschland' },
+        { '@type': 'Country', name: 'Österreich' },
+        { '@type': 'Country', name: 'Schweiz' },
+      ],
       inLanguage: 'de-DE',
       mainEntityOfPage: canonical.href,
     }
   : null;
 
+/*
+ * FAQPage. Google zeigt daraus seit 2023 keine aufklappbaren Ergebnisse
+ * mehr; der Nutzen liegt heute woanders: Sprachassistenten und KI-gestuetzte
+ * Suchsysteme lesen die Frage-Antwort-Paare als geschlossene Einheit und
+ * koennen sie zitieren, ohne den Fliesstext zerlegen zu muessen. Deshalb
+ * bleibt die Auszeichnung sinnvoll, auch ohne Rich Result.
+ */
+const fragenObjekt =
+  fragen.length > 0
+    ? {
+        '@type': 'FAQPage',
+        '@id': canonical.href + '#fragen',
+        mainEntity: fragen.map((eintrag) => ({
+          '@type': 'Question',
+          name: eintrag.frage,
+          acceptedAnswer: { '@type': 'Answer', text: eintrag.antwort },
+        })),
+      }
+    : null;
+
 const strukturierteDaten = {
   '@context': 'https://schema.org',
-  '@graph': [organisation, webseite, brotkrumenListe, artikelObjekt, dienstleistungsObjekt].filter(
-    Boolean,
-  ),
+  '@graph': [
+    organisation,
+    ...personenKnoten,
+    webseite,
+    brotkrumenListe,
+    artikelObjekt,
+    dienstleistungsObjekt,
+    fragenObjekt,
+  ].filter(Boolean),
 };
 ---
 
@@ -274,6 +371,16 @@ const strukturierteDaten = {
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
       )
     }
+
+    {/*
+      Die einzige Sicherheitsangabe, die auf GitHub Pages ueberhaupt
+      moeglich ist: eigene HTTP-Kopfzeilen lassen sich dort nicht setzen,
+      als Meta-Element wirkt sie trotzdem. strict-origin-when-cross-origin
+      schickt beim Verlassen der Seite nur noch die Herkunft mit, nicht den
+      vollstaendigen Pfad. Eine Inhaltsrichtlinie steht bewusst nicht hier:
+      sie braucht den Kopfzeilenweg, um zuverlaessig zu greifen.
+    */}
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
 
     <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
     <meta name="theme-color" content="#000000" />

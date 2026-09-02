@@ -1,0 +1,123 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Section from '../components/Section.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import Button from '../components/Button.astro';
+import Kasten from '../components/Kasten.astro';
+import { fragen } from '../data/fragen';
+import { withBase } from '../lib/url';
+
+/**
+ * Häufige Fragen.
+ *
+ * Warum als eigene Seite und nicht als Abschnitt auf der Kontaktseite: Die
+ * Fragen haben eine eigene Suchabsicht. Wer "muss ich mein ERP ablösen"
+ * eingibt, sucht keine Kontaktseite. Eine eigene Adresse kann für solche
+ * Fragen ranken, ein Abschnitt weiter unten auf einer anderen Seite nicht.
+ *
+ * Die Antworten stehen in src/data/fragen.ts und gehen von dort sowohl in
+ * den sichtbaren Text als auch in die strukturierten Daten. Beides aus
+ * derselben Quelle, damit die Auszeichnung nicht von der Seite abweichen
+ * kann: Google verlangt ausdrücklich, dass ausgezeichnete Antworten auch
+ * sichtbar auf der Seite stehen.
+ */
+
+const brotkrumen = [{ label: 'Home', href: '/' }];
+
+// Nur die Kurzfassung geht in die Auszeichnung. Die Ergänzung steht auf der
+// Seite und ist dort der Grund, warum jemand bleibt.
+const fuerAuszeichnung = fragen.map(({ frage, antwort }) => ({ frage, antwort }));
+---
+
+<Base
+  title="Häufige Fragen zu Automation und Software"
+  description="Was eine Automation kostet, ob das bestehende System abgelöst werden muss, wie lange ein Projekt dauert und ab wann nicht mehr automatisch entschieden wird."
+  breadcrumb={brotkrumen}
+  fragen={fuerAuszeichnung}
+>
+  <PageHeader
+    kicker="Fragen"
+    title="Häufige Fragen"
+    lead="Acht Fragen, die in fast jedem Erstgespräch kommen. Die Antworten sagen auch, wo etwas nicht feststeht."
+    breadcrumb={brotkrumen}
+  />
+
+  <Section>
+    <div class="grid gap-10 lg:grid-cols-12 lg:gap-16">
+      <div class="lg:col-span-8">
+        {/*
+          Aufgeklappt, nicht zugeklappt. Ein Aufklapper spart Platz, aber
+          diese Seite hat nichts anderes zu zeigen, und was zugeklappt ist,
+          liest niemand. Die Fragen stehen als h2, damit die Gliederung dem
+          entspricht, was inhaltlich passiert.
+        */}
+        <div class="divide-y divide-line border-y border-line">
+          {
+            fragen.map((eintrag, i) => (
+              <article class="py-8 first:pt-0 last:pb-0">
+                <div class="flex items-baseline gap-5">
+                  <span class="zaehlziffer shrink-0 text-2xl leading-none" aria-hidden="true">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <div class="min-w-0">
+                    <h2 class="text-xl text-ink sm:text-2xl">{eintrag.frage}</h2>
+                    <p class="vorspann mt-4">{eintrag.antwort}</p>
+                    {eintrag.ergaenzung && (
+                      <p class="prose-measure mt-4 text-ink-soft">{eintrag.ergaenzung}</p>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+
+      <div class="space-y-6 lg:col-span-3 lg:col-start-10">
+        <Kasten titel="Frage nicht dabei?">
+          <p>
+            Dann schreiben Sie sie uns. Auch eine Frage, auf die die Antwort
+            „dafür sind wir die Falschen“ lautet, ist in zwei Sätzen
+            beantwortet.
+          </p>
+          <a
+            href={withBase('/kontakt')}
+            class="textverweis mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-ink"
+          >
+            Frage stellen
+          </a>
+        </Kasten>
+        <Kasten titel="Weiterlesen" tone="muted">
+          <ul class="liste-strich space-y-2 text-sm">
+            <li>
+              <a href={withBase('/leistungen')} class="textverweis">Was wir bauen</a>, die fünf
+              Bereiche im Überblick
+            </li>
+            <li>
+              <a href={withBase('/case-studies')} class="textverweis">Referenzprojekte</a>, zwei
+              abgeschlossene Fälle mit Namen des Kunden
+            </li>
+            <li>
+              <a href={withBase('/muensterland')} class="textverweis">Münsterland</a>, wo die
+              Nähe zählt und wo nicht
+            </li>
+          </ul>
+        </Kasten>
+      </div>
+    </div>
+  </Section>
+
+  <Section tone="dark">
+    <div class="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+      <SectionHeading
+        as="h2"
+        title="Ihre Frage steht nicht dabei?"
+        lead="Beschreiben Sie kurz Ihren Fall. Sie bekommen eine Einschätzung, keine Verkaufspräsentation."
+        tone="dark"
+        class="max-w-2xl"
+      />
+      <Button href="/kontakt" variant="invers" class="shrink-0">Frage stellen</Button>
+    </div>
+  </Section>
+</Base>

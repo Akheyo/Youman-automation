@@ -45,13 +45,40 @@ export const anbieter = {
    * müssen alle Gesellschafter genannt werden, nicht nur eine Person.
    */
   personen: [
-    { name: 'Amanuel Kheyo', telefon: '+49 155 67541365' },
+    {
+      name: 'Amanuel Kheyo',
+      telefon: '+49 155 67541365',
+      /**
+       * Kennung für den Anker in den strukturierten Daten. Muss stabil
+       * bleiben: Sie ist die Adresse, unter der die Person als Entität
+       * geführt wird.
+       */
+      kennung: 'amanuel-kheyo',
+      /** Rolle, wie sie in den strukturierten Daten erscheint. */
+      rolle: 'Gründer und Geschäftsführer',
+      /**
+       * Öffentliche Profile derselben Person, etwa LinkedIn oder Xing.
+       *
+       * Sie sind der wirksamste einzelne Beleg für Fachkenntnis, den
+       * strukturierte Daten hergeben: Google kann die Person darüber
+       * wiedererkennen und mit dem verknüpfen, was anderswo über sie
+       * steht. Solange die Liste leer ist, erscheint kein sameAs, denn ein
+       * Verweis ins Leere ist schlechter als keiner.
+       */
+      profile: [] as string[],
+    },
   ],
 
   /** Ladungsfähige Anschrift – ein Postfach genügt nicht. */
   strasse: 'Dülmener Weg 86a',
   plz: '46325' as string | null,
   ort: 'Borken' as string | null,
+  /**
+   * Bundesland. Steht nicht im Impressum, wird aber in den strukturierten
+   * Daten als addressRegion gebraucht: ortsbezogene Suchen zielen oft auf
+   * die Region statt auf den Ort. Durch die Postleitzahl eindeutig belegt.
+   */
+  bundesland: 'Nordrhein-Westfalen',
   land: 'Deutschland',
 
   /** Zentrale Adresse; identisch mit der auf der Kontaktseite. */

@@ -10,6 +10,7 @@ import Kachel from '../../components/Kachel.astro';
 import Kasten from '../../components/Kasten.astro';
 import { leistungen } from '../../data/leistungen';
 import { branchen } from '../../data/branchen';
+import { referenzenZurLeistung } from '../../data/caseStudies';
 import { prozess } from '../../data/site';
 import { withBase } from '../../lib/url';
 import { ersterSatz } from '../../lib/text';
@@ -28,10 +29,11 @@ const passendeBranchen = branchen.filter((b) => b.leistungen.includes(leistung.s
 // Der erste Satz der Einleitung traegt die Aussage und wird als Vorspann
 // gesetzt, der Rest als Fliesstext darunter.
 const einleitung = ersterSatz(leistung.intro);
+const referenzen = referenzenZurLeistung(leistung.slug);
 
 const brotkrumen = [
   { label: 'Home', href: '/' },
-  { label: 'Leistungen', href: '/leistungen' },
+  { label: 'Leistungen', href: '/leistungen/' },
 ];
 ---
 
@@ -172,6 +174,38 @@ const brotkrumen = [
       }
     </ol>
   </Section>
+
+  {/*
+    Das Projekt, das diese Leistung belegt. Steht vor den Branchen, weil ein
+    abgeschlossener Fall mehr sagt als die Einordnung in einen Wirtschaftszweig.
+    Die Zuordnung kommt aus caseStudies.ts, nicht aus dieser Seite.
+  */}
+  {
+    referenzen.length > 0 && (
+      <Section>
+        <SectionHeading
+          kicker="Aus der Praxis"
+          title={referenzen.length === 1 ? 'Ein abgeschlossenes Projekt dazu' : 'Abgeschlossene Projekte dazu'}
+          lead="Mit Namen des Kunden und mit dem, was dort tatsächlich gebaut wurde."
+        />
+        <ul class="mt-12 rasterfugen sm:grid-cols-2" data-reveal>
+          {referenzen.map((fall) => (
+            <Kachel
+              href={fall.href}
+              kicker={fall.branche}
+              title={fall.title}
+              teaser={fall.excerpt}
+              bild={fall.bild}
+              bildAlt={fall.bildAlt}
+              bildhinweis={fall.bildhinweis}
+              verhaeltnis="16 / 9"
+              sizes="(min-width: 640px) 50vw, 100vw"
+            />
+          ))}
+        </ul>
+      </Section>
+    )
+  }
 
   {
     passendeBranchen.length > 0 && (
