@@ -84,20 +84,44 @@ Drei Spalten, von links nach rechts:
 Nach *Übergeben* verschwindet die Bestellung von der Tafel und bleibt in der
 Datenbank. Bestellungen älter als 20 Minuten bekommen eine auffällige Zeitangabe.
 
-## Kassensystem anbinden
+## Kassensystem anbinden — SumUp
 
-Noch offen — dafür muss feststehen, welche Kasse im Laden steht. Die Anbindung
-kommt später als zusätzlicher Empfänger dazu (dieselbe Stelle wie Telegram, in
-`lib/sapore/notify.ts`). Am Rest ändert sich dabei nichts: die Küchenansicht
-bleibt als Rückfallebene bestehen, falls die Kasse einmal nicht erreichbar ist.
+Steht im Laden eine **SumUp Kasse** (die POS-App auf einem Tablet, nicht nur ein
+Kartenlesegeraet), ist die Anbindung machbar: SumUp POS hat dafuer die
+**External Sale API**. Eine so erzeugte Bestellung erscheint laut Hersteller
+innerhalb von rund 10 Sekunden auf den Kassen des Betriebs, druckt den Bon und
+laeuft in die Kitchen-Display-App — genau so, als waere sie an der Kasse
+eingetippt worden.
 
-Grobe Einschätzung nach Hersteller:
+Wichtig ist die Unterscheidung:
 
-- **ready2order, Lightspeed/Gastrofix, Tillhub** — offene Schnittstelle, machbar.
-- **Vectron, Hypersoft, orderbird** — nur über einen Partnervertrag mit dem
-  Hersteller, mit Vorlauf und Kosten.
-- **Lieferando-/Uber-Eats-Gerät** — geschlossenes System der Plattform, von außen
-  nicht anbindbar.
+| Geraet | Anbindung |
+| ------ | --------- |
+| **SumUp Kasse / POS** (Tablet mit Kassen-App) | Machbar ueber die External Sale API. |
+| **SumUp Solo, Air, 3G** (reines Kartenlesegeraet) | Nicht moeglich — die Geraete nehmen nur Zahlungen entgegen und haben keine Bestellliste. |
+
+### Was dafuer gebraucht wird
+
+1. **API-Schluessel** aus dem SumUp-Dashboard (dort unter den Entwickler- bzw.
+   API-Einstellungen anzulegen).
+2. **Artikelnummern**: die Kasse kennt unsere Artikel-IDs nicht. Jede Position
+   der Speisekarte muss auf einen in der Kasse angelegten Artikel zeigen. Dafuer
+   gibt es in `lib/sapore/menu.ts` je Gericht das Feld `posId`. Die Nummern
+   liefert der Endpunkt `ExternalSale-GetProducts`.
+3. **Filial-ID** vom Endpunkt `Outlet-GetOutlets`.
+
+Die eigentliche Bestellung geht dann an `ExternalSale-CreateSale`. Die genauen
+Feldnamen stehen in der Hersteller-Doku unter <https://apidoc.thegoodtill.com>
+(SumUp POS stammt aus der Uebernahme von Goodtill, daher die Adresse).
+
+### Reihenfolge
+
+Die Kasse kommt als **zusaetzlicher Empfaenger** dazu, an derselben Stelle wie
+Telegram (`lib/sapore/notify.ts`). Am Rest aendert sich nichts: die Bestellung
+wird weiterhin zuerst gespeichert, und die Kuechenansicht bleibt als
+Rueckfallebene bestehen, falls die Kasse einmal nicht erreichbar ist. Faellt die
+Uebergabe an die Kasse aus, steht der Grund an der Bestellzeile in
+`forward_error`.
 
 ## Wenn etwas nicht ankommt
 

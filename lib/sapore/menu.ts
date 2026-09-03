@@ -71,6 +71,13 @@ export type MenuItem = {
   description: string;
   price: number;
   tags?: Array<'vegetarisch' | 'scharf' | 'beliebt' | 'neu'>;
+  /**
+   * Artikelnummer im Kassensystem. Wird gebraucht, sobald Bestellungen in die
+   * Kasse laufen sollen: die Kasse kennt unsere IDs nicht, jede Position muss
+   * auf einen dort angelegten Artikel zeigen. Solange leer, bleibt die Kasse
+   * aussen vor und die Bestellung geht nur in die Kuechenansicht.
+   */
+  posId?: string;
 };
 
 export type MenuCategory = {
