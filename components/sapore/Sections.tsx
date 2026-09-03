@@ -53,6 +53,30 @@ function computeOpen(now: Date): { open: boolean; label: string } {
   };
 }
 
+/**
+ * Zerlegt eine Zeile in Woerter, damit sie beim Laden gestaffelt aufblendet.
+ * Woerter statt Buchstaben: der Skill raet von zeichenweiser Animation bei
+ * laengeren Zeilen ab (ein Element je Zeichen blaeht das Dokument auf), und
+ * deutsche Komposita blieben dabei schlecht lesbar. Unter
+ * `prefers-reduced-motion` steht alles sofort still und sichtbar.
+ */
+function Words({ text, delay = 0 }: { text: string; delay?: number }) {
+  return (
+    <>
+      {text.split(' ').map((word, index) => (
+        <span
+          key={`${word}-${index}`}
+          className={styles.word}
+          style={{ animationDelay: `${delay + index * 0.055}s` }}
+        >
+          {word}
+          {index < text.split(' ').length - 1 ? '\u00A0' : ''}
+        </span>
+      ))}
+    </>
+  );
+}
+
 /** Statuszeile, die Hero und Oeffnungszeiten teilen. */
 export function OpenStatus() {
   const [state, setState] = useState<{ open: boolean; label: string } | null>(null);
@@ -222,14 +246,17 @@ export function Hero() {
             </p>
 
             <h1 className={styles.heroTitle}>
-              Steakdöner, Pizza und Imbiss
-              <em>frisch zubereitet in Borken</em>
+              <Words text="Vom Spieß." />
+              <em>
+                <Words text="Nicht aus der Presse." delay={0.2} />
+              </em>
             </h1>
 
             <p className={styles.heroText}>
-              Bei Sapore Grill kommt ausschließlich Fleisch vom Jungbullen auf den Spieß —
-              kein Hack, nichts Gepresstes. Dazu knusprige Pizza aus dem Ofen, täglich frisch
-              geschnittene Salate und deftige Imbiss-Teller. Zum Abholen oder zur Lieferung.
+              Steakdöner, Pizza und Imbiss in Borken. Bei Sapore Grill kommt ausschließlich
+              Fleisch vom Jungbullen auf den Spieß — kein Hack, nichts Gepresstes. Dazu
+              knusprige Pizza aus dem Ofen, täglich frisch geschnittene Salate und deftige
+              Imbiss-Teller. Zum Abholen oder zur Lieferung.
             </p>
 
             <div className={styles.heroCtas}>
@@ -415,6 +442,24 @@ export function Specials() {
             </article>
           </Reveal>
         </div>
+      </div>
+    </section>
+  );
+}
+
+/** Der Leitspruch des Betriebs — die einzige Stelle mit Serifenschrift. */
+export function Quote() {
+  return (
+    <section className={styles.quoteBlock}>
+      <div className={styles.shell}>
+        <Reveal>
+          <blockquote className={styles.quote}>
+            <p className={styles.quoteText}>
+              „Frisch. Lecker. <span>Qualität.</span>“
+            </p>
+            <span className={styles.quoteBy}>Unser Versprechen, jeden Tag</span>
+          </blockquote>
+        </Reveal>
       </div>
     </section>
   );
@@ -661,7 +706,10 @@ export function FinalCta() {
       <div className={styles.shell}>
         <Reveal>
           <div className={styles.finalCta}>
-            <h2 className={styles.finalTitle}>Frisch. Lecker. Qualität.</h2>
+            <h2 className={styles.finalTitle}>
+              Hunger?
+              <em>Wir legen auf.</em>
+            </h2>
             <p className={styles.finalText}>
               Täglich von {BUSINESS.opensAt}:00 bis {BUSINESS.closesAt}:00 Uhr für Sie da —
               online bestellen oder einfach anrufen.

@@ -10,6 +10,7 @@ import {
   Header,
   Hero,
   Hours,
+  Quote,
   Specials,
   Steps,
   TrustStrip,
@@ -191,6 +192,7 @@ export default function SaporeGrillPage() {
         <Hero />
         <TrustStrip />
         <Specials />
+        <Quote />
         <OrderSection />
         <Gallery />
         <Steps />
