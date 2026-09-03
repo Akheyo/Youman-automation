@@ -1,42 +1,53 @@
 /* =============================================================================
  * Sapore Grill — Design-System
  *
- * Richtung aus dem UI/UX-Skill: "Skeuomorphism" (Material, Textur, Tiefe —
- * ausgewiesen fuer Premium und Luxus) auf "Dark Mode OLED" (tiefes Schwarz,
- * Kontrast 7:1, minimales Leuchten). Uebersetzt auf das Thema: die Materialien
- * eines Holzkohlegrills — Kohle, Gusseisen, Messing, Glut.
+ * Alles richtet sich nach dem Wappen des Betriebs: goldener Ring auf Schwarz,
+ * Spiess ueber Flammen, Slab-Serifen-Schrift mit Schlagschatten, gekreuzte
+ * Messer. Daraus folgt die ganze Seite — Emblem-Sprache statt Agentur-Optik.
  *
- * Drei Regeln, an denen sich alles ausrichtet:
- *  1. Kein Leuchten, keine Farbverlaufs-Schrift. Tiefe entsteht ueber Kanten,
- *     mehrlagige Schatten und eine feine Koernung — nicht ueber Schein.
- *  2. Messing ist der einzige Zierton, Glut ausschliesslich fuer Handlungen.
- *  3. Schrift-Dreiklang (Skill-Empfehlung "Bold Typography / Inter Poster"):
- *     Inter 700–800 als Plakatschrift, JetBrains Mono fuer Marken, Preise und
- *     Zeiten, Playfair Display kursiv fuer genau ein Zitat.
+ * Farben direkt aus dem Logo abgenommen: Schwarz, Gold, Creme, Flammenrot,
+ * Fleischbraun. Kein weiterer Ton kommt dazu.
+ *
+ * Schrift: Alfa Slab One fuer Ueberschriften — dieselbe Gattung wie im Logo,
+ * mit Schlagschatten wie dort. Bitter fuer Fliesstext und Marken; eine
+ * Serifenschrift, die am Bildschirm lesbar bleibt. Bewusst kein Inter: das ist
+ * die Schrift, an der man generierte Seiten erkennt.
  *
  * Mobile-first; Breakpoints bei 640/900/1200px.
  * ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:ital,wght@1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bitter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 
 .page {
-  /* Kohle: warm abgetoent, damit Schwarz nicht technisch-blau wirkt. */
-  --void: #0a0908;
-  --coal: #121010;
-  --iron: #1a1715;
-  --iron-2: #221e1a;
-  --ash: #322c26;
-  --ash-soft: #241f1b;
+  /* -------------------------------------------------------------------------
+   * Zwei Grundstimmungen, gleiche Tokennamen.
+   *
+   * Hell ist der Normalfall: Speisekarte, Bestellung, Zeiten und Kontakt stehen
+   * auf warmem Creme — dort wird gelesen, ausgewaehlt und getippt.
+   * Dunkel traegt die Marke: Kopf, Hero, Zitat, Abschluss und Fusszeile sehen
+   * aus wie das Wappen. Die Umschaltung macht `.dark`.
+   *
+   * Alle Farben stammen aus dem Logo; Gold und Flamme sind auf hellem Grund
+   * tiefer gesetzt, damit sie dort ihre 4,5:1 erreichen.
+   * ---------------------------------------------------------------------- */
+  --ground: #f7f2e8;
+  --ground-2: #efe7d8;
+  --panel: #fffdf8;
+  --panel-2: #f4eee2;
+  --line: #d9cbb2;
+  --line-soft: #e7dbc6;
 
-  --bone: #f4efe6;
-  --smoke: #a89d90;
-  --smoke-dim: #857a6e;
+  --text: #1c1512;
+  --text-dim: #5a5044;
+  --text-dimmer: #74695a;
 
-  --brass: #c99a4b;
-  --brass-bright: #e3b76b;
-  --ember: #d6402a;
-  --ember-bright: #ff6a4d;
-  --leaf: #6fbf87;
+  --gold: #8a6a2c;
+  --gold-bright: #6f5320;
+  --gold-deep: #5c4419;
+  --flame: #c22e17;
+  --flame-bright: #a3240f;
+  --meat: #b8823c;
+  --leaf: #2f6b46;
 
   --radius: 4px;
   --radius-lg: 8px;
@@ -48,9 +59,9 @@
   --s5: 72px;
   --s6: 120px;
 
-  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  --quote: 'Playfair Display', Georgia, serif;
+  --font: 'Bitter', Georgia, 'Times New Roman', serif;
+  --display: 'Alfa Slab One', Rockwell, 'Bookman Old Style', Georgia, serif;
+  --label: 'Bitter', Georgia, serif;
 
   /* Mehrlagig: Kante oben hell, Schatten unten tief — die Flaeche liest sich
      als angehobene Platte, nicht als eingefaerbtes Rechteck. */
@@ -60,14 +71,39 @@
     0 8px 24px rgba(0, 0, 0, 0.45);
 
   position: relative;
-  background: var(--void);
-  color: var(--bone);
+  background: var(--ground);
+  color: var(--text);
   font-family: var(--font);
   font-size: 16px;
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+}
+
+
+/* Dunkle Abschnitte: dieselben Tokennamen, Werte aus dem Wappen. */
+.dark {
+  --ground: #1c1512;
+  --ground-2: #15100e;
+  --panel: #241c18;
+  --panel-2: #2c221d;
+  --line: #47382e;
+  --line-soft: #33281f;
+
+  --text: #f5f0e8;
+  --text-dim: #c0b4a3;
+  --text-dimmer: #9a8d7c;
+
+  --gold: #c8a15a;
+  --gold-bright: #e0c088;
+  --gold-deep: #8a6a2c;
+  --flame: #d93a1f;
+  --flame-bright: #ff7a55;
+  --leaf: #6fbf87;
+
+  background: var(--ground);
+  color: var(--text);
 }
 
 .page *,
@@ -78,23 +114,27 @@
 
 /* Feine Koernung ueber der gesamten Flaeche: nimmt dem Schwarz das Digitale
    und laesst es wie Kohle wirken. Rein dekorativ, blockiert keine Eingaben. */
-.page::before {
+.dark::before {
   content: '';
-  position: fixed;
+  position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 0;
   pointer-events: none;
   opacity: 0.16;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
 }
 
-.page > * {
+.dark {
   position: relative;
-  z-index: 2;
+}
+
+.dark > * {
+  position: relative;
+  z-index: 1;
 }
 
 .page :focus-visible {
-  outline: 2px solid var(--brass-bright);
+  outline: 2px solid var(--gold-bright);
   outline-offset: 3px;
 }
 
@@ -109,12 +149,13 @@
 /* --- Marken, Preise, Zeiten: Mono ---------------------------------------- */
 
 .eyebrow {
-  font-family: var(--mono);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--gold);
   margin: 0 0 var(--s3);
 }
 
@@ -133,20 +174,22 @@
   top: 4px;
   bottom: 8px;
   width: 2px;
-  background: linear-gradient(180deg, var(--brass), rgba(201, 154, 75, 0));
+  background: linear-gradient(180deg, var(--gold), rgba(201, 154, 75, 0));
 }
 
 .h2 {
-  font-size: clamp(2rem, 5vw, 3.25rem);
-  line-height: 1.05;
-  font-weight: 800;
-  letter-spacing: -0.035em;
+  font-family: var(--display);
+  font-size: clamp(1.75rem, 4.2vw, 2.75rem);
+  line-height: 1.12;
+  font-weight: 400;
+  letter-spacing: -0.005em;
   text-wrap: balance;
   margin: 0 0 var(--s3);
+  text-shadow: 0 2px 0 #000;
 }
 
 .lead {
-  color: var(--smoke);
+  color: var(--text-dim);
   font-size: 1.0625rem;
   line-height: 1.75;
   max-width: 58ch;
@@ -158,9 +201,9 @@
 }
 
 .sectionAlt {
-  background: var(--coal);
-  border-top: 1px solid var(--ash-soft);
-  border-bottom: 1px solid var(--ash-soft);
+  background: var(--ground-2);
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 /* Ohne Funktion in dieser Fassung — der Spiess ersetzt den Trennstrich. */
@@ -194,35 +237,35 @@
 }
 
 .btnPrimary {
-  background: var(--ember);
+  background: var(--flame);
   color: #fff;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 6px 18px rgba(214, 64, 42, 0.22);
 }
 
 .btnPrimary:hover {
-  background: var(--ember-bright);
+  background: var(--flame-bright);
   color: #1a0b06;
 }
 
 .btnGold {
-  background: var(--brass);
+  background: var(--gold);
   color: #1a1206;
   box-shadow: inset 0 1px 0 rgba(255, 240, 210, 0.3), 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
 .btnGold:hover {
-  background: var(--brass-bright);
+  background: var(--gold-bright);
 }
 
 .btnGhost {
   background: transparent;
-  color: var(--bone);
-  border-color: var(--ash);
+  color: var(--text);
+  border-color: var(--line);
 }
 
 .btnGhost:hover {
-  border-color: var(--brass);
-  color: var(--brass-bright);
+  border-color: var(--gold);
+  color: var(--gold-bright);
 }
 
 .btn:disabled {
@@ -237,8 +280,8 @@
 
 /* Auf dem dunklen Abschlussblock sitzt alles auf demselben Grund. */
 .btnOnDark {
-  background: var(--bone);
-  color: var(--void);
+  background: var(--text);
+  color: var(--ground);
 }
 
 .btnOnDark:hover {
@@ -247,13 +290,13 @@
 
 .btnGhostOnDark {
   background: transparent;
-  color: var(--bone);
-  border-color: var(--ash);
+  color: var(--text);
+  border-color: var(--line);
 }
 
 .btnGhostOnDark:hover {
-  border-color: var(--brass);
-  color: var(--brass-bright);
+  border-color: var(--gold);
+  color: var(--gold-bright);
 }
 
 .icon {
@@ -271,13 +314,14 @@
 /* --- Servicezeile und Kopf ----------------------------------------------- */
 
 .utility {
-  background: #060505;
-  border-bottom: 1px solid var(--ash-soft);
-  font-family: var(--mono);
+  background: var(--ground-2);
+  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--smoke);
+  color: var(--text-dim);
 }
 
 .utilityInner {
@@ -299,11 +343,11 @@
 }
 
 .utilityItem:hover {
-  color: var(--brass-bright);
+  color: var(--gold-bright);
 }
 
 .utilitySep {
-  color: var(--ash);
+  color: var(--line);
   display: none;
 }
 
@@ -315,9 +359,9 @@
   position: sticky;
   top: 0;
   z-index: 60;
-  background: rgba(10, 9, 8, 0.88);
+  background: color-mix(in srgb, var(--ground) 88%, transparent);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--ash-soft);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .headerInner {
@@ -332,7 +376,7 @@
   align-items: center;
   gap: 13px;
   margin-right: auto;
-  color: var(--bone);
+  color: var(--text);
   text-decoration: none;
 }
 
@@ -349,17 +393,18 @@
 }
 
 .brandName {
-  font-size: 1.1875rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--display);
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
 .brandSub {
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 0.625rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--gold);
   white-space: nowrap;
 }
 
@@ -369,11 +414,11 @@
 }
 
 .navLink {
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 0.75rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--smoke);
+  color: var(--text-dim);
   text-decoration: none;
   padding: 6px 0;
   border-bottom: 1px solid transparent;
@@ -381,8 +426,8 @@
 }
 
 .navLink:hover {
-  color: var(--bone);
-  border-bottom-color: var(--brass);
+  color: var(--text);
+  border-bottom-color: var(--gold);
 }
 
 .headerActions {
@@ -402,38 +447,38 @@
   width: 50px;
   height: 50px;
   border-radius: var(--radius);
-  border: 1px solid var(--ash);
+  border: 1px solid var(--line);
   background: transparent;
-  color: var(--bone);
+  color: var(--text);
   cursor: pointer;
 }
 
 .burger:hover {
-  border-color: var(--brass);
+  border-color: var(--gold);
 }
 
 .mobileNav {
   display: grid;
   padding-bottom: var(--s2);
-  border-top: 1px solid var(--ash-soft);
+  border-top: 1px solid var(--line-soft);
 }
 
 .mobileNavLink {
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 0.8125rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--bone);
+  color: var(--text);
   text-decoration: none;
   padding: 17px 2px;
-  border-bottom: 1px solid var(--ash-soft);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 /* --- Hero: Schrift als Bild ---------------------------------------------- */
 
 .hero {
   padding: var(--s5) 0 var(--s5);
-  border-bottom: 1px solid var(--ash-soft);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .heroInner {
@@ -449,11 +494,12 @@
   align-items: center;
   gap: 10px var(--s3);
   margin: 0 0 var(--s4);
-  font-family: var(--mono);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--smoke);
+  color: var(--text-dim);
 }
 
 .statusOpen {
@@ -467,7 +513,7 @@
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  color: var(--ember-bright);
+  color: var(--flame-bright);
 }
 
 .dot {
@@ -480,19 +526,21 @@
 
 /* Plakat-Zeile: sehr gross, sehr eng, ohne Zierrat. */
 .heroTitle {
-  font-size: clamp(2.9rem, 8.4vw, 5.75rem);
-  line-height: 0.94;
-  font-weight: 800;
-  letter-spacing: -0.045em;
-  text-transform: uppercase;
+  font-family: var(--display);
+  font-size: clamp(2.4rem, 6.8vw, 4.5rem);
+  line-height: 1.04;
+  font-weight: 400;
+  letter-spacing: -0.005em;
   margin: 0 0 var(--s4);
   text-wrap: balance;
+  /* Derselbe harte Schlagschatten wie unter dem Schriftzug im Wappen. */
+  text-shadow: 0 3px 0 #000, 0 4px 8px rgba(0, 0, 0, 0.55);
 }
 
 .heroTitle em {
   display: block;
   font-style: normal;
-  color: var(--brass);
+  color: var(--gold);
 }
 
 /* Wortweises Aufblenden beim Laden — kurz, ohne Zappeln. */
@@ -513,7 +561,7 @@
 .heroText {
   font-size: 1.0625rem;
   line-height: 1.8;
-  color: var(--smoke);
+  color: var(--text-dim);
   max-width: 50ch;
   margin: 0 0 var(--s4);
 }
@@ -532,7 +580,7 @@
   padding: 0;
   list-style: none;
   max-width: 540px;
-  border-top: 1px solid var(--ash-soft);
+  border-top: 1px solid var(--line-soft);
 }
 
 .fact {
@@ -540,35 +588,36 @@
   gap: 14px;
   align-items: center;
   padding: 15px 0;
-  border-bottom: 1px solid var(--ash-soft);
+  border-bottom: 1px solid var(--line-soft);
   font-size: 0.9375rem;
-  color: var(--bone);
+  color: var(--text);
 }
 
 .factIcon {
-  color: var(--brass);
+  color: var(--gold);
   flex: none;
 }
 
 /* Infotafel: angehobene Metallplatte. */
 .heroCard {
-  border: 1px solid var(--ash);
-  background: linear-gradient(180deg, var(--iron-2), var(--iron));
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
   border-radius: var(--radius-lg);
   box-shadow: var(--plate);
   padding: var(--s4);
 }
 
 .heroCardTitle {
-  font-family: var(--mono);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--gold);
   margin: 0 0 var(--s3);
   padding-bottom: var(--s2);
-  border-bottom: 1px solid var(--ash);
+  border-bottom: 1px solid var(--line);
 }
 
 .infoList {
@@ -590,41 +639,41 @@
   border-radius: var(--radius);
   display: grid;
   place-items: center;
-  background: var(--ash-soft);
-  border: 1px solid var(--ash);
-  color: var(--brass);
+  background: var(--line-soft);
+  border: 1px solid var(--line);
+  color: var(--gold);
 }
 
 .infoLabel {
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 0.625rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--smoke-dim);
+  color: var(--text-dimmer);
   margin-bottom: 3px;
 }
 
 .infoValue {
-  color: var(--bone);
+  color: var(--text);
   font-weight: 600;
   text-decoration: none;
   display: block;
 }
 
 a.infoValue:hover {
-  color: var(--brass-bright);
+  color: var(--gold-bright);
 }
 
 .infoNote {
-  color: var(--smoke);
+  color: var(--text-dim);
   font-size: 0.875rem;
 }
 
 /* --- Kennzahlenband ------------------------------------------------------ */
 
 .trust {
-  background: #060505;
-  border-bottom: 1px solid var(--ash-soft);
+  background: var(--ground-2);
+  border-bottom: 1px solid var(--line-soft);
   padding: var(--s5) 0;
 }
 
@@ -640,11 +689,11 @@ a.infoValue:hover {
 }
 
 .trustValue {
-  font-family: var(--mono);
-  font-size: 1.375rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--brass-bright);
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--gold-bright);
   display: block;
   margin-bottom: 8px;
   font-variant-numeric: tabular-nums;
@@ -652,7 +701,7 @@ a.infoValue:hover {
 
 .trustLabel {
   font-size: 0.875rem;
-  color: var(--smoke);
+  color: var(--text-dim);
   line-height: 1.55;
 }
 
@@ -665,8 +714,8 @@ a.infoValue:hover {
 }
 
 .special {
-  border: 1px solid var(--ash-soft);
-  background: linear-gradient(180deg, var(--iron), var(--coal));
+  border: 1px solid var(--line-soft);
+  background: linear-gradient(180deg, var(--panel), var(--ground-2));
   border-radius: var(--radius-lg);
   box-shadow: var(--plate);
   padding: var(--s4);
@@ -674,7 +723,7 @@ a.infoValue:hover {
 }
 
 .special:hover {
-  border-color: var(--ash);
+  border-color: var(--line);
 }
 
 .specialFigure {
@@ -683,23 +732,24 @@ a.infoValue:hover {
 
 .specialTag {
   display: block;
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 0.625rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--gold);
   margin-bottom: 12px;
 }
 
 .specialTitle {
-  font-size: 1.625rem;
-  font-weight: 800;
-  letter-spacing: -0.025em;
+  font-family: var(--display);
+  font-size: 1.4rem;
+  font-weight: 400;
+  letter-spacing: 0;
   margin: 0 0 14px;
 }
 
 .specialText {
-  color: var(--smoke);
+  color: var(--text-dim);
   margin: 0 0 var(--s3);
   line-height: 1.75;
 }
@@ -709,7 +759,7 @@ a.infoValue:hover {
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid var(--ash-soft);
+  border-top: 1px solid var(--line-soft);
 }
 
 .specialList li {
@@ -717,13 +767,13 @@ a.infoValue:hover {
   gap: 11px;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 1px solid var(--ash-soft);
+  border-bottom: 1px solid var(--line-soft);
   font-size: 0.9375rem;
-  color: var(--bone);
+  color: var(--text);
 }
 
 .check {
-  color: var(--brass);
+  color: var(--gold);
   flex: none;
 }
 
@@ -731,9 +781,9 @@ a.infoValue:hover {
 
 .quoteBlock {
   padding: var(--s6) 0;
-  border-top: 1px solid var(--ash-soft);
-  border-bottom: 1px solid var(--ash-soft);
-  background: #060505;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--ground-2);
 }
 
 .quote {
@@ -743,27 +793,27 @@ a.infoValue:hover {
 }
 
 .quoteText {
-  font-family: var(--quote);
-  font-style: italic;
+  font-family: var(--display);
   font-weight: 400;
-  font-size: clamp(1.75rem, 5.2vw, 3.25rem);
-  line-height: 1.22;
-  letter-spacing: -0.015em;
-  color: var(--bone);
+  font-size: clamp(1.5rem, 4.4vw, 2.75rem);
+  line-height: 1.25;
+  color: var(--text);
   margin: 0 0 var(--s3);
   text-wrap: balance;
+  text-shadow: 0 3px 0 #000;
 }
 
 .quoteText span {
-  color: var(--brass);
+  color: var(--gold);
 }
 
 .quoteBy {
-  font-family: var(--mono);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--smoke-dim);
+  color: var(--text-dimmer);
 }
 
 /* --- Hinweisblock -------------------------------------------------------- */
@@ -772,26 +822,27 @@ a.infoValue:hover {
   display: flex;
   gap: 15px;
   align-items: flex-start;
-  border: 1px solid var(--ash);
-  border-left: 2px solid var(--brass);
-  background: var(--iron);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--gold);
+  background: var(--panel);
   border-radius: var(--radius);
   padding: var(--s3);
   margin-bottom: var(--s4);
 }
 
 .noticeTitle {
-  font-family: var(--mono);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--gold);
   display: block;
   margin-bottom: 8px;
 }
 
 .noticeText {
-  color: var(--smoke);
+  color: var(--text-dim);
   font-size: 0.9375rem;
   line-height: 1.7;
   margin: 0;
@@ -815,7 +866,7 @@ a.infoValue:hover {
   gap: var(--s3);
   max-width: 100%;
   overflow-x: auto;
-  border-bottom: 1px solid var(--ash);
+  border-bottom: 1px solid var(--line);
   margin-bottom: var(--s4);
   scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
@@ -830,8 +881,8 @@ a.infoValue:hover {
   border: none;
   border-bottom: 2px solid transparent;
   background: transparent;
-  color: var(--smoke-dim);
-  font-family: var(--mono);
+  color: var(--text-dimmer);
+  font-family: var(--label);
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.14em;
@@ -842,16 +893,16 @@ a.infoValue:hover {
 }
 
 .tab:hover {
-  color: var(--bone);
+  color: var(--text);
 }
 
 .tabActive {
-  color: var(--brass-bright);
-  border-bottom-color: var(--brass);
+  color: var(--gold-bright);
+  border-bottom-color: var(--gold);
 }
 
 .categoryNote {
-  color: var(--smoke);
+  color: var(--text-dim);
   font-size: 0.875rem;
   margin: 0 0 var(--s4);
 }
@@ -861,14 +912,14 @@ a.infoValue:hover {
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid var(--ash-soft);
+  border-top: 1px solid var(--line-soft);
 }
 
 .item {
   display: grid;
   gap: 8px;
   padding: var(--s3) 0;
-  border-bottom: 1px solid var(--ash-soft);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .itemHead {
@@ -879,8 +930,8 @@ a.infoValue:hover {
 
 .itemName {
   font-size: 1.0625rem;
-  font-weight: 700;
-  letter-spacing: -0.012em;
+  font-weight: 600;
+  letter-spacing: 0;
   margin: 0;
   display: flex;
   flex-wrap: wrap;
@@ -890,17 +941,17 @@ a.infoValue:hover {
 
 .leader {
   flex: 1;
-  border-bottom: 1px dotted var(--ash);
+  border-bottom: 1px dotted var(--line);
   min-width: 16px;
   transform: translateY(-4px);
 }
 
 /* Preise in Mono mit gleich breiten Ziffern — sie stehen exakt untereinander. */
 .price {
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 0.9375rem;
   font-weight: 500;
-  color: var(--brass-bright);
+  color: var(--gold-bright);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -913,7 +964,7 @@ a.infoValue:hover {
 }
 
 .itemDesc {
-  color: var(--smoke);
+  color: var(--text-dim);
   font-size: 0.9375rem;
   line-height: 1.65;
   margin: 0;
@@ -921,19 +972,19 @@ a.infoValue:hover {
 }
 
 .tag {
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 0.5625rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   padding: 3px 8px;
   border-radius: 2px;
-  border: 1px solid var(--ash);
-  color: var(--smoke);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
   white-space: nowrap;
 }
 
 .tagBeliebt {
-  color: var(--brass-bright);
+  color: var(--gold-bright);
   border-color: rgba(201, 154, 75, 0.55);
 }
 
@@ -950,10 +1001,11 @@ a.infoValue:hover {
   min-height: 44px;
   padding: 11px 18px;
   border-radius: var(--radius);
-  border: 1px solid var(--ash);
-  background: var(--iron);
-  color: var(--bone);
-  font-family: var(--mono);
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.14em;
@@ -964,16 +1016,16 @@ a.infoValue:hover {
 }
 
 .addBtn:hover {
-  background: var(--brass);
-  border-color: var(--brass);
+  background: var(--gold);
+  border-color: var(--gold);
   color: #1a1206;
 }
 
 /* --- Warenkorb ----------------------------------------------------------- */
 
 .cart {
-  border: 1px solid var(--ash);
-  background: linear-gradient(180deg, var(--iron-2), var(--iron));
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
   border-radius: var(--radius-lg);
   box-shadow: var(--plate);
   padding: var(--s3);
@@ -984,18 +1036,19 @@ a.infoValue:hover {
   align-items: center;
   gap: 11px;
   padding-bottom: var(--s2);
-  border-bottom: 1px solid var(--ash);
+  border-bottom: 1px solid var(--line);
   margin-bottom: var(--s3);
-  color: var(--brass);
+  color: var(--gold);
 }
 
 .cartTitle {
-  font-family: var(--mono);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--gold);
   margin: 0;
   margin-right: auto;
 }
@@ -1005,9 +1058,9 @@ a.infoValue:hover {
   height: 26px;
   padding: 0 8px;
   border-radius: 13px;
-  background: var(--ember);
+  background: var(--flame);
   color: #fff;
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 0.75rem;
   font-weight: 700;
   display: inline-grid;
@@ -1018,7 +1071,7 @@ a.infoValue:hover {
 .modeSwitch {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border: 1px solid var(--ash);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
   margin-bottom: var(--s3);
@@ -1031,9 +1084,10 @@ a.infoValue:hover {
   gap: 9px;
   min-height: 48px;
   border: none;
-  background: var(--void);
-  color: var(--smoke);
-  font-family: var(--mono);
+  background: var(--ground);
+  color: var(--text-dim);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.14em;
@@ -1043,15 +1097,15 @@ a.infoValue:hover {
 }
 
 .modeBtn:first-child {
-  border-right: 1px solid var(--ash);
+  border-right: 1px solid var(--line);
 }
 
 .modeBtn:hover {
-  color: var(--bone);
+  color: var(--text);
 }
 
 .modeBtnActive {
-  background: var(--brass);
+  background: var(--gold);
   color: #1a1206;
 }
 
@@ -1065,7 +1119,7 @@ a.infoValue:hover {
 }
 
 .cartEmptyIcon {
-  color: var(--ash);
+  color: var(--line);
   width: 30px;
   height: 30px;
   margin-bottom: var(--s2);
@@ -1078,14 +1132,14 @@ a.infoValue:hover {
   list-style: none;
   max-height: 340px;
   overflow-y: auto;
-  border-top: 1px solid var(--ash-soft);
+  border-top: 1px solid var(--line-soft);
 }
 
 .line {
   display: grid;
   gap: 9px;
   padding: 15px 0;
-  border-bottom: 1px solid var(--ash-soft);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .lineName {
@@ -1103,8 +1157,8 @@ a.infoValue:hover {
 }
 
 .linePrice {
-  font-family: var(--mono);
-  color: var(--smoke);
+  font-family: var(--label);
+  color: var(--text-dim);
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
@@ -1121,23 +1175,23 @@ a.infoValue:hover {
   display: grid;
   place-items: center;
   border-radius: var(--radius);
-  border: 1px solid var(--ash);
-  background: var(--void);
-  color: var(--bone);
+  border: 1px solid var(--line);
+  background: var(--ground);
+  color: var(--text);
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .stepBtn:hover {
-  background: var(--brass);
-  border-color: var(--brass);
+  background: var(--gold);
+  border-color: var(--gold);
   color: #1a1206;
 }
 
 .stepValue {
   min-width: 32px;
   text-align: center;
-  font-family: var(--mono);
+  font-family: var(--label);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -1146,7 +1200,7 @@ a.infoValue:hover {
   display: grid;
   gap: 11px;
   padding-top: var(--s2);
-  border-top: 1px solid var(--ash);
+  border-top: 1px solid var(--line);
   margin-bottom: var(--s3);
 }
 
@@ -1155,26 +1209,26 @@ a.infoValue:hover {
   justify-content: space-between;
   gap: var(--s2);
   font-size: 0.9375rem;
-  color: var(--smoke);
+  color: var(--text-dim);
   font-variant-numeric: tabular-nums;
 }
 
 .totalRow span:last-child {
-  font-family: var(--mono);
+  font-family: var(--label);
 }
 
 .totalRowMain {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--bone);
+  color: var(--text);
   padding-top: 13px;
-  border-top: 1px solid var(--ash);
+  border-top: 1px solid var(--line);
 }
 
 .totalRowMain span:last-child {
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 1.25rem;
-  color: var(--brass-bright);
+  color: var(--gold-bright);
 }
 
 .hintWarn {
@@ -1183,7 +1237,7 @@ a.infoValue:hover {
   align-items: flex-start;
   border-radius: var(--radius);
   border: 1px solid rgba(214, 64, 42, 0.45);
-  border-left: 2px solid var(--ember);
+  border-left: 2px solid var(--flame);
   background: rgba(214, 64, 42, 0.09);
   color: #f3b8ab;
   padding: 13px 15px;
@@ -1225,16 +1279,16 @@ a.infoValue:hover {
 }
 
 .label {
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 0.625rem;
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--smoke);
+  color: var(--text-dim);
 }
 
 .optional {
-  color: var(--smoke-dim);
+  color: var(--text-dimmer);
   text-transform: none;
   letter-spacing: 0.04em;
 }
@@ -1246,9 +1300,9 @@ a.infoValue:hover {
   min-height: 48px;
   padding: 12px 14px;
   border-radius: var(--radius);
-  border: 1px solid var(--ash);
-  background: var(--void);
-  color: var(--bone);
+  border: 1px solid var(--line);
+  background: var(--ground);
+  color: var(--text);
   font-family: var(--font);
   font-size: 1rem;
   transition: border-color 0.2s ease;
@@ -1256,20 +1310,20 @@ a.infoValue:hover {
 
 .input::placeholder,
 .textarea::placeholder {
-  /* 4.7:1 auf dem Feldgrund — Platzhalter bleiben lesbar. */
-  color: #8b8175;
+  /* Ueber das Token, damit der Platzhalter in beiden Stimmungen 4,5:1 haelt. */
+  color: var(--text-dimmer);
 }
 
 .input:hover,
 .textarea:hover,
 .select:hover {
-  border-color: var(--smoke-dim);
+  border-color: var(--text-dimmer);
 }
 
 .input:focus,
 .textarea:focus,
 .select:focus {
-  border-color: var(--brass);
+  border-color: var(--gold);
 }
 
 .textarea {
@@ -1278,11 +1332,11 @@ a.infoValue:hover {
 }
 
 .inputError {
-  border-color: var(--ember);
+  border-color: var(--flame);
 }
 
 .errorText {
-  color: var(--ember-bright);
+  color: var(--flame-bright);
   font-size: 0.8125rem;
   display: flex;
   gap: 7px;
@@ -1290,7 +1344,7 @@ a.infoValue:hover {
 }
 
 .helper {
-  color: var(--smoke-dim);
+  color: var(--text-dimmer);
   font-size: 0.8125rem;
   line-height: 1.6;
 }
@@ -1301,7 +1355,7 @@ a.infoValue:hover {
   align-items: flex-start;
   font-size: 0.875rem;
   line-height: 1.65;
-  color: var(--smoke);
+  color: var(--text-dim);
   cursor: pointer;
 }
 
@@ -1310,24 +1364,25 @@ a.infoValue:hover {
   height: 20px;
   flex: none;
   margin-top: 2px;
-  accent-color: var(--ember);
+  accent-color: var(--flame);
   cursor: pointer;
 }
 
 .errorSummary {
   border-radius: var(--radius);
   border: 1px solid rgba(214, 64, 42, 0.45);
-  border-left: 2px solid var(--ember);
+  border-left: 2px solid var(--flame);
   background: rgba(214, 64, 42, 0.09);
   padding: var(--s2) var(--s3);
 }
 
 .errorSummaryTitle {
-  font-family: var(--mono);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ember-bright);
+  color: var(--flame-bright);
   margin: 0 0 10px;
 }
 
@@ -1363,24 +1418,24 @@ a.infoValue:hover {
 }
 
 .successTitle {
-  font-size: 1.375rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 400;
   margin: 0 0 10px;
 }
 
 .orderNo {
-  font-family: var(--mono);
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--brass-bright);
+  font-family: var(--display);
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: var(--gold-bright);
   letter-spacing: 0.04em;
 }
 
 .summaryBox {
   text-align: left;
-  border-top: 1px solid var(--ash);
-  border-bottom: 1px solid var(--ash);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   padding: var(--s2) 0;
   margin: var(--s3) 0;
   display: grid;
@@ -1392,12 +1447,12 @@ a.infoValue:hover {
   display: flex;
   justify-content: space-between;
   gap: var(--s2);
-  color: var(--smoke);
+  color: var(--text-dim);
 }
 
 .summaryRow span:last-child {
-  color: var(--bone);
-  font-family: var(--mono);
+  color: var(--text);
+  font-family: var(--label);
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
 }
@@ -1417,28 +1472,29 @@ a.infoValue:hover {
 
 .step {
   padding-top: var(--s3);
-  border-top: 1px solid var(--brass);
+  border-top: 1px solid var(--gold);
 }
 
 .stepNum {
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 0.625rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--gold);
   display: block;
   margin-bottom: 13px;
 }
 
 .stepTitle {
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: var(--display);
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: 0;
   margin: 0 0 10px;
 }
 
 .stepText {
-  color: var(--smoke);
+  color: var(--text-dim);
   font-size: 0.9375rem;
   line-height: 1.75;
   margin: 0;
@@ -1455,7 +1511,7 @@ a.infoValue:hover {
 
 .hoursTable {
   display: grid;
-  border-top: 1px solid var(--ash-soft);
+  border-top: 1px solid var(--line-soft);
 }
 
 .hourRow {
@@ -1463,19 +1519,19 @@ a.infoValue:hover {
   justify-content: space-between;
   gap: var(--s2);
   padding: 16px 0;
-  border-bottom: 1px solid var(--ash-soft);
+  border-bottom: 1px solid var(--line-soft);
   font-size: 0.9375rem;
-  color: var(--smoke);
+  color: var(--text-dim);
 }
 
 .hourRow span:last-child {
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
 }
 
 .hourRowToday {
-  color: var(--brass-bright);
+  color: var(--gold-bright);
   font-weight: 600;
 }
 
@@ -1488,10 +1544,10 @@ a.infoValue:hover {
 .mapFrame {
   width: 100%;
   aspect-ratio: 4 / 3;
-  border: 1px solid var(--ash);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  background: var(--coal);
+  background: var(--ground-2);
   display: block;
   /* Die helle Kachelkarte wuerde den dunklen Satz sprengen. */
   filter: grayscale(0.4) invert(0.92) hue-rotate(180deg) brightness(0.92) contrast(0.95);
@@ -1499,7 +1555,7 @@ a.infoValue:hover {
 
 .contactCards {
   display: grid;
-  border-top: 1px solid var(--ash-soft);
+  border-top: 1px solid var(--line-soft);
 }
 
 .contactCard {
@@ -1507,7 +1563,7 @@ a.infoValue:hover {
   gap: 15px;
   align-items: flex-start;
   padding: var(--s3) 0;
-  border-bottom: 1px solid var(--ash-soft);
+  border-bottom: 1px solid var(--line-soft);
   color: inherit;
   text-decoration: none;
   transition: opacity 0.2s ease;
@@ -1520,31 +1576,32 @@ a.contactCard:hover {
 /* --- Abschluss ----------------------------------------------------------- */
 
 .finalCta {
-  border: 1px solid var(--ash);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--iron), #060505);
+  background: linear-gradient(180deg, var(--panel), var(--ground-2));
   box-shadow: var(--plate);
   padding: var(--s6) var(--s3);
   text-align: center;
 }
 
 .finalTitle {
-  font-size: clamp(2rem, 6vw, 3.5rem);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  text-transform: uppercase;
-  line-height: 1;
+  font-family: var(--display);
+  font-size: clamp(1.75rem, 5vw, 3rem);
+  font-weight: 400;
+  letter-spacing: -0.005em;
+  line-height: 1.1;
   margin: 0 0 var(--s3);
   text-wrap: balance;
+  text-shadow: 0 3px 0 #000;
 }
 
 .finalTitle em {
   font-style: normal;
-  color: var(--brass);
+  color: var(--gold);
 }
 
 .finalText {
-  color: var(--smoke);
+  color: var(--text-dim);
   max-width: 46ch;
   margin: 0 auto var(--s4);
   line-height: 1.75;
@@ -1560,8 +1617,8 @@ a.contactCard:hover {
 /* --- Fusszeile ----------------------------------------------------------- */
 
 .footer {
-  border-top: 1px solid var(--ash-soft);
-  background: #060505;
+  border-top: 1px solid var(--line-soft);
+  background: var(--ground-2);
   padding: var(--s5) 0 var(--s4);
 }
 
@@ -1573,11 +1630,11 @@ a.contactCard:hover {
 }
 
 .footerTitle {
-  font-family: var(--mono);
+  font-family: var(--label);
   font-size: 0.625rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--gold);
   margin: 0 0 var(--s3);
 }
 
@@ -1587,29 +1644,30 @@ a.contactCard:hover {
   margin: 0;
   padding: 0;
   list-style: none;
-  color: var(--smoke);
+  color: var(--text-dim);
   font-size: 0.9375rem;
 }
 
 .footerLink {
-  color: var(--smoke);
+  color: var(--text-dim);
   text-decoration: none;
 }
 
 .footerLink:hover {
-  color: var(--brass-bright);
+  color: var(--gold-bright);
 }
 
 .footerBottom {
-  border-top: 1px solid var(--ash-soft);
+  border-top: 1px solid var(--line-soft);
   padding-top: var(--s3);
   display: grid;
   gap: 9px;
-  font-family: var(--mono);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--smoke-dim);
+  color: var(--text-dimmer);
 }
 
 /* --- Mobiler Bestellbalken ----------------------------------------------- */
@@ -1623,9 +1681,9 @@ a.contactCard:hover {
   display: flex;
   gap: 10px;
   padding: 12px var(--s3) calc(12px + env(safe-area-inset-bottom));
-  background: rgba(6, 5, 5, 0.96);
+  background: color-mix(in srgb, var(--ground) 96%, transparent);
   backdrop-filter: blur(12px);
-  border-top: 1px solid var(--ash);
+  border-top: 1px solid var(--line);
 }
 
 .mobileBar .btn {
@@ -1652,8 +1710,8 @@ a.contactCard:hover {
   width: 100%;
   overflow: hidden;
   border-radius: var(--radius-lg);
-  background: var(--coal);
-  border: 1px solid var(--ash-soft);
+  background: var(--ground-2);
+  border: 1px solid var(--line-soft);
 }
 
 .figureImg {
@@ -1676,8 +1734,8 @@ a.contactCard:hover {
   background:
     repeating-linear-gradient(
       45deg,
-      var(--coal),
-      var(--coal) 14px,
+      var(--ground-2),
+      var(--ground-2) 14px,
       #171412 14px,
       #171412 28px
     );
@@ -1686,45 +1744,47 @@ a.contactCard:hover {
 .figurePhIcon {
   width: 26px;
   height: 26px;
-  color: var(--ash);
+  color: var(--line);
   margin-bottom: 2px;
 }
 
 .figurePhNeed {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--smoke);
+  color: var(--text-dim);
   margin: 0;
   max-width: 34ch;
   line-height: 1.55;
 }
 
 .figurePhPath {
-  font-family: var(--mono);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
-  color: var(--smoke-dim);
+  color: var(--text-dimmer);
   margin: 0;
 }
 
 .figurePhPath code {
-  font-family: var(--mono);
-  background: var(--void);
-  border: 1px solid var(--ash-soft);
+  font-family: var(--label);
+  background: var(--ground);
+  border: 1px solid var(--line-soft);
   border-radius: 2px;
   padding: 1px 5px;
 }
 
 .figurePhHint {
   font-size: 0.75rem;
-  color: var(--smoke-dim);
+  color: var(--text-dimmer);
   margin: 0;
 }
 
 .figureCaption {
-  font-family: var(--mono);
+  font-family: var(--label);
+  font-weight: 600;
   font-size: 0.6875rem;
   letter-spacing: 0.08em;
-  color: var(--smoke-dim);
+  color: var(--text-dimmer);
   margin: 12px 0 0;
   line-height: 1.6;
 }
@@ -1823,7 +1883,7 @@ a.contactCard:hover {
   }
 
   .trustItem {
-    border-left: 1px solid var(--ash-soft);
+    border-left: 1px solid var(--line-soft);
   }
 
   .trustItem:first-child {

@@ -11,9 +11,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { BUSINESS, DELIVERY } from '@/lib/sapore/menu';
 import styles from './sapore.module.css';
+import BrandEmblem from './BrandEmblem';
 import Figure from './Figure';
 import {
-  BrandMark,
   IconBag,
   IconCheck,
   IconClock,
@@ -143,7 +143,7 @@ export function Header() {
 
   return (
     <>
-      <div className={styles.utility}>
+      <div className={`${styles.utility} ${styles.dark}`}>
         <div className={styles.shell}>
           <div className={styles.utilityInner}>
             <span className={styles.utilityItem}>
@@ -168,14 +168,14 @@ export function Header() {
         </div>
       </div>
 
-      <header className={styles.header}>
+      <header className={`${styles.header} ${styles.dark}`}>
         <div className={styles.shell}>
           <div className={styles.headerInner}>
             <a href="#top" className={styles.brand}>
-              <BrandMark className={styles.brandMark} />
+              <BrandEmblem className={styles.brandMark} alt="Sapore Grill" />
               <span className={styles.brandText}>
                 <span className={styles.brandName}>{BUSINESS.name}</span>
-                <span className={styles.brandSub}>Döner · Pizza · Borken</span>
+                <span className={styles.brandSub}>Döner mit Geschmack</span>
               </span>
             </a>
 
@@ -236,7 +236,7 @@ export function Header() {
 
 export function Hero() {
   return (
-    <section className={styles.hero} id="top">
+    <section className={`${styles.hero} ${styles.dark}`} id="top">
       <div className={styles.shell}>
         <div className={styles.heroInner}>
           <div>
@@ -352,7 +352,7 @@ export function TrustStrip() {
   ];
 
   return (
-    <div className={styles.trust}>
+    <div className={`${styles.trust} ${styles.dark}`}>
       <div className={styles.shell}>
         <div className={styles.trustGrid}>
           {items.map((item) => (
@@ -450,14 +450,14 @@ export function Specials() {
 /** Der Leitspruch des Betriebs — die einzige Stelle mit Serifenschrift. */
 export function Quote() {
   return (
-    <section className={styles.quoteBlock}>
+    <section className={`${styles.quoteBlock} ${styles.dark}`}>
       <div className={styles.shell}>
         <Reveal>
           <blockquote className={styles.quote}>
             <p className={styles.quoteText}>
-              „Frisch. Lecker. <span>Qualität.</span>“
+              Döner mit <span>Geschmack.</span>
             </p>
-            <span className={styles.quoteBy}>Unser Versprechen, jeden Tag</span>
+            <span className={styles.quoteBy}>Frisch · Lecker · Qualität</span>
           </blockquote>
         </Reveal>
       </div>
@@ -705,7 +705,7 @@ export function FinalCta() {
     <section className={styles.section}>
       <div className={styles.shell}>
         <Reveal>
-          <div className={styles.finalCta}>
+          <div className={`${styles.finalCta} ${styles.dark}`}>
             <h2 className={styles.finalTitle}>
               Hunger?
               <em>Wir legen auf.</em>
@@ -715,13 +715,13 @@ export function FinalCta() {
               online bestellen oder einfach anrufen.
             </p>
             <div className={styles.finalCtas}>
-              <a href="#speisekarte" className={`${styles.btn} ${styles.btnOnDark}`}>
+              <a href="#speisekarte" className={`${styles.btn} ${styles.btnGold}`}>
                 <IconBag className={styles.icon} />
                 Zur Speisekarte
               </a>
               <a
                 href={`tel:${BUSINESS.phoneHref}`}
-                className={`${styles.btn} ${styles.btnGhostOnDark}`}
+                className={`${styles.btn} ${styles.btnGhost}`}
               >
                 <IconPhone className={styles.icon} />
                 {BUSINESS.phone}
@@ -736,12 +736,12 @@ export function FinalCta() {
 
 export function Footer() {
   return (
-    <footer className={styles.footer}>
+    <footer className={`${styles.footer} ${styles.dark}`}>
       <div className={styles.shell}>
         <div className={styles.footerGrid}>
           <div>
             <a href="#top" className={styles.brand} style={{ marginBottom: 16 }}>
-              <BrandMark className={styles.brandMark} />
+              <BrandEmblem className={styles.brandMark} alt="Sapore Grill" />
               <span className={styles.brandText}>
                 <span className={styles.brandName}>{BUSINESS.name}</span>
                 <span className={styles.brandSub}>{BUSINESS.tagline}</span>

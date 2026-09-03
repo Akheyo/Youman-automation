@@ -182,17 +182,45 @@ export function IconCopy(p: IconProps) {
   );
 }
 
-/** Wortmarke im Kopf: Doenerspiess ueber Flamme, Gold auf Dunkel. */
+/**
+ * Wappen nach dem Logo des Betriebs: goldener Ring auf Schwarz, Doenerspiess
+ * ueber Flammen, gekreuzte Messer. Bewusst vereinfacht, damit es auch bei 40px
+ * in der Kopfzeile noch lesbar bleibt.
+ *
+ * Ersetzt wird es automatisch durch die Bilddatei, sobald `public/sapore/logo.png`
+ * vorliegt — bis dahin traegt diese Fassung die Marke.
+ */
 export function BrandMark({ className }: IconProps) {
   return (
-    <svg className={className} viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-      <circle cx="24" cy="24" r="22.5" fill="#171512" stroke="#d9a441" strokeWidth="1.5" />
+    <svg className={className} viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+      <circle cx="50" cy="50" r="49" fill="#0a0a0a" />
+      <circle cx="50" cy="50" r="45" fill="none" stroke="#c8a15a" strokeWidth="1.6" />
+
+      {/* Flammen hinter dem Spiess */}
       <path
-        d="M24 8.5c2.6 3.4 4.2 6.4 4.2 9.6 0 1.6-.4 3-1.1 4.3.9-.4 1.6-1.1 2.1-2 1.4 1.7 2.2 3.7 2.2 5.8 0 4.6-3.3 8.3-7.4 8.3s-7.4-3.7-7.4-8.3c0-3.5 1.9-6.7 4.6-9-.3 1.5 0 2.8.8 3.7-.5-4.4.9-8.6 2-12.4Z"
-        fill="#e0322d"
+        d="M31 62c-3.4-4.2-3.6-9.1-1.1-13.3.5 2.2 1.7 3.6 3.2 4.2-1.5-4.6-.4-9.2 3.1-12.9-.6 4.3.7 7.3 3 9.3 1.9 1.7 2.7 3.9 2.4 6.2-.4 3.1-2.6 5.6-5.6 6.5H31Z"
+        fill="#d93a1f"
       />
-      <path d="M17 38.5h14" stroke="#d9a441" strokeWidth="2" strokeLinecap="round" />
-      <path d="M20 34.8v3.7M28 34.8v3.7" stroke="#d9a441" strokeWidth="1.6" strokeLinecap="round" />
+      <path
+        d="M69 62c3.4-4.2 3.6-9.1 1.1-13.3-.5 2.2-1.7 3.6-3.2 4.2 1.5-4.6.4-9.2-3.1-12.9.6 4.3-.7 7.3-3 9.3-1.9 1.7-2.7 3.9-2.4 6.2.4 3.1 2.6 5.6 5.6 6.5H69Z"
+        fill="#e8641f"
+      />
+
+      {/* Spiess: Stange oben, Fleischkegel mit Schichtlinien */}
+      <path d="M50 12v9" stroke="#c8a15a" strokeWidth="2.4" strokeLinecap="round" />
+      <path d="M45 13h10" stroke="#c8a15a" strokeWidth="2.4" strokeLinecap="round" />
+      <path
+        d="M50 21c7.6 0 12.6 2.3 12.6 4.6 0 6.4-1.6 17.2-4.3 25.4C56.4 56.6 53.4 62 50 66c-3.4-4-6.4-9.4-8.3-15-2.7-8.2-4.3-19-4.3-25.4C37.4 23.3 42.4 21 50 21Z"
+        fill="#b8823c"
+      />
+      <g stroke="#8a5f28" strokeWidth="1.1" strokeLinecap="round">
+        <path d="M38.6 29h22.8M39.2 35.4h21.6M40.4 41.8h19.2M42.2 48.2h15.6M44.6 54.6h10.8" />
+      </g>
+
+      {/* Gekreuzte Messer unten */}
+      <g stroke="#c8a15a" strokeWidth="2" strokeLinecap="round">
+        <path d="M40 78l14-9M60 78L46 69" />
+      </g>
     </svg>
   );
 }
@@ -202,14 +230,6 @@ export function IconCamera(p: IconProps) {
     <Svg {...p}>
       <path d="M3.5 8.5h3l1.5-2.5h8l1.5 2.5h3v10h-17v-10Z" />
       <circle cx="12" cy="13" r="3.4" />
-    </Svg>
-  );
-}
-
-export function IconStar(p: IconProps) {
-  return (
-    <Svg {...p}>
-      <path d="m12 4 2.4 5 5.6.8-4 3.9 1 5.5-5-2.7-5 2.7 1-5.5-4-3.9 5.6-.8L12 4Z" />
     </Svg>
   );
 }
