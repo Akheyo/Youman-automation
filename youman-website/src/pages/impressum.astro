@@ -9,12 +9,17 @@ import {
   anbieterLuecken,
   anbieterVollstaendig,
 } from '../data/anbieter';
+import { rechtstexte } from '../data/rechtstexte';
 
 /**
  * Die Anbieterkennzeichnung nach § 5 DDG wird aus `anbieter.ts` erzeugt – das
- * sind reine Tatsachenangaben. Rechtstexte entstehen hier nicht: Haftungs-
- * und Urheberrechtshinweise sowie die Erklärung zur Verbraucherschlichtung
- * sind Willenserklärungen und kommen von der Rechtsberatung.
+ * sind reine Tatsachenangaben.
+ *
+ * Die Erklärungen mit rechtlicher Wirkung stehen getrennt davon in
+ * `rechtstexte.ts`, weil sie etwas anderes sind: keine Angaben über den
+ * Anbieter, sondern Willenserklärungen. Die Trennung hat einen praktischen
+ * Grund. Ändert sich die Anschrift, ändert sich eine Zeile in `anbieter.ts`.
+ * Ändert sich die Rechtslage, ändert sich nichts an den Anbieterangaben.
  *
  * Fehlt ein Pflichtfeld, bleibt der Platzhalter stehen und benennt genau die
  * Lücke. Eine halb ausgefüllte Anbieterkennzeichnung wäre schlechter als eine
@@ -111,25 +116,23 @@ const telefone = anbieter.personen.filter((person) => person.telefon);
             </>
           )}
 
-          <div class="mt-16">
-            <PlaceholderNote title="Noch offen: Texte der Rechtsberatung">
-              <p>
-                Die Angaben oben sind vollständig. Was hier noch fehlt, sind Erklärungen mit
-                rechtlicher Wirkung, die nicht erzeugt werden können:
-              </p>
-              <ul class="mt-3 list-disc space-y-1 pl-5">
-                <li>Haftung für Inhalte und für Verweise auf fremde Seiten</li>
-                <li>Hinweis zum Urheberrecht</li>
-                <li>
-                  Erklärung zur Teilnahme an einem Streitbeilegungsverfahren vor einer
-                  Verbraucherschlichtungsstelle (§ 36 VSBG)
-                </li>
-              </ul>
-              <p class="mt-4">
-                Sobald die Texte vorliegen, werden sie unterhalb der Angaben eingesetzt.
-              </p>
-            </PlaceholderNote>
-          </div>
+          {/*
+            Die Rechtstexte. Sie stehen in src/data/rechtstexte.ts, samt der
+            Begruendung, warum dort das DDG und nicht mehr das TMG zitiert
+            wird und warum kein Verweis auf die eingestellte OS-Plattform
+            der EU darin steht.
+
+            Als h2 und Fliesstext, nicht in einem abgesetzten Kasten: Das
+            sind keine Randbemerkungen, sondern Teil der Seite.
+          */}
+          {rechtstexte.map((abschnitt) => (
+            <>
+              <h2 class="mt-14 text-2xl md:text-3xl">{abschnitt.titel}</h2>
+              {abschnitt.absaetze.map((absatz) => (
+                <p class="prose-measure mt-5 text-ink-soft">{absatz}</p>
+              ))}
+            </>
+          ))}
         </div>
       ) : (
         <PlaceholderNote title="Platzhalter: Impressum noch unvollständig">
