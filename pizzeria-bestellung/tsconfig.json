@@ -5,7 +5,6 @@
     "allowJs": false,
     "skipLibCheck": true,
     "strict": true,
-    "noUncheckedIndexedAccess": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noEmit": true,
@@ -18,17 +17,8 @@
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["./*"]
-    }
+    "paths": { "@/*": ["./*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": [
-    "node_modules",
-    "tests/e2e",
-    "scripts/lod2-pipeline",
-    "komplett-konzept",
-    "projektplanung",
-    "pizzeria-bestellung"
-  ]
+  "exclude": ["node_modules"]
 }
