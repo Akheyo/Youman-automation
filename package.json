@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "wp:check": "node scripts/wp-verbindung.mjs",
+    "wp:audit": "node scripts/wp-seo-audit.mjs"
   },
   "dependencies": {
     "@sentry/nextjs": "^8.55.2",
