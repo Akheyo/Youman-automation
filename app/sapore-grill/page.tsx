@@ -59,10 +59,8 @@ export const metadata: Metadata = {
     locale: 'de_DE',
     images: [
       {
-        url: '/sapore/og.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Steakdöner und Gemüse Kebap von Sapore Grill in Borken',
+        url: '/sapore/logo.png',
+        alt: 'Sapore Grill Borken — Döner mit Geschmack',
       },
     ],
   },
@@ -70,7 +68,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Sapore Grill Borken — Steakdöner, Pizza & Imbiss',
     description: 'Täglich 11–22 Uhr. Online bestellen: liefern lassen oder abholen.',
-    images: ['/sapore/og.jpg'],
+    images: ['/sapore/logo.png'],
   },
 };
 
@@ -103,7 +101,7 @@ function buildJsonLd() {
     servesCuisine: ['Türkisch', 'Döner', 'Pizza', 'Imbiss'],
     priceRange: '€',
     currenciesAccepted: 'EUR',
-    image: `${SITE}/sapore/og.jpg`,
+    image: `${SITE}/sapore/logo.png`,
     address: {
       '@type': 'PostalAddress',
       streetAddress: BUSINESS.street,

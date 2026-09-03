@@ -14,7 +14,7 @@ Einfach die Datei unter dem genannten Namen ablegen und neu laden.
 | `galerie-salat.jpg`    | Salatschale, schräg von oben                                  | Quadratisch, ab 1000 px       |
 | `galerie-imbiss.jpg`   | Imbiss-Teller komplett angerichtet                            | Quadratisch, ab 1000 px       |
 | `galerie-laden.jpg`    | Innen- oder Außenansicht des Ladens                           | Quadratisch, ab 1000 px       |
-| `og.jpg`               | Vorschaubild beim Teilen (WhatsApp, Facebook, Google)         | Genau 1200 × 630 px           |
+| `logo.png`             | Das Wappen. Wird im Kopf, in der Fusszeile und beim Teilen verwendet | Quadratisch, ab 1000 px |
 
 Hinweise:
 
@@ -22,5 +22,8 @@ Hinweise:
   langsamer, was auch das Suchmaschinen-Ranking kostet.
 - Bei Handyfotos hilft schon: Tageslicht, ruhiger Hintergrund, Teller nicht
   mittig, sondern leicht versetzt aufnehmen.
-- `og.jpg` ist das Bild, das erscheint, wenn jemand den Link verschickt. Ohne
-  diese Datei zeigen WhatsApp und Facebook nur den Text.
+- `logo.png` ist zugleich das Bild, das erscheint, wenn jemand den Link
+  verschickt. Ohne diese Datei zeigen WhatsApp und Facebook nur den Text.
+  Sobald ein eigenes Teilen-Bild vorliegt (quer, genau 1200 × 630 px, am besten
+  ein Produktfoto), wird es in `app/sapore-grill/page.tsx` eingetragen — dort
+  steht der Pfad an drei Stellen.
