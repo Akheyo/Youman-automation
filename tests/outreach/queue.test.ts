@@ -200,6 +200,34 @@ describe('sendNextStep', () => {
     expect(updates[0]).toMatchObject({ status: 'fertig' });
   });
 
+  it('legt ohne aktivierte Messung kein Zaehlpixel in die Mail', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    const { sb, events } = fakeDb();
+
+    await sendNextStep(sb, { campaign, steps, contact: contact(), now: jetzt });
+
+    const body = JSON.parse(fetchMock.mock.calls[0]![1].body);
+    expect(body.html).not.toContain('/api/outreach/p/');
+    expect(events[0]!.track_token).toBeNull();
+  });
+
+  it('legt bei aktivierter Messung ein Zaehlpixel ein und merkt sich das Token', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    const { sb, events } = fakeDb();
+
+    await sendNextStep(sb, { campaign: { ...campaign, track_opens: true }, steps, contact: contact(), now: jetzt });
+
+    const body = JSON.parse(fetchMock.mock.calls[0]![1].body);
+    const token = events[0]!.track_token as string;
+    expect(token).toMatch(/^[0-9a-f]{32}$/);
+    // Das Pixel traegt genau das Token, das am Ereignis haengt.
+    expect(body.html).toContain(`https://app.example.de/api/outreach/p/${token}.gif`);
+    // Der Nur-Text-Teil bleibt frei davon.
+    expect(body.text).not.toContain('/api/outreach/p/');
+  });
+
   it('legt Abmeldelink und Signatur in jede Mail', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
     vi.stubGlobal('fetch', fetchMock);

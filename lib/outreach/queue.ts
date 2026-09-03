@@ -13,6 +13,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { renderStep, type ContactVars } from './template';
 import { sendOutreachMail, unsubscribeUrlFor, oneClickUrlFor } from './sender';
+import { newTrackToken, pixelUrlFor } from './tracking';
 import { nextSendAt, isWithinWindow, batchSize, type SendWindow } from './schedule';
 
 export interface OutreachCampaign extends SendWindow {
@@ -26,6 +27,8 @@ export interface OutreachCampaign extends SendWindow {
   signature?: string | null;
   max_per_day: number;
   stop_on_reply?: boolean | null;
+  /** Öffnungsmessung — bewusst je Kampagne und standardmäßig aus. */
+  track_opens?: boolean | null;
 }
 
 export interface OutreachStep {
@@ -55,7 +58,16 @@ const MAX_FAILS = 3;
 
 async function logEvent(
   sb: SupabaseClient,
-  row: { user_id: string; campaign_id: string; contact_id: string; step_no?: number | null; kind: string; subject?: string | null; detail?: string | null },
+  row: {
+    user_id: string;
+    campaign_id: string;
+    contact_id: string;
+    step_no?: number | null;
+    kind: string;
+    subject?: string | null;
+    detail?: string | null;
+    track_token?: string | null;
+  },
 ) {
   await sb.from('outreach_events').insert(row);
 }
@@ -122,6 +134,10 @@ export async function sendNextStep(
     return { ok: false, error: detail, fatal: true };
   }
 
+  // Ein Token je versendeter Mail. Es wird nur eingebettet, wenn die Kampagne
+  // wirklich misst — sonst gibt es kein Pixel und nichts zu speichern.
+  const trackToken = campaign.track_opens ? newTrackToken() : null;
+
   const res = await sendOutreachMail({
     to: contact.email,
     subject: rendered.subject,
@@ -133,6 +149,7 @@ export async function sendNextStep(
     unsubscribeUrl: unsubscribeUrlFor(contact.unsubscribe_token),
     oneClickUrl: oneClickUrlFor(contact.unsubscribe_token),
     inReplyTo: step.step_no > 1 ? contact.message_id : null,
+    trackingPixelUrl: trackToken ? pixelUrlFor(trackToken) : null,
   });
 
   if (!res.ok) {
@@ -183,6 +200,7 @@ export async function sendNextStep(
     step_no: step.step_no,
     kind: 'gesendet',
     subject: rendered.subject,
+    track_token: trackToken,
   });
 
   return { ok: true, step_no: step.step_no, subject: rendered.subject, done };

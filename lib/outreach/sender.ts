@@ -27,6 +27,8 @@ export interface OutreachMail {
   oneClickUrl?: string | null;
   /** Kopfzeilen für den Thread-Anschluss beim Nachfassen. */
   inReplyTo?: string | null;
+  /** Zählpixel für die Öffnungsmessung. Nur gesetzt, wenn die Kampagne misst. */
+  trackingPixelUrl?: string | null;
 }
 
 export type SendResult = { ok: true; messageId?: string } | { ok: false; error: string };
@@ -67,7 +69,12 @@ export function buildHtml(mail: OutreachMail): string {
         mail.unsubscribeUrl,
       )}" style="color:#6d28d9">Hier abmelden</a> — dann schreibe ich Ihnen nicht wieder.</p>`
     : '';
-  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#1b1733"><div style="white-space:pre-wrap">${body}</div>${footer}</div>`;
+  // Das Zählpixel kommt ganz zum Schluss: wird es blockiert, fehlt am Ende der
+  // Mail nichts Sichtbares.
+  const pixel = mail.trackingPixelUrl
+    ? `<img src="${escapeHtml(mail.trackingPixelUrl)}" width="1" height="1" alt="" style="display:block;border:0;width:1px;height:1px">`
+    : '';
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#1b1733"><div style="white-space:pre-wrap">${body}</div>${footer}${pixel}</div>`;
 }
 
 /** Baut die Absenderzeile ("Max Muster <max@firma.de>"). */

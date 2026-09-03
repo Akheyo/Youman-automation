@@ -19,6 +19,7 @@ interface Counts {
   abgemeldet: number;
   fertig: number;
   gesendet: number;
+  geoeffnet: number;
 }
 interface Campaign {
   id: string;
@@ -33,6 +34,7 @@ interface Campaign {
   send_on_weekend: boolean;
   max_per_day: number;
   stop_on_reply: boolean;
+  track_opens: boolean;
   counts: Counts;
 }
 interface Step {
@@ -54,6 +56,8 @@ interface Contact {
   next_send_at: string | null;
   last_sent_at: string | null;
   last_error: string | null;
+  opens: number;
+  last_open_at: string | null;
 }
 interface PreviewStep {
   step_no: number;
@@ -67,7 +71,8 @@ interface Report {
   byStatus: Record<string, number>;
   byKind: Record<string, number>;
   perStep: { step_no: number; count: number }[];
-  quoten: { antwortquote: number; abmeldequote: number };
+  quoten: { antwortquote: number; abmeldequote: number; oeffnungsrate: number };
+  trackOpens: boolean;
   recent: { created_at: string; kind: string; step_no: number | null; subject: string | null; detail: string | null }[];
 }
 interface Suppressed {
@@ -91,6 +96,7 @@ const STATUS_TEXT: Record<string, string> = {
   aktiv: 'Sequenz läuft',
   geantwortet: 'hat geantwortet',
   fertig: 'Sequenz durch',
+  geoeffnet: 'hat geöffnet',
   gestoppt: 'angehalten',
   abgemeldet: 'abgemeldet',
   bounce: 'unzustellbar',
@@ -270,6 +276,7 @@ export default function OutreachCockpit(props: {
 
   // ---- Kontakte -----------------------------------------------------------
   const [csv, setCsv] = useState('');
+  const [nurGeoeffnet, setNurGeoeffnet] = useState(false);
 
   async function importCsv() {
     if (!activeId || !csv.trim()) return;
@@ -451,6 +458,11 @@ export default function OutreachCockpit(props: {
                   <span>
                     <strong>{c.counts.gesendet}</strong> Mails raus
                   </span>
+                  {c.track_opens && (
+                    <span>
+                      <strong>{c.counts.geoeffnet}</strong> geöffnet
+                    </span>
+                  )}
                   <span>
                     <strong>{c.counts.geantwortet}</strong> Antworten
                   </span>
@@ -521,7 +533,24 @@ export default function OutreachCockpit(props: {
                     />
                     Antwort stoppt die Sequenz
                   </label>
+                  <label className={styles.check}>
+                    <input
+                      type="checkbox"
+                      defaultChecked={c.track_opens}
+                      onChange={(e) => patchCampaign(c.id, { track_opens: e.target.checked })}
+                    />
+                    Öffnungen messen
+                  </label>
                 </div>
+
+                {c.track_opens && (
+                  <p className={styles.hint}>
+                    Gemessen wird über ein unsichtbares Bild in der Mail. Zwei Dinge dazu: Apple Mail und Firmen-Scanner laden
+                    Bilder schon beim Empfang vor, die Zahl ist also eine Tendenz und kein Nachweis über eine einzelne Person.
+                    Und: Öffnungsmessung braucht nach Auffassung der Datenschutzbehörden eine Einwilligung — bei Kaltakquise
+                    haben Sie die in der Regel nicht.
+                  </p>
+                )}
 
                 <label className={styles.sigLabel}>
                   Signatur (kommt unter jede Mail)
@@ -689,10 +718,25 @@ export default function OutreachCockpit(props: {
             </div>
 
             <div className={styles.card}>
-              <h2 className={styles.cardHead}>{contacts.length} Kontakte</h2>
+              <h2 className={styles.cardHead}>
+                {contacts.length} Kontakte
+                {active.track_opens && contacts.some((c) => c.opens > 0) && (
+                  <span className={styles.muted}> · {contacts.filter((c) => c.opens > 0).length} haben geöffnet</span>
+                )}
+              </h2>
+              {active.track_opens && (
+                <div className={styles.rowActions}>
+                  <button
+                    className={nurGeoeffnet ? styles.primary : styles.secondary}
+                    onClick={() => setNurGeoeffnet((v) => !v)}
+                  >
+                    {nurGeoeffnet ? 'Alle zeigen' : 'Nur wer geöffnet hat'}
+                  </button>
+                </div>
+              )}
               {contacts.length === 0 && <p className={styles.muted}>Noch keine Kontakte in dieser Kampagne.</p>}
               <ul className={styles.contactList}>
-                {contacts.map((c) => (
+                {(nurGeoeffnet ? contacts.filter((c) => c.opens > 0) : contacts).map((c) => (
                   <li key={c.id} className={styles.contactRow}>
                     <div className={styles.contactMain}>
                       <span className={styles.contactName}>
@@ -709,6 +753,11 @@ export default function OutreachCockpit(props: {
                       </span>
                     </div>
                     <div className={styles.contactActions}>
+                      {active.track_opens && c.opens > 0 && (
+                        <span className={styles.openPill} title={`zuletzt ${fmt(c.last_open_at)}`}>
+                          {c.opens === 1 ? 'geöffnet' : `${c.opens}× geöffnet`}
+                        </span>
+                      )}
                       <span className={styles.statusPill} data-s={c.status}>
                         {c.status}
                       </span>
@@ -752,6 +801,12 @@ export default function OutreachCockpit(props: {
                 <span className={styles.statVal}>{report.byKind.gesendet ?? 0}</span>
                 <span className={styles.statLabel}>Mails versendet</span>
               </div>
+              {report.trackOpens && (
+                <div className={styles.stat}>
+                  <span className={styles.statVal}>{report.quoten.oeffnungsrate}%</span>
+                  <span className={styles.statLabel}>Öffnungsrate</span>
+                </div>
+              )}
               <div className={styles.statAccent}>
                 <span className={styles.statVal}>{report.quoten.antwortquote}%</span>
                 <span className={styles.statLabel}>Antwortquote</span>
@@ -769,6 +824,13 @@ export default function OutreachCockpit(props: {
                 <span className={styles.statLabel}>Fehler</span>
               </div>
             </div>
+
+            {report.trackOpens && (
+              <p className={styles.hint}>
+                Die Öffnungsrate ist eine Tendenz: Vorablader wie Apple Mail werden herausgefiltert, soweit sie sich erkennen
+                lassen — sicher trennen lassen sie sich nicht. Verlässlich ist allein die Antwortquote.
+              </p>
+            )}
 
             <div className={styles.card}>
               <h2 className={styles.cardHead}>Versand je Schritt</h2>

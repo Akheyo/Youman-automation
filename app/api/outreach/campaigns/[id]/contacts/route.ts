@@ -30,7 +30,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   const status = new URL(request.url).searchParams.get('status');
   let query = supabase
     .from('outreach_contacts')
-    .select('id, email, first_name, last_name, company, website, anlass, status, current_step, next_send_at, last_sent_at, last_error')
+    .select('id, email, first_name, last_name, company, website, anlass, status, current_step, next_send_at, last_sent_at, last_error, opens, last_open_at')
     .eq('campaign_id', params.id)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })

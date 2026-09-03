@@ -19,7 +19,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 
   const { data: campaign } = await supabase
     .from('outreach_campaigns')
-    .select('id, name, status')
+    .select('id, name, status, track_opens')
     .eq('id', params.id)
     .eq('user_id', user.id)
     .single();
@@ -49,6 +49,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   const gesendet = byKind.gesendet ?? 0;
   const geantwortet = byKind.geantwortet ?? 0;
   const abgemeldet = byKind.abgemeldet ?? 0;
+  const geoeffnet = byKind.geoeffnet ?? 0;
   const rate = (n: number) => (gesendet > 0 ? Math.round((n / gesendet) * 1000) / 10 : 0);
 
   return NextResponse.json({
@@ -57,7 +58,8 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     byStatus,
     byKind,
     perStep: [...perStep.entries()].sort((a, b) => a[0] - b[0]).map(([step_no, count]) => ({ step_no, count })),
-    quoten: { antwortquote: rate(geantwortet), abmeldequote: rate(abgemeldet) },
+    quoten: { antwortquote: rate(geantwortet), abmeldequote: rate(abgemeldet), oeffnungsrate: rate(geoeffnet) },
+    trackOpens: campaign.track_opens === true,
     recent: recent ?? [],
   });
 }

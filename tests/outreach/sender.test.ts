@@ -29,6 +29,17 @@ describe('buildText / buildHtml', () => {
   it('schleust kein rohes HTML aus dem Text durch', () => {
     expect(buildHtml({ ...basis, body: '<script>alert(1)</script>' })).not.toContain('<script>');
   });
+
+  it('haengt das Zaehlpixel nur an, wenn eine Pixel-URL vorliegt', () => {
+    expect(buildHtml(basis)).not.toContain('<img');
+    const html = buildHtml({ ...basis, trackingPixelUrl: 'https://app.de/api/outreach/p/tok.gif' });
+    expect(html).toContain('src="https://app.de/api/outreach/p/tok.gif"');
+    expect(html).toContain('width="1"');
+  });
+
+  it('haelt das Pixel aus dem Nur-Text-Teil heraus', () => {
+    expect(buildText({ ...basis, trackingPixelUrl: 'https://app.de/api/outreach/p/tok.gif' })).not.toContain('p/tok.gif');
+  });
 });
 
 describe('fromHeader', () => {

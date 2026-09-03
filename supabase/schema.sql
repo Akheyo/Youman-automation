@@ -572,3 +572,74 @@ begin
   return c.email;
 end;
 $$;
+
+-- ============================================================================
+--  Phase H — Öffnungsmessung (opt-in je Kampagne)
+-- ============================================================================
+-- Gemessen wird über ein 1x1-Pixel im HTML-Teil der Mail. Zwei Dinge dazu:
+--
+--   1. Die Zahl ist eine Tendenz, kein Fakt. Apple Mail laedt Bilder schon
+--      beim Empfang vor (jede Mail zaehlt dann als geoeffnet), Firmen-Scanner
+--      tun dasselbe, und Clients mit blockierten Bildern melden echte
+--      Oeffnungen nie. Deshalb wird jede Abrufmeldung mit `prefetch` markiert,
+--      wenn sie nach Maschine aussieht.
+--   2. Oeffnungs-Tracking braucht nach Auffassung der Datenschutzkonferenz
+--      und § 25 TDDDG eine Einwilligung. Darum ist es je Kampagne
+--      abschaltbar und standardmaessig AUS.
+alter table public.outreach_campaigns add column if not exists track_opens boolean not null default false;
+
+-- Je versendeter Mail ein Token im zugehoerigen 'gesendet'-Ereignis. Der
+-- Pixel-Abruf findet die Zeile darueber und schreibt Zeitpunkt und Zaehler.
+alter table public.outreach_events add column if not exists track_token text;
+alter table public.outreach_events add column if not exists opened_at    timestamptz;
+alter table public.outreach_events add column if not exists open_count   integer not null default 0;
+
+create unique index if not exists outreach_events_track_token_idx on public.outreach_events (track_token) where track_token is not null;
+
+-- Verdichtet am Kontakt, damit die Liste ohne Verknuepfung auskommt.
+alter table public.outreach_contacts add column if not exists opens        integer not null default 0;
+alter table public.outreach_contacts add column if not exists last_open_at timestamptz;
+
+-- ---------------------------------------------------------------------------
+-- outreach_track_open: Pixel-Abruf verbuchen. Laeuft ohne Sitzung (der
+--   Empfaenger ist nicht angemeldet), daher security definer und
+--   ausschliesslich ueber den Token adressierbar.
+--
+--   p_prefetch = true kommt vom Aufrufer, wenn der Abruf nach einem Scanner
+--   oder Vorablader aussieht. Solche Abrufe zaehlen mit, gelten aber nicht
+--   als erste echte Oeffnung.
+--
+--   Rueckgabe: true, wenn dies die erste gewertete Oeffnung war.
+-- ---------------------------------------------------------------------------
+create or replace function public.outreach_track_open(p_token text, p_prefetch boolean default false)
+returns boolean
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  ev record;
+  first_open boolean := false;
+begin
+  select * into ev from public.outreach_events where track_token = p_token and kind = 'gesendet';
+  if not found then return false; end if;
+
+  update public.outreach_events
+     set open_count = open_count + 1,
+         opened_at  = case when p_prefetch then opened_at else coalesce(opened_at, now()) end
+   where id = ev.id;
+
+  if not p_prefetch and ev.opened_at is null then
+    first_open := true;
+
+    update public.outreach_contacts
+       set opens = opens + 1,
+           last_open_at = now()
+     where id = ev.contact_id;
+
+    insert into public.outreach_events (user_id, campaign_id, contact_id, step_no, kind, subject)
+    values (ev.user_id, ev.campaign_id, ev.contact_id, ev.step_no, 'geoeffnet', ev.subject);
+  end if;
+
+  return first_open;
+end;
+$$;

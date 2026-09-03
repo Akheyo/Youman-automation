@@ -100,6 +100,38 @@ beim Lead-Eingang.
 Ohne diesen Ablauf funktioniert alles Übrige weiter; Antworten müssen dann im
 Cockpit von Hand als „hat geantwortet" markiert werden.
 
+## 5. Öffnungen messen (optional, standardmäßig aus)
+
+Je Kampagne lässt sich unter **Kampagnen → Öffnungen messen** ein Zählpixel
+einschalten. Danach zeigt die Kontaktliste, wer geöffnet hat, und der Bericht
+eine Öffnungsrate. Es braucht dafür nichts einzurichten außer `APP_URL` — das
+Pixel liegt unter `/api/outreach/p/<token>.gif` und läuft über dieselbe App.
+
+Zwei Einschränkungen, die Sie kennen sollten, bevor Sie den Schalter umlegen:
+
+**Die Zahl ist eine Tendenz, kein Nachweis.** Apple Mail lädt seit 2021 alle
+Bilder schon beim Empfang vor; ohne Filter zählt damit jede Mail an einen
+Apple-Nutzer als geöffnet. Firmen-Sicherheitsscanner tun dasselbe. Paul
+sortiert aus, was sich erkennen lässt — Abrufe ohne Client-Kennung, bekannte
+Scanner und alles, was in den ersten zehn Sekunden nach dem Versand eintrifft.
+Apples Vorablader gibt sich allerdings als normaler Browser aus und lässt sich
+nicht sicher abtrennen. Umgekehrt blockieren viele Clients Bilder, echte
+Öffnungen fallen also durch. Verlässlich ist allein die Antwortquote.
+
+**Rechtlich braucht Öffnungsmessung eine Einwilligung.** Nach Auffassung der
+Datenschutzkonferenz und § 25 TDDDG trägt berechtigtes Interesse hier nicht.
+Bei Kaltakquise haben Sie diese Einwilligung typischerweise nicht. Deshalb ist
+der Schalter je Kampagne und standardmäßig aus — die Entscheidung soll bewusst
+fallen. Klären Sie sie mit Ihrer Rechtsberatung.
+
+Gespeichert wird bewusst wenig: Zeitpunkt und Zähler je versendeter Mail. Die
+Client-Kennung dient nur dazu, Maschinen auszusortieren, und wird nicht
+abgelegt; IP-Adressen werden nicht gespeichert.
+
+Ein Nebeneffekt fürs Marketing: ein Zählpixel ist für Spamfilter ein Signal.
+Reine Textmails ohne Pixel und ohne Link-Umschreibung kommen in der
+Kaltakquise erfahrungsgemäß besser an.
+
 ---
 
 ## Rechtliches (kurz)
@@ -120,6 +152,7 @@ Was die Software beisteuert:
 - **Protokoll je Kontakt** in `outreach_events` — wann was rausging und wann
   jemand widersprochen hat.
 - **Feld `anlass`** je Kontakt für den sachlichen Grund der Ansprache.
+- **Öffnungsmessung standardmäßig aus** und nur je Kampagne einschaltbar.
 
 Impressumspflicht und Datenschutzhinweise gelten auch für Outreach-Mails:
 Beides gehört in die Signatur der Kampagne.

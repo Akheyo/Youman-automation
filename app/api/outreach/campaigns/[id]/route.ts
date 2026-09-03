@@ -81,6 +81,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
   if ('send_on_weekend' in body) patch.send_on_weekend = body.send_on_weekend === true;
   if ('stop_on_reply' in body) patch.stop_on_reply = body.stop_on_reply !== false;
+  if ('track_opens' in body) patch.track_opens = body.track_opens === true;
   if ('timezone' in body && String(body.timezone ?? '').trim()) patch.timezone = String(body.timezone).trim();
 
   const starting = STATUS.includes(String(body.status));

@@ -24,13 +24,13 @@ export async function GET() {
   const [{ data: campaigns }, { data: contacts }, { data: events }] = await Promise.all([
     supabase.from('outreach_campaigns').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
     supabase.from('outreach_contacts').select('campaign_id, status').eq('user_id', user.id),
-    supabase.from('outreach_events').select('campaign_id').eq('user_id', user.id).eq('kind', 'gesendet'),
+    supabase.from('outreach_events').select('campaign_id, kind').eq('user_id', user.id).in('kind', ['gesendet', 'geoeffnet']),
   ]);
 
   const counts = new Map<string, Record<string, number>>();
   const bump = (id: string | null, key: string) => {
     if (!id) return;
-    const c = counts.get(id) ?? { total: 0, offen: 0, geantwortet: 0, abgemeldet: 0, fertig: 0, gesendet: 0 };
+    const c = counts.get(id) ?? { total: 0, offen: 0, geantwortet: 0, abgemeldet: 0, fertig: 0, gesendet: 0, geoeffnet: 0 };
     c[key] = (c[key] ?? 0) + 1;
     counts.set(id, c);
   };
@@ -41,11 +41,11 @@ export async function GET() {
     else if (c.status === 'abgemeldet') bump(c.campaign_id, 'abgemeldet');
     else if (c.status === 'fertig') bump(c.campaign_id, 'fertig');
   }
-  for (const e of events ?? []) bump(e.campaign_id, 'gesendet');
+  for (const e of events ?? []) bump(e.campaign_id, e.kind === 'geoeffnet' ? 'geoeffnet' : 'gesendet');
 
   const withCounts = (campaigns ?? []).map((c) => ({
     ...c,
-    counts: counts.get(c.id) ?? { total: 0, offen: 0, geantwortet: 0, abgemeldet: 0, fertig: 0, gesendet: 0 },
+    counts: counts.get(c.id) ?? { total: 0, offen: 0, geantwortet: 0, abgemeldet: 0, fertig: 0, gesendet: 0, geoeffnet: 0 },
   }));
   return NextResponse.json({ campaigns: withCounts });
 }
@@ -94,5 +94,5 @@ export async function POST(request: Request) {
   const steps = STARTER_SEQUENCE.map((s) => ({ ...s, campaign_id: campaign.id, user_id: user.id }));
   await supabase.from('outreach_steps').insert(steps);
 
-  return NextResponse.json({ campaign: { ...campaign, counts: { total: 0, offen: 0, geantwortet: 0, abgemeldet: 0, fertig: 0, gesendet: 0 } } });
+  return NextResponse.json({ campaign: { ...campaign, counts: { total: 0, offen: 0, geantwortet: 0, abgemeldet: 0, fertig: 0, gesendet: 0, geoeffnet: 0 } } });
 }
