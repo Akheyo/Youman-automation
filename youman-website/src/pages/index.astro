@@ -18,14 +18,24 @@ import { withBase } from '../lib/url';
 
 /*
  * Die Faktenleiste unter der Einleitung. Nur Belegbares: Gruendungsjahr und
- * Sitz aus den Impressumsdaten, die Zahl der Bereiche und der Referenzen aus
- * den Daten, die auch die Seiten erzeugen. Keine Prozentwerte.
+ * Sitz aus den Impressumsdaten, die Zahl der Bereiche aus den Daten, die
+ * auch die Seiten erzeugen, und der Arbeitsraum, den auch areaServed in den
+ * strukturierten Daten angibt. Keine Prozentwerte.
+ *
+ * Herausgenommen: die Zahl der Referenzen. Sie war belegt und trotzdem
+ * falsch platziert. Eine Ziffer in dieser Groesse liest sich als Leistung,
+ * und "2" liest sich an dieser Stelle als wenig, obwohl zwei benannte,
+ * abgeschlossene Projekte mehr sind als das, was die meisten Anbieter
+ * ueberhaupt mit Kundennamen zeigen. Die beiden Faelle stehen zwei
+ * Abschnitte weiter unten mit Namen, Bild und Ablauf, und dort tragen sie
+ * sich selbst, statt gegen eine Erwartung anzulaufen, die die Zahl vorher
+ * geweckt hat.
  */
 const fakten = [
   { wert: site.gruendungsjahr, label: 'Gegründet' },
   ...(anbieter.ort ? [{ wert: anbieter.ort, label: 'Sitz' }] : []),
   { wert: String(leistungen.length), label: 'Leistungsbereiche' },
-  { wert: String(caseStudies.length), label: 'Referenzen mit Namen' },
+  { wert: 'DACH', label: 'Arbeitsraum' },
 ];
 // Fuer die Vorschau beim Teilen: dasselbe Motiv, mit dem der Hero anfaengt.
 import heroVorschau from '../assets/img/hero-1.jpg';
