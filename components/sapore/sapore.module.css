@@ -384,6 +384,11 @@
   width: 42px;
   height: 42px;
   flex: none;
+  /* Das Wappen ist rund, die Bilddatei quadratisch mit schwarzem Grund. Rund
+     beschnitten verschwinden die Ecken, die sich sonst gegen das waermere
+     Braunschwarz der Kopfzeile abzeichnen. */
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .brandText {

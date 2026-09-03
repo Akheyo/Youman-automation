@@ -14,7 +14,7 @@ Einfach die Datei unter dem genannten Namen ablegen und neu laden.
 | `galerie-salat.jpg`    | Salatschale, schräg von oben                                  | Quadratisch, ab 1000 px       |
 | `galerie-imbiss.jpg`   | Imbiss-Teller komplett angerichtet                            | Quadratisch, ab 1000 px       |
 | `galerie-laden.jpg`    | Innen- oder Außenansicht des Ladens                           | Quadratisch, ab 1000 px       |
-| `logo.png`             | Das Wappen. Wird im Kopf, in der Fusszeile und beim Teilen verwendet | Quadratisch, ab 1000 px |
+| `logo.webp` / `logo.jpg` | Das Wappen. Beides wird aus deinem Original erzeugt — siehe unten | liegt bereits vor |
 
 Hinweise:
 
@@ -22,8 +22,24 @@ Hinweise:
   langsamer, was auch das Suchmaschinen-Ranking kostet.
 - Bei Handyfotos hilft schon: Tageslicht, ruhiger Hintergrund, Teller nicht
   mittig, sondern leicht versetzt aufnehmen.
-- `logo.png` ist zugleich das Bild, das erscheint, wenn jemand den Link
-  verschickt. Ohne diese Datei zeigen WhatsApp und Facebook nur den Text.
-  Sobald ein eigenes Teilen-Bild vorliegt (quer, genau 1200 × 630 px, am besten
-  ein Produktfoto), wird es in `app/sapore-grill/page.tsx` eingetragen — dort
-  steht der Pfad an drei Stellen.
+## Zum Wappen
+
+Es liegt in zwei Fassungen, beide aus dem hochgeladenen Original erzeugt:
+
+- **`logo.webp`** (47 KB) — was die Seite anzeigt. Das Wappen laedt in Kopf und
+  Fusszeile bei jedem Aufruf mit; als PNG waere dieselbe Datei 535 KB schwer.
+  Bei Gaesten im Mobilfunknetz ist das der Unterschied zwischen schnell und
+  zaeh, und Ladezeit zaehlt bei Google mit.
+- **`logo.jpg`** (68 KB) — was erscheint, wenn jemand den Link verschickt.
+  JPEG, weil WhatsApp und Facebook es zuverlaessig lesen; bei WebP ist das je
+  nach Dienst nicht garantiert.
+
+Das Original (1254 x 1254 px, 1,2 MB) bleibt in der Git-Historie erhalten.
+
+**Wenn du das Logo aenderst:** lade einfach das neue Original in diesen Ordner
+und sag Bescheid — die beiden Fassungen erzeuge ich daraus neu. Selbst
+umbenennen reicht nicht, die Groesse waere sonst wieder bei ueber einem Megabyte.
+
+Sobald ein eigenes Teilen-Bild vorliegt (quer, genau 1200 x 630 px, am besten
+ein Produktfoto statt des Wappens), wird der Pfad in
+`app/sapore-grill/page.tsx` eingetragen — er steht dort an drei Stellen.
