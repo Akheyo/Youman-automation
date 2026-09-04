@@ -69,6 +69,53 @@ gelöschten URLs weiter. Im Backend unter *Rank Math → Status & Tools →
 Datenbank-Werkzeuge* den Sitemap-Cache leeren, dann LiteSpeed *Purge All*.
 Danach Sitemap in der Search Console neu einreichen.
 
+## Erledigt am 04.09.2026 (zweiter Durchgang)
+
+Über den Rank-Math-Endpunkt `updateMeta` gesetzt (`scripts/wp-seo-meta.mjs --anwenden`):
+
+* **6 zu lange Meta-Beschreibungen gekürzt** auf 144–158 Zeichen. Google kappt ab
+  etwa 160, die Texte brachen vorher mitten im Satz ab: `/photovoltaik/` (185),
+  `/stromspeicher/` (194), `/wallbox/` (177), `/referenzen/` (175), `/ueber-uns/`
+  (175), `/kontakt/` (162). Startseite separat von 179 auf 158.
+* **17 Fokus-Keywords gesetzt.** Ohne Fokus-Keyword bewertet Rank Math eine Seite
+  gar nicht — deren SEO-Score stand auf 0 und sie tauchten in keiner Auswertung auf.
+  Betroffen waren alle 12 Ortsseiten plus FAQ, Gewerbe, Mieterstrom, Ratgeber
+  und Service/Wartung.
+
+**Link-Prüfung** (`scripts/wp-linkcheck.mjs`): 23 Linkziele auf 35 Seiten geprüft,
+**ein** kaputter interner Link. Das Aufräumen vom ersten Durchgang hat also nichts
+zerrissen. Der Fund ist älter: `/?page_id=3` (verlinkt von `/shop/` und
+`/wishlist/`) zeigt auf WordPress' Standard-Datenschutzseite, die nur ein Entwurf
+ist. Die richtige deutsche Seite ist `#5335 /datenschutzerklaerung/`.
+
+**Rank-Math-Site-Audit** (über den MCP-Adapter): Score 72/100 — 20 bestanden,
+10 durchgefallen, 4 Warnungen.
+
+### Offen, nur im Backend machbar
+
+| Was | Wo |
+|---|---|
+| Sitemap-Speicher leeren (siehe unten) | Rank Math → Sitemap-Einstellungen → „Links pro Sitemap" ändern, speichern, zurückändern, speichern |
+| Datenschutzseite auf #5335 setzen | Einstellungen → Datenschutz |
+| CSS/JS minifizieren, Expires-Header für Bilder | LiteSpeed Cache → Page Optimization |
+| Automatische Updates einschalten | Rank Math → Dashboard |
+| 23 ausstehende Plugin-Updates | Plugins (vorher Backup, in kleinen Gruppen) |
+
+### Sitemap eingefroren
+
+Die Rank-Math-Sitemap ist seit dem **28.07.2026** eingefroren und zeigt weiter
+den Stand von damals. Nachgewiesen: eine frisch veröffentlichte Testseite taucht
+nicht auf, 0 veröffentlichte Beiträge werden als 13 URLs gelistet. Ausgeschlossen
+wurden Seiten-Cache (eindeutige Query-Parameter ändern nichts), Objekt- und
+Opcode-Cache (LiteSpeed Purge All), statische Dateien (`?sitemap=post` liefert
+dasselbe), Modul-Neustart und Neu-Speichern einzelner Seiten. Es bleibt Rank Maths
+eigener Sitemap-Speicher, und der lässt sich nur über das Speichern der
+Sitemap-Einstellungen im Backend leeren — dafür gibt es weder bei Rank Math noch
+über den MCP-Adapter einen Endpunkt.
+
+Praktische Folge: Alles, was seit dem 28.07. auf der Seite passiert ist, hat
+Google über die Sitemap nie erfahren.
+
 ## Vollständiger Prüfbericht
 
 Stand: 2026-09-03 · 87 URLs aus der Sitemap geprueft.
