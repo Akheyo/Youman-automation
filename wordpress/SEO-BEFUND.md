@@ -48,6 +48,27 @@ kann kein Skript erfinden.
 
 ---
 
+---
+
+## Erledigt am 04.09.2026
+
+53 Demo-Inhalte in den Papierkorb verschoben (`scripts/wp-demo-aufraeumen.mjs --anwenden`):
+27 Seiten (Baustein-Schaukasten, Zweitfassungen der Startseite, doppelte Shop-Seiten),
+13 englische Demo-Beiträge, 6 Referenz-Fantasieprojekte, 9 Demo-Produkte.
+Stichproben liefern 404, die echten Seiten (`/photovoltaik-borken/`, `/kontakt/`) laufen.
+
+Vorher geprüft und deshalb **nicht** angefasst:
+
+* `/wishlist/` und `/yith-compare/` — von den YITH-Plugins als Funktionsseiten eingetragen.
+* Die echten Shop-Seiten: WooCommerce zeigt auf die Seiten-IDs 14/15/16, nicht auf
+  die `-2`-Duplikate. Die Duplikate konnten daher weg.
+* Menü-Einträge: keine der Demo-Seiten war verlinkt.
+
+**Noch offen:** Rank Math liefert die Sitemap aus dem Cache und listet die
+gelöschten URLs weiter. Im Backend unter *Rank Math → Status & Tools →
+Datenbank-Werkzeuge* den Sitemap-Cache leeren, dann LiteSpeed *Purge All*.
+Danach Sitemap in der Search Console neu einreichen.
+
 ## Vollständiger Prüfbericht
 
 Stand: 2026-09-03 · 87 URLs aus der Sitemap geprueft.
