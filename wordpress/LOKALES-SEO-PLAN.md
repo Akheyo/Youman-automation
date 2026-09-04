@@ -26,13 +26,35 @@ Code ist. **Das Unternehmensprofil und die Bewertungen sind der Hebel, nicht die
 
 ## Erledigt (Website)
 
+Rank-Math-Score der Startseite: **72 → 75**, durchgefallene Prüfungen 10 → 8.
+
 * 53 Demo-Inhalte des gekauften Themes entfernt (46 % der Sitemap waren Platzhalter)
 * 7 Meta-Beschreibungen von 162–194 auf 144–158 Zeichen gekürzt
-* 17 fehlende Fokus-Keywords gesetzt (vorher SEO-Score 0, weil unbewertet)
+* 20 Fokus-Keywords gesetzt oder korrigiert (vorher SEO-Score 0, weil unbewertet)
+* 3 SEO-Titel so gefasst, dass Ortsname und Keyword darin vorkommen
+  (`/referenzen/`, `/kontakt/`, `/faq/`)
 * **`Service`-Schema mit `areaServed` auf 18 Seiten** — 12 Ortsseiten je auf ihre
   Stadt, 6 Leistungsseiten auf alle 12 Orte. Vorher waren alle als „Article"
   ausgezeichnet, also als Blogbeitrag statt als Dienstleistung.
+* **Vorschaubild beim Teilen (`og:image`) auf 24 Seiten** — vorher zeigten
+  WhatsApp, Facebook und LinkedIn nur Text ohne Bild. Gewählt: eigene
+  Drohnenaufnahme einer Gewerbedach-Anlage, 1600×900.
+* **5 Seiten aus dem Suchindex genommen** (`noindex`, weiter erreichbar):
+  die englischen Theme-Rechtstexte, die leere Beitragsübersicht und die
+  beiden YITH-Funktionsseiten.
+* **4 Rank-Math-Module eingeschaltet**: 404-Monitor, Sofortige Indexierung
+  (IndexNow für Bing/Copilot), LLMS-Text (`/llms.txt` für KI-Suchmaschinen),
+  Linkzähler.
+* ALT-Texte für 8 Bilder in der Mediathek gesetzt
 * Interne Links geprüft: 1 defekter Link auf 35 Seiten
+
+### Bekannte Einschränkung: ALT-Texte
+
+Die ALT-Texte stehen korrekt in der Mediathek, das Theme-Widget gibt aber
+`alt=""` aus. Betroffen sind ausschließlich dekorative Symbole (Solarmodul,
+Batterie, Schraubenschlüssel, Ladesäule) — bei denen ist ein leeres ALT nach
+den Barrierefreiheitsregeln sogar richtig, auch wenn Rank Math es bemängelt.
+Beim Logo wäre einer sinnvoll; das ginge nur über die Theme-Einstellungen.
 
 ## Vorhanden und in Ordnung
 
