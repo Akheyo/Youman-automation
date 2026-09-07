@@ -102,9 +102,18 @@ function vereinheitliche(text: string): string {
 const LANG =
   /(?<![A-Z0-9])H\s*(\d{1,2})\s*\/\s*R\s*(\d{1,2}KTL|KTL|\d{1,2})\s*\/\s*E([A-Z]{1,2})\s*F\s*([A-Z]?\d{1,3})\s*-\s*(?:K\s*(\d{1,3})|([A-Z]?\d{1,3}))/g;
 
-/** Die kurze Form aus Nummern und Fließtext. */
+/**
+ * Die kurze Form aus Nummern und Fließtext.
+ *
+ * BEWUSST OHNE Grenze vor dem "H": In den Beschreibungen ist der Lagerplatz
+ * beim Formatieren oft an den vorherigen Text gerutscht und klebt ohne
+ * Trennzeichen dahinter — "…ebay.de/str/derprofi24H1R7F7K8-7_CK". Mit einer
+ * Wortgrenze blieben rund die Hälfte aller Hinweise unentdeckt. Die Struktur
+ * (Halle + Regal + Ebene A–J + Fach) ist eigen genug, um auch ohne Grenze
+ * zu tragen.
+ */
 const KURZ =
-  /(?<![A-Z0-9])H\s*(\d{1,2})\s*[-_/.]?\s*R\s*(\d{1,2}KTL|KTL|\d{1,2})\s*[-_/.]?\s*([A-J])\s*(\d{1,2})(?:\s*[-_]?\s*K\s*(\d{1,3})((?:\s*\+\s*\d{1,3})*))?(?![0-9])/g;
+  /H\s*(\d{1,2})\s*[-_/.]?\s*R\s*(\d{1,2}KTL|KTL|\d{1,2})\s*[-_/.]?\s*([A-J])\s*(\d{1,2})(?:\s*[-_]?\s*K\s*(\d{1,3})((?:\s*\+\s*\d{1,3})*))?(?![0-9])/g;
 
 /**
  * Bringt den Zusatz auf eine einheitliche Form: Kisten zweistellig ("K7" →

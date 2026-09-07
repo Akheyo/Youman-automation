@@ -90,6 +90,13 @@ describe('findeLagerplaetze — kurze Form (Variantennummer, Freitext)', () => {
     expect(t[0].code).toBe('H2/R11/EB F03-0');
   });
 
+  it('findet den Code auch angeklebt an den vorherigen Text', () => {
+    // So steht es in vielen Beschreibungen — der Platz ist beim Formatieren
+    // an die Shop-Adresse gerutscht.
+    const t = findeLagerplaetze('…in unserem Sortiment https://www.ebay.de/str/derprofi24H1R7F7K8-7_CKca 0,1Kg');
+    expect(t[0].code).toBe('H1/R7/EF F07-K08');
+  });
+
   it('meldet unübliche Ebenen als unsicher', () => {
     const [t] = findeLagerplaetze('H1R6X12');
     expect(t?.sicherheit ?? 'kein Treffer').toBe('kein Treffer');
