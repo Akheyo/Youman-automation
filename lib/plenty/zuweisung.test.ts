@@ -61,6 +61,34 @@ describe('weiseZu', () => {
     expect(res.zeilen[0].zielId).toBe(8619);
   });
 
+  it('holt im Probelauf weder Artikel-IDs noch Bestände', async () => {
+    // Beides kostet je einen API-Aufruf pro Artikel und lief bei mehreren
+    // tausend Zeilen in den Serverless-Timeout.
+    const gerufen: string[] = [];
+    const { fetchMock } = attrappe();
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => { gerufen.push(url); return fetchMock(url, init); });
+    const { weiseZu } = await import('./zuweisung');
+    const wuensche = Array.from({ length: 200 }, (_, i) => ({ variationId: i + 1, ziel: 'H1/R8/EA F15-K10' }));
+    const res = await weiseZu(wuensche, { warehouseId: 106 });
+
+    expect(res.geplant).toBe(200);
+    expect(gerufen.some((u) => u.includes('/rest/items/variations'))).toBe(false);
+    expect(gerufen.some((u) => u.includes('/stock/storageLocations'))).toBe(false);
+    expect(res.zeilen[0].hinweis).toMatch(/beim Buchen/);
+  });
+
+  it('lädt Artikel-IDs nur für die Zeilen, die auch gebucht werden', async () => {
+    const gerufen: string[] = [];
+    const { fetchMock } = attrappe();
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => { gerufen.push(url); return fetchMock(url, init); });
+    const { weiseZu } = await import('./zuweisung');
+    const wuensche = Array.from({ length: 200 }, (_, i) => ({ variationId: i + 1, ziel: 'H1/R8/EA F15-K10' }));
+    await weiseZu(wuensche, { warehouseId: 106, probelauf: false, maxBuchungen: 10 });
+
+    // 10 Buchungen → eine einzige Sammelabfrage, nicht vier.
+    expect(gerufen.filter((u) => u.includes('/rest/items/variations')).length).toBe(1);
+  });
+
   it('bucht mit Grund 401 vom Standard-Lagerort auf den Zielplatz', async () => {
     const { fetchMock, geschrieben } = attrappe();
     vi.stubGlobal('fetch', fetchMock);
