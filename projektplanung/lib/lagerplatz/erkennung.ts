@@ -78,6 +78,10 @@ export function normalisiere(text: string): string {
 /** Ausgeschriebene Ebenen auf ihr Kürzel bringen ("Halle 2 Regal 7" → "H2 R7"). */
 function vereinheitliche(text: string): string {
   let out = normalisiere(text);
+  // Kleinteillager: "H1KTLA67" meint Halle 1, Regal KTL, Ebene A, Fach 67 —
+  // das "R" fehlt dort. Einmal ergaenzen, dann greift die normale Regel.
+  out = out.replace(/\bH\s*(\d{1,2})\s*(\d{0,2}KTL)/g, 'H$1R$2');
+
   for (const [wort, kuerzel] of [
     ['LAGERPLATZ', ' '],
     ['LAGERORT', ' '],
