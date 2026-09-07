@@ -821,3 +821,12 @@ export async function plentyGet<T>(path: string, cfg: PlentyConfig = getPlentyCo
   const token = await login(cfg);
   return api<T>(cfg, token, path);
 }
+
+/**
+ * Liefert einen gültigen Bearer-Token (aus dem modulweiten Cache oder per
+ * frischem Login). Für Aufrufe, die nicht über `plentyGet` laufen — etwa
+ * schreibende PUT-Anfragen.
+ */
+export async function plentyToken(cfg: PlentyConfig = getPlentyConfig()): Promise<string> {
+  return login(cfg);
+}

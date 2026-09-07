@@ -175,6 +175,52 @@ Scan einmal aus und schreibt das Ergebnis in die Diagnose-Zeile:
 Lesend: Bestand (`/rest/stockmanagement/stock`), Lager, Artikel und Varianten.
 Fehlen die Lagernamen-Rechte, läuft der Scan trotzdem — er zeigt dann IDs.
 
+## Lagerplätze zuweisen (`/lagerplatz/zuweisen`)
+
+Bucht den Bestand vom Standard-Lagerort auf den erkannten Lagerplatz um.
+**Das bewegt echten Bestand.** In PlentyONE gibt es keine reine Zuordnung: Ein
+Artikel liegt auf einem Platz, indem sein Bestand dorthin gebucht ist.
+
+### Die verwendeten Endpunkte
+
+Aus der offiziellen PlentyONE-REST-Spezifikation
+(`developers.plentymarkets.com/rest-api/openApiV2WithExamples.min.json`),
+nicht geraten:
+
+| Zweck | Endpunkt |
+| --- | --- |
+| Lager auflisten | `GET /rest/stockmanagement/warehouses` |
+| **Alle** Lagerorte eines Lagers, auch die leeren | `GET /rest/warehouses/{warehouseId}/locations` |
+| Bestand je Lagerort | `GET /rest/stockmanagement/warehouses/{warehouseId}/stock/storageLocations` |
+| Umbuchen | `PUT /rest/items/{itemId}/variations/{variationId}/stock/redistribute` |
+
+Der Umbuchungs-Body: `reasonId: 401` (Umlagerung), `quantity`,
+`currentWarehouseId`, `currentStorageLocationId` (0 = Standard-Lagerort),
+`newWarehouseId`, `newStorageLocationId`.
+
+Dass die Lagerort-Liste **auch leere Plätze** enthält, ist der Kern: Aus einem
+Artikelexport lassen sich nur belegte Plätze ablesen. Daraus zu schließen, ein
+Platz existiere nicht, ist falsch — dieser Fehlschluss hat bei der Vorbereitung
+zweimal zu falschen Zahlen geführt.
+
+### Die Sicherungen
+
+- **Probelauf ist die Voreinstellung.** Geschrieben wird nur, wenn der Aufruf
+  ausdrücklich `probelauf: false` setzt.
+- In der Oberfläche muss zusätzlich das Wort **BUCHEN** eingetippt werden.
+- Eine **Obergrenze je Lauf** (20 bis 500 Artikel) begrenzt den Schaden eines
+  Irrtums.
+- Kein Ziel-Lagerort, keine Artikel-ID oder nichts auf dem Quell-Lagerort →
+  die Zeile wird übersprungen statt geraten.
+- Ein Fehler stoppt nicht den Lauf, sondern wird je Zeile protokolliert.
+
+### Warum das trotzdem geprüft gehört
+
+Der Lagerplatz stammt aus Freitext. Wo er sich mit einem echten Lagerort
+vergleichen ließ, stimmte er in 37–49 % der Fälle exakt. Als Suchhinweis ist
+das gut, als Datenquelle nicht. Deshalb: erst 20 Artikel buchen, im Regal
+nachsehen, dann größere Blöcke.
+
 ### Nächster Schritt
 
 Die Auswertung der ersten echten Daten hat die Aufgabe verschoben: Die
