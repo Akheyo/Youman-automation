@@ -26,11 +26,21 @@ describe('findeLagerplaetze — lange Form (Plenty-Lagerort)', () => {
     expect(findeLagerplaetze('H5/RKTL/EA F01-K071')[0].segment.regal).toBe('KTL');
   });
 
-  it('behält einen unklaren Zusatz, statt ihn zu verwerfen', () => {
+  it('liest das Unterfach', () => {
     const [t] = findeLagerplaetze('H5/R10/EE F22-2');
     expect(t.code).toBe('H5/R10/EE F22-2');
     expect(t.segment.kiste).toBe('2');
-    expect(t.klartext).toBe('Halle 5 · Regal 10 · Ebene E · Fach 22 · Zusatz 2');
+    expect(t.klartext).toBe('Halle 5 · Regal 10 · Ebene E · Fach 22 · Unterfach 2');
+  });
+
+  it('zählt "-01" und "-1" als dasselbe Unterfach', () => {
+    expect(findeLagerplaetze('H1/R13/EAZ F07-01')[0].code).toBe('H1/R13/EAZ F07-1');
+    expect(findeLagerplaetze('H1/R13/EAZ F07-1')[0].code).toBe('H1/R13/EAZ F07-1');
+  });
+
+  it('erkennt den Palettenplatz', () => {
+    const [t] = findeLagerplaetze('H2/R7/EA F05-P16');
+    expect(t.klartext).toMatch(/Palettenplatz 16/);
   });
 
   it('kommt mit Z-Ebenen zurecht', () => {

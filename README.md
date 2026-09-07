@@ -118,9 +118,18 @@ Beide Formen werden auf die **lange** normiert, weil das die Form ist, mit der
 Plenty arbeitet — so lassen sich Texthinweis und echter Lagerort direkt
 vergleichen (`gleicherOrt()` vergleicht dabei bis auf die Kiste).
 
-Ein `K` bezeichnet immer die **Kiste**. Steht hinter dem Bindestrich eine bloße
-Zahl (`-1`, `-2`), ist deren Bedeutung ungeklärt — sie bleibt unverändert
-stehen, statt interpretiert zu werden.
+Hinter dem Bindestrich steht, wie fein der Platz aufgelöst ist:
+
+| Zusatz | Bedeutung | Häufigkeit |
+| --- | --- | ---: |
+| `-K71` | **Kiste** 71 | 13.955 |
+| `-0` | weder Kiste noch Unterfach | 23.469 |
+| `-1`, `-2`, `-3` | **Unterfach** — ein Fach kann mehrere haben | 11.450 |
+| `-P16` | Palettenplatz | 8 |
+
+Führende Nullen werden entfernt (`-01` und `-1` sind dasselbe Unterfach) und
+Kisten zweistellig geschrieben (`K7` → `K07`), damit derselbe Platz nicht je
+nach Schreibweise doppelt gezählt wird.
 
 **Jeder Artikel bekommt einen von vier Status:**
 

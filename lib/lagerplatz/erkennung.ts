@@ -31,10 +31,14 @@ export interface Segment {
   /** Fach — meist eine Zahl, vereinzelt mit Buchstaben ("M1"). */
   fach: string;
   /**
-   * Zusatz hinter dem Bindestrich, unverändert wie vorgefunden:
-   * "K71" = Kiste 71, "0" = keine Kiste. Vereinzelt stehen dort auch bloße
-   * Zahlen ("1", "2") — deren Bedeutung ist ungeklärt, deshalb bleiben sie
-   * stehen statt interpretiert zu werden. null = im Text nicht angegeben.
+   * Zusatz hinter dem Bindestrich, normiert:
+   *   "K71" = Kiste 71
+   *   "0"   = weder Kiste noch Unterfach
+   *   "1"   = Unterfach 1 (ein Fach kann mehrere Unterfächer haben)
+   *   "P16" = Palettenplatz
+   * Führende Nullen werden entfernt, damit "-01" und "-1" als derselbe Platz
+   * gezählt werden — in Plenty kommen beide Schreibweisen vor.
+   * null = im Text gar nicht angegeben.
    */
   kiste: string | null;
 }
@@ -96,11 +100,24 @@ function vereinheitliche(text: string): string {
 
 /** Die lange Form, wie Plenty sie führt. */
 const LANG =
-  /(?<![A-Z0-9])H\s*(\d{1,2})\s*\/\s*R\s*(\d{1,2}KTL|KTL|\d{1,2})\s*\/\s*E([A-Z]{1,2})\s*F\s*([A-Z]?\d{1,3})\s*-\s*(?:K\s*(\d{1,3})|(\d{1,3}))/g;
+  /(?<![A-Z0-9])H\s*(\d{1,2})\s*\/\s*R\s*(\d{1,2}KTL|KTL|\d{1,2})\s*\/\s*E([A-Z]{1,2})\s*F\s*([A-Z]?\d{1,3})\s*-\s*(?:K\s*(\d{1,3})|([A-Z]?\d{1,3}))/g;
 
 /** Die kurze Form aus Nummern und Fließtext. */
 const KURZ =
   /(?<![A-Z0-9])H\s*(\d{1,2})\s*[-_/.]?\s*R\s*(\d{1,2}KTL|KTL|\d{1,2})\s*[-_/.]?\s*([A-J])\s*(\d{1,2})(?:\s*[-_]?\s*K\s*(\d{1,3})((?:\s*\+\s*\d{1,3})*))?(?![0-9])/g;
+
+/**
+ * Bringt den Zusatz auf eine einheitliche Form: Kisten zweistellig ("K7" →
+ * "K07"), Unterfächer ohne führende Nullen ("01" → "1"). Sonst bliebe
+ * derselbe Platz je nach Schreibweise doppelt gezählt.
+ */
+function normZusatz(roh: string): string {
+  const kiste = roh.match(/^K0*(\d+)$/);
+  if (kiste) return `K${kiste[1].padStart(2, '0')}`;
+  const zahl = roh.match(/^0*(\d+)$/);
+  if (zahl) return zahl[1];
+  return roh;
+}
 
 /** Erlaubte Ebenen-Buchstaben laut Bestand (A–J, optional mit Z-Zusatz). */
 const EBENEN = /^[A-J]Z?$/;
@@ -117,7 +134,9 @@ export function codeAus(s: Segment): string {
 export function klartextAus(s: Segment): string {
   const teile = [`Halle ${s.halle}`, `Regal ${s.regal}`, `Ebene ${s.ebene}`, `Fach ${/^\d+$/.test(s.fach) ? Number(s.fach) : s.fach}`];
   if (s.kiste && s.kiste !== '0') {
-    teile.push(s.kiste.startsWith('K') ? `Kiste ${Number(s.kiste.slice(1))}` : `Zusatz ${s.kiste}`);
+    if (s.kiste.startsWith('K')) teile.push(`Kiste ${Number(s.kiste.slice(1))}`);
+    else if (s.kiste.startsWith('P')) teile.push(`Palettenplatz ${s.kiste.slice(1)}`);
+    else teile.push(`Unterfach ${s.kiste}`);
   }
   return teile.join(' · ');
 }
@@ -168,7 +187,7 @@ export function findeLagerplaetze(text: string): LagerplatzTreffer[] {
       // m[3] ist der Teil NACH dem E — bei "EE F02" also "E" (Ebene E).
       ebene: m[3],
       fach: m[4],
-      kiste: m[5] ? `K${m[5]}` : (m[6] ?? '0'),
+      kiste: normZusatz(m[5] ? `K${m[5]}` : (m[6] ?? '0')),
     };
     const t = alsTreffer(seg, m[0], 'lang');
     if (!gefunden.has(t.code)) gefunden.set(t.code, t);
@@ -184,8 +203,8 @@ export function findeLagerplaetze(text: string): LagerplatzTreffer[] {
       fach: m[4],
     };
     // "K2+3" nennt zwei Kisten am selben Fach – beide zählen.
-    const kisten: Array<string | null> = m[5] ? [`K${m[5].padStart(2, '0')}`] : [null];
-    if (m[6]) for (const z of m[6].matchAll(/\d{1,3}/g)) kisten.push(`K${z[0].padStart(2, '0')}`);
+    const kisten: Array<string | null> = m[5] ? [normZusatz(`K${m[5]}`)] : [null];
+    if (m[6]) for (const z of m[6].matchAll(/\d{1,3}/g)) kisten.push(normZusatz(`K${z[0]}`));
 
     for (const kiste of kisten) {
       const t = alsTreffer({ ...basis, kiste }, m[0], 'kurz');
