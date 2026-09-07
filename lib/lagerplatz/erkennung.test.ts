@@ -97,6 +97,12 @@ describe('findeLagerplaetze — kurze Form (Variantennummer, Freitext)', () => {
     expect(t[0].code).toBe('H1/R7/EF F07-K08');
   });
 
+  it('versteht das Kleinteillager ohne "R" davor', () => {
+    // KTL = Kleinteillager; dort steht oft "H1KTL..." statt "H1/RKTL/..."
+    expect(findeLagerplaetze('H1KTLA67_10_SA08072019')[0].code).toBe('H1/RKTL/EA F67-0');
+    expect(findeLagerplaetze('H6R8KTLB3')[0].code).toBe('H6/R8KTL/EB F03-0');
+  });
+
   it('meldet unübliche Ebenen als unsicher', () => {
     const [t] = findeLagerplaetze('H1R6X12');
     expect(t?.sicherheit ?? 'kein Treffer').toBe('kein Treffer');
