@@ -16,6 +16,24 @@ interface Ergebnis {
 }
 interface Wunsch { variationId: number; ziel: string; menge?: number | null; name?: string }
 
+/**
+ * Liest eine Antwort als JSON — und gibt eine lesbare Meldung, wenn stattdessen
+ * eine Fehlerseite kommt (bei einem Timeout schickt Vercel HTML, kein JSON).
+ */
+async function alsJson(res: Response): Promise<Record<string, unknown>> {
+  const text = await res.text();
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    const anfang = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+    throw new Error(
+      res.status === 504 || /timed? ?out|FUNCTION_INVOCATION_TIMEOUT/i.test(text)
+        ? 'Zeitüberschreitung — bitte mit einer kleineren Liste erneut versuchen.'
+        : `Unerwartete Antwort (HTTP ${res.status}): ${anfang || 'leer'}`,
+    );
+  }
+}
+
 /** Liest die Zuweisungsliste aus einer CSV (Semikolon, mit Kopfzeile). */
 function lesCsv(text: string): Wunsch[] {
   const zeilen = text.replace(/^﻿/, '').split(/\r?\n/).filter((z) => z.trim());
@@ -56,9 +74,9 @@ export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
     setLaeuft('lager'); setFehler(null);
     try {
       const res = await fetch('/api/lagerplatz/lagerorte');
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error ?? 'Lager nicht ladbar.');
-      setLager(d.lager ?? []);
+      const d = await alsJson(res);
+      if (!res.ok) throw new Error(String(d.error ?? 'Lager nicht ladbar.'));
+      setLager((d.lager as Lager[]) ?? []);
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(null); }
   }
 
@@ -66,8 +84,8 @@ export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
     setLaeuft('orte'); setFehler(null); setLagerInfo(null);
     try {
       const res = await fetch(`/api/lagerplatz/lagerorte?warehouseId=${id}`);
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error ?? 'Lagerorte nicht ladbar.');
+      const d = await alsJson(res);
+      if (!res.ok) throw new Error(String(d.error ?? 'Lagerorte nicht ladbar.'));
       setLagerInfo(`${d.gesamt} Lagerorte, davon ${d.zuordenbar} zuordenbar` +
         (d.ohneCode ? ` · ${d.ohneCode} mit abweichendem Namen` : '') +
         (d.doppelt ? ` · ${d.doppelt} doppelt` : ''));
@@ -86,7 +104,7 @@ export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
           wuensche: wuensche.map((w) => ({ variationId: w.variationId, ziel: w.ziel, menge: w.menge })),
         }),
       });
-      const d = await res.json();
+      const d = (await alsJson(res)) as unknown as Ergebnis;
       if (!res.ok && !d.zeilen) throw new Error(d.error ?? `Fehlgeschlagen (HTTP ${res.status}).`);
       setErgebnis(d);
       if (!probelauf) setFreigabe('');
