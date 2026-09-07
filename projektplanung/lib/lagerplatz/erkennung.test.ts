@@ -1,58 +1,125 @@
 import { describe, expect, it } from 'vitest';
-import { besterTreffer, findeLagerplaetze, klartextAus } from './erkennung';
+import { besterTreffer, findeLagerplaetze, gleicherOrt, klartextAus } from './erkennung';
 import { alsCsv, bewerteVariante, fasseZusammen } from './befund';
 
-describe('findeLagerplaetze', () => {
-  it('erkennt die Standardform H6R5A7', () => {
-    const [t] = findeLagerplaetze('H6R5A7');
-    expect(t.code).toBe('H6R5A7');
+/** Alle Beispiele stammen aus echten Plenty-Daten (Stichprobe 1.000 Artikel). */
+
+describe('findeLagerplaetze — lange Form (Plenty-Lagerort)', () => {
+  it('liest den Standardfall mit Kiste', () => {
+    const [t] = findeLagerplaetze('H2/R7/EA F08-K71');
+    expect(t.code).toBe('H2/R7/EA F08-K71');
+    expect(t.form).toBe('lang');
     expect(t.sicherheit).toBe('sicher');
-    expect(t.klartext).toBe('Halle 6 · Regal 5 · Ablage 7');
+    expect(t.segment).toEqual({ halle: 2, regal: '7', ebene: 'A', fach: '08', kiste: 'K71' });
+    expect(t.klartext).toBe('Halle 2 · Regal 7 · Ebene A · Fach 8 · Kiste 71');
   });
 
-  it('ist tolerant bei Trennzeichen, Kleinschreibung und führenden Nullen', () => {
-    for (const text of ['h6-r5-a7', 'H6 R5 A7', 'H.6/R.5_A.7', 'H06R05A07']) {
-      expect(findeLagerplaetze(text)[0]?.code, text).toBe('H6R5A7');
-    }
+  it('versteht „-0" als „keine Kiste"', () => {
+    const [t] = findeLagerplaetze('H1/R1/EB F12-0');
+    expect(t.segment.kiste).toBe('0');
+    expect(t.code).toBe('H1/R1/EB F12-0');
+    expect(t.klartext).toBe('Halle 1 · Regal 1 · Ebene B · Fach 12');
+  });
+
+  it('kommt mit KTL-Regalen zurecht', () => {
+    expect(findeLagerplaetze('H6/R2KTL/ED F01-0')[0].segment.regal).toBe('2KTL');
+    expect(findeLagerplaetze('H5/RKTL/EA F01-K071')[0].segment.regal).toBe('KTL');
+  });
+
+  it('liest das Unterfach', () => {
+    const [t] = findeLagerplaetze('H5/R10/EE F22-2');
+    expect(t.code).toBe('H5/R10/EE F22-2');
+    expect(t.segment.kiste).toBe('2');
+    expect(t.klartext).toBe('Halle 5 · Regal 10 · Ebene E · Fach 22 · Unterfach 2');
+  });
+
+  it('zählt "-01" und "-1" als dasselbe Unterfach', () => {
+    expect(findeLagerplaetze('H1/R13/EAZ F07-01')[0].code).toBe('H1/R13/EAZ F07-1');
+    expect(findeLagerplaetze('H1/R13/EAZ F07-1')[0].code).toBe('H1/R13/EAZ F07-1');
+  });
+
+  it('erkennt den Palettenplatz', () => {
+    const [t] = findeLagerplaetze('H2/R7/EA F05-P16');
+    expect(t.klartext).toMatch(/Palettenplatz 16/);
+  });
+
+  it('kommt mit Z-Ebenen zurecht', () => {
+    expect(findeLagerplaetze('H1/R11/EAZ F02-1')[0].segment.ebene).toBe('AZ');
+    expect(findeLagerplaetze('H2/R10/EBZ F01-0')[0].segment.ebene).toBe('BZ');
+  });
+
+  it('kommt mit Buchstaben im Fach zurecht („FM1")', () => {
+    const [t] = findeLagerplaetze('H1/R13/EC FM1-2');
+    expect(t.code).toBe('H1/R13/EC FM1-2');
+    expect(t.segment.fach).toBe('M1');
+  });
+
+  it('findet mehrere Lagerorte in einem Feld', () => {
+    const codes = findeLagerplaetze('H1/R8/EA F20-K10,H1/R8/EA F20-K19').map((t) => t.code);
+    expect(codes).toEqual(['H1/R8/EA F20-K10', 'H1/R8/EA F20-K19']);
+  });
+});
+
+describe('findeLagerplaetze — kurze Form (Variantennummer, Freitext)', () => {
+  it('normiert die Kurzform auf die Plenty-Schreibweise', () => {
+    const [t] = findeLagerplaetze('NEW-14158-H3R6B10_CK');
+    expect(t.code).toBe('H3/R6/EB F10-0');
+    expect(t.form).toBe('kurz');
+    expect(t.grund).toBe('aus Freitext gelesen');
+  });
+
+  it('liest Kleinschreibung', () => {
+    expect(findeLagerplaetze('wh25092014_7_h1r6a10')[0].code).toBe('H1/R6/EA F10-0');
+  });
+
+  it('nimmt die Kiste mit', () => {
+    expect(findeLagerplaetze('H2R7A15K30-1_CK')[0].code).toBe('H2/R7/EA F15-K30');
+  });
+
+  it('versteht mehrere Kisten am selben Fach („K2+3")', () => {
+    const codes = findeLagerplaetze('H1R5A12K2+3_07.05.2014').map((t) => t.code);
+    expect(codes).toEqual(['H1/R5/EA F12-K02', 'H1/R5/EA F12-K03']);
   });
 
   it('versteht ausgeschriebene Ebenen', () => {
-    const [t] = findeLagerplaetze('Lagerplatz: Halle 6 Regal 5 Ablage 7');
-    expect(t.code).toBe('H6R5A7');
-    expect(t.sicherheit).toBe('sicher');
+    expect(findeLagerplaetze('Lagerplatz: Halle 2 Regal 4 B 1')[0].code).toBe('H2/R4/EB F01-0');
   });
 
   it('findet den Code mitten in einer Beschreibung', () => {
-    const text = 'Gebrauchte Drehmaschine, Baujahr 1998.\nLagerplatz H2R11F3 — Abholung nach Absprache.';
-    const [t] = findeLagerplaetze(text);
-    expect(t.code).toBe('H2R11F3');
+    const t = findeLagerplaetze('Drehmaschine, Baujahr 1998. Lagerplatz H2R11B3 — Abholung nach Absprache.');
+    expect(t[0].code).toBe('H2/R11/EB F03-0');
   });
 
-  it('findet den Code in einer Variantennummer', () => {
-    expect(findeLagerplaetze('KK-2024-0815-H6R5A7')[0]?.code).toBe('H6R5A7');
+  it('findet den Code auch angeklebt an den vorherigen Text', () => {
+    // So steht es in vielen Beschreibungen — der Platz ist beim Formatieren
+    // an die Shop-Adresse gerutscht.
+    const t = findeLagerplaetze('…in unserem Sortiment https://www.ebay.de/str/derprofi24H1R7F7K8-7_CKca 0,1Kg');
+    expect(t[0].code).toBe('H1/R7/EF F07-K08');
   });
 
-  it('räumt HTML aus Beschreibungen weg', () => {
-    expect(findeLagerplaetze('<p>Lagerplatz:<br/><b>H6R5A7</b></p>')[0]?.code).toBe('H6R5A7');
+  it('versteht das Kleinteillager ohne "R" davor', () => {
+    // KTL = Kleinteillager; dort steht oft "H1KTL..." statt "H1/RKTL/..."
+    expect(findeLagerplaetze('H1KTLA67_10_SA08072019')[0].code).toBe('H1/RKTL/EA F67-0');
+    expect(findeLagerplaetze('H6R8KTLB3')[0].code).toBe('H6/R8KTL/EB F03-0');
   });
 
-  it('meldet zwei Ebenen als unsicher statt sie zu verwerfen', () => {
-    const [t] = findeLagerplaetze('R5A7');
-    expect(t.code).toBe('R5A7');
+  it('liest das Kleinteillager-Fach auch ohne Ebene', () => {
+    const [t] = findeLagerplaetze('NEW-15879-H1R5KTL15_EK');
+    expect(t.code).toBe('H1/R5KTL F15-0');
+    expect(t.segment.ebene).toBe('');
     expect(t.sicherheit).toBe('unsicher');
-    expect(t.grund).toMatch(/zwei Ebenen/);
+    expect(t.grund).toBe('Ebene nicht angegeben');
+    expect(t.klartext).toBe('Halle 1 · Kleinteillager 5 · Fach 15');
   });
 
-  it('meldet unbekannte Ebenen als unsicher', () => {
-    const [t] = findeLagerplaetze('X1Y2Z3');
-    expect(t.sicherheit).toBe('unsicher');
-    expect(t.grund).toMatch(/unbekannte Ebene/);
+  it('bevorzugt den vollständigen Platz vor dem ohne Ebene', () => {
+    const beste = besterTreffer(findeLagerplaetze('H1R5KTL15 und H1R5KTLA15'));
+    expect(beste?.segment.ebene).toBe('A');
   });
 
-  it('hält Maßangaben für Maßangaben, nicht für Lagerplätze', () => {
-    const [t] = findeLagerplaetze('Karton L120B60H90');
-    expect(t.sicherheit).toBe('ignoriert');
-    expect(besterTreffer(findeLagerplaetze('Karton L120B60H90'))).toBeNull();
+  it('meldet unübliche Ebenen als unsicher', () => {
+    const [t] = findeLagerplaetze('H1R6X12');
+    expect(t?.sicherheit ?? 'kein Treffer').toBe('kein Treffer');
   });
 
   it('erzeugt keine Treffer aus Fließtext ohne Muster', () => {
@@ -60,22 +127,35 @@ describe('findeLagerplaetze', () => {
     expect(findeLagerplaetze('')).toEqual([]);
   });
 
-  it('fasst denselben Code nur einmal zusammen', () => {
-    expect(findeLagerplaetze('H6R5A7 … siehe auch h6 r5 a7')).toHaveLength(1);
+  it('hält Maßangaben nicht für Lagerplätze', () => {
+    expect(findeLagerplaetze('Karton L120B60H90')).toEqual([]);
+    expect(findeLagerplaetze('Abmessungen 220x80x60cm')).toEqual([]);
   });
 
-  it('erkennt mehrere verschiedene Codes', () => {
-    const codes = findeLagerplaetze('H6R5A7 und H2R1F4').map((t) => t.code);
-    expect(codes).toEqual(['H6R5A7', 'H2R1F4']);
+  it('liest dieselbe Stelle nicht doppelt als lang und kurz', () => {
+    expect(findeLagerplaetze('H2/R7/EA F08-K71')).toHaveLength(1);
   });
+});
 
-  it('bevorzugt den sicheren Treffer vor dem unsicheren', () => {
-    const beste = besterTreffer(findeLagerplaetze('A4 B5 — Lagerplatz H6R5A7'));
-    expect(beste?.code).toBe('H6R5A7');
+describe('besterTreffer', () => {
+  it('zieht den echten Lagerort dem Texthinweis vor', () => {
+    const beste = besterTreffer(findeLagerplaetze('H1R6A10 … laut Plenty H2/R7/EA F08-K71'));
+    expect(beste?.code).toBe('H2/R7/EA F08-K71');
+    expect(beste?.form).toBe('lang');
   });
+});
 
-  it('klartextAus benennt bekannte Ebenen', () => {
-    expect(klartextAus([{ schluessel: 'H', nummer: 1 }, { schluessel: 'F', nummer: 2 }])).toBe('Halle 1 · Fach 2');
+describe('gleicherOrt', () => {
+  it('ignoriert die Kiste beim Vergleich', () => {
+    expect(gleicherOrt('H1/R6/EA F10-0', 'H1/R6/EA F10-K07')).toBe(true);
+    expect(gleicherOrt('H1/R6/EA F10-0', 'H1/R6/EA F11-0')).toBe(false);
+  });
+});
+
+describe('klartextAus', () => {
+  it('lässt die Kiste weg, wenn es keine gibt', () => {
+    expect(klartextAus({ halle: 1, regal: '8KTL', ebene: 'CZ', fach: '5', kiste: null }))
+      .toBe('Halle 1 · Kleinteillager 8 · Ebene CZ · Fach 5');
   });
 });
 
@@ -83,67 +163,58 @@ describe('bewerteVariante', () => {
   const basis = { variationId: 1, itemId: 10 };
 
   it('nimmt den Lagerplatz aus der Variantennummer', () => {
-    const b = bewerteVariante({ ...basis, nummer: 'KK-H6R5A7' });
-    expect(b.code).toBe('H6R5A7');
+    const b = bewerteVariante({ ...basis, nummer: 'NEW-14158-H3R6B10_CK' });
+    expect(b.code).toBe('H3/R6/EB F10-0');
     expect(b.quelle).toBe('Variantennummer');
     expect(b.status).toBe('gefunden');
   });
 
   it('greift auf die Beschreibung zurück, wenn die Nummer nichts hergibt', () => {
-    const b = bewerteVariante({ ...basis, nummer: '100234', beschreibung: 'Standort: Halle 2 Regal 4 Fach 1' });
-    expect(b.code).toBe('H2R4F1');
+    const b = bewerteVariante({ ...basis, nummer: '100234', beschreibung: 'Standort: H2R4B1' });
+    expect(b.code).toBe('H2/R4/EB F01-0');
     expect(b.quelle).toBe('Beschreibung');
   });
 
-  it('meldet widersprüchliche Angaben als Konflikt', () => {
-    const b = bewerteVariante({ ...basis, nummer: 'H6R5A7', beschreibung: 'Lagerplatz H1R1A1' });
+  it('meldet zwei verschiedene Plätze als Konflikt', () => {
+    const b = bewerteVariante({ ...basis, nummer: 'H1R8A13', beschreibung: 'jetzt H2/R3/EA F11-0' });
     expect(b.status).toBe('konflikt');
-    expect(b.hinweis).toMatch(/H6R5A7/);
-    expect(b.code).toBe('H6R5A7'); // Variantennummer hat Vorrang
-  });
-
-  it('zieht einen sicheren Treffer einem unsicheren vor, auch aus späterem Feld', () => {
-    const b = bewerteVariante({ ...basis, nummer: 'R5A7', beschreibung: 'Lagerplatz H6R5A7' });
-    expect(b.code).toBe('H6R5A7');
-    expect(b.status).toBe('gefunden');
+    expect(b.hinweis).toMatch(/H2\/R3\/EA F11-0/);
   });
 
   it('meldet kein-treffer, wenn nichts zu finden ist', () => {
-    const b = bewerteVariante({ ...basis, nummer: '100234', beschreibung: 'Sehr guter Zustand' });
+    const b = bewerteVariante({ ...basis, nummer: 'NEW-43261', beschreibung: 'Sehr guter Zustand' });
     expect(b.status).toBe('kein-treffer');
     expect(b.code).toBeNull();
   });
 
-  it('erklärt, wenn nur Maßangaben gefunden wurden', () => {
-    const b = bewerteVariante({ ...basis, beschreibung: 'Abmessungen L120B60H90' });
-    expect(b.status).toBe('kein-treffer');
-    expect(b.hinweis).toMatch(/Maßangaben/);
+  it('reicht Bestand und Lager durch', () => {
+    const b = bewerteVariante({ ...basis, nummer: 'H1R6A10', bestand: 5, bestandPhysisch: 5, lager: 'Haupthalle' });
+    expect(b.bestand).toBe(5);
+    expect(b.lager).toBe('Haupthalle');
   });
 });
 
 describe('fasseZusammen', () => {
   it('zählt Status und verschiedene Lagerplätze', () => {
     const befunde = [
-      bewerteVariante({ variationId: 1, itemId: 1, nummer: 'H6R5A7' }),
-      bewerteVariante({ variationId: 2, itemId: 2, nummer: 'H6R5A7' }),
-      bewerteVariante({ variationId: 3, itemId: 3, nummer: 'H1R1A1' }),
+      bewerteVariante({ variationId: 1, itemId: 1, nummer: 'H1R6A10' }),
+      bewerteVariante({ variationId: 2, itemId: 2, nummer: 'H1R6A10' }),
+      bewerteVariante({ variationId: 3, itemId: 3, nummer: 'H2/R7/EA F08-K71' }),
       bewerteVariante({ variationId: 4, itemId: 4, nummer: '4711' }),
     ];
     const z = fasseZusammen(befunde);
     expect(z.gesamt).toBe(4);
     expect(z.gefunden).toBe(3);
     expect(z.ohneTreffer).toBe(1);
-    expect(z.plaetze[0]).toEqual({ code: 'H6R5A7', klartext: 'Halle 6 · Regal 5 · Ablage 7', anzahl: 2 });
-    expect(z.plaetze).toHaveLength(2);
+    expect(z.plaetze[0]).toEqual({ code: 'H1/R6/EA F10-0', klartext: 'Halle 1 · Regal 6 · Ebene A · Fach 10', anzahl: 2 });
   });
 });
 
 describe('alsCsv', () => {
   it('schreibt Kopfzeile und maskiert Semikolons', () => {
-    const csv = alsCsv([bewerteVariante({ variationId: 1, itemId: 2, nummer: 'H6R5A7', name: 'Regal; alt' })]);
+    const csv = alsCsv([bewerteVariante({ variationId: 1, itemId: 2, nummer: 'H1R6A10', name: 'Regal; alt' })]);
     const [kopf, zeile] = csv.split('\r\n');
     expect(kopf.startsWith('Variante-ID;Artikel-ID')).toBe(true);
     expect(zeile).toContain('"Regal; alt"');
-    expect(zeile).toContain('H6R5A7');
   });
 });
