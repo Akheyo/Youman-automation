@@ -91,38 +91,50 @@ durchsuchen — auch Artikel ohne Bestand.
 
 ### Was als Lagerplatz erkannt wird
 
-Geprüft wird in dieser Reihenfolge, das erste belastbare Ergebnis gewinnt:
-**Variantennummer → Modell → Externe ID → Name → Beschreibung**.
+Das Schema stammt aus den echten Daten (Stichprobe: 1.000 Artikel mit Bestand,
+735 hinterlegte Lagerorte) — nicht aus Annahmen. Es gibt zwei Schreibweisen:
 
-Bewusst tolerant, weil die Codes über die Jahre unterschiedlich geschrieben
-wurden:
+**Lang** — so führt Plenty die echten Lagerorte:
 
-| Schreibweise im Artikel | erkannt als |
+```
+H2/R7/EA F08-K71      Halle 2 · Regal 7 · Ebene A · Fach 8 · Kiste 71
+H1/R1/EB F12-0        "-0" heißt: keine Kiste
+H6/R2KTL/ED F01-0     Regale können "KTL" tragen
+H1/R11/EAZ F02-1      Ebenen können ein "Z" tragen
+H1/R13/EC FM1-2       Fächer vereinzelt mit Buchstaben
+```
+
+**Kurz** — so steht es in Variantennummern, Beschreibungen und Kommentaren:
+
+| im Text | wird zu |
 | --- | --- |
-| `H6R5A7` | `H6R5A7` — Halle 6 · Regal 5 · Ablage 7 |
-| `h6-r5-a7`, `H 6 / R 5 / A 7`, `H06R05A07` | `H6R5A7` |
-| `Lagerplatz: Halle 6 Regal 5 Ablage 7` | `H6R5A7` |
-| `H2R11F3` mitten im Beschreibungstext | `H2R11F3` |
+| `NEW-14158-H3R6B10_CK` | `H3/R6/EB F10-0` |
+| `wh25092014_7_h1r6a10` | `H1/R6/EA F10-0` |
+| `H2R7A15K30-1_CK` | `H2/R7/EA F15-K30` |
+| `H1R5A12K2+3` | `H1/R5/EA F12-K02` **und** `…-K03` (zwei Kisten) |
+| `Halle 2 Regal 4 B 1` | `H2/R4/EB F01-0` |
 
-Bekannte Ebenen sind `H` Halle, `L` Lager, `G` Gang, `Z` Zeile, `R` Regal,
-`E` Ebene, `F` Fach, `A` Ablage, `B` Boden, `P` Platz, `C` Container,
-`K` Kiste, `S` Stellplatz — jeweils auch ausgeschrieben.
+Beide Formen werden auf die **lange** normiert, weil das die Form ist, mit der
+Plenty arbeitet — so lassen sich Texthinweis und echter Lagerort direkt
+vergleichen (`gleicherOrt()` vergleicht dabei bis auf die Kiste).
+
+Ein `K` bezeichnet immer die **Kiste**. Steht hinter dem Bindestrich eine bloße
+Zahl (`-1`, `-2`), ist deren Bedeutung ungeklärt — sie bleibt unverändert
+stehen, statt interpretiert zu werden.
 
 **Jeder Artikel bekommt einen von vier Status:**
 
-- **gefunden** — mindestens drei bekannte Ebenen, eindeutig. Kann übernommen werden.
-- **unsicher** — nur zwei Ebenen (`R5A7`) oder eine unbekannte Ebene (`X1Y2Z3`).
-  Wird angezeigt, aber nicht als gesichert gezählt.
-- **Konflikt** — Variantennummer und Beschreibung nennen verschiedene Plätze.
-  Muss ein Mensch entscheiden.
-- **ohne Lagerplatz** — nichts gefunden. Bei einem Artikel mit Bestand ist das
-  die Arbeitsliste: Der Platz muss aufgenommen werden. Reine Maßangaben wie
-  `L120B60H90` landen bewusst hier und nicht bei den Lagerplätzen.
+- **gefunden** — Lagerplatz eindeutig erkannt.
+- **unsicher** — z. B. eine Ebene außerhalb A–J.
+- **Konflikt** — zwei Felder nennen verschiedene Plätze. Das ist nicht
+  zwangsläufig ein Fehler: Liegt der Artikel mehrfach im Lager, kann der Text
+  einen *zusätzlichen* Platz nennen. Bei Bestand 1 dagegen ist eine der beiden
+  Angaben veraltet.
+- **ohne Lagerplatz** — nichts gefunden.
 
-**Ergebnis:** Kennzahlen, die Liste aller verschiedenen Lagerplätze mit
-Artikelzahl (das ist die Anlage-Liste für Plenty) und eine durchsuchbare
-Einzelansicht inkl. Bestand und Lager. Beides als CSV exportierbar (Semikolon +
-BOM, öffnet direkt in Excel).
+Was der Scan (noch) **nicht** liest: die in Plenty bereits hinterlegten
+Lagerorte und die Frage, wie viel Bestand davon auf dem Standard-Lagerort
+liegt. Genau dort steckt die eigentliche Arbeit — siehe „Nächster Schritt".
 
 ### Bedienung
 
@@ -156,10 +168,15 @@ Fehlen die Lagernamen-Rechte, läuft der Scan trotzdem — er zeigt dann IDs.
 
 ### Nächster Schritt
 
-Aus der Vorschau lassen sich später die echten Lagerorte in Plenty anlegen
-(Lager → Regal → Fach → Lagerort) und den Varianten zuordnen. Der Scan liefert
-dafür die Grundlage; das Schreiben ist bewusst noch nicht gebaut, damit die
-Liste erst geprüft werden kann.
+Die Auswertung der ersten echten Daten hat die Aufgabe verschoben: Die
+Lagerorte **existieren größtenteils schon** (in der Stichprobe bei 71 % der
+Artikel). Das Problem ist ein anderes — **42 % der Stückzahl liegt auf dem
+Standard-Lagerort**, also ohne echten Platz, teils bei Artikeln, die auf einem
+weiteren Platz sehr wohl verbucht sind.
+
+Der nächste Ausbauschritt ist deshalb nicht „Lagerorte anlegen", sondern:
+bestehende Lagerorte mitlesen, den Standard-Anteil je Artikel ausweisen und den
+Texthinweis als Vorschlag danebenstellen, wohin umgebucht werden müsste.
 
 ## Tests
 
