@@ -16,6 +16,23 @@ interface Ergebnis {
 }
 interface Wunsch { variationId: number; ziel: string; menge?: number | null; name?: string }
 
+/** Lädt einen Text als CSV-Datei herunter (BOM, damit Excel Umlaute zeigt). */
+function ladeHerunter(dateiname: string, inhalt: string) {
+  const blob = new Blob(['\ufeff' + inhalt], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = dateiname;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Maskiert ein CSV-Feld (Semikolon-getrennt). */
+function feld(wert: unknown): string {
+  const s = wert === null || wert === undefined ? '' : String(wert);
+  return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
 /**
  * Liest eine Antwort als JSON — und gibt eine lesbare Meldung, wenn stattdessen
  * eine Fehlerseite kommt (bei einem Timeout schickt Vercel HTML, kein JSON).
@@ -34,26 +51,50 @@ async function alsJson(res: Response): Promise<Record<string, unknown>> {
   }
 }
 
+/**
+ * Zerlegt eine CSV zeilen- und feldweise — mit Anführungszeichen.
+ *
+ * Stumpfes Trennen an Semikolons reicht nicht: Artikelnamen enthalten sie
+ * ("… 1\"-150; 316-3/4 u.v.m"). Eine solche Zeile verrutscht dann um eine
+ * Spalte, und in "Lagerplatz" steht plötzlich ein Stück Artikelname.
+ */
+function zerlegeCsv(text: string): string[][] {
+  const zeilen: string[][] = [];
+  let feldWert = '';
+  let zeile: string[] = [];
+  let inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuote) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { feldWert += '"'; i++; } else inQuote = false;
+      } else feldWert += c;
+    } else if (c === '"') inQuote = true;
+    else if (c === ';') { zeile.push(feldWert); feldWert = ''; }
+    else if (c === '\n') { zeile.push(feldWert); zeilen.push(zeile); zeile = []; feldWert = ''; }
+    else if (c !== '\r') feldWert += c;
+  }
+  if (feldWert || zeile.length) { zeile.push(feldWert); zeilen.push(zeile); }
+  return zeilen.filter((z) => z.some((f) => f.trim()));
+}
+
 /** Liest die Zuweisungsliste aus einer CSV (Semikolon, mit Kopfzeile). */
 function lesCsv(text: string): Wunsch[] {
-  const zeilen = text.replace(/^﻿/, '').split(/\r?\n/).filter((z) => z.trim());
-  if (!zeilen.length) return [];
-  const kopf = zeilen[0].split(';').map((h) => h.trim().toLowerCase());
+  const tabelle = zerlegeCsv(text.replace(/^﻿/, ''));
+  if (!tabelle.length) return [];
+  const kopf = tabelle[0].map((h) => h.trim().toLowerCase());
   const spalte = (...namen: string[]) => kopf.findIndex((h) => namen.some((n) => h.includes(n)));
   const iVar = spalte('variante-id', 'variationid');
   const iZiel = spalte('lagerplatz', 'ziel');
   const iMenge = spalte('bestand', 'menge');
   const iName = spalte('name');
   if (iVar < 0 || iZiel < 0) return [];
-  return zeilen.slice(1).map((z) => {
-    const s = z.split(';').map((f) => f.replace(/^"|"$/g, '').trim());
-    return {
-      variationId: Number(s[iVar]),
-      ziel: s[iZiel] ?? '',
-      menge: iMenge >= 0 && Number(s[iMenge]) > 0 ? Number(s[iMenge]) : null,
-      name: iName >= 0 ? s[iName] : undefined,
-    };
-  }).filter((w) => w.variationId > 0 && w.ziel);
+  return tabelle.slice(1).map((s) => ({
+    variationId: Number((s[iVar] ?? '').trim()),
+    ziel: (s[iZiel] ?? '').trim(),
+    menge: iMenge >= 0 && Number(s[iMenge]) > 0 ? Number(s[iMenge]) : null,
+    name: iName >= 0 ? s[iName] : undefined,
+  })).filter((w) => w.variationId > 0 && w.ziel);
 }
 
 export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
@@ -112,6 +153,18 @@ export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
   }
 
   const sichtbar = useMemo(() => ergebnis?.zeilen.slice(0, 200) ?? [], [ergebnis]);
+
+  /** Welche Lagerorte fehlen — zusammengefasst, größte zuerst. */
+  const fehlendeOrte = useMemo(() => {
+    const zaehler = new Map<string, { code: string; anzahl: number; beispiel: number }>();
+    for (const z of ergebnis?.zeilen ?? []) {
+      if (z.status !== 'uebersprungen' || !z.hinweis?.includes('existiert in Plenty nicht')) continue;
+      const e = zaehler.get(z.ziel);
+      if (e) e.anzahl += 1;
+      else zaehler.set(z.ziel, { code: z.ziel, anzahl: 1, beispiel: z.variationId });
+    }
+    return [...zaehler.values()].sort((a, b) => b.anzahl - a.anzahl || a.code.localeCompare(b.code));
+  }, [ergebnis]);
 
   return (
     <div className={styles.page}>
@@ -205,6 +258,43 @@ export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
         </p>
       </section>
 
+      {ergebnis && fehlendeOrte.length > 0 && (
+        <section className={styles.card}>
+          <div className={styles.cardHead}>
+            <h2 className={styles.cardTitle}>Fehlende Lagerorte</h2>
+            <button type="button" className={styles.secondary}
+              onClick={() => ladeHerunter('fehlende-lagerorte.csv',
+                ['Lagerplatz;betroffene Artikel;Beispiel Variante-ID',
+                  ...fehlendeOrte.map((o) => [o.code, o.anzahl, o.beispiel].join(';'))].join('\r\n'))}>
+              Als CSV
+            </button>
+          </div>
+          <p className={styles.checkHint}>
+            Diese Plätze stehen im Artikeltext, gibt es in Plenty aber nicht. Solange sie fehlen, bleiben die
+            betroffenen Artikel unangetastet — angelegt werden sie über <em>Neue Lagerorte anlegen</em>.
+          </p>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead><tr><th>Lagerplatz</th><th>betroffene Artikel</th><th>Beispiel-Variante</th></tr></thead>
+              <tbody>
+                {fehlendeOrte.slice(0, 100).map((o) => (
+                  <tr key={o.code}>
+                    <td className={styles.mono}>{o.code}</td>
+                    <td className={styles.mono}>{o.anzahl}</td>
+                    <td className={styles.cellHint}>{o.beispiel}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {fehlendeOrte.length > 100 && (
+              <p className={styles.more}>
+                100 von {fehlendeOrte.length.toLocaleString('de-DE')} fehlenden Plätzen — der CSV-Export enthält alle.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
       {ergebnis && (
         <section className={styles.card}>
           <div className={styles.cardHead}>
@@ -232,6 +322,15 @@ export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
           {ergebnis.diagnose.length > 0 && (
             <ul className={styles.diagnose}>{ergebnis.diagnose.map((d) => <li key={d}>{d}</li>)}</ul>
           )}
+          <div className={styles.actions} style={{ marginTop: '1rem' }}>
+            <button type="button" className={styles.secondary}
+              onClick={() => ladeHerunter('zuweisung-ergebnis.csv',
+                ['Variante-ID;Variantennummer;Ziel-Lagerplatz;gefundener Lagerort;Menge;Status;Hinweis',
+                  ...ergebnis.zeilen.map((z) => [z.variationId, wuensche.find((w) => w.variationId === z.variationId)?.name ?? '',
+                    z.ziel, z.zielName ?? '', z.menge ?? '', z.status, z.hinweis ?? ''].map(feld).join(';'))].join('\r\n'))}>
+              Alle Zeilen als CSV
+            </button>
+          </div>
           <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
