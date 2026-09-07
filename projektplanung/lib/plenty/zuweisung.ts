@@ -185,7 +185,16 @@ export async function weiseZu(wuensche: Wunsch[], opts: ZuweisungOptionen): Prom
     return { ...leer, error: `Lagerorte nicht lesbar: ${(err as Error).message}`, dauerMs: Date.now() - start };
   }
 
-  const itemIds = await ergaenzeItemIds(wuensche, diagnose);
+  // Artikel-IDs kosten je 50 Varianten einen API-Aufruf. Im Probelauf werden
+  // sie nicht gebraucht (es wird ja nichts geschrieben), und beim Buchen nur
+  // für die Zeilen, die tatsächlich drankommen — sonst läuft der Aufruf bei
+  // mehreren tausend Zeilen in den Serverless-Timeout.
+  let itemIds = new Map<number, number>();
+  if (!probelauf) {
+    const buchbar = wuensche.filter((w) => nachCode.has(w.ziel)).slice(0, maxBuchungen);
+    itemIds = await ergaenzeItemIds(buchbar, diagnose);
+  }
+
   let gebucht = 0, uebersprungen = 0, fehler = 0, geplant = 0;
 
   for (const w of wuensche) {
@@ -197,24 +206,38 @@ export async function weiseZu(wuensche: Wunsch[], opts: ZuweisungOptionen): Prom
       zeilen.push({ ...basis, menge: null, status: 'uebersprungen', hinweis: 'Lagerort existiert in Plenty nicht' });
       uebersprungen++; continue;
     }
-    if (!itemId) {
-      zeilen.push({ ...basis, menge: null, status: 'uebersprungen', hinweis: 'Artikel-ID nicht ermittelbar' });
-      uebersprungen++; continue;
-    }
 
     let menge = w.menge ?? null;
-    if (menge === null || menge <= 0) {
+    // Nur nachschlagen, wenn wirklich gebucht wird — ein Aufruf je Artikel.
+    if ((menge === null || menge <= 0) && !probelauf && gebucht < maxBuchungen) {
       menge = await bestandAmQuellort(opts.warehouseId, w.variationId, vonLagerortId);
     }
-    if (menge === null || menge <= 0) {
+    // Im Probelauf wird die Menge nicht nachgeschlagen (ein Aufruf je Artikel).
+    // Eine unbekannte Menge ist dort kein Grund zum Überspringen — sie wird
+    // beim Buchen ermittelt.
+    if ((menge === null || menge <= 0) && !probelauf) {
       zeilen.push({ ...basis, menge, status: 'uebersprungen', hinweis: 'Auf dem Quell-Lagerort liegt nichts' });
       uebersprungen++; continue;
     }
 
     geplant++;
     if (probelauf) {
-      zeilen.push({ ...basis, menge, status: 'geplant', hinweis: null });
+      zeilen.push({
+        ...basis,
+        menge,
+        status: 'geplant',
+        hinweis: menge === null ? 'Menge wird beim Buchen aus dem Bestand ermittelt' : null,
+      });
       continue;
+    }
+    // Ab hier wird wirklich gebucht — ohne Menge geht das nicht.
+    if (menge === null || menge <= 0) {
+      zeilen.push({ ...basis, menge, status: 'uebersprungen', hinweis: 'Menge nicht ermittelbar' });
+      uebersprungen++; continue;
+    }
+    if (!itemId) {
+      zeilen.push({ ...basis, menge, status: 'uebersprungen', hinweis: 'Artikel-ID nicht ermittelbar' });
+      uebersprungen++; continue;
     }
     if (gebucht >= maxBuchungen) {
       zeilen.push({ ...basis, menge, status: 'uebersprungen', hinweis: `Obergrenze von ${maxBuchungen} Buchungen erreicht` });
