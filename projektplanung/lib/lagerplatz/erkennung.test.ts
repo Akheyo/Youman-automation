@@ -103,6 +103,20 @@ describe('findeLagerplaetze — kurze Form (Variantennummer, Freitext)', () => {
     expect(findeLagerplaetze('H6R8KTLB3')[0].code).toBe('H6/R8KTL/EB F03-0');
   });
 
+  it('liest das Kleinteillager-Fach auch ohne Ebene', () => {
+    const [t] = findeLagerplaetze('NEW-15879-H1R5KTL15_EK');
+    expect(t.code).toBe('H1/R5KTL F15-0');
+    expect(t.segment.ebene).toBe('');
+    expect(t.sicherheit).toBe('unsicher');
+    expect(t.grund).toBe('Ebene nicht angegeben');
+    expect(t.klartext).toBe('Halle 1 · Kleinteillager 5 · Fach 15');
+  });
+
+  it('bevorzugt den vollständigen Platz vor dem ohne Ebene', () => {
+    const beste = besterTreffer(findeLagerplaetze('H1R5KTL15 und H1R5KTLA15'));
+    expect(beste?.segment.ebene).toBe('A');
+  });
+
   it('meldet unübliche Ebenen als unsicher', () => {
     const [t] = findeLagerplaetze('H1R6X12');
     expect(t?.sicherheit ?? 'kein Treffer').toBe('kein Treffer');
@@ -141,7 +155,7 @@ describe('gleicherOrt', () => {
 describe('klartextAus', () => {
   it('lässt die Kiste weg, wenn es keine gibt', () => {
     expect(klartextAus({ halle: 1, regal: '8KTL', ebene: 'CZ', fach: '5', kiste: null }))
-      .toBe('Halle 1 · Regal 8KTL · Ebene CZ · Fach 5');
+      .toBe('Halle 1 · Kleinteillager 8 · Ebene CZ · Fach 5');
   });
 });
 

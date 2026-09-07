@@ -26,7 +26,11 @@ export interface Segment {
   halle: number;
   /** Regal — kann Buchstaben enthalten, z. B. "8KTL" oder "KTL". */
   regal: string;
-  /** Ebene ohne das führende E, z. B. "A", "BZ". */
+  /**
+   * Ebene ohne das führende E, z. B. "A", "BZ".
+   * Leer, wenn der Text keine nennt — im Kleinteillager steht oft nur
+   * "H1R5KTL15" (Halle 1, Regal 5 KTL, Fach 15).
+   */
   ebene: string;
   /** Fach — meist eine Zahl, vereinzelt mit Buchstaben ("M1"). */
   fach: string;
@@ -132,6 +136,13 @@ function normZusatz(roh: string): string {
   return roh;
 }
 
+/**
+ * Kleinteillager ohne Ebenenangabe: "H1R5KTL15" = Halle 1, Regal 5 KTL,
+ * Fach 15. Der Platz ist damit nicht vollständig bestimmt (die Ebene fehlt),
+ * als Suchhinweis aber brauchbar.
+ */
+const KTL_OHNE_EBENE = /H\s*(\d{1,2})\s*R?\s*(\d{1,2}KTL|KTL)\s*(\d{1,3})(?![0-9A-J])/g;
+
 /** Erlaubte Ebenen-Buchstaben laut Bestand (A–J, optional mit Z-Zusatz). */
 const EBENEN = /^[A-J]Z?$/;
 
@@ -140,12 +151,16 @@ export function codeAus(s: Segment): string {
   // Reine Zahlen zweistellig ("F08"), alles andere unverändert ("FM1").
   const fach = /^\d+$/.test(s.fach) ? s.fach.padStart(2, '0') : s.fach;
   const kiste = s.kiste ?? '0';
-  return `H${s.halle}/R${s.regal}/E${s.ebene} F${fach}-${kiste}`;
+  // Ohne bekannte Ebene entfällt der E-Teil — der Platz bleibt unvollständig.
+  const ebene = s.ebene ? `/E${s.ebene}` : '';
+  return `H${s.halle}/R${s.regal}${ebene} F${fach}-${kiste}`;
 }
 
 /** Lesbare Form für die Oberfläche. */
 export function klartextAus(s: Segment): string {
-  const teile = [`Halle ${s.halle}`, `Regal ${s.regal}`, `Ebene ${s.ebene}`, `Fach ${/^\d+$/.test(s.fach) ? Number(s.fach) : s.fach}`];
+  const teile = [`Halle ${s.halle}`, s.regal.includes('KTL') ? `Kleinteillager ${s.regal.replace('KTL', '').trim() || ''}`.trim() : `Regal ${s.regal}`];
+  if (s.ebene) teile.push(`Ebene ${s.ebene}`);
+  teile.push(`Fach ${/^\d+$/.test(s.fach) ? Number(s.fach) : s.fach}`);
   if (s.kiste && s.kiste !== '0') {
     if (s.kiste.startsWith('K')) teile.push(`Kiste ${Number(s.kiste.slice(1))}`);
     else if (s.kiste.startsWith('P')) teile.push(`Palettenplatz ${s.kiste.slice(1)}`);
@@ -168,6 +183,9 @@ export function gleicherOrt(a: string, b: string): boolean {
 // ---------------------------------------------------------------------------
 
 function bewerte(s: Segment, form: 'lang' | 'kurz'): { sicherheit: Sicherheit; grund: string | null } {
+  if (!s.ebene) {
+    return { sicherheit: 'unsicher', grund: 'Ebene nicht angegeben' };
+  }
   if (!EBENEN.test(s.ebene)) {
     return { sicherheit: 'unsicher', grund: `unübliche Ebene „E${s.ebene}"` };
   }
@@ -223,6 +241,16 @@ export function findeLagerplaetze(text: string): LagerplatzTreffer[] {
       const t = alsTreffer({ ...basis, kiste }, m[0], 'kurz');
       if (!gefunden.has(t.code)) gefunden.set(t.code, t);
     }
+  }
+
+  // 3) Kleinteillager ohne Ebene, im verbleibenden Text
+  for (const m of rest.matchAll(KTL_OHNE_EBENE)) {
+    const t = alsTreffer(
+      { halle: Number(m[1]), regal: m[2], ebene: '', fach: m[3], kiste: null },
+      m[0],
+      'kurz',
+    );
+    if (!gefunden.has(t.code)) gefunden.set(t.code, t);
   }
 
   return [...gefunden.values()];
