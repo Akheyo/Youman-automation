@@ -37,7 +37,9 @@ export async function POST(request: Request) {
   const wuensche: Wunsch[] = roh
     .map((w) => w as Record<string, unknown>)
     .filter((w) => Number(w?.variationId) > 0 && typeof w?.ziel === 'string' && w.ziel.trim())
-    .slice(0, 2000)
+    // Der Probelauf rechnet nur im Speicher, das trägt die ganze Liste.
+    // Gebucht wird ohnehin nur bis zur Obergrenze (maxBuchungen).
+    .slice(0, 12000)
     .map((w) => ({
       variationId: Number(w.variationId),
       itemId: Number(w.itemId) > 0 ? Number(w.itemId) : null,
