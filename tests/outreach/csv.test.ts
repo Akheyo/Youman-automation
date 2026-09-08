@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseContactsCsv, splitName } from '@/lib/outreach/csv';
+import { parseContactsCsv, splitName, ersterName } from '@/lib/outreach/csv';
 
 describe('splitName', () => {
   it('trennt Vor- und Nachname', () => {
@@ -13,6 +13,37 @@ describe('splitName', () => {
   it('kommt mit einem einzelnen Wort und mit Leerstring klar', () => {
     expect(splitName('Anna')).toEqual({ first_name: 'Anna' });
     expect(splitName('   ')).toEqual({});
+  });
+});
+
+describe('ersterName', () => {
+  it('nimmt bei mehreren Personen die erste', () => {
+    expect(ersterName('Maximilian Kleinert; Alexander Peters; Kai Steffan')).toBe('Maximilian Kleinert');
+    expect(ersterName('Anna Beispiel / Bernd Muster')).toBe('Anna Beispiel');
+    expect(ersterName('Anna Beispiel und Bernd Muster')).toBe('Anna Beispiel');
+  });
+
+  it('laesst einen einzelnen Namen unberuehrt', () => {
+    expect(ersterName('Anna Beispiel')).toBe('Anna Beispiel');
+    expect(ersterName('')).toBe('');
+  });
+});
+
+describe('splitName mit Lead-Listen-Eigenheiten', () => {
+  it('nimmt bei mehreren Entscheidern nur den ersten', () => {
+    expect(splitName('Maximilian Kleinert; Alexander Peters')).toEqual({
+      first_name: 'Maximilian',
+      last_name: 'Kleinert',
+    });
+  });
+
+  it('laesst Titel aus der Anrede heraus', () => {
+    expect(splitName('Dr. Anna Beispiel')).toEqual({ first_name: 'Anna', last_name: 'Beispiel' });
+    expect(splitName('Prof. Dr. Bernd Muster')).toEqual({ first_name: 'Bernd', last_name: 'Muster' });
+  });
+
+  it('gibt nicht auf, wenn nur ein Titel dasteht', () => {
+    expect(splitName('Dr.')).toEqual({ first_name: 'Dr.' });
   });
 });
 
@@ -52,6 +83,11 @@ describe('parseContactsCsv', () => {
   it('entfernt Dubletten und normalisiert auf Kleinschreibung', () => {
     const rows = parseContactsCsv('email\nAnna@Firma.de\nanna@firma.de');
     expect(rows.map((r) => r.email)).toEqual(['anna@firma.de']);
+  });
+
+  it('erkennt die Spalte entscheider als Ansprechpartner', () => {
+    const rows = parseContactsCsv('email;firma;entscheider;rolle\na@b.de;B GmbH;Maximilian Kleinert; Alexander Peters;Geschäftsführer');
+    expect(rows[0]).toMatchObject({ first_name: 'Maximilian', last_name: 'Kleinert', company: 'B GmbH' });
   });
 
   it('gibt bei leerer Eingabe eine leere Liste zurueck', () => {

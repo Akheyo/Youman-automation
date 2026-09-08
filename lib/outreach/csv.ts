@@ -60,6 +60,9 @@ const COLS: Record<string, Field> = {
   kontakt: 'full_name',
   ansprechpartner: 'full_name',
   contact: 'full_name',
+  entscheider: 'full_name',
+  entscheiderin: 'full_name',
+  geschaeftsfuehrer: 'full_name',
   firma: 'company',
   firmenname: 'company',
   company: 'company',
@@ -92,12 +95,32 @@ export function ersteUrl(wert: string): string {
   return treffer ?? teile[0] ?? '';
 }
 
+/**
+ * Erste Person aus einer Namensspalte.
+ *
+ * Lead-Listen fuehren unter "entscheider" oft die ganze Geschaeftsfuehrung in
+ * einer Zelle ("Anna Beispiel; Bernd Muster"). Angeschrieben wird eine Person,
+ * also zaehlt die erste — "Hallo Anna Beispiel; Bernd Muster," waere das
+ * sichere Ende des Gespraechs.
+ */
+export function ersterName(wert: string): string {
+  const teile = (wert ?? '')
+    .split(/[;\/|]|\su\.\s|\sund\s|,(?=\s*[A-ZÄÖÜ][a-zäöüß]+\s+[A-ZÄÖÜ])/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  return teile[0] ?? '';
+}
+
 /** Splittet "Anna Beispiel" in Vor- und Nachname. */
 export function splitName(full: string): { first_name?: string; last_name?: string } {
-  const parts = full.trim().split(/\s+/).filter(Boolean);
+  const parts = ersterName(full).split(/\s+/).filter(Boolean);
   if (parts.length === 0) return {};
   if (parts.length === 1) return { first_name: parts[0] };
-  return { first_name: parts[0], last_name: parts.slice(1).join(' ') };
+  // Titel stehen vorne und gehoeren nicht in die Anrede.
+  const ohneTitel = parts.filter((p) => !/^(dr\.?|prof\.?|dipl\.?-?\w*\.?|ing\.?|mba|m\.a\.|b\.a\.)$/i.test(p));
+  const rest = ohneTitel.length >= 1 ? ohneTitel : parts;
+  if (rest.length === 1) return { first_name: rest[0] };
+  return { first_name: rest[0], last_name: rest.slice(1).join(' ') };
 }
 
 export function parseContactsCsv(text: string): ParsedContact[] {
