@@ -65,8 +65,9 @@ export function collectChecks(env: Env, schema: SchemaProbe | null): CheckGroup[
   const supabase = allSet(env, ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_ANON_KEY']);
   const serviceRole = isSet(env, 'SUPABASE_SERVICE_ROLE_KEY');
   const appUrl = isSet(env, 'APP_URL');
-  const sender = isSet(env, 'OUTREACH_WEBHOOK_URL') || isSet(env, 'FELIX_PITCH_WEBHOOK_URL');
-  const eigenerVersand = isSet(env, 'OUTREACH_WEBHOOK_URL');
+  const smtp = isSet(env, 'SMTP_HOST') && isSet(env, 'SMTP_USER') && isSet(env, 'SMTP_PASS');
+  const webhook = isSet(env, 'OUTREACH_WEBHOOK_URL') || isSet(env, 'FELIX_PITCH_WEBHOOK_URL');
+  const sender = smtp || webhook;
 
   const pflicht: Check[] = [
     {
@@ -122,14 +123,25 @@ export function collectChecks(env: Env, schema: SchemaProbe | null): CheckGroup[
       id: 'sender',
       label: 'Versandweg',
       ok: sender,
-      detail: sender
-        ? eigenerVersand
-          ? 'Eigener Outreach-Webhook ist gesetzt.'
-          : 'Läuft über den Felix-Pitch-Webhook. Funktioniert, ein eigener Endpunkt ist aber sauberer.'
-        : 'Es lässt sich texten, importieren und Vorschau ansehen — aber nichts verschicken.',
-      hint: 'OUTREACH_WEBHOOK_URL auf einen Webhook setzen, der die Mail per SMTP zustellt. Details in SETUP-PAUL.md.',
+      detail: smtp
+        ? `Paul versendet per SMTP über ${env.SMTP_HOST}.`
+        : webhook
+          ? 'Läuft über einen Webhook. Funktioniert; SMTP direkt ist einfacher zu betreiben.'
+          : 'Es lässt sich texten, importieren und Vorschau ansehen — aber nichts verschicken.',
+      hint: 'Zugangsdaten deines Postfachs als SMTP_HOST, SMTP_USER und SMTP_PASS hinterlegen. Details in SETUP-PAUL.md.',
       level: 'outreach',
-      vars: ['OUTREACH_WEBHOOK_URL'],
+      vars: ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASS'],
+    },
+    {
+      id: 'absender',
+      label: 'Absenderadresse',
+      ok: isSet(env, 'SMTP_FROM') || !smtp,
+      detail: isSet(env, 'SMTP_FROM')
+        ? `Mails gehen ab als ${env.SMTP_FROM}.`
+        : 'Ohne Vorgabe nimmt Paul die Adresse aus der jeweiligen Kampagne, ersatzweise den SMTP-Benutzer.',
+      hint: 'SMTP_FROM auf die Adresse setzen, die im Postfach der Empfänger stehen soll — z. B. info@deine-domain.de.',
+      level: 'outreach',
+      vars: ['SMTP_FROM'],
     },
     {
       id: 'cron',
@@ -223,5 +235,6 @@ export function collectChecks(env: Env, schema: SchemaProbe | null): CheckGroup[
 /** Kurzfassung fürs Seitenende: kann jetzt versendet werden? */
 export function versandBereit(groups: CheckGroup[]): boolean {
   const relevant = groups.filter((g) => g.level !== 'optional');
-  return relevant.every((g) => g.checks.every((c) => c.ok || c.id === 'cron'));
+  const weich = ['cron', 'absender'];
+  return relevant.every((g) => g.checks.every((c) => c.ok || weich.includes(c.id)));
 }

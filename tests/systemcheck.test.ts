@@ -12,6 +12,14 @@ const PFLICHT_ERFUELLT: Env = {
 
 const VOLL: Env = { ...PFLICHT_ERFUELLT, OUTREACH_WEBHOOK_URL: 'https://hook.de/mail', CRON_SECRET: 'geheim' };
 
+const SMTP_ERFUELLT: Env = {
+  ...PFLICHT_ERFUELLT,
+  SMTP_HOST: 'smtp.firma.de',
+  SMTP_USER: 'info@firma.de',
+  SMTP_PASS: 'app-passwort',
+  CRON_SECRET: 'geheim',
+};
+
 const SCHEMA_OK = { missing: [], checked: OUTREACH_TABLES.length };
 
 function check(env: Env, schema: Parameters<typeof collectChecks>[1], id: string) {
@@ -49,14 +57,31 @@ describe('collectChecks', () => {
     expect(pflicht.checks.every((c) => c.ok)).toBe(true);
   });
 
-  it('akzeptiert den Felix-Webhook als Versandweg, weist aber darauf hin', () => {
-    const mitFelix = check({ ...PFLICHT_ERFUELLT, FELIX_PITCH_WEBHOOK_URL: 'https://hook.de/pitch' }, SCHEMA_OK, 'sender');
-    expect(mitFelix.ok).toBe(true);
-    expect(mitFelix.detail).toContain('Felix');
+  it('akzeptiert SMTP und Webhook als Versandweg', () => {
+    const perSmtp = check({ ...SMTP_ERFUELLT }, SCHEMA_OK, 'sender');
+    expect(perSmtp.ok).toBe(true);
+    expect(perSmtp.detail).toContain('smtp.firma.de');
 
-    const mitEigenem = check(VOLL, SCHEMA_OK, 'sender');
-    expect(mitEigenem.ok).toBe(true);
-    expect(mitEigenem.detail).toContain('Eigener');
+    const perWebhook = check(VOLL, SCHEMA_OK, 'sender');
+    expect(perWebhook.ok).toBe(true);
+    expect(perWebhook.detail).toContain('Webhook');
+
+    const perFelix = check({ ...PFLICHT_ERFUELLT, FELIX_PITCH_WEBHOOK_URL: 'https://hook.de/pitch' }, SCHEMA_OK, 'sender');
+    expect(perFelix.ok).toBe(true);
+  });
+
+  it('nennt die Absenderadresse, sobald sie vorgegeben ist', () => {
+    const ohne = check(SMTP_ERFUELLT, SCHEMA_OK, 'absender');
+    expect(ohne.ok).toBe(false);
+
+    const mit = check({ ...SMTP_ERFUELLT, SMTP_FROM: 'info@firma.de' }, SCHEMA_OK, 'absender');
+    expect(mit.ok).toBe(true);
+    expect(mit.detail).toContain('info@firma.de');
+  });
+
+  it('verlangt eine Absenderadresse nur bei SMTP-Versand', () => {
+    // Beim Webhook bestimmt der nachgelagerte Dienst den Absender.
+    expect(check(VOLL, SCHEMA_OK, 'absender').ok).toBe(true);
   });
 
   it('unterscheidet fehlendes Schema von nicht pruefbarem Schema', () => {
@@ -91,6 +116,15 @@ describe('versandBereit', () => {
 
   it('blockiert, solange das Schema fehlt', () => {
     expect(versandBereit(collectChecks(VOLL, { missing: ['outreach_contacts'], checked: 5 }))).toBe(false);
+  });
+
+  it('ist auch mit SMTP statt Webhook erfuellt', () => {
+    expect(versandBereit(collectChecks(SMTP_ERFUELLT, SCHEMA_OK))).toBe(true);
+  });
+
+  it('haelt eine fehlende Absenderadresse nicht fuer einen Blocker', () => {
+    // Ohne SMTP_FROM greift die Adresse aus der Kampagne.
+    expect(versandBereit(collectChecks(SMTP_ERFUELLT, SCHEMA_OK))).toBe(true);
   });
 
   it('laesst sich von fehlenden Zusatzdiensten nicht aufhalten', () => {

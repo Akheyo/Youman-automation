@@ -28,9 +28,55 @@ Angelegt werden:
 
 ## 2. Versandweg
 
-Der SMTP-Versand liegt außerhalb der App. In `OUTREACH_WEBHOOK_URL` einen
-Webhook eintragen (n8n, Make oder ein eigener Dienst), der diesen Body
-entgegennimmt und die Mail zustellt:
+Zwei Wege, Paul nimmt den ersten, der eingerichtet ist.
+
+### Weg A — SMTP über dein eigenes Postfach (empfohlen)
+
+Paul verschickt direkt über ein echtes Postfach. Kein Zwischensystem, keine
+zusätzliche Software. Das ist auch der Weg, den lemlist und vergleichbare
+Werkzeuge gehen.
+
+**Warum kein Versanddienst?** Postmark, Resend und SendGrid verbieten
+Kaltakquise ausdrücklich in ihren Nutzungsbedingungen. Ein dort gesperrtes
+Konto trifft mitten in der laufenden Kampagne. Ein Postfach bei Google
+Workspace oder Microsoft 365 hat diese Einschränkung nicht.
+
+```
+SMTP_HOST = smtp.gmail.com
+SMTP_PORT = 465
+SMTP_USER = info@deine-domain.de
+SMTP_PASS = <App-Passwort>
+SMTP_FROM = info@deine-domain.de
+```
+
+| Anbieter | Host | Port |
+| --- | --- | --- |
+| Google Workspace | `smtp.gmail.com` | 465 (TLS) |
+| Microsoft 365 | `smtp.office365.com` | 587 (STARTTLS) |
+| IONOS | `smtp.ionos.de` | 465 (TLS) |
+| Strato | `smtp.strato.de` | 465 (TLS) |
+
+> **App-Passwort, nicht Kontopasswort.** Google und Microsoft lehnen das
+> normale Passwort ab. Bei Google: Konto → Sicherheit → Zwei-Faktor
+> einschalten → App-Passwörter → eines erzeugen. Das ist ein 16-stelliger
+> Code, den du als `SMTP_PASS` einträgst.
+
+`SMTP_FROM` muss zum angemeldeten Postfach passen oder von ihm versendet
+werden dürfen — sonst schreibt der Mailserver die Adresse still um oder weist
+die Mail ab.
+
+**Prüfen:** Auf `/systemcheck` gibt es beim Punkt „Versandweg" den Knopf
+**SMTP-Verbindung testen**. Er meldet sich am Postfach an, ohne eine Mail zu
+verschicken, und übersetzt die typischen Fehler in Klartext.
+
+Tageslimits beachten: Google Workspace erlaubt rund 500 Empfänger pro Tag,
+Microsoft 365 etwa 10.000 — in der Anwärmphase ist beides mehr als genug.
+
+### Weg B — Webhook (n8n, Make, eigener Dienst)
+
+Alternative für alle, die ihren Versand ohnehin an einer Stelle bündeln. In
+`OUTREACH_WEBHOOK_URL` einen Webhook eintragen, der diesen Body entgegennimmt
+und die Mail zustellt:
 
 ```json
 {

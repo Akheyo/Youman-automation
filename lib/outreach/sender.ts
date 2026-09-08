@@ -1,16 +1,19 @@
 /**
- * Transport für Outreach-Mails.
+ * Transport für Outreach-Mails. Zwei Wege, in dieser Reihenfolge:
  *
- * Der eigentliche SMTP-Versand liegt außerhalb der App: ein Webhook (n8n,
- * Make, eigener Dienst) bekommt `{ to, subject, html, text, headers, ... }`
- * und stellt zu. Das ist derselbe Weg, den Paul schon für Einzel-Pitches aus
- * dem Chat nutzt — Outreach kann einen eigenen Endpunkt bekommen
- * (OUTREACH_WEBHOOK_URL) und fällt sonst auf FELIX_PITCH_WEBHOOK_URL zurück.
+ *   1. SMTP direkt aus der App (SMTP_HOST/USER/PASS) — der Normalfall. Paul
+ *      verschickt über dein eigenes Postfach, so wie es etablierte
+ *      Outreach-Werkzeuge auch tun.
+ *   2. Ein Webhook (OUTREACH_WEBHOOK_URL, ersatzweise FELIX_PITCH_WEBHOOK_URL),
+ *      der die fertige Mail entgegennimmt und zustellt — für alle, die den
+ *      Versand über n8n, Make oder einen eigenen Dienst bündeln wollen.
  *
  * Jede Mail bekommt hier zwei Pflichtbestandteile angehängt: den Abmeldelink
  * im Text und den List-Unsubscribe-Header. Ohne beides ist Kaltakquise per
  * Mail weder rechtlich sauber noch zustellbar.
  */
+
+import { smtpConfigured, smtpSettings, smtpFrom, sendViaSmtp, erklaereSmtpFehler } from './smtp';
 
 export interface OutreachMail {
   to: string;
@@ -37,8 +40,15 @@ export function webhookUrl(): string {
   return (process.env.OUTREACH_WEBHOOK_URL || process.env.FELIX_PITCH_WEBHOOK_URL || '').trim();
 }
 
+/** Welcher Weg greift gerade? */
+export function transportKind(): 'smtp' | 'webhook' | 'keiner' {
+  if (smtpConfigured()) return 'smtp';
+  if (webhookUrl()) return 'webhook';
+  return 'keiner';
+}
+
 export function outreachConfigured(): boolean {
-  return webhookUrl().length > 0;
+  return transportKind() !== 'keiner';
 }
 
 export function escapeHtml(s: string): string {
@@ -77,9 +87,15 @@ export function buildHtml(mail: OutreachMail): string {
   return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#1b1733"><div style="white-space:pre-wrap">${body}</div>${footer}${pixel}</div>`;
 }
 
-/** Baut die Absenderzeile ("Max Muster <max@firma.de>"). */
+/**
+ * Baut die Absenderzeile ("Max Muster <max@firma.de>").
+ *
+ * Hat die Kampagne keine eigene Adresse, greift SMTP_FROM — so muss die
+ * Absenderadresse nur einmal zentral stimmen und nicht in jeder Kampagne
+ * nachgepflegt werden.
+ */
 export function fromHeader(mail: OutreachMail): string | undefined {
-  const email = (mail.fromEmail ?? '').trim();
+  const email = (mail.fromEmail ?? '').trim() || smtpFrom();
   const name = (mail.fromName ?? '').trim();
   if (!email) return name || undefined;
   return name ? `${name} <${email}>` : email;
@@ -91,8 +107,10 @@ export function fromHeader(mail: OutreachMail): string | undefined {
  * der Aufrufer (Queue) protokolliert sie am Kontakt und macht weiter.
  */
 export async function sendOutreachMail(mail: OutreachMail, timeoutMs = 20_000): Promise<SendResult> {
-  const url = webhookUrl();
-  if (!url) return { ok: false, error: 'Versand nicht konfiguriert (OUTREACH_WEBHOOK_URL fehlt).' };
+  const kind = transportKind();
+  if (kind === 'keiner') {
+    return { ok: false, error: 'Versand nicht konfiguriert (SMTP_HOST/SMTP_USER/SMTP_PASS oder OUTREACH_WEBHOOK_URL fehlen).' };
+  }
 
   const to = (mail.to ?? '').trim();
   if (!/^[^@\s,;]+@[^@\s,;]+\.[a-zA-Z]{2,}$/.test(to)) return { ok: false, error: `Ungültige Empfängeradresse: "${to}".` };
@@ -112,6 +130,28 @@ export async function sendOutreachMail(mail: OutreachMail, timeoutMs = 20_000): 
     headers['References'] = mail.inReplyTo;
   }
 
+  if (kind === 'smtp') {
+    const settings = smtpSettings()!;
+    const res = await sendViaSmtp(
+      {
+        to,
+        subject: mail.subject.trim(),
+        text: buildText(mail),
+        html: buildHtml(mail),
+        from: fromHeader(mail),
+        replyTo: mail.replyTo,
+        headers,
+        inReplyTo: mail.inReplyTo,
+      },
+      settings,
+      timeoutMs,
+    );
+    // Rohe SMTP-Meldungen sind unlesbar — in Klartext übersetzen, damit im
+    // Cockpit steht, was zu tun ist.
+    return res.ok ? res : { ok: false, error: erklaereSmtpFehler(res.error) };
+  }
+
+  const url = webhookUrl();
   const payload = {
     to,
     subject: mail.subject.trim(),

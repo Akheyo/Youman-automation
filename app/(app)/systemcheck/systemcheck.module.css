@@ -171,3 +171,31 @@
     padding: 22px;
   }
 }
+
+/* Verbindungstest fuer SMTP */
+.smtpTest {
+  margin-top: 10px;
+}
+.smtpTest .secondary {
+  border: 1px solid #ddd2f5;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 8px 15px;
+  font-size: 13px;
+}
+.smtpTest .secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.testOk,
+.testBad {
+  margin: 9px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.testOk {
+  color: #15803d;
+}
+.testBad {
+  color: #b91c1c;
+}

@@ -5,6 +5,7 @@ import { createClient, supabaseConfigured } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isOwnerEmail } from '@/lib/plans';
 import { collectChecks, versandBereit, OUTREACH_TABLES, type SchemaProbe } from '@/lib/systemcheck';
+import SmtpTest from './SmtpTest';
 import styles from './systemcheck.module.css';
 
 export const metadata: Metadata = { title: 'Systemcheck · Youman Automation', robots: { index: false, follow: false } };
@@ -83,6 +84,7 @@ export default async function SystemcheckPage() {
                         ))}
                       </span>
                     )}
+                    {check.id === 'sender' && check.ok && <SmtpTest />}
                   </div>
                 </li>
               ))}
