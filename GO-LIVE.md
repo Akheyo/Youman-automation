@@ -60,10 +60,9 @@ Der `service_role`-Schlüssel umgeht **alle** Zugriffsregeln der Datenbank. Er
 gehört nur auf den Server. Wenn er je öffentlich wird: in Supabase sofort neu
 erzeugen.
 
-Unter **Authentication → URL Configuration** die **Site URL** auf deine spätere
-App-Adresse setzen und unter **Redirect URLs** zusätzlich
-`https://<deine-app>/auth/callback` eintragen. Ohne das laufen die Links aus den
-Bestätigungsmails ins Leere.
+> Die Anmelde-Adressen in Supabase (**Authentication → URL Configuration**)
+> kommen erst in Schritt 5 dran — dafür muss die App erst deployt sein und eine
+> Adresse haben.
 
 ## 4. Bei Vercel deployen
 
@@ -87,11 +86,19 @@ Bestätigungsmails ins Leere.
 > `APP_URL` ohne Schrägstrich am Ende. Sie steckt in jedem Abmeldelink — ist sie
 > falsch, gehen Abmeldungen ins Leere, und dann darf keine Kaltakquise-Mail raus.
 
-## 5. Erster Login
+## 5. Anmelde-Adressen nachtragen, dann erster Login
 
-`https://<deine-app>.vercel.app/signup` aufrufen, mit der Adresse registrieren,
-die du bei `OWNER_EMAILS` eingetragen hast. Diese Adresse hat automatisch
-unbegrenzte Kontingente.
+Jetzt steht die Adresse der App fest. Zurück in Supabase,
+**Authentication → URL Configuration**:
+
+- **Site URL**: `https://<deine-app>.vercel.app`
+- **Redirect URLs**: `https://<deine-app>.vercel.app/auth/callback` hinzufügen
+
+Ohne diesen Schritt kommt zwar die Bestätigungsmail an, aber der Link darin
+führt ins Leere — der klassische „Login geht nicht"-Fall.
+
+Danach `https://<deine-app>.vercel.app/signup` aufrufen und registrieren.
+Die Adresse aus `OWNER_EMAILS` hat automatisch unbegrenzte Kontingente.
 
 Dann **`/systemcheck`** öffnen. Die drei Punkte unter „Ohne das läuft nichts"
 müssen grün sein. Sind sie es nicht, steht dort, welche Variable fehlt.
