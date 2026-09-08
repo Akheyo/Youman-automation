@@ -99,7 +99,7 @@ describe('scanneLagerplaetze — Artikel mit Bestand', () => {
     expect(res.geprueft).toBe(2); // Variante 2 hat keinen Bestand
     expect(res.ohneBestand).toBe(1);
     expect(res.befunde.map((b) => b.variationId)).toEqual([1, 3]);
-    expect(res.befunde[0].code).toBe('H1R1A1');
+    expect(res.befunde[0].code).toBe('H1/R1/EA F01-0');
     expect(res.befunde[0].bestand).toBe(4);
     expect(res.befunde[0].lager).toBe('Haupthalle');
     // Reservierter Bestand zählt weiterhin als „liegt im Lager".
@@ -156,14 +156,14 @@ describe('scanneLagerplaetze — Artikel mit Bestand', () => {
           id,
           itemId: 900,
           number: '100234',
-          item: { texts: [{ name1: 'Drehmaschine', description: '<p>Lagerplatz: Halle 2 Regal 4 Fach 1</p>' }] },
+          item: { texts: [{ name1: 'Drehmaschine', description: '<p>Lagerplatz: H2/R4/EB F01-0</p>' }] },
         }),
       }),
     );
 
     const { scanneLagerplaetze } = await import('./lagerplatz-scan');
     const res = await scanneLagerplaetze({ proSeite: 1 });
-    expect(res.befunde[0].code).toBe('H2R4F1');
+    expect(res.befunde[0].code).toBe('H2/R4/EB F01-0');
     expect(res.befunde[0].quelle).toBe('Beschreibung');
     expect(res.befunde[0].name).toBe('Drehmaschine');
   });
@@ -192,13 +192,13 @@ describe('scanneLagerplaetze — Artikel mit Bestand', () => {
       varianten: (id) => ({ id, itemId: 900, number: '100234' }),
     });
     vi.stubGlobal('fetch', async (url: string) => {
-      if (url.includes('/descriptions')) return ANTWORT([{ lang: 'de', description: 'Lagerplatz H3R2F5' }]);
+      if (url.includes('/descriptions')) return ANTWORT([{ lang: 'de', description: 'Lagerplatz H3R2B5' }]);
       return basis(url);
     });
 
     const { scanneLagerplaetze } = await import('./lagerplatz-scan');
     const res = await scanneLagerplaetze({ proSeite: 1, texteNachladen: true });
-    expect(res.befunde[0].code).toBe('H3R2F5');
+    expect(res.befunde[0].code).toBe('H3/R2/EB F05-0');
     expect(res.diagnose.some((d) => d.includes('nachgeladen'))).toBe(true);
   });
 
@@ -227,7 +227,7 @@ describe('scanneLagerplaetze — Artikel mit Bestand', () => {
     const { scanneLagerplaetze } = await import('./lagerplatz-scan');
     const res = await scanneLagerplaetze({ proSeite: 2 });
     expect(res.ok).toBe(true);
-    expect(res.befunde.map((b) => b.code)).toEqual(['H1R1A1', 'H1R1A2']);
+    expect(res.befunde.map((b) => b.code)).toEqual(['H1/R1/EA F01-0', 'H1/R1/EA F02-0']);
     expect(res.diagnose.some((d) => d.includes('einzeln geladen'))).toBe(true);
   });
 
@@ -285,7 +285,7 @@ describe('scanneLagerplaetze — gesamter Artikelstamm (quelle: alle)', () => {
     expect(res.fertig).toBe(true);
     expect(res.geprueft).toBe(4);
     expect(res.ohneBestand).toBe(0);
-    expect(res.befunde[0].code).toBe('H1R1A2');
+    expect(res.befunde[0].code).toBe('H1/R1/EA F02-0');
     expect(res.befunde[0].bestand).toBeNull();
   });
 
