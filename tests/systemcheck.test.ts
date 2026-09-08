@@ -20,7 +20,7 @@ const SMTP_ERFUELLT: Env = {
   CRON_SECRET: 'geheim',
 };
 
-const SCHEMA_OK = { missing: [], checked: OUTREACH_TABLES.length };
+const SCHEMA_OK = { missing: [], veraltet: [], checked: OUTREACH_TABLES.length };
 
 function check(env: Env, schema: Parameters<typeof collectChecks>[1], id: string) {
   return collectChecks(env, schema)
@@ -84,9 +84,23 @@ describe('collectChecks', () => {
     expect(check(VOLL, SCHEMA_OK, 'absender').ok).toBe(true);
   });
 
+  it('meldet ein veraltetes Schema, wenn nur einzelne Spalten fehlen', () => {
+    // Genau der Fall, der sonst erst beim Import als "schema cache"-Meldung
+    // auffaellt.
+    const c = check(VOLL, { missing: [], veraltet: ['outreach_contacts.mx_status'], checked: 5 }, 'schema');
+    expect(c.ok).toBe(false);
+    expect(c.detail).toContain('veraltet');
+    expect(c.detail).toContain('mx_status');
+  });
+
+  it('blockiert den Versand, solange Spalten fehlen', () => {
+    const groups = collectChecks(VOLL, { missing: [], veraltet: ['outreach_events.mailbox'], checked: 5 });
+    expect(versandBereit(groups)).toBe(false);
+  });
+
   it('unterscheidet fehlendes Schema von nicht pruefbarem Schema', () => {
     expect(check(VOLL, null, 'schema').detail).toContain('Konnte nicht geprüft werden');
-    expect(check(VOLL, { missing: ['outreach_steps'], checked: 5 }, 'schema').detail).toContain('outreach_steps');
+    expect(check(VOLL, { missing: ['outreach_steps'], veraltet: [], checked: 5 }, 'schema').detail).toContain('outreach_steps');
     expect(check(VOLL, SCHEMA_OK, 'schema').ok).toBe(true);
   });
 
@@ -115,7 +129,7 @@ describe('versandBereit', () => {
   });
 
   it('blockiert, solange das Schema fehlt', () => {
-    expect(versandBereit(collectChecks(VOLL, { missing: ['outreach_contacts'], checked: 5 }))).toBe(false);
+    expect(versandBereit(collectChecks(VOLL, { missing: ['outreach_contacts'], veraltet: [], checked: 5 }))).toBe(false);
   });
 
   it('ist auch mit SMTP statt Webhook erfuellt', () => {

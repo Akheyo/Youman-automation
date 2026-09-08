@@ -44,13 +44,33 @@ function allSet(env: Env, names: string[]): boolean {
 }
 
 /**
- * Ergebnis der Schema-Prüfung: welche Tabellen ließen sich abfragen.
+ * Ergebnis der Schema-Prüfung.
  * `null` heißt "konnte nicht geprüft werden" (keine Datenbankverbindung).
+ *
+ * `veraltet` sind Spalten, die der Code erwartet, die aber in der Datenbank
+ * fehlen — typisch, wenn schema.sql nach einem Update nicht erneut eingespielt
+ * wurde. Genau das führt sonst mitten im Betrieb zu Meldungen wie
+ * "Could not find the 'x' column in the schema cache".
  */
 export interface SchemaProbe {
   missing: string[];
+  veraltet: string[];
   checked: number;
 }
+
+/**
+ * Spalten, die nach dem ersten Einspielen dazugekommen sind. Fehlt eine,
+ * ist das Schema veraltet und muss neu eingespielt werden.
+ */
+export const OUTREACH_COLUMNS: { table: string; column: string }[] = [
+  { table: 'outreach_contacts', column: 'mx_status' },
+  { table: 'outreach_contacts', column: 'opens' },
+  { table: 'outreach_contacts', column: 'thread_subject' },
+  { table: 'outreach_events', column: 'mailbox' },
+  { table: 'outreach_events', column: 'track_token' },
+  { table: 'outreach_campaigns', column: 'paused_reason' },
+  { table: 'outreach_campaigns', column: 'track_opens' },
+];
 
 /** Tabellen, ohne die Paul nicht arbeiten kann. */
 export const OUTREACH_TABLES = [
@@ -109,14 +129,16 @@ export function collectChecks(env: Env, schema: SchemaProbe | null): CheckGroup[
     {
       id: 'schema',
       label: 'Datenbankschema eingespielt',
-      ok: schema !== null && schema.missing.length === 0,
+      ok: schema !== null && schema.missing.length === 0 && schema.veraltet.length === 0,
       detail:
         schema === null
           ? 'Konnte nicht geprüft werden — dafür müssen Datenbank und Service-Role-Schlüssel stehen.'
-          : schema.missing.length === 0
-            ? `Alle ${schema.checked} Outreach-Tabellen sind vorhanden.`
-            : `Es fehlen: ${schema.missing.join(', ')}.`,
-      hint: 'supabase/schema.sql komplett im Supabase-SQL-Editor ausführen. Das ist gefahrlos wiederholbar.',
+          : schema.missing.length > 0
+            ? `Es fehlen ganze Tabellen: ${schema.missing.join(', ')}.`
+            : schema.veraltet.length > 0
+              ? `Das Schema ist veraltet — diese Spalten fehlen: ${schema.veraltet.join(', ')}. Bis dahin brechen Import und Versand mit einer Meldung über die "schema cache" ab.`
+              : `Alle ${schema.checked} Outreach-Tabellen sind vorhanden und aktuell.`,
+      hint: 'supabase/schema.sql komplett im Supabase-SQL-Editor ausführen. Das ist gefahrlos wiederholbar und ergänzt nur, was fehlt.',
       level: 'outreach',
     },
     {

@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { createClient, supabaseConfigured } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isOwnerEmail } from '@/lib/plans';
-import { collectChecks, versandBereit, OUTREACH_TABLES, type SchemaProbe } from '@/lib/systemcheck';
+import { collectChecks, versandBereit, OUTREACH_TABLES, OUTREACH_COLUMNS, type SchemaProbe } from '@/lib/systemcheck';
 import SmtpTest from './SmtpTest';
 import styles from './systemcheck.module.css';
 
@@ -30,7 +30,17 @@ async function probeSchema(): Promise<SchemaProbe | null> {
     // Fehlende Tabelle meldet Postgres als 42P01 ("undefined_table").
     if (error && (error.code === '42P01' || /does not exist/i.test(error.message))) missing.push(table);
   }
-  return { missing, checked: OUTREACH_TABLES.length };
+
+  // Nachgereichte Spalten einzeln prüfen. Eine fehlende Spalte bricht sonst
+  // erst mitten im Betrieb ab — beim Import oder beim Versand.
+  const veraltet: string[] = [];
+  for (const { table, column } of OUTREACH_COLUMNS) {
+    if (missing.includes(table)) continue;
+    const { error } = await admin.from(table).select(column, { head: true }).limit(1);
+    if (error) veraltet.push(`${table}.${column}`);
+  }
+
+  return { missing, veraltet, checked: OUTREACH_TABLES.length };
 }
 
 export default async function SystemcheckPage() {
