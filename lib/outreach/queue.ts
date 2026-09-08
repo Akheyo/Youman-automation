@@ -14,6 +14,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { renderStep, type ContactVars } from './template';
 import { sendOutreachMail, unsubscribeUrlFor, oneClickUrlFor } from './sender';
 import { newTrackToken, pixelUrlFor } from './tracking';
+import { mailboxes, warmupConfig, waehleMailbox, type MailboxAuslastung } from './mailboxes';
+import { bewerte } from './health';
 import { nextSendAt, isWithinWindow, batchSize, type SendWindow } from './schedule';
 
 export interface OutreachCampaign extends SendWindow {
@@ -67,6 +69,7 @@ async function logEvent(
     subject?: string | null;
     detail?: string | null;
     track_token?: string | null;
+    mailbox?: string | null;
   },
 ) {
   await sb.from('outreach_events').insert(row);
@@ -78,7 +81,14 @@ async function logEvent(
  */
 export async function sendNextStep(
   sb: SupabaseClient,
-  opts: { campaign: OutreachCampaign; steps: OutreachStep[]; contact: OutreachContact; now?: Date },
+  opts: {
+    campaign: OutreachCampaign;
+    steps: OutreachStep[];
+    contact: OutreachContact;
+    now?: Date;
+    /** Von der Queue gewaehltes Postfach. Ohne Angabe: das erste eingerichtete. */
+    postfach?: { settings: import('./smtp').SmtpSettings; from: string; id: string };
+  },
 ): Promise<StepResult> {
   const { campaign, contact } = opts;
   const now = opts.now ?? new Date();
@@ -150,7 +160,7 @@ export async function sendNextStep(
     oneClickUrl: oneClickUrlFor(contact.unsubscribe_token),
     inReplyTo: step.step_no > 1 ? contact.message_id : null,
     trackingPixelUrl: trackToken ? pixelUrlFor(trackToken) : null,
-  });
+  }, 20_000, opts.postfach ? { settings: opts.postfach.settings, from: opts.postfach.from } : undefined);
 
   if (!res.ok) {
     const fails = (contact.fails ?? 0) + 1;
@@ -201,6 +211,7 @@ export async function sendNextStep(
     kind: 'gesendet',
     subject: rendered.subject,
     track_token: trackToken,
+    mailbox: opts.postfach?.id ?? null,
   });
 
   return { ok: true, step_no: step.step_no, subject: rendered.subject, done };
@@ -231,11 +242,51 @@ export async function runOutreachQueue(sb: SupabaseClient, opts: QueueOptions = 
   let sent = 0;
   const report: Record<string, unknown>[] = [];
 
+  // Postfach-Pool und Tagesstand einmal je Lauf ermitteln.
+  const pool = mailboxes();
+  const warmup = warmupConfig();
+  const auslastung: Record<string, MailboxAuslastung> = {};
+  if (pool.length > 0) {
+    for (const mb of pool) {
+      const { count } = await sb
+        .from('outreach_events')
+        .select('id', { count: 'exact', head: true })
+        .eq('kind', 'gesendet')
+        .eq('mailbox', mb.id)
+        .gte('created_at', startOfDay.toISOString());
+      const { data: erste } = await sb
+        .from('outreach_events')
+        .select('created_at')
+        .eq('kind', 'gesendet')
+        .eq('mailbox', mb.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      auslastung[mb.id] = { heute: count ?? 0, ersterVersand: erste?.created_at ?? null };
+    }
+  }
+
   for (const campaign of (campaigns ?? []) as OutreachCampaign[]) {
     if (sent >= globalCap) break;
 
     if (!isWithinWindow(campaign, now)) {
       report.push({ campaign: campaign.id, skip: 'ausserhalb-versandfenster' });
+      continue;
+    }
+
+    // Schutzschalter: kippen Bounce- oder Abmeldequote, wird die Kampagne
+    // angehalten, statt weiter am Ruf der Absenderdomain zu kratzen.
+    const { data: bilanz } = await sb.from('outreach_events').select('kind').eq('campaign_id', campaign.id);
+    const zaehlwerk = { gesendet: 0, bounces: 0, abmeldungen: 0 };
+    for (const e of bilanz ?? []) {
+      if (e.kind === 'gesendet') zaehlwerk.gesendet += 1;
+      else if (e.kind === 'bounce') zaehlwerk.bounces += 1;
+      else if (e.kind === 'abgemeldet') zaehlwerk.abmeldungen += 1;
+    }
+    const befund = bewerte(zaehlwerk);
+    if (befund.stoppen) {
+      await sb.from('outreach_campaigns').update({ status: 'pausiert', paused_reason: befund.grund }).eq('id', campaign.id);
+      report.push({ campaign: campaign.id, skip: 'schutzschalter', grund: befund.grund });
       continue;
     }
 
@@ -311,9 +362,36 @@ export async function runOutreachQueue(sb: SupabaseClient, opts: QueueOptions = 
           break;
         }
       }
-      const res = await sendNextStep(sb, { campaign, steps, contact, now });
-      if (res.ok) sent += 1;
-      report.push({ campaign: campaign.id, contact: contact.id, ok: res.ok, ...(res.ok ? { step: res.step_no } : { error: res.error }) });
+      // Postfach mit der geringsten Tageslast waehlen. Ist der Pool leer, greift
+      // der Einzel-Versandweg aus der Umgebung wie bisher.
+      let postfach: { settings: import('./smtp').SmtpSettings; from: string; id: string } | undefined;
+      if (pool.length > 0) {
+        const wahl = waehleMailbox(pool, auslastung, warmup, now);
+        if (!wahl) {
+          report.push({ campaign: campaign.id, skip: 'tageskapazitaet-postfaecher' });
+          break;
+        }
+        postfach = { settings: wahl.mailbox.settings, from: wahl.mailbox.from, id: wahl.mailbox.id };
+      }
+
+      const res = await sendNextStep(sb, { campaign, steps, contact, now, postfach });
+      if (res.ok) {
+        sent += 1;
+        if (postfach) {
+          const stand = auslastung[postfach.id] ?? { heute: 0, ersterVersand: null };
+          auslastung[postfach.id] = {
+            heute: stand.heute + 1,
+            ersterVersand: stand.ersterVersand ?? now.toISOString(),
+          };
+        }
+      }
+      report.push({
+        campaign: campaign.id,
+        contact: contact.id,
+        ok: res.ok,
+        mailbox: postfach?.id,
+        ...(res.ok ? { step: res.step_no } : { error: res.error }),
+      });
     }
   }
 

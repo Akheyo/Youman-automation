@@ -643,3 +643,28 @@ begin
   return first_open;
 end;
 $$;
+
+-- ============================================================================
+--  Phase I — Zustellbarkeit: Postfach-Rotation, Anwaermen, Schutzschalter
+-- ============================================================================
+-- Kaltakquise verbrennt Domains nicht durch Technik, sondern durch Verhalten:
+-- zu viel auf einmal aus einem frischen Postfach, zu viele unzustellbare
+-- Adressen, zu viele Beschwerden. Diese drei Dinge fangen die Spalten hier ab.
+
+-- Welches Postfach hat diese Mail verschickt? Grundlage fuer Rotation und
+-- fuer das Tageslimit je Postfach.
+alter table public.outreach_events add column if not exists mailbox text;
+
+create index if not exists outreach_events_mailbox_idx
+  on public.outreach_events (mailbox, created_at desc)
+  where mailbox is not null;
+
+-- Warum wurde die Kampagne angehalten? Leer = vom Menschen pausiert.
+-- Gesetzt = der Schutzschalter hat ausgeloest (zu viele Bounces o. Ae.).
+alter table public.outreach_campaigns add column if not exists paused_reason text;
+
+-- Ergebnis der Adresspruefung beim Import:
+--   ok        = Syntax und MX-Eintrag der Domain in Ordnung
+--   kein_mx   = Domain nimmt gar keine Mails an -> sicherer Bounce
+--   ungeprueft = Pruefung war nicht moeglich (DNS-Fehler)
+alter table public.outreach_contacts add column if not exists mx_status text;

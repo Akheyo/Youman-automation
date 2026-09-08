@@ -13,6 +13,8 @@ import { createClient } from '@/lib/supabase/server';
 import { parseContactsCsv, splitName, type ParsedContact } from '@/lib/outreach/csv';
 import { isEmail } from '@/lib/outreach/template';
 import { nextSendAt } from '@/lib/outreach/schedule';
+import { pruefeAdressen, istAussichtslos } from '@/lib/outreach/verify';
+import { parseContactsXlsx } from '@/lib/outreach/xlsx';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -62,7 +64,15 @@ export async function POST(request: Request, { params }: { params: { id: string 
   let parsed: ParsedContact[] = [];
   let source = 'manual';
 
-  if (typeof body.csv === 'string' && body.csv.trim()) {
+  if (typeof body.xlsxBase64 === 'string' && body.xlsxBase64.trim()) {
+    // Excel-Datei: kommt als Base64, wird serverseitig gelesen.
+    source = 'xlsx';
+    try {
+      parsed = await parseContactsXlsx(Buffer.from(body.xlsxBase64, 'base64'));
+    } catch {
+      return NextResponse.json({ error: 'Die Excel-Datei konnte nicht gelesen werden.' }, { status: 400 });
+    }
+  } else if (typeof body.csv === 'string' && body.csv.trim()) {
     parsed = parseContactsCsv(body.csv);
     source = 'csv';
   } else if (Array.isArray(body.contacts)) {
@@ -103,7 +113,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       });
     }
   } else {
-    return NextResponse.json({ error: 'Keine Kontakte übergeben (csv, contacts oder fromLeads).' }, { status: 400 });
+    return NextResponse.json({ error: 'Keine Kontakte übergeben (csv, xlsxBase64, contacts oder fromLeads).' }, { status: 400 });
   }
 
   if (parsed.length === 0) return NextResponse.json({ error: 'Keine gültige E-Mail-Adresse gefunden.' }, { status: 400 });
@@ -122,11 +132,19 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const skippedBlocked = parsed.length - parsed.filter((p) => !blockedSet.has(p.email)).length;
   const skippedDuplicate = parsed.length - skippedBlocked - fresh.length;
 
+  // Adressprüfung vor dem Import: Domains ohne Mailserver koennen keine Post
+  // empfangen. Jede solche Adresse waere ein Bounce — und Bounces sind die
+  // schnellste Art, den Ruf der Absenderdomain zu ruinieren.
+  const geprueft = await pruefeAdressen(fresh.map((c) => c.email));
+  const status = new Map(geprueft.map((g) => [g.email, g.status]));
+  const zustellbar = fresh.filter((c) => !istAussichtslos(status.get(c.email) ?? 'ungeprueft'));
+  const skippedUnzustellbar = fresh.length - zustellbar.length;
+
   let imported = 0;
-  if (fresh.length > 0) {
+  if (zustellbar.length > 0) {
     // Läuft die Kampagne bereits, wird der Zugang gleich mit eingeplant.
     const due = campaign.status === 'aktiv' ? nextSendAt(campaign, 0).toISOString() : null;
-    const rows = fresh.map((c) => ({
+    const rows = zustellbar.map((c) => ({
       user_id: user.id,
       campaign_id: params.id,
       email: c.email,
@@ -139,6 +157,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       source,
       status: 'neu',
       next_send_at: due,
+      mx_status: status.get(c.email) ?? 'ungeprueft',
     }));
     // In Blöcken einfügen, damit große Listen nicht an einer Anfrage hängen.
     for (let i = 0; i < rows.length; i += 500) {
@@ -148,5 +167,5 @@ export async function POST(request: Request, { params }: { params: { id: string 
     }
   }
 
-  return NextResponse.json({ imported, skippedBlocked, skippedDuplicate, parsed: parsed.length });
+  return NextResponse.json({ imported, skippedBlocked, skippedDuplicate, skippedUnzustellbar, parsed: parsed.length });
 }

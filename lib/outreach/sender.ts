@@ -13,7 +13,7 @@
  * Mail weder rechtlich sauber noch zustellbar.
  */
 
-import { smtpConfigured, smtpSettings, smtpFrom, sendViaSmtp, erklaereSmtpFehler } from './smtp';
+import { smtpConfigured, smtpSettings, smtpFrom, sendViaSmtp, erklaereSmtpFehler, type SmtpSettings } from './smtp';
 
 export interface OutreachMail {
   to: string;
@@ -35,6 +35,15 @@ export interface OutreachMail {
 }
 
 export type SendResult = { ok: true; messageId?: string } | { ok: false; error: string };
+
+/**
+ * Welches Postfach soll senden? Ohne Angabe nimmt Paul das erste aus der
+ * Umgebung. Die Queue reicht hier das rotierte Postfach herein.
+ */
+export interface Absenderpostfach {
+  settings: SmtpSettings;
+  from: string;
+}
 
 export function webhookUrl(): string {
   return (process.env.OUTREACH_WEBHOOK_URL || process.env.FELIX_PITCH_WEBHOOK_URL || '').trim();
@@ -106,8 +115,12 @@ export function fromHeader(mail: OutreachMail): string | undefined {
  * Netzwerkfehler werden als `{ ok: false }` zurückgegeben, nicht geworfen —
  * der Aufrufer (Queue) protokolliert sie am Kontakt und macht weiter.
  */
-export async function sendOutreachMail(mail: OutreachMail, timeoutMs = 20_000): Promise<SendResult> {
-  const kind = transportKind();
+export async function sendOutreachMail(
+  mail: OutreachMail,
+  timeoutMs = 20_000,
+  postfach?: Absenderpostfach,
+): Promise<SendResult> {
+  const kind = postfach ? 'smtp' : transportKind();
   if (kind === 'keiner') {
     return { ok: false, error: 'Versand nicht konfiguriert (SMTP_HOST/SMTP_USER/SMTP_PASS oder OUTREACH_WEBHOOK_URL fehlen).' };
   }
@@ -131,14 +144,16 @@ export async function sendOutreachMail(mail: OutreachMail, timeoutMs = 20_000): 
   }
 
   if (kind === 'smtp') {
-    const settings = smtpSettings()!;
+    const settings = postfach?.settings ?? smtpSettings()!;
     const res = await sendViaSmtp(
       {
         to,
         subject: mail.subject.trim(),
         text: buildText(mail),
         html: buildHtml(mail),
-        from: fromHeader(mail),
+        // Bei Rotation bestimmt das gewaehlte Postfach den Absender — eine
+        // fremde Adresse wuerde der Mailserver umschreiben oder abweisen.
+        from: postfach ? (mail.fromName ? `${mail.fromName} <${postfach.from}>` : postfach.from) : fromHeader(mail),
         replyTo: mail.replyTo,
         headers,
         inReplyTo: mail.inReplyTo,

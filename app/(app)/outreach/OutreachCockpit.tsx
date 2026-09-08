@@ -81,6 +81,13 @@ interface Suppressed {
   created_at: string;
 }
 
+interface ImportErgebnis {
+  imported: number;
+  skippedBlocked: number;
+  skippedDuplicate: number;
+  skippedUnzustellbar: number;
+}
+
 type Tab = 'kampagnen' | 'sequenz' | 'kontakte' | 'bericht' | 'sperrliste';
 
 const TABS: { id: Tab; label: string }[] = [
@@ -278,22 +285,57 @@ export default function OutreachCockpit(props: {
   const [csv, setCsv] = useState('');
   const [nurGeoeffnet, setNurGeoeffnet] = useState(false);
 
+  function meldung(data: ImportErgebnis, quelle?: string): string {
+    const skipped = [
+      data.skippedBlocked ? `${data.skippedBlocked} auf der Sperrliste` : '',
+      data.skippedDuplicate ? `${data.skippedDuplicate} schon vorhanden` : '',
+      data.skippedUnzustellbar ? `${data.skippedUnzustellbar} nicht zustellbar (Domain nimmt keine Mails an)` : '',
+    ].filter(Boolean);
+    const woher = quelle ? ` aus ${quelle}` : '';
+    return `${data.imported} Kontakte übernommen${woher}${skipped.length ? ` — übersprungen: ${skipped.join(', ')}.` : '.'}`;
+  }
+
+  /**
+   * Excel geht direkt an den Server — der Inhalt ist binär und hat im
+   * Textfeld nichts verloren. CSV landet weiter im Textfeld, damit man vor
+   * dem Import noch hineinschauen kann.
+   */
+  async function datei(file: File) {
+    if (!/\.(xlsx|xlsm|xltx)$/i.test(file.name)) {
+      setCsv(await file.text());
+      return;
+    }
+    if (!activeId) return;
+    setBusy(true);
+    const puffer = await file.arrayBuffer();
+    let binaer = '';
+    const bytes = new Uint8Array(puffer);
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binaer += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    }
+    const data = await call<ImportErgebnis>(`/api/outreach/campaigns/${activeId}/contacts`, {
+      method: 'POST',
+      body: JSON.stringify({ xlsxBase64: btoa(binaer) }),
+    });
+    setBusy(false);
+    if (data) {
+      await Promise.all([loadContacts(activeId), loadCampaigns()]);
+      say(meldung(data, file.name));
+    }
+  }
+
   async function importCsv() {
     if (!activeId || !csv.trim()) return;
     setBusy(true);
-    const data = await call<{ imported: number; skippedBlocked: number; skippedDuplicate: number }>(
-      `/api/outreach/campaigns/${activeId}/contacts`,
-      { method: 'POST', body: JSON.stringify({ csv }) },
-    );
+    const data = await call<ImportErgebnis>(`/api/outreach/campaigns/${activeId}/contacts`, {
+      method: 'POST',
+      body: JSON.stringify({ csv }),
+    });
     setBusy(false);
     if (data) {
       setCsv('');
       await Promise.all([loadContacts(activeId), loadCampaigns()]);
-      const skipped = [
-        data.skippedBlocked ? `${data.skippedBlocked} auf der Sperrliste` : '',
-        data.skippedDuplicate ? `${data.skippedDuplicate} schon vorhanden` : '',
-      ].filter(Boolean);
-      say(`${data.imported} Kontakte übernommen${skipped.length ? ` — übersprungen: ${skipped.join(', ')}.` : '.'}`);
+      say(meldung(data));
     }
   }
 
@@ -685,8 +727,11 @@ export default function OutreachCockpit(props: {
               <h2 className={styles.cardHead}>Kontakte einspielen</h2>
               <p className={styles.hint}>
                 CSV mit Kopfzeile, Komma oder Semikolon. Erkannt werden <code>email</code>, <code>vorname</code>,{' '}
-                <code>nachname</code>, <code>name</code>, <code>firma</code>, <code>website</code>, <code>anlass</code>. Jede
-                weitere Spalte wird als eigener Platzhalter nutzbar. Adressen auf der Sperrliste werden automatisch übersprungen.
+                <code>nachname</code>, <code>name</code>, <code>firma</code> / <code>firmenname</code>, <code>website</code> /{' '}
+                <code>quelle</code>, <code>anlass</code> / <code>beschreibung</code>. Jede weitere Spalte — etwa{' '}
+                <code>position</code>, <code>branche</code> oder <code>ort</code> — wird als eigener Platzhalter nutzbar.
+                Excel-Dateien kannst du direkt hochladen. Adressen auf der Sperrliste und Domains ohne Mailserver werden
+                automatisch übersprungen.
               </p>
               <textarea
                 className={styles.csv}
@@ -697,14 +742,15 @@ export default function OutreachCockpit(props: {
               />
               <div className={styles.rowActions}>
                 <label className={styles.fileBtn}>
-                  Datei wählen
+                  Datei wählen (CSV oder Excel)
                   <input
                     type="file"
-                    accept=".csv,text/csv,text/plain"
+                    accept=".csv,.xlsx,.xlsm,.xltx,text/csv,text/plain"
                     hidden
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
-                      if (file) setCsv(await file.text());
+                      if (file) await datei(file);
+                      e.target.value = '';
                     }}
                   />
                 </label>

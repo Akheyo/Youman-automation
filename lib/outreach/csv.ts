@@ -61,17 +61,36 @@ const COLS: Record<string, Field> = {
   ansprechpartner: 'full_name',
   contact: 'full_name',
   firma: 'company',
+  firmenname: 'company',
   company: 'company',
   unternehmen: 'company',
   website: 'website',
   webseite: 'website',
   url: 'website',
   domain: 'website',
+  quelle: 'website',
+  source: 'website',
   anlass: 'anlass',
   grund: 'anlass',
   notiz: 'anlass',
   notes: 'anlass',
+  beschreibung: 'anlass',
+  description: 'anlass',
 };
+
+/**
+ * Lead-Listen fuehren in Quellen-Spalten oft mehrere Adressen nebeneinander,
+ * getrennt durch "|", ";" oder Leerzeichen. Fuer die Personalisierung
+ * ({{website}}, {{domain}}) zaehlt die erste.
+ */
+export function ersteUrl(wert: string): string {
+  const teile = (wert ?? '')
+    .split(/[|,;\s]+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const treffer = teile.find((t) => /^(https?:\/\/|www\.)/i.test(t) || /\.[a-z]{2,}$/i.test(t));
+  return treffer ?? teile[0] ?? '';
+}
 
 /** Splittet "Anna Beispiel" in Vor- und Nachname. */
 export function splitName(full: string): { first_name?: string; last_name?: string } {
@@ -125,7 +144,7 @@ export function parseContactsCsv(text: string): ParsedContact[] {
       first_name: rec.first_name ?? fromFull.first_name,
       last_name: rec.last_name ?? fromFull.last_name,
       company: rec.company,
-      website: rec.website,
+      website: rec.website ? ersteUrl(rec.website) : undefined,
       anlass: rec.anlass,
       custom,
     });
