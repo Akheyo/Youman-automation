@@ -233,6 +233,68 @@ Der nächste Ausbauschritt ist deshalb nicht „Lagerorte anlegen", sondern:
 bestehende Lagerorte mitlesen, den Standard-Anteil je Artikel ausweisen und den
 Texthinweis als Vorschlag danebenstellen, wohin umgebucht werden müsste.
 
+## Einstellungen (`/einstellungen`)
+
+Der PlentyONE-Zugang wird **in der Oberfläche** gepflegt, nicht mehr nur über
+Umgebungsvariablen. Alle Werkzeuge — Projekte anlegen, Lagerorte anlegen,
+Zuweisen, Lagerplatz-Scan und die Artikelsuche — holen ihren Zugang von dort.
+Eine Änderung wirkt **sofort, ohne neuen Deploy**.
+
+### Rangfolge
+
+```
+Einstellungsseite (Datenbank)   schlägt   Umgebungsvariablen (Vercel)
+```
+
+Wer in der Oberfläche etwas einträgt, will damit etwas ändern. Die
+Umgebungsvariablen bleiben als Grundeinstellung liegen: Eine leere Datenbank
+macht nichts kaputt, und „Zugang löschen" fällt auf sie zurück.
+
+**Ein halb ausgefüllter Datensatz greift nicht.** Nur wenn Basis-URL, Benutzer
+und Passwort zusammen vorliegen, verdrängt die Datenbank die
+Umgebungsvariablen — sonst legte ein abgebrochenes Speichern alle Werkzeuge
+für alle Kollegen lahm.
+
+### Was mit dem Passwort passiert
+
+- Es wird mit **AES-256-GCM** verschlüsselt in Supabase abgelegt, nie im
+  Klartext (`lib/einstellungen/tresor.ts`).
+- Es wird **nie an den Browser ausgeliefert**. Die Seite zeigt nur, ob eines
+  hinterlegt ist und wie es endet (`••••••ab12`).
+- Das Feld leer lassen heißt „unverändert" — man kann die URL ändern, ohne das
+  Passwort erneut einzutippen.
+- Die Tabelle `einstellungen` hat RLS an und **absichtlich keine Policy**: Über
+  den normalen Anon-Key kommt niemand heran, auch nicht lesend. Der Zugriff
+  läuft ausschließlich serverseitig über den Service-Role-Key.
+
+**Was das nicht leistet:** Der Schlüssel liegt als Umgebungsvariable auf
+demselben Server, der auch entschlüsselt. Wer den Server übernimmt, kommt an
+beides. Die Verschlüsselung schützt gegen abhandengekommene Datenbank-Inhalte
+(Backups, geteilte Snapshots), nicht gegen einen übernommenen Server. Bewusste
+Abwägung, keine Lücke aus Versehen.
+
+### Voraussetzungen
+
+| Variable | Nötig wofür |
+| --- | --- |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Pflicht** — ohne ihn lässt sich nichts speichern |
+| `EINSTELLUNGEN_SCHLUESSEL` | Optional. Fehlt er, wird der Service-Role-Key als Schlüsselmaterial verwendet |
+
+Wird der Service-Role-Key gedreht und war kein eigener Schlüssel gesetzt, sind
+die gespeicherten Passwörter nicht mehr lesbar. Die Seite **sagt das** („bitte
+einmal neu eintragen") statt still auf einen falschen Zugang zu laufen.
+
+### Verbindung testen
+
+„Verbindung testen" prüft die **eingetippten** Werte, ohne sie zu speichern —
+und bewusst am Token-Cache vorbei, sonst meldete der Test „erfolgreich", weil
+vorhin schon einmal jemand angemeldet war. Beim Speichern läuft derselbe Test
+automatisch mit; schlägt er fehl, wird trotzdem gespeichert, aber deutlich
+gewarnt.
+
+Einmalig muss `supabase/schema.sql` im Supabase-SQL-Editor laufen (legt die
+Tabelle `einstellungen` an). Fehlt sie, sagt die Seite genau das.
+
 ## Artikel nicht gefunden (`/lagerplatz/suche`)
 
 Ein Artikel ist am eingetragenen Platz nicht auffindbar. Diese Seite sammelt aus
@@ -339,6 +401,8 @@ projektplanung/
 │   ├── (app)/lagerplatz/      # Lagerplatz-Scan (Vorschau, nur lesend)
 │   ├── api/projekte/          # GET Suche / POST Anlegen / [id] löschen
 │   ├── (app)/lagerplatz/suche/ # Artikel nicht gefunden — alternative Plätze
+│   ├── (app)/einstellungen/   # Plenty-Zugang pflegen + Prozessübersicht
+│   ├── api/einstellungen/     # GET/PUT/POST/DELETE Plenty-Zugang
 │   ├── api/lagerplatz/scan/   # POST Lagerplatz-Scan (häppchenweise)
 │   ├── api/lagerplatz/suche/  # POST Suche nach alternativen Lagerplätzen
 │   ├── api/plenty/test/       # Verbindungstest
@@ -346,6 +410,7 @@ projektplanung/
 │   └── login/                 # Anmeldung
 ├── components/                # App-Shell (Header)
 ├── lib/
+│   ├── einstellungen/         # Zugang laden/speichern + Verschlüsselung (getestet)
 │   ├── lagerplatz/            # Erkennung, Befunde, Nachbarschaftslogik (getestet)
 │   ├── plenty/                # PlentyONE-Client, EAN, Bestands-Scan, Platzsuche
 │   ├── projekte/              # Reine Geschäftslogik (getestet)

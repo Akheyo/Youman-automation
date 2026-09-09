@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { requireUser, supabaseConfigured } from '@/lib/supabase/server';
-import { plentyConfigured } from '@/lib/plenty/client';
+import { plentyEingerichtet } from '@/lib/plenty/client';
 import ProjektDashboard, { type Projekt } from './ProjektDashboard';
 
 export const metadata: Metadata = { title: 'Projekte · Komplett Konzept Projektplanung' };
@@ -20,5 +20,5 @@ export default async function ProjektePage() {
     initial = (data ?? []) as Projekt[];
   }
 
-  return <ProjektDashboard initial={initial} plentyReady={plentyConfigured()} supabaseReady={supabaseConfigured()} />;
+  return <ProjektDashboard initial={initial} plentyReady={await plentyEingerichtet()} supabaseReady={supabaseConfigured()} />;
 }

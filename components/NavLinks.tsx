@@ -10,6 +10,7 @@ const LINKS = [
   { href: '/lagerplatz/anlegen', text: 'Lagerorte anlegen' },
   { href: '/lagerplatz/zuweisen', text: 'Zuweisen' },
   { href: '/lagerplatz/suche', text: 'Artikel suchen' },
+  { href: '/einstellungen', text: 'Einstellungen' },
 ];
 
 /** Hauptnavigation des eingeloggten Bereichs. */

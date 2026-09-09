@@ -38,7 +38,7 @@
  *   /rest/warehouses/locations/stock/{lagerortId}
  */
 
-import { plentyConfigured, plentyGet } from './client';
+import { plentyEingerichtet, plentyGet } from './client';
 import { ladeLager, ladeLagerorte, verzeichnis } from './lagerorte';
 import { findeLagerplaetze } from '@/lib/lagerplatz/erkennung';
 import {
@@ -493,7 +493,7 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
     dauerMs: Date.now() - start,
   });
 
-  if (!plentyConfigured()) return leer('PlentyONE ist nicht eingerichtet.', false);
+  if (!(await plentyEingerichtet())) return leer('PlentyONE ist nicht eingerichtet.', false);
 
   const idSpanne = Math.min(15, Math.max(0, Math.floor(opts.idSpanne ?? 5)));
   const zeitfensterMin = Math.min(720, Math.max(0, Math.floor(opts.zeitfensterMin ?? 45)));

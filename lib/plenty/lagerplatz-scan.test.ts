@@ -72,7 +72,7 @@ describe('scanneLagerplaetze — Artikel mit Bestand', () => {
     const res = await scanneLagerplaetze();
     expect(res.ok).toBe(false);
     expect(res.konfiguriert).toBe(false);
-    expect(res.error).toMatch(/nicht konfiguriert/);
+    expect(res.error).toMatch(/nicht eingerichtet/);
     expect(res.naechsteSeite).toBeNull();
   });
 

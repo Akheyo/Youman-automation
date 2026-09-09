@@ -200,6 +200,6 @@ describe('weiseZu', () => {
     const { weiseZu } = await import('./zuweisung');
     const res = await weiseZu([{ variationId: 1, ziel: 'H1/R8/EA F15-K10' }], { warehouseId: 106, probelauf: false });
     expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/nicht konfiguriert/);
+    expect(res.error).toMatch(/nicht eingerichtet/);
   });
 });
