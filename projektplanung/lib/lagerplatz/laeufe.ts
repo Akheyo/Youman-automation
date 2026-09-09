@@ -101,7 +101,10 @@ export function leseLauf(zeile: string): { lauf: Lauf } | { fehler: string } | n
     return { fehler: `"${roh}" — Regal "${sRegal}" nicht lesbar.` };
   }
 
-  const ebene = sEbene.replace(/^E/i, '').toUpperCase();
+  // Erst prüfen, dann abschneiden: Ebene "E" ist selbst gültig, und ein
+  // blindes Entfernen des Präfixes würde ausgerechnet sie zu nichts machen.
+  const roheEbene = sEbene.toUpperCase();
+  const ebene = /^[A-J]Z?$/.test(roheEbene) ? roheEbene : roheEbene.replace(/^E/, '');
   if (!/^[A-J]Z?$/.test(ebene)) {
     return { fehler: `"${roh}" — Ebene "${sEbene}" nicht lesbar (erwartet A bis J).` };
   }
