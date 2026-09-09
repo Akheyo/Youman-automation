@@ -41,11 +41,12 @@ function attrappe(opts: AttrappeOpts = {}) {
     { id: 14, level: 4, name: 'Feld', shortcut: 'F' },
   ];
   // Vorhandene Struktur: Halle 1 › Regal 8 › Ebene A › Feld 15.
+  // Wie in PlentyONE steht das Kürzel der Spalte IM NAMEN des Knotens.
   const knoten = opts.knoten ?? [
-    { id: 100, parentId: 0, dimensionId: 11, name: '1', position: 1 },
-    { id: 200, parentId: 100, dimensionId: 12, name: '8', position: 1 },
-    { id: 300, parentId: 200, dimensionId: 13, name: 'A', position: 1 },
-    { id: 400, parentId: 300, dimensionId: 14, name: '15', position: 1 },
+    { id: 100, parentId: 0, dimensionId: 11, name: 'H1', position: 1 },
+    { id: 200, parentId: 100, dimensionId: 12, name: 'R8', position: 1 },
+    { id: 300, parentId: 200, dimensionId: 13, name: 'EA', position: 1 },
+    { id: 400, parentId: 300, dimensionId: 14, name: 'F15', position: 1 },
   ];
 
   const geschrieben: Array<{ url: string; body: Record<string, unknown> }> = [];
@@ -122,6 +123,13 @@ describe('schreibweisen', () => {
   it('bietet Zahlen mit und ohne führende Null an', () => {
     expect(schreibweisen('02')).toEqual(['02', '2', '002']);
     expect(schreibweisen('2')).toEqual(['2', '02', '002']);
+  });
+
+  it('setzt das Kürzel der Spalte davor und sucht damit zuerst', () => {
+    // In Plenty heißt die Halle "H1", nicht "1". Ohne Kürzel findet die Suche
+    // den vorhandenen Knoten nicht und legt einen zweiten Baum an.
+    expect(schreibweisen('1', 'H')).toEqual(['H1', 'H01', 'H001', '1', '01', '001']);
+    expect(schreibweisen('C', 'E')).toEqual(['EC', 'C']);
   });
 
   it('lässt Namen mit Buchstaben unangetastet', () => {
@@ -208,17 +216,18 @@ describe('legeLagerorteAn', () => {
     expect(res.neueKnoten).toBe(1);
     const knotenAufrufe = geschrieben.filter((g) => g.url.includes('/locations/levels'));
     expect(knotenAufrufe).toHaveLength(1);
-    expect(knotenAufrufe[0].body).toMatchObject({ parentId: 300, dimensionId: 14, name: '16' });
+    // Mit Kürzel — sonst entsteht ein Baum, dessen Lagerorte "1/8/A 16-K01" heißen.
+    expect(knotenAufrufe[0].body).toMatchObject({ parentId: 300, dimensionId: 14, name: 'F16' });
   });
 
   it('übernimmt die Schreibweise der vorhandenen Knoten', async () => {
     const { fetchMock, geschrieben } = attrappe({
       knoten: [
-        { id: 100, parentId: 0, dimensionId: 11, name: '1', position: 1 },
-        { id: 200, parentId: 100, dimensionId: 12, name: '8', position: 1 },
-        { id: 300, parentId: 200, dimensionId: 13, name: 'A', position: 1 },
+        { id: 100, parentId: 0, dimensionId: 11, name: 'H1', position: 1 },
+        { id: 200, parentId: 100, dimensionId: 12, name: 'R8', position: 1 },
+        { id: 300, parentId: 200, dimensionId: 13, name: 'EA', position: 1 },
         // Das vorhandene Feld ist aufgefüllt — das neue muss es auch sein.
-        { id: 400, parentId: 300, dimensionId: 14, name: '07', position: 1 },
+        { id: 400, parentId: 300, dimensionId: 14, name: 'F07', position: 1 },
       ],
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -226,7 +235,7 @@ describe('legeLagerorteAn', () => {
     await legeLagerorteAn(['H1/R8/EA F09-K01'], { warehouseId: 106, probelauf: false });
 
     const knotenAufruf = geschrieben.find((g) => g.url.includes('/locations/levels'));
-    expect(knotenAufruf?.body).toMatchObject({ name: '09' });
+    expect(knotenAufruf?.body).toMatchObject({ name: 'F09' });
   });
 
   it('schreibt nicht, wenn die Liste der vorhandenen Lagerorte unvollständig ist', async () => {
@@ -314,10 +323,10 @@ describe('legeLagerorteAn', () => {
       if (url.includes('/locations/levels')) {
         return ANTWORT({
           entries: [
-            { id: 100, parentId: 0, dimensionId: 11, name: '1', position: 1 },
-            { id: 200, parentId: 100, dimensionId: 12, name: '8', position: 1 },
-            { id: 300, parentId: 200, dimensionId: 13, name: 'A', position: 1 },
-            { id: 400, parentId: 300, dimensionId: 14, name: '16', position: 1 },
+            { id: 100, parentId: 0, dimensionId: 11, name: 'H1', position: 1 },
+            { id: 200, parentId: 100, dimensionId: 12, name: 'R8', position: 1 },
+            { id: 300, parentId: 200, dimensionId: 13, name: 'EA', position: 1 },
+            { id: 400, parentId: 300, dimensionId: 14, name: 'F16', position: 1 },
           ],
           isLastPage: true,
         });
@@ -389,11 +398,11 @@ describe('legeLagerorteAn', () => {
     // Wird nur nach "02" gesucht, entsteht ein zweites Feld daneben.
     const { fetchMock, geschrieben } = attrappe({
       knoten: [
-        { id: 100, parentId: 0, dimensionId: 11, name: '1', position: 1 },
-        { id: 200, parentId: 100, dimensionId: 12, name: '8', position: 1 },
-        { id: 300, parentId: 200, dimensionId: 13, name: 'A', position: 1 },
-        // Das vorhandene Feld heißt "2" — der gesuchte Code sagt "F02".
-        { id: 400, parentId: 300, dimensionId: 14, name: '2', position: 1 },
+        { id: 100, parentId: 0, dimensionId: 11, name: 'H1', position: 1 },
+        { id: 200, parentId: 100, dimensionId: 12, name: 'R8', position: 1 },
+        { id: 300, parentId: 200, dimensionId: 13, name: 'EA', position: 1 },
+        // Das vorhandene Feld heißt "F2" — der gesuchte Code sagt "F02".
+        { id: 400, parentId: 300, dimensionId: 14, name: 'F2', position: 1 },
       ],
       orte: [{ id: 1, fullLabel: 'H1/R8/EA F2-K10', purposeKey: 'pickup', statusKey: 'active' }],
     });
@@ -409,11 +418,11 @@ describe('legeLagerorteAn', () => {
   it('legt ein neues Feld in der Schreibweise seiner Geschwister an', async () => {
     const { fetchMock, geschrieben } = attrappe({
       knoten: [
-        { id: 100, parentId: 0, dimensionId: 11, name: '1', position: 1 },
-        { id: 200, parentId: 100, dimensionId: 12, name: '8', position: 1 },
-        { id: 300, parentId: 200, dimensionId: 13, name: 'A', position: 1 },
+        { id: 100, parentId: 0, dimensionId: 11, name: 'H1', position: 1 },
+        { id: 200, parentId: 100, dimensionId: 12, name: 'R8', position: 1 },
+        { id: 300, parentId: 200, dimensionId: 13, name: 'EA', position: 1 },
         // Die Geschwister sind aufgefüllt — das neue Feld muss es auch sein.
-        { id: 400, parentId: 300, dimensionId: 14, name: '02', position: 1 },
+        { id: 400, parentId: 300, dimensionId: 14, name: 'F02', position: 1 },
       ],
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -421,7 +430,7 @@ describe('legeLagerorteAn', () => {
     await legeLagerorteAn(['H1/R8/EA F03-K01'], { warehouseId: 106, probelauf: false });
 
     const knoten = geschrieben.find((g) => g.url.includes('/locations/levels'));
-    expect(knoten?.body).toMatchObject({ name: '03' });
+    expect(knoten?.body).toMatchObject({ name: 'F03' });
   });
 
   it('wiederholt einen Schreibzugriff, den PlentyONE ausgebremst hat', async () => {
@@ -450,10 +459,10 @@ describe('legeLagerorteAn', () => {
       if (url.includes('/locations/levels')) {
         return ANTWORT({
           entries: [
-            { id: 100, parentId: 0, dimensionId: 11, name: '1', position: 1 },
-            { id: 200, parentId: 100, dimensionId: 12, name: '8', position: 1 },
-            { id: 300, parentId: 200, dimensionId: 13, name: 'A', position: 1 },
-            { id: 400, parentId: 300, dimensionId: 14, name: '15', position: 1 },
+            { id: 100, parentId: 0, dimensionId: 11, name: 'H1', position: 1 },
+            { id: 200, parentId: 100, dimensionId: 12, name: 'R8', position: 1 },
+            { id: 300, parentId: 200, dimensionId: 13, name: 'EA', position: 1 },
+            { id: 400, parentId: 300, dimensionId: 14, name: 'F15', position: 1 },
           ],
           isLastPage: true,
         });

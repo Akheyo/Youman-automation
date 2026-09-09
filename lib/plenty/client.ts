@@ -847,6 +847,16 @@ export async function plentyPost<T>(
 }
 
 /**
+ * Führt einen DELETE gegen die Plenty-REST-API aus. Löschen ist endgültig —
+ * der Aufrufer muss also selbst dafür sorgen, dass vorher klar ist, was weg
+ * soll (Probelauf, ausdrückliche Freigabe).
+ */
+export async function plentyDelete<T>(path: string, cfg: PlentyConfig = getPlentyConfig()): Promise<T> {
+  const token = await login(cfg);
+  return api<T>(cfg, token, path, { method: 'DELETE' });
+}
+
+/**
  * Liefert einen gültigen Bearer-Token (aus dem modulweiten Cache oder per
  * frischem Login). Für Aufrufe, die nicht über `plentyGet` laufen — etwa
  * schreibende PUT-Anfragen.

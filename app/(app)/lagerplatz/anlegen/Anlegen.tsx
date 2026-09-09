@@ -60,6 +60,16 @@ async function alsJson(res: Response): Promise<Record<string, unknown>> {
   }
 }
 
+/** Ergebnis des Aufraeumens (falsch angelegter Zweig). */
+interface Aufraeum {
+  ok: boolean; probelauf: boolean; error: string | null;
+  zweige: Array<{ wurzelId: number; name: string; knoten: number; orte: number; beispiele: string[] }>;
+  orteGesamt: number; knotenGesamt: number;
+  orteGeloescht: number; knotenGeloescht: number;
+  fehler: number; offen: number; schreiblimit: boolean;
+  meldungen: string[]; diagnose: string[];
+}
+
 const LEER: Ergebnis = {
   probelauf: true, bestehende: 0, vorhanden: 0, geplant: 0, angelegt: 0,
   uebersprungen: 0, fehler: 0, neueKnoten: 0, offen: 0, zeilen: [], diagnose: [],
@@ -77,6 +87,8 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
   const [freigabe, setFreigabe] = useState('');
   const [wartet, setWartet] = useState<number | null>(null);
   const [unbekannt, setUnbekannt] = useState<string[]>([]);
+  const [aufraeumen, setAufraeumen] = useState<Aufraeum | null>(null);
+  const [loeschFreigabe, setLoeschFreigabe] = useState('');
   const abbrechen = useRef(false);
 
   /** Die Tabelle wird schon beim Tippen aufgelöst — dieselbe Logik wie im Server. */
@@ -186,6 +198,46 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
     }
   }
 
+  /**
+   * Entfernt die falsch angelegten Zweige. Laeuft wie das Anlegen in Bloecken,
+   * bis nichts mehr offen ist.
+   */
+  async function starteAufraeumen(probelauf: boolean) {
+    if (!warehouseId) return;
+    abbrechen.current = false;
+    setLaeuft(probelauf ? 'pruefe' : 'loesche');
+    setFehler(null);
+    if (probelauf) setAufraeumen(null);
+
+    try {
+      for (let runde = 0; runde < 200; runde++) {
+        if (abbrechen.current) break;
+        const res = await fetch('/api/lagerplatz/aufraeumen', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ warehouseId, probelauf, maxLoeschungen: 500 }),
+        });
+        const d = (await alsJson(res)) as unknown as Aufraeum;
+        if (d.error) throw new Error(d.error);
+        setAufraeumen(d);
+        if (probelauf || d.offen === 0) break;
+        if (d.schreiblimit) {
+          for (let rest = 60; rest > 0 && !abbrechen.current; rest--) {
+            setWartet(rest);
+            await new Promise((f) => setTimeout(f, 1000));
+          }
+          setWartet(null);
+        }
+      }
+      if (!probelauf) setLoeschFreigabe('');
+    } catch (e) {
+      setFehler((e as Error).message);
+    } finally {
+      setWartet(null);
+      setLaeuft(null);
+    }
+  }
+
   const sichtbar = useMemo(() => ergebnis?.zeilen.slice(0, 200) ?? [], [ergebnis]);
   const anteil = fortschritt && fortschritt.gesamt > 0
     ? Math.round((fortschritt.fertig / fortschritt.gesamt) * 100)
@@ -234,6 +286,75 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
             <ul className={`${styles.diagnose} ${styles.mono}`}>
               {unbekannt.map((n) => <li key={n}>{n}</li>)}
             </ul>
+          </>
+        )}
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}><h2 className={styles.cardTitle}>Falsch angelegtes entfernen</h2></div>
+        <p className={styles.checkHint}>
+          Ein Lauf hat einen zweiten Baum ohne Kürzel angelegt — Hallen namens „1" statt „H1", darunter Lagerorte
+          wie <span className={styles.mono}>1/7/C 16-K01</span>. Hier lässt sich das wieder entfernen. Erkannt
+          wird es an der Regel, an der man es auch von Hand sieht: Ein oberster Knoten, dessen Name nicht mit dem
+          Kürzel seiner Spalte beginnt, gehört nicht dazu. Lagerorte mit Bestand werden nie gelöscht.
+        </p>
+        <div className={styles.controls}>
+          <div className={styles.actions}>
+            <button type="button" className={styles.secondary} onClick={() => starteAufraeumen(true)}
+              disabled={!!laeuft || !warehouseId}>
+              {laeuft === 'pruefe' ? 'prüft …' : 'Prüfen, was entfernt würde'}
+            </button>
+          </div>
+          {aufraeumen && aufraeumen.zweige.length > 0 && (
+            <>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="loeschen">Zum Bestätigen „LOESCHEN" eintippen</label>
+                <input id="loeschen" className={styles.input} value={loeschFreigabe} placeholder="LOESCHEN"
+                  onChange={(e) => setLoeschFreigabe(e.target.value)} disabled={!!laeuft} />
+              </div>
+              <div className={styles.actions}>
+                <button type="button" className={styles.primary} onClick={() => starteAufraeumen(false)}
+                  disabled={!!laeuft || loeschFreigabe.trim().toUpperCase() !== 'LOESCHEN'}>
+                  {laeuft === 'loesche' ? 'entfernt …' : 'Jetzt entfernen'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {aufraeumen && (
+          <>
+            <p className={styles.progress}>
+              {aufraeumen.zweige.length === 0
+                ? 'Kein falscher Zweig gefunden — es gibt nichts zu entfernen.'
+                : aufraeumen.probelauf
+                  ? `${aufraeumen.zweige.length} falsche Zweige · ${aufraeumen.orteGesamt.toLocaleString('de-DE')} Lagerorte · ${aufraeumen.knotenGesamt.toLocaleString('de-DE')} Knoten`
+                  : `${aufraeumen.orteGeloescht.toLocaleString('de-DE')} von ${aufraeumen.orteGesamt.toLocaleString('de-DE')} Lagerorten und ${aufraeumen.knotenGeloescht.toLocaleString('de-DE')} von ${aufraeumen.knotenGesamt.toLocaleString('de-DE')} Knoten entfernt` +
+                    (aufraeumen.fehler ? ` · ${aufraeumen.fehler} Fehler` : '')}
+            </p>
+            {aufraeumen.zweige.length > 0 && (
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead><tr><th>Zweig</th><th>Lagerorte</th><th>Knoten</th><th>Beispiele</th></tr></thead>
+                  <tbody>
+                    {aufraeumen.zweige.map((z) => (
+                      <tr key={z.wurzelId}>
+                        <td className={styles.mono}>{z.name} (ID {z.wurzelId})</td>
+                        <td className={styles.mono}>{z.orte.toLocaleString('de-DE')}</td>
+                        <td className={styles.mono}>{z.knoten.toLocaleString('de-DE')}</td>
+                        <td className={styles.cellHint}>{z.beispiele.join(' · ')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {aufraeumen.diagnose.length > 0 && (
+              <ul className={styles.diagnose}>{aufraeumen.diagnose.map((d) => <li key={d}>{d}</li>)}</ul>
+            )}
+            {aufraeumen.meldungen.length > 0 && (
+              <ul className={styles.diagnose}>{aufraeumen.meldungen.map((m) => <li key={m}>{m}</li>)}</ul>
+            )}
           </>
         )}
       </section>
