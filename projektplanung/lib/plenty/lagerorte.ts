@@ -26,6 +26,8 @@ export interface Lagerort {
   code: string | null;
   status: string | null;
   zweck: string | null;
+  /** Der Strukturknoten (Feld), unter dem der Lagerort hängt. */
+  levelId: number | null;
 }
 
 /** Ein Lager (Warehouse). */
@@ -99,6 +101,7 @@ export async function ladeLagerorte(
         code,
         status: (e?.statusKey as string) ?? null,
         zweck: (e?.purposeKey as string) ?? null,
+        levelId: Number.isFinite(Number(e?.levelId)) ? Number(e.levelId) : null,
       });
     }
   };

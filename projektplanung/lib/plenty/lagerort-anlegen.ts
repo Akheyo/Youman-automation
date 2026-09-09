@@ -169,16 +169,26 @@ export function nameMitStellen(name: string, breite: number): string {
 /**
  * Alle Schreibweisen, unter denen derselbe Knoten in Plenty stehen kann.
  *
- * Das Lager führt beide nebeneinander: Feld 2 heißt mal "F2", mal "F02". Wer
- * nur nach einer Schreibweise sucht, findet den vorhandenen Knoten nicht und
- * legt ihn ein zweites Mal an — genau so sind schon Dubletten entstanden.
- * Deshalb wird bei Zahlen ohne führende Null, mit zwei und mit drei Stellen
- * gesucht.
+ * Zwei Dinge zugleich:
+ *
+ *  1. Das Kürzel der Spalte steht IM NAMEN des Knotens. Die Halle heißt "H1",
+ *     nicht "1"; das Regal "R7", die Ebene "EC", das Feld "F16". Wer ohne
+ *     Kürzel sucht, findet nichts — und legt einen kompletten zweiten Baum
+ *     an, dessen Lagerorte dann "1/7/C 16-K01" heißen statt
+ *     "H1/R7/EC F16-K01". Genau das ist einmal passiert.
+ *  2. Zahlen stehen mal mit, mal ohne führende Null: Feld 2 ist "F2" oder
+ *     "F02".
+ *
+ * Die erste Schreibweise der Liste ist die, in der ein fehlender Knoten
+ * angelegt wird.
  */
-export function schreibweisen(name: string): string[] {
-  if (!/^\d+$/.test(name)) return [name];
-  const blank = String(Number(name));
-  return [...new Set([name, blank, blank.padStart(2, '0'), blank.padStart(3, '0')])];
+export function schreibweisen(wert: string, kuerzel = ''): string[] {
+  const formen = /^\d+$/.test(wert)
+    ? [...new Set([wert, String(Number(wert)), String(Number(wert)).padStart(2, '0'), String(Number(wert)).padStart(3, '0')])]
+    : [wert];
+  const mitKuerzel = kuerzel ? formen.map((f) => `${kuerzel}${f}`) : [];
+  // Mit Kürzel zuerst: so heißen die echten Knoten.
+  return [...new Set([...mitKuerzel, ...formen])];
 }
 
 /** Kurze Pause; PlentyONE begrenzt Schreibzugriffe pro Zeitfenster. */
@@ -487,10 +497,12 @@ export async function legeLagerorteAn(
    * "F2" und "F02" nebeneinander, aber innerhalb eines Regals ist es meist
    * einheitlich.
    */
-  const stellenDerGruppe = (gruppe: string): number | null => {
+  const stellenDerGruppe = (gruppe: string, kuerzel = ''): number | null => {
     const namen = geschwister.get(gruppe);
     if (!namen?.length) return null;
-    return stellenAus(namen);
+    // Das Kürzel gehört zum Namen ("F02") — für die Frage nach führenden
+    // Nullen zählt nur der Zahlenteil.
+    return stellenAus(namen.map((n) => (kuerzel && n.startsWith(kuerzel) ? n.slice(kuerzel.length) : n)));
   };
 
   let neueKnoten = 0;
@@ -503,20 +515,23 @@ export async function legeLagerorteAn(
   async function sorgeFuerKnoten(
     parentId: number,
     dimensionId: number,
+    kuerzel: string,
     rohName: string,
   ): Promise<{ id: number; neu: boolean }> {
     const gruppe = `${parentId}|${dimensionId}`;
 
-    // Erst in ALLEN Schreibweisen suchen. Das Lager führt "F2" und "F02"
-    // nebeneinander; wer nur eine Form sucht, legt den Knoten doppelt an.
-    for (const kandidat of schreibweisen(rohName)) {
+    // Erst in ALLEN Schreibweisen suchen — mit Kürzel ("H1") und ohne ("1"),
+    // mit und ohne führende Null. Wer nur eine Form sucht, legt den Knoten
+    // ein zweites Mal an.
+    for (const kandidat of schreibweisen(rohName, kuerzel)) {
       const da = index.get(knotenSchluessel(parentId, dimensionId, kandidat));
       if (da) return { id: da.id, neu: false };
     }
 
-    // Nichts gefunden: neu anlegen — in der Schreibweise der Geschwister unter
-    // genau diesem Elternknoten, ersatzweise der des ganzen Lagers.
-    const name = nameMitStellen(rohName, stellenDerGruppe(gruppe) ?? stellen.get(dimensionId) ?? 0);
+    // Nichts gefunden: neu anlegen — mit Kürzel, und in der Schreibweise der
+    // Geschwister unter genau diesem Elternknoten.
+    const zahl = nameMitStellen(rohName, stellenDerGruppe(gruppe, kuerzel) ?? stellen.get(dimensionId) ?? 0);
+    const name = `${kuerzel}${zahl}`;
     const schluessel = knotenSchluessel(parentId, dimensionId, name);
 
     const position = (letztePosition.get(gruppe) ?? 0) + 1;
@@ -601,13 +616,13 @@ export async function legeLagerorteAn(
 
     try {
       let neuHier = 0;
-      const hEbene = await sorgeFuerKnoten(wurzelId, dHalle.id, String(teile.halle));
+      const hEbene = await sorgeFuerKnoten(wurzelId, dHalle.id, dHalle.kuerzel, String(teile.halle));
       if (hEbene.neu) neuHier += 1;
-      const rEbene = await sorgeFuerKnoten(hEbene.id, dRegal.id, teile.regal);
+      const rEbene = await sorgeFuerKnoten(hEbene.id, dRegal.id, dRegal.kuerzel, teile.regal);
       if (rEbene.neu) neuHier += 1;
-      const eEbene = await sorgeFuerKnoten(rEbene.id, dEbene.id, teile.ebene);
+      const eEbene = await sorgeFuerKnoten(rEbene.id, dEbene.id, dEbene.kuerzel, teile.ebene);
       if (eEbene.neu) neuHier += 1;
-      const fEbene = await sorgeFuerKnoten(eEbene.id, dFach.id, teile.fach);
+      const fEbene = await sorgeFuerKnoten(eEbene.id, dFach.id, dFach.kuerzel, teile.fach);
       if (fEbene.neu) neuHier += 1;
       neueKnoten += neuHier;
 
@@ -641,6 +656,7 @@ export async function legeLagerorteAn(
         code,
         status,
         zweck,
+        levelId: fEbene.id,
       });
       angelegt += 1;
     } catch (err) {
