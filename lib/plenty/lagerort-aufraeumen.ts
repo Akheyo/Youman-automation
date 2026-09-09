@@ -156,64 +156,6 @@ export function findeFalscheZweige(
 }
 
 /**
- * Liest, auf welchen dieser Lagerorte Bestand liegt.
- *
- * Der Bestand eines Lagers sind zehntausende Zeilen — nacheinander geholt
- * dauert das länger als eine Serverantwort erlaubt. Deshalb wird geblättert
- * wie beim Lesen der Lagerorte: erste Seite einzeln, der Rest in Gruppen
- * gleichzeitig.
- */
-async function mitBestand(
-  warehouseId: number,
-  orte: Lagerort[],
-): Promise<{ belegt: Set<number>; vollstaendig: boolean }> {
-  const belegt = new Set<number>();
-  const ids = new Set(orte.map((o) => o.id));
-  if (!ids.size) return { belegt, vollstaendig: true };
-
-  const proSeite = 250;
-  const gleichzeitig = 6;
-  const maxSeiten = 400;
-
-  const seiteLesen = (seite: number) =>
-    plentyGet<{ entries?: PlentyBestand[]; isLastPage?: boolean; lastPageNumber?: number }>(
-      `/rest/stockmanagement/warehouses/${warehouseId}/stock/storageLocations?itemsPerPage=${proSeite}&page=${seite}`,
-    );
-
-  const uebernimm = (res: { entries?: PlentyBestand[] } | null) => {
-    for (const e of res?.entries ?? []) {
-      const id = Number(e?.storageLocationId);
-      if (ids.has(id) && Number(e?.quantity ?? 0) !== 0) belegt.add(id);
-    }
-    return (res?.entries ?? []).length;
-  };
-
-  const erste = await seiteLesen(1);
-  const ersteAnzahl = uebernimm(erste);
-  if (erste?.isLastPage || ersteAnzahl === 0 || ersteAnzahl < proSeite) {
-    return { belegt, vollstaendig: true };
-  }
-
-  const letzte = Number(erste?.lastPageNumber ?? 0);
-  if (letzte > 1) {
-    const seiten: number[] = [];
-    for (let sn = 2; sn <= Math.min(letzte, maxSeiten); sn++) seiten.push(sn);
-    for (let i = 0; i < seiten.length; i += gleichzeitig) {
-      const gruppe = await Promise.all(seiten.slice(i, i + gleichzeitig).map(seiteLesen));
-      for (const res of gruppe) uebernimm(res);
-    }
-    return { belegt, vollstaendig: letzte <= maxSeiten };
-  }
-
-  for (let seite = 2; seite <= maxSeiten; seite++) {
-    const res = await seiteLesen(seite);
-    const anzahl = uebernimm(res);
-    if (res?.isLastPage || anzahl === 0 || anzahl < proSeite) return { belegt, vollstaendig: true };
-  }
-  return { belegt, vollstaendig: false };
-}
-
-/**
  * Arbeitet eine fertige Liste ab, ohne noch einmal zu suchen.
  *
  * Das ist der Unterschied zwischen 44 und mehreren hundert Löschungen je
@@ -388,24 +330,12 @@ export async function raeumeAuf(opts: AufraeumOptionen): Promise<AufraeumErgebni
     };
   }
 
-  // Sicherung: Nichts löschen, worauf Bestand liegt.
-  let belegt: Set<number>;
-  try {
-    const bestand = await mitBestand(opts.warehouseId, alleOrte);
-    if (!bestand.vollstaendig) {
-      return leer('Der Bestand des Lagers war nicht vollständig lesbar. Ohne diese Prüfung wird nichts gelöscht.');
-    }
-    belegt = bestand.belegt;
-  } catch (err) {
-    return leer(`Bestand nicht prüfbar: ${(err as Error).message}. Ohne diese Prüfung wird nicht gelöscht.`);
-  }
-  if (belegt.size) {
-    return leer(
-      `Auf ${belegt.size} dieser Lagerorte liegt Bestand. Es wird nichts gelöscht — bitte erst umbuchen. ` +
-        `Beispiel-IDs: ${[...belegt].slice(0, 10).join(', ')}`,
-    );
-  }
-  diagnose.push(`Auf keinem der ${alleOrte.length} Lagerorte liegt Bestand.`);
+  // Die Bestandsprüfung passiert nicht hier, sondern unmittelbar vor jeder
+  // einzelnen Löschung (siehe `entferneNachListe`). Das ist genauer — der
+  // Bestand kann sich zwischen Suchen und Löschen ändern — und es erspart
+  // das Lesen der kompletten Bestandsliste des Lagers, an dem PlentyONE mit
+  // "short period read limit reached" abbricht.
+  diagnose.push('Vor jeder Löschung wird der Bestand genau dieses Lagerorts geprüft.');
 
   const uebersicht = zweige.map((z) => ({
     wurzelId: z.wurzel.id,
@@ -459,45 +389,23 @@ export async function raeumeAuf(opts: AufraeumOptionen): Promise<AufraeumErgebni
 
   if (probelauf) return fertig(0, 0, 0, alleOrte.length + alleKnoten.length, false);
 
-  // --- Löschen: erst die Lagerorte, dann die Knoten von unten nach oben ----
-  let orteGeloescht = 0;
-  let knotenGeloescht = 0;
-  let fehler = 0;
-  let schreiblimit = false;
-  let getan = 0;
-
-  const abbruch = () => getan >= maxLoeschungen || Date.now() - start > budgetMs || schreiblimit;
-
-  for (const o of alleOrte) {
-    if (abbruch()) break;
-    try {
-      await loescheMitGeduld(`/rest/warehouses/locations/${o.id}`);
-      orteGeloescht += 1;
-      erledigt.push(o.id);
-    } catch (err) {
-      fehler += 1;
-      if (meldungen.length < 20) meldungen.push(`Lagerort ${o.id} (${o.name}): ${(err as Error).message.slice(0, 200)}`);
-      if (istSchreiblimit(err)) schreiblimit = true;
-    }
-    getan += 1;
-  }
-
-  // Knoten nur anfassen, wenn alle Lagerorte des Zweigs weg sind — sonst
-  // wehrt Plenty sich zu Recht.
-  if (orteGeloescht === alleOrte.length && !schreiblimit) {
-    for (const k of knotenVonUntenNachOben) {
-      if (abbruch()) break;
-      try {
-        await loescheMitGeduld(`/rest/warehouses/locations/levels/${k.id}`);
-        knotenGeloescht += 1;
-        erledigt.push(k.id);
-      } catch (err) {
-        fehler += 1;
-        if (meldungen.length < 20) meldungen.push(`Knoten ${k.id} ("${k.name}"): ${(err as Error).message.slice(0, 200)}`);
-        if (istSchreiblimit(err)) schreiblimit = true;
-      }
-      getan += 1;
-    }
+  // --- Löschen ------------------------------------------------------------
+  // Über denselben Weg wie mit einer fertigen Liste: Dort steckt die
+  // Bestandsprüfung je Lagerort, und die soll es nur an einer Stelle geben.
+  const lauf = await entferneNachListe({
+    orteIds: alleOrte.map((o) => o.id),
+    knotenIds: knotenVonUntenNachOben.map((k) => k.id),
+    maxLoeschungen,
+    budgetMs: budgetMs - (Date.now() - start),
+  });
+  const orteGeloescht = lauf.orteGeloescht;
+  const knotenGeloescht = lauf.knotenGeloescht;
+  const fehler = lauf.fehler;
+  const schreiblimit = lauf.schreiblimit;
+  erledigt.push(...lauf.erledigt);
+  meldungen.push(...lauf.meldungen);
+  if (lauf.uebersprungen) {
+    diagnose.push(`${lauf.uebersprungen} Lagerorte übersprungen, weil Bestand darauf liegt.`);
   }
 
   const offen = alleOrte.length - orteGeloescht + (alleKnoten.length - knotenGeloescht);

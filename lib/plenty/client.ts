@@ -819,7 +819,19 @@ export async function testPlentyConnection(): Promise<{ ok: boolean; message: st
  */
 export async function plentyGet<T>(path: string, cfg: PlentyConfig = getPlentyConfig()): Promise<T> {
   const token = await login(cfg);
-  return api<T>(cfg, token, path);
+  // PlentyONE bremst auch das Lesen ("short period read limit reached"). Das
+  // ist keine Störung, sondern der Normalfall, wenn viele Seiten hintereinander
+  // geholt werden — also kurz warten und noch einmal fragen, statt den ganzen
+  // Lauf daran scheitern zu lassen.
+  for (let versuch = 1; ; versuch++) {
+    try {
+      return await api<T>(cfg, token, path);
+    } catch (err) {
+      const gebremst = /HTTP 429/.test((err as Error).message);
+      if (!gebremst || versuch >= 3) throw err;
+      await new Promise((fertig) => setTimeout(fertig, 1_500 * versuch));
+    }
+  }
 }
 
 /**
