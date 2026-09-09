@@ -10,6 +10,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { entferneNachListe, raeumeAuf } from '@/lib/plenty/lagerort-aufraeumen';
+import { leereLagerortPuffer } from '@/lib/plenty/lagerorte';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
   const knotenIds = Array.isArray(body.knotenIds) ? body.knotenIds.map(Number).filter(Number.isFinite) : [];
   if (body.probelauf === false && (orteIds.length || knotenIds.length)) {
     const res = await entferneNachListe({ orteIds, knotenIds, budgetMs: 45_000 });
+    if (res.orteGeloescht > 0) leereLagerortPuffer(warehouseId);
     return NextResponse.json({
       ok: true,
       probelauf: false,
@@ -71,6 +73,8 @@ export async function POST(request: Request) {
     budgetMs: 45_000,
     nurWurzeln: Array.isArray(body.nurWurzeln) ? body.nurWurzeln.map(Number).filter(Number.isFinite) : undefined,
   });
+
+  if (ergebnis.orteGeloescht > 0) leereLagerortPuffer(warehouseId);
 
   return NextResponse.json(ergebnis, { status: ergebnis.ok ? 200 : 502 });
 }
