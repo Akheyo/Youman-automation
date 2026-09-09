@@ -372,3 +372,299 @@ alter table public.agent_config add column if not exists voicemail_message   tex
 alter table public.profiles add column if not exists lead_webhook_token   text;
 alter table public.profiles add column if not exists post_call_webhook_url text;
 create index if not exists profiles_lead_webhook_token_idx on public.profiles (lead_webhook_token);
+
+-- ============================================================================
+--  Phase G — Paul: Cold-Outreach per E-Mail (Sequenzen, Queue, Opt-out)
+-- ============================================================================
+-- Lina ruft an, Paul schreibt. Eine Outreach-Kampagne ist eine benannte
+-- Sequenz aus mehreren Mail-Schritten (Erstmail + Follow-ups), die pro Kontakt
+-- nacheinander abgearbeitet wird, bis der Kontakt antwortet, sich abmeldet
+-- oder die Sequenz durch ist.
+
+-- ---------------------------------------------------------------------------
+-- outreach_campaigns: eine Sequenz mit Absender, Versandfenster und Limits.
+-- ---------------------------------------------------------------------------
+create table if not exists public.outreach_campaigns (
+  id             uuid primary key default gen_random_uuid(),
+  user_id        uuid not null references auth.users (id) on delete cascade,
+  name           text not null,
+  status         text not null default 'entwurf',   -- entwurf | aktiv | pausiert | fertig
+  from_name      text,                               -- Absendername ("Max von Youman")
+  from_email     text,                               -- Absenderadresse
+  reply_to       text,                               -- abweichende Antwortadresse
+  signature      text,                               -- wird unter jede Mail gehaengt
+  window_start   integer not null default 8,         -- Versandfenster: Start-Stunde (lokal)
+  window_end     integer not null default 18,        -- End-Stunde (lokal)
+  timezone       text    not null default 'Europe/Berlin',
+  send_on_weekend boolean not null default false,    -- Sa/So versenden?
+  max_per_day    integer not null default 40,        -- Rate-Limit: Mails/Tag in dieser Kampagne
+  stop_on_reply  boolean not null default true,      -- Antwort stoppt die restliche Sequenz
+  created_at     timestamptz not null default now()
+);
+
+alter table public.outreach_campaigns enable row level security;
+drop policy if exists "outreach_campaigns own" on public.outreach_campaigns;
+create policy "outreach_campaigns own" on public.outreach_campaigns for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
+-- outreach_steps: die Schritte der Sequenz. step_no 1 ist die Erstmail,
+--   delay_days zaehlt ab dem Versand des vorherigen Schritts.
+--   Leerer subject ab Schritt 2 = Antwort im selben Thread ("Re: ...").
+-- ---------------------------------------------------------------------------
+create table if not exists public.outreach_steps (
+  id          uuid primary key default gen_random_uuid(),
+  campaign_id uuid not null references public.outreach_campaigns (id) on delete cascade,
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  step_no     integer not null,
+  delay_days  integer not null default 0,
+  subject     text not null default '',
+  body        text not null default '',
+  created_at  timestamptz not null default now(),
+  unique (campaign_id, step_no)
+);
+
+alter table public.outreach_steps enable row level security;
+drop policy if exists "outreach_steps own" on public.outreach_steps;
+create policy "outreach_steps own" on public.outreach_steps for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
+-- outreach_contacts: Empfaenger einer Kampagne inkl. Sequenz-Fortschritt.
+--   status: neu (noch nichts raus) | aktiv (Sequenz laeuft) | geantwortet
+--           | fertig (Sequenz durch) | gestoppt (manuell) | abgemeldet | bounce
+--   unsubscribe_token: Einmal-Token fuer den Abmeldelink in jeder Mail.
+-- ---------------------------------------------------------------------------
+create table if not exists public.outreach_contacts (
+  id                uuid primary key default gen_random_uuid(),
+  user_id           uuid not null references auth.users (id) on delete cascade,
+  campaign_id       uuid not null references public.outreach_campaigns (id) on delete cascade,
+  email             text not null,
+  first_name        text,
+  last_name         text,
+  company           text,
+  website           text,
+  anlass            text,                             -- sachlicher Grund der Ansprache
+  custom            jsonb not null default '{}'::jsonb, -- freie Platzhalter aus dem CSV
+  source            text not null default 'manual',   -- manual | csv | leads
+  status            text not null default 'neu',
+  current_step      integer not null default 0,       -- zuletzt versendeter Schritt
+  next_send_at      timestamptz,                      -- faellig ab
+  last_sent_at      timestamptz,
+  last_error        text,
+  created_at        timestamptz not null default now(),
+  unsubscribe_token text not null default replace(gen_random_uuid()::text, '-', ''),
+  unique (campaign_id, email)
+);
+
+alter table public.outreach_contacts enable row level security;
+drop policy if exists "outreach_contacts own" on public.outreach_contacts;
+create policy "outreach_contacts own" on public.outreach_contacts for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create index if not exists outreach_contacts_queue_idx on public.outreach_contacts (campaign_id, status, next_send_at);
+create index if not exists outreach_contacts_token_idx on public.outreach_contacts (unsubscribe_token);
+
+-- Thread-Anschluss beim Nachfassen: Betreff der Erstmail und deren Message-ID,
+-- damit Follow-ups als "Re: ..." im selben Verlauf landen (backfill-sicher).
+alter table public.outreach_contacts add column if not exists thread_subject text;
+alter table public.outreach_contacts add column if not exists message_id     text;
+alter table public.outreach_contacts add column if not exists fails          integer not null default 0;
+
+-- ---------------------------------------------------------------------------
+-- outreach_events: Protokoll je Kontakt (Beleg fuer Versand und Widerspruch).
+--   kind: gesendet | fehler | geantwortet | bounce | abgemeldet | gestoppt
+-- ---------------------------------------------------------------------------
+create table if not exists public.outreach_events (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  campaign_id uuid references public.outreach_campaigns (id) on delete cascade,
+  contact_id  uuid references public.outreach_contacts (id) on delete cascade,
+  step_no     integer,
+  kind        text not null,
+  subject     text,
+  detail      text,
+  created_at  timestamptz not null default now()
+);
+
+alter table public.outreach_events enable row level security;
+drop policy if exists "outreach_events own" on public.outreach_events;
+create policy "outreach_events own" on public.outreach_events for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create index if not exists outreach_events_user_created_idx on public.outreach_events (user_id, created_at desc);
+create index if not exists outreach_events_campaign_idx on public.outreach_events (campaign_id, created_at desc);
+
+-- ---------------------------------------------------------------------------
+-- outreach_suppression: kontoweite Sperrliste (Art. 21 DSGVO / § 7 UWG).
+--   Eine Adresse hier bekommt aus KEINER Kampagne mehr Post — auch nicht,
+--   wenn sie spaeter erneut importiert wird.
+-- ---------------------------------------------------------------------------
+create table if not exists public.outreach_suppression (
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  email      text not null,
+  reason     text not null default 'abgemeldet',   -- abgemeldet | bounce | manuell
+  created_at timestamptz not null default now(),
+  primary key (user_id, email)
+);
+
+alter table public.outreach_suppression enable row level security;
+drop policy if exists "outreach_suppression own" on public.outreach_suppression;
+create policy "outreach_suppression own" on public.outreach_suppression for all
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------------
+-- consume_email_quota_for: Service-Role-Variante der Mail-Kontingentpruefung,
+--   adressiert ueber eine explizite User-ID (der Versand-Cron laeuft ohne
+--   angemeldete Sitzung). Pendant zu consume_call_quota_for.
+-- ---------------------------------------------------------------------------
+create or replace function public.consume_email_quota_for(p_user uuid, p_limit integer)
+returns boolean
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  cur_period text := to_char(now(), 'YYYY-MM');
+  used integer;
+begin
+  update public.profiles
+     set search_count = case when usage_period is distinct from cur_period then 0 else search_count end,
+         email_count  = case when usage_period is distinct from cur_period then 0 else email_count  end,
+         call_count   = case when usage_period is distinct from cur_period then 0 else call_count   end,
+         usage_period = cur_period
+   where id = p_user;
+
+  select email_count into used from public.profiles where id = p_user;
+  if used is null then return false; end if;
+  if used >= p_limit then return false; end if;
+  update public.profiles set email_count = email_count + 1 where id = p_user;
+  return true;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- outreach_unsubscribe: Abmeldung ueber den Link in der Mail. Laeuft ohne
+--   Sitzung (der Empfaenger ist nicht eingeloggt), daher security definer und
+--   ausschliesslich ueber den Token adressierbar.
+-- ---------------------------------------------------------------------------
+create or replace function public.outreach_unsubscribe(p_token text)
+returns text
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  c record;
+begin
+  select * into c from public.outreach_contacts where unsubscribe_token = p_token;
+  if not found then return null; end if;
+
+  update public.outreach_contacts
+     set status = 'abgemeldet', next_send_at = null
+   where id = c.id;
+
+  insert into public.outreach_suppression (user_id, email, reason)
+  values (c.user_id, lower(c.email), 'abgemeldet')
+  on conflict (user_id, email) do nothing;
+
+  insert into public.outreach_events (user_id, campaign_id, contact_id, step_no, kind, detail)
+  values (c.user_id, c.campaign_id, c.id, c.current_step, 'abgemeldet', 'Abmeldelink in der E-Mail');
+
+  return c.email;
+end;
+$$;
+
+-- ============================================================================
+--  Phase H — Öffnungsmessung (opt-in je Kampagne)
+-- ============================================================================
+-- Gemessen wird über ein 1x1-Pixel im HTML-Teil der Mail. Zwei Dinge dazu:
+--
+--   1. Die Zahl ist eine Tendenz, kein Fakt. Apple Mail laedt Bilder schon
+--      beim Empfang vor (jede Mail zaehlt dann als geoeffnet), Firmen-Scanner
+--      tun dasselbe, und Clients mit blockierten Bildern melden echte
+--      Oeffnungen nie. Deshalb wird jede Abrufmeldung mit `prefetch` markiert,
+--      wenn sie nach Maschine aussieht.
+--   2. Oeffnungs-Tracking braucht nach Auffassung der Datenschutzkonferenz
+--      und § 25 TDDDG eine Einwilligung. Darum ist es je Kampagne
+--      abschaltbar und standardmaessig AUS.
+alter table public.outreach_campaigns add column if not exists track_opens boolean not null default false;
+
+-- Je versendeter Mail ein Token im zugehoerigen 'gesendet'-Ereignis. Der
+-- Pixel-Abruf findet die Zeile darueber und schreibt Zeitpunkt und Zaehler.
+alter table public.outreach_events add column if not exists track_token text;
+alter table public.outreach_events add column if not exists opened_at    timestamptz;
+alter table public.outreach_events add column if not exists open_count   integer not null default 0;
+
+create unique index if not exists outreach_events_track_token_idx on public.outreach_events (track_token) where track_token is not null;
+
+-- Verdichtet am Kontakt, damit die Liste ohne Verknuepfung auskommt.
+alter table public.outreach_contacts add column if not exists opens        integer not null default 0;
+alter table public.outreach_contacts add column if not exists last_open_at timestamptz;
+
+-- ---------------------------------------------------------------------------
+-- outreach_track_open: Pixel-Abruf verbuchen. Laeuft ohne Sitzung (der
+--   Empfaenger ist nicht angemeldet), daher security definer und
+--   ausschliesslich ueber den Token adressierbar.
+--
+--   p_prefetch = true kommt vom Aufrufer, wenn der Abruf nach einem Scanner
+--   oder Vorablader aussieht. Solche Abrufe zaehlen mit, gelten aber nicht
+--   als erste echte Oeffnung.
+--
+--   Rueckgabe: true, wenn dies die erste gewertete Oeffnung war.
+-- ---------------------------------------------------------------------------
+create or replace function public.outreach_track_open(p_token text, p_prefetch boolean default false)
+returns boolean
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  ev record;
+  first_open boolean := false;
+begin
+  select * into ev from public.outreach_events where track_token = p_token and kind = 'gesendet';
+  if not found then return false; end if;
+
+  update public.outreach_events
+     set open_count = open_count + 1,
+         opened_at  = case when p_prefetch then opened_at else coalesce(opened_at, now()) end
+   where id = ev.id;
+
+  if not p_prefetch and ev.opened_at is null then
+    first_open := true;
+
+    update public.outreach_contacts
+       set opens = opens + 1,
+           last_open_at = now()
+     where id = ev.contact_id;
+
+    insert into public.outreach_events (user_id, campaign_id, contact_id, step_no, kind, subject)
+    values (ev.user_id, ev.campaign_id, ev.contact_id, ev.step_no, 'geoeffnet', ev.subject);
+  end if;
+
+  return first_open;
+end;
+$$;
+
+-- ============================================================================
+--  Phase I — Zustellbarkeit: Postfach-Rotation, Anwaermen, Schutzschalter
+-- ============================================================================
+-- Kaltakquise verbrennt Domains nicht durch Technik, sondern durch Verhalten:
+-- zu viel auf einmal aus einem frischen Postfach, zu viele unzustellbare
+-- Adressen, zu viele Beschwerden. Diese drei Dinge fangen die Spalten hier ab.
+
+-- Welches Postfach hat diese Mail verschickt? Grundlage fuer Rotation und
+-- fuer das Tageslimit je Postfach.
+alter table public.outreach_events add column if not exists mailbox text;
+
+create index if not exists outreach_events_mailbox_idx
+  on public.outreach_events (mailbox, created_at desc)
+  where mailbox is not null;
+
+-- Warum wurde die Kampagne angehalten? Leer = vom Menschen pausiert.
+-- Gesetzt = der Schutzschalter hat ausgeloest (zu viele Bounces o. Ae.).
+alter table public.outreach_campaigns add column if not exists paused_reason text;
+
+-- Ergebnis der Adresspruefung beim Import:
+--   ok        = Syntax und MX-Eintrag der Domain in Ordnung
+--   kein_mx   = Domain nimmt gar keine Mails an -> sicherer Bounce
+--   ungeprueft = Pruefung war nicht moeglich (DNS-Fehler)
+alter table public.outreach_contacts add column if not exists mx_status text;

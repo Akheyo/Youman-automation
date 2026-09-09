@@ -1,0 +1,39 @@
+# Die Datenbank liegt bei Supabase (Projekt in Frankfurt). Auf dem Hetzner-Server
+# laufen nur die App und der Reverse Proxy.
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kk-app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL fehlt in .env}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET fehlt in .env}
+      APP_URL: ${APP_URL:-http://localhost}
+      TZ: ${TZ:-Europe/Berlin}
+    networks: [kk]
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: kk-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-:80}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [app]
+    networks: [kk]
+
+volumes:
+  caddy-data:
+  caddy-config:
+
+networks:
+  kk:
+    driver: bridge

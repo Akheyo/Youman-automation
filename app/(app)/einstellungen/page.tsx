@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { requireUser } from '@/lib/supabase/server';
-import { planForUser } from '@/lib/plans';
+import { planForUser, isOwnerEmail } from '@/lib/plans';
 import BillingButtons from '../dashboard/BillingButtons';
 import Webhooks from './Webhooks';
 import styles from '../dashboard/dashboard.module.css';
@@ -19,6 +19,7 @@ export default async function EinstellungenPage() {
   const plan = planForUser({ plan: profile?.plan, email: user.email });
   const hasSub = Boolean(profile?.stripe_subscription_id);
   const googleEmail = gt?.email ?? null;
+  const istInhaber = isOwnerEmail(user.email);
 
   return (
     <div className={styles.page}>
@@ -82,7 +83,33 @@ export default async function EinstellungenPage() {
               Bearbeiten
             </Link>
           </div>
+          <div className={styles.settingRow}>
+            <div>
+              <div className={styles.settingName}>Paul-Sequenzen</div>
+              <div className={styles.settingDesc}>Kampagnen, Sequenztexte, Kontakte und die Sperrliste für den Mail-Versand.</div>
+            </div>
+            <Link href="/outreach" className={styles.settingBtn}>
+              Bearbeiten
+            </Link>
+          </div>
         </section>
+
+        {istInhaber && (
+          <section className={styles.card}>
+            <div className={styles.sectionTitle}>Betrieb</div>
+            <div className={styles.settingRow}>
+              <div>
+                <div className={styles.settingName}>Systemcheck</div>
+                <div className={styles.settingDesc}>
+                  Zeigt, welche Bausteine eingerichtet sind und was für den Versand noch fehlt.
+                </div>
+              </div>
+              <Link href="/systemcheck" className={styles.settingBtn}>
+                Öffnen
+              </Link>
+            </div>
+          </section>
+        )}
 
         <Webhooks />
 

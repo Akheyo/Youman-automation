@@ -27,9 +27,10 @@
     "node_modules",
     "tests/e2e",
     "scripts/lod2-pipeline",
-    // Eigenstaendige App mit eigener tsconfig und eigenem Vercel-Projekt.
-    // Ohne diese Zeile zieht der Typecheck der Hauptanwendung ihre Dateien
+    // Eigenstaendige Apps mit eigener tsconfig und eigenem Vercel-Projekt.
+    // Ohne diese Zeilen zieht der Typecheck der Hauptanwendung ihre Dateien
     // mit ein — und loest dort "@/..." gegen das falsche Verzeichnis auf.
+    "komplett-konzept",
     "projektplanung"
   ]
 }
