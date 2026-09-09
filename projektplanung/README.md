@@ -90,18 +90,25 @@ wie eine App ablegen (Manifest + Icons, kein App Store). Der Ablauf:
 1. Seite öffnen → ein **angefangener Artikel wird fortgesetzt**, sonst entsteht
    ein neuer. Deshalb kostet ein versehentliches Öffnen keine Karteileiche, und
    ein zwischendrin geschlossenes Handy keinen Artikel.
-2. Vier Kacheln geben die **Aufnahme-Reihenfolge** vor: Übersicht, Typenschild,
-   Zustand, Detail. Ein Tipp öffnet die echte Kamera-App des Handys — volle
-   Auflösung, vertraute Bedienung.
+2. **Ein Knopf: „Foto aufnehmen".** So viele Aufnahmen wie nötig, in beliebiger
+   Reihenfolge. Es gibt keine Pflicht-Perspektiven und nichts abzuhaken.
 3. Jedes Foto geht **sofort im Hintergrund** raus, während schon das nächste
    gemacht wird.
-4. „Artikel fertig" setzt den Status auf `bereit`. Ab hier übernimmt die
-   Verarbeitung.
+4. „Artikel fertig" — und ab hier läuft es **von selbst weiter**: Die Auswertung
+   startet ohne weiteres Zutun, während auf dem Tisch schon der nächste Artikel
+   liegt.
 
-Pflicht sind **Übersicht** und **Typenschild**. Das Typenschild ist bei
-Gebrauchtware der wertvollste Datenpunkt überhaupt: daraus fallen Hersteller
-und Modellnummer, und daraus wiederum die Vergleichspreise. Ohne es ist der
-spätere Preis geraten.
+### Warum niemand mehr Bildrollen vergibt
+
+Die erste Fassung verlangte vier Aufnahmen in vier Kacheln: Übersicht,
+Typenschild, Zustand, Detail. Das war ein Formular vor der Kamera — abhaken,
+bevor man auslösen darf, mit vollen Händen im Lager.
+
+Wofür ein Foto taugt, **sieht man dem Foto an**. Das entscheidet die Auswertung
+hinterher, und zwar zuverlässiger als jemand, der gerade eine Palette abräumt.
+Fehlt etwas Wichtiges, sagt sie es hinterher — „kein lesbares Typenschild auf
+den Fotos" ist ein Hinweis am Ergebnis, kein Grund, jemanden am Regal stehen zu
+lassen. Zum Abschicken reicht **ein Foto**.
 
 ### Warum die Fotos direkt zum Storage gehen
 
@@ -113,6 +120,57 @@ Qualitätsverlust, wegen dem WhatsApp aus der Kette geflogen ist.
 Deshalb vergibt die App nur die Erlaubnis (signierte Upload-URL), und der
 Browser lädt direkt in den privaten Bucket `artikelfotos`. Details in
 [`lib/erfassung/speicher.ts`](lib/erfassung/speicher.ts).
+
+### Was die Auswertung macht
+
+Alle Fotos **eines** Artikels gehen in **einen** Aufruf an Claude. Das ist der
+Kern: Erst im Zusammenhang ergibt sich aus Übersicht, Typenschild und
+Detailaufnahme ein Gerät — einzeln ausgewertet sieht man dreimal etwas
+Metallisches.
+
+Zurück kommt ein festes Schema (`lib/erfassung/erkennung.ts`): Gerätetyp,
+Hersteller, Modell, Modellnummer, Zustand, Schäden, Lieferumfang, technische
+Merkmale, dazu je Foto, wofür es taugt.
+
+**Jedes Feld darf „unbekannt" sein**, und das ist die wichtigste Regel hier:
+Eine geratene Modellnummer sieht aus wie eine echte, und die Preisrecherche
+baut später darauf auf. Lieber eine Lücke, die jemand füllt, als eine Angabe,
+der niemand widerspricht.
+
+**Schäden landen in der Notiz.** Der maschinelle Teil steht unter einer
+Trennzeile und wird bei jeder neuen Auswertung ersetzt, damit er sich nicht
+stapelt. Was ein Mensch getippt hat, steht darüber und wird **nie**
+überschrieben — wer „Fernbedienung fehlt" notiert, weiß etwas, das auf keinem
+Foto zu sehen ist.
+
+Anschließend wird in PlentyONE gesucht, ob es dasselbe Teil schon einmal gab
+(`lib/erfassung/treffer.ts`) — Modellnummer zuerst, dann Hersteller + Modell,
+dann Titel. Zu allgemeine Begriffe werden verworfen, statt das halbe Lager als
+Treffer auszugeben. Bei Gebrauchtware ist ein früheres Exemplar die beste
+Preisquelle, die es gibt, und sie gehört euch.
+
+### Wie „von selbst" hier funktioniert
+
+Angestoßen wird die Auswertung nach dem Abschicken **und** bei jedem Laden der
+Liste: Was auf `bereit` steht, wird nachgezogen, eines nach dem anderen. Bleibt
+ein Artikel liegen, weil jemand die App zugemacht hat, holt ihn der nächste
+Aufruf nach.
+
+Das ist bewusst noch kein eigener Dienst. Ein Artikel, dessen Auswertung nicht
+durchgeht, wird in derselben Sitzung nicht erneut angestoßen — sonst liefe eine
+Schleife, die Geld kostet. Ein richtiger Worker (mit Wiederholung über Tage
+hinweg) kommt mit den nächsten Ausbaustufen.
+
+**Zeitgrenze:** Die Auswertung läuft als Serverless-Funktion mit
+`maxDuration = 60`. Das ist die Obergrenze, die auch im kleinsten Vercel-Tarif
+erlaubt ist. Reicht sie bei vielen Fotos nicht, ist die Stellschraube
+`output_config.effort` in `lib/erfassung/erkennung.ts`.
+
+**HEIC:** iPhones speichern je nach Einstellung im HEIC-Format, das die
+Auswertung nicht lesen kann. Solche Bilder werden übersprungen **und benannt** —
+still weglassen wäre der schlechtere Weg, weil dann unerklärlich weniger
+erkannt würde. Abhilfe am Gerät: Einstellungen → Kamera → Formate → „Maximale
+Kompatibilität".
 
 ### Funkloch im Lager
 
@@ -150,18 +208,25 @@ Namen, damit die Spur stimmt, wer fotografiert hat.
 ### Status eines Artikels
 
 `offen` → `bereit` → `erkannt` → `bepreist` → `listing` → `freigabe` →
-`veroeffentlicht`, dazu `fehler`. Heute endet der Weg bei `bereit`; die
-folgenden Stufen sind die nächsten Ausbauschritte (Merkmale aus den Bildern
-lesen, Preis aus der eigenen Verkaufshistorie vorschlagen, Listing erzeugen,
-in Plenty anlegen).
+`veroeffentlicht`, dazu `fehler`. Heute endet der Weg bei `erkannt`; die
+folgenden Stufen sind die nächsten Ausbauschritte (Preis aus der eigenen
+Verkaufshistorie vorschlagen, Listing erzeugen, in Plenty anlegen).
 
 ### Einrichtung
 
 Einmalig [`supabase/schema.sql`](supabase/schema.sql) im SQL-Editor laufen
 lassen — das legt `erfassung_artikel`, `erfassung_bilder` und den privaten
-Bucket `artikelfotos` an. `SUPABASE_SERVICE_ROLE_KEY` ist **Pflicht**: ohne ihn
-lassen sich keine Upload-Erlaubnisse ausstellen. `ERFASSUNG_WEBHOOK_URL` ist
-optional (siehe `.env.example`).
+Bucket `artikelfotos` an. Die Datei ist idempotent und kann nach einem Update
+erneut laufen.
+
+| Variable | Nötig wofür |
+| --- | --- |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Pflicht** — ohne ihn keine Upload-Erlaubnisse, keine Fotos |
+| `ANTHROPIC_API_KEY` | **Pflicht für die Auswertung** — ohne ihn läuft das Fotografieren, die Erkennung nicht |
+| `ERFASSUNG_WEBHOOK_URL` | optional, Anstoß nach außen |
+
+Der Status eines Artikels sagt, wo er steht: `offen` → `bereit` → `erkannt`.
+Bleibt einer auf `fehler` stehen, steht die Meldung im Klartext an der Zeile.
 
 ## Lagerplatz-Scan (`/lagerplatz`)
 
