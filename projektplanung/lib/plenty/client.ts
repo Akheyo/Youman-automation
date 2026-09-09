@@ -823,6 +823,30 @@ export async function plentyGet<T>(path: string, cfg: PlentyConfig = getPlentyCo
 }
 
 /**
+ * Führt einen POST gegen die Plenty-REST-API aus (gleicher Token-Cache wie
+ * `plentyGet`). Wirft bei HTTP-Fehlern mit Statuscode und Antwortanfang in der
+ * Meldung, damit der Aufrufer je Zeile protokollieren kann, woran es lag.
+ */
+export async function plentyPost<T>(
+  path: string,
+  params: Record<string, string | number>,
+  cfg: PlentyConfig = getPlentyConfig(),
+): Promise<T> {
+  const token = await login(cfg);
+  // Die PlentyONE-Spec deklariert die Felder mancher schreibender Endpunkte als
+  // Query-Parameter, andere Teile der Doku zeigen sie im Body. Wir schicken
+  // beides — doppelt gemoppelt schadet nicht, geraten wird nichts.
+  const qs = new URLSearchParams(
+    Object.entries(params).map(([k, v]) => [k, String(v)]),
+  ).toString();
+  const trenner = path.includes('?') ? '&' : '?';
+  return api<T>(cfg, token, `${path}${trenner}${qs}`, {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+}
+
+/**
  * Liefert einen gültigen Bearer-Token (aus dem modulweiten Cache oder per
  * frischem Login). Für Aufrufe, die nicht über `plentyGet` laufen — etwa
  * schreibende PUT-Anfragen.

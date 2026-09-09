@@ -175,3 +175,20 @@
 .more { margin: var(--space-3) 0 0; font-size: 0.8rem; color: var(--muted); text-align: center; }
 .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .hint { margin: var(--space-4) 0 0; font-size: 0.82rem; color: var(--muted); }
+
+/* Eingabefeld für die Läufe-Tabelle (Lagerorte anlegen). */
+.textarea {
+  width: 100%;
+  min-height: 220px;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-monospace, 'IBM Plex Mono', SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+.textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+.fieldFull { display: flex; flex-direction: column; gap: var(--space-2); width: 100%; }

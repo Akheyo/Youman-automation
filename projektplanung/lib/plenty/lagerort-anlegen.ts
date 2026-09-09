@@ -1,0 +1,511 @@
+/**
+ * Lagerorte in PlentyONE anlegen — ohne die Maske „Neue Lagerorte anlegen".
+ *
+ * WIE PLENTY LAGERORTE FÜHRT
+ * --------------------------
+ * Drei Ebenen, alle in der REST-Doku beschrieben:
+ *
+ *   Dimension  Die Spalte an sich — Halle, Regal, Ebene, Feld. Je Lager fest
+ *              eingerichtet, mit Kürzel ("H") und Trennzeichen ("/").
+ *              GET /rest/warehouses/{id}/locations/dimensions
+ *   Level      Ein Knoten in dieser Spalte, z. B. Halle "1" oder Feld "07".
+ *              Hat parentId (der Knoten darüber), dimensionId und Position.
+ *              GET  /rest/warehouses/{id}/locations/levels
+ *              POST /rest/warehouses/locations/levels
+ *   Lagerort   Das Blatt darunter, z. B. Kiste "K04". Das ist die ID, auf die
+ *              später Bestand gebucht wird.
+ *              POST /rest/warehouses/locations
+ *
+ * Aus "H1/R7/EC F16-K04" werden also vier Levels (1, 7, C, 16) und ein
+ * Lagerort (K04). Existiert ein Level schon, wird es wiederverwendet.
+ *
+ * WARUM NICHT DER previews-ENDPUNKT
+ * ---------------------------------
+ * POST /rest/warehouses/locations/previews ist der Generator hinter der Maske
+ * und würde einen ganzen Bereich in einem Aufruf anlegen. Seine drei Array-
+ * Parameter sind in der Spec aber nur als "array of string" beschrieben, ohne
+ * Feldnamen. Für einen schreibenden Aufruf ist das zu wenig; deshalb hier die
+ * dokumentierten Einzelendpunkte. Mehr Aufrufe, dafür kein Raten.
+ *
+ * SCHUTZ
+ * ------
+ *   - `probelauf: true` ist Voreinstellung; dann wird nichts geschrieben.
+ *   - Was es schon gibt, wird übersprungen — es entstehen keine Dubletten.
+ *   - Zweck, Status und die Schreibweise der Namen werden NICHT erfunden,
+ *     sondern aus den vorhandenen Lagerorten desselben Lagers abgelesen.
+ *   - Ein Fehler in einer Zeile stoppt den Lauf nicht, sondern wird vermerkt.
+ *   - Zeitbudget je Aufruf, damit die Funktion nicht in den Timeout läuft;
+ *     der Rest wird als „offen" gemeldet und im nächsten Aufruf erledigt.
+ */
+
+import { plentyGet, plentyPost } from './client';
+import { ladeLagerorte, verzeichnis } from './lagerorte';
+import { codeAus, findeLagerplaetze, type Segment } from '@/lib/lagerplatz/erkennung';
+
+// ---------------------------------------------------------------------------
+// Typen
+// ---------------------------------------------------------------------------
+
+/** Eine Spalte der Lagerortstruktur (Halle, Regal, Ebene, Feld). */
+export interface Dimension {
+  id: number;
+  /** Tiefe, 1 = oberste Spalte. */
+  tiefe: number;
+  name: string;
+  /** Kürzel, das im Namen erscheint, z. B. "H". */
+  kuerzel: string;
+}
+
+/** Ein Knoten der Struktur, z. B. Halle "1" oder Feld "07". */
+export interface Knoten {
+  id: number;
+  parentId: number;
+  dimensionId: number;
+  name: string;
+  position: number;
+}
+
+export type AnlageStatus = 'vorhanden' | 'geplant' | 'angelegt' | 'uebersprungen' | 'fehler';
+
+/** Was mit einem gewünschten Lagerort passiert ist. */
+export interface AnlageZeile {
+  code: string;
+  status: AnlageStatus;
+  /** ID des Lagerorts — bei „vorhanden" die bestehende, bei „angelegt" die neue. */
+  id: number | null;
+  /** Wie viele Struktur-Knoten dafür neu angelegt wurden (0, wenn alles stand). */
+  neueKnoten: number;
+  hinweis: string | null;
+}
+
+export interface AnlageErgebnis {
+  ok: boolean;
+  probelauf: boolean;
+  error: string | null;
+  warehouseId: number;
+  /** Wie viele Lagerorte das Lager vor dem Lauf hatte. */
+  bestehende: number;
+  vorhanden: number;
+  geplant: number;
+  angelegt: number;
+  uebersprungen: number;
+  fehler: number;
+  /** Neu angelegte Struktur-Knoten (Hallen/Regale/Ebenen/Felder). */
+  neueKnoten: number;
+  /** Noch nicht abgearbeitet, weil das Zeitbudget aufgebraucht war. */
+  offen: number;
+  /** Index in der Eingabeliste, ab dem der nächste Aufruf weitermachen muss. */
+  naechsterIndex: number;
+  zeilen: AnlageZeile[];
+  diagnose: string[];
+  dauerMs: number;
+}
+
+export interface AnlageOptionen {
+  warehouseId: number;
+  /** Ohne ausdrückliches `probelauf: false` wird nichts geschrieben. */
+  probelauf?: boolean;
+  /** Obergrenze für tatsächlich angelegte Lagerorte je Aufruf. */
+  maxAnlagen?: number;
+  /** Zeitbudget in Millisekunden; danach bricht der Lauf sauber ab. */
+  budgetMs?: number;
+  /** Nur setzen, wenn die abgelesenen Werte nicht passen. */
+  zweck?: string;
+  status?: string;
+}
+
+interface PlentyListe<T> {
+  entries?: T[];
+  isLastPage?: boolean;
+  lastPageNumber?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Code zerlegen
+// ---------------------------------------------------------------------------
+
+/**
+ * Zerlegt einen Lagerplatz-Code der einheitlichen Form in seine vier
+ * Strukturteile und die Bezeichnung des Lagerorts.
+ *
+ * "H1/R7/EC F16-K04" → halle 1, regal 7, ebene C, fach 16, bezeichnung "K04"
+ * "H2/R7/EA F07-0"   → …, bezeichnung "0" (Stellplatz ohne Kiste)
+ *
+ * Gibt null zurück, wenn der Text nicht eindeutig ein Lagerplatz ist — dann
+ * wird die Zeile übersprungen statt geraten.
+ */
+export function zerlegeCode(text: string): (Segment & { bezeichnung: string }) | null {
+  const treffer = findeLagerplaetze(text);
+  if (treffer.length !== 1) return null;
+  const s = treffer[0].segment;
+  // Ohne Ebene ist der Platz unvollständig; so etwas legen wir nicht an.
+  if (!s.ebene) return null;
+  return { ...s, bezeichnung: s.kiste ?? '0' };
+}
+
+/**
+ * Liest an vorhandenen Namen ab, ob Zahlen aufgefüllt werden ("07" statt "7").
+ * Erfinden wollen wir die Schreibweise nicht — sie muss zu dem passen, was im
+ * Lager schon steht, sonst stehen später zwei Felder nebeneinander.
+ */
+export function stellenAus(namen: Iterable<string>): number {
+  let breite = 0;
+  for (const n of namen) {
+    if (!/^\d+$/.test(n)) continue;
+    // Nur führende Nullen verraten die Absicht; "16" allein sagt nichts.
+    if (n.startsWith('0')) breite = Math.max(breite, n.length);
+  }
+  return breite;
+}
+
+/** Bringt einen Namen auf die abgelesene Schreibweise. */
+export function nameMitStellen(name: string, breite: number): string {
+  if (breite <= 0 || !/^\d+$/.test(name)) return name;
+  return name.padStart(breite, '0');
+}
+
+// ---------------------------------------------------------------------------
+// Struktur lesen
+// ---------------------------------------------------------------------------
+
+/** Liest Dimensionen und Knoten eines Lagers. */
+export async function ladeStruktur(
+  warehouseId: number,
+): Promise<{ dimensionen: Dimension[]; knoten: Knoten[] }> {
+  const rohDim = await plentyGet<PlentyListe<Record<string, unknown>> | Array<Record<string, unknown>>>(
+    `/rest/warehouses/${warehouseId}/locations/dimensions`,
+  );
+  const dimEintraege = Array.isArray(rohDim) ? rohDim : (rohDim?.entries ?? []);
+  const dimensionen: Dimension[] = dimEintraege
+    .filter((d) => Number.isFinite(Number(d?.id)))
+    .map((d) => ({
+      id: Number(d.id),
+      tiefe: Number(d.level ?? 0),
+      name: String(d.name ?? ''),
+      kuerzel: String(d.shortcut ?? ''),
+    }))
+    .sort((a, b) => a.tiefe - b.tiefe);
+
+  const rohLvl = await plentyGet<PlentyListe<Record<string, unknown>> | Array<Record<string, unknown>>>(
+    `/rest/warehouses/${warehouseId}/locations/levels`,
+  );
+  const lvlEintraege = Array.isArray(rohLvl) ? rohLvl : (rohLvl?.entries ?? []);
+  const knoten: Knoten[] = lvlEintraege
+    .filter((l) => Number.isFinite(Number(l?.id)))
+    .map((l) => ({
+      id: Number(l.id),
+      parentId: Number(l.parentId ?? 0),
+      dimensionId: Number(l.dimensionId ?? 0),
+      name: String(l.name ?? '').trim(),
+      position: Number(l.position ?? 0),
+    }));
+
+  return { dimensionen, knoten };
+}
+
+/** Schlüssel für die Knotensuche: gleicher Elternknoten, gleiche Spalte, gleicher Name. */
+function knotenSchluessel(parentId: number, dimensionId: number, name: string): string {
+  return `${parentId}|${dimensionId}|${name.toUpperCase()}`;
+}
+
+// ---------------------------------------------------------------------------
+// Anlegen
+// ---------------------------------------------------------------------------
+
+/**
+ * Legt die übergebenen Lagerorte an — oder zeigt im Probelauf nur, was
+ * passieren würde.
+ *
+ * Die Reihenfolge der Rückgabe entspricht der Eingabe, damit sich das Ergebnis
+ * Zeile für Zeile mit der Wunschliste vergleichen lässt.
+ */
+export async function legeLagerorteAn(
+  codes: string[],
+  opts: AnlageOptionen,
+): Promise<AnlageErgebnis> {
+  const start = Date.now();
+  const probelauf = opts.probelauf !== false;
+  const maxAnlagen = Math.max(0, Math.floor(opts.maxAnlagen ?? 200));
+  const budgetMs = Math.max(5_000, Math.floor(opts.budgetMs ?? 45_000));
+  const diagnose: string[] = [];
+  const zeilen: AnlageZeile[] = [];
+
+  const leer = (fehler: string): AnlageErgebnis => ({
+    ok: false,
+    probelauf,
+    error: fehler,
+    warehouseId: opts.warehouseId,
+    bestehende: 0,
+    vorhanden: 0,
+    geplant: 0,
+    angelegt: 0,
+    uebersprungen: 0,
+    fehler: 0,
+    neueKnoten: 0,
+    offen: codes.length,
+    naechsterIndex: 0,
+    zeilen: [],
+    diagnose,
+    dauerMs: Date.now() - start,
+  });
+
+  // --- Bestand lesen ------------------------------------------------------
+  let bestehende: Awaited<ReturnType<typeof ladeLagerorte>>;
+  let struktur: Awaited<ReturnType<typeof ladeStruktur>>;
+  try {
+    [bestehende, struktur] = await Promise.all([
+      ladeLagerorte(opts.warehouseId),
+      ladeStruktur(opts.warehouseId),
+    ]);
+  } catch (err) {
+    return leer(`Struktur des Lagers ${opts.warehouseId} nicht lesbar: ${(err as Error).message}`);
+  }
+
+  const { nachCode, doppelt } = verzeichnis(bestehende.orte);
+  diagnose.push(
+    `${bestehende.orte.length} vorhandene Lagerorte gelesen, davon ${nachCode.size} eindeutig zuordenbar` +
+      (doppelt ? `, ${doppelt} doppelte Namen` : ''),
+  );
+  if (bestehende.abgebrochen) {
+    return leer(
+      'Die Liste der vorhandenen Lagerorte war nicht vollständig lesbar. Ohne vollständige Liste wird nicht angelegt — sonst entstehen Dubletten.',
+    );
+  }
+
+  // Spalten: die vier Ebenen von oben nach unten.
+  const nachTiefe = [...struktur.dimensionen].sort((a, b) => a.tiefe - b.tiefe);
+  if (nachTiefe.length < 4) {
+    return leer(
+      `Das Lager hat nur ${nachTiefe.length} Strukturspalten; erwartet werden vier (Halle, Regal, Ebene, Feld).`,
+    );
+  }
+  const [dHalle, dRegal, dEbene, dFach] = nachTiefe;
+  diagnose.push(
+    `Struktur: ${nachTiefe.map((d) => `${d.name || '?'} (${d.kuerzel || '–'})`).join(' › ')}`,
+  );
+
+  // Wurzel: der Elternknoten, unter dem die obersten Knoten hängen.
+  const oberste = struktur.knoten.filter((k) => k.dimensionId === dHalle.id);
+  if (!oberste.length) {
+    return leer(
+      'Im Lager gibt es noch keinen einzigen Knoten der obersten Spalte. Der erste muss von Hand angelegt werden, damit die Wurzel-ID bekannt ist.',
+    );
+  }
+  const wurzelId = oberste[0].parentId;
+
+  // Schreibweise je Spalte von den vorhandenen Knoten ablesen.
+  const stellen = new Map<number, number>();
+  for (const d of nachTiefe) {
+    stellen.set(
+      d.id,
+      stellenAus(struktur.knoten.filter((k) => k.dimensionId === d.id).map((k) => k.name)),
+    );
+  }
+
+  // Zweck und Status von den vorhandenen Lagerorten übernehmen (häufigster Wert).
+  const haeufigster = (werte: Array<string | null>): string | null => {
+    const zaehler = new Map<string, number>();
+    for (const w of werte) {
+      if (!w) continue;
+      zaehler.set(w, (zaehler.get(w) ?? 0) + 1);
+    }
+    let besterWert: string | null = null;
+    let bestesMal = 0;
+    for (const [w, n] of zaehler) if (n > bestesMal) [besterWert, bestesMal] = [w, n];
+    return besterWert;
+  };
+  const zweck = opts.zweck ?? haeufigster(bestehende.orte.map((o) => o.zweck));
+  const status = opts.status ?? haeufigster(bestehende.orte.map((o) => o.status));
+  if (!zweck || !status) {
+    return leer(
+      'Zweck oder Status ließen sich aus den vorhandenen Lagerorten nicht ablesen. Bitte beides ausdrücklich angeben.',
+    );
+  }
+  diagnose.push(`Neue Lagerorte bekommen Zweck "${zweck}" und Status "${status}" — abgelesen vom Bestand.`);
+
+  // Knotenindex aufbauen; er wächst mit, sobald ein Knoten angelegt wurde.
+  const index = new Map<string, Knoten>();
+  const letztePosition = new Map<string, number>();
+  for (const k of struktur.knoten) {
+    index.set(knotenSchluessel(k.parentId, k.dimensionId, k.name), k);
+    const gruppe = `${k.parentId}|${k.dimensionId}`;
+    letztePosition.set(gruppe, Math.max(letztePosition.get(gruppe) ?? 0, k.position));
+  }
+
+  let neueKnoten = 0;
+  let angelegt = 0;
+  let vorhanden = 0;
+  let uebersprungen = 0;
+  let fehler = 0;
+
+  /** Sucht einen Knoten oder legt ihn an. Im Probelauf wird nur gezählt. */
+  async function sorgeFuerKnoten(
+    parentId: number,
+    dimensionId: number,
+    rohName: string,
+  ): Promise<{ id: number; neu: boolean }> {
+    const name = nameMitStellen(rohName, stellen.get(dimensionId) ?? 0);
+    const schluessel = knotenSchluessel(parentId, dimensionId, name);
+    const da = index.get(schluessel);
+    if (da) return { id: da.id, neu: false };
+
+    const gruppe = `${parentId}|${dimensionId}`;
+    const position = (letztePosition.get(gruppe) ?? 0) + 1;
+    letztePosition.set(gruppe, position);
+
+    if (probelauf) {
+      // Platzhalter mit negativer ID: eindeutig ungültig, aber im Index
+      // wiederauffindbar, damit Geschwister im selben Probelauf nicht doppelt
+      // gezählt werden.
+      const platzhalter: Knoten = { id: -(index.size + 1), parentId, dimensionId, name, position };
+      index.set(schluessel, platzhalter);
+      return { id: platzhalter.id, neu: true };
+    }
+
+    const antwort = await plentyPost<Record<string, unknown>>('/rest/warehouses/locations/levels', {
+      parentId,
+      dimensionId,
+      position,
+      name,
+    });
+    const id = Number(antwort?.id);
+    if (!Number.isFinite(id) || id <= 0) {
+      throw new Error(`Knoten "${name}" angelegt, aber Plenty lieferte keine ID zurück.`);
+    }
+    index.set(schluessel, { id, parentId, dimensionId, name, position });
+    return { id, neu: true };
+  }
+
+  // --- Zeilen abarbeiten --------------------------------------------------
+  let offen = 0;
+  let abgebrochen = false;
+
+  for (let i = 0; i < codes.length; i++) {
+    const roh = codes[i];
+
+    if (abgebrochen) {
+      offen += 1;
+      continue;
+    }
+    if (Date.now() - start > budgetMs) {
+      abgebrochen = true;
+      offen += 1;
+      continue;
+    }
+
+    const teile = zerlegeCode(roh);
+    if (!teile) {
+      zeilen.push({
+        code: roh,
+        status: 'uebersprungen',
+        id: null,
+        neueKnoten: 0,
+        hinweis: 'Kein eindeutiger, vollständiger Lagerplatz — nicht angelegt.',
+      });
+      uebersprungen += 1;
+      continue;
+    }
+
+    const code = codeAus(teile);
+    const schonDa = nachCode.get(code);
+    if (schonDa) {
+      zeilen.push({
+        code,
+        status: 'vorhanden',
+        id: schonDa.id,
+        neueKnoten: 0,
+        hinweis: `Gibt es bereits als "${schonDa.name}".`,
+      });
+      vorhanden += 1;
+      continue;
+    }
+
+    if (!probelauf && angelegt >= maxAnlagen) {
+      abgebrochen = true;
+      offen += 1;
+      continue;
+    }
+
+    try {
+      let neuHier = 0;
+      const hEbene = await sorgeFuerKnoten(wurzelId, dHalle.id, String(teile.halle));
+      if (hEbene.neu) neuHier += 1;
+      const rEbene = await sorgeFuerKnoten(hEbene.id, dRegal.id, teile.regal);
+      if (rEbene.neu) neuHier += 1;
+      const eEbene = await sorgeFuerKnoten(rEbene.id, dEbene.id, teile.ebene);
+      if (eEbene.neu) neuHier += 1;
+      const fEbene = await sorgeFuerKnoten(eEbene.id, dFach.id, teile.fach);
+      if (fEbene.neu) neuHier += 1;
+      neueKnoten += neuHier;
+
+      if (probelauf) {
+        zeilen.push({ code, status: 'geplant', id: null, neueKnoten: neuHier, hinweis: null });
+        continue;
+      }
+
+      const antwort = await plentyPost<Record<string, unknown>>('/rest/warehouses/locations', {
+        levelId: fEbene.id,
+        label: teile.bezeichnung,
+        purposeKey: zweck,
+        statusKey: status,
+        position: 1,
+      });
+      const id = Number(antwort?.id);
+      zeilen.push({
+        code,
+        status: 'angelegt',
+        id: Number.isFinite(id) && id > 0 ? id : null,
+        neueKnoten: neuHier,
+        hinweis: null,
+      });
+      // Sofort in den Bestand aufnehmen, damit derselbe Code in derselben
+      // Liste kein zweites Mal angelegt wird.
+      nachCode.set(code, {
+        id: Number.isFinite(id) ? id : 0,
+        name: code,
+        code,
+        status,
+        zweck,
+      });
+      angelegt += 1;
+    } catch (err) {
+      zeilen.push({
+        code,
+        status: 'fehler',
+        id: null,
+        neueKnoten: 0,
+        hinweis: (err as Error).message.slice(0, 300),
+      });
+      fehler += 1;
+    }
+  }
+
+  if (abgebrochen) {
+    diagnose.push(
+      probelauf
+        ? `Zeitbudget aufgebraucht — ${offen} Zeilen offen. Der nächste Aufruf macht dort weiter.`
+        : `Lauf beendet bei ${angelegt} angelegten Lagerorten — ${offen} Zeilen offen (Obergrenze oder Zeitbudget).`,
+    );
+  }
+
+  const geplant = zeilen.filter((z) => z.status === 'geplant').length;
+
+  return {
+    ok: true,
+    probelauf,
+    error: null,
+    warehouseId: opts.warehouseId,
+    bestehende: bestehende.orte.length,
+    vorhanden,
+    geplant,
+    angelegt,
+    uebersprungen,
+    fehler,
+    neueKnoten,
+    offen,
+    naechsterIndex: codes.length - offen,
+    zeilen,
+    diagnose,
+    dauerMs: Date.now() - start,
+  };
+}
