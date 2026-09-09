@@ -17,7 +17,7 @@
  *   - Ein Fehler stoppt nicht den ganzen Lauf, sondern wird je Zeile vermerkt.
  */
 
-import { getPlentyConfig, plentyConfigured, plentyGet, plentyToken } from './client';
+import { aktuelleConfig, plentyConfigured, plentyGet, plentyToken } from './client';
 import { ladeLagerorte, verzeichnis, type Lagerort } from './lagerorte';
 import { istSchreiblimit } from './lagerort-anlegen';
 
@@ -149,7 +149,7 @@ async function bucheUm(
   variationId: number,
   body: Record<string, number>,
 ): Promise<{ ok: boolean; meldung: string }> {
-  const cfg = getPlentyConfig();
+  const cfg = await aktuelleConfig();
   const token = await plentyToken(cfg);
   const res = await fetch(
     `${cfg.baseUrl}/rest/items/${itemId}/variations/${variationId}/stock/redistribute?itemId=${itemId}`,
@@ -181,8 +181,8 @@ export async function weiseZu(wuensche: Wunsch[], opts: ZuweisungOptionen): Prom
     offen: 0, schreiblimit: false, erledigt: [], diagnose, dauerMs: 0,
   };
 
-  if (!plentyConfigured(getPlentyConfig())) {
-    return { ...leer, error: 'PlentyONE ist nicht konfiguriert.', dauerMs: Date.now() - start };
+  if (!plentyConfigured(await aktuelleConfig())) {
+    return { ...leer, error: 'PlentyONE ist nicht eingerichtet — unter „Einstellungen" den Zugang eintragen.', dauerMs: Date.now() - start };
   }
 
   let nachCode: Map<string, Lagerort>;
