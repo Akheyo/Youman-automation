@@ -7,7 +7,7 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { ladeLager, ladeLagerorte, verzeichnis } from '@/lib/plenty/lagerorte';
+import { ladeLager, ladeLagerorteGepuffert, verzeichnis } from '@/lib/plenty/lagerorte';
 import { ladeStruktur, pruefeLagerort } from '@/lib/plenty/lagerort-anlegen';
 import { plentyGet } from '@/lib/plenty/client';
 
@@ -64,7 +64,7 @@ export async function GET(request: Request) {
     if (!Number.isFinite(warehouseId) || warehouseId <= 0) {
       return NextResponse.json({ ok: true, lager });
     }
-    const { orte, ohneCode, abgebrochen } = await ladeLagerorte(warehouseId);
+    const { orte, ohneCode, abgebrochen } = await ladeLagerorteGepuffert(warehouseId);
     const { nachCode, doppelt } = verzeichnis(orte);
     return NextResponse.json({
       ok: true,

@@ -355,6 +355,10 @@ export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
           Der Lauf teilt sich selbst auf und macht weiter, bis die gewählte Zahl erreicht oder die Liste durch
           ist — einmal starten, Fenster offen lassen. Anhalten ist jederzeit möglich; schon Gebuchtes bleibt.
         </p>
+        {/* Auch hier, nicht nur ganz oben: Wer unten auf „Jetzt buchen" drückt,
+            sieht sonst nur, dass nichts passiert, und die Begründung steht
+            ausserhalb des Bildschirms. */}
+        {fehler && !laeuft && <p className={`${styles.notice} ${styles.noticeErr}`}>{fehler}</p>}
         {wartet !== null && (
           <p className={styles.progress}>
             PlentyONE bremst Schreibzugriffe — weiter in {wartet} s. Fenster offen lassen.

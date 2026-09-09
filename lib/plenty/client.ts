@@ -900,8 +900,10 @@ export async function plentyGet<T>(path: string, cfg?: PlentyConfig): Promise<T>
       return await api<T>(zugang, token, path);
     } catch (err) {
       const gebremst = /HTTP 429/.test((err as Error).message);
-      if (!gebremst || versuch >= 3) throw err;
-      await new Promise((fertig) => setTimeout(fertig, 1_500 * versuch));
+      // Plentys Lesefenster ist kurz, aber nicht kurz genug fuer 1,5 s:
+      // erst mit mehreren Sekunden Pause geht die Bremse wieder auf.
+      if (!gebremst || versuch >= 6) throw err;
+      await new Promise((fertig) => setTimeout(fertig, 2_000 * versuch));
     }
   }
 }
