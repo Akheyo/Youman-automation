@@ -100,6 +100,29 @@ export interface Artikelkarte {
   angelegtAm: string | null;
 }
 
+/**
+ * Ein Eintrag der Zeitleiste: eine Buchung mit Uhrzeit.
+ *
+ * Beim Einlagern ist die Uhrzeit das eigentliche Argument. Wer sehen will, ob
+ * ein Artikel mit derselben Palette hereinkam, braucht die Reihenfolge und die
+ * Abstände in Minuten — nicht nur „war ungefähr gleichzeitig".
+ */
+export interface Zeitpunkt {
+  /** ISO-Zeitstempel, in der Oberfläche als Datum und Uhrzeit dargestellt. */
+  zeit: string;
+  variationId: number | null;
+  nummer: string | null;
+  name: string | null;
+  bildUrl: string | null;
+  /** Ziel-Lagerort der Buchung. */
+  ortName: string | null;
+  ortCode: string | null;
+  /** Minuten vor (negativ) bzw. nach (positiv) der Buchung des gesuchten Artikels. */
+  versatzMin: number | null;
+  /** Der gesuchte Artikel selbst — in der Oberfläche hervorgehoben. */
+  istGesucht: boolean;
+}
+
 /** Wie der gesuchte Artikel im Bestand steht — bestimmt, wo man suchen geht. */
 export type Bestandslage =
   | 'verbucht'          // Liegt laut Plenty auf einem echten Lagerplatz.
@@ -125,6 +148,11 @@ export interface SucheErgebnis {
   nachbarn: Artikelkarte[];
   /** Artikel aus demselben Einlagerungsvorgang. */
   einlagerung: Artikelkarte[];
+  /**
+   * Alle Buchungen rund um die Einlagerung, chronologisch — mit Uhrzeit,
+   * Ziel-Lagerort und Minutenabstand zum gesuchten Artikel.
+   */
+  zeitleiste: Zeitpunkt[];
   /** Gleichnamige Artikel — bei Gebrauchtware der stärkste Hinweis nach dem Text. */
   dubletten: Artikelkarte[];
   /** Wer sonst noch auf den Plätzen liegt, auf die der Artikel verbucht ist. */
@@ -551,6 +579,7 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
     laufzettel: [],
     nachbarn: [],
     einlagerung: [],
+    zeitleiste: [],
     dubletten: [],
     aufDemSollplatz: [],
     diagnose,
@@ -692,8 +721,11 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
       gefunden.push({
         code: ort.code,
         signal: 'historie',
-        text: `Laut Warenbewegungen lag der Artikel hier schon einmal${wann ? ` (${wann.slice(0, 10)})` : ''}`,
+        text: 'Laut Warenbewegungen lag der Artikel hier schon einmal',
         variationId,
+        // Die Uhrzeit gehört als Datum weitergereicht, nicht in den Text
+        // gebacken — die Oberfläche stellt sie in der Zeitzone des Nutzers dar.
+        zeit: wann ?? null,
       });
     }
     if (bewegungen?.length) diagnose.push(`${bewegungen.length} Warenbewegungen zum Artikel gelesen.`);
@@ -804,6 +836,7 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
   // Signal: Einlagerung im selben Zeitfenster. Braucht den Zeitanker aus den
   // Warenbewegungen und läuft deshalb erst jetzt.
   const einlagerungKarten: Artikelkarte[] = [];
+  const zeitleiste: Zeitpunkt[] = [];
   if (zeitfensterMin > 0 && zeitUebrig()) {
     const ankerZeit =
       (historie.bewegungen ?? [])
@@ -839,6 +872,7 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
           // In Zehn-Minuten-Schritten dämpfen: was Stunden später gebucht wurde,
           // gehörte zu einer anderen Palette.
           abstand: minuten !== null ? Math.round(minuten / 10) : 2,
+          zeit: b.bookingTime || b.createdAt || null,
         });
       }
 
@@ -846,6 +880,36 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
       const ids = [...new Set(fremde.map((b) => zahl(b.variationId)!))].slice(0, 12);
       einlagerungKarten.push(...(await ladeKarten(ids, false)));
       diagnose.push(`${fremde.length} Buchungen im Fenster ±${zeitfensterMin} min.`);
+
+      // Die Zeitleiste: alle Buchungen des Fensters plus die des gesuchten
+      // Artikels, chronologisch. Damit ist auf einen Blick zu sehen, was in
+      // derselben Minute gebucht wurde — und was erst eine Stunde später.
+      const kartenNachId = new Map(einlagerungKarten.map((k) => [k.variationId, k]));
+      const alleBuchungen = [
+        ...(historie.bewegungen ?? []).map((b) => ({ b, istGesucht: true })),
+        ...fremde.map((b) => ({ b, istGesucht: false })),
+      ];
+      for (const { b, istGesucht } of alleBuchungen) {
+        const wann = b.bookingTime || b.createdAt;
+        if (!wann) continue;
+        const vid = zahl(b.variationId);
+        const karte = istGesucht ? gesucht : vid !== null ? kartenNachId.get(vid) : undefined;
+        const ort = nachId.get(zahl(b.storageLocationId) ?? 0);
+        zeitleiste.push({
+          zeit: wann,
+          variationId: vid,
+          nummer: karte?.nummer ?? (istGesucht ? gesucht.nummer : null),
+          name: karte?.name ?? null,
+          bildUrl: karte?.bildUrl ?? null,
+          ortName: ort?.name ?? null,
+          ortCode: ort?.code ?? null,
+          // Vorzeichen behalten: „12 min vorher" ist etwas anderes als
+          // „12 min nachher", wenn man rekonstruiert, wer was abgestellt hat.
+          versatzMin: Math.round((new Date(wann).getTime() - anker) / 60_000),
+          istGesucht,
+        });
+      }
+      zeitleiste.sort((a, b) => a.zeit.localeCompare(b.zeit));
     }
   }
 
@@ -885,6 +949,7 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
     laufzettel: laufzettel(kandidaten),
     nachbarn: nachbarn.karten.sort((a, b) => Math.abs(a.idAbstand) - Math.abs(b.idAbstand)),
     einlagerung: einlagerungKarten,
+    zeitleiste,
     dubletten: dubletten.karten,
     aufDemSollplatz: tausch.karten,
     diagnose,

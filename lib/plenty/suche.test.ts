@@ -224,6 +224,47 @@ describe('sucheAlternativePlaetze', () => {
     expect(eingelagert?.belege.some((b) => b.signal === 'einlagerung')).toBe(true);
   });
 
+  it('stellt die Buchungen mit Uhrzeit chronologisch auf', async () => {
+    const res = await suche(attrappe({ bewegungen: true }));
+    const zeiten = res.zeitleiste.map((z) => z.zeit);
+    expect(zeiten.length).toBeGreaterThan(1);
+    expect(zeiten).toEqual([...zeiten].sort());
+  });
+
+  it('markiert den gesuchten Artikel in der Zeitleiste', async () => {
+    const res = await suche(attrappe({ bewegungen: true }));
+    expect(res.zeitleiste.some((z) => z.istGesucht)).toBe(true);
+    expect(res.zeitleiste.find((z) => z.istGesucht)?.versatzMin).toBe(0);
+  });
+
+  it('behält das Vorzeichen des Zeitversatzes', async () => {
+    // „12 min vorher" ist etwas anderes als „12 min nachher", wenn man
+    // rekonstruiert, wer was abgestellt hat.
+    const res = await suche(attrappe({ bewegungen: true }));
+    const fremd = res.zeitleiste.find((z) => !z.istGesucht);
+    expect(fremd?.versatzMin).toBe(5); // 09:05 gegen Anker 09:00
+  });
+
+  it('nennt zu jeder Buchung den Ziel-Lagerort', async () => {
+    const res = await suche(attrappe({ bewegungen: true }));
+    const fremd = res.zeitleiste.find((z) => !z.istGesucht);
+    expect(fremd?.ortCode).toBe('H3/R1/EB F09-0');
+  });
+
+  it('hängt die Uhrzeit an den Beleg statt in den Text', async () => {
+    const res = await suche(attrappe({ bewegungen: true, bestand: { 5000: null } }));
+    const historie = res.kandidaten
+      .flatMap((k) => k.belege)
+      .find((b) => b.signal === 'historie');
+    expect(historie?.zeit).toBe('2026-03-02T09:00:00+01:00');
+    expect(historie?.text).not.toMatch(/\d{4}-\d{2}-\d{2}/);
+  });
+
+  it('bleibt ohne Bewegungsdaten bei einer leeren Zeitleiste', async () => {
+    const res = await suche(attrappe({ bewegungen: false }));
+    expect(res.zeitleiste).toEqual([]);
+  });
+
   it('läuft weiter, wenn es keine Bewegungsdaten gibt', async () => {
     const res = await suche(attrappe({ bewegungen: false }));
     expect(res.ok).toBe(true);
