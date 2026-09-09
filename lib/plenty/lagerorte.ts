@@ -68,7 +68,7 @@ export async function ladeLagerorte(
   // nicht stimmt — sie stehen deshalb als Beispiele in der Oberfläche.
   const proSeite = Math.min(250, Math.max(1, Math.floor(opts.proSeite ?? 250)));
   const maxSeiten = Math.max(1, Math.floor(opts.maxSeiten ?? 200));
-  const gleichzeitig = Math.min(10, Math.max(1, Math.floor(opts.gleichzeitig ?? 6)));
+  const gleichzeitig = Math.min(10, Math.max(1, Math.floor(opts.gleichzeitig ?? 4)));
   const orte: Lagerort[] = [];
   let ohneCode = 0;
   let abgebrochen = true;
@@ -142,6 +142,72 @@ export async function ladeLagerorte(
   }
 
   return { orte, gelesen: orte.length, ohneCode, abgebrochen };
+}
+
+/** Das, was `ladeLagerorte` liefert — so hält es auch der Puffer fest. */
+export interface Lagerortliste {
+  orte: Lagerort[];
+  gelesen: number;
+  ohneCode: number;
+  abgebrochen: boolean;
+}
+
+/** Wie lange eine gelesene Liste als frisch gilt. */
+export const PUFFER_DAUER_MS = 10 * 60_000;
+
+const puffer = new Map<number, { zeit: number; liste: Lagerortliste }>();
+const laufend = new Map<number, Promise<Lagerortliste>>();
+
+/**
+ * Liest die Lagerorte eines Lagers — aber höchstens einmal je Zeitfenster.
+ *
+ * Ein Buchungslauf besteht aus vielen Teilaufrufen, und jeder brauchte bisher
+ * die ganze Liste: Bei 13.000 Lagerorten sind das 53 Seiten — mal 170 Runden
+ * über 9.000 Leseabfragen. Genau daran zieht PlentyONE die Lesebremse
+ * ("short period read limit reached"), und der Lauf bleibt stehen.
+ *
+ * Gepuffert wird nur eine vollständig gelesene Liste; eine abgeschnittene
+ * wäre eine stille Lüge. Läuft schon ein Lesevorgang, hängen sich weitere
+ * Aufrufer an denselben an, statt ein zweites Mal zu fragen.
+ */
+export async function ladeLagerorteGepuffert(
+  warehouseId: number,
+  opts: { maxAlterMs?: number; frisch?: boolean } = {},
+): Promise<Lagerortliste & { ausPuffer: boolean; alterMs: number }> {
+  const maxAlter = Math.max(0, Math.floor(opts.maxAlterMs ?? PUFFER_DAUER_MS));
+
+  if (!opts.frisch) {
+    const treffer = puffer.get(warehouseId);
+    const alter = treffer ? Date.now() - treffer.zeit : Infinity;
+    // `maxAlterMs: 0` heisst "auf jeden Fall frisch" — nicht "alles im selben
+    // Millisekundenschlag gilt noch".
+    if (treffer && maxAlter > 0 && alter <= maxAlter) {
+      return { ...treffer.liste, ausPuffer: true, alterMs: alter };
+    }
+  }
+
+  const schon = laufend.get(warehouseId);
+  if (schon) return { ...(await schon), ausPuffer: false, alterMs: 0 };
+
+  const lauf = ladeLagerorte(warehouseId)
+    .then((liste) => {
+      // Nur vollständige Listen dürfen in den Puffer.
+      if (!liste.abgebrochen) puffer.set(warehouseId, { zeit: Date.now(), liste });
+      return liste;
+    })
+    .finally(() => laufend.delete(warehouseId));
+  laufend.set(warehouseId, lauf);
+
+  return { ...(await lauf), ausPuffer: false, alterMs: 0 };
+}
+
+/**
+ * Wirft den Puffer weg — nötig, sobald Lagerorte angelegt oder gelöscht
+ * wurden, damit der nächste Lauf die neuen auch sieht.
+ */
+export function leereLagerortPuffer(warehouseId?: number): void {
+  if (warehouseId === undefined) puffer.clear();
+  else puffer.delete(warehouseId);
 }
 
 /**
