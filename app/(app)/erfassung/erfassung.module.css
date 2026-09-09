@@ -1,0 +1,301 @@
+/* Erfassung — zuerst fürs Handy gebaut. Große Flächen, wenig Text, Daumen
+   erreicht alles Wichtige unten. Am Desktop wird daraus zwei Spalten. */
+
+.seite {
+  max-width: 720px;
+  margin: 0 auto;
+  padding-bottom: 140px; /* Platz für die feste Fußleiste */
+}
+
+/* ------------------------------------------------------------------ Kopf */
+
+.kopf {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) 0 var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.kopfLabel {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.nummer {
+  margin: 0;
+  font-size: 40px;
+  line-height: 1.05;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.verwerfen {
+  background: none;
+  border: 1px solid var(--border-strong);
+  color: var(--muted);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 14px;
+}
+.verwerfen:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+.verwerfen:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* --------------------------------------------------------------- Leisten */
+
+.leiste {
+  margin: var(--space-3) 0 0;
+  padding: 10px var(--space-4);
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+.leisteOk { background: var(--green-soft); color: var(--green); }
+.leisteFehler { background: var(--red-soft); color: var(--red); }
+.leisteWarnung { background: var(--amber-soft); color: var(--amber); }
+
+/* -------------------------------------------------------------- Kacheln */
+
+.kacheln {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+@media (min-width: 560px) {
+  .kacheln { grid-template-columns: 1fr 1fr; }
+}
+
+.kachel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* Fehlende Pflichtaufnahme: sichtbar offen, aber nicht als Fehler —
+   es ist ja noch nichts schiefgegangen. */
+.kachelOffen { border-color: var(--blue); box-shadow: inset 3px 0 0 var(--blue); }
+
+.kachelKnopf {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: var(--space-4);
+}
+.kachelKnopf:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.kachelTitel {
+  display: block;
+  font-weight: 600;
+  color: var(--navy);
+  font-size: 16px;
+}
+
+.pflicht { color: var(--blue); }
+
+.kachelHinweis {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.kachelAktion {
+  display: inline-block;
+  margin-top: var(--space-3);
+  color: var(--blue);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ------------------------------------------------------------- Miniaturen */
+
+.streifen {
+  display: flex;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-4);
+  overflow-x: auto;
+}
+
+.miniatur {
+  position: relative;
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+}
+.miniatur img { width: 100%; height: 100%; object-fit: cover; }
+
+.ohneBild { display: block; width: 100%; height: 100%; background: var(--bg-soft); }
+
+/* Ampel je Foto: wartet (grau), lädt (blau), oben (grün), Fehler (rot). */
+.punkt {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+.punkt_wartet { background: var(--border-strong); }
+.punkt_laedt  { background: var(--blue); }
+.punkt_oben   { background: var(--green); }
+.punkt_fehler { background: var(--red); }
+
+.weg {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.6);
+  color: #fff;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.nochmal {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 0;
+  background: var(--red);
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 0;
+}
+
+/* ---------------------------------------------------------------- Rest */
+
+.galerie {
+  margin-top: var(--space-3);
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--border-strong);
+  color: var(--muted);
+  border-radius: var(--radius);
+  padding: 12px;
+  font-size: 14px;
+}
+.galerie:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.notizFeld {
+  display: block;
+  margin-top: var(--space-4);
+}
+.notizFeld > span {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.notizFeld textarea {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+/* ------------------------------------------------------------ Fußleiste */
+
+.fuss {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 -6px 20px rgba(15, 23, 42, 0.06);
+  z-index: 10;
+}
+
+.fussInfo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 18px;
+}
+.fussFehler { color: var(--red); }
+
+.fertig {
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--blue);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  padding: 16px;
+}
+.fertig:hover:not(:disabled) { background: var(--blue-h); }
+.fertig:disabled { background: var(--border-strong); cursor: not-allowed; }
+
+@media (min-width: 720px) {
+  .fuss {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 720px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border: 1px solid var(--border);
+    border-bottom: 0;
+  }
+}
+
+/* -------------------------------------------------------------- Verlauf */
+
+.verlauf { margin-top: var(--space-6); }
+.verlauf h2 { font-size: 15px; margin: 0 0 var(--space-3); }
+.verlauf ul { list-style: none; margin: 0; padding: 0; }
+.verlauf li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.verlaufNummer {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy);
+  min-width: 3.5em;
+}
+
+.marke {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+.markeFehler { background: var(--red-soft); color: var(--red); }
+
+.verlaufMeta { color: var(--muted); font-size: 13px; }
+.verlaufFehler { flex: 1 0 100%; color: var(--red); font-size: 13px; }
+
+.leer { color: var(--muted); font-size: 14px; }

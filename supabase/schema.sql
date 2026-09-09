@@ -101,3 +101,109 @@ alter table public.einstellungen enable row level security;
 -- Falls die Tabelle schon existiert: Spalten nachruesten (Migration).
 alter table public.einstellungen add column if not exists plenty_warehouse_id integer;
 alter table public.einstellungen add column if not exists geaendert_von text;
+
+-- ---------------------------------------------------------------------------
+-- Erfassung: Artikel am Regal fotografieren
+--
+-- Ein Datensatz je Artikel, der am Handy erfasst wird, plus eine Zeile je Foto.
+-- Der Artikel entsteht in dem Moment, in dem jemand am Regal auf "Neuer
+-- Artikel" tippt — nicht erst, wenn irgendwo ein Ordner abgefragt wird.
+--
+-- SICHTBARKEIT: Anders als bei "projekte" sieht hier JEDER angemeldete Nutzer
+-- ALLE Artikel. Das ist Absicht: Mario fotografiert im Lager, das Büro prüft
+-- und gibt frei. Wären die Artikel je Nutzer abgeschottet, könnte niemand die
+-- Arbeit eines anderen weiterführen — und genau darum geht es. Anlegen darf
+-- man aber nur auf den eigenen Namen (check auth.uid() = user_id), damit die
+-- Spur, wer fotografiert hat, stimmt.
+-- ---------------------------------------------------------------------------
+
+-- Laufende, menschenlesbare Nummer. Am Regal ruft man sich "Artikel 4711" zu,
+-- keine UUID.
+create sequence if not exists public.erfassung_nummer_seq;
+
+create table if not exists public.erfassung_artikel (
+  id             uuid primary key default gen_random_uuid(),
+  nummer         bigint not null unique default nextval('public.erfassung_nummer_seq'),
+  user_id        uuid not null references auth.users (id) on delete cascade,
+  erfasst_von    text,                    -- E-Mail, damit die Liste ohne Join lesbar ist
+
+  -- offen        → wird gerade fotografiert
+  -- bereit       → "fertig" getippt, wartet auf die Verarbeitung
+  -- erkannt      → Merkmale aus den Bildern gelesen (Schritt 2)
+  -- bepreist     → Preisvorschlag liegt vor (Schritt 3)
+  -- listing      → Texte erzeugt (Schritt 4)
+  -- freigabe     → wartet auf einen Menschen
+  -- veroeffentlicht → in Plenty angelegt und aktiv
+  -- fehler       → hängt, mit Meldung in "fehler"
+  status         text not null default 'offen',
+
+  notiz          text,                    -- was das Handy nicht sieht: "Kabel fehlt"
+  fertig_am      timestamptz,
+  plenty_item_id bigint,
+  fehler         text,
+  created_at     timestamptz not null default now()
+);
+
+create table if not exists public.erfassung_bilder (
+  id           uuid primary key default gen_random_uuid(),
+  artikel_id   uuid not null references public.erfassung_artikel (id) on delete cascade,
+  user_id      uuid not null references auth.users (id) on delete cascade,
+
+  -- uebersicht | typenschild | schaden | detail — die Aufnahme-Reihenfolge.
+  -- Das Typenschild ist bei Gebrauchtware der wertvollste Datenpunkt: daraus
+  -- fallen Hersteller und Modellnummer und damit die Vergleichspreise.
+  rolle        text not null default 'detail',
+  position     integer not null default 0,
+  pfad         text not null,             -- Pfad im Storage-Bucket "artikelfotos"
+  dateiname    text,
+  bytes        bigint,
+
+  -- Erst true, wenn der Browser den Upload bestätigt hat. Ohne diese Spalte
+  -- fällt ein abgebrochener Upload niemandem auf — genau der Fehler, den die
+  -- alte WhatsApp-Strecke hatte.
+  hochgeladen  boolean not null default false,
+
+  created_at   timestamptz not null default now()
+);
+
+alter table public.erfassung_artikel enable row level security;
+alter table public.erfassung_bilder  enable row level security;
+
+drop policy if exists "erfassung_artikel lesen"   on public.erfassung_artikel;
+drop policy if exists "erfassung_artikel anlegen" on public.erfassung_artikel;
+drop policy if exists "erfassung_artikel aendern" on public.erfassung_artikel;
+drop policy if exists "erfassung_artikel loeschen" on public.erfassung_artikel;
+
+create policy "erfassung_artikel lesen" on public.erfassung_artikel
+  for select to authenticated using (true);
+create policy "erfassung_artikel anlegen" on public.erfassung_artikel
+  for insert to authenticated with check (auth.uid() = user_id);
+create policy "erfassung_artikel aendern" on public.erfassung_artikel
+  for update to authenticated using (true) with check (true);
+create policy "erfassung_artikel loeschen" on public.erfassung_artikel
+  for delete to authenticated using (auth.uid() = user_id);
+
+drop policy if exists "erfassung_bilder lesen"   on public.erfassung_bilder;
+drop policy if exists "erfassung_bilder anlegen" on public.erfassung_bilder;
+drop policy if exists "erfassung_bilder aendern" on public.erfassung_bilder;
+drop policy if exists "erfassung_bilder loeschen" on public.erfassung_bilder;
+
+create policy "erfassung_bilder lesen" on public.erfassung_bilder
+  for select to authenticated using (true);
+create policy "erfassung_bilder anlegen" on public.erfassung_bilder
+  for insert to authenticated with check (auth.uid() = user_id);
+create policy "erfassung_bilder aendern" on public.erfassung_bilder
+  for update to authenticated using (true) with check (true);
+create policy "erfassung_bilder loeschen" on public.erfassung_bilder
+  for delete to authenticated using (true);
+
+-- Arbeitsliste: was wartet auf Verarbeitung? Neueste zuerst.
+create index if not exists erfassung_artikel_status_idx
+  on public.erfassung_artikel (status, created_at desc);
+create index if not exists erfassung_bilder_artikel_idx
+  on public.erfassung_bilder (artikel_id, position);
+
+-- Privater Bucket für die Artikelfotos (die App legt ihn sonst automatisch an).
+insert into storage.buckets (id, name, public)
+  values ('artikelfotos', 'artikelfotos', false)
+  on conflict (id) do nothing;

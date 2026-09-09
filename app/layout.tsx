@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
+  // Damit die Erfassung auf dem iPhone als App vom Startbildschirm startet.
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'Erfassung' },
+  icons: { apple: '/apple-touch-icon.png' },
   title: 'Komplett Konzept · Projektplanung',
   description:
     'Projektplanung der Komplett Konzept Verwertungs GmbH — Firma, Ort und Ansprechpartner erfassen und automatisch Kategorie, Artikel und EAN in PlentyONE erzeugen.',

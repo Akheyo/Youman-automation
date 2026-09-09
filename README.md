@@ -64,6 +64,105 @@ nie mit echten Hersteller-GTINs kollidiert. Aufbau: `[Präfix 2][Nutzlast 10]
 [Prüfziffer 1]`. Die Prüfziffer wird korrekt nach dem EAN-13-Standard berechnet
 (siehe [`lib/plenty/ean.ts`](lib/plenty/ean.ts)).
 
+## Erfassung (`/erfassung`)
+
+Artikel am Regal fotografieren — und in derselben Sekunde entsteht der Artikel.
+
+### Was vorher war
+
+Fotos per WhatsApp in eine Gruppe, am PC über WhatsApp Web ins Google Drive
+gezogen, ein Ordner-Watcher hat gepollt und daraus einen Plenty-Artikel gebaut.
+Vier Schwachstellen, die alle zusammen dieselbe Ursache haben — **auf dem Handy
+ist alles da, und jeder Schritt danach wirft etwas davon weg**:
+
+| Stelle | Was verloren ging |
+| --- | --- |
+| WhatsApp | Auflösung. Verkaufsbilder wurden komprimiert, bevor sie irgendwo ankamen. |
+| Drag & Drop am PC | Vollständigkeit. Fehlten drei von vierzig Bildern, merkte es niemand. |
+| Ordner-Watcher | Zeit. Zwischen Foto und Verarbeitung lagen Minuten. |
+| Reihenfolge im Ordner | Zuordnung. Fotografierten zwei Leute gleichzeitig, mischten sich die Artikel. |
+
+### Wie es jetzt läuft
+
+Die Seite ist fürs Handy gebaut und lässt sich über „Zum Startbildschirm"
+wie eine App ablegen (Manifest + Icons, kein App Store). Der Ablauf:
+
+1. Seite öffnen → ein **angefangener Artikel wird fortgesetzt**, sonst entsteht
+   ein neuer. Deshalb kostet ein versehentliches Öffnen keine Karteileiche, und
+   ein zwischendrin geschlossenes Handy keinen Artikel.
+2. Vier Kacheln geben die **Aufnahme-Reihenfolge** vor: Übersicht, Typenschild,
+   Zustand, Detail. Ein Tipp öffnet die echte Kamera-App des Handys — volle
+   Auflösung, vertraute Bedienung.
+3. Jedes Foto geht **sofort im Hintergrund** raus, während schon das nächste
+   gemacht wird.
+4. „Artikel fertig" setzt den Status auf `bereit`. Ab hier übernimmt die
+   Verarbeitung.
+
+Pflicht sind **Übersicht** und **Typenschild**. Das Typenschild ist bei
+Gebrauchtware der wertvollste Datenpunkt überhaupt: daraus fallen Hersteller
+und Modellnummer, und daraus wiederum die Vergleichspreise. Ohne es ist der
+spätere Preis geraten.
+
+### Warum die Fotos direkt zum Storage gehen
+
+Serverless-Funktionen auf Vercel nehmen nur rund **4,5 MB** Anfrage-Körper an.
+Ein Handyfoto in voller Auflösung liegt darüber. Liefe der Upload über eine
+API-Route, müssten die Bilder vorher kleingerechnet werden — also genau der
+Qualitätsverlust, wegen dem WhatsApp aus der Kette geflogen ist.
+
+Deshalb vergibt die App nur die Erlaubnis (signierte Upload-URL), und der
+Browser lädt direkt in den privaten Bucket `artikelfotos`. Details in
+[`lib/erfassung/speicher.ts`](lib/erfassung/speicher.ts).
+
+### Funkloch im Lager
+
+Jedes Foto liegt **zuerst in IndexedDB**, dann geht es hoch
+([`lib/erfassung/warteschlange.ts`](lib/erfassung/warteschlange.ts)). Ein
+Neuladen, ein Akku-Aus, ein Wegwischen der App — die Aufnahmen stehen noch in
+der Reihe und gehen raus, sobald wieder Empfang da ist. Der Weg je Foto hat drei
+einzeln wiederholbare Schritte:
+
+```
+1. Platz reservieren   POST /api/erfassung/artikel/{id}/bild
+2. Datei hochladen     direkt zum Supabase-Storage
+3. Ankunft bestätigen  PUT  /api/erfassung/artikel/{id}/bild
+```
+
+Schritt 3 ist der wichtige: **Erst die Bestätigung macht ein Foto zu einem
+Foto.** Ein Bild, das noch in der Warteschlange hängt, zählt nicht für die
+Pflichtaufnahmen — sonst ginge der Artikel als vollständig durch und das
+Typenschild fehlte hinterher. Genau der Fehler, den die alte Strecke hatte.
+
+**Eine Einschränkung ehrlich vorweg:** Auf dem iPhone laufen Uploads nur,
+solange die Seite offen ist. Wer mitten im Übertragen wegwischt, dessen Rest
+geht beim nächsten Öffnen raus — verloren ist nichts, aber es ist nicht ganz
+unsichtbar. Die Seite sagt deshalb jederzeit, wie viele Fotos noch unterwegs
+sind.
+
+### Sichtbarkeit
+
+Anders als bei den Projekten sieht hier **jeder angemeldete Nutzer alle
+Artikel**. Das ist Absicht: Im Lager wird fotografiert, im Büro geprüft und
+freigegeben. Wären die Artikel je Nutzer abgeschottet, könnte niemand die
+Arbeit eines anderen weiterführen. Anlegen darf man aber nur auf den eigenen
+Namen, damit die Spur stimmt, wer fotografiert hat.
+
+### Status eines Artikels
+
+`offen` → `bereit` → `erkannt` → `bepreist` → `listing` → `freigabe` →
+`veroeffentlicht`, dazu `fehler`. Heute endet der Weg bei `bereit`; die
+folgenden Stufen sind die nächsten Ausbauschritte (Merkmale aus den Bildern
+lesen, Preis aus der eigenen Verkaufshistorie vorschlagen, Listing erzeugen,
+in Plenty anlegen).
+
+### Einrichtung
+
+Einmalig [`supabase/schema.sql`](supabase/schema.sql) im SQL-Editor laufen
+lassen — das legt `erfassung_artikel`, `erfassung_bilder` und den privaten
+Bucket `artikelfotos` an. `SUPABASE_SERVICE_ROLE_KEY` ist **Pflicht**: ohne ihn
+lassen sich keine Upload-Erlaubnisse ausstellen. `ERFASSUNG_WEBHOOK_URL` ist
+optional (siehe `.env.example`).
+
 ## Lagerplatz-Scan (`/lagerplatz`)
 
 Viele Artikel tragen ihren Lagerplatz bis heute nur im Text — in der
@@ -442,8 +541,10 @@ npm run typecheck
 ```
 projektplanung/
 ├── app/
+│   ├── (app)/erfassung/       # Artikel am Regal fotografieren (Handy)
 │   ├── (app)/projekte/        # Dashboard (Formular + Suchverlauf)
 │   ├── (app)/lagerplatz/      # Lagerplatz-Scan (Vorschau, nur lesend)
+│   ├── api/erfassung/         # Artikel anlegen, Fotos hochladen, abschicken
 │   ├── api/projekte/          # GET Suche / POST Anlegen / [id] löschen
 │   ├── (app)/lagerplatz/suche/ # Artikel nicht gefunden — alternative Plätze
 │   ├── (app)/einstellungen/   # Plenty-Zugang pflegen + Prozessübersicht
@@ -456,6 +557,7 @@ projektplanung/
 ├── components/                # App-Shell (Header)
 ├── lib/
 │   ├── einstellungen/         # Zugang laden/speichern + Verschlüsselung (getestet)
+│   ├── erfassung/             # Aufnahme-Regeln, Storage, Upload-Warteschlange (getestet)
 │   ├── lagerplatz/            # Erkennung, Befunde, Nachbarschaftslogik (getestet)
 │   ├── plenty/                # PlentyONE-Client, EAN, Bestands-Scan, Platzsuche
 │   ├── projekte/              # Reine Geschäftslogik (getestet)
