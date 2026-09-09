@@ -159,6 +159,31 @@ function merke(wert: ZugangMitQuelle): ZugangMitQuelle {
   return wert;
 }
 
+/** Steht die Tabelle bereit, in der die Einstellungen liegen? */
+export type Tabellenstand = 'vorhanden' | 'fehlt' | 'unbekannt';
+
+/**
+ * Prüft, ob die Tabelle `einstellungen` in DIESEM Supabase-Projekt existiert.
+ *
+ * Der Grund ist praktisch: Aus einem Repo können mehrere Vercel-Projekte
+ * laufen, die auf verschiedene Supabase-Projekte zeigen. Wer das Schema
+ * einspielt, spielt es leicht ins falsche — und merkt es erst, wenn das
+ * Speichern fehlschlägt. Statt Projekt-Referenzen von Hand zu vergleichen,
+ * fragt die Seite hier einfach nach.
+ */
+export async function pruefeTabelle(): Promise<Tabellenstand> {
+  const supabase = createAdminClient();
+  if (!supabase) return 'unbekannt';
+  try {
+    const { error } = await supabase.from('einstellungen').select('id').limit(1);
+    if (!error) return 'vorhanden';
+    // PostgREST meldet eine unbekannte Tabelle je nach Version unterschiedlich.
+    return /does not exist|schema cache|not find the table/i.test(error.message) ? 'fehlt' : 'unbekannt';
+  } catch {
+    return 'unbekannt';
+  }
+}
+
 /** Was gespeichert werden soll. Fehlende Felder bleiben unverändert. */
 export interface Speicherwunsch {
   baseUrl?: string | null;

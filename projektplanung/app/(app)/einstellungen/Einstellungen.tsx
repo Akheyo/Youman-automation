@@ -38,6 +38,7 @@ interface Stand {
     projektRef: string | null;
     angemeldetNutzbar: boolean;
     serviceRoleGesetzt: boolean;
+    tabelle: 'vorhanden' | 'fehlt' | 'unbekannt';
   };
 }
 
@@ -238,10 +239,18 @@ export default function Einstellungen() {
           <h2 className={styles.cardTitle}>Datenbank</h2>
           <span
             className={`${styles.badge} ${
-              stand?.supabase.serviceRoleGesetzt ? styles.badgeOk : styles.badgeWarn
+              stand?.supabase.serviceRoleGesetzt && stand.supabase.tabelle === 'vorhanden'
+                ? styles.badgeOk
+                : styles.badgeWarn
             }`}
           >
-            {stand?.supabase.serviceRoleGesetzt ? 'bereit' : 'nicht speicherfähig'}
+            {!stand?.supabase.serviceRoleGesetzt
+              ? 'nicht speicherfähig'
+              : stand.supabase.tabelle === 'vorhanden'
+                ? 'bereit'
+                : stand.supabase.tabelle === 'fehlt'
+                  ? 'Tabelle fehlt'
+                  : 'Zustand unklar'}
           </span>
         </div>
         <p className={styles.hilfe} style={{ marginTop: 0, marginBottom: '1rem' }}>
@@ -263,6 +272,16 @@ export default function Einstellungen() {
             <strong>{stand?.supabase.serviceRoleGesetzt ? 'gesetzt' : 'fehlt'}</strong>
           </div>
           <div className={styles.herkunftZeile}>
+            <span>Tabelle <code>einstellungen</code>:</span>
+            <strong>
+              {stand?.supabase.tabelle === 'vorhanden'
+                ? 'vorhanden — das Schema liegt in genau diesem Projekt'
+                : stand?.supabase.tabelle === 'fehlt'
+                  ? 'fehlt in diesem Projekt'
+                  : 'nicht prüfbar'}
+            </strong>
+          </div>
+          <div className={styles.herkunftZeile}>
             <span>Verschlüsselung:</span>
             <strong>
               {stand?.schluessel === 'eigen'
@@ -273,10 +292,19 @@ export default function Einstellungen() {
             </strong>
           </div>
         </div>
-        {stand?.supabase.projektRef && (
+        {stand?.supabase.tabelle === 'fehlt' && (
           <p className={styles.hilfe}>
-            Im Supabase-Dashboard das Projekt mit dieser Referenz öffnen → SQL Editor →{' '}
-            <code>supabase/schema.sql</code> einmal ausführen.
+            Im Supabase-Dashboard <strong>das Projekt mit genau dieser Referenz</strong> öffnen →
+            SQL Editor → <code>supabase/schema.sql</code> ausführen. Wurde das Schema schon
+            eingespielt und steht hier trotzdem „fehlt", ist es im falschen Projekt gelandet.
+          </p>
+        )}
+        {stand?.schluessel === 'supabase' && (
+          <p className={styles.hilfe}>
+            Verschlüsselt wird ersatzweise mit dem Service-Role-Key. Wird der gedreht, sind die
+            gespeicherten Passwörter nicht mehr lesbar (die Seite sagt das dann, und man trägt sie
+            einmal neu ein). Wer das vermeiden will, setzt <code>EINSTELLUNGEN_SCHLUESSEL</code> in
+            Vercel.
           </p>
         )}
       </section>

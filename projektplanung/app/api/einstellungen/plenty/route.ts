@@ -17,6 +17,7 @@ import { testPlentyConnection } from '@/lib/plenty/client';
 import {
   ladeZugang,
   normalisiereBaseUrl,
+  pruefeTabelle,
   speichereZugang,
   verwerfeZugang,
 } from '@/lib/einstellungen/plenty';
@@ -50,7 +51,7 @@ export async function GET() {
   const wer = await angemeldet();
   if (!wer.ok) return nichtAngemeldet();
 
-  const zugang = await ladeZugang({ frisch: true });
+  const [zugang, tabelle] = await Promise.all([ladeZugang({ frisch: true }), pruefeTabelle()]);
   return NextResponse.json({
     baseUrl: zugang.baseUrl,
     user: zugang.user,
@@ -66,7 +67,7 @@ export async function GET() {
     schluessel: schluesselQuelle(),
     // An welchem Supabase-Projekt diese Installation haengt — damit klar ist,
     // wo das Schema eingespielt gehoert, wenn mehrere Projekte im Spiel sind.
-    supabase: supabaseInfo(),
+    supabase: { ...supabaseInfo(), tabelle },
   });
 }
 
