@@ -17,13 +17,15 @@ function supabaseAttrappe(zeile: Record<string, unknown> | null, opts: { fehler?
     from() {
       return {
         select() {
+          const fehler = opts.fehler ? { message: opts.fehler } : null;
           return {
             eq() {
               return {
-                maybeSingle: async () =>
-                  opts.fehler ? { data: null, error: { message: opts.fehler } } : { data: zeile, error: null },
+                maybeSingle: async () => (fehler ? { data: null, error: fehler } : { data: zeile, error: null }),
               };
             },
+            // Fuer die Existenzpruefung der Tabelle.
+            limit: async () => (fehler ? { data: null, error: fehler } : { data: [], error: null }),
           };
         },
         async upsert(werte: Record<string, unknown>) {
@@ -156,6 +158,23 @@ describe('Plenty-Zugang', () => {
     const res = await speichereZugang({ baseUrl: 'https://a.example.com', user: 'u', passwort: 'p' });
     expect(res.ok).toBe(false);
     expect(res.fehler).toMatch(/schema\.sql/);
+  });
+
+  it('meldet die Tabelle als vorhanden, wenn sie sich abfragen lässt', async () => {
+    const { pruefeTabelle } = await modul(null);
+    expect(await pruefeTabelle()).toBe('vorhanden');
+  });
+
+  it('erkennt, wenn das Schema im falschen Projekt liegt', async () => {
+    // Genau der Fall, den die Einstellungsseite sichtbar machen soll: Das SQL
+    // wurde ausgeführt — nur in einem anderen Supabase-Projekt.
+    const { pruefeTabelle } = await modul(null, { fehler: 'relation "public.einstellungen" does not exist' });
+    expect(await pruefeTabelle()).toBe('fehlt');
+  });
+
+  it('behauptet bei einer unklaren Störung nichts', async () => {
+    const { pruefeTabelle } = await modul(null, { fehler: 'connection reset by peer' });
+    expect(await pruefeTabelle()).toBe('unbekannt');
   });
 
   it('schneidet ein angehängtes /rest von der Basis-URL ab', async () => {
