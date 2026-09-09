@@ -141,24 +141,62 @@ export function findeFalscheZweige(
   });
 }
 
-/** Liest, auf welchen dieser Lagerorte Bestand liegt. */
-async function mitBestand(warehouseId: number, orte: Lagerort[]): Promise<Set<number>> {
+/**
+ * Liest, auf welchen dieser Lagerorte Bestand liegt.
+ *
+ * Der Bestand eines Lagers sind zehntausende Zeilen — nacheinander geholt
+ * dauert das länger als eine Serverantwort erlaubt. Deshalb wird geblättert
+ * wie beim Lesen der Lagerorte: erste Seite einzeln, der Rest in Gruppen
+ * gleichzeitig.
+ */
+async function mitBestand(
+  warehouseId: number,
+  orte: Lagerort[],
+): Promise<{ belegt: Set<number>; vollstaendig: boolean }> {
   const belegt = new Set<number>();
   const ids = new Set(orte.map((o) => o.id));
-  if (!ids.size) return belegt;
+  if (!ids.size) return { belegt, vollstaendig: true };
 
-  for (let seite = 1; seite <= 200; seite++) {
-    const res = await plentyGet<{ entries?: PlentyBestand[]; isLastPage?: boolean }>(
-      `/rest/stockmanagement/warehouses/${warehouseId}/stock/storageLocations?itemsPerPage=250&page=${seite}`,
+  const proSeite = 250;
+  const gleichzeitig = 6;
+  const maxSeiten = 400;
+
+  const seiteLesen = (seite: number) =>
+    plentyGet<{ entries?: PlentyBestand[]; isLastPage?: boolean; lastPageNumber?: number }>(
+      `/rest/stockmanagement/warehouses/${warehouseId}/stock/storageLocations?itemsPerPage=${proSeite}&page=${seite}`,
     );
-    const eintraege = res?.entries ?? [];
-    for (const e of eintraege) {
+
+  const uebernimm = (res: { entries?: PlentyBestand[] } | null) => {
+    for (const e of res?.entries ?? []) {
       const id = Number(e?.storageLocationId);
       if (ids.has(id) && Number(e?.quantity ?? 0) !== 0) belegt.add(id);
     }
-    if (res?.isLastPage || eintraege.length === 0) break;
+    return (res?.entries ?? []).length;
+  };
+
+  const erste = await seiteLesen(1);
+  const ersteAnzahl = uebernimm(erste);
+  if (erste?.isLastPage || ersteAnzahl === 0 || ersteAnzahl < proSeite) {
+    return { belegt, vollstaendig: true };
   }
-  return belegt;
+
+  const letzte = Number(erste?.lastPageNumber ?? 0);
+  if (letzte > 1) {
+    const seiten: number[] = [];
+    for (let sn = 2; sn <= Math.min(letzte, maxSeiten); sn++) seiten.push(sn);
+    for (let i = 0; i < seiten.length; i += gleichzeitig) {
+      const gruppe = await Promise.all(seiten.slice(i, i + gleichzeitig).map(seiteLesen));
+      for (const res of gruppe) uebernimm(res);
+    }
+    return { belegt, vollstaendig: letzte <= maxSeiten };
+  }
+
+  for (let seite = 2; seite <= maxSeiten; seite++) {
+    const res = await seiteLesen(seite);
+    const anzahl = uebernimm(res);
+    if (res?.isLastPage || anzahl === 0 || anzahl < proSeite) return { belegt, vollstaendig: true };
+  }
+  return { belegt, vollstaendig: false };
 }
 
 /**
@@ -235,7 +273,11 @@ export async function raeumeAuf(opts: AufraeumOptionen): Promise<AufraeumErgebni
   // Sicherung: Nichts löschen, worauf Bestand liegt.
   let belegt: Set<number>;
   try {
-    belegt = await mitBestand(opts.warehouseId, alleOrte);
+    const bestand = await mitBestand(opts.warehouseId, alleOrte);
+    if (!bestand.vollstaendig) {
+      return leer('Der Bestand des Lagers war nicht vollständig lesbar. Ohne diese Prüfung wird nichts gelöscht.');
+    }
+    belegt = bestand.belegt;
   } catch (err) {
     return leer(`Bestand nicht prüfbar: ${(err as Error).message}. Ohne diese Prüfung wird nicht gelöscht.`);
   }
