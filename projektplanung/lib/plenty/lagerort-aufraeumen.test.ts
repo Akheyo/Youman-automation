@@ -82,11 +82,11 @@ describe('raeumeAuf', () => {
         geloescht.push(url.replace('https://test.plentymarkets-cloud01.com', ''));
         return ANTWORT({ ok: true });
       }
-      if (url.includes('/stock/storageLocations')) {
-        return ANTWORT({
-          entries: (opts.bestandAuf ?? []).map((id) => ({ storageLocationId: id, quantity: 3 })),
-          isLastPage: true,
-        });
+      // Bestand je Lagerort — so prüft der Lauf unmittelbar vor dem Löschen.
+      if (url.includes('/warehouses/locations/stock/')) {
+        const id = Number(url.split('/').pop());
+        const menge = (opts.bestandAuf ?? []).includes(id) ? 3 : 0;
+        return ANTWORT({ entries: menge ? [{ storageLocationId: id, quantity: menge }] : [] });
       }
       if (url.includes('/locations/dimensions')) {
         return ANTWORT({
@@ -150,14 +150,42 @@ describe('raeumeAuf', () => {
     expect(geloescht.join(' ')).not.toContain('/900');
   });
 
-  it('löscht nichts, wenn auf einem der Lagerorte Bestand liegt', async () => {
+  it('lässt einen Lagerort mit Bestand stehen und löscht nur den Rest', async () => {
     const { fetchMock, geloescht } = attrappe({ bestandAuf: [15902] });
     vi.stubGlobal('fetch', fetchMock);
     const { raeumeAuf } = await import('./lagerort-aufraeumen');
     const res = await raeumeAuf({ warehouseId: 106, probelauf: false });
 
-    expect(res.ok).toBe(false);
-    expect(res.error).toContain('Bestand');
-    expect(geloescht).toHaveLength(0);
+    // 15902 bleibt stehen — und damit auch die Knoten darüber.
+    expect(geloescht).toContain('/rest/warehouses/locations/15901');
+    expect(geloescht).not.toContain('/rest/warehouses/locations/15902');
+    expect(res.orteGeloescht).toBe(1);
+    expect(res.meldungen.join(' ')).toContain('Bestand vorhanden');
+  });
+
+  it('prüft den Bestand unmittelbar vor jeder einzelnen Löschung', async () => {
+    const { fetchMock, geloescht } = attrappe();
+    vi.stubGlobal('fetch', fetchMock);
+    const { entferneNachListe } = await import('./lagerort-aufraeumen');
+    const res = await entferneNachListe({ orteIds: [15901, 15902], knotenIds: [10139] });
+
+    expect(res.orteGeloescht).toBe(2);
+    expect(res.knotenGeloescht).toBe(1);
+    expect(geloescht).toHaveLength(3);
+  });
+
+  it('löscht einen Lagerort nicht, wenn die Bestandsabfrage scheitert', async () => {
+    // Im Zweifel stehenlassen: Eine unbeantwortete Frage ist kein "leer".
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+      if (url.includes('/rest/login')) return ANTWORT({ access_token: 't', expires_in: 3600, user_id: 1 });
+      if (url.includes('/warehouses/locations/stock/')) return ANTWORT({ error: 'kaputt' }, 500);
+      if (init?.method === 'DELETE') return ANTWORT({ ok: true });
+      return ANTWORT({ entries: [] });
+    });
+    const { entferneNachListe } = await import('./lagerort-aufraeumen');
+    const res = await entferneNachListe({ orteIds: [15901], knotenIds: [] });
+
+    expect(res.orteGeloescht).toBe(0);
+    expect(res.uebersprungen).toBe(1);
   });
 });
