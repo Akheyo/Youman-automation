@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import styles from '../lagerplatz.module.css';
 
 interface Lager { id: number; name: string }
@@ -12,6 +12,7 @@ interface Zeile {
 interface Ergebnis {
   ok: boolean; probelauf: boolean; error: string | null; lagerorte: number;
   geplant: number; gebucht: number; uebersprungen: number; fehler: number;
+  offen: number; schreiblimit: boolean; erledigt: number[];
   zeilen: Zeile[]; diagnose: string[];
 }
 interface Wunsch { variationId: number; ziel: string; menge?: number | null; name?: string }
@@ -97,6 +98,31 @@ function lesCsv(text: string): Wunsch[] {
   })).filter((w) => w.variationId > 0 && w.ziel);
 }
 
+/**
+ * Schickt eine Anfrage und wiederholt sie bei einer Zeitüberschreitung.
+ * Verloren ist dann der einzelne Aufruf, nicht der Lauf.
+ */
+async function schicke(pfad: string, koerper: unknown, versuche = 4): Promise<Record<string, unknown>> {
+  let letzter: Error | null = null;
+  for (let versuch = 1; versuch <= versuche; versuch++) {
+    try {
+      const res = await fetch(pfad, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(koerper),
+      });
+      const d = await alsJson(res);
+      if (!res.ok && !d.zeilen) throw new Error(String(d.error ?? `Fehlgeschlagen (HTTP ${res.status}).`));
+      return d;
+    } catch (e) {
+      letzter = e as Error;
+      if (!/Zeitüberschreitung/.test(letzter.message) || versuch === versuche) throw letzter;
+      await new Promise((f) => setTimeout(f, 3000 * versuch));
+    }
+  }
+  throw letzter ?? new Error('Unbekannter Fehler.');
+}
+
 export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
   const [lager, setLager] = useState<Lager[]>([]);
   const [warehouseId, setWarehouseId] = useState<number | null>(null);
@@ -108,6 +134,9 @@ export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
   const [fehler, setFehler] = useState<string | null>(null);
   const [maxBuchungen, setMaxBuchungen] = useState(20);
   const [freigabe, setFreigabe] = useState('');
+  const [fortschritt, setFortschritt] = useState<{ fertig: number; gesamt: number } | null>(null);
+  const [wartet, setWartet] = useState<number | null>(null);
+  const abbrechen = useRef(false);
 
   const buchenErlaubt = freigabe.trim().toUpperCase() === 'BUCHEN' && Boolean(warehouseId) && wuensche.length > 0;
 
@@ -133,23 +162,84 @@ export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(null); }
   }
 
+  /**
+   * Arbeitet die ganze Liste ab — in so vielen Teilaufrufen, wie nötig sind.
+   *
+   * Jeder Aufruf hat ein eigenes Zeitbudget und meldet zurück, welche Zeilen
+   * erledigt sind. Die werden herausgestrichen, der Rest geht in die nächste
+   * Runde. Bremst PlentyONE das Schreiben aus, wird eine Minute gewartet.
+   * Einmal starten, Fenster offen lassen.
+   */
   async function starte(probelauf: boolean) {
     if (!warehouseId) return;
-    setLaeuft(probelauf ? 'probe' : 'buchen'); setFehler(null); setErgebnis(null);
+    abbrechen.current = false;
+    setLaeuft(probelauf ? 'probe' : 'buchen');
+    setFehler(null);
+    setErgebnis(null);
+    setFortschritt({ fertig: 0, gesamt: wuensche.length });
+
+    let offeneListe = wuensche;
+    const summe: Ergebnis = {
+      ok: true, probelauf, error: null, lagerorte: 0,
+      geplant: 0, gebucht: 0, uebersprungen: 0, fehler: 0,
+      offen: 0, schreiblimit: false, erledigt: [], zeilen: [], diagnose: [],
+    };
+
     try {
-      const res = await fetch('/api/lagerplatz/zuweisen', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          warehouseId, probelauf, maxBuchungen,
-          wuensche: wuensche.map((w) => ({ variationId: w.variationId, ziel: w.ziel, menge: w.menge })),
-        }),
-      });
-      const d = (await alsJson(res)) as unknown as Ergebnis;
-      if (!res.ok && !d.zeilen) throw new Error(d.error ?? `Fehlgeschlagen (HTTP ${res.status}).`);
-      setErgebnis(d);
+      // Obergrenze der Runden: Notbremse gegen eine Endlosschleife.
+      for (let runde = 0; runde < 500; runde++) {
+        if (abbrechen.current) { summe.diagnose.push('Vom Benutzer angehalten.'); break; }
+
+        const d = (await schicke('/api/lagerplatz/zuweisen', {
+          warehouseId,
+          probelauf,
+          // Im Probelauf zählt nur das Zeitbudget; beim Buchen zusätzlich die
+          // Obergrenze, die du oben gewählt hast — pro Lauf, nicht pro Aufruf.
+          maxBuchungen: probelauf ? 2000 : Math.max(1, maxBuchungen - summe.gebucht),
+          wuensche: offeneListe.map((w) => ({ variationId: w.variationId, ziel: w.ziel, menge: w.menge })),
+        })) as unknown as Ergebnis;
+        if (d.error) throw new Error(d.error);
+
+        summe.lagerorte = d.lagerorte;
+        summe.geplant += d.geplant;
+        summe.gebucht += d.gebucht;
+        summe.uebersprungen += d.uebersprungen;
+        summe.fehler += d.fehler;
+        summe.zeilen.push(...d.zeilen);
+        if (runde === 0) summe.diagnose.push(...d.diagnose);
+
+        const erledigt = new Set(d.erledigt ?? []);
+        offeneListe = offeneListe.filter((w) => !erledigt.has(w.variationId));
+        setFortschritt({ fertig: wuensche.length - offeneListe.length, gesamt: wuensche.length });
+        setErgebnis({ ...summe, zeilen: [...summe.zeilen], offen: offeneListe.length });
+
+        if (!offeneListe.length) break;
+        // Beim Buchen ist Schluss, sobald die gewählte Obergrenze erreicht ist.
+        if (!probelauf && summe.gebucht >= maxBuchungen) {
+          summe.diagnose.push(`Obergrenze von ${maxBuchungen} Buchungen erreicht — ${offeneListe.length} Zeilen bleiben offen.`);
+          break;
+        }
+        if (d.schreiblimit) {
+          for (let rest = 60; rest > 0 && !abbrechen.current; rest--) {
+            setWartet(rest);
+            await new Promise((f) => setTimeout(f, 1000));
+          }
+          setWartet(null);
+        } else if (erledigt.size === 0) {
+          summe.diagnose.push('Der Lauf kam nicht weiter und wurde angehalten.');
+          break;
+        }
+      }
+
+      setErgebnis({ ...summe, zeilen: [...summe.zeilen], offen: offeneListe.length });
       if (!probelauf) setFreigabe('');
-    } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(null); }
+    } catch (e) {
+      setFehler((e as Error).message);
+      setErgebnis({ ...summe, zeilen: [...summe.zeilen] });
+    } finally {
+      setWartet(null);
+      setLaeuft(null);
+    }
   }
 
   const sichtbar = useMemo(() => ergebnis?.zeilen.slice(0, 200) ?? [], [ergebnis]);
@@ -238,7 +328,9 @@ export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
             <label className={styles.label} htmlFor="max">Höchstens buchen</label>
             <select id="max" className={styles.select} value={maxBuchungen}
               onChange={(e) => setMaxBuchungen(Number(e.target.value))} disabled={!!laeuft}>
-              {[20, 50, 100, 250, 500].map((n) => <option key={n} value={n}>{n} Artikel</option>)}
+              {[20, 50, 100, 250, 500, 1000, 2500, 20000].map((n) => (
+                <option key={n} value={n}>{n >= 20000 ? 'alle' : `${n} Artikel`}</option>
+              ))}
             </select>
           </div>
           <div className={styles.field}>
@@ -251,11 +343,35 @@ export default function Zuweisung({ plentyReady }: { plentyReady: boolean }) {
               disabled={!!laeuft || !buchenErlaubt}>
               {laeuft === 'buchen' ? 'bucht …' : 'Jetzt buchen'}
             </button>
+            {laeuft && (
+              <button type="button" className={styles.secondary} onClick={() => { abbrechen.current = true; }}>
+                Anhalten
+              </button>
+            )}
           </div>
         </div>
         <p className={styles.checkHint}>
           Fang klein an: 20 Artikel buchen, im Lager nachschauen, ob sie dort liegen. Erst dann größere Blöcke.
+          Der Lauf teilt sich selbst auf und macht weiter, bis die gewählte Zahl erreicht oder die Liste durch
+          ist — einmal starten, Fenster offen lassen. Anhalten ist jederzeit möglich; schon Gebuchtes bleibt.
         </p>
+        {wartet !== null && (
+          <p className={styles.progress}>
+            PlentyONE bremst Schreibzugriffe — weiter in {wartet} s. Fenster offen lassen.
+          </p>
+        )}
+        {fortschritt && (
+          <>
+            <p className={styles.progress}>
+              {fortschritt.fertig.toLocaleString('de-DE')} von {fortschritt.gesamt.toLocaleString('de-DE')} Zeilen
+              {laeuft ? ' …' : ' abgearbeitet'}
+            </p>
+            <div className={styles.bar}>
+              <div className={styles.barFill}
+                style={{ width: `${fortschritt.gesamt > 0 ? Math.round((fortschritt.fertig / fortschritt.gesamt) * 100) : 0}%` }} />
+            </div>
+          </>
+        )}
       </section>
 
       {ergebnis && fehlendeOrte.length > 0 && (
