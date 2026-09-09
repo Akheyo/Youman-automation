@@ -15,6 +15,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { codesAusTabelle } from '@/lib/lagerplatz/laeufe';
 import { legeLagerorteAn } from '@/lib/plenty/lagerort-anlegen';
+import { leereLagerortPuffer } from '@/lib/plenty/lagerorte';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -77,6 +78,9 @@ export async function POST(request: Request) {
     // Etwas unter maxDuration, damit die Antwort noch sauber rausgeht.
     budgetMs: 45_000,
   });
+
+  // Neue Lagerorte heisst: die zwischengespeicherte Liste ist veraltet.
+  if (ergebnis.angelegt > 0) leereLagerortPuffer(warehouseId);
 
   return NextResponse.json(
     {

@@ -18,7 +18,7 @@
  */
 
 import { getPlentyConfig, plentyConfigured, plentyGet, plentyToken } from './client';
-import { ladeLagerorte, verzeichnis, type Lagerort } from './lagerorte';
+import { ladeLagerorteGepuffert, verzeichnis, type Lagerort } from './lagerorte';
 import { istSchreiblimit } from './lagerort-anlegen';
 
 /** Grund 401 = Umlagerung (laut Plenty-Doku: „Stock transfer"). */
@@ -188,11 +188,17 @@ export async function weiseZu(wuensche: Wunsch[], opts: ZuweisungOptionen): Prom
   let nachCode: Map<string, Lagerort>;
   let anzahlOrte = 0;
   try {
-    const { orte, ohneCode, abgebrochen } = await ladeLagerorte(opts.warehouseId);
+    // Gepuffert: Ein Lauf besteht aus vielen Teilaufrufen, und die Liste
+    // ändert sich zwischendurch nicht. Ohne Puffer werden 53 Seiten je Runde
+    // gelesen — daran zieht PlentyONE die Lesebremse.
+    const { orte, ohneCode, abgebrochen, ausPuffer, alterMs } = await ladeLagerorteGepuffert(opts.warehouseId);
     anzahlOrte = orte.length;
     const v = verzeichnis(orte);
     nachCode = v.nachCode;
-    diagnose.push(`${orte.length} Lagerorte gelesen, ${v.nachCode.size} davon eindeutig zuordenbar.`);
+    diagnose.push(
+      `${orte.length} Lagerorte gelesen, ${v.nachCode.size} davon eindeutig zuordenbar.` +
+        (ausPuffer ? ` (Liste aus dem Zwischenspeicher, ${Math.round(alterMs / 1000)} s alt)` : ''),
+    );
     if (ohneCode) diagnose.push(`${ohneCode} Lagerort-Namen folgen nicht dem bekannten Schema und bleiben unberücksichtigt.`);
     if (v.doppelt) diagnose.push(`${v.doppelt} Lagerorte tragen denselben Code doppelt — es wird jeweils der erste genommen.`);
     if (abgebrochen) diagnose.push('Die Lagerort-Liste war länger als erwartet und wurde abgeschnitten.');
