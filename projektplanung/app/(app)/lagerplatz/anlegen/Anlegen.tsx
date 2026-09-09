@@ -76,6 +76,7 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
   const [fehler, setFehler] = useState<string | null>(null);
   const [freigabe, setFreigabe] = useState('');
   const [wartet, setWartet] = useState<number | null>(null);
+  const [unbekannt, setUnbekannt] = useState<string[]>([]);
   const abbrechen = useRef(false);
 
   /** Die Tabelle wird schon beim Tippen aufgelöst — dieselbe Logik wie im Server. */
@@ -101,7 +102,9 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
       const d = await alsJson(res);
       if (!res.ok) throw new Error(String(d.error ?? 'Lagerorte nicht ladbar.'));
       setLagerInfo(`${d.gesamt} Lagerorte vorhanden, davon ${d.zuordenbar} zuordenbar` +
+        (d.ohneCode ? ` · ${d.ohneCode} mit unbekanntem Namensschema` : '') +
         (d.doppelt ? ` · ${d.doppelt} doppelte Namen` : ''));
+      setUnbekannt(((d.beispieleOhneCode as Array<{ id: number; name: string }>) ?? []).map((o) => `${o.name} (ID ${o.id})`));
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(null); }
   }
 
@@ -222,6 +225,17 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
         </div>
         {laeuft === 'orte' && <p className={styles.progress}>Lagerorte werden gelesen …</p>}
         {lagerInfo && <p className={styles.progress}>{lagerInfo}</p>}
+        {unbekannt.length > 0 && (
+          <>
+            <p className={styles.checkHint}>
+              So heißen Lagerorte, deren Namen sich nicht auf die einheitliche Form bringen lassen. Sie zählen
+              bei der Zuweisung nicht mit:
+            </p>
+            <ul className={`${styles.diagnose} ${styles.mono}`}>
+              {unbekannt.map((n) => <li key={n}>{n}</li>)}
+            </ul>
+          </>
+        )}
       </section>
 
       <section className={styles.card}>
