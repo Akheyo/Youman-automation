@@ -67,6 +67,7 @@ interface Aufraeum {
   orteGesamt: number; knotenGesamt: number;
   orteGeloescht: number; knotenGeloescht: number;
   fehler: number; offen: number; schreiblimit: boolean;
+  orteIds: number[]; knotenIds: number[]; erledigt: number[];
   meldungen: string[]; diagnose: string[];
 }
 
@@ -234,18 +235,54 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
     if (probelauf) setAufraeumen(null);
 
     try {
+      // Der Probelauf sucht einmal; danach wird die Liste abgearbeitet, ohne
+      // erneut 13.000 Lagerorte zu lesen. Vorher blieben je Aufruf fünf
+      // Sekunden für die eigentliche Arbeit — 44 Löschungen statt hunderter.
+      let offeneOrte = probelauf ? [] : (aufraeumen?.orteIds ?? []);
+      let offeneKnoten = probelauf ? [] : (aufraeumen?.knotenIds ?? []);
+      const gesamt = offeneOrte.length + offeneKnoten.length;
+      let geschafft = 0;
+
       for (let runde = 0; runde < 200; runde++) {
         if (abbrechen.current) break;
+
         const d = (await schicke('/api/lagerplatz/aufraeumen', {
-          warehouseId, probelauf, maxLoeschungen: 500,
+          warehouseId,
+          probelauf,
+          maxLoeschungen: 2000,
+          ...(probelauf ? {} : { orteIds: offeneOrte, knotenIds: offeneKnoten }),
         })) as unknown as Aufraeum;
         if (d.error) throw new Error(d.error);
-        setAufraeumen(d);
-        setFortschritt({
-          fertig: d.orteGeloescht + d.knotenGeloescht,
-          gesamt: d.orteGesamt + d.knotenGesamt,
-        });
-        if (probelauf || d.offen === 0) break;
+
+        if (probelauf) {
+          setAufraeumen(d);
+          break;
+        }
+
+        const erledigt = new Set(d.erledigt ?? []);
+        offeneOrte = offeneOrte.filter((id) => !erledigt.has(id));
+        offeneKnoten = offeneKnoten.filter((id) => !erledigt.has(id));
+        geschafft += erledigt.size;
+
+        setAufraeumen((vorher) => ({
+          ...(vorher ?? d),
+          ...d,
+          zweige: vorher?.zweige ?? [],
+          orteIds: offeneOrte,
+          knotenIds: offeneKnoten,
+          orteGesamt: vorher?.orteGesamt ?? d.orteGesamt,
+          knotenGesamt: vorher?.knotenGesamt ?? d.knotenGesamt,
+          orteGeloescht: (vorher?.orteGeloescht ?? 0) + d.orteGeloescht,
+          knotenGeloescht: (vorher?.knotenGeloescht ?? 0) + d.knotenGeloescht,
+        }));
+        setFortschritt({ fertig: geschafft, gesamt });
+
+        if (!offeneOrte.length && !offeneKnoten.length) break;
+        // Kein Fortschritt in dieser Runde: sonst dreht es sich endlos.
+        if (erledigt.size === 0 && !d.schreiblimit) {
+          setFehler('Der Lauf kam nicht weiter — siehe Meldungen unten.');
+          break;
+        }
         if (d.schreiblimit) {
           for (let rest = 60; rest > 0 && !abbrechen.current; rest--) {
             setWartet(rest);
