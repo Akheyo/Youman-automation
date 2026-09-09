@@ -56,7 +56,10 @@ export async function POST(request: Request) {
     // Schreiben nur, wenn ausdrücklich verlangt.
     probelauf: body.probelauf !== false,
     vonLagerortId: Number(body.vonLagerortId) >= 0 ? Number(body.vonLagerortId) : 0,
-    maxBuchungen: Math.min(500, Number(body.maxBuchungen) > 0 ? Number(body.maxBuchungen) : 50),
+    // Die Obergrenze bremst nicht mehr den ganzen Lauf, sondern nur den
+    // einzelnen Aufruf — die Oberfläche schickt den Rest hinterher.
+    maxBuchungen: Math.min(2000, Number(body.maxBuchungen) > 0 ? Number(body.maxBuchungen) : 50),
+    budgetMs: 45_000,
   });
 
   return NextResponse.json(ergebnis, { status: ergebnis.ok ? 200 : 502 });
