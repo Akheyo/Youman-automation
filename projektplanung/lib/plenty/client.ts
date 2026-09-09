@@ -23,6 +23,7 @@
  */
 
 import { generateEan13 } from './ean';
+import { ladeZugang } from '@/lib/einstellungen/plenty';
 import {
   buildCategoryName,
   buildItemDescription,
@@ -77,6 +78,32 @@ export function getPlentyConfig(): PlentyConfig {
 
 export function plentyConfigured(cfg = getPlentyConfig()): boolean {
   return Boolean(cfg.baseUrl && cfg.user && cfg.password);
+}
+
+/**
+ * Der tatsaechlich gueltige Zugang: Umgebungsvariablen als Grundlage, die in
+ * der Oberflaeche gepflegten Einstellungen darueber.
+ *
+ * Alle Plenty-Aufrufe gehen hierdurch, damit eine Aenderung unter
+ * „Einstellungen" sofort fuer jedes Werkzeug gilt — ohne neuen Deploy. Die
+ * Einstellungen sind kurz zwischengespeichert (siehe lib/einstellungen/plenty.ts),
+ * ein Durchlauf ueber hunderte Artikel kostet also nicht hunderte Abfragen.
+ */
+export async function aktuelleConfig(): Promise<PlentyConfig> {
+  const basis = getPlentyConfig();
+  const zugang = await ladeZugang();
+  return {
+    ...basis,
+    baseUrl: zugang.baseUrl,
+    user: zugang.user,
+    password: zugang.password,
+    plentyId: zugang.plentyId ?? basis.plentyId,
+  };
+}
+
+/** Wie `plentyConfigured`, aber unter Beruecksichtigung der Einstellungsseite. */
+export async function plentyEingerichtet(): Promise<boolean> {
+  return plentyConfigured(await aktuelleConfig());
 }
 
 // ---------------------------------------------------------------------------
@@ -797,14 +824,58 @@ export async function syncProjektToPlenty(
 }
 
 /** Leichter Verbindungstest für die Einstellungsseite / Health-Check. */
-export async function testPlentyConnection(): Promise<{ ok: boolean; message: string }> {
-  const cfg = getPlentyConfig();
-  if (!plentyConfigured(cfg)) return { ok: false, message: 'Plenty nicht konfiguriert (Env-Variablen fehlen).' };
+export async function testPlentyConnection(
+  kandidat?: Partial<Pick<PlentyConfig, 'baseUrl' | 'user' | 'password'>>,
+): Promise<{ ok: boolean; message: string }> {
+  // Mit `kandidat` laesst sich ein noch nicht gespeicherter Zugang pruefen —
+  // sonst muesste man erst speichern, um zu erfahren, ob er ueberhaupt geht,
+  // und haette einen kaputten Zugang fuer alle anderen hinterlassen.
+  const basis = await aktuelleConfig();
+  const cfg: PlentyConfig = kandidat
+    ? {
+        ...basis,
+        baseUrl: kandidat.baseUrl !== undefined ? kandidat.baseUrl : basis.baseUrl,
+        user: kandidat.user !== undefined ? kandidat.user : basis.user,
+        password: kandidat.password !== undefined ? kandidat.password : basis.password,
+      }
+    : basis;
+  if (!plentyConfigured(cfg)) {
+    return { ok: false, message: 'Plenty ist nicht eingerichtet — unter „Einstellungen" den Zugang eintragen.' };
+  }
   try {
-    await login(cfg);
-    return { ok: true, message: 'Login erfolgreich.' };
+    // Bewusst am Token-Cache vorbei: Ein Test muss wirklich anfragen, sonst
+    // meldet er „erfolgreich", weil vorhin schon einmal jemand angemeldet war.
+    const res = await fetch(`${cfg.baseUrl}/rest/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ username: cfg.user, password: cfg.password }),
+    });
+    const roh = await res.text();
+    if (!res.ok) {
+      return {
+        ok: false,
+        message:
+          res.status === 401
+            ? 'Benutzername oder Passwort stimmen nicht (HTTP 401).'
+            : `Plenty antwortet mit HTTP ${res.status}: ${roh.slice(0, 160)}`,
+      };
+    }
+    let token: string | null = null;
+    try {
+      token = (JSON.parse(roh) as { access_token?: string }).access_token ?? null;
+    } catch {
+      // Keine JSON-Antwort — meist eine falsche Basis-URL, die auf den Shop zeigt.
+    }
+    if (!token) {
+      return {
+        ok: false,
+        message:
+          'Antwort ohne Token — meist zeigt die Basis-URL nicht auf das Plenty-System. Erwartet wird z. B. https://ihr-shop.plentymarkets-cloud01.com',
+      };
+    }
+    return { ok: true, message: 'Login erfolgreich — der Zugang funktioniert.' };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return { ok: false, message: `Plenty nicht erreichbar: ${(err as Error).message}` };
   }
 }
 
@@ -817,15 +888,16 @@ export async function testPlentyConnection(): Promise<{ ok: boolean; message: st
  * gecachten Token wie der Projekt-Sync. Wirft bei HTTP-Fehlern (mit Statuscode
  * in der Meldung), damit der Aufrufer gezielt auf 400/403 reagieren kann.
  */
-export async function plentyGet<T>(path: string, cfg: PlentyConfig = getPlentyConfig()): Promise<T> {
-  const token = await login(cfg);
+export async function plentyGet<T>(path: string, cfg?: PlentyConfig): Promise<T> {
+  const zugang = cfg ?? (await aktuelleConfig());
+  const token = await login(zugang);
   // PlentyONE bremst auch das Lesen ("short period read limit reached"). Das
   // ist keine Störung, sondern der Normalfall, wenn viele Seiten hintereinander
   // geholt werden — also kurz warten und noch einmal fragen, statt den ganzen
   // Lauf daran scheitern zu lassen.
   for (let versuch = 1; ; versuch++) {
     try {
-      return await api<T>(cfg, token, path);
+      return await api<T>(zugang, token, path);
     } catch (err) {
       const gebremst = /HTTP 429/.test((err as Error).message);
       if (!gebremst || versuch >= 3) throw err;
@@ -842,9 +914,10 @@ export async function plentyGet<T>(path: string, cfg: PlentyConfig = getPlentyCo
 export async function plentyPost<T>(
   path: string,
   params: Record<string, string | number>,
-  cfg: PlentyConfig = getPlentyConfig(),
+  cfg?: PlentyConfig,
 ): Promise<T> {
-  const token = await login(cfg);
+  const zugang = cfg ?? (await aktuelleConfig());
+  const token = await login(zugang);
   // Die PlentyONE-Spec deklariert die Felder mancher schreibender Endpunkte als
   // Query-Parameter, andere Teile der Doku zeigen sie im Body. Wir schicken
   // beides — doppelt gemoppelt schadet nicht, geraten wird nichts.
@@ -852,7 +925,7 @@ export async function plentyPost<T>(
     Object.entries(params).map(([k, v]) => [k, String(v)]),
   ).toString();
   const trenner = path.includes('?') ? '&' : '?';
-  return api<T>(cfg, token, `${path}${trenner}${qs}`, {
+  return api<T>(zugang, token, `${path}${trenner}${qs}`, {
     method: 'POST',
     body: JSON.stringify(params),
   });
@@ -863,9 +936,10 @@ export async function plentyPost<T>(
  * der Aufrufer muss also selbst dafür sorgen, dass vorher klar ist, was weg
  * soll (Probelauf, ausdrückliche Freigabe).
  */
-export async function plentyDelete<T>(path: string, cfg: PlentyConfig = getPlentyConfig()): Promise<T> {
-  const token = await login(cfg);
-  return api<T>(cfg, token, path, { method: 'DELETE' });
+export async function plentyDelete<T>(path: string, cfg?: PlentyConfig): Promise<T> {
+  const zugang = cfg ?? (await aktuelleConfig());
+  const token = await login(zugang);
+  return api<T>(zugang, token, path, { method: 'DELETE' });
 }
 
 /**
@@ -873,6 +947,6 @@ export async function plentyDelete<T>(path: string, cfg: PlentyConfig = getPlent
  * frischem Login). Für Aufrufe, die nicht über `plentyGet` laufen — etwa
  * schreibende PUT-Anfragen.
  */
-export async function plentyToken(cfg: PlentyConfig = getPlentyConfig()): Promise<string> {
-  return login(cfg);
+export async function plentyToken(cfg?: PlentyConfig): Promise<string> {
+  return login(cfg ?? (await aktuelleConfig()));
 }

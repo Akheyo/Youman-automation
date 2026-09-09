@@ -1,0 +1,513 @@
+'use client';
+
+/**
+ * Einstellungen: PlentyONE-Zugang pflegen und alle Werkzeuge von einer Stelle
+ * aus erreichen.
+ *
+ * Zwei Grundsätze in dieser Oberfläche:
+ *
+ *   1. Das Passwort verlässt den Server nie. Das Feld ist beim Laden leer;
+ *      daneben steht, ob und wie ein Passwort hinterlegt ist. Leer lassen
+ *      heißt „unverändert" — man kann also die URL ändern, ohne das Passwort
+ *      erneut eintippen zu müssen.
+ *
+ *   2. Testen vor dem Speichern. Ein falscher Zugang, der gespeichert wird,
+ *      legt alle Werkzeuge für alle Kollegen lahm. Deshalb prüft „Verbindung
+ *      testen" die eingetippten Werte, ohne sie zu speichern.
+ */
+
+import { useCallback, useEffect, useState } from 'react';
+import styles from './einstellungen.module.css';
+
+type Quelle = 'datenbank' | 'umgebung' | 'leer';
+
+interface Stand {
+  baseUrl: string;
+  user: string;
+  passwortGesetzt: boolean;
+  passwortMaske: string | null;
+  passwortUnlesbar: boolean;
+  plentyId: number | null;
+  warehouseId: number | null;
+  quelle: Quelle;
+  geaendertVon: string | null;
+  geaendertAm: string | null;
+  schluessel: 'eigen' | 'supabase' | 'keiner';
+  supabase: {
+    url: string | null;
+    projektRef: string | null;
+    angemeldetNutzbar: boolean;
+    serviceRoleGesetzt: boolean;
+    tabelle: 'vorhanden' | 'fehlt' | 'unbekannt';
+  };
+}
+
+/** Die Werkzeuge, die auf diesem Zugang aufsetzen. */
+const PROZESSE = [
+  {
+    href: '/projekte',
+    name: 'Projekte anlegen',
+    text: 'Firma, Ort und Ansprechpartner erfassen, Kategorie und Artikel in Plenty anlegen, EAN-13 erzeugen.',
+    schreibt: true,
+  },
+  {
+    href: '/lagerplatz',
+    name: 'Lagerplätze finden',
+    text: 'Geht die Artikel mit Bestand durch und liest Lagerplatz-Codes aus ihren Texten.',
+    schreibt: false,
+  },
+  {
+    href: '/lagerplatz/anlegen',
+    name: 'Lagerorte anlegen',
+    text: 'Legt fehlende Lagerorte in Plenty an — Halle, Regal, Ebene, Fach.',
+    schreibt: true,
+  },
+  {
+    href: '/lagerplatz/zuweisen',
+    name: 'Zuweisen',
+    text: 'Bucht Bestand vom Standard-Lagerplatz auf den richtigen Platz um.',
+    schreibt: true,
+  },
+  {
+    href: '/lagerplatz/suche',
+    name: 'Artikel suchen',
+    text: 'Artikel nicht gefunden? Schlägt alternative Lagerplätze vor, mit Begründung und Laufzettel.',
+    schreibt: false,
+  },
+];
+
+const QUELLE_TEXT: Record<Quelle, string> = {
+  datenbank: 'aus diesen Einstellungen',
+  umgebung: 'aus den Umgebungsvariablen (Vercel)',
+  leer: 'nicht eingerichtet',
+};
+
+async function alsJson(res: Response): Promise<Record<string, unknown>> {
+  const text = await res.text();
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    throw new Error(`Unerwartete Antwort (HTTP ${res.status}).`);
+  }
+}
+
+export default function Einstellungen() {
+  const [stand, setStand] = useState<Stand | null>(null);
+  const [baseUrl, setBaseUrl] = useState('');
+  const [benutzer, setBenutzer] = useState('');
+  const [passwort, setPasswort] = useState('');
+  const [plentyId, setPlentyId] = useState('');
+  const [warehouseId, setWarehouseId] = useState('');
+  const [lager, setLager] = useState<Array<{ id: number; name: string }>>([]);
+  const [lagerHinweis, setLagerHinweis] = useState<string | null>(null);
+  const [laedt, setLaedt] = useState(true);
+  const [laeuft, setLaeuft] = useState<'test' | 'speichern' | 'verwerfen' | null>(null);
+  const [meldung, setMeldung] = useState<{ art: 'ok' | 'warn' | 'err'; text: string } | null>(null);
+
+  const laden = useCallback(async () => {
+    setLaedt(true);
+    try {
+      const daten = (await alsJson(await fetch('/api/einstellungen/plenty'))) as unknown as Stand;
+      setStand(daten);
+      setBaseUrl(daten.baseUrl ?? '');
+      setBenutzer(daten.user ?? '');
+      setPlentyId(daten.plentyId !== null ? String(daten.plentyId) : '');
+      setWarehouseId(daten.warehouseId !== null ? String(daten.warehouseId) : '');
+      setPasswort(''); // nie vorbelegen
+    } catch (err) {
+      setMeldung({ art: 'err', text: (err as Error).message });
+    } finally {
+      setLaedt(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void laden();
+  }, [laden]);
+
+  // Die Lagerliste erst holen, wenn ein Zugang steht — vorher gäbe es nichts
+  // zu holen. Ein Fehlschlag ist kein Drama: Dann bleibt das freie Zahlenfeld.
+  useEffect(() => {
+    if (!stand || stand.quelle === 'leer') return;
+    let abgebrochen = false;
+    (async () => {
+      try {
+        const daten = await alsJson(await fetch('/api/einstellungen/lager'));
+        if (abgebrochen) return;
+        setLager((daten.lager as Array<{ id: number; name: string }>) ?? []);
+        setLagerHinweis((daten.hinweis as string | null) ?? null);
+      } catch {
+        if (!abgebrochen) setLagerHinweis('Lagerliste nicht abrufbar.');
+      }
+    })();
+    return () => {
+      abgebrochen = true;
+    };
+  }, [stand]);
+
+  const koerper = () => ({
+    baseUrl,
+    user: benutzer,
+    passwort,
+    plentyId: plentyId === '' ? null : Number(plentyId),
+    warehouseId: warehouseId === '' ? null : Number(warehouseId),
+  });
+
+  async function testen() {
+    setLaeuft('test');
+    setMeldung(null);
+    try {
+      const res = await fetch('/api/einstellungen/plenty', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(koerper()),
+      });
+      const daten = await alsJson(res);
+      setMeldung({
+        art: daten.ok ? 'ok' : 'err',
+        text: String(daten.message ?? daten.error ?? 'Unbekanntes Ergebnis.'),
+      });
+    } catch (err) {
+      setMeldung({ art: 'err', text: (err as Error).message });
+    } finally {
+      setLaeuft(null);
+    }
+  }
+
+  async function speichern() {
+    setLaeuft('speichern');
+    setMeldung(null);
+    try {
+      const res = await fetch('/api/einstellungen/plenty', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(koerper()),
+      });
+      const daten = await alsJson(res);
+      if (!res.ok) throw new Error(String(daten.error ?? 'Speichern fehlgeschlagen.'));
+      const test = daten.test as { ok: boolean; message: string } | undefined;
+      setMeldung(
+        test?.ok
+          ? { art: 'ok', text: `Gespeichert. ${test.message}` }
+          : { art: 'warn', text: `Gespeichert, aber der Zugang trägt nicht: ${test?.message ?? 'unklar'}` },
+      );
+      await laden();
+    } catch (err) {
+      setMeldung({ art: 'err', text: (err as Error).message });
+    } finally {
+      setLaeuft(null);
+    }
+  }
+
+  async function verwerfen() {
+    if (!confirm('Gespeicherten Zugang löschen? Danach gelten wieder die Umgebungsvariablen aus Vercel.')) return;
+    setLaeuft('verwerfen');
+    setMeldung(null);
+    try {
+      const res = await fetch('/api/einstellungen/plenty', { method: 'DELETE' });
+      const daten = await alsJson(res);
+      if (!res.ok) throw new Error(String(daten.error ?? 'Löschen fehlgeschlagen.'));
+      setMeldung({ art: 'ok', text: 'Zugang gelöscht — es gelten wieder die Umgebungsvariablen.' });
+      await laden();
+    } catch (err) {
+      setMeldung({ art: 'err', text: (err as Error).message });
+    } finally {
+      setLaeuft(null);
+    }
+  }
+
+  const beschaeftigt = laeuft !== null || laedt;
+
+  return (
+    <div className={styles.page}>
+      <header className={styles.head}>
+        <span className={styles.eyebrow}>Einrichtung</span>
+        <h1 className={styles.title}>Einstellungen</h1>
+        <p className={styles.subtitle}>
+          Hier hängt alles dran: Projekte anlegen, Lagerorte anlegen, Zuweisen und die Artikelsuche
+          holen ihren PlentyONE-Zugang von dieser Seite. Eine Änderung wirkt sofort — ohne neuen
+          Deploy bei Vercel.
+        </p>
+      </header>
+
+      {meldung && (
+        <div
+          className={`${styles.notice} ${
+            meldung.art === 'ok' ? styles.noticeOk : meldung.art === 'warn' ? styles.noticeWarn : styles.noticeErr
+          }`}
+        >
+          {meldung.text}
+        </div>
+      )}
+
+      {stand?.passwortUnlesbar && (
+        <div className={`${styles.notice} ${styles.noticeWarn}`}>
+          Das gespeicherte Passwort lässt sich nicht mehr entschlüsseln — vermutlich hat sich der
+          Schlüssel geändert (etwa weil der Supabase-Service-Role-Key gedreht wurde). Bitte einmal
+          neu eintragen und speichern.
+        </div>
+      )}
+
+      {stand && !stand.supabase.serviceRoleGesetzt && (
+        <div className={`${styles.notice} ${styles.noticeErr}`}>
+          <code>SUPABASE_SERVICE_ROLE_KEY</code> ist nicht gesetzt — ohne ihn lässt sich hier nichts
+          speichern. In Vercel unter Settings → Environment Variables eintragen, für Production
+          <em> und </em> Preview, danach neu deployen.
+        </div>
+      )}
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}>
+          <h2 className={styles.cardTitle}>Datenbank</h2>
+          <span
+            className={`${styles.badge} ${
+              stand?.supabase.serviceRoleGesetzt && stand.supabase.tabelle === 'vorhanden'
+                ? styles.badgeOk
+                : styles.badgeWarn
+            }`}
+          >
+            {!stand?.supabase.serviceRoleGesetzt
+              ? 'nicht speicherfähig'
+              : stand.supabase.tabelle === 'vorhanden'
+                ? 'bereit'
+                : stand.supabase.tabelle === 'fehlt'
+                  ? 'Tabelle fehlt'
+                  : 'Zustand unklar'}
+          </span>
+        </div>
+        <p className={styles.hilfe} style={{ marginTop: 0, marginBottom: '1rem' }}>
+          An diesem Supabase-Projekt hängt die Projektplanung. Läuft dieselbe Anwendung mehrfach
+          (verschiedene Vercel-Projekte), zeigt jede Instanz hier ihr eigenes — das Schema gehört in
+          genau dieses.
+        </p>
+        <div className={styles.herkunft}>
+          <div className={styles.herkunftZeile}>
+            <span>Projekt-Referenz:</span>
+            {/* Direkt verlinkt: Zwei Supabase-Projekte gleichen Namens sind im
+                Dashboard nicht auseinanderzuhalten — der Link trifft immer das
+                richtige, das Umschalten von Hand nicht. */}
+            {stand?.supabase.projektRef ? (
+              <a
+                href={`https://supabase.com/dashboard/project/${stand.supabase.projektRef}/sql/new`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <strong>{stand.supabase.projektRef}</strong> — SQL-Editor öffnen ↗
+              </a>
+            ) : (
+              <strong>nicht eingerichtet</strong>
+            )}
+          </div>
+          <div className={styles.herkunftZeile}>
+            <span>URL:</span>
+            <strong>{stand?.supabase.url ?? '—'}</strong>
+          </div>
+          <div className={styles.herkunftZeile}>
+            <span>Service-Role-Key:</span>
+            <strong>{stand?.supabase.serviceRoleGesetzt ? 'gesetzt' : 'fehlt'}</strong>
+          </div>
+          <div className={styles.herkunftZeile}>
+            <span>Tabelle <code>einstellungen</code>:</span>
+            <strong>
+              {stand?.supabase.tabelle === 'vorhanden'
+                ? 'vorhanden — das Schema liegt in genau diesem Projekt'
+                : stand?.supabase.tabelle === 'fehlt'
+                  ? 'fehlt in diesem Projekt'
+                  : 'nicht prüfbar'}
+            </strong>
+          </div>
+          <div className={styles.herkunftZeile}>
+            <span>Verschlüsselung:</span>
+            <strong>
+              {stand?.schluessel === 'eigen'
+                ? 'eigener Schlüssel (EINSTELLUNGEN_SCHLUESSEL)'
+                : stand?.schluessel === 'supabase'
+                  ? 'ersatzweise über den Service-Role-Key'
+                  : 'kein Schlüssel'}
+            </strong>
+          </div>
+        </div>
+        {stand?.supabase.tabelle === 'fehlt' && (
+          <p className={styles.hilfe}>
+            Über den Link oben den SQL-Editor <strong>dieses</strong> Projekts öffnen und{' '}
+            <code>supabase/schema.sql</code> ausführen. Wurde das Schema schon eingespielt und steht
+            hier trotzdem „fehlt", ist es in einem anderen Supabase-Projekt gelandet — mehrere
+            Projekte tragen leicht denselben Namen, unterscheidbar sind sie nur an der Referenz.
+          </p>
+        )}
+        {stand?.schluessel === 'supabase' && (
+          <p className={styles.hilfe}>
+            Verschlüsselt wird ersatzweise mit dem Service-Role-Key. Wird der gedreht, sind die
+            gespeicherten Passwörter nicht mehr lesbar (die Seite sagt das dann, und man trägt sie
+            einmal neu ein). Wer das vermeiden will, setzt <code>EINSTELLUNGEN_SCHLUESSEL</code> in
+            Vercel.
+          </p>
+        )}
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}>
+          <h2 className={styles.cardTitle}>PlentyONE-Zugang</h2>
+          <span
+            className={`${styles.badge} ${
+              stand?.quelle === 'leer' ? styles.badgeWarn : stand?.quelle === 'datenbank' ? styles.badgeOk : styles.badgeMuted
+            }`}
+          >
+            {stand ? QUELLE_TEXT[stand.quelle] : '…'}
+          </span>
+        </div>
+
+        {stand && (
+          <div className={styles.herkunft}>
+            <div className={styles.herkunftZeile}>
+              <span>Passwort:</span>
+              <strong>
+                {stand.passwortGesetzt ? `hinterlegt (${stand.passwortMaske})` : 'keines hinterlegt'}
+              </strong>
+            </div>
+            {stand.geaendertAm && (
+              <div className={styles.herkunftZeile}>
+                <span>Zuletzt gespeichert:</span>
+                <strong>
+                  {new Date(stand.geaendertAm).toLocaleString('de-DE')}
+                  {stand.geaendertVon ? ` von ${stand.geaendertVon}` : ''}
+                </strong>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className={styles.felder}>
+          <div className={styles.feld}>
+            <label className={styles.label} htmlFor="baseUrl">Basis-URL</label>
+            <input
+              id="baseUrl"
+              className={styles.input}
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder="https://ihr-shop.plentymarkets-cloud01.com"
+              autoComplete="off"
+            />
+            <span className={styles.hilfe}>
+              Ohne <code>/rest</code> am Ende — das hängt die App selbst an. Muss mit <code>https://</code> beginnen.
+            </span>
+          </div>
+
+          <div className={styles.feld}>
+            <label className={styles.label} htmlFor="benutzer">REST-Benutzer</label>
+            <input
+              id="benutzer"
+              className={styles.input}
+              value={benutzer}
+              onChange={(e) => setBenutzer(e.target.value)}
+              autoComplete="off"
+            />
+            <span className={styles.hilfe}>
+              Braucht Leserechte auf Artikel, Varianten, Bestand und Lager; zum Anlegen und Zuweisen
+              zusätzlich Schreibrechte auf Lagerorte und Bestand.
+            </span>
+          </div>
+
+          <div className={styles.feld}>
+            <label className={styles.label} htmlFor="passwort">Passwort</label>
+            <input
+              id="passwort"
+              className={styles.input}
+              type="password"
+              value={passwort}
+              onChange={(e) => setPasswort(e.target.value)}
+              placeholder={stand?.passwortGesetzt ? 'unverändert lassen' : 'Passwort eintragen'}
+              autoComplete="new-password"
+            />
+            <span className={styles.hilfe}>
+              Wird verschlüsselt gespeichert und nie wieder angezeigt. Leer lassen heißt: das
+              bisherige Passwort bleibt.
+            </span>
+          </div>
+
+          <div className={styles.zwei}>
+            <div className={styles.feld}>
+              <label className={styles.label} htmlFor="plentyId">Mandant (plentyId)</label>
+              <input
+                id="plentyId"
+                className={styles.input}
+                value={plentyId}
+                onChange={(e) => setPlentyId(e.target.value.replace(/\D/g, ''))}
+                placeholder="0"
+                inputMode="numeric"
+              />
+            </div>
+            <div className={styles.feld}>
+              <label className={styles.label} htmlFor="warehouseId">Standard-Lager</label>
+              {lager.length ? (
+                <select
+                  id="warehouseId"
+                  className={styles.input}
+                  value={warehouseId}
+                  onChange={(e) => setWarehouseId(e.target.value)}
+                >
+                  <option value="">— das erste ({lager[0].name}) —</option>
+                  {lager.map((l) => (
+                    <option key={l.id} value={String(l.id)}>
+                      {l.name} (ID {l.id})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  id="warehouseId"
+                  className={styles.input}
+                  value={warehouseId}
+                  onChange={(e) => setWarehouseId(e.target.value.replace(/\D/g, ''))}
+                  placeholder="leer = das erste"
+                  inputMode="numeric"
+                />
+              )}
+              <span className={styles.hilfe}>
+                {lagerHinweis
+                  ? lagerHinweis
+                  : lager.length > 1
+                    ? 'Mehrere Lager vorhanden — bitte ausdrücklich wählen, sonst sucht die App im erstbesten.'
+                    : 'Auf welchem Lager die Lagerwerkzeuge arbeiten.'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.aktionen}>
+          <button className={styles.secondary} onClick={testen} disabled={beschaeftigt || !baseUrl || !benutzer}>
+            {laeuft === 'test' ? 'Prüft …' : 'Verbindung testen'}
+          </button>
+          <button className={styles.primary} onClick={speichern} disabled={beschaeftigt || !baseUrl || !benutzer}>
+            {laeuft === 'speichern' ? 'Speichert …' : 'Speichern'}
+          </button>
+          {stand?.quelle === 'datenbank' && (
+            <button className={`${styles.secondary} ${styles.gefahr}`} onClick={verwerfen} disabled={beschaeftigt}>
+              Zugang löschen
+            </button>
+          )}
+        </div>
+      </section>
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}>
+          <h2 className={styles.cardTitle}>Prozesse</h2>
+          <span className={styles.hilfe}>alle auf diesem Zugang</span>
+        </div>
+        <div className={styles.prozesse}>
+          {PROZESSE.map((p) => (
+            <a key={p.href} href={p.href} className={styles.prozess}>
+              <div className={styles.prozessName}>{p.name}</div>
+              <div className={styles.prozessText}>{p.text}</div>
+              <div className={styles.prozessSchreibt}>
+                <span className={`${styles.badge} ${p.schreibt ? styles.badgeWarn : styles.badgeMuted}`}>
+                  {p.schreibt ? 'schreibt in Plenty' : 'nur lesend'}
+                </span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}

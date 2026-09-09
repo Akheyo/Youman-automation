@@ -16,7 +16,7 @@
  * durch — die Oberfläche ruft einfach wiederholt auf.
  */
 
-import { getPlentyConfig, plentyConfigured, plentyGet } from './client';
+import { aktuelleConfig, plentyConfigured, plentyGet } from './client';
 import { bewerteVariante, fasseZusammen, type Befund, type VariantenRohdaten, type Zusammenfassung } from '@/lib/lagerplatz/befund';
 
 // ---------------------------------------------------------------------------
@@ -339,10 +339,13 @@ export async function scanneLagerplaetze(opts: ScanOptionen = {}): Promise<ScanE
   const maxDauerMs = Math.max(5_000, Math.floor(opts.maxDauerMs ?? 45_000));
   const maxNachladungen = Math.max(0, Math.floor(opts.maxNachladungen ?? 150));
   const diagnose: string[] = [];
+  // Zugang aus den Einstellungen bzw. den Umgebungsvariablen — nicht direkt
+  // aus process.env, damit eine Aenderung in der Oberflaeche sofort greift.
+  const konfiguriert = plentyConfigured(await aktuelleConfig());
 
   const leer: ScanErgebnis = {
     ok: false,
-    konfiguriert: plentyConfigured(),
+    konfiguriert,
     error: null,
     quelle,
     gelesen: 0,
@@ -359,11 +362,11 @@ export async function scanneLagerplaetze(opts: ScanOptionen = {}): Promise<ScanE
     dauerMs: 0,
   };
 
-  if (!plentyConfigured(getPlentyConfig())) {
+  if (!konfiguriert) {
     return {
       ...leer,
       naechsteSeite: null,
-      error: 'PlentyONE ist nicht konfiguriert (PLENTY_BASE_URL / PLENTY_USER / PLENTY_PASSWORD fehlen).',
+      error: 'PlentyONE ist nicht eingerichtet — unter „Einstellungen" den Zugang eintragen.',
       dauerMs: Date.now() - start,
     };
   }
