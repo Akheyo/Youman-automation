@@ -304,6 +304,38 @@ function knotenSchluessel(parentId: number, dimensionId: number, name: string): 
   return `${parentId}|${dimensionId}|${name.toUpperCase()}`;
 }
 
+/**
+ * Holt einen Lagerort und die Kette seiner Strukturknoten nach oben — roh,
+ * so wie PlentyONE sie liefert.
+ *
+ * Gebraucht zur Klärung, wenn ein angelegter Lagerort in der Plenty-Maske
+ * nicht auftaucht: Daran lässt sich ablesen, wie er wirklich heißt und unter
+ * welchem Pfad er hängt, statt es aus dem Verhalten zu erraten.
+ */
+export async function pruefeLagerort(
+  lagerortId: number,
+): Promise<{ lagerort: Record<string, unknown> | null; kette: Array<Record<string, unknown>>; fehler: string | null }> {
+  const kette: Array<Record<string, unknown>> = [];
+  try {
+    const lagerort = await plentyGet<Record<string, unknown>>(
+      `/rest/warehouses/locations/${lagerortId}`,
+    );
+    let levelId = Number(lagerort?.levelId ?? 0);
+    // Höchstens zehn Stufen — die Struktur hat vier, alles darüber wäre ein Kreis.
+    for (let stufe = 0; stufe < 10 && Number.isFinite(levelId) && levelId > 0; stufe++) {
+      const knoten = await plentyGet<Record<string, unknown>>(
+        `/rest/warehouses/locations/levels/${levelId}`,
+      );
+      if (!knoten) break;
+      kette.push(knoten);
+      levelId = Number(knoten?.parentId ?? 0);
+    }
+    return { lagerort, kette, fehler: null };
+  } catch (err) {
+    return { lagerort: null, kette, fehler: (err as Error).message };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Anlegen
 // ---------------------------------------------------------------------------
