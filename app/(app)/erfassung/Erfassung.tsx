@@ -296,7 +296,11 @@ export default function Erfassung() {
       }
       // Wofür ein Foto taugt, entscheidet die Auswertung. Am Regal wird
       // fotografiert, nicht sortiert.
-      await einreihen(artikel.id, 'detail', datei);
+      try {
+        await einreihen(artikel.id, 'detail', datei);
+      } catch (e) {
+        setMeldung({ art: 'fehler', text: e instanceof Error ? e.message : String(e) });
+      }
     }
   };
 
