@@ -98,6 +98,8 @@ export default function Einstellungen() {
   const [passwort, setPasswort] = useState('');
   const [plentyId, setPlentyId] = useState('');
   const [warehouseId, setWarehouseId] = useState('');
+  const [lager, setLager] = useState<Array<{ id: number; name: string }>>([]);
+  const [lagerHinweis, setLagerHinweis] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(true);
   const [laeuft, setLaeuft] = useState<'test' | 'speichern' | 'verwerfen' | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'ok' | 'warn' | 'err'; text: string } | null>(null);
@@ -122,6 +124,26 @@ export default function Einstellungen() {
   useEffect(() => {
     void laden();
   }, [laden]);
+
+  // Die Lagerliste erst holen, wenn ein Zugang steht — vorher gäbe es nichts
+  // zu holen. Ein Fehlschlag ist kein Drama: Dann bleibt das freie Zahlenfeld.
+  useEffect(() => {
+    if (!stand || stand.quelle === 'leer') return;
+    let abgebrochen = false;
+    (async () => {
+      try {
+        const daten = await alsJson(await fetch('/api/einstellungen/lager'));
+        if (abgebrochen) return;
+        setLager((daten.lager as Array<{ id: number; name: string }>) ?? []);
+        setLagerHinweis((daten.hinweis as string | null) ?? null);
+      } catch {
+        if (!abgebrochen) setLagerHinweis('Lagerliste nicht abrufbar.');
+      }
+    })();
+    return () => {
+      abgebrochen = true;
+    };
+  }, [stand]);
 
   const koerper = () => ({
     baseUrl,
@@ -417,14 +439,37 @@ export default function Einstellungen() {
             </div>
             <div className={styles.feld}>
               <label className={styles.label} htmlFor="warehouseId">Standard-Lager</label>
-              <input
-                id="warehouseId"
-                className={styles.input}
-                value={warehouseId}
-                onChange={(e) => setWarehouseId(e.target.value.replace(/\D/g, ''))}
-                placeholder="leer = das erste"
-                inputMode="numeric"
-              />
+              {lager.length ? (
+                <select
+                  id="warehouseId"
+                  className={styles.input}
+                  value={warehouseId}
+                  onChange={(e) => setWarehouseId(e.target.value)}
+                >
+                  <option value="">— das erste ({lager[0].name}) —</option>
+                  {lager.map((l) => (
+                    <option key={l.id} value={String(l.id)}>
+                      {l.name} (ID {l.id})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  id="warehouseId"
+                  className={styles.input}
+                  value={warehouseId}
+                  onChange={(e) => setWarehouseId(e.target.value.replace(/\D/g, ''))}
+                  placeholder="leer = das erste"
+                  inputMode="numeric"
+                />
+              )}
+              <span className={styles.hilfe}>
+                {lagerHinweis
+                  ? lagerHinweis
+                  : lager.length > 1
+                    ? 'Mehrere Lager vorhanden — bitte ausdrücklich wählen, sonst sucht die App im erstbesten.'
+                    : 'Auf welchem Lager die Lagerwerkzeuge arbeiten.'}
+              </span>
             </div>
           </div>
         </div>
