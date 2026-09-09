@@ -21,6 +21,7 @@ import {
   verwerfeZugang,
 } from '@/lib/einstellungen/plenty';
 import { maskiere, schluesselQuelle } from '@/lib/einstellungen/tresor';
+import { supabaseInfo } from '@/lib/einstellungen/supabase-info';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -37,11 +38,17 @@ async function angemeldet(): Promise<{ ok: true; email: string | null } | { ok: 
   return user ? { ok: true, email: user.email ?? null } : { ok: false };
 }
 
-const NICHT_ANGEMELDET = NextResponse.json({ error: 'Bitte anmelden.' }, { status: 401 });
+/**
+ * Muss eine FUNKTION sein, keine Konstante: Der Body einer Response ist ein
+ * Stream, der sich nur einmal lesen laesst. Ein wiederverwendetes Objekt
+ * liefert ab dem zweiten Mal eine leere Antwort — der Aufrufer saehe dann nur
+ * ein nacktes 401 ohne Begruendung.
+ */
+const nichtAngemeldet = () => NextResponse.json({ error: 'Bitte anmelden.' }, { status: 401 });
 
 export async function GET() {
   const wer = await angemeldet();
-  if (!wer.ok) return NICHT_ANGEMELDET;
+  if (!wer.ok) return nichtAngemeldet();
 
   const zugang = await ladeZugang({ frisch: true });
   return NextResponse.json({
@@ -57,12 +64,15 @@ export async function GET() {
     geaendertVon: zugang.geaendertVon,
     geaendertAm: zugang.geaendertAm,
     schluessel: schluesselQuelle(),
+    // An welchem Supabase-Projekt diese Installation haengt — damit klar ist,
+    // wo das Schema eingespielt gehoert, wenn mehrere Projekte im Spiel sind.
+    supabase: supabaseInfo(),
   });
 }
 
 export async function PUT(request: Request) {
   const wer = await angemeldet();
-  if (!wer.ok) return NICHT_ANGEMELDET;
+  if (!wer.ok) return nichtAngemeldet();
 
   let body: Record<string, unknown> = {};
   try {
@@ -115,7 +125,7 @@ export async function PUT(request: Request) {
 
 export async function POST(request: Request) {
   const wer = await angemeldet();
-  if (!wer.ok) return NICHT_ANGEMELDET;
+  if (!wer.ok) return nichtAngemeldet();
 
   let body: Record<string, unknown> = {};
   try {
@@ -143,7 +153,7 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   const wer = await angemeldet();
-  if (!wer.ok) return NICHT_ANGEMELDET;
+  if (!wer.ok) return nichtAngemeldet();
   const ergebnis = await verwerfeZugang();
   return ergebnis.ok
     ? NextResponse.json({ ok: true })
