@@ -17,6 +17,7 @@ interface Antwort {
   bestehende: number; vorhanden: number; geplant: number; angelegt: number;
   uebersprungen: number; fehler: number; neueKnoten: number;
   offen: number; naechsterIndex: number; gesamtZeilen: number;
+  schreiblimit: boolean;
   zeilen: Zeile[]; diagnose: string[];
 }
 /** Zusammengezogenes Ergebnis über alle Teilaufrufe eines Laufs. */
@@ -74,6 +75,7 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
   const [fortschritt, setFortschritt] = useState<{ fertig: number; gesamt: number } | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
   const [freigabe, setFreigabe] = useState('');
+  const [wartet, setWartet] = useState<number | null>(null);
   const abbrechen = useRef(false);
 
   /** Die Tabelle wird schon beim Tippen aufgelöst — dieselbe Logik wie im Server. */
@@ -152,11 +154,22 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
         setErgebnis({ ...summe, zeilen: [...summe.zeilen], offen: d.offen });
 
         if (d.offen === 0) break;
-        if (d.naechsterIndex <= ab) {
+
+        // PlentyONE begrenzt Schreibzugriffe je Zeitfenster. Sofort weiter zu
+        // machen hiesse, die restliche Liste in Fehler laufen zu lassen.
+        if (d.schreiblimit) {
+          for (let rest = 60; rest > 0 && !abbrechen.current; rest--) {
+            setWartet(rest);
+            await new Promise((fertig) => setTimeout(fertig, 1000));
+          }
+          setWartet(null);
+        }
+
+        if (d.naechsterIndex <= ab && !d.schreiblimit) {
           summe.diagnose.push('Der Lauf kam nicht weiter und wurde angehalten.');
           break;
         }
-        ab = d.naechsterIndex;
+        ab = Math.max(ab, d.naechsterIndex);
       }
 
       setErgebnis({ ...summe, zeilen: [...summe.zeilen] });
@@ -165,6 +178,7 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
       setFehler((e as Error).message);
       setErgebnis({ ...summe, zeilen: [...summe.zeilen] });
     } finally {
+      setWartet(null);
       setLaeuft(null);
     }
   }
@@ -277,6 +291,11 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
           Der Lauf teilt sich selbst in Blöcke auf und macht weiter, bis die Liste durch ist — einmal starten,
           Fenster offen lassen. Anhalten ist jederzeit möglich; schon angelegte Lagerorte bleiben bestehen.
         </p>
+        {wartet !== null && (
+          <p className={styles.progress}>
+            PlentyONE bremst Schreibzugriffe — weiter in {wartet} s. Fenster offen lassen.
+          </p>
+        )}
         {fortschritt && (
           <>
             <p className={styles.progress}>
