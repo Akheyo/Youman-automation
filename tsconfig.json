@@ -23,5 +23,13 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "tests/e2e", "scripts/lod2-pipeline"]
+  "exclude": [
+    "node_modules",
+    "tests/e2e",
+    "scripts/lod2-pipeline",
+    // Eigenstaendige App mit eigener tsconfig und eigenem Vercel-Projekt.
+    // Ohne diese Zeile zieht der Typecheck der Hauptanwendung ihre Dateien
+    // mit ein — und loest dort "@/..." gegen das falsche Verzeichnis auf.
+    "projektplanung"
+  ]
 }
