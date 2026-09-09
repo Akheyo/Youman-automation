@@ -70,6 +70,34 @@ interface Aufraeum {
   meldungen: string[]; diagnose: string[];
 }
 
+/**
+ * Schickt eine Anfrage und wiederholt sie bei einer Zeitüberschreitung.
+ *
+ * Die Läufe lesen jedes Mal den ganzen Lagerbestand; dauert das einmal zu
+ * lange, ist der Aufruf verloren, nicht der Lauf. Ohne Wiederholung bliebe
+ * die Arbeit auf halbem Weg stehen — und genau das soll nicht passieren.
+ */
+async function schicke(pfad: string, koerper: unknown, versuche = 4): Promise<Record<string, unknown>> {
+  let letzter: Error | null = null;
+  for (let versuch = 1; versuch <= versuche; versuch++) {
+    try {
+      const res = await fetch(pfad, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(koerper),
+      });
+      const d = await alsJson(res);
+      if (!res.ok && !d.zeilen && !d.zweige) throw new Error(String(d.error ?? `Fehlgeschlagen (HTTP ${res.status}).`));
+      return d;
+    } catch (e) {
+      letzter = e as Error;
+      if (!/Zeitüberschreitung/.test(letzter.message) || versuch === versuche) throw letzter;
+      await new Promise((f) => setTimeout(f, 3000 * versuch));
+    }
+  }
+  throw letzter ?? new Error('Unbekannter Fehler.');
+}
+
 const LEER: Ergebnis = {
   probelauf: true, bestehende: 0, vorhanden: 0, geplant: 0, angelegt: 0,
   uebersprungen: 0, fehler: 0, neueKnoten: 0, offen: 0, zeilen: [], diagnose: [],
@@ -145,13 +173,9 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
           break;
         }
 
-        const res = await fetch('/api/lagerplatz/anlegen', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ warehouseId, probelauf, tabelle, ab, maxAnlagen: 1000 }),
-        });
-        const d = (await alsJson(res)) as unknown as Antwort;
-        if (!res.ok && !d.zeilen) throw new Error(d.error ?? `Fehlgeschlagen (HTTP ${res.status}).`);
+        const d = (await schicke('/api/lagerplatz/anlegen', {
+          warehouseId, probelauf, tabelle, ab, maxAnlagen: 1000,
+        })) as unknown as Antwort;
         if (d.error) throw new Error(d.error);
 
         summe.bestehende = d.bestehende;
@@ -212,14 +236,15 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
     try {
       for (let runde = 0; runde < 200; runde++) {
         if (abbrechen.current) break;
-        const res = await fetch('/api/lagerplatz/aufraeumen', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ warehouseId, probelauf, maxLoeschungen: 500 }),
-        });
-        const d = (await alsJson(res)) as unknown as Aufraeum;
+        const d = (await schicke('/api/lagerplatz/aufraeumen', {
+          warehouseId, probelauf, maxLoeschungen: 500,
+        })) as unknown as Aufraeum;
         if (d.error) throw new Error(d.error);
         setAufraeumen(d);
+        setFortschritt({
+          fertig: d.orteGeloescht + d.knotenGeloescht,
+          gesamt: d.orteGesamt + d.knotenGesamt,
+        });
         if (probelauf || d.offen === 0) break;
         if (d.schreiblimit) {
           for (let rest = 60; rest > 0 && !abbrechen.current; rest--) {
