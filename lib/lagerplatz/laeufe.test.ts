@@ -41,6 +41,15 @@ describe('leseLauf', () => {
     expect(leseLauf('1 | 5KTL | A | 15 | 0')).toMatchObject({ lauf: { regal: '5KTL' } });
   });
 
+  it('liest die Ebene E, statt sie für ein Präfix zu halten', () => {
+    // Fiel bei der echten Tabelle auf: vier Läufe auf Ebene E wären
+    // stillschweigend verschwunden, weil das "E" als Präfix abgeschnitten wurde.
+    expect(leseLauf('53   1     8     E     17-18    0')).toMatchObject({
+      lauf: { halle: 1, regal: '8', ebene: 'E', vonFach: 17, bisFach: 18 },
+    });
+    expect(leseLauf('81   1     4     EE    11       K 1-36')).toMatchObject({ lauf: { ebene: 'E' } });
+  });
+
   it('überspringt Kopfzeile und Leerzeilen', () => {
     expect(leseLauf('Nr  Halle Regal Ebene Feld       Lagerort')).toBeNull();
     expect(leseLauf('   ')).toBeNull();
