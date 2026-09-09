@@ -59,6 +59,12 @@ export interface AufraeumErgebnis {
   fehler: number;
   offen: number;
   schreiblimit: boolean;
+  /** Die Lagerorte, die weg sollen — damit das Löschen nicht neu suchen muss. */
+  orteIds: number[];
+  /** Die Knoten, die weg sollen, tiefster zuerst. */
+  knotenIds: number[];
+  /** In diesem Aufruf abgearbeitet (gelöscht oder endgültig übersprungen). */
+  erledigt: number[];
   meldungen: string[];
   diagnose: string[];
   dauerMs: number;
@@ -73,6 +79,14 @@ export interface AufraeumOptionen {
   budgetMs?: number;
   /** Nur diese Wurzeln aufräumen. Leer = alle erkannten. */
   nurWurzeln?: number[];
+  /**
+   * Fertige Arbeitsliste aus einem vorangegangenen Probelauf. Ist sie da,
+   * entfällt das Suchen — und damit das Lesen von 13.000 Lagerorten je
+   * Aufruf. Genau daran scheiterte es vorher: Für das Löschen selbst blieben
+   * fünf Sekunden übrig.
+   */
+  orteIds?: number[];
+  knotenIds?: number[];
 }
 
 interface PlentyBestand {
@@ -200,6 +214,107 @@ async function mitBestand(
 }
 
 /**
+ * Arbeitet eine fertige Liste ab, ohne noch einmal zu suchen.
+ *
+ * Das ist der Unterschied zwischen 44 und mehreren hundert Löschungen je
+ * Aufruf: Ohne diese Abkürzung liest jeder Durchgang erst wieder 13.000
+ * Lagerorte, 7.700 Knoten und den ganzen Bestand — für die eigentliche
+ * Arbeit bleiben dann fünf Sekunden.
+ *
+ * Die Sicherung bleibt: Vor jeder Löschung wird der Bestand GENAU DIESES
+ * Lagerorts geprüft. Das ist sogar genauer als die Prüfung über die ganze
+ * Bestandsliste, und es kostet einen Aufruf statt zehntausender Zeilen.
+ */
+export async function entferneNachListe(opts: {
+  orteIds: number[];
+  knotenIds: number[];
+  maxLoeschungen?: number;
+  budgetMs?: number;
+}): Promise<{
+  orteGeloescht: number;
+  knotenGeloescht: number;
+  uebersprungen: number;
+  fehler: number;
+  erledigt: number[];
+  schreiblimit: boolean;
+  meldungen: string[];
+}> {
+  const start = Date.now();
+  const budgetMs = Math.max(5_000, Math.floor(opts.budgetMs ?? 45_000));
+  const maxLoeschungen = Math.max(1, Math.floor(opts.maxLoeschungen ?? 2000));
+  const meldungen: string[] = [];
+  const erledigt: number[] = [];
+  let orteGeloescht = 0;
+  let knotenGeloescht = 0;
+  let uebersprungen = 0;
+  let fehler = 0;
+  let schreiblimit = false;
+  let getan = 0;
+
+  const abbruch = () => getan >= maxLoeschungen || Date.now() - start > budgetMs || schreiblimit;
+
+  /** Liegt auf diesem Lagerort Bestand? Im Zweifel: ja (dann wird nicht gelöscht). */
+  const hatBestand = async (id: number): Promise<boolean> => {
+    try {
+      const res = await plentyGet<{ entries?: PlentyBestand[] } | PlentyBestand[]>(
+        `/rest/warehouses/locations/stock/${id}`,
+      );
+      const eintraege = Array.isArray(res) ? res : (res?.entries ?? []);
+      return eintraege.some((e) => Number(e?.quantity ?? 0) !== 0);
+    } catch {
+      return true;
+    }
+  };
+
+  // Lagerorte in Gruppen prüfen, dann einzeln löschen.
+  const gruppe = 6;
+  for (let i = 0; i < opts.orteIds.length && !abbruch(); i += gruppe) {
+    const teil = opts.orteIds.slice(i, i + gruppe);
+    const belegt = await Promise.all(teil.map(hatBestand));
+    for (let j = 0; j < teil.length; j++) {
+      if (abbruch()) break;
+      const id = teil[j];
+      if (belegt[j]) {
+        uebersprungen += 1;
+        erledigt.push(id);
+        if (meldungen.length < 20) meldungen.push(`Lagerort ${id}: Bestand vorhanden — nicht gelöscht.`);
+        continue;
+      }
+      try {
+        await loescheMitGeduld(`/rest/warehouses/locations/${id}`);
+        orteGeloescht += 1;
+        erledigt.push(id);
+      } catch (err) {
+        fehler += 1;
+        if (meldungen.length < 20) meldungen.push(`Lagerort ${id}: ${(err as Error).message.slice(0, 200)}`);
+        if (istSchreiblimit(err)) schreiblimit = true;
+      }
+      getan += 1;
+    }
+  }
+
+  // Knoten erst, wenn kein Lagerort mehr offen ist.
+  const orteOffen = opts.orteIds.length - erledigt.length;
+  if (orteOffen <= 0 && !schreiblimit) {
+    for (const id of opts.knotenIds) {
+      if (abbruch()) break;
+      try {
+        await loescheMitGeduld(`/rest/warehouses/locations/levels/${id}`);
+        knotenGeloescht += 1;
+        erledigt.push(id);
+      } catch (err) {
+        fehler += 1;
+        if (meldungen.length < 20) meldungen.push(`Knoten ${id}: ${(err as Error).message.slice(0, 200)}`);
+        if (istSchreiblimit(err)) schreiblimit = true;
+      }
+      getan += 1;
+    }
+  }
+
+  return { orteGeloescht, knotenGeloescht, uebersprungen, fehler, erledigt, schreiblimit, meldungen };
+}
+
+/**
  * Entfernt die falsch angelegten Zweige — oder zeigt im Probelauf nur, was
  * entfernt würde.
  */
@@ -223,6 +338,9 @@ export async function raeumeAuf(opts: AufraeumOptionen): Promise<AufraeumErgebni
     fehler: 0,
     offen: 0,
     schreiblimit: false,
+    orteIds: [],
+    knotenIds: [],
+    erledigt: [],
     meldungen,
     diagnose,
     dauerMs: Date.now() - start,
@@ -297,6 +415,22 @@ export async function raeumeAuf(opts: AufraeumOptionen): Promise<AufraeumErgebni
     beispiele: z.orte.slice(0, 3).map((o) => o.name),
   }));
 
+  const erledigt: number[] = [];
+
+  // Knoten von unten nach oben: erst die Felder, zuletzt die Halle. Anders
+  // wehrt Plenty sich zu Recht — ein Knoten mit Kindern lässt sich nicht
+  // löschen.
+  const tiefeVon = new Map<number, number>();
+  const nachId = new Map(alleKnoten.map((k) => [k.id, k]));
+  const tiefe = (k: Knoten): number => {
+    if (tiefeVon.has(k.id)) return tiefeVon.get(k.id) as number;
+    const eltern = nachId.get(k.parentId);
+    const t = eltern ? tiefe(eltern) + 1 : 0;
+    tiefeVon.set(k.id, t);
+    return t;
+  };
+  const knotenVonUntenNachOben = [...alleKnoten].sort((a, b) => tiefe(b) - tiefe(a));
+
   const fertig = (
     orteGeloescht: number,
     knotenGeloescht: number,
@@ -315,6 +449,9 @@ export async function raeumeAuf(opts: AufraeumOptionen): Promise<AufraeumErgebni
     fehler,
     offen,
     schreiblimit,
+    orteIds: alleOrte.map((o) => o.id),
+    knotenIds: knotenVonUntenNachOben.map((k) => k.id),
+    erledigt,
     meldungen,
     diagnose,
     dauerMs: Date.now() - start,
@@ -336,6 +473,7 @@ export async function raeumeAuf(opts: AufraeumOptionen): Promise<AufraeumErgebni
     try {
       await loescheMitGeduld(`/rest/warehouses/locations/${o.id}`);
       orteGeloescht += 1;
+      erledigt.push(o.id);
     } catch (err) {
       fehler += 1;
       if (meldungen.length < 20) meldungen.push(`Lagerort ${o.id} (${o.name}): ${(err as Error).message.slice(0, 200)}`);
@@ -347,23 +485,12 @@ export async function raeumeAuf(opts: AufraeumOptionen): Promise<AufraeumErgebni
   // Knoten nur anfassen, wenn alle Lagerorte des Zweigs weg sind — sonst
   // wehrt Plenty sich zu Recht.
   if (orteGeloescht === alleOrte.length && !schreiblimit) {
-    // Tiefste zuerst: die Kette nach oben zählen.
-    const tiefeVon = new Map<number, number>();
-    const nachId = new Map(alleKnoten.map((k) => [k.id, k]));
-    const tiefe = (k: Knoten): number => {
-      if (tiefeVon.has(k.id)) return tiefeVon.get(k.id) as number;
-      const eltern = nachId.get(k.parentId);
-      const t = eltern ? tiefe(eltern) + 1 : 0;
-      tiefeVon.set(k.id, t);
-      return t;
-    };
-    const sortiert = [...alleKnoten].sort((a, b) => tiefe(b) - tiefe(a));
-
-    for (const k of sortiert) {
+    for (const k of knotenVonUntenNachOben) {
       if (abbruch()) break;
       try {
         await loescheMitGeduld(`/rest/warehouses/locations/levels/${k.id}`);
         knotenGeloescht += 1;
+        erledigt.push(k.id);
       } catch (err) {
         fehler += 1;
         if (meldungen.length < 20) meldungen.push(`Knoten ${k.id} ("${k.name}"): ${(err as Error).message.slice(0, 200)}`);
