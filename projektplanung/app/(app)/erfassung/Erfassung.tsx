@@ -3,26 +3,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './erfassung.module.css';
 import {
-  ROLLEN,
-  ROLLE_HINWEIS,
-  ROLLE_TEXT,
-  PFLICHT_ROLLEN,
+  ERKANNTE_ROLLE_TEXT,
   STATUS_TEXT,
+  artikelBereit,
   bereitHinweis,
   istStatus,
   validiereBild,
-  type Rolle,
+  type ErkannteRolle,
 } from '@/lib/erfassung/logic';
+import { ZUSTAND_TEXT, type Erkennung } from '@/lib/erfassung/erkennung';
+import type { Treffer } from '@/lib/erfassung/treffer';
 import {
+  arbeite,
   beobachte,
   einreihen,
   laeuftNurImArbeitsspeicher,
   nochmal,
-  verwerfen,
-  verwerfeArtikel,
   vergissArtikel,
+  verwerfeArtikel,
+  verwerfen,
   vorschau,
-  arbeite,
   wiederAufnehmen,
   type Eintrag,
   type EintragStatus,
@@ -31,6 +31,7 @@ import {
 interface ServerBild {
   id: string;
   rolle: string;
+  rolle_erkannt: string | null;
   position: number;
   hochgeladen: boolean;
   url?: string | null;
@@ -44,17 +45,21 @@ interface ServerArtikel {
   created_at: string;
   fertig_am: string | null;
   fehler: string | null;
+  erkennung: Erkennung | null;
+  treffer: { treffer: Treffer[]; diagnose: string[] } | null;
+  erkannt_am: string | null;
+  erkennung_fehler: string | null;
   bilder: ServerBild[] | null;
 }
 
-/** Ein Foto in der Oberfläche — egal ob es noch in der Reihe steht oder schon oben ist. */
+/** Ein Foto in der Oberfläche — egal ob noch in der Reihe oder schon oben. */
 interface Foto {
   schluessel: string;
-  rolle: Rolle;
   bild?: string;
   status: EintragStatus;
   meldung?: string;
   queueId?: string;
+  rolle?: string | null;
 }
 
 async function alsJson(res: Response): Promise<Record<string, unknown>> {
@@ -66,16 +71,17 @@ async function alsJson(res: Response): Promise<Record<string, unknown>> {
   }
 }
 
-function istRolleSicher(wert: string): Rolle {
-  return (ROLLEN as readonly string[]).includes(wert) ? (wert as Rolle) : 'detail';
-}
-
 function uhrzeit(iso: string): string {
   try {
     return new Date(iso).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   } catch {
     return '';
   }
+}
+
+function rolleText(rolle: string | null | undefined): string | null {
+  if (!rolle) return null;
+  return ERKANNTE_ROLLE_TEXT[rolle as ErkannteRolle] ?? rolle;
 }
 
 export default function Erfassung() {
@@ -88,35 +94,137 @@ export default function Erfassung() {
   const [beschaeftigt, setBeschaeftigt] = useState(false);
   const [startet, setStartet] = useState(true);
   const [online, setOnline] = useState(true);
+  /** Welcher Artikel wird gerade ausgewertet — für die Anzeige in der Liste. */
+  const [wertetAus, setWertetAus] = useState<string | null>(null);
 
-  const rolleRef = useRef<Rolle>('uebersicht');
-  // Verhindert, dass ein doppelter Mount (React StrictMode, schneller
-  // Seitenwechsel) zwei leere Artikel anlegt.
-  const gestartetRef = useRef(false);
   const kameraRef = useRef<HTMLInputElement>(null);
   const galerieRef = useRef<HTMLInputElement>(null);
+  const gestartetRef = useRef(false);
+  const auswertungLaeuft = useRef(false);
+  /**
+   * Schon angestoßene Auswertungen. Ohne das würde ein Artikel, dessen
+   * Auswertung nicht durchgeht (z. B. fehlender API-Schlüssel), bei jedem
+   * Listenaufruf erneut angestoßen — eine Schleife, die Geld kostet.
+   */
+  const versuchtRef = useRef<Set<string>>(new Set());
 
   // -------------------------------------------------------------------------
-  // Laden und Sitzung
+  // Auswertung — läuft von selbst
   // -------------------------------------------------------------------------
 
-  const ladeListe = useCallback(async () => {
+  const ladeListe = useCallback(async (): Promise<ServerArtikel[]> => {
     try {
       const res = await fetch('/api/erfassung/artikel', { cache: 'no-store' });
       const daten = await alsJson(res);
-      if (res.ok) setListe((daten.artikel as ServerArtikel[]) ?? []);
+      if (!res.ok) return [];
+      const artikel = (daten.artikel as ServerArtikel[]) ?? [];
+      setListe(artikel);
+      return artikel;
     } catch {
-      /* die Liste ist Beiwerk – ein Fehler hier darf das Fotografieren nicht stören */
+      // Die Liste ist Beiwerk — ein Fehler hier darf das Fotografieren nicht stören.
+      return [];
     }
   }, []);
 
   /**
-   * Sucht einen angefangenen Artikel dieses Nutzers und macht dort weiter.
-   * Nur wenn keiner offen ist, entsteht ein neuer.
+   * Wertet alles aus, was auf "bereit" steht — eines nach dem anderen.
    *
-   * Das ist der Grund, warum man die App zumachen kann, ohne etwas zu
-   * verlieren — und warum nicht bei jedem Öffnen eine leere Karteileiche
-   * angelegt wird.
+   * Angestoßen wird das nach dem Abschicken und bei jedem Laden der Liste.
+   * Damit läuft ein Artikel ohne weiteres Zutun durch: fotografieren, fertig,
+   * und während schon der nächste auf dem Tisch liegt, wird der vorige
+   * ausgewertet. Bleibt einer liegen, weil jemand die App zugemacht hat, holt
+   * ihn der nächste Aufruf nach.
+   */
+  const auswertenNachziehen = useCallback(
+    async (artikelListe: ServerArtikel[]) => {
+      if (auswertungLaeuft.current) return;
+      const offen = artikelListe.filter((a) => a.status === 'bereit' && !versuchtRef.current.has(a.id));
+      if (offen.length === 0) return;
+
+      auswertungLaeuft.current = true;
+      try {
+        for (const eintrag of offen) {
+          versuchtRef.current.add(eintrag.id);
+          setWertetAus(eintrag.id);
+          try {
+            const res = await fetch(`/api/erfassung/artikel/${eintrag.id}/erkennen`, { method: 'POST' });
+            const daten = await alsJson(res);
+            if (!res.ok) {
+              setMeldung({ art: 'fehler', text: `Artikel ${eintrag.nummer}: ${String(daten.error ?? 'Auswertung fehlgeschlagen.')}` });
+            } else {
+              const hinweise = (daten.hinweise as string[]) ?? [];
+              if (hinweise.length > 0) setMeldung({ art: 'fehler', text: `Artikel ${eintrag.nummer}: ${hinweise[0]}` });
+            }
+          } catch (e) {
+            setMeldung({
+              art: 'fehler',
+              text: `Artikel ${eintrag.nummer}: ${e instanceof Error ? e.message : String(e)}`,
+            });
+          } finally {
+            setWertetAus(null);
+          }
+          await ladeListe();
+        }
+      } finally {
+        auswertungLaeuft.current = false;
+      }
+    },
+    [ladeListe],
+  );
+
+  const listeUndAuswertung = useCallback(async () => {
+    const artikelListe = await ladeListe();
+    void auswertenNachziehen(artikelListe);
+  }, [ladeListe, auswertenNachziehen]);
+
+  /**
+   * Von Hand nachziehen.
+   *
+   * Ein Artikel, dessen Auswertung schiefgegangen ist, wird in derselben
+   * Sitzung nicht von allein erneut angestoßen (sonst liefe eine Schleife).
+   * Ohne diesen Knopf bliebe er stumm liegen, und genau das soll nicht
+   * passieren.
+   */
+  const erneutAuswerten = useCallback(
+    async (id: string, nummer: number) => {
+      if (auswertungLaeuft.current) return;
+      auswertungLaeuft.current = true;
+      setWertetAus(id);
+      setMeldung(null);
+      try {
+        const res = await fetch(`/api/erfassung/artikel/${id}/erkennen`, { method: 'POST' });
+        const daten = await alsJson(res);
+        if (!res.ok) throw new Error(String(daten.error ?? 'Auswertung fehlgeschlagen.'));
+        const hinweise = (daten.hinweise as string[]) ?? [];
+        if (hinweise.length > 0) setMeldung({ art: 'fehler', text: `Artikel ${nummer}: ${hinweise[0]}` });
+      } catch (e) {
+        setMeldung({ art: 'fehler', text: `Artikel ${nummer}: ${e instanceof Error ? e.message : String(e)}` });
+      } finally {
+        setWertetAus(null);
+        auswertungLaeuft.current = false;
+        await ladeListe();
+      }
+    },
+    [ladeListe],
+  );
+
+  // -------------------------------------------------------------------------
+  // Sitzung
+  // -------------------------------------------------------------------------
+
+  const neuerArtikel = useCallback(async () => {
+    const res = await fetch('/api/erfassung/artikel', { method: 'POST' });
+    const daten = await alsJson(res);
+    if (!res.ok) throw new Error(String(daten.error ?? 'Artikel anlegen fehlgeschlagen.'));
+    const a = daten.artikel as { id: string; nummer: number };
+    setArtikel({ id: a.id, nummer: a.nummer });
+    setServerBilder([]);
+    setNotiz('');
+  }, []);
+
+  /**
+   * Setzt einen angefangenen Artikel fort, sonst entsteht ein neuer. Deshalb
+   * kostet ein versehentliches Öffnen keine Karteileiche.
    */
   const starteSitzung = useCallback(async () => {
     setStartet(true);
@@ -138,30 +246,18 @@ export default function Erfassung() {
     } finally {
       setStartet(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const neuerArtikel = useCallback(async () => {
-    const res = await fetch('/api/erfassung/artikel', { method: 'POST' });
-    const daten = await alsJson(res);
-    if (!res.ok) throw new Error(String(daten.error ?? 'Artikel anlegen fehlgeschlagen.'));
-    const a = daten.artikel as { id: string; nummer: number };
-    setArtikel({ id: a.id, nummer: a.nummer });
-    setServerBilder([]);
-    setNotiz('');
-  }, []);
+  }, [neuerArtikel]);
 
   useEffect(() => {
     const ab = beobachte(setReihe);
     void wiederAufnehmen();
     if (!gestartetRef.current) {
       gestartetRef.current = true;
-      void starteSitzung().then(ladeListe);
+      void starteSitzung().then(listeUndAuswertung);
     }
     return ab;
-  }, [starteSitzung, ladeListe]);
+  }, [starteSitzung, listeUndAuswertung]);
 
-  // Netzwechsel: sobald wieder Netz da ist, läuft die Reihe von selbst weiter.
   useEffect(() => {
     const setzen = () => {
       const da = navigator.onLine !== false;
@@ -177,7 +273,6 @@ export default function Erfassung() {
     };
   }, []);
 
-  // Vom Startbildschirm aus installierbar machen.
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {
@@ -187,15 +282,10 @@ export default function Erfassung() {
   }, []);
 
   // -------------------------------------------------------------------------
-  // Fotos aufnehmen
+  // Fotografieren
   // -------------------------------------------------------------------------
 
-  const oeffneKamera = (rolle: Rolle) => {
-    rolleRef.current = rolle;
-    kameraRef.current?.click();
-  };
-
-  const dateienUebernehmen = async (dateien: FileList | null, rolle: Rolle) => {
+  const dateienUebernehmen = async (dateien: FileList | null) => {
     if (!dateien || dateien.length === 0 || !artikel) return;
     for (const datei of Array.from(dateien)) {
       const fehler = validiereBild({ contentType: datei.type, groesse: datei.size });
@@ -203,27 +293,24 @@ export default function Erfassung() {
         setMeldung({ art: 'fehler', text: `${datei.name}: ${fehler}` });
         continue;
       }
-      await einreihen(artikel.id, rolle, datei);
+      // Wofür ein Foto taugt, entscheidet die Auswertung. Am Regal wird
+      // fotografiert, nicht sortiert.
+      await einreihen(artikel.id, 'detail', datei);
     }
   };
-
-  // -------------------------------------------------------------------------
-  // Abschicken und verwerfen
-  // -------------------------------------------------------------------------
 
   const fotos: Foto[] = useMemo(() => {
     if (!artikel) return [];
     const ausServer: Foto[] = serverBilder.map((b) => ({
       schluessel: `s-${b.id}`,
-      rolle: istRolleSicher(b.rolle),
       bild: b.url ?? undefined,
       status: 'oben' as EintragStatus,
+      rolle: b.rolle_erkannt,
     }));
     const ausReihe: Foto[] = reihe
       .filter((e) => e.artikelId === artikel.id)
       .map((e) => ({
         schluessel: `w-${e.id}`,
-        rolle: e.rolle,
         bild: vorschau(e.id),
         status: e.status,
         meldung: e.meldung,
@@ -232,31 +319,37 @@ export default function Erfassung() {
     return [...ausServer, ...ausReihe];
   }, [artikel, serverBilder, reihe]);
 
-  const obenListe = useMemo(
-    () => fotos.filter((f) => f.status === 'oben').map((f) => ({ rolle: f.rolle as string, hochgeladen: true })),
-    [fotos],
-  );
+  const obenListe = useMemo(() => fotos.filter((f) => f.status === 'oben').map(() => ({ hochgeladen: true })), [fotos]);
   const hinweis = bereitHinweis(obenListe);
   const offeneUploads = fotos.filter((f) => f.status === 'wartet' || f.status === 'laedt').length;
   const fehlerhafte = fotos.filter((f) => f.status === 'fehler').length;
+  const kannAbschicken =
+    Boolean(artikel) && !beschaeftigt && artikelBereit(obenListe) && offeneUploads === 0 && fehlerhafte === 0;
+
+  // -------------------------------------------------------------------------
+  // Abschicken
+  // -------------------------------------------------------------------------
 
   const fertig = async () => {
-    if (!artikel || beschaeftigt) return;
+    if (!artikel || !kannAbschicken) return;
     setBeschaeftigt(true);
     setMeldung(null);
+    const fertiger = artikel;
     try {
-      const res = await fetch(`/api/erfassung/artikel/${artikel.id}/fertig`, {
+      const res = await fetch(`/api/erfassung/artikel/${fertiger.id}/fertig`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notiz }),
       });
       const daten = await alsJson(res);
       if (!res.ok) throw new Error(String(daten.error ?? 'Abschicken fehlgeschlagen.'));
-      const nummer = artikel.nummer;
-      await vergissArtikel(artikel.id);
+
+      await vergissArtikel(fertiger.id);
       await neuerArtikel();
-      setMeldung({ art: 'ok', text: `Artikel ${nummer} ist durch. Weiter mit dem nächsten.` });
-      void ladeListe();
+      setMeldung({ art: 'ok', text: `Artikel ${fertiger.nummer} ist durch — wird jetzt ausgewertet.` });
+      // Die Auswertung läuft im Hintergrund weiter, während schon der nächste
+      // Artikel fotografiert wird.
+      void listeUndAuswertung();
     } catch (e) {
       setMeldung({ art: 'fehler', text: e instanceof Error ? e.message : String(e) });
     } finally {
@@ -294,7 +387,7 @@ export default function Erfassung() {
         capture="environment"
         className="visually-hidden"
         onChange={(e) => {
-          void dateienUebernehmen(e.target.files, rolleRef.current);
+          void dateienUebernehmen(e.target.files);
           e.target.value = '';
         }}
       />
@@ -305,7 +398,7 @@ export default function Erfassung() {
         multiple
         className="visually-hidden"
         onChange={(e) => {
-          void dateienUebernehmen(e.target.files, 'detail');
+          void dateienUebernehmen(e.target.files);
           e.target.value = '';
         }}
       />
@@ -337,61 +430,49 @@ export default function Erfassung() {
         </p>
       )}
 
-      <section className={styles.kacheln}>
-        {ROLLEN.map((rolle) => {
-          const eigene = fotos.filter((f) => f.rolle === rolle);
-          const pflicht = PFLICHT_ROLLEN.includes(rolle);
-          const erfuellt = eigene.some((f) => f.status === 'oben');
-          return (
-            <article key={rolle} className={`${styles.kachel} ${pflicht && !erfuellt ? styles.kachelOffen : ''}`}>
-              <button
-                type="button"
-                className={styles.kachelKnopf}
-                onClick={() => oeffneKamera(rolle)}
-                disabled={!artikel || beschaeftigt}
-              >
-                <span className={styles.kachelTitel}>
-                  {ROLLE_TEXT[rolle]}
-                  {pflicht && <span className={styles.pflicht} title="Pflichtaufnahme"> *</span>}
-                </span>
-                <span className={styles.kachelHinweis}>{ROLLE_HINWEIS[rolle]}</span>
-                <span className={styles.kachelAktion}>{eigene.length > 0 ? 'Noch eins' : 'Foto aufnehmen'}</span>
-              </button>
+      <button
+        type="button"
+        className={styles.aufnehmen}
+        onClick={() => kameraRef.current?.click()}
+        disabled={!artikel || beschaeftigt}
+      >
+        <span className={styles.aufnehmenGross}>Foto aufnehmen</span>
+        <span className={styles.aufnehmenKlein}>
+          So viele wie nötig — Übersicht, Typenschild, Schäden. Sortieren macht die Auswertung.
+        </span>
+      </button>
 
-              {eigene.length > 0 && (
-                <ul className={styles.streifen}>
-                  {eigene.map((f) => (
-                    <li key={f.schluessel} className={styles.miniatur}>
-                      {f.bild ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={f.bild} alt="" />
-                      ) : (
-                        <span className={styles.ohneBild} aria-hidden />
-                      )}
-                      <span className={`${styles.punkt} ${styles[`punkt_${f.status}`]}`} title={f.meldung ?? f.status} />
-                      {f.queueId && (
-                        <button
-                          type="button"
-                          className={styles.weg}
-                          onClick={() => void verwerfen(f.queueId!)}
-                          aria-label="Foto verwerfen"
-                        >
-                          ×
-                        </button>
-                      )}
-                      {f.status === 'fehler' && f.queueId && (
-                        <button type="button" className={styles.nochmal} onClick={() => void nochmal(f.queueId!)}>
-                          nochmal
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+      {fotos.length > 0 && (
+        <ul className={styles.streifen}>
+          {fotos.map((f) => (
+            <li key={f.schluessel} className={styles.miniatur}>
+              {f.bild ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={f.bild} alt="" />
+              ) : (
+                <span className={styles.ohneBild} aria-hidden />
               )}
-            </article>
-          );
-        })}
-      </section>
+              <span className={`${styles.punkt} ${styles[`punkt_${f.status}`]}`} title={f.meldung ?? f.status} />
+              {rolleText(f.rolle) && <span className={styles.rolleMarke}>{rolleText(f.rolle)}</span>}
+              {f.queueId && (
+                <button
+                  type="button"
+                  className={styles.weg}
+                  onClick={() => void verwerfen(f.queueId!)}
+                  aria-label="Foto verwerfen"
+                >
+                  ×
+                </button>
+              )}
+              {f.status === 'fehler' && f.queueId && (
+                <button type="button" className={styles.nochmal} onClick={() => void nochmal(f.queueId!)}>
+                  nochmal
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <button
         type="button"
@@ -403,12 +484,12 @@ export default function Erfassung() {
       </button>
 
       <label className={styles.notizFeld}>
-        <span>Notiz (was das Foto nicht zeigt)</span>
+        <span>Notiz — nur was man auf den Fotos nicht sieht</span>
         <textarea
           value={notiz}
           onChange={(e) => setNotiz(e.target.value)}
           rows={2}
-          placeholder="z. B. Fernbedienung fehlt, Kabel dabei"
+          placeholder="z. B. läuft nicht an, Fernbedienung fehlt"
           maxLength={500}
         />
       </label>
@@ -418,14 +499,13 @@ export default function Erfassung() {
           {offeneUploads > 0 && <span>{offeneUploads} Foto(s) werden noch übertragen</span>}
           {fehlerhafte > 0 && <span className={styles.fussFehler}>{fehlerhafte} hängen — bitte „nochmal“</span>}
           {offeneUploads === 0 && fehlerhafte === 0 && hinweis && <span>{hinweis}</span>}
-          {offeneUploads === 0 && fehlerhafte === 0 && !hinweis && <span>Alle Pflichtaufnahmen sind da.</span>}
+          {offeneUploads === 0 && fehlerhafte === 0 && !hinweis && (
+            <span>
+              {obenListe.length} Foto{obenListe.length === 1 ? '' : 's'} übertragen
+            </span>
+          )}
         </div>
-        <button
-          type="button"
-          className={styles.fertig}
-          onClick={fertig}
-          disabled={!artikel || beschaeftigt || Boolean(hinweis) || offeneUploads > 0 || fehlerhafte > 0}
-        >
+        <button type="button" className={styles.fertig} onClick={fertig} disabled={!kannAbschicken}>
           {beschaeftigt ? 'einen Moment …' : 'Artikel fertig'}
         </button>
       </div>
@@ -434,23 +514,84 @@ export default function Erfassung() {
         <h2>Zuletzt erfasst</h2>
         {liste.length === 0 && <p className={styles.leer}>Noch nichts erfasst.</p>}
         <ul>
-          {liste.map((a) => {
-            const anzahl = (a.bilder ?? []).filter((b) => b.hochgeladen).length;
-            const status = istStatus(a.status) ? STATUS_TEXT[a.status] : a.status;
-            return (
-              <li key={a.id}>
-                <span className={styles.verlaufNummer}>{a.nummer}</span>
-                <span className={`${styles.marke} ${a.status === 'fehler' ? styles.markeFehler : ''}`}>{status}</span>
-                <span className={styles.verlaufMeta}>
-                  {anzahl} Bild{anzahl === 1 ? '' : 'er'} · {uhrzeit(a.fertig_am ?? a.created_at)}
-                  {a.erfasst_von ? ` · ${a.erfasst_von}` : ''}
-                </span>
-                {a.fehler && <span className={styles.verlaufFehler}>{a.fehler}</span>}
-              </li>
-            );
-          })}
+          {liste.map((a) => (
+            <ArtikelZeile
+              key={a.id}
+              artikel={a}
+              wertetAus={wertetAus === a.id}
+              onErneutAuswerten={erneutAuswerten}
+            />
+          ))}
         </ul>
       </section>
     </div>
+  );
+}
+
+/** Eine Zeile im Verlauf — mit dem, was die Auswertung gefunden hat. */
+function ArtikelZeile({
+  artikel,
+  wertetAus,
+  onErneutAuswerten,
+}: {
+  artikel: ServerArtikel;
+  wertetAus: boolean;
+  onErneutAuswerten: (id: string, nummer: number) => Promise<void>;
+}) {
+  const anzahl = (artikel.bilder ?? []).filter((b) => b.hochgeladen).length;
+  const status = istStatus(artikel.status) ? STATUS_TEXT[artikel.status] : artikel.status;
+  const e = artikel.erkennung;
+  const treffer = artikel.treffer?.treffer ?? [];
+  const haengt = !wertetAus && (artikel.status === 'fehler' || artikel.status === 'bereit');
+
+  return (
+    <li className={styles.verlaufZeile}>
+      <div className={styles.verlaufKopf}>
+        <span className={styles.verlaufNummer}>{artikel.nummer}</span>
+        <span className={`${styles.marke} ${artikel.status === 'fehler' ? styles.markeFehler : ''}`}>
+          {wertetAus ? 'wird ausgewertet …' : status}
+        </span>
+        <span className={styles.verlaufMeta}>
+          {anzahl} Bild{anzahl === 1 ? '' : 'er'} · {uhrzeit(artikel.fertig_am ?? artikel.created_at)}
+        </span>
+      </div>
+
+      {e && (
+        <div className={styles.erkennung}>
+          <p className={styles.erkennungTitel}>{e.titel}</p>
+          <p className={styles.erkennungZeile}>
+            {ZUSTAND_TEXT[e.zustand]}
+            {e.modellnummer ? ` · Modellnr. ${e.modellnummer}` : ''}
+            {e.sicherheit !== 'hoch' ? ` · Sicherheit ${e.sicherheit}` : ''}
+          </p>
+          {e.schaeden.length > 0 && (
+            <p className={styles.schaeden}>
+              {e.schaeden.length} Schaden/Schäden: {e.schaeden.join('; ')}
+            </p>
+          )}
+          {!e.typenschildGefunden && (
+            <p className={styles.warnZeile}>Kein lesbares Typenschild — Modellnummer fehlt.</p>
+          )}
+          {treffer.length > 0 && (
+            <p className={styles.erkennungZeile}>
+              Schon im Bestand: {treffer.slice(0, 3).map((t) => t.name || t.nummer || t.variationId).join(', ')}
+            </p>
+          )}
+        </div>
+      )}
+
+      {artikel.erkennung_fehler && <p className={styles.verlaufFehler}>{artikel.erkennung_fehler}</p>}
+      {artikel.fehler && <p className={styles.verlaufFehler}>{artikel.fehler}</p>}
+
+      {haengt && (
+        <button
+          type="button"
+          className={styles.erneut}
+          onClick={() => void onErneutAuswerten(artikel.id, artikel.nummer)}
+        >
+          Noch einmal auswerten
+        </button>
+      )}
+    </li>
   );
 }
