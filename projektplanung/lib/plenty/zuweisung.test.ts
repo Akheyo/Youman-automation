@@ -9,7 +9,13 @@ const ANTWORT = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 
 /** Plenty-Attrappe; sammelt alle schreibenden Aufrufe zum Nachprüfen. */
-function attrappe(opts: { orte?: Array<{ id: number; fullLabel: string }>; bestand?: number; buchungFehler?: boolean } = {}) {
+function attrappe(opts: {
+  orte?: Array<{ id: number; fullLabel: string }>;
+  bestand?: number;
+  buchungFehler?: boolean;
+  fehlerText?: string;
+  fehlerStatus?: number;
+} = {}) {
   const orte = opts.orte ?? [
     { id: 8619, fullLabel: 'H1/R8/EA F15-K10' },
     { id: 4397, fullLabel: 'H1/R1/EB F12-0' },
@@ -19,7 +25,9 @@ function attrappe(opts: { orte?: Array<{ id: number; fullLabel: string }>; besta
     if (url.includes('/rest/login')) return ANTWORT({ access_token: 't', expires_in: 3600, user_id: 1 });
     if (init?.method === 'PUT') {
       geschrieben.push({ url, body: JSON.parse(String(init.body)) });
-      return opts.buchungFehler ? ANTWORT({ error: 'nope' }, 400) : ANTWORT({ ok: true });
+      return opts.buchungFehler
+        ? ANTWORT({ error: opts.fehlerText ?? 'nope' }, opts.fehlerStatus ?? 400)
+        : ANTWORT({ ok: true });
     }
     if (url.includes('/locations')) return ANTWORT({ entries: orte, isLastPage: true, totalsCount: orte.length });
     if (url.includes('/stock/storageLocations')) {
@@ -140,7 +148,28 @@ describe('weiseZu', () => {
 
     expect(res.gebucht).toBe(2);
     expect(geschrieben).toHaveLength(2);
-    expect(res.uebersprungen).toBe(2);
+    // Was nicht mehr drankam, gilt nicht als übersprungen, sondern als offen —
+    // die Oberfläche schickt genau diese Zeilen in der nächsten Runde noch
+    // einmal, bis die Liste durch ist.
+    expect(res.uebersprungen).toBe(0);
+    expect(res.offen).toBe(2);
+    expect(res.erledigt).toEqual([1, 2]);
+  });
+
+  it('meldet die Schreibbremse, statt die Zeile als Fehler abzuhaken', async () => {
+    // Bremst PlentyONE, ist die Zeile nicht kaputt — sie kommt nach der Pause
+    // noch einmal dran.
+    const { fetchMock } = attrappe({ buchungFehler: true, fehlerText: 'short period write limit reached', fehlerStatus: 429 });
+    vi.stubGlobal('fetch', fetchMock);
+    const { weiseZu } = await import('./zuweisung');
+    const res = await weiseZu([{ variationId: 1, ziel: 'H1/R8/EA F15-K10' }], {
+      warehouseId: 106, probelauf: false,
+    });
+
+    expect(res.schreiblimit).toBe(true);
+    expect(res.fehler).toBe(0);
+    expect(res.offen).toBe(1);
+    expect(res.erledigt).toEqual([]);
   });
 
   it('vermerkt einen Buchungsfehler je Zeile und läuft weiter', async () => {
