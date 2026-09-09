@@ -60,21 +60,32 @@ export async function ladeLager(): Promise<Lager[]> {
  */
 export async function ladeLagerorte(
   warehouseId: number,
-  opts: { maxSeiten?: number; proSeite?: number } = {},
+  opts: { maxSeiten?: number; proSeite?: number; gleichzeitig?: number } = {},
 ): Promise<{ orte: Lagerort[]; gelesen: number; ohneCode: number; abgebrochen: boolean }> {
   const proSeite = Math.min(250, Math.max(1, Math.floor(opts.proSeite ?? 250)));
   const maxSeiten = Math.max(1, Math.floor(opts.maxSeiten ?? 200));
+  const gleichzeitig = Math.min(10, Math.max(1, Math.floor(opts.gleichzeitig ?? 6)));
   const orte: Lagerort[] = [];
   let ohneCode = 0;
-  let seite = 1;
   let abgebrochen = true;
 
-  for (; seite <= maxSeiten; seite++) {
-    const res = await plentyGet<PlentyListe<Record<string, unknown>>>(
+  const seiteLesen = (seite: number) =>
+    plentyGet<PlentyListe<Record<string, unknown>>>(
       `/rest/warehouses/${warehouseId}/locations?itemsPerPage=${proSeite}&page=${seite}`,
     );
-    const eintraege = res?.entries ?? [];
-    for (const e of eintraege) {
+
+  /**
+   * Ist diese Seite die letzte? Sagt Plenty es ausdrücklich, gilt die Angabe —
+   * auch ein „nein" bei kurzer Seite. Fehlt die Angabe, ist eine nicht volle
+   * Seite das Ende.
+   */
+  const fertig = (res: PlentyListe<Record<string, unknown>> | null, anzahl: number) => {
+    if (typeof res?.isLastPage === 'boolean') return res.isLastPage;
+    return anzahl === 0 || anzahl < proSeite;
+  };
+
+  const uebernimm = (res: PlentyListe<Record<string, unknown>> | null) => {
+    for (const e of res?.entries ?? []) {
       const id = Number(e?.id);
       if (!Number.isFinite(id)) continue;
       const name = String(e?.fullLabel ?? e?.label ?? '').trim();
@@ -88,7 +99,38 @@ export async function ladeLagerorte(
         zweck: (e?.purposeKey as string) ?? null,
       });
     }
-    if (res?.isLastPage || eintraege.length === 0 || (res?.lastPageNumber && seite >= Number(res.lastPageNumber))) {
+  };
+
+  // Erste Seite einzeln — sie verrät, wie viele es insgesamt sind.
+  const erste = await seiteLesen(1);
+  const ersteAnzahl = (erste?.entries ?? []).length;
+  uebernimm(erste);
+  const letzte = Number(erste?.lastPageNumber ?? 0);
+
+  if (fertig(erste, ersteAnzahl)) {
+    return { orte, gelesen: orte.length, ohneCode, abgebrochen: false };
+  }
+
+  if (letzte > 1) {
+    // Seitenzahl bekannt: die restlichen Seiten in Gruppen gleichzeitig holen.
+    // Nacheinander dauert das bei einem grossen Lager (12.000 Lagerorte sind
+    // rund 50 Seiten) laenger als das Zeitbudget einer Anfrage.
+    const seiten: number[] = [];
+    for (let s = 2; s <= Math.min(letzte, maxSeiten); s++) seiten.push(s);
+    for (let i = 0; i < seiten.length; i += gleichzeitig) {
+      const gruppe = await Promise.all(seiten.slice(i, i + gleichzeitig).map(seiteLesen));
+      for (const res of gruppe) uebernimm(res);
+    }
+    abgebrochen = letzte > maxSeiten;
+    return { orte, gelesen: orte.length, ohneCode, abgebrochen };
+  }
+
+  // Ohne Seitenzahl bleibt nur, sich vorzutasten.
+  for (let seite = 2; seite <= maxSeiten; seite++) {
+    const res = await seiteLesen(seite);
+    const anzahl = (res?.entries ?? []).length;
+    uebernimm(res);
+    if (fertig(res, anzahl)) {
       abgebrochen = false;
       break;
     }

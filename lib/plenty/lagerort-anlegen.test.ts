@@ -264,6 +264,107 @@ describe('legeLagerorteAn', () => {
     expect(res.zeilen[0].hinweis).toContain('400');
   });
 
+  it('liest alle Seiten der vorhandenen Lagerorte, nicht nur die erste', async () => {
+    // 12.000 Lagerorte sind rund 50 Seiten. Wird nur die erste gelesen, gilt
+    // alles Weitere als fehlend — und wird ein zweites Mal angelegt.
+    const seite1 = Array.from({ length: 250 }, (_, i) => ({
+      id: 1000 + i,
+      fullLabel: `H1/R8/EA F${String((i % 40) + 1).padStart(2, '0')}-K${String((i % 30) + 1).padStart(2, '0')}`,
+      purposeKey: 'pickup',
+      statusKey: 'active',
+    }));
+    const seite2 = [{ id: 7777, fullLabel: 'H1/R8/EA F16-K01', purposeKey: 'pickup', statusKey: 'active' }];
+    const geschrieben: string[] = [];
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+      if (url.includes('/rest/login')) return ANTWORT({ access_token: 't', expires_in: 3600, user_id: 1 });
+      if (init?.method === 'POST') {
+        geschrieben.push(url);
+        return ANTWORT({ id: 4242 });
+      }
+      if (url.includes('/locations/dimensions')) {
+        return ANTWORT({
+          entries: [
+            { id: 11, level: 1, name: 'Halle', shortcut: 'H' },
+            { id: 12, level: 2, name: 'Regal', shortcut: 'R' },
+            { id: 13, level: 3, name: 'Ebene', shortcut: 'E' },
+            { id: 14, level: 4, name: 'Feld', shortcut: 'F' },
+          ],
+          isLastPage: true,
+        });
+      }
+      if (url.includes('/locations/levels')) {
+        return ANTWORT({
+          entries: [
+            { id: 100, parentId: 0, dimensionId: 11, name: '1', position: 1 },
+            { id: 200, parentId: 100, dimensionId: 12, name: '8', position: 1 },
+            { id: 300, parentId: 200, dimensionId: 13, name: 'A', position: 1 },
+            { id: 400, parentId: 300, dimensionId: 14, name: '16', position: 1 },
+          ],
+          isLastPage: true,
+        });
+      }
+      const seite = Number(new URL(url, 'https://x').searchParams.get('page') ?? 1);
+      return ANTWORT({
+        entries: seite === 1 ? seite1 : seite2,
+        isLastPage: seite >= 2,
+        lastPageNumber: 2,
+      });
+    });
+
+    const legeLagerorteAn = await lade();
+    const res = await legeLagerorteAn(['H1/R8/EA F16-K01'], { warehouseId: 106, probelauf: false });
+
+    expect(res.bestehende).toBe(251);
+    expect(res.vorhanden).toBe(1);
+    expect(res.angelegt).toBe(0);
+    expect(geschrieben).toHaveLength(0);
+  });
+
+  it('schreibt nicht, wenn die Struktur des Lagers unvollständig lesbar ist', async () => {
+    // Wird ein vorhandener Knoten übersehen, entsteht ein zweites Feld
+    // gleichen Namens. Deshalb ist das ein harter Abbruch, kein Hinweis.
+    const geschrieben: string[] = [];
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+      if (url.includes('/rest/login')) return ANTWORT({ access_token: 't', expires_in: 3600, user_id: 1 });
+      if (init?.method === 'POST') {
+        geschrieben.push(url);
+        return ANTWORT({ id: 1 });
+      }
+      if (url.includes('/locations/dimensions')) {
+        return ANTWORT({
+          entries: [
+            { id: 11, level: 1, name: 'Halle', shortcut: 'H' },
+            { id: 12, level: 2, name: 'Regal', shortcut: 'R' },
+            { id: 13, level: 3, name: 'Ebene', shortcut: 'E' },
+            { id: 14, level: 4, name: 'Feld', shortcut: 'F' },
+          ],
+          isLastPage: true,
+        });
+      }
+      if (url.includes('/locations/levels')) {
+        // Volle Seiten, und laut Plenty gibt es mehr, als wir holen dürfen.
+        return ANTWORT({
+          entries: Array.from({ length: 250 }, (_, i) => ({
+            id: 5000 + i, parentId: 0, dimensionId: 11, name: String(i), position: i,
+          })),
+          isLastPage: false,
+          lastPageNumber: 500,
+        });
+      }
+      return ANTWORT({
+        entries: [{ id: 1, fullLabel: 'H1/R8/EA F15-K10', purposeKey: 'pickup', statusKey: 'active' }],
+        isLastPage: true,
+      });
+    });
+
+    const legeLagerorteAn = await lade();
+    const res = await legeLagerorteAn(['H1/R8/EA F16-K01'], { warehouseId: 106, probelauf: false });
+
+    expect(res.ok).toBe(false);
+    expect(res.error).toContain('Struktur');
+    expect(geschrieben).toHaveLength(0);
+  });
+
   it('legt denselben Code in einer Liste nur einmal an', async () => {
     const { fetchMock, geschrieben } = attrappe();
     vi.stubGlobal('fetch', fetchMock);
