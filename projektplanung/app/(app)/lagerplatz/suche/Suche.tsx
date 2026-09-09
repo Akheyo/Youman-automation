@@ -195,6 +195,20 @@ export default function Suche({ plentyReady }: { plentyReady: boolean }) {
     }
   }
 
+  // Jeder Beleg nennt die Variante, auf die er sich stützt. Damit lässt sich in
+  // der Kandidatenliste direkt das Bild dazu zeigen — ohne einen weiteren
+  // Abruf, denn die Karten sind ohnehin schon geladen.
+  const nachVariante = new Map<number, Artikelkarte>();
+  for (const k of [
+    ...(ergebnis?.gesucht ? [ergebnis.gesucht] : []),
+    ...(ergebnis?.nachbarn ?? []),
+    ...(ergebnis?.dubletten ?? []),
+    ...(ergebnis?.einlagerung ?? []),
+    ...(ergebnis?.aufDemSollplatz ?? []),
+  ]) {
+    if (!nachVariante.has(k.variationId)) nachVariante.set(k.variationId, k);
+  }
+
   return (
     <div className={styles.page}>
       <header className={styles.head}>
@@ -314,14 +328,34 @@ export default function Suche({ plentyReady }: { plentyReady: boolean }) {
                       <div className={eigen.kandidatCode}>{k.code}</div>
                       <p className={eigen.kandidatKlartext}>{k.klartext}</p>
                       <ul className={eigen.belege}>
-                        {k.belege.map((b, i) => (
-                          <li key={i} className={eigen.beleg}>
-                            <span className={`${styles.badge} ${styles.badgeMuted}`}>
-                              {SIGNAL_TEXT[b.signal] ?? b.signal}
-                            </span>
-                            <span>{b.text}</span>
-                          </li>
-                        ))}
+                        {k.belege.map((b, i) => {
+                          const karte = b.variationId !== null ? nachVariante.get(b.variationId) : undefined;
+                          return (
+                            <li key={i} className={eigen.beleg}>
+                              {karte?.bildUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  className={eigen.belegBild}
+                                  src={karte.bildUrl}
+                                  alt={karte.name ?? ''}
+                                  title={`${karte.nummer ?? karte.variationId} — ${karte.name ?? ''}`}
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <span className={eigen.belegBildLeer} aria-hidden="true" />
+                              )}
+                              <span className={`${styles.badge} ${styles.badgeMuted}`}>
+                                {SIGNAL_TEXT[b.signal] ?? b.signal}
+                              </span>
+                              <span className={eigen.belegText}>
+                                {b.text}
+                                {karte?.klasse && karte.klasse !== 'unbekannt' && (
+                                  <span className={styles.cellHint}> · {KLASSE_TEXT[karte.klasse]}</span>
+                                )}
+                              </span>
+                            </li>
+                          );
+                        })}
                       </ul>
                       {k.einwaende.map((e) => (
                         <p key={e} className={eigen.einwand}>⚠ {e}</p>
