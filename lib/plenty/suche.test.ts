@@ -284,6 +284,47 @@ describe('sucheAlternativePlaetze', () => {
     expect(res.aufDemSollplatz.map((k) => k.variationId)).toContain(5003);
   });
 
+  it('liest die Lagerortliste nicht bei jeder Suche neu', async () => {
+    // Die Liste zu lesen kostet je nach Lagergröße zwanzig und mehr Abrufe.
+    // Sie ändert sich nur beim Anlegen von Lagerorten — sie jedes Mal neu zu
+    // holen war der größte Zeitfresser der Suche.
+    const mock = attrappe();
+    vi.stubGlobal('fetch', mock.fetchMock);
+    const { sucheAlternativePlaetze } = await import('./suche');
+
+    await sucheAlternativePlaetze({ eingabe: '5000', warehouseId: 106 });
+    const nachErstem = mock.gerufen.filter((u) => u.includes('/locations')).length;
+    expect(nachErstem).toBeGreaterThan(0);
+
+    await sucheAlternativePlaetze({ eingabe: '5000', warehouseId: 106 });
+    expect(mock.gerufen.filter((u) => u.includes('/locations')).length).toBe(nachErstem);
+  });
+
+  it('fragt Bilder nicht mehrfach ab', async () => {
+    const mock = attrappe();
+    vi.stubGlobal('fetch', mock.fetchMock);
+    const { sucheAlternativePlaetze } = await import('./suche');
+
+    await sucheAlternativePlaetze({ eingabe: '5000', warehouseId: 106 });
+    const nachErstem = mock.gerufen.filter((u) => u.includes('/images')).length;
+    expect(nachErstem).toBeGreaterThan(0);
+
+    await sucheAlternativePlaetze({ eingabe: '5000', warehouseId: 106 });
+    expect(mock.gerufen.filter((u) => u.includes('/images')).length).toBe(nachErstem);
+  });
+
+  it('lädt Beschreibungstexte nur, wo sie auch ausgewertet werden', async () => {
+    // Für die ID-Nachbarn kostete der Textabruf je einen Aufruf, ohne dass das
+    // Ergebnis in die Bewertung einging.
+    const mock = attrappe();
+    vi.stubGlobal('fetch', mock.fetchMock);
+    const { sucheAlternativePlaetze } = await import('./suche');
+    await sucheAlternativePlaetze({ eingabe: '5000', warehouseId: 106, idSpanne: 5 });
+
+    // Nur der gesuchte Artikel selbst — nicht seine zehn Nachbarn.
+    expect(mock.gerufen.filter((u) => u.includes('/descriptions')).length).toBe(1);
+  });
+
   it('lässt sich die ID-Spanne vorgeben', async () => {
     const eng = await suche(attrappe(), '5000', { idSpanne: 1 });
     expect(eng.nachbarn.length).toBeLessThanOrEqual(2);

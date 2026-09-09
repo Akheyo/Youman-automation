@@ -59,7 +59,27 @@
 }
 .kandidatKlartext { color: var(--muted); font-size: 0.82rem; margin: 0.15rem 0 var(--space-3); }
 .belege { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
-.beleg { display: flex; gap: 0.5rem; align-items: baseline; font-size: 0.82rem; }
+.beleg { display: flex; gap: 0.5rem; align-items: center; font-size: 0.82rem; }
+/* Kleines Vorschaubild direkt am Beleg: zeigt sofort, was dort liegt —
+   eine Kiste Schrauben oder eine Maschine. */
+.belegBild {
+  width: 2.6rem;
+  height: 2.6rem;
+  object-fit: contain;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.belegBildLeer {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 4px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.belegText { flex: 1; min-width: 0; }
 .einwand {
   margin-top: var(--space-2);
   font-size: 0.8rem;

@@ -359,9 +359,28 @@ Großteil). Plätze, die dazu nicht passen, werden **abgewertet und begründet**
 Fehlen Gewicht und Maße, ist die Klasse `unbekannt` und es wird **nichts**
 abgewertet. Lieber keine Aussage als eine falsche.
 
-Die Artikelbilder werden trotzdem geladen — zu den Nachbarn, den Dubletten und
-den zeitgleich eingelagerten Artikeln. Die Rechnung ersetzt nicht den Blick,
-sie sortiert nur vor.
+Die Artikelbilder werden trotzdem geladen, und zwar überall: in der
+Kandidatenliste direkt neben jedem Beleg (mit Größenklasse dahinter) und in den
+Abschnitten zu Nachbarn, Dubletten, Einlagerung und Soll-Platz. Die Rechnung
+ersetzt nicht den Blick, sie sortiert nur vor.
+
+Führt ein Artikel seine Bilder an der Variante statt am Artikel, wird auch dort
+nachgesehen — sonst bliebe die Kachel grundlos leer.
+
+### Tempo
+
+Die Suche fasst je Durchgang leicht hundert Plenty-Aufrufe an. Drei Dinge
+halten sie trotzdem kurz:
+
+| Maßnahme | Was sie spart |
+| --- | --- |
+| Lagerortliste zwischengespeichert (5 min) | Sie zu lesen kostet je nach Lagergröße 20+ Seitenabrufe — bei **jeder** Suche. Der größte Posten. |
+| Unabhängige Signale laufen gleichzeitig | Warenbewegungen, Dubletten, ID-Nachbarn und Platztausch warteten vorher grundlos aufeinander. |
+| Beschreibungstexte nur, wo sie ausgewertet werden | Für die ID-Nachbarn kostete der Abruf je einen Aufruf ohne Wirkung auf das Ergebnis. |
+| Bilder zwischengespeichert | Dieselben Nachbarn tauchen immer wieder auf; auch „hat kein Bild" wird gemerkt. |
+
+Alle vier sind durch Tests abgesichert (`lib/plenty/suche.test.ts`) — sonst
+verschwänden sie beim nächsten Umbau unbemerkt.
 
 ### Laufzettel
 

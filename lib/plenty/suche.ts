@@ -39,7 +39,7 @@
  */
 
 import { plentyEingerichtet, plentyGet } from './client';
-import { ladeLager, ladeLagerorte, verzeichnis } from './lagerorte';
+import { ladeLager, ladeLagerorte, verzeichnis, type Lagerort } from './lagerorte';
 import { findeLagerplaetze } from '@/lib/lagerplatz/erkennung';
 import {
   bewerte,
@@ -183,6 +183,38 @@ interface PlentyBild {
   position?: number | null;
 }
 
+/**
+ * Die Lagerortliste eines Lagers, zwischengespeichert.
+ *
+ * Sie zu lesen kostet je nach Lagergröße zwanzig und mehr Seitenabrufe — und
+ * das bei JEDER Suche, obwohl sich Lagerorte höchstens beim Anlegen ändern.
+ * Das war mit Abstand der größte Zeitfresser. Fünf Minuten sind kurz genug,
+ * dass frisch angelegte Orte zeitnah auftauchen.
+ */
+const ORTE_CACHE_MS = 5 * 60_000;
+const orteCache = new Map<number, { orte: Lagerort[]; ohneCode: number; bis: number }>();
+
+async function ladeLagerorteGepuffert(
+  warehouseId: number,
+): Promise<{ orte: Lagerort[]; ohneCode: number; ausCache: boolean }> {
+  const treffer = orteCache.get(warehouseId);
+  if (treffer && Date.now() < treffer.bis) {
+    return { orte: treffer.orte, ohneCode: treffer.ohneCode, ausCache: true };
+  }
+  const { orte, ohneCode } = await ladeLagerorte(warehouseId, { maxSeiten: 200, gleichzeitig: 10 });
+  orteCache.set(warehouseId, { orte, ohneCode, bis: Date.now() + ORTE_CACHE_MS });
+  return { orte, ohneCode, ausCache: false };
+}
+
+/**
+ * Wie viele Artikel gleichzeitig geladen werden.
+ *
+ * Acht statt der urspruenglichen vier: PlentyONE bremst zwar (HTTP 429), aber
+ * `plentyGet` wartet in dem Fall kurz und fragt erneut — lieber gelegentlich
+ * gebremst als durchgaengig nur halb so schnell.
+ */
+const GLEICHZEITIG = 8;
+
 /** Führt Aufrufe in kleinen Gruppen aus, damit Plenty nicht ins Limit läuft. */
 async function inGruppen<T, R>(werte: T[], groesse: number, fn: (wert: T) => Promise<R>): Promise<R[]> {
   const out: R[] = [];
@@ -293,18 +325,50 @@ async function ladeBelegungen(
   }
 }
 
+/**
+ * Bilder sind teuer: ein eigener Aufruf je Artikel. Beim Suchen tauchen aber
+ * immer wieder dieselben Nachbarn auf, und Artikelbilder ändern sich so gut
+ * wie nie — deshalb ein Zwischenspeicher über die Laufzeit des Servers.
+ * Auch ein „kein Bild vorhanden" wird gemerkt, sonst fragt jede Suche erneut
+ * genau die Artikel ab, die keins haben.
+ */
+const bildCache = new Map<number, string | null>();
+/**
+ * Obergrenze, damit der Zwischenspeicher auf einem lange laufenden Server
+ * nicht unbegrenzt wächst. Bei Überschreitung wird er geleert statt einzelne
+ * Einträge zu verdrängen — für einen reinen Beschleuniger ist das genug.
+ */
+const BILD_CACHE_MAX = 5_000;
+
 /** Das erste Artikelbild — für die Plausibilitätskontrolle in der Oberfläche. */
-async function ladeBild(itemId: number): Promise<string | null> {
-  try {
-    const res = await plentyGet<PlentyBild[] | PlentyListe<PlentyBild>>(`/rest/items/${itemId}/images`);
-    const bilder = Array.isArray(res) ? res : (res?.entries ?? []);
+async function ladeBild(itemId: number, variationId?: number): Promise<string | null> {
+  if (bildCache.has(itemId)) return bildCache.get(itemId)!;
+
+  const besteUrl = (bilder: PlentyBild[]): string | null => {
     if (!bilder.length) return null;
     const sortiert = [...bilder].sort((a, b) => (zahl(a?.position) ?? 99) - (zahl(b?.position) ?? 99));
     const b = sortiert[0];
     return b.urlPreview || b.urlMiddle || b.urlSecondPreview || b.url || null;
-  } catch {
-    return null;
+  };
+
+  const holen = async (pfad: string): Promise<string | null> => {
+    try {
+      const res = await plentyGet<PlentyBild[] | PlentyListe<PlentyBild>>(pfad);
+      return besteUrl(Array.isArray(res) ? res : (res?.entries ?? []));
+    } catch {
+      return null;
+    }
+  };
+
+  let url = await holen(`/rest/items/${itemId}/images`);
+  // Manche Artikel führen die Bilder nicht am Artikel, sondern an der Variante
+  // — ohne diesen zweiten Versuch bliebe die Kachel grundlos leer.
+  if (!url && variationId) {
+    url = await holen(`/rest/items/${itemId}/variations/${variationId}/images`);
   }
+  if (bildCache.size >= BILD_CACHE_MAX) bildCache.clear();
+  bildCache.set(itemId, url);
+  return url;
 }
 
 /** Die Texte einer Variante — dort steht oft der alte Lagerplatz. */
@@ -525,12 +589,14 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
   const nachId = new Map<number, { name: string; code: string | null }>();
   const bekannteOrte = new Map<string, number>();
   try {
-    const { orte, ohneCode } = await ladeLagerorte(warehouseId, { maxSeiten: 200 });
+    const { orte, ohneCode, ausCache } = await ladeLagerorteGepuffert(warehouseId);
     for (const o of orte) {
       nachId.set(o.id, { name: o.name, code: o.code });
       if (o.code && !bekannteOrte.has(o.code)) bekannteOrte.set(o.code, o.id);
     }
-    diagnose.push(`${orte.length} Lagerorte gelesen (${ohneCode} ohne erkennbaren Code).`);
+    diagnose.push(
+      `${orte.length} Lagerorte ${ausCache ? 'aus dem Zwischenspeicher' : 'gelesen'} (${ohneCode} ohne erkennbaren Code).`,
+    );
     void verzeichnis; // Verzeichnis-Helfer bleibt für spätere Dublettenprüfung.
   } catch (err) {
     diagnose.push(`Lagerorte nicht lesbar: ${(err as Error).message.slice(0, 100)}`);
@@ -579,85 +645,97 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
   }
 
   // Hilfsfunktion: eine Variante mit allem laden, was die Oberfläche braucht.
+  // `mitText` kostet einen eigenen Aufruf je Artikel und lohnt nur dort, wo der
+  // Beschreibungstext auch ausgewertet wird — Nummer, Modell und Name kommen
+  // ohnehin aus der Sammelabfrage mit.
   const ladeKarte = async (v: PlentyVariante, mitText: boolean): Promise<Artikelkarte> => {
     const id = zahl(v.id)!;
     const iid = zahl(v.itemId);
     const [belegungen, bild, text] = await Promise.all([
       ladeBelegungen(warehouseId!, id, nachId),
-      iid ? ladeBild(iid) : Promise.resolve(null),
+      iid ? ladeBild(iid, id) : Promise.resolve(null),
       mitText && iid ? ladeTexte(iid, id) : Promise.resolve(''),
     ]);
     return karteAus(v, id - variationId, belegungen ?? [], bild, text);
   };
 
-  // 5) Signal 3: Warenbewegungen des Artikels selbst — wo lag er früher?
-  //    Liefert zugleich den Zeitanker für das Einlagerungsfenster.
-  const eigeneBewegungen = await ladeBewegungen(
-    warehouseId,
-    `variationId=${variationId}&itemsPerPage=50`,
-    diagnose,
-  );
-  const schonGenannt = new Set(echteBelegungen.map((b) => b.code));
-  for (const b of eigeneBewegungen ?? []) {
-    const ortId = zahl(b.storageLocationId) ?? 0;
-    if (!ortId) continue;
-    const ort = nachId.get(ortId);
-    if (!ort?.code || schonGenannt.has(ort.code)) continue;
-    schonGenannt.add(ort.code);
-    const wann = b.bookingTime || b.createdAt;
-    hinweise.push({
-      code: ort.code,
-      signal: 'historie',
-      text: `Laut Warenbewegungen lag der Artikel hier schon einmal${wann ? ` (${wann.slice(0, 10)})` : ''}`,
-      variationId,
-    });
-  }
-  if (eigeneBewegungen?.length) {
-    diagnose.push(`${eigeneBewegungen.length} Warenbewegungen zum Artikel gelesen.`);
-  }
+  /** Lädt mehrere Varianten als Karten — gleichzeitig, aber gedeckelt. */
+  const ladeKarten = async (ids: number[], mitText: boolean): Promise<Artikelkarte[]> => {
+    if (!ids.length) return [];
+    const varianten = await ladeVarianten(ids, diagnose);
+    return inGruppen(
+      ids.filter((id) => varianten.has(id)),
+      GLEICHZEITIG,
+      (id) => ladeKarte(varianten.get(id)!, mitText),
+    );
+  };
 
-  // 6) Signal 4: Gleichnamige Artikel — haben wir das Teil nochmal?
-  const dubletten: Artikelkarte[] = [];
-  if (opts.mitNamenssuche !== false && gesucht.name && zeitUebrig()) {
-    const ids = (await findeGleichnamige(gesucht.name, variationId, diagnose)).slice(0, 8);
-    if (ids.length) {
-      const varianten = await ladeVarianten(ids, diagnose);
-      const karten = await inGruppen(
-        ids.filter((id) => varianten.has(id)),
-        4,
-        (id) => ladeKarte(varianten.get(id)!, false),
-      );
-      for (const karte of karten) {
-        dubletten.push(karte);
-        for (const b of karte.belegungen) {
-          if (!b.code || b.lagerortId === 0) continue;
-          hinweise.push({
-            code: b.code,
-            signal: 'namensdublette',
-            text: `Gleichnamiger Artikel ${karte.nummer ?? karte.variationId} liegt hier`,
-            variationId: karte.variationId,
-          });
-        }
-      }
-      diagnose.push(`${dubletten.length} gleichnamige Artikel gefunden.`);
+  // -------------------------------------------------------------------------
+  // Die Signale. Vier davon hängen nicht voneinander ab und laufen deshalb
+  // gleichzeitig — nacheinander wartete jede Phase auf die vorige, obwohl sie
+  // nichts von ihr braucht. Das war der zweitgrößte Zeitfresser nach der
+  // Lagerortliste.
+  // -------------------------------------------------------------------------
+
+  /** Signal: Warenbewegungen des Artikels selbst — wo lag er früher? */
+  const phaseHistorie = async () => {
+    const bewegungen = await ladeBewegungen(warehouseId!, `variationId=${variationId}&itemsPerPage=50`, diagnose);
+    const gefunden: Hinweis[] = [];
+    const gesehen = new Set(echteBelegungen.map((b) => b.code));
+    for (const b of bewegungen ?? []) {
+      const ortId = zahl(b.storageLocationId) ?? 0;
+      if (!ortId) continue;
+      const ort = nachId.get(ortId);
+      if (!ort?.code || gesehen.has(ort.code)) continue;
+      gesehen.add(ort.code);
+      const wann = b.bookingTime || b.createdAt;
+      gefunden.push({
+        code: ort.code,
+        signal: 'historie',
+        text: `Laut Warenbewegungen lag der Artikel hier schon einmal${wann ? ` (${wann.slice(0, 10)})` : ''}`,
+        variationId,
+      });
     }
-  }
+    if (bewegungen?.length) diagnose.push(`${bewegungen.length} Warenbewegungen zum Artikel gelesen.`);
+    return { hinweise: gefunden, bewegungen };
+  };
 
-  // 7) Signal 5+7: ID-Nachbarn und, wer davon am selben Tag angelegt wurde.
-  const nachbarIds = idNachbarn(variationId, idSpanne);
-  const nachbarKarten: Artikelkarte[] = [];
-  const eigenerTag = (gesucht.angelegtAm ?? '').slice(0, 10);
-  if (nachbarIds.length && zeitUebrig()) {
-    const varianten = await ladeVarianten(nachbarIds, diagnose);
-    const vorhanden = nachbarIds.filter((id) => varianten.has(id));
-    const karten = await inGruppen(vorhanden, 4, (id) => ladeKarte(varianten.get(id)!, true));
+  /** Signal: Gleichnamige Artikel — haben wir das Teil nochmal? */
+  const phaseDubletten = async () => {
+    if (opts.mitNamenssuche === false || !gesucht.name) return { hinweise: [] as Hinweis[], karten: [] };
+    const ids = (await findeGleichnamige(gesucht.name, variationId, diagnose)).slice(0, 8);
+    const karten = await ladeKarten(ids, false);
+    const gefunden: Hinweis[] = [];
     for (const karte of karten) {
-      nachbarKarten.push(karte);
+      for (const b of karte.belegungen) {
+        if (!b.code || b.lagerortId === 0) continue;
+        gefunden.push({
+          code: b.code,
+          signal: 'namensdublette',
+          text: `Gleichnamiger Artikel ${karte.nummer ?? karte.variationId} liegt hier`,
+          variationId: karte.variationId,
+        });
+      }
+    }
+    if (karten.length) diagnose.push(`${karten.length} gleichnamige Artikel gefunden.`);
+    return { hinweise: gefunden, karten };
+  };
+
+  /** Signal: ID-Nachbarn — und wer davon am selben Tag angelegt wurde. */
+  const phaseNachbarn = async () => {
+    const ids = idNachbarn(variationId, idSpanne);
+    if (!ids.length) return { hinweise: [] as Hinweis[], karten: [] };
+    // Ohne Beschreibungstexte: Deren Lagerplatz-Hinweise werden hier nicht
+    // ausgewertet, der Aufruf wäre je Nachbar reine Wartezeit.
+    const karten = await ladeKarten(ids, false);
+    const eigenerTag = (gesucht.angelegtAm ?? '').slice(0, 10);
+    const gefunden: Hinweis[] = [];
+    for (const karte of karten) {
       const abstand = Math.abs(karte.idAbstand);
       const gleicherTag = !!eigenerTag && (karte.angelegtAm ?? '').slice(0, 10) === eigenerTag;
       for (const b of karte.belegungen) {
         if (!b.code || b.lagerortId === 0) continue;
-        hinweise.push({
+        gefunden.push({
           code: b.code,
           signal: 'id-nachbar',
           text: `${karte.nummer ?? karte.variationId} (ID ${karte.idAbstand > 0 ? '+' : ''}${karte.idAbstand}) liegt hier`,
@@ -668,7 +746,7 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
         // mit derselben Lieferung herein, auch wenn die IDs weiter auseinander
         // liegen als gedacht.
         if (gleicherTag) {
-          hinweise.push({
+          gefunden.push({
             code: b.code,
             signal: 'anlagedatum',
             text: `${karte.nummer ?? karte.variationId} wurde am selben Tag angelegt (${eigenerTag}) und liegt hier`,
@@ -678,16 +756,57 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
         }
       }
     }
-    diagnose.push(`${nachbarKarten.length} von ${nachbarIds.length} Nachbar-IDs existieren.`);
-  }
+    diagnose.push(`${karten.length} von ${ids.length} Nachbar-IDs existieren.`);
+    return { hinweise: gefunden, karten };
+  };
 
-  // 8) Signal 6: Einlagerung im selben Zeitfenster.
-  //    Die Bewegung nennt den Ziel-Lagerort direkt — das ist genauer als der
-  //    heutige Bestand, denn seither kann umgeräumt worden sein.
+  /** Signal: Wer liegt auf dem Soll-Platz? Vertauschungen aufdecken. */
+  const phaseTausch = async () => {
+    if (!echteBelegungen.length) return { hinweise: [] as Hinweis[], karten: [] };
+    const fremdIds: number[] = [];
+    for (const b of echteBelegungen.slice(0, 3)) {
+      for (const id of await ladePlatzbelegung(b.lagerortId)) {
+        if (id !== variationId) fremdIds.push(id);
+      }
+    }
+    const ids = [...new Set(fremdIds)].slice(0, 6);
+    // Hier lohnt der Textabruf: Der Platz, an den der Fremdartikel gehört, ist
+    // genau der Hinweis, den dieses Signal liefert.
+    const karten = await ladeKarten(ids, true);
+    const gefunden: Hinweis[] = [];
+    const gesehen = new Set(echteBelegungen.map((b) => b.code));
+    for (const karte of karten) {
+      for (const code of karte.textPlaetze) {
+        if (gesehen.has(code)) continue;
+        gefunden.push({
+          code,
+          signal: 'platztausch',
+          text: `Auf dem Soll-Platz liegt ${karte.nummer ?? karte.variationId} — laut dessen Text gehört der hierher, womöglich vertauscht`,
+          variationId: karte.variationId,
+        });
+      }
+    }
+    if (karten.length) diagnose.push(`${karten.length} Fremdartikel auf dem Soll-Platz.`);
+    return { hinweise: gefunden, karten };
+  };
+
+  const [historie, dubletten, nachbarn, tausch] = await Promise.all([
+    phaseHistorie(),
+    phaseDubletten(),
+    phaseNachbarn(),
+    phaseTausch(),
+  ]);
+
+  // Reihenfolge beim Einsammeln ist festgelegt, damit dasselbe Ergebnis
+  // herauskommt, egal welche Phase zuerst fertig war.
+  hinweise.push(...historie.hinweise, ...dubletten.hinweise, ...nachbarn.hinweise, ...tausch.hinweise);
+
+  // Signal: Einlagerung im selben Zeitfenster. Braucht den Zeitanker aus den
+  // Warenbewegungen und läuft deshalb erst jetzt.
   const einlagerungKarten: Artikelkarte[] = [];
   if (zeitfensterMin > 0 && zeitUebrig()) {
     const ankerZeit =
-      (eigeneBewegungen ?? [])
+      (historie.bewegungen ?? [])
         .map((b) => b.bookingTime || b.createdAt)
         .filter((x): x is string => !!x)
         .sort()
@@ -725,56 +844,13 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
 
       // Bilder und Namen nur für eine Handvoll — sonst sprengt es das Zeitbudget.
       const ids = [...new Set(fremde.map((b) => zahl(b.variationId)!))].slice(0, 12);
-      if (ids.length) {
-        const varianten = await ladeVarianten(ids, diagnose);
-        const karten = await inGruppen(
-          ids.filter((id) => varianten.has(id)),
-          4,
-          (id) => ladeKarte(varianten.get(id)!, false),
-        );
-        einlagerungKarten.push(...karten);
-      }
+      einlagerungKarten.push(...(await ladeKarten(ids, false)));
       diagnose.push(`${fremde.length} Buchungen im Fenster ±${zeitfensterMin} min.`);
     }
   }
 
-  // 9) Signal 8: Wer liegt auf dem Soll-Platz? Vertauschungen aufdecken.
-  const aufDemSollplatz: Artikelkarte[] = [];
-  if (echteBelegungen.length && zeitUebrig()) {
-    const fremdIds: number[] = [];
-    for (const b of echteBelegungen.slice(0, 3)) {
-      for (const id of await ladePlatzbelegung(b.lagerortId)) {
-        if (id !== variationId) fremdIds.push(id);
-      }
-    }
-    const ids = [...new Set(fremdIds)].slice(0, 6);
-    if (ids.length) {
-      const varianten = await ladeVarianten(ids, diagnose);
-      const karten = await inGruppen(
-        ids.filter((id) => varianten.has(id)),
-        4,
-        (id) => ladeKarte(varianten.get(id)!, false),
-      );
-      for (const karte of karten) {
-        aufDemSollplatz.push(karte);
-        // Der Platz, an den der Fremdartikel eigentlich gehört, ist der
-        // Verdacht: Dorthin wurde der gesuchte womöglich gestellt.
-        for (const code of karte.textPlaetze) {
-          if (schonGenannt.has(code)) continue;
-          hinweise.push({
-            code,
-            signal: 'platztausch',
-            text: `Auf dem Soll-Platz liegt ${karte.nummer ?? karte.variationId} — laut dessen Text gehört der hierher, womöglich vertauscht`,
-            variationId: karte.variationId,
-          });
-        }
-      }
-      diagnose.push(`${aufDemSollplatz.length} Fremdartikel auf dem Soll-Platz.`);
-    }
-  }
-
-  // 10) Signal 9: Plätze direkt neben den bisher gefundenen.
-  //     Erst jetzt, damit sie sich an den echten Treffern orientieren.
+  // Signal: Plätze direkt neben den bisher gefundenen. Erst jetzt, damit sie
+  // sich an den echten Treffern orientieren.
   if (mitRegalNachbarn) {
     const bisher = [...new Set(hinweise.map((h) => h.code))].slice(0, 12);
     for (const code of bisher) {
@@ -807,10 +883,10 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
     lageText: beschreibeLage(lage, gesucht),
     kandidaten,
     laufzettel: laufzettel(kandidaten),
-    nachbarn: nachbarKarten.sort((a, b) => Math.abs(a.idAbstand) - Math.abs(b.idAbstand)),
+    nachbarn: nachbarn.karten.sort((a, b) => Math.abs(a.idAbstand) - Math.abs(b.idAbstand)),
     einlagerung: einlagerungKarten,
-    dubletten,
-    aufDemSollplatz,
+    dubletten: dubletten.karten,
+    aufDemSollplatz: tausch.karten,
     diagnose,
     dauerMs: Date.now() - start,
   };
