@@ -62,6 +62,8 @@ export async function ladeLagerorte(
   warehouseId: number,
   opts: { maxSeiten?: number; proSeite?: number; gleichzeitig?: number } = {},
 ): Promise<{ orte: Lagerort[]; gelesen: number; ohneCode: number; abgebrochen: boolean }> {
+  // Die Namen ohne erkennbaren Code sind der wichtigste Hinweis, wenn etwas
+  // nicht stimmt — sie stehen deshalb als Beispiele in der Oberfläche.
   const proSeite = Math.min(250, Math.max(1, Math.floor(opts.proSeite ?? 250)));
   const maxSeiten = Math.max(1, Math.floor(opts.maxSeiten ?? 200));
   const gleichzeitig = Math.min(10, Math.max(1, Math.floor(opts.gleichzeitig ?? 6)));

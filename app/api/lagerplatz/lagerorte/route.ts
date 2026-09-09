@@ -39,6 +39,13 @@ export async function GET(request: Request) {
       doppelt,
       abgebrochen,
       beispiele: orte.slice(0, 10).map((o) => ({ id: o.id, name: o.name, code: o.code })),
+      // Namen, die sich nicht auf die einheitliche Form bringen lassen.
+      // Ohne sie lässt sich nicht erkennen, WARUM ein Platz nicht zählt —
+      // etwa weil neu angelegte Lagerorte anders heißen als erwartet.
+      beispieleOhneCode: orte
+        .filter((o) => !o.code)
+        .slice(0, 25)
+        .map((o) => ({ id: o.id, name: o.name })),
     });
   } catch (err) {
     return NextResponse.json({ ok: false, error: (err as Error).message }, { status: 502 });
