@@ -15,6 +15,7 @@ import { ZUSTAND_TEXT, type Erkennung } from '@/lib/erfassung/erkennung';
 import type { Treffer } from '@/lib/erfassung/treffer';
 import {
   arbeite,
+  aussichtslos,
   beobachte,
   einreihen,
   laeuftNurImArbeitsspeicher,
@@ -322,7 +323,8 @@ export default function Erfassung() {
   const obenListe = useMemo(() => fotos.filter((f) => f.status === 'oben').map(() => ({ hochgeladen: true })), [fotos]);
   const hinweis = bereitHinweis(obenListe);
   const offeneUploads = fotos.filter((f) => f.status === 'wartet' || f.status === 'laedt').length;
-  const fehlerhafte = fotos.filter((f) => f.status === 'fehler').length;
+  const haengende = useMemo(() => fotos.filter((f) => f.status === 'fehler'), [fotos]);
+  const fehlerhafte = haengende.length;
   const kannAbschicken =
     Boolean(artikel) && !beschaeftigt && artikelBereit(obenListe) && offeneUploads === 0 && fehlerhafte === 0;
 
@@ -474,6 +476,39 @@ export default function Erfassung() {
         </ul>
       )}
 
+      {haengende.length > 0 && (
+        <section className={styles.haengt}>
+          <h2>
+            {haengende.length} Foto{haengende.length === 1 ? '' : 's'} nicht übertragen
+          </h2>
+          {haengende.map((f) => (
+            <div key={f.schluessel} className={styles.haengtZeile}>
+              {/* Der Grund im Klartext. Ohne ihn ist "hängt" eine Aussage ohne
+                  Inhalt — und am Handy gibt es keinen Tooltip zum Nachsehen. */}
+              <p className={styles.haengtGrund}>{f.meldung ?? 'Unbekannter Fehler.'}</p>
+              <div className={styles.haengtKnoepfe}>
+                {!aussichtslos(f.meldung) && f.queueId && (
+                  <button type="button" onClick={() => void nochmal(f.queueId!)}>
+                    Nochmal versuchen
+                  </button>
+                )}
+                {f.queueId && (
+                  <button type="button" onClick={() => void verwerfen(f.queueId!)}>
+                    Foto verwerfen
+                  </button>
+                )}
+              </div>
+              {aussichtslos(f.meldung) && (
+                <p className={styles.haengtHinweis}>
+                  Dieses Foto gehört zu einem Artikel, den es nicht mehr gibt oder der schon abgeschickt ist. Ein
+                  weiterer Anlauf ändert daran nichts — bitte verwerfen und, falls nötig, neu fotografieren.
+                </p>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+
       <button
         type="button"
         className={styles.galerie}
@@ -497,7 +532,9 @@ export default function Erfassung() {
       <div className={styles.fuss}>
         <div className={styles.fussInfo}>
           {offeneUploads > 0 && <span>{offeneUploads} Foto(s) werden noch übertragen</span>}
-          {fehlerhafte > 0 && <span className={styles.fussFehler}>{fehlerhafte} hängen — bitte „nochmal“</span>}
+          {fehlerhafte > 0 && (
+            <span className={styles.fussFehler}>{fehlerhafte} nicht übertragen — Grund steht oben</span>
+          )}
           {offeneUploads === 0 && fehlerhafte === 0 && hinweis && <span>{hinweis}</span>}
           {offeneUploads === 0 && fehlerhafte === 0 && !hinweis && (
             <span>
