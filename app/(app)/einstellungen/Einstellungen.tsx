@@ -33,6 +33,12 @@ interface Stand {
   geaendertVon: string | null;
   geaendertAm: string | null;
   schluessel: 'eigen' | 'supabase' | 'keiner';
+  supabase: {
+    url: string | null;
+    projektRef: string | null;
+    angemeldetNutzbar: boolean;
+    serviceRoleGesetzt: boolean;
+  };
 }
 
 /** Die Werkzeuge, die auf diesem Zugang aufsetzen. */
@@ -219,12 +225,61 @@ export default function Einstellungen() {
         </div>
       )}
 
-      {stand?.schluessel === 'keiner' && (
+      {stand && !stand.supabase.serviceRoleGesetzt && (
         <div className={`${styles.notice} ${styles.noticeErr}`}>
-          Es fehlt ein Schlüssel zum Verschlüsseln des Passworts. Ohne <code>EINSTELLUNGEN_SCHLUESSEL</code>{' '}
-          oder <code>SUPABASE_SERVICE_ROLE_KEY</code> wird nichts gespeichert.
+          <code>SUPABASE_SERVICE_ROLE_KEY</code> ist nicht gesetzt — ohne ihn lässt sich hier nichts
+          speichern. In Vercel unter Settings → Environment Variables eintragen, für Production
+          <em> und </em> Preview, danach neu deployen.
         </div>
       )}
+
+      <section className={styles.card}>
+        <div className={styles.cardHead}>
+          <h2 className={styles.cardTitle}>Datenbank</h2>
+          <span
+            className={`${styles.badge} ${
+              stand?.supabase.serviceRoleGesetzt ? styles.badgeOk : styles.badgeWarn
+            }`}
+          >
+            {stand?.supabase.serviceRoleGesetzt ? 'bereit' : 'nicht speicherfähig'}
+          </span>
+        </div>
+        <p className={styles.hilfe} style={{ marginTop: 0, marginBottom: '1rem' }}>
+          An diesem Supabase-Projekt hängt die Projektplanung. Läuft dieselbe Anwendung mehrfach
+          (verschiedene Vercel-Projekte), zeigt jede Instanz hier ihr eigenes — das Schema gehört in
+          genau dieses.
+        </p>
+        <div className={styles.herkunft}>
+          <div className={styles.herkunftZeile}>
+            <span>Projekt-Referenz:</span>
+            <strong>{stand?.supabase.projektRef ?? 'nicht eingerichtet'}</strong>
+          </div>
+          <div className={styles.herkunftZeile}>
+            <span>URL:</span>
+            <strong>{stand?.supabase.url ?? '—'}</strong>
+          </div>
+          <div className={styles.herkunftZeile}>
+            <span>Service-Role-Key:</span>
+            <strong>{stand?.supabase.serviceRoleGesetzt ? 'gesetzt' : 'fehlt'}</strong>
+          </div>
+          <div className={styles.herkunftZeile}>
+            <span>Verschlüsselung:</span>
+            <strong>
+              {stand?.schluessel === 'eigen'
+                ? 'eigener Schlüssel (EINSTELLUNGEN_SCHLUESSEL)'
+                : stand?.schluessel === 'supabase'
+                  ? 'ersatzweise über den Service-Role-Key'
+                  : 'kein Schlüssel'}
+            </strong>
+          </div>
+        </div>
+        {stand?.supabase.projektRef && (
+          <p className={styles.hilfe}>
+            Im Supabase-Dashboard das Projekt mit dieser Referenz öffnen → SQL Editor →{' '}
+            <code>supabase/schema.sql</code> einmal ausführen.
+          </p>
+        )}
+      </section>
 
       <section className={styles.card}>
         <div className={styles.cardHead}>

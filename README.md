@@ -292,8 +292,19 @@ vorhin schon einmal jemand angemeldet war. Beim Speichern läuft derselbe Test
 automatisch mit; schlägt er fehl, wird trotzdem gespeichert, aber deutlich
 gewarnt.
 
-Einmalig muss `supabase/schema.sql` im Supabase-SQL-Editor laufen (legt die
-Tabelle `einstellungen` an). Fehlt sie, sagt die Seite genau das.
+### Welches Supabase-Projekt?
+
+Die Seite zeigt oben unter **Datenbank** die Projekt-Referenz, an der diese
+Installation hängt — das Stück vor `.supabase.co` aus `NEXT_PUBLIC_SUPABASE_URL`.
+
+Das ist kein Beiwerk: Läuft dieselbe Anwendung mehrfach (mehrere Vercel-Projekte
+aus einem Repo), hat jede Instanz eigene Umgebungsvariablen und kann auf ein
+anderes Supabase-Projekt zeigen. Wer das Schema dann ins falsche einspielt,
+wundert sich, warum die Tabelle „fehlt". Die Referenz auf der Seite sagt, in
+welchem Projekt im Supabase-Dashboard das SQL laufen muss.
+
+Einmalig muss `supabase/schema.sql` dort im SQL-Editor laufen (legt die Tabelle
+`einstellungen` an). Fehlt sie, sagt die Seite genau das.
 
 ## Artikel nicht gefunden (`/lagerplatz/suche`)
 
