@@ -233,10 +233,100 @@ Der nächste Ausbauschritt ist deshalb nicht „Lagerorte anlegen", sondern:
 bestehende Lagerorte mitlesen, den Standard-Anteil je Artikel ausweisen und den
 Texthinweis als Vorschlag danebenstellen, wohin umgebucht werden müsste.
 
+## Artikel nicht gefunden (`/lagerplatz/suche`)
+
+Ein Artikel ist am eingetragenen Platz nicht auffindbar. Diese Seite sammelt aus
+PlentyONE alles, was auf einen anderen Platz hindeutet, und macht daraus eine
+begründete Rangliste. **Nur lesend** — es wird nichts umgebucht.
+
+### Der erste Blick: Wie steht der Artikel im Bestand?
+
+Bevor irgendjemand losläuft, beantwortet die Seite die Frage, die den Suchweg
+bestimmt:
+
+| Lage | Bedeutung | Wo suchen |
+|---|---|---|
+| **verbucht** | Liegt laut Plenty auf einem echten Lagerplatz | Im Regal — und dann in der Umgebung |
+| **nur Standard-Lagerplatz** | Bestand da, aber nie einem Regal zugewiesen | **Nicht im Regal** — im Wareneingang |
+| **kein Bestand** | Verkauft, umgebucht oder nie eingebucht | Erst die Buchungen klären, dann suchen |
+
+Diese Unterscheidung war der Grund, die Seite überhaupt zu bauen: Ein Artikel auf
+dem Standard-Lagerplatz wurde nie eingeräumt. Ihn im Regal zu suchen ist verlorene
+Zeit.
+
+### Die Signale
+
+Sie bilden den Suchweg nach, der sich im Lager bewährt hat:
+
+| Signal | Gewicht | Was geprüft wird |
+|---|---|---|
+| Bestand | 100 | Wohin ist der Artikel selbst verbucht? |
+| Artikeltext | 80 | Variantennummer, Modell, Beschreibung — dort steht oft der frühere Platz |
+| Warenbewegung | 70 | Wo lag er schon einmal? Rückläufer wandern an ihren alten Platz |
+| Gleicher Artikel | 65 | Haben wir das Teil nochmal? Bei Gebrauchtware steht Exemplar 2 beim ersten |
+| Nachbar-ID | 55 | ±5 IDs (einstellbar bis ±15) — zusammen angelegt heißt zusammen eingeräumt |
+| Einlagerung | 50 | Was im selben Zeitfenster gebucht wurde, kam mit derselben Palette |
+| Anlagetag | 45 | Grober Ersatz, wenn keine Bewegungsdaten vorliegen |
+| Vertauscht? | 40 | Wer liegt auf dem Soll-Platz — und wo gehört der eigentlich hin? |
+| Regal nebenan | 30 | Fach ±2, Kiste ±2, Ebene ±1 — der häufigste Einräumfehler |
+
+Mehrere Signale auf denselben Platz verstärken sich, aber gedämpft: Das stärkste
+zählt voll, jedes weitere zur Hälfte. Sonst überholen fünf schwache Hinweise
+einen starken.
+
+### Die Größenprobe ersetzt den Blick aufs Bild
+
+Aus Gewicht und Maßen wird eine Größenklasse abgeleitet (Kleinteil, mittel,
+Großteil). Plätze, die dazu nicht passen, werden **abgewertet und begründet**:
+
+- Großteil in einer Kleinteilkiste (`-K71`, KTL-Regal)
+- Kleinteil auf einem Palettenplatz (`-P16`)
+- Großteil in Ebene D–J — dort wird nichts Schweres eingelagert
+
+Fehlen Gewicht und Maße, ist die Klasse `unbekannt` und es wird **nichts**
+abgewertet. Lieber keine Aussage als eine falsche.
+
+Die Artikelbilder werden trotzdem geladen — zu den Nachbarn, den Dubletten und
+den zeitgleich eingelagerten Artikeln. Die Rechnung ersetzt nicht den Blick,
+sie sortiert nur vor.
+
+### Laufzettel
+
+Dieselben Plätze ein zweites Mal, aber nach Laufweg sortiert (Halle → Regal →
+Ebene → Fach → Kiste) statt nach Punkten, mit Druckknopf. Wer suchen geht, läuft
+die Halle einmal ab, statt zwischen bestbewerteten Plätzen hin- und herzuspringen.
+
+### Verwendete Endpunkte (alle GET)
+
+```
+/rest/items/variations                                        Artikel auflösen, Nachbarn, Namenssuche
+/rest/items/{itemId}/variations/{variationId}/descriptions    Texte nach Lagerplatz-Codes
+/rest/items/{itemId}/images                                   Bild für die Sichtprüfung
+/rest/stockmanagement/warehouses/{id}/stock/storageLocations  Wo liegt was
+/rest/stockmanagement/warehouses/{id}/stock/movements         Historie und Einlagerungsfenster
+/rest/warehouses/locations/stock/{lagerortId}                 Wer liegt auf dem Soll-Platz
+```
+
+Nicht jede Plenty-Ausbaustufe kennt alle davon. Bewegungen und Namenssuche
+werden über mehrere bekannte Pfade probiert; greift keiner, fällt die Suche auf
+das Anlagedatum zurück und **schreibt in die Diagnose, was gefehlt hat** — statt
+stillschweigend ein schwächeres Ergebnis zu liefern.
+
+### Noch offen
+
+- **Rückmeldung „hier war er"**: Ein Klick beim Fund würde über die Zeit zeigen,
+  welches Signal wirklich trifft und welche Regale die meisten Suchfälle
+  erzeugen. Braucht eine Tabelle in Supabase.
+- **eBay-Abgleich**: Die Titelsuche läuft heute nur gegen Plenty. Ob dasselbe
+  Teil noch als eBay-Angebot liegt, ist ein zusätzlicher Hinweis.
+- **Einlagerungs-Sessions**: Buchungen nach Nutzer gruppieren (Lücke > 30 min =
+  neue Session) statt über ein festes Zeitfenster. Genauer, sobald die
+  Bewegungsdaten `userId` verlässlich mitliefern.
+
 ## Tests
 
 ```bash
-npm test        # Vitest: EAN-Erzeugung, Kern-Logik, Lagerplatz-Erkennung
+npm test        # Vitest: EAN-Erzeugung, Kern-Logik, Lagerplatz-Erkennung, Platzsuche
 npm run typecheck
 ```
 
@@ -248,14 +338,16 @@ projektplanung/
 │   ├── (app)/projekte/        # Dashboard (Formular + Suchverlauf)
 │   ├── (app)/lagerplatz/      # Lagerplatz-Scan (Vorschau, nur lesend)
 │   ├── api/projekte/          # GET Suche / POST Anlegen / [id] löschen
+│   ├── (app)/lagerplatz/suche/ # Artikel nicht gefunden — alternative Plätze
 │   ├── api/lagerplatz/scan/   # POST Lagerplatz-Scan (häppchenweise)
+│   ├── api/lagerplatz/suche/  # POST Suche nach alternativen Lagerplätzen
 │   ├── api/plenty/test/       # Verbindungstest
 │   ├── auth/                  # Supabase Login-Callback + Logout
 │   └── login/                 # Anmeldung
 ├── components/                # App-Shell (Header)
 ├── lib/
-│   ├── lagerplatz/            # Lagerplatz-Erkennung + Befunde (getestet)
-│   ├── plenty/                # PlentyONE-Client, EAN-Erzeugung, Bestands-Scan
+│   ├── lagerplatz/            # Erkennung, Befunde, Nachbarschaftslogik (getestet)
+│   ├── plenty/                # PlentyONE-Client, EAN, Bestands-Scan, Platzsuche
 │   ├── projekte/              # Reine Geschäftslogik (getestet)
 │   └── supabase/              # Supabase-Helfer (server/client/admin)
 └── supabase/schema.sql        # DB-Schema
