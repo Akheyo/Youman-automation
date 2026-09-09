@@ -331,6 +331,17 @@ export async function arbeite(): Promise<void> {
   }
 }
 
+/**
+ * Ist dieser Fehler durch Wiederholen behebbar?
+ *
+ * Ein Eintrag, dessen Artikel gelöscht oder schon abgeschickt wurde, wird durch
+ * keinen weiteren Anlauf besser. Solche Einträge nur immer wieder anzubieten,
+ * wäre eine Sackgasse mit Knopf — sie gehören weggeworfen.
+ */
+export function aussichtslos(meldung: string | undefined): boolean {
+  return /nicht gefunden|bereits abgeschickt|HTTP 404|HTTP 409/i.test(meldung ?? '');
+}
+
 /** Einen stehengebliebenen Eintrag erneut versuchen. */
 export async function nochmal(id: string): Promise<void> {
   const satz = (await alle()).find((s) => s.id === id);
@@ -357,10 +368,10 @@ async function einenHochladen(satz: Datensatz): Promise<void> {
       }),
     });
     const daten = await alsJson(res);
-    if (!res.ok) throw new Error(String(daten.error ?? `Reservieren fehlgeschlagen (HTTP ${res.status}).`));
+    if (!res.ok) throw new Error(`Schritt 1 (Platz reservieren): ${String(daten.error ?? `HTTP ${res.status}`)}`);
     const bild = daten.bild as { id: string } | undefined;
     const upload = daten.upload as { pfad: string; token: string } | undefined;
-    if (!bild?.id || !upload?.token) throw new Error('Unvollständige Antwort beim Reservieren.');
+    if (!bild?.id || !upload?.token) throw new Error('Schritt 1 (Platz reservieren): unvollständige Antwort.');
     satz.bildId = bild.id;
     satz.pfad = upload.pfad;
     satz.token = upload.token;
@@ -379,7 +390,7 @@ async function einenHochladen(satz: Datensatz): Promise<void> {
     // Dann meldet der Storage "gibt es schon" — und genau dann ist alles gut,
     // es fehlt nur noch der letzte Schritt.
     const schonDa = /exist|duplicate|bereits/i.test(error.message);
-    if (!schonDa) throw new Error(`Upload: ${error.message}`);
+    if (!schonDa) throw new Error(`Schritt 2 (Upload zum Speicher): ${error.message}`);
   }
 
   // Schritt 3 — Ankunft bestätigen. Erst jetzt zählt das Bild.
@@ -390,7 +401,7 @@ async function einenHochladen(satz: Datensatz): Promise<void> {
   });
   if (!res.ok) {
     const daten = await alsJson(res).catch(() => ({}) as Record<string, unknown>);
-    throw new Error(String(daten.error ?? `Bestätigen fehlgeschlagen (HTTP ${res.status}).`));
+    throw new Error(`Schritt 3 (Ankunft bestätigen): ${String(daten.error ?? `HTTP ${res.status}`)}`);
   }
 }
 
