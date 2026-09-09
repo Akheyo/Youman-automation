@@ -261,7 +261,20 @@ export default function Einstellungen() {
         <div className={styles.herkunft}>
           <div className={styles.herkunftZeile}>
             <span>Projekt-Referenz:</span>
-            <strong>{stand?.supabase.projektRef ?? 'nicht eingerichtet'}</strong>
+            {/* Direkt verlinkt: Zwei Supabase-Projekte gleichen Namens sind im
+                Dashboard nicht auseinanderzuhalten — der Link trifft immer das
+                richtige, das Umschalten von Hand nicht. */}
+            {stand?.supabase.projektRef ? (
+              <a
+                href={`https://supabase.com/dashboard/project/${stand.supabase.projektRef}/sql/new`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <strong>{stand.supabase.projektRef}</strong> — SQL-Editor öffnen ↗
+              </a>
+            ) : (
+              <strong>nicht eingerichtet</strong>
+            )}
           </div>
           <div className={styles.herkunftZeile}>
             <span>URL:</span>
@@ -294,9 +307,10 @@ export default function Einstellungen() {
         </div>
         {stand?.supabase.tabelle === 'fehlt' && (
           <p className={styles.hilfe}>
-            Im Supabase-Dashboard <strong>das Projekt mit genau dieser Referenz</strong> öffnen →
-            SQL Editor → <code>supabase/schema.sql</code> ausführen. Wurde das Schema schon
-            eingespielt und steht hier trotzdem „fehlt", ist es im falschen Projekt gelandet.
+            Über den Link oben den SQL-Editor <strong>dieses</strong> Projekts öffnen und{' '}
+            <code>supabase/schema.sql</code> ausführen. Wurde das Schema schon eingespielt und steht
+            hier trotzdem „fehlt", ist es in einem anderen Supabase-Projekt gelandet — mehrere
+            Projekte tragen leicht denselben Namen, unterscheidbar sind sie nur an der Referenz.
           </p>
         )}
         {stand?.schluessel === 'supabase' && (
