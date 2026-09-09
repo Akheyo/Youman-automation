@@ -96,6 +96,8 @@ export interface AnlageErgebnis {
   offen: number;
   /** Index in der Eingabeliste, ab dem der nächste Aufruf weitermachen muss. */
   naechsterIndex: number;
+  /** PlentyONE hat die Schreibbremse gezogen — vor dem Weitermachen warten. */
+  schreiblimit: boolean;
   zeilen: AnlageZeile[];
   diagnose: string[];
   dauerMs: number;
@@ -162,6 +164,48 @@ export function stellenAus(namen: Iterable<string>): number {
 export function nameMitStellen(name: string, breite: number): string {
   if (breite <= 0 || !/^\d+$/.test(name)) return name;
   return name.padStart(breite, '0');
+}
+
+/**
+ * Alle Schreibweisen, unter denen derselbe Knoten in Plenty stehen kann.
+ *
+ * Das Lager führt beide nebeneinander: Feld 2 heißt mal "F2", mal "F02". Wer
+ * nur nach einer Schreibweise sucht, findet den vorhandenen Knoten nicht und
+ * legt ihn ein zweites Mal an — genau so sind schon Dubletten entstanden.
+ * Deshalb wird bei Zahlen ohne führende Null, mit zwei und mit drei Stellen
+ * gesucht.
+ */
+export function schreibweisen(name: string): string[] {
+  if (!/^\d+$/.test(name)) return [name];
+  const blank = String(Number(name));
+  return [...new Set([name, blank, blank.padStart(2, '0'), blank.padStart(3, '0')])];
+}
+
+/** Kurze Pause; PlentyONE begrenzt Schreibzugriffe pro Zeitfenster. */
+function warte(ms: number): Promise<void> {
+  return new Promise((fertig) => setTimeout(fertig, ms));
+}
+
+/** Erkennt die Schreibbremse von PlentyONE an der Antwort. */
+export function istSchreiblimit(fehler: unknown): boolean {
+  const text = (fehler as Error)?.message ?? '';
+  return /HTTP 429/.test(text) || /write limit/i.test(text);
+}
+
+/**
+ * Führt einen Schreibzugriff aus und wiederholt ihn, wenn PlentyONE mit
+ * „short period write limit reached" bremst. Das Limit ist keine Störung,
+ * sondern der Normalfall bei tausend Anlagen hintereinander.
+ */
+async function schreibeMitGeduld<T>(fn: () => Promise<T>, versuche = 3): Promise<T> {
+  for (let versuch = 1; ; versuch++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (versuch >= versuche || !istSchreiblimit(err)) throw err;
+      await warte(2_000 * versuch);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -296,6 +340,7 @@ export async function legeLagerorteAn(
     neueKnoten: 0,
     offen: codes.length,
     naechsterIndex: 0,
+    schreiblimit: false,
     zeilen: [],
     diagnose,
     dauerMs: Date.now() - start,
@@ -394,11 +439,27 @@ export async function legeLagerorteAn(
   // Knotenindex aufbauen; er wächst mit, sobald ein Knoten angelegt wurde.
   const index = new Map<string, Knoten>();
   const letztePosition = new Map<string, number>();
+  const geschwister = new Map<string, string[]>();
   for (const k of struktur.knoten) {
     index.set(knotenSchluessel(k.parentId, k.dimensionId, k.name), k);
     const gruppe = `${k.parentId}|${k.dimensionId}`;
     letztePosition.set(gruppe, Math.max(letztePosition.get(gruppe) ?? 0, k.position));
+    const namen = geschwister.get(gruppe) ?? [];
+    namen.push(k.name);
+    geschwister.set(gruppe, namen);
   }
+
+  /**
+   * Schreibweise der Geschwister unter genau diesem Elternknoten. Die ist
+   * verlässlicher als der Durchschnitt des ganzen Lagers: In Burlo stehen
+   * "F2" und "F02" nebeneinander, aber innerhalb eines Regals ist es meist
+   * einheitlich.
+   */
+  const stellenDerGruppe = (gruppe: string): number | null => {
+    const namen = geschwister.get(gruppe);
+    if (!namen?.length) return null;
+    return stellenAus(namen);
+  };
 
   let neueKnoten = 0;
   let angelegt = 0;
@@ -412,12 +473,20 @@ export async function legeLagerorteAn(
     dimensionId: number,
     rohName: string,
   ): Promise<{ id: number; neu: boolean }> {
-    const name = nameMitStellen(rohName, stellen.get(dimensionId) ?? 0);
-    const schluessel = knotenSchluessel(parentId, dimensionId, name);
-    const da = index.get(schluessel);
-    if (da) return { id: da.id, neu: false };
-
     const gruppe = `${parentId}|${dimensionId}`;
+
+    // Erst in ALLEN Schreibweisen suchen. Das Lager führt "F2" und "F02"
+    // nebeneinander; wer nur eine Form sucht, legt den Knoten doppelt an.
+    for (const kandidat of schreibweisen(rohName)) {
+      const da = index.get(knotenSchluessel(parentId, dimensionId, kandidat));
+      if (da) return { id: da.id, neu: false };
+    }
+
+    // Nichts gefunden: neu anlegen — in der Schreibweise der Geschwister unter
+    // genau diesem Elternknoten, ersatzweise der des ganzen Lagers.
+    const name = nameMitStellen(rohName, stellenDerGruppe(gruppe) ?? stellen.get(dimensionId) ?? 0);
+    const schluessel = knotenSchluessel(parentId, dimensionId, name);
+
     const position = (letztePosition.get(gruppe) ?? 0) + 1;
     letztePosition.set(gruppe, position);
 
@@ -430,23 +499,27 @@ export async function legeLagerorteAn(
       return { id: platzhalter.id, neu: true };
     }
 
-    const antwort = await plentyPost<Record<string, unknown>>('/rest/warehouses/locations/levels', {
-      parentId,
-      dimensionId,
-      position,
-      name,
-    });
+    const antwort = await schreibeMitGeduld(() =>
+      plentyPost<Record<string, unknown>>('/rest/warehouses/locations/levels', {
+        parentId,
+        dimensionId,
+        position,
+        name,
+      }),
+    );
     const id = Number(antwort?.id);
     if (!Number.isFinite(id) || id <= 0) {
       throw new Error(`Knoten "${name}" angelegt, aber Plenty lieferte keine ID zurück.`);
     }
     index.set(schluessel, { id, parentId, dimensionId, name, position });
+    geschwister.set(gruppe, [...(geschwister.get(gruppe) ?? []), name]);
     return { id, neu: true };
   }
 
   // --- Zeilen abarbeiten --------------------------------------------------
   let offen = 0;
   let abgebrochen = false;
+  let schreiblimit = false;
 
   for (let i = 0; i < codes.length; i++) {
     const roh = codes[i];
@@ -511,13 +584,15 @@ export async function legeLagerorteAn(
         continue;
       }
 
-      const antwort = await plentyPost<Record<string, unknown>>('/rest/warehouses/locations', {
-        levelId: fEbene.id,
-        label: teile.bezeichnung,
-        purposeKey: zweck,
-        statusKey: status,
-        position: 1,
-      });
+      const antwort = await schreibeMitGeduld(() =>
+        plentyPost<Record<string, unknown>>('/rest/warehouses/locations', {
+          levelId: fEbene.id,
+          label: teile.bezeichnung,
+          purposeKey: zweck,
+          statusKey: status,
+          position: 1,
+        }),
+      );
       const id = Number(antwort?.id);
       zeilen.push({
         code,
@@ -545,10 +620,22 @@ export async function legeLagerorteAn(
         hinweis: (err as Error).message.slice(0, 300),
       });
       fehler += 1;
+      // Bremst PlentyONE trotz Wiederholungen weiter, hat es keinen Sinn, die
+      // restliche Liste in Fehler laufen zu lassen. Der Lauf hält an und wird
+      // nach einer Pause fortgesetzt.
+      if (istSchreiblimit(err)) {
+        schreiblimit = true;
+        abgebrochen = true;
+      }
     }
   }
 
-  if (abgebrochen) {
+  if (schreiblimit) {
+    diagnose.push(
+      `PlentyONE hat die Schreibbremse gezogen ("short period write limit"). ` +
+        `${angelegt} Lagerorte sind angelegt, ${offen} Zeilen bleiben offen — nach einer Pause geht es weiter.`,
+    );
+  } else if (abgebrochen) {
     diagnose.push(
       probelauf
         ? `Zeitbudget aufgebraucht — ${offen} Zeilen offen. Der nächste Aufruf macht dort weiter.`
@@ -572,6 +659,7 @@ export async function legeLagerorteAn(
     neueKnoten,
     offen,
     naechsterIndex: codes.length - offen,
+    schreiblimit,
     zeilen,
     diagnose,
     dauerMs: Date.now() - start,

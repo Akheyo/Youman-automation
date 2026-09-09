@@ -13,7 +13,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { nameMitStellen, stellenAus, zerlegeCode } from './lagerort-anlegen';
+import { istSchreiblimit, nameMitStellen, schreibweisen, stellenAus, zerlegeCode } from './lagerort-anlegen';
 
 const ANTWORT = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -115,6 +115,25 @@ describe('stellenAus / nameMitStellen', () => {
 
   it('lässt Namen mit Buchstaben unangetastet', () => {
     expect(nameMitStellen('8KTL', 2)).toBe('8KTL');
+  });
+});
+
+describe('schreibweisen', () => {
+  it('bietet Zahlen mit und ohne führende Null an', () => {
+    expect(schreibweisen('02')).toEqual(['02', '2', '002']);
+    expect(schreibweisen('2')).toEqual(['2', '02', '002']);
+  });
+
+  it('lässt Namen mit Buchstaben unangetastet', () => {
+    expect(schreibweisen('8KTL')).toEqual(['8KTL']);
+    expect(schreibweisen('A')).toEqual(['A']);
+  });
+});
+
+describe('istSchreiblimit', () => {
+  it('erkennt die Schreibbremse von PlentyONE', () => {
+    expect(istSchreiblimit(new Error('Plenty POST … → HTTP 429: short period write limit reached'))).toBe(true);
+    expect(istSchreiblimit(new Error('HTTP 400: ungueltig'))).toBe(false);
   });
 });
 
@@ -364,6 +383,95 @@ describe('legeLagerorteAn', () => {
     expect(res.error).toContain('Struktur');
     expect(geschrieben).toHaveLength(0);
   });
+
+  it('findet ein vorhandenes Feld auch in der anderen Schreibweise', async () => {
+    // Der Kern des Dublettenproblems: Plenty führt "F2" und "F02" nebeneinander.
+    // Wird nur nach "02" gesucht, entsteht ein zweites Feld daneben.
+    const { fetchMock, geschrieben } = attrappe({
+      knoten: [
+        { id: 100, parentId: 0, dimensionId: 11, name: '1', position: 1 },
+        { id: 200, parentId: 100, dimensionId: 12, name: '8', position: 1 },
+        { id: 300, parentId: 200, dimensionId: 13, name: 'A', position: 1 },
+        // Das vorhandene Feld heißt "2" — der gesuchte Code sagt "F02".
+        { id: 400, parentId: 300, dimensionId: 14, name: '2', position: 1 },
+      ],
+      orte: [{ id: 1, fullLabel: 'H1/R8/EA F2-K10', purposeKey: 'pickup', statusKey: 'active' }],
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const legeLagerorteAn = await lade();
+    const res = await legeLagerorteAn(['H1/R8/EA F02-K11'], { warehouseId: 106, probelauf: false });
+
+    expect(res.neueKnoten).toBe(0);
+    expect(geschrieben.filter((g) => g.url.includes('/locations/levels'))).toHaveLength(0);
+    expect(geschrieben[0].body).toMatchObject({ levelId: 400, label: 'K11' });
+  });
+
+  it('legt ein neues Feld in der Schreibweise seiner Geschwister an', async () => {
+    const { fetchMock, geschrieben } = attrappe({
+      knoten: [
+        { id: 100, parentId: 0, dimensionId: 11, name: '1', position: 1 },
+        { id: 200, parentId: 100, dimensionId: 12, name: '8', position: 1 },
+        { id: 300, parentId: 200, dimensionId: 13, name: 'A', position: 1 },
+        // Die Geschwister sind aufgefüllt — das neue Feld muss es auch sein.
+        { id: 400, parentId: 300, dimensionId: 14, name: '02', position: 1 },
+      ],
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const legeLagerorteAn = await lade();
+    await legeLagerorteAn(['H1/R8/EA F03-K01'], { warehouseId: 106, probelauf: false });
+
+    const knoten = geschrieben.find((g) => g.url.includes('/locations/levels'));
+    expect(knoten?.body).toMatchObject({ name: '03' });
+  });
+
+  it('wiederholt einen Schreibzugriff, den PlentyONE ausgebremst hat', async () => {
+    let versuche = 0;
+    const geschrieben: string[] = [];
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+      if (url.includes('/rest/login')) return ANTWORT({ access_token: 't', expires_in: 3600, user_id: 1 });
+      if (init?.method === 'POST') {
+        versuche += 1;
+        // Der erste Versuch läuft in die Schreibbremse, der zweite geht durch.
+        if (versuche === 1) return ANTWORT({ error: 'short period write limit reached' }, 429);
+        geschrieben.push(url);
+        return ANTWORT({ id: 5555 });
+      }
+      if (url.includes('/locations/dimensions')) {
+        return ANTWORT({
+          entries: [
+            { id: 11, level: 1, name: 'Halle', shortcut: 'H' },
+            { id: 12, level: 2, name: 'Regal', shortcut: 'R' },
+            { id: 13, level: 3, name: 'Ebene', shortcut: 'E' },
+            { id: 14, level: 4, name: 'Feld', shortcut: 'F' },
+          ],
+          isLastPage: true,
+        });
+      }
+      if (url.includes('/locations/levels')) {
+        return ANTWORT({
+          entries: [
+            { id: 100, parentId: 0, dimensionId: 11, name: '1', position: 1 },
+            { id: 200, parentId: 100, dimensionId: 12, name: '8', position: 1 },
+            { id: 300, parentId: 200, dimensionId: 13, name: 'A', position: 1 },
+            { id: 400, parentId: 300, dimensionId: 14, name: '15', position: 1 },
+          ],
+          isLastPage: true,
+        });
+      }
+      return ANTWORT({
+        entries: [{ id: 1, fullLabel: 'H1/R8/EA F15-K10', purposeKey: 'pickup', statusKey: 'active' }],
+        isLastPage: true,
+      });
+    });
+
+    const legeLagerorteAn = await lade();
+    const res = await legeLagerorteAn(['H1/R8/EA F15-K11'], { warehouseId: 106, probelauf: false });
+
+    expect(res.angelegt).toBe(1);
+    expect(res.fehler).toBe(0);
+    expect(res.schreiblimit).toBe(false);
+    expect(geschrieben).toHaveLength(1);
+  }, 15_000);
 
   it('legt denselben Code in einer Liste nur einmal an', async () => {
     const { fetchMock, geschrieben } = attrappe();
