@@ -131,7 +131,7 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
         const res = await fetch('/api/lagerplatz/anlegen', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ warehouseId, probelauf, tabelle, ab, maxAnlagen: 200 }),
+          body: JSON.stringify({ warehouseId, probelauf, tabelle, ab, maxAnlagen: 1000 }),
         });
         const d = (await alsJson(res)) as unknown as Antwort;
         if (!res.ok && !d.zeilen) throw new Error(d.error ?? `Fehlgeschlagen (HTTP ${res.status}).`);

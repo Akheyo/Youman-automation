@@ -168,10 +168,22 @@ export function nameMitStellen(name: string, breite: number): string {
 // Struktur lesen
 // ---------------------------------------------------------------------------
 
-/** Liest Dimensionen und Knoten eines Lagers. */
+/**
+ * Liest Dimensionen und Knoten eines Lagers.
+ *
+ * Die Knotenliste MUSS vollständig sein: Wird ein vorhandener Knoten
+ * übersehen, legt der Lauf ihn ein zweites Mal an. Deshalb wird geblättert,
+ * bis Plenty die letzte Seite meldet — und wenn das nicht gelingt, wird das
+ * als `vollstaendig: false` zurückgegeben statt stillschweigend geschluckt.
+ */
 export async function ladeStruktur(
   warehouseId: number,
-): Promise<{ dimensionen: Dimension[]; knoten: Knoten[] }> {
+  opts: { maxSeiten?: number; proSeite?: number; gleichzeitig?: number } = {},
+): Promise<{ dimensionen: Dimension[]; knoten: Knoten[]; vollstaendig: boolean }> {
+  const proSeite = Math.min(250, Math.max(1, Math.floor(opts.proSeite ?? 250)));
+  const maxSeiten = Math.max(1, Math.floor(opts.maxSeiten ?? 200));
+  const gleichzeitig = Math.min(10, Math.max(1, Math.floor(opts.gleichzeitig ?? 6)));
+
   const rohDim = await plentyGet<PlentyListe<Record<string, unknown>> | Array<Record<string, unknown>>>(
     `/rest/warehouses/${warehouseId}/locations/dimensions`,
   );
@@ -186,21 +198,61 @@ export async function ladeStruktur(
     }))
     .sort((a, b) => a.tiefe - b.tiefe);
 
-  const rohLvl = await plentyGet<PlentyListe<Record<string, unknown>> | Array<Record<string, unknown>>>(
-    `/rest/warehouses/${warehouseId}/locations/levels`,
-  );
-  const lvlEintraege = Array.isArray(rohLvl) ? rohLvl : (rohLvl?.entries ?? []);
-  const knoten: Knoten[] = lvlEintraege
-    .filter((l) => Number.isFinite(Number(l?.id)))
-    .map((l) => ({
-      id: Number(l.id),
-      parentId: Number(l.parentId ?? 0),
-      dimensionId: Number(l.dimensionId ?? 0),
-      name: String(l.name ?? '').trim(),
-      position: Number(l.position ?? 0),
-    }));
+  const knoten: Knoten[] = [];
+  const uebernimm = (roh: PlentyListe<Record<string, unknown>> | Array<Record<string, unknown>> | null) => {
+    const eintraege = Array.isArray(roh) ? roh : (roh?.entries ?? []);
+    for (const l of eintraege) {
+      if (!Number.isFinite(Number(l?.id))) continue;
+      knoten.push({
+        id: Number(l.id),
+        parentId: Number(l.parentId ?? 0),
+        dimensionId: Number(l.dimensionId ?? 0),
+        name: String(l.name ?? '').trim(),
+        position: Number(l.position ?? 0),
+      });
+    }
+    return eintraege.length;
+  };
 
-  return { dimensionen, knoten };
+  const seiteLesen = (seite: number) =>
+    plentyGet<PlentyListe<Record<string, unknown>> | Array<Record<string, unknown>>>(
+      `/rest/warehouses/${warehouseId}/locations/levels?itemsPerPage=${proSeite}&page=${seite}`,
+    );
+
+  /**
+   * Ist diese Seite die letzte? Eine reine Liste ist immer vollständig. Sagt
+   * Plenty es ausdrücklich, gilt die Angabe — auch ein „nein" bei kurzer
+   * Seite. Fehlt die Angabe, ist eine nicht volle Seite das Ende.
+   */
+  const fertig = (
+    roh: PlentyListe<Record<string, unknown>> | Array<Record<string, unknown>> | null,
+    anzahl: number,
+  ) => {
+    if (Array.isArray(roh)) return true;
+    if (typeof roh?.isLastPage === 'boolean') return roh.isLastPage;
+    return anzahl === 0 || anzahl < proSeite;
+  };
+
+  const erste = await seiteLesen(1);
+  const ersteAnzahl = uebernimm(erste);
+  if (fertig(erste, ersteAnzahl)) return { dimensionen, knoten, vollstaendig: true };
+
+  const letzte = Array.isArray(erste) ? 0 : Number(erste?.lastPageNumber ?? 0);
+  if (letzte > 1) {
+    const seiten: number[] = [];
+    for (let s = 2; s <= Math.min(letzte, maxSeiten); s++) seiten.push(s);
+    for (let i = 0; i < seiten.length; i += gleichzeitig) {
+      const gruppe = await Promise.all(seiten.slice(i, i + gleichzeitig).map(seiteLesen));
+      for (const res of gruppe) uebernimm(res);
+    }
+    return { dimensionen, knoten, vollstaendig: letzte <= maxSeiten };
+  }
+
+  for (let seite = 2; seite <= maxSeiten; seite++) {
+    const res = await seiteLesen(seite);
+    if (fertig(res, uebernimm(res))) return { dimensionen, knoten, vollstaendig: true };
+  }
+  return { dimensionen, knoten, vollstaendig: false };
 }
 
 /** Schlüssel für die Knotensuche: gleicher Elternknoten, gleiche Spalte, gleicher Name. */
@@ -261,14 +313,30 @@ export async function legeLagerorteAn(
     return leer(`Struktur des Lagers ${opts.warehouseId} nicht lesbar: ${(err as Error).message}`);
   }
 
+  const leseDauer = Date.now() - start;
   const { nachCode, doppelt } = verzeichnis(bestehende.orte);
   diagnose.push(
-    `${bestehende.orte.length} vorhandene Lagerorte gelesen, davon ${nachCode.size} eindeutig zuordenbar` +
+    `${bestehende.orte.length} vorhandene Lagerorte und ${struktur.knoten.length} Strukturknoten gelesen ` +
+      `(${(leseDauer / 1000).toFixed(1)} s), davon ${nachCode.size} eindeutig zuordenbar` +
       (doppelt ? `, ${doppelt} doppelte Namen` : ''),
   );
   if (bestehende.abgebrochen) {
     return leer(
       'Die Liste der vorhandenen Lagerorte war nicht vollständig lesbar. Ohne vollständige Liste wird nicht angelegt — sonst entstehen Dubletten.',
+    );
+  }
+  if (!struktur.vollstaendig) {
+    return leer(
+      'Die Struktur des Lagers (Hallen/Regale/Ebenen/Felder) war nicht vollständig lesbar. Ohne vollständige Liste wird nicht angelegt — sonst entstehen doppelte Felder.',
+    );
+  }
+  // Bleibt nach dem Lesen keine Zeit mehr, käme sonst ein Ergebnis mit lauter
+  // Nullen heraus, das wie ein leerer Lauf aussieht. Lieber deutlich sagen,
+  // woran es liegt.
+  if (budgetMs - leseDauer < 4_000) {
+    return leer(
+      `Das Lesen der vorhandenen Lagerorte hat allein ${(leseDauer / 1000).toFixed(1)} s gedauert — ` +
+        'für den Abgleich blieb keine Zeit. Bitte erneut versuchen; hält das an, muss das Lesen weiter beschleunigt werden.',
     );
   }
 
