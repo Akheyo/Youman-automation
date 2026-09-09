@@ -8,7 +8,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { ladeLager, ladeLagerorte, verzeichnis } from '@/lib/plenty/lagerorte';
-import { pruefeLagerort } from '@/lib/plenty/lagerort-anlegen';
+import { ladeStruktur, pruefeLagerort } from '@/lib/plenty/lagerort-anlegen';
+import { plentyGet } from '@/lib/plenty/client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,6 +31,32 @@ export async function GET(request: Request) {
   if (Number.isFinite(lagerortId) && lagerortId > 0) {
     const roh = await pruefeLagerort(lagerortId);
     return NextResponse.json({ ok: !roh.fehler, lagerortId, ...roh });
+  }
+
+  // Rohe Strukturangaben eines Lagers: die Spalten (Dimensionen) mit Kürzel
+  // und der Angabe, ob das Kürzel im Namen erscheint — und die obersten
+  // Knoten. Daran hängt, ob ein Lagerort "H1/R7/…" oder nur "1/7/…" heißt.
+  if (params.get('struktur') === '1' && Number.isFinite(warehouseId) && warehouseId > 0) {
+    try {
+      const dimensionen = await plentyGet<unknown>(`/rest/warehouses/${warehouseId}/locations/dimensions`);
+      const { knoten, vollstaendig } = await ladeStruktur(warehouseId);
+      const tiefen = new Map<number, number>();
+      for (const k of knoten) tiefen.set(k.dimensionId, (tiefen.get(k.dimensionId) ?? 0) + 1);
+      return NextResponse.json({
+        ok: true,
+        warehouseId,
+        dimensionen,
+        knotenGesamt: knoten.length,
+        vollstaendig,
+        knotenJeDimension: [...tiefen.entries()].map(([dimensionId, anzahl]) => ({ dimensionId, anzahl })),
+        obersteKnoten: knoten
+          .filter((k) => k.parentId === 0)
+          .slice(0, 40)
+          .map((k) => ({ id: k.id, name: k.name, dimensionId: k.dimensionId })),
+      });
+    } catch (err) {
+      return NextResponse.json({ ok: false, error: (err as Error).message }, { status: 502 });
+    }
   }
 
   try {
