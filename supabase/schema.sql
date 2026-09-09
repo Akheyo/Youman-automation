@@ -207,3 +207,24 @@ create index if not exists erfassung_bilder_artikel_idx
 insert into storage.buckets (id, name, public)
   values ('artikelfotos', 'artikelfotos', false)
   on conflict (id) do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Erkennung: was auf den Fotos zu sehen ist
+--
+-- Ergebnis der Bildauswertung, als JSON am Artikel. Bewusst als jsonb und
+-- nicht als 20 Spalten: Welche Merkmale ein Artikel hat, hängt davon ab, was
+-- er ist — ein Akkuschrauber trägt andere als ein Rollcontainer. Was fest
+-- zugeordnet werden muss (Preis, Plenty-ID), bekommt später eigene Spalten.
+-- ---------------------------------------------------------------------------
+alter table public.erfassung_artikel
+  add column if not exists erkennung        jsonb,     -- Merkmale, Zustand, Schäden
+  add column if not exists treffer          jsonb,     -- ähnliche Artikel aus PlentyONE
+  add column if not exists erkannt_am       timestamptz,
+  add column if not exists erkennung_fehler text;
+
+-- Die Rolle eines Fotos (Übersicht, Typenschild, Schaden, Detail) vergibt seit
+-- der Umstellung die Erkennung, nicht mehr der Mensch am Regal. Wer
+-- fotografiert, soll fotografieren und nicht sortieren.
+alter table public.erfassung_bilder
+  add column if not exists rolle_erkannt  text,
+  add column if not exists bildbeschreibung text;

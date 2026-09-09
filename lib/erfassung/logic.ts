@@ -10,11 +10,24 @@ export const ROLLEN = ['uebersicht', 'typenschild', 'schaden', 'detail'] as cons
 export type Rolle = (typeof ROLLEN)[number];
 
 /**
- * Pflichtaufnahmen. Ohne Übersicht kein Listing-Bild, ohne Typenschild keine
- * Modellnummer — und ohne Modellnummer keine Vergleichspreise. Alles andere
- * ist Kür.
+ * Rollen, wie die Bilderkennung sie vergibt — inklusive „unbrauchbar" für
+ * verwackelte oder überbelichtete Aufnahmen.
+ *
+ * Wer am Regal fotografiert, vergibt KEINE Rollen mehr. Das war ein Formular
+ * vor der Kamera: vier Kacheln abarbeiten, bevor man auslösen darf. Wofür ein
+ * Foto taugt, sieht man dem Foto an — das kann die Auswertung hinterher
+ * entscheiden, und sie tut es zuverlässiger als jemand mit vollen Händen.
  */
-export const PFLICHT_ROLLEN: Rolle[] = ['uebersicht', 'typenschild'];
+export const ERKANNTE_ROLLEN = [...ROLLEN, 'unbrauchbar'] as const;
+export type ErkannteRolle = (typeof ERKANNTE_ROLLEN)[number];
+
+export const ERKANNTE_ROLLE_TEXT: Record<ErkannteRolle, string> = {
+  uebersicht: 'Übersicht',
+  typenschild: 'Typenschild',
+  schaden: 'Schaden',
+  detail: 'Detail',
+  unbrauchbar: 'unbrauchbar',
+};
 
 export const ROLLE_TEXT: Record<Rolle, string> = {
   uebersicht: 'Übersicht',
@@ -119,27 +132,30 @@ export function naechstePosition(bilder: Array<{ position: number }>): number {
 }
 
 /**
- * Welche Pflichtaufnahmen fehlen noch?
+ * Wie viele Fotos sind bestätigt oben?
  *
- * Es zählen nur bestätigt hochgeladene Bilder. Ein Foto, das im Funkloch in der
- * Warteschlange hängt, ist noch keins — sonst gäbe der Artikel als vollständig
- * durch und das Typenschild fehlte hinterher.
+ * Es zählen nur bestätigt hochgeladene Bilder. Ein Foto, das im Funkloch in
+ * der Warteschlange hängt, ist noch keins — sonst ginge der Artikel als
+ * vollständig durch und käme mit halbem Bildsatz in die Auswertung.
  */
-export function fehlendePflichtbilder(
-  bilder: Array<{ rolle: string; hochgeladen: boolean }>,
-): Rolle[] {
-  const da = new Set(bilder.filter((b) => b.hochgeladen).map((b) => b.rolle));
-  return PFLICHT_ROLLEN.filter((r) => !da.has(r));
+export function anzahlOben(bilder: Array<{ hochgeladen: boolean }>): number {
+  return bilder.filter((b) => b.hochgeladen).length;
 }
 
-/** Darf der Artikel abgeschickt werden? */
-export function artikelBereit(bilder: Array<{ rolle: string; hochgeladen: boolean }>): boolean {
-  return fehlendePflichtbilder(bilder).length === 0;
+/**
+ * Darf der Artikel abgeschickt werden?
+ *
+ * Eine einzige Bedingung: mindestens ein Foto ist oben. Es gibt bewusst keine
+ * Pflicht-Perspektiven mehr — was auf den Fotos fehlt, sagt die Auswertung
+ * hinterher (z. B. „kein lesbares Typenschild"), statt es vorher zu verlangen.
+ * Ein fehlendes Typenschild ist ein Hinweis, kein Grund, jemanden am Regal
+ * stehen zu lassen.
+ */
+export function artikelBereit(bilder: Array<{ hochgeladen: boolean }>): boolean {
+  return anzahlOben(bilder) > 0;
 }
 
 /** Menschenlesbare Begründung, warum "fertig" (noch) nicht geht. */
-export function bereitHinweis(bilder: Array<{ rolle: string; hochgeladen: boolean }>): string | null {
-  const fehlt = fehlendePflichtbilder(bilder);
-  if (fehlt.length === 0) return null;
-  return `Es fehlt noch: ${fehlt.map((r) => ROLLE_TEXT[r]).join(' und ')}.`;
+export function bereitHinweis(bilder: Array<{ hochgeladen: boolean }>): string | null {
+  return artikelBereit(bilder) ? null : 'Mindestens ein Foto machen.';
 }

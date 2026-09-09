@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  anzahlOben,
   artikelBereit,
   bereitHinweis,
   bildPfad,
   dateiEndung,
-  fehlendePflichtbilder,
   istRolle,
   istStatus,
   naechstePosition,
@@ -72,31 +72,24 @@ describe('naechstePosition', () => {
   });
 });
 
-describe('fehlendePflichtbilder', () => {
-  it('verlangt Uebersicht und Typenschild', () => {
-    expect(fehlendePflichtbilder([])).toEqual(['uebersicht', 'typenschild']);
+describe('artikelBereit', () => {
+  it('verlangt mindestens ein Foto', () => {
+    expect(artikelBereit([])).toBe(false);
+    expect(bereitHinweis([])).toBe('Mindestens ein Foto machen.');
   });
 
   it('zaehlt nur bestaetigt hochgeladene Bilder', () => {
-    const bilder = [
-      { rolle: 'uebersicht', hochgeladen: true },
-      { rolle: 'typenschild', hochgeladen: false }, // haengt in der Warteschlange
-    ];
-    expect(fehlendePflichtbilder(bilder)).toEqual(['typenschild']);
-    expect(artikelBereit(bilder)).toBe(false);
+    // Ein Foto, das noch in der Warteschlange haengt, ist noch keins — sonst
+    // ginge der Artikel mit halbem Bildsatz in die Auswertung.
+    expect(artikelBereit([{ hochgeladen: false }])).toBe(false);
+    expect(anzahlOben([{ hochgeladen: true }, { hochgeladen: false }])).toBe(1);
   });
 
-  it('ist zufrieden, sobald beide Pflichtbilder oben sind', () => {
-    const bilder = [
-      { rolle: 'uebersicht', hochgeladen: true },
-      { rolle: 'typenschild', hochgeladen: true },
-    ];
-    expect(artikelBereit(bilder)).toBe(true);
-    expect(bereitHinweis(bilder)).toBeNull();
-  });
-
-  it('sagt im Klartext, was fehlt', () => {
-    expect(bereitHinweis([{ rolle: 'uebersicht', hochgeladen: true }])).toBe('Es fehlt noch: Typenschild.');
+  it('ist mit einem einzigen Foto zufrieden', () => {
+    // Bewusst keine Pflicht-Perspektiven: Was fehlt, sagt die Auswertung
+    // hinterher, statt jemanden am Regal eine Kachelliste abarbeiten zu lassen.
+    expect(artikelBereit([{ hochgeladen: true }])).toBe(true);
+    expect(bereitHinweis([{ hochgeladen: true }])).toBeNull();
   });
 });
 

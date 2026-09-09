@@ -57,63 +57,34 @@
 .leisteFehler { background: var(--red-soft); color: var(--red); }
 .leisteWarnung { background: var(--amber-soft); color: var(--amber); }
 
-/* -------------------------------------------------------------- Kacheln */
+/* ------------------------------------------------------- Aufnahme-Knopf */
 
-.kacheln {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-3);
-  margin-top: var(--space-4);
-}
-
-@media (min-width: 560px) {
-  .kacheln { grid-template-columns: 1fr 1fr; }
-}
-
-.kachel {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--bg);
-  overflow: hidden;
-}
-
-/* Fehlende Pflichtaufnahme: sichtbar offen, aber nicht als Fehler —
-   es ist ja noch nichts schiefgegangen. */
-.kachelOffen { border-color: var(--blue); box-shadow: inset 3px 0 0 var(--blue); }
-
-.kachelKnopf {
+/* Ein Knopf, nicht vier Kacheln. Wer am Regal steht, hat eine Hand frei. */
+.aufnehmen {
   display: block;
   width: 100%;
-  text-align: left;
-  background: none;
+  margin-top: var(--space-4);
   border: 0;
-  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--blue);
+  color: #fff;
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
 }
-.kachelKnopf:disabled { opacity: 0.5; cursor: not-allowed; }
+.aufnehmen:hover:not(:disabled) { background: var(--blue-h); }
+.aufnehmen:disabled { background: var(--border-strong); cursor: not-allowed; }
 
-.kachelTitel {
+.aufnehmenGross {
   display: block;
+  font-size: 20px;
   font-weight: 600;
-  color: var(--navy);
-  font-size: 16px;
 }
-
-.pflicht { color: var(--blue); }
-
-.kachelHinweis {
+.aufnehmenKlein {
   display: block;
-  margin-top: 2px;
-  color: var(--muted);
+  margin-top: 6px;
   font-size: 13px;
   line-height: 1.4;
-}
-
-.kachelAktion {
-  display: inline-block;
-  margin-top: var(--space-3);
-  color: var(--blue);
-  font-weight: 600;
-  font-size: 14px;
+  opacity: 0.85;
 }
 
 /* ------------------------------------------------------------- Miniaturen */
@@ -123,7 +94,7 @@
   gap: var(--space-2);
   list-style: none;
   margin: 0;
-  padding: 0 var(--space-4) var(--space-4);
+  padding: var(--space-3) 0 0;
   overflow-x: auto;
 }
 
@@ -180,6 +151,19 @@
   color: #fff;
   font-size: 11px;
   padding: 2px 0;
+}
+
+/* Was die Auswertung im Bild erkannt hat — erscheint erst danach. */
+.rolleMarke {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  background: rgba(15, 23, 42, 0.65);
+  color: #fff;
+  font-size: 10px;
+  text-align: center;
+  padding: 1px 2px;
 }
 
 /* ---------------------------------------------------------------- Rest */
@@ -270,13 +254,48 @@
 .verlauf { margin-top: var(--space-6); }
 .verlauf h2 { font-size: 15px; margin: 0 0 var(--space-3); }
 .verlauf ul { list-style: none; margin: 0; padding: 0; }
-.verlauf li {
+.verlaufZeile {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.verlaufKopf {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-3);
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
+}
+
+/* Der Befund steht eingerückt unter der Kopfzeile — ein Blick sagt, ob die
+   Auswertung etwas Brauchbares gefunden hat. */
+.erkennung {
+  margin-top: 6px;
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--blue-soft);
+}
+
+.erkennungTitel {
+  margin: 0;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.erkennungZeile {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.schaeden {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--amber);
+}
+
+.warnZeile {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--amber);
 }
 
 .verlaufNummer {
@@ -296,6 +315,19 @@
 .markeFehler { background: var(--red-soft); color: var(--red); }
 
 .verlaufMeta { color: var(--muted); font-size: 13px; }
-.verlaufFehler { flex: 1 0 100%; color: var(--red); font-size: 13px; }
+.verlaufFehler { margin: 4px 0 0; color: var(--red); font-size: 13px; }
 
 .leer { color: var(--muted); font-size: 14px; }
+
+/* Nachziehen, wenn die Auswertung schiefgegangen ist. Ohne diesen Knopf bliebe
+   ein solcher Artikel stumm liegen. */
+.erneut {
+  margin-top: 8px;
+  background: none;
+  border: 1px solid var(--border-strong);
+  color: var(--blue);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  font-size: 13px;
+}
+.erneut:hover { border-color: var(--blue); }
