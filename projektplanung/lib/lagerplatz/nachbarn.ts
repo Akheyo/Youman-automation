@@ -78,6 +78,14 @@ export interface Beleg {
   variationId?: number | null;
   /** Abstand zum gesuchten Artikel (IDs bzw. Minuten) — kleiner ist besser. */
   abstand?: number | null;
+  /**
+   * Wann das passiert ist, als ISO-Zeitstempel — bei Buchungen die Buchungs-,
+   * sonst die Anlagezeit. Beim Einlagern ist die Uhrzeit das eigentliche
+   * Argument: Was in derselben Minute gebucht wurde, kam mit derselben
+   * Palette. „5 min versetzt" allein sagt nicht, ob das um 9 Uhr früh oder
+   * mitten in der Spätschicht war.
+   */
+  zeit?: string | null;
 }
 
 /** Ein möglicher Lagerplatz mit allem, was dafür und dagegen spricht. */
@@ -281,6 +289,8 @@ export interface Hinweis {
   variationId?: number | null;
   /** Abstand in IDs bzw. Minuten. Dämpft das Gewicht des Signals. */
   abstand?: number | null;
+  /** ISO-Zeitstempel des Vorgangs, siehe `Beleg.zeit`. */
+  zeit?: string | null;
 }
 
 /**
@@ -315,7 +325,13 @@ export function bewerte(
   for (const h of hinweise) {
     if (!h?.code) continue;
     const liste = gruppen.get(h.code) ?? [];
-    liste.push({ signal: h.signal, text: h.text, variationId: h.variationId ?? null, abstand: h.abstand ?? null });
+    liste.push({
+      signal: h.signal,
+      text: h.text,
+      variationId: h.variationId ?? null,
+      abstand: h.abstand ?? null,
+      zeit: h.zeit ?? null,
+    });
     gruppen.set(h.code, liste);
   }
 

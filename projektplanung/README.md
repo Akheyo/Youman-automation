@@ -382,6 +382,21 @@ halten sie trotzdem kurz:
 Alle vier sind durch Tests abgesichert (`lib/plenty/suche.test.ts`) — sonst
 verschwänden sie beim nächsten Umbau unbemerkt.
 
+### Zeitleiste der Einlagerung
+
+Alle Buchungen im Zeitfenster, chronologisch mit **Uhrzeit**, Ziel-Lagerort und
+Minutenabstand zum gesuchten Artikel — der selbst hervorgehoben ist.
+
+Beim Einlagern ist die Uhrzeit das eigentliche Argument: Was in derselben
+Minute gebucht wurde, kam mit derselben Palette. „Etwa zeitgleich" allein sagt
+nicht, ob das um 9 Uhr früh war oder mitten in der Spätschicht. Eine Pause von
+mehr als 15 Minuten wird als gestrichelte Linie gezeigt — dahinter beginnt
+vermutlich eine andere Lieferung.
+
+Das Vorzeichen des Versatzes bleibt erhalten („12 min vorher" ≠ „12 min
+später"), weil es beim Rekonstruieren zählt, wer was zuerst abgestellt hat.
+Dargestellt wird in der Zeitzone des Betrachters; weitergereicht wird ISO.
+
 ### Laufzettel
 
 Dieselben Plätze ein zweites Mal, aber nach Laufweg sortiert (Halle → Regal →

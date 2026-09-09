@@ -22,6 +22,18 @@ interface Beleg {
   text: string;
   variationId: number | null;
   abstand: number | null;
+  zeit: string | null;
+}
+interface Zeitpunkt {
+  zeit: string;
+  variationId: number | null;
+  nummer: string | null;
+  name: string | null;
+  bildUrl: string | null;
+  ortName: string | null;
+  ortCode: string | null;
+  versatzMin: number | null;
+  istGesucht: boolean;
 }
 interface Kandidat {
   code: string;
@@ -61,6 +73,7 @@ interface Ergebnis {
   laufzettel: Kandidat[];
   nachbarn: Artikelkarte[];
   einlagerung: Artikelkarte[];
+  zeitleiste: Zeitpunkt[];
   dubletten: Artikelkarte[];
   aufDemSollplatz: Artikelkarte[];
   diagnose: string[];
@@ -93,6 +106,36 @@ const LAGE_STIL: Record<Ergebnis['lage'], string> = {
   'ohne-bestand': eigen.lageOhne,
   unbekannt: eigen.lageUnbekannt,
 };
+
+/** Uhrzeit auf die Minute, in der Zeitzone des Betrachters. */
+function uhrzeit(iso: string): string {
+  return new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+}
+
+/** Datum kurz, z. B. „Mo, 02.03.". */
+function datum(iso: string): string {
+  return new Date(iso).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' });
+}
+
+/** Vollständig, für Titel-Hinweise und die Belege. */
+function datumZeit(iso: string): string {
+  return new Date(iso).toLocaleString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+/** „12 min vorher" / „5 min später" — das Vorzeichen trägt die Aussage. */
+function versatzText(min: number | null): string {
+  if (min === null) return '';
+  if (min === 0) return 'gleiche Minute';
+  const betrag = Math.abs(min);
+  const wert = betrag >= 90 ? `${(betrag / 60).toFixed(1).replace('.', ',')} h` : `${betrag} min`;
+  return min < 0 ? `${wert} vorher` : `${wert} später`;
+}
 
 /** Liest eine Antwort als JSON — bei einem Timeout schickt Vercel HTML. */
 async function alsJson(res: Response): Promise<Record<string, unknown>> {
@@ -349,6 +392,7 @@ export default function Suche({ plentyReady }: { plentyReady: boolean }) {
                               </span>
                               <span className={eigen.belegText}>
                                 {b.text}
+                                {b.zeit && <span className={styles.cellHint}> · {datumZeit(b.zeit)}</span>}
                                 {karte?.klasse && karte.klasse !== 'unbekannt' && (
                                   <span className={styles.cellHint}> · {KLASSE_TEXT[karte.klasse]}</span>
                                 )}
@@ -391,6 +435,53 @@ export default function Suche({ plentyReady }: { plentyReady: boolean }) {
                     <span className={styles.cellHint}>{Math.round(k.punkte)} Pkt</span>
                   </li>
                 ))}
+              </ol>
+            </section>
+          )}
+
+          {ergebnis.zeitleiste.length > 1 && (
+            <section className={styles.card}>
+              <div className={styles.cardHead}>
+                <h2 className={styles.cardTitle}>Zeitleiste der Einlagerung</h2>
+                <span className={styles.cellHint}>{ergebnis.zeitleiste.length} Buchungen</span>
+              </div>
+              <p className={styles.hint} style={{ marginTop: 0, marginBottom: '1rem' }}>
+                Was in derselben Minute gebucht wurde, kam mit derselben Palette. Die gestrichelte
+                Linie markiert eine Pause von mehr als 15 Minuten — danach war es vermutlich eine
+                andere Lieferung. Der gesuchte Artikel ist hervorgehoben.
+              </p>
+              <ol className={eigen.zeitleiste}>
+                {ergebnis.zeitleiste.map((z, i) => {
+                  const vorher = i > 0 ? ergebnis.zeitleiste[i - 1] : null;
+                  const luecke =
+                    vorher !== null &&
+                    new Date(z.zeit).getTime() - new Date(vorher.zeit).getTime() > 15 * 60_000;
+                  return (
+                    <li
+                      key={`${z.zeit}-${z.variationId ?? i}`}
+                      className={`${eigen.zeitZeile} ${z.istGesucht ? eigen.zeitGesucht : ''} ${
+                        luecke ? eigen.zeitLuecke : ''
+                      }`}
+                    >
+                      <span className={eigen.zeitUhr} title={datumZeit(z.zeit)}>
+                        {uhrzeit(z.zeit)}
+                        <span className={eigen.zeitDatum}>{datum(z.zeit)}</span>
+                      </span>
+                      {z.bildUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className={eigen.belegBild} src={z.bildUrl} alt={z.name ?? ''} loading="lazy" />
+                      ) : (
+                        <span className={eigen.belegBildLeer} aria-hidden="true" />
+                      )}
+                      <span>
+                        {z.istGesucht ? '▸ gesuchter Artikel' : (z.nummer ?? z.variationId ?? '—')}
+                        {z.name && !z.istGesucht && <span className={styles.cellHint}> · {z.name}</span>}
+                        {z.ortName && <span className={eigen.zeitOrt}> → {z.ortName}</span>}
+                      </span>
+                      <span className={eigen.zeitVersatz}>{versatzText(z.versatzMin)}</span>
+                    </li>
+                  );
+                })}
               </ol>
             </section>
           )}
