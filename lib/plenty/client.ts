@@ -934,6 +934,28 @@ export async function plentyPost<T>(
 }
 
 /**
+ * Führt einen PUT gegen die Plenty-REST-API aus (gleicher Token-Cache wie
+ * `plentyGet`). Wie beim POST gehen die Felder als Query-Parameter UND im
+ * Body raus — die PlentyONE-Doku ist da nicht einheitlich.
+ */
+export async function plentyPut<T>(
+  path: string,
+  params: Record<string, string | number>,
+  cfg?: PlentyConfig,
+): Promise<T> {
+  const zugang = cfg ?? (await aktuelleConfig());
+  const token = await login(zugang);
+  const qs = new URLSearchParams(
+    Object.entries(params).map(([k, v]) => [k, String(v)]),
+  ).toString();
+  const trenner = path.includes('?') ? '&' : '?';
+  return api<T>(zugang, token, `${path}${trenner}${qs}`, {
+    method: 'PUT',
+    body: JSON.stringify(params),
+  });
+}
+
+/**
  * Führt einen DELETE gegen die Plenty-REST-API aus. Löschen ist endgültig —
  * der Aufrufer muss also selbst dafür sorgen, dass vorher klar ist, was weg
  * soll (Probelauf, ausdrückliche Freigabe).
