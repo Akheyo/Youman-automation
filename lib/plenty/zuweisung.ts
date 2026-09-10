@@ -254,6 +254,10 @@ export async function weiseZu(wuensche: Wunsch[], opts: ZuweisungOptionen): Prom
 
     geplant++;
     if (probelauf) {
+      // Auch eine geplante Zeile ist fuer diesen Aufruf abgearbeitet. Fehlte
+      // das, schickte die Oberflaeche sie in der naechsten Runde noch einmal
+      // und zaehlte sie doppelt: aus 8.818 Zeilen wurden 17.609 geprueft.
+      erledigt.push(w.variationId);
       zeilen.push({
         ...basis,
         menge,
