@@ -256,3 +256,105 @@ describe('Probelauf zaehlt jede Zeile genau einmal', () => {
     expect(res.offen).toBe(0);
   });
 });
+
+describe('Menge kommt vom Quell-Lagerort, nicht aus der Liste', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    process.env.PLENTY_BASE_URL = 'https://test.plentymarkets-cloud01.com';
+    process.env.PLENTY_USER = 'api';
+    process.env.PLENTY_PASSWORD = 'geheim';
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.PLENTY_BASE_URL;
+    delete process.env.PLENTY_USER;
+    delete process.env.PLENTY_PASSWORD;
+  });
+
+  /** Attrappe mit frei wählbarem Bestand auf dem Standard-Lagerort. */
+  function attrappe(bestandAufNull: number) {
+    const gebucht: Array<Record<string, unknown>> = [];
+    const antwort = (b: unknown, status = 200) =>
+      new Response(JSON.stringify(b), { status, headers: { 'content-type': 'application/json' } });
+    const fetchMock = async (url: string, init?: RequestInit) => {
+      if (url.includes('/rest/login')) return antwort({ access_token: 't', expires_in: 3600, user_id: 1 });
+      if (url.includes('/redistribute')) {
+        gebucht.push(init?.body ? JSON.parse(String(init.body)) : {});
+        return antwort({ ok: true });
+      }
+      if (url.includes('/rest/items/variations')) {
+        return antwort({ entries: [{ id: 6006, itemId: 900 }] });
+      }
+      if (url.includes('/stock/storagelocation') || url.includes('/stock')) {
+        return antwort({ entries: [{ variationId: 6006, storageLocationId: 0, quantity: bestandAufNull }] });
+      }
+      if (url.includes('/locations')) {
+        return antwort({
+          entries: [{ id: 900, fullLabel: 'H1/R7/EA F16-K26', levelId: 5, statusKey: 'active', purposeKey: 'picking' }],
+          isLastPage: true,
+        });
+      }
+      return antwort({ entries: [], isLastPage: true });
+    };
+    return { fetchMock, gebucht };
+  }
+
+  it('bucht höchstens, was auf dem Quell-Lagerort liegt', async () => {
+    // Liste sagt 13, auf dem Standardplatz liegen 4 — gebucht werden 4.
+    const { fetchMock, gebucht } = attrappe(4);
+    vi.stubGlobal('fetch', fetchMock);
+    const { weiseZu } = await import('./zuweisung');
+    const res = await weiseZu(
+      [{ variationId: 6006, ziel: 'H1/R7/EA F16-K26', menge: 13 }],
+      { warehouseId: 106, probelauf: false },
+    );
+
+    expect(res.gebucht).toBe(1);
+    expect(gebucht[0].quantity).toBe(4);
+  });
+
+  it('überspringt, statt mit "Quantity too small" zu scheitern', async () => {
+    // Genau der Fall aus dem Lauf: Liste sagt 1, auf dem Standardplatz liegt 0.
+    const { fetchMock, gebucht } = attrappe(0);
+    vi.stubGlobal('fetch', fetchMock);
+    const { weiseZu } = await import('./zuweisung');
+    const res = await weiseZu(
+      [{ variationId: 6006, ziel: 'H1/R7/EA F16-K26', menge: 1 }],
+      { warehouseId: 106, probelauf: false },
+    );
+
+    expect(gebucht).toHaveLength(0);
+    expect(res.fehler).toBe(0);
+    expect(res.uebersprungen).toBe(1);
+    expect(res.zeilen[0].hinweis).toMatch(/liegt nichts/);
+  });
+
+  it('behandelt ein Artikelpaket als übersprungen, nicht als Fehler', async () => {
+    const antwort = (b: unknown, status = 200) =>
+      new Response(JSON.stringify(b), { status, headers: { 'content-type': 'application/json' } });
+    vi.stubGlobal('fetch', async (url: string) => {
+      if (url.includes('/rest/login')) return antwort({ access_token: 't', expires_in: 3600, user_id: 1 });
+      if (url.includes('/redistribute')) {
+        return antwort({ error: { message: 'Variation is bundle and has no stock quantity.', code: 6 } }, 500);
+      }
+      if (url.includes('/rest/items/variations')) return antwort({ entries: [{ id: 32283, itemId: 900 }] });
+      if (url.includes('/stock')) return antwort({ entries: [{ variationId: 32283, storageLocationId: 0, quantity: 482 }] });
+      if (url.includes('/locations')) {
+        return antwort({
+          entries: [{ id: 900, fullLabel: 'H6/R2/EC F22-0', levelId: 5, statusKey: 'active', purposeKey: 'picking' }],
+          isLastPage: true,
+        });
+      }
+      return antwort({ entries: [], isLastPage: true });
+    });
+    const { weiseZu } = await import('./zuweisung');
+    const res = await weiseZu(
+      [{ variationId: 32283, ziel: 'H6/R2/EC F22-0', menge: 482 }],
+      { warehouseId: 106, probelauf: false },
+    );
+
+    expect(res.fehler).toBe(0);
+    expect(res.uebersprungen).toBe(1);
+    expect(res.zeilen[0].hinweis).toMatch(/Artikelpaket/);
+  });
+});
