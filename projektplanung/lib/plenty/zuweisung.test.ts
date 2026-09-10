@@ -203,3 +203,56 @@ describe('weiseZu', () => {
     expect(res.error).toMatch(/nicht eingerichtet/);
   });
 });
+
+describe('Probelauf zaehlt jede Zeile genau einmal', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    process.env.PLENTY_BASE_URL = 'https://test.plentymarkets-cloud01.com';
+    process.env.PLENTY_USER = 'api';
+    process.env.PLENTY_PASSWORD = 'geheim';
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.PLENTY_BASE_URL;
+    delete process.env.PLENTY_USER;
+    delete process.env.PLENTY_PASSWORD;
+  });
+
+  it('meldet geplante Zeilen als erledigt — sonst schickt die Oberflaeche sie erneut', async () => {
+    // Der Fehler, der repariert wird: "geplant" landete nicht in `erledigt`.
+    // Die Oberflaeche strich die Zeile also nicht aus der offenen Liste und
+    // schickte sie in der naechsten Runde noch einmal — aus 8.818 Zeilen
+    // wurden 17.609 geprueft.
+    vi.stubGlobal('fetch', async (url: string) => {
+      const antwort = (body: unknown) =>
+        new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+      if (url.includes('/rest/login')) return antwort({ access_token: 't', expires_in: 3600, user_id: 1 });
+      if (url.includes('/locations')) {
+        return antwort({
+          entries: [
+            { id: 900, fullLabel: 'H1/R7/EA F16-K26', levelId: 5, statusKey: 'active', purposeKey: 'picking' },
+            { id: 901, fullLabel: 'H2/R1/EB F21-0', levelId: 6, statusKey: 'active', purposeKey: 'picking' },
+          ],
+          isLastPage: true,
+        });
+      }
+      return antwort({ entries: [], isLastPage: true });
+    });
+
+    const { weiseZu } = await import('./zuweisung');
+    const res = await weiseZu(
+      [
+        { variationId: 6006, ziel: 'H1/R7/EA F16-K26', menge: 1 },
+        { variationId: 32467, ziel: 'H2/R1/EB F21-0', menge: 1 },
+        { variationId: 999, ziel: 'H9/R9/EZ F99-K99', menge: 1 },
+      ],
+      { warehouseId: 106, probelauf: true },
+    );
+
+    expect(res.geplant).toBe(2);
+    expect(res.uebersprungen).toBe(1);
+    // Jede der drei Zeilen ist abgearbeitet — keine kommt in Runde zwei wieder.
+    expect(res.erledigt.sort()).toEqual([999, 6006, 32467].sort());
+    expect(res.offen).toBe(0);
+  });
+});
