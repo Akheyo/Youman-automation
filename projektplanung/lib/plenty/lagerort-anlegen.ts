@@ -207,7 +207,7 @@ export function istSchreiblimit(fehler: unknown): boolean {
  * „short period write limit reached" bremst. Das Limit ist keine Störung,
  * sondern der Normalfall bei tausend Anlagen hintereinander.
  */
-async function schreibeMitGeduld<T>(fn: () => Promise<T>, versuche = 3): Promise<T> {
+export async function schreibeMitGeduld<T>(fn: () => Promise<T>, versuche = 3): Promise<T> {
   for (let versuch = 1; ; versuch++) {
     try {
       return await fn();
