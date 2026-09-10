@@ -240,15 +240,29 @@ export async function weiseZu(wuensche: Wunsch[], opts: ZuweisungOptionen): Prom
     }
 
     let menge = w.menge ?? null;
-    // Nur nachschlagen, wenn wirklich gebucht wird — ein Aufruf je Artikel.
-    if ((menge === null || menge <= 0) && !probelauf && gebucht < maxBuchungen) {
-      menge = await bestandAmQuellort(opts.warehouseId, w.variationId, vonLagerortId);
+    // Vor dem Buchen zaehlt einzig, was auf dem Quell-Lagerort wirklich liegt.
+    //
+    // Die Menge aus der Liste ist der Gesamtbestand der Variante. Auf dem
+    // Standard-Lagerort liegt davon oft weniger — bei manchen Artikeln 0 oder
+    // sogar minus, weil der Bestand schon auf echten Plaetzen sitzt. Wurde die
+    // Listenmenge ungeprueft weitergereicht, antwortete PlentyONE mit
+    // "Quantity too small for redistribution" und die Zeile war verbrannt.
+    // Ein Lauf mit 320 Zeilen endete so mit 0 gebucht und 304 Fehlern.
+    if (!probelauf && gebucht < maxBuchungen) {
+      const amQuellort = await bestandAmQuellort(opts.warehouseId, w.variationId, vonLagerortId);
+      // Nie mehr buchen als dort liegt; ohne Vorgabe gilt der volle Bestand.
+      menge = menge === null || menge <= 0 ? amQuellort : Math.min(menge, amQuellort ?? 0);
     }
     // Im Probelauf wird die Menge nicht nachgeschlagen (ein Aufruf je Artikel).
     // Eine unbekannte Menge ist dort kein Grund zum Überspringen — sie wird
     // beim Buchen ermittelt.
     if ((menge === null || menge <= 0) && !probelauf) {
-      zeilen.push({ ...basis, menge, status: 'uebersprungen', hinweis: 'Auf dem Quell-Lagerort liegt nichts' });
+      zeilen.push({
+        ...basis,
+        menge,
+        status: 'uebersprungen',
+        hinweis: 'Auf dem Quell-Lagerort liegt nichts — entweder schon umgebucht oder der Bestand sitzt woanders',
+      });
       uebersprungen++; erledigt.push(w.variationId); continue;
     }
 
@@ -291,6 +305,16 @@ export async function weiseZu(wuensche: Wunsch[], opts: ZuweisungOptionen): Prom
       // noch einmal dran, nach der Pause.
       schreiblimit = true;
       offen++;
+    } else if (/is bundle/i.test(res.meldung)) {
+      // Ein Bundle hat keinen eigenen Bestand — der steckt in seinen
+      // Bestandteilen. Das ist nichts, was ein zweiter Versuch heilt.
+      zeilen.push({
+        ...basis,
+        menge,
+        status: 'uebersprungen',
+        hinweis: 'Artikelpaket (Bundle) — hat keinen eigenen Bestand und kann nicht umgebucht werden',
+      });
+      uebersprungen++; erledigt.push(w.variationId);
     } else {
       zeilen.push({ ...basis, menge, status: 'fehler', hinweis: res.meldung });
       fehler++; erledigt.push(w.variationId);
