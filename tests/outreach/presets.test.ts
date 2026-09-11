@@ -13,8 +13,8 @@ const vollstaendig = {
 };
 
 describe('Vorlagen', () => {
-  it('bieten drei Sequenzen mit je vier Schritten in der Reihenfolge 0/3/7/14', () => {
-    expect(VORLAGEN.map((v) => v.id)).toEqual(['stunden', 'beobachtung', 'besuch']);
+  it('bieten vier Sequenzen mit je vier Schritten in der Reihenfolge 0/3/7/14', () => {
+    expect(VORLAGEN.map((v) => v.id)).toEqual(['onlinehandel', 'stunden', 'beobachtung', 'besuch']);
     for (const v of VORLAGEN) {
       expect(v.steps.map((s) => s.step_no)).toEqual([1, 2, 3, 4]);
       expect(v.steps.map((s) => s.delay_days)).toEqual([0, 3, 7, 14]);
@@ -82,6 +82,7 @@ describe('Vorlagen', () => {
   });
 
   it('findet eine Vorlage ueber ihre Kennung', () => {
+    expect(vorlage('onlinehandel')?.name).toBe('Aus eigener Erfahrung');
     expect(vorlage('stunden')?.name).toBe('Zwei Stunden am Tag');
     expect(vorlage('gibt-es-nicht')).toBeUndefined();
   });

@@ -62,6 +62,41 @@ Ich nehme im Monat nur eine Handvoll dieser Analysen an, weil ich sie selbst mac
 
 export const VORLAGEN: Vorlage[] = [
   {
+    id: 'onlinehandel',
+    name: 'Aus eigener Erfahrung',
+    beschreibung: 'Die eigene Geschichte als Beleg: kein Beraterversprechen, sondern ein Problem, das der Absender selbst hatte.',
+    steps: [
+      {
+        step_no: 1,
+        delay_days: 0,
+        subject: 'ich hatte einen onlinehandel',
+        body: `${ANREDE}
+
+ich habe nicht Beratung studiert. Ich hatte einen Onlinehandel, und der hat mich jeden Tag Stunden gekostet. Bestände abgleichen, Daten von einem System ins andere schieben. Irgendwann habe ich mir das automatisiert.
+
+Heute mache ich das für mittelständische Betriebe. Dieselbe Sache, nur größer: Was ein Mensch täglich zwischen zwei Systemen trägt, läuft danach von selbst. Ohne Urlaub, ohne Krankmeldung, ohne Einarbeitung.
+
+Wollen Sie wissen, was das bei {{firma}} wäre? Drei Sätze von Ihnen reichen mir, dann rechne ich es aus.`,
+      },
+      {
+        step_no: 2,
+        delay_days: 3,
+        subject: '',
+        body: `${ANREDE}
+
+ein Nachtrag zu meiner Mail von neulich.
+
+Ich erkenne diese Stellen inzwischen schnell, weil ich selbst zu lange an einer gesessen habe. Es sind fast immer dieselben: zwei Systeme, die dasselbe wissen müssten, und dazwischen ein Mensch, der sie von Hand auf Stand hält.
+
+Zwei Stunden am Tag sind im Jahr rund 440 Stunden. Eine Viertelstelle, die nichts herstellt und nichts verkauft. In keiner Kalkulation taucht sie auf, deshalb bleibt sie.
+
+Wo passiert das bei {{firma}}? Ich rechne Ihnen die Stunden aus, kostenlos. Wenn wenig herauskommt, sage ich das auch.`,
+      },
+      { step_no: 3, delay_days: 7, subject: '', body: BEISPIEL_DRAHTMUELLER },
+      { step_no: 4, delay_days: 14, subject: '', body: ABSCHIED },
+    ],
+  },
+  {
     id: 'stunden',
     name: 'Zwei Stunden am Tag',
     beschreibung: 'Rechnet die Zeit in Kapazität um: nicht was gespart wird, sondern was die freie Zeit erwirtschaftet.',
