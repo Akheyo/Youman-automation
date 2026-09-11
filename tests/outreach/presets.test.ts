@@ -14,7 +14,7 @@ const vollstaendig = {
 
 describe('Vorlagen', () => {
   it('bieten drei Sequenzen mit je vier Schritten in der Reihenfolge 0/3/7/14', () => {
-    expect(VORLAGEN.map((v) => v.id)).toEqual(['zettel', 'beobachtung', 'besuch']);
+    expect(VORLAGEN.map((v) => v.id)).toEqual(['stunden', 'beobachtung', 'besuch']);
     for (const v of VORLAGEN) {
       expect(v.steps.map((s) => s.step_no)).toEqual([1, 2, 3, 4]);
       expect(v.steps.map((s) => s.delay_days)).toEqual([0, 3, 7, 14]);
@@ -62,6 +62,13 @@ describe('Vorlagen', () => {
     }
   });
 
+  it('kommen ohne Gedankenstrich aus, der nach Maschine klingt', () => {
+    for (const v of VORLAGEN) for (const s of v.steps) {
+      expect(s.body + s.subject, `${v.id} Schritt ${s.step_no}`).not.toContain('—');
+    }
+    expect(SIGNATUR_VORLAGE).not.toContain('—');
+  });
+
   it('vermeiden die Nachfass-Floskeln, die Antworten kosten', () => {
     const verboten = /nachhaken|nochmal nach oben|haben sie meine|nur kurz nachfragen|checking in/i;
     for (const v of VORLAGEN) for (const s of v.steps) expect(s.body).not.toMatch(verboten);
@@ -75,7 +82,7 @@ describe('Vorlagen', () => {
   });
 
   it('findet eine Vorlage ueber ihre Kennung', () => {
-    expect(vorlage('zettel')?.name).toBe('Was der Zettel kostet');
+    expect(vorlage('stunden')?.name).toBe('Zwei Stunden am Tag');
     expect(vorlage('gibt-es-nicht')).toBeUndefined();
   });
 
