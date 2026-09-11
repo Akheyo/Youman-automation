@@ -1,0 +1,115 @@
+/* Einstellungen — eigenes Modul, damit die Lagerplatz-Seiten unberührt bleiben.
+   Farben und Abstände kommen aus den globalen Design-Tokens. */
+
+.page { animation: fade-up 0.2s ease both; }
+
+.head { margin-bottom: var(--space-6); }
+.eyebrow {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin-bottom: var(--space-2);
+}
+.title { margin: 0 0 var(--space-2); font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; }
+.subtitle { margin: 0; color: var(--muted); font-size: 0.95rem; max-width: 72ch; }
+
+.card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6);
+  margin-bottom: var(--space-5);
+}
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-5);
+  border-bottom: 1px solid var(--border);
+}
+.cardTitle { margin: 0; font-size: 1.05rem; font-weight: 700; }
+
+.notice { margin-bottom: var(--space-4); padding: 0.7rem 0.9rem; border-radius: var(--radius); font-size: 0.85rem; }
+.noticeOk { background: var(--green-soft); color: var(--green); border: 1px solid rgba(23, 130, 63, 0.25); }
+.noticeWarn { background: var(--amber-soft); color: var(--amber); border: 1px solid #f3d38a; }
+.noticeErr { background: var(--red-soft); color: var(--red); border: 1px solid rgba(217, 45, 32, 0.25); }
+
+.felder { display: grid; gap: var(--space-4); max-width: 46rem; }
+.feld { display: flex; flex-direction: column; gap: var(--space-2); }
+.zwei { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-monospace, 'IBM Plex Mono', SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  width: 100%;
+}
+.input:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+.hilfe { font-size: 0.78rem; color: var(--muted); }
+
+.aktionen { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-5); align-items: center; }
+.primary {
+  padding: 0.75rem 1.2rem;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--navy);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+.primary:hover:not(:disabled) { background: #0c1f4d; }
+.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.secondary {
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--navy);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.secondary:hover:not(:disabled) { background: var(--bg-soft); border-color: var(--muted); }
+.secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+.gefahr { margin-left: auto; color: var(--red); border-color: rgba(217, 45, 32, 0.35); }
+
+.badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 600; }
+.badgeOk { background: var(--green-soft); color: var(--green); }
+.badgeWarn { background: var(--amber-soft); color: var(--amber); }
+.badgeMuted { background: var(--bg-soft); color: var(--muted); }
+
+/* Herkunft der Werte */
+.herkunft { display: grid; gap: 0.4rem; font-size: 0.83rem; color: var(--muted); margin-bottom: var(--space-5); }
+.herkunftZeile { display: flex; gap: 0.5rem; align-items: baseline; }
+
+/* Prozessübersicht */
+.prozesse { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-3); }
+.prozess {
+  display: block;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-softer);
+  text-decoration: none;
+  color: inherit;
+}
+.prozess:hover { border-color: var(--blue); background: var(--bg); }
+.prozessName { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.25rem; }
+.prozessText { font-size: 0.82rem; color: var(--muted); line-height: 1.45; }
+.prozessSchreibt { margin-top: var(--space-3); }

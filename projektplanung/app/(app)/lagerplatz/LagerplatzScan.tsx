@@ -142,6 +142,11 @@ export default function LagerplatzScan({ plentyReady }: { plentyReady: boolean }
           „Halle 6 Regal 5 Ablage 7"). Dieser Durchlauf <strong>liest nur</strong>; in Plenty wird nichts
           verändert.
         </p>
+        <p className={styles.hint}>
+          Einen einzelnen Artikel nicht gefunden?{' '}
+          <a href="/lagerplatz/suche">Suche nach alternativen Lagerplätzen</a> — sie wertet Artikeltext,
+          Warenbewegungen, Nachbar-IDs und die Einlagerung aus.
+        </p>
       </header>
 
       {!plentyReady && (

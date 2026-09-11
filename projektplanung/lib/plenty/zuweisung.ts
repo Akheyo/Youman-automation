@@ -17,8 +17,9 @@
  *   - Ein Fehler stoppt nicht den ganzen Lauf, sondern wird je Zeile vermerkt.
  */
 
-import { getPlentyConfig, plentyConfigured, plentyGet, plentyToken } from './client';
-import { ladeLagerorte, verzeichnis, type Lagerort } from './lagerorte';
+import { aktuelleConfig, plentyConfigured, plentyGet, plentyToken } from './client';
+import { ladeLagerorteGepuffert, verzeichnis, type Lagerort } from './lagerorte';
+import { istSchreiblimit } from './lagerort-anlegen';
 
 /** Grund 401 = Umlagerung (laut Plenty-Doku: „Stock transfer"). */
 export const GRUND_UMLAGERUNG = 401;
@@ -60,6 +61,17 @@ export interface ZuweisungErgebnis {
   uebersprungen: number;
   fehler: number;
   zeilen: Zeile[];
+  /** Noch nicht abgearbeitet — Obergrenze, Zeitbudget oder Schreibbremse. */
+  offen: number;
+  /** PlentyONE hat die Schreibbremse gezogen; vor dem Weitermachen warten. */
+  schreiblimit: boolean;
+  /**
+   * Varianten, die in diesem Aufruf endgültig erledigt sind (gebucht,
+   * übersprungen oder mit Fehler). Damit streicht die Oberfläche sie aus der
+   * Liste und schickt beim nächsten Aufruf nur den Rest — sonst müsste der
+   * Lauf jedes Mal von vorn beginnen.
+   */
+  erledigt: number[];
   diagnose: string[];
   dauerMs: number;
 }
@@ -72,6 +84,8 @@ export interface ZuweisungOptionen {
   vonLagerortId?: number;
   /** Obergrenze für tatsächliche Buchungen je Aufruf. */
   maxBuchungen?: number;
+  /** Zeitbudget je Aufruf; danach bricht der Lauf sauber ab. */
+  budgetMs?: number;
 }
 
 interface PlentyVariante { id?: number; itemId?: number }
@@ -135,7 +149,7 @@ async function bucheUm(
   variationId: number,
   body: Record<string, number>,
 ): Promise<{ ok: boolean; meldung: string }> {
-  const cfg = getPlentyConfig();
+  const cfg = await aktuelleConfig();
   const token = await plentyToken(cfg);
   const res = await fetch(
     `${cfg.baseUrl}/rest/items/${itemId}/variations/${variationId}/stock/redistribute?itemId=${itemId}`,
@@ -163,21 +177,28 @@ export async function weiseZu(wuensche: Wunsch[], opts: ZuweisungOptionen): Prom
 
   const leer: ZuweisungErgebnis = {
     ok: false, probelauf, error: null, warehouseId: opts.warehouseId, lagerorte: 0,
-    geplant: 0, gebucht: 0, uebersprungen: 0, fehler: 0, zeilen, diagnose, dauerMs: 0,
+    geplant: 0, gebucht: 0, uebersprungen: 0, fehler: 0, zeilen,
+    offen: 0, schreiblimit: false, erledigt: [], diagnose, dauerMs: 0,
   };
 
-  if (!plentyConfigured(getPlentyConfig())) {
-    return { ...leer, error: 'PlentyONE ist nicht konfiguriert.', dauerMs: Date.now() - start };
+  if (!plentyConfigured(await aktuelleConfig())) {
+    return { ...leer, error: 'PlentyONE ist nicht eingerichtet — unter „Einstellungen" den Zugang eintragen.', dauerMs: Date.now() - start };
   }
 
   let nachCode: Map<string, Lagerort>;
   let anzahlOrte = 0;
   try {
-    const { orte, ohneCode, abgebrochen } = await ladeLagerorte(opts.warehouseId);
+    // Gepuffert: Ein Lauf besteht aus vielen Teilaufrufen, und die Liste
+    // ändert sich zwischendurch nicht. Ohne Puffer werden 53 Seiten je Runde
+    // gelesen — daran zieht PlentyONE die Lesebremse.
+    const { orte, ohneCode, abgebrochen, ausPuffer, alterMs } = await ladeLagerorteGepuffert(opts.warehouseId);
     anzahlOrte = orte.length;
     const v = verzeichnis(orte);
     nachCode = v.nachCode;
-    diagnose.push(`${orte.length} Lagerorte gelesen, ${v.nachCode.size} davon eindeutig zuordenbar.`);
+    diagnose.push(
+      `${orte.length} Lagerorte gelesen, ${v.nachCode.size} davon eindeutig zuordenbar.` +
+        (ausPuffer ? ` (Liste aus dem Zwischenspeicher, ${Math.round(alterMs / 1000)} s alt)` : ''),
+    );
     if (ohneCode) diagnose.push(`${ohneCode} Lagerort-Namen folgen nicht dem bekannten Schema und bleiben unberücksichtigt.`);
     if (v.doppelt) diagnose.push(`${v.doppelt} Lagerorte tragen denselben Code doppelt — es wird jeweils der erste genommen.`);
     if (abgebrochen) diagnose.push('Die Lagerort-Liste war länger als erwartet und wurde abgeschnitten.');
@@ -196,32 +217,61 @@ export async function weiseZu(wuensche: Wunsch[], opts: ZuweisungOptionen): Prom
   }
 
   let gebucht = 0, uebersprungen = 0, fehler = 0, geplant = 0;
+  let offen = 0;
+  let schreiblimit = false;
+  const erledigt: number[] = [];
+  const budgetMs = Math.max(5_000, Math.floor(opts.budgetMs ?? 45_000));
+
+  /** Ist für diesen Aufruf Schluss? Der Rest bleibt offen und kommt gleich dran. */
+  const feierabend = () =>
+    !probelauf && (gebucht >= maxBuchungen || schreiblimit || Date.now() - start > budgetMs);
 
   for (const w of wuensche) {
+    // Nicht mehr drangekommen: keine Zeile schreiben, sondern als offen
+    // zählen. Die Oberfläche schickt genau diese Zeilen noch einmal.
+    if (feierabend()) { offen++; continue; }
     const ziel = nachCode.get(w.ziel);
     const itemId = w.itemId ?? itemIds.get(w.variationId) ?? null;
     const basis = { variationId: w.variationId, itemId, ziel: w.ziel, zielId: ziel?.id ?? null, zielName: ziel?.name ?? null };
 
     if (!ziel) {
       zeilen.push({ ...basis, menge: null, status: 'uebersprungen', hinweis: 'Lagerort existiert in Plenty nicht' });
-      uebersprungen++; continue;
+      uebersprungen++; erledigt.push(w.variationId); continue;
     }
 
     let menge = w.menge ?? null;
-    // Nur nachschlagen, wenn wirklich gebucht wird — ein Aufruf je Artikel.
-    if ((menge === null || menge <= 0) && !probelauf && gebucht < maxBuchungen) {
-      menge = await bestandAmQuellort(opts.warehouseId, w.variationId, vonLagerortId);
+    // Vor dem Buchen zaehlt einzig, was auf dem Quell-Lagerort wirklich liegt.
+    //
+    // Die Menge aus der Liste ist der Gesamtbestand der Variante. Auf dem
+    // Standard-Lagerort liegt davon oft weniger — bei manchen Artikeln 0 oder
+    // sogar minus, weil der Bestand schon auf echten Plaetzen sitzt. Wurde die
+    // Listenmenge ungeprueft weitergereicht, antwortete PlentyONE mit
+    // "Quantity too small for redistribution" und die Zeile war verbrannt.
+    // Ein Lauf mit 320 Zeilen endete so mit 0 gebucht und 304 Fehlern.
+    if (!probelauf && gebucht < maxBuchungen) {
+      const amQuellort = await bestandAmQuellort(opts.warehouseId, w.variationId, vonLagerortId);
+      // Nie mehr buchen als dort liegt; ohne Vorgabe gilt der volle Bestand.
+      menge = menge === null || menge <= 0 ? amQuellort : Math.min(menge, amQuellort ?? 0);
     }
     // Im Probelauf wird die Menge nicht nachgeschlagen (ein Aufruf je Artikel).
     // Eine unbekannte Menge ist dort kein Grund zum Überspringen — sie wird
     // beim Buchen ermittelt.
     if ((menge === null || menge <= 0) && !probelauf) {
-      zeilen.push({ ...basis, menge, status: 'uebersprungen', hinweis: 'Auf dem Quell-Lagerort liegt nichts' });
-      uebersprungen++; continue;
+      zeilen.push({
+        ...basis,
+        menge,
+        status: 'uebersprungen',
+        hinweis: 'Auf dem Quell-Lagerort liegt nichts — entweder schon umgebucht oder der Bestand sitzt woanders',
+      });
+      uebersprungen++; erledigt.push(w.variationId); continue;
     }
 
     geplant++;
     if (probelauf) {
+      // Auch eine geplante Zeile ist fuer diesen Aufruf abgearbeitet. Fehlte
+      // das, schickte die Oberflaeche sie in der naechsten Runde noch einmal
+      // und zaehlte sie doppelt: aus 8.818 Zeilen wurden 17.609 geprueft.
+      erledigt.push(w.variationId);
       zeilen.push({
         ...basis,
         menge,
@@ -233,17 +283,12 @@ export async function weiseZu(wuensche: Wunsch[], opts: ZuweisungOptionen): Prom
     // Ab hier wird wirklich gebucht — ohne Menge geht das nicht.
     if (menge === null || menge <= 0) {
       zeilen.push({ ...basis, menge, status: 'uebersprungen', hinweis: 'Menge nicht ermittelbar' });
-      uebersprungen++; continue;
+      uebersprungen++; erledigt.push(w.variationId); continue;
     }
     if (!itemId) {
       zeilen.push({ ...basis, menge, status: 'uebersprungen', hinweis: 'Artikel-ID nicht ermittelbar' });
-      uebersprungen++; continue;
+      uebersprungen++; erledigt.push(w.variationId); continue;
     }
-    if (gebucht >= maxBuchungen) {
-      zeilen.push({ ...basis, menge, status: 'uebersprungen', hinweis: `Obergrenze von ${maxBuchungen} Buchungen erreicht` });
-      uebersprungen++; continue;
-    }
-
     const res = await bucheUm(itemId, w.variationId, {
       reasonId: GRUND_UMLAGERUNG,
       quantity: menge,
@@ -252,12 +297,41 @@ export async function weiseZu(wuensche: Wunsch[], opts: ZuweisungOptionen): Prom
       newWarehouseId: opts.warehouseId,
       newStorageLocationId: ziel.id,
     });
-    if (res.ok) { zeilen.push({ ...basis, menge, status: 'gebucht', hinweis: null }); gebucht++; }
-    else { zeilen.push({ ...basis, menge, status: 'fehler', hinweis: res.meldung }); fehler++; }
+    if (res.ok) {
+      zeilen.push({ ...basis, menge, status: 'gebucht', hinweis: null });
+      gebucht++; erledigt.push(w.variationId);
+    } else if (istSchreiblimit(new Error(res.meldung))) {
+      // Die Schreibbremse ist kein Fehler dieser Zeile — sie kommt gleich
+      // noch einmal dran, nach der Pause.
+      schreiblimit = true;
+      offen++;
+    } else if (/is bundle/i.test(res.meldung)) {
+      // Ein Bundle hat keinen eigenen Bestand — der steckt in seinen
+      // Bestandteilen. Das ist nichts, was ein zweiter Versuch heilt.
+      zeilen.push({
+        ...basis,
+        menge,
+        status: 'uebersprungen',
+        hinweis: 'Artikelpaket (Bundle) — hat keinen eigenen Bestand und kann nicht umgebucht werden',
+      });
+      uebersprungen++; erledigt.push(w.variationId);
+    } else {
+      zeilen.push({ ...basis, menge, status: 'fehler', hinweis: res.meldung });
+      fehler++; erledigt.push(w.variationId);
+    }
+  }
+
+  if (schreiblimit) {
+    diagnose.push(
+      `PlentyONE hat die Schreibbremse gezogen. ${gebucht} gebucht, ${offen} Zeilen offen — nach einer Pause geht es weiter.`,
+    );
+  } else if (offen) {
+    diagnose.push(`${offen} Zeilen offen (Obergrenze oder Zeitbudget) — der Lauf macht gleich weiter.`);
   }
 
   return {
     ...leer, ok: true, lagerorte: anzahlOrte,
-    geplant, gebucht, uebersprungen, fehler, zeilen, dauerMs: Date.now() - start,
+    geplant, gebucht, uebersprungen, fehler, zeilen,
+    offen, schreiblimit, erledigt, dauerMs: Date.now() - start,
   };
 }

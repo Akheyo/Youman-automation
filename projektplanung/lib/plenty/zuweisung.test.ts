@@ -9,7 +9,13 @@ const ANTWORT = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 
 /** Plenty-Attrappe; sammelt alle schreibenden Aufrufe zum Nachprüfen. */
-function attrappe(opts: { orte?: Array<{ id: number; fullLabel: string }>; bestand?: number; buchungFehler?: boolean } = {}) {
+function attrappe(opts: {
+  orte?: Array<{ id: number; fullLabel: string }>;
+  bestand?: number;
+  buchungFehler?: boolean;
+  fehlerText?: string;
+  fehlerStatus?: number;
+} = {}) {
   const orte = opts.orte ?? [
     { id: 8619, fullLabel: 'H1/R8/EA F15-K10' },
     { id: 4397, fullLabel: 'H1/R1/EB F12-0' },
@@ -19,7 +25,9 @@ function attrappe(opts: { orte?: Array<{ id: number; fullLabel: string }>; besta
     if (url.includes('/rest/login')) return ANTWORT({ access_token: 't', expires_in: 3600, user_id: 1 });
     if (init?.method === 'PUT') {
       geschrieben.push({ url, body: JSON.parse(String(init.body)) });
-      return opts.buchungFehler ? ANTWORT({ error: 'nope' }, 400) : ANTWORT({ ok: true });
+      return opts.buchungFehler
+        ? ANTWORT({ error: opts.fehlerText ?? 'nope' }, opts.fehlerStatus ?? 400)
+        : ANTWORT({ ok: true });
     }
     if (url.includes('/locations')) return ANTWORT({ entries: orte, isLastPage: true, totalsCount: orte.length });
     if (url.includes('/stock/storageLocations')) {
@@ -140,7 +148,28 @@ describe('weiseZu', () => {
 
     expect(res.gebucht).toBe(2);
     expect(geschrieben).toHaveLength(2);
-    expect(res.uebersprungen).toBe(2);
+    // Was nicht mehr drankam, gilt nicht als übersprungen, sondern als offen —
+    // die Oberfläche schickt genau diese Zeilen in der nächsten Runde noch
+    // einmal, bis die Liste durch ist.
+    expect(res.uebersprungen).toBe(0);
+    expect(res.offen).toBe(2);
+    expect(res.erledigt).toEqual([1, 2]);
+  });
+
+  it('meldet die Schreibbremse, statt die Zeile als Fehler abzuhaken', async () => {
+    // Bremst PlentyONE, ist die Zeile nicht kaputt — sie kommt nach der Pause
+    // noch einmal dran.
+    const { fetchMock } = attrappe({ buchungFehler: true, fehlerText: 'short period write limit reached', fehlerStatus: 429 });
+    vi.stubGlobal('fetch', fetchMock);
+    const { weiseZu } = await import('./zuweisung');
+    const res = await weiseZu([{ variationId: 1, ziel: 'H1/R8/EA F15-K10' }], {
+      warehouseId: 106, probelauf: false,
+    });
+
+    expect(res.schreiblimit).toBe(true);
+    expect(res.fehler).toBe(0);
+    expect(res.offen).toBe(1);
+    expect(res.erledigt).toEqual([]);
   });
 
   it('vermerkt einen Buchungsfehler je Zeile und läuft weiter', async () => {
@@ -171,6 +200,161 @@ describe('weiseZu', () => {
     const { weiseZu } = await import('./zuweisung');
     const res = await weiseZu([{ variationId: 1, ziel: 'H1/R8/EA F15-K10' }], { warehouseId: 106, probelauf: false });
     expect(res.ok).toBe(false);
-    expect(res.error).toMatch(/nicht konfiguriert/);
+    expect(res.error).toMatch(/nicht eingerichtet/);
+  });
+});
+
+describe('Probelauf zaehlt jede Zeile genau einmal', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    process.env.PLENTY_BASE_URL = 'https://test.plentymarkets-cloud01.com';
+    process.env.PLENTY_USER = 'api';
+    process.env.PLENTY_PASSWORD = 'geheim';
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.PLENTY_BASE_URL;
+    delete process.env.PLENTY_USER;
+    delete process.env.PLENTY_PASSWORD;
+  });
+
+  it('meldet geplante Zeilen als erledigt — sonst schickt die Oberflaeche sie erneut', async () => {
+    // Der Fehler, der repariert wird: "geplant" landete nicht in `erledigt`.
+    // Die Oberflaeche strich die Zeile also nicht aus der offenen Liste und
+    // schickte sie in der naechsten Runde noch einmal — aus 8.818 Zeilen
+    // wurden 17.609 geprueft.
+    vi.stubGlobal('fetch', async (url: string) => {
+      const antwort = (body: unknown) =>
+        new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+      if (url.includes('/rest/login')) return antwort({ access_token: 't', expires_in: 3600, user_id: 1 });
+      if (url.includes('/locations')) {
+        return antwort({
+          entries: [
+            { id: 900, fullLabel: 'H1/R7/EA F16-K26', levelId: 5, statusKey: 'active', purposeKey: 'picking' },
+            { id: 901, fullLabel: 'H2/R1/EB F21-0', levelId: 6, statusKey: 'active', purposeKey: 'picking' },
+          ],
+          isLastPage: true,
+        });
+      }
+      return antwort({ entries: [], isLastPage: true });
+    });
+
+    const { weiseZu } = await import('./zuweisung');
+    const res = await weiseZu(
+      [
+        { variationId: 6006, ziel: 'H1/R7/EA F16-K26', menge: 1 },
+        { variationId: 32467, ziel: 'H2/R1/EB F21-0', menge: 1 },
+        { variationId: 999, ziel: 'H9/R9/EZ F99-K99', menge: 1 },
+      ],
+      { warehouseId: 106, probelauf: true },
+    );
+
+    expect(res.geplant).toBe(2);
+    expect(res.uebersprungen).toBe(1);
+    // Jede der drei Zeilen ist abgearbeitet — keine kommt in Runde zwei wieder.
+    expect(res.erledigt.sort()).toEqual([999, 6006, 32467].sort());
+    expect(res.offen).toBe(0);
+  });
+});
+
+describe('Menge kommt vom Quell-Lagerort, nicht aus der Liste', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    process.env.PLENTY_BASE_URL = 'https://test.plentymarkets-cloud01.com';
+    process.env.PLENTY_USER = 'api';
+    process.env.PLENTY_PASSWORD = 'geheim';
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.PLENTY_BASE_URL;
+    delete process.env.PLENTY_USER;
+    delete process.env.PLENTY_PASSWORD;
+  });
+
+  /** Attrappe mit frei wählbarem Bestand auf dem Standard-Lagerort. */
+  function attrappe(bestandAufNull: number) {
+    const gebucht: Array<Record<string, unknown>> = [];
+    const antwort = (b: unknown, status = 200) =>
+      new Response(JSON.stringify(b), { status, headers: { 'content-type': 'application/json' } });
+    const fetchMock = async (url: string, init?: RequestInit) => {
+      if (url.includes('/rest/login')) return antwort({ access_token: 't', expires_in: 3600, user_id: 1 });
+      if (url.includes('/redistribute')) {
+        gebucht.push(init?.body ? JSON.parse(String(init.body)) : {});
+        return antwort({ ok: true });
+      }
+      if (url.includes('/rest/items/variations')) {
+        return antwort({ entries: [{ id: 6006, itemId: 900 }] });
+      }
+      if (url.includes('/stock/storagelocation') || url.includes('/stock')) {
+        return antwort({ entries: [{ variationId: 6006, storageLocationId: 0, quantity: bestandAufNull }] });
+      }
+      if (url.includes('/locations')) {
+        return antwort({
+          entries: [{ id: 900, fullLabel: 'H1/R7/EA F16-K26', levelId: 5, statusKey: 'active', purposeKey: 'picking' }],
+          isLastPage: true,
+        });
+      }
+      return antwort({ entries: [], isLastPage: true });
+    };
+    return { fetchMock, gebucht };
+  }
+
+  it('bucht höchstens, was auf dem Quell-Lagerort liegt', async () => {
+    // Liste sagt 13, auf dem Standardplatz liegen 4 — gebucht werden 4.
+    const { fetchMock, gebucht } = attrappe(4);
+    vi.stubGlobal('fetch', fetchMock);
+    const { weiseZu } = await import('./zuweisung');
+    const res = await weiseZu(
+      [{ variationId: 6006, ziel: 'H1/R7/EA F16-K26', menge: 13 }],
+      { warehouseId: 106, probelauf: false },
+    );
+
+    expect(res.gebucht).toBe(1);
+    expect(gebucht[0].quantity).toBe(4);
+  });
+
+  it('überspringt, statt mit "Quantity too small" zu scheitern', async () => {
+    // Genau der Fall aus dem Lauf: Liste sagt 1, auf dem Standardplatz liegt 0.
+    const { fetchMock, gebucht } = attrappe(0);
+    vi.stubGlobal('fetch', fetchMock);
+    const { weiseZu } = await import('./zuweisung');
+    const res = await weiseZu(
+      [{ variationId: 6006, ziel: 'H1/R7/EA F16-K26', menge: 1 }],
+      { warehouseId: 106, probelauf: false },
+    );
+
+    expect(gebucht).toHaveLength(0);
+    expect(res.fehler).toBe(0);
+    expect(res.uebersprungen).toBe(1);
+    expect(res.zeilen[0].hinweis).toMatch(/liegt nichts/);
+  });
+
+  it('behandelt ein Artikelpaket als übersprungen, nicht als Fehler', async () => {
+    const antwort = (b: unknown, status = 200) =>
+      new Response(JSON.stringify(b), { status, headers: { 'content-type': 'application/json' } });
+    vi.stubGlobal('fetch', async (url: string) => {
+      if (url.includes('/rest/login')) return antwort({ access_token: 't', expires_in: 3600, user_id: 1 });
+      if (url.includes('/redistribute')) {
+        return antwort({ error: { message: 'Variation is bundle and has no stock quantity.', code: 6 } }, 500);
+      }
+      if (url.includes('/rest/items/variations')) return antwort({ entries: [{ id: 32283, itemId: 900 }] });
+      if (url.includes('/stock')) return antwort({ entries: [{ variationId: 32283, storageLocationId: 0, quantity: 482 }] });
+      if (url.includes('/locations')) {
+        return antwort({
+          entries: [{ id: 900, fullLabel: 'H6/R2/EC F22-0', levelId: 5, statusKey: 'active', purposeKey: 'picking' }],
+          isLastPage: true,
+        });
+      }
+      return antwort({ entries: [], isLastPage: true });
+    });
+    const { weiseZu } = await import('./zuweisung');
+    const res = await weiseZu(
+      [{ variationId: 32283, ziel: 'H6/R2/EC F22-0', menge: 482 }],
+      { warehouseId: 106, probelauf: false },
+    );
+
+    expect(res.fehler).toBe(0);
+    expect(res.uebersprungen).toBe(1);
+    expect(res.zeilen[0].hinweis).toMatch(/Artikelpaket/);
   });
 });

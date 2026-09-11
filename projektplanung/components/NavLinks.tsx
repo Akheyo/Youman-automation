@@ -5,9 +5,13 @@ import { usePathname } from 'next/navigation';
 import styles from './app-shell.module.css';
 
 const LINKS = [
+  { href: '/erfassung', text: 'Erfassung' },
   { href: '/projekte', text: 'Projekte' },
   { href: '/lagerplatz', text: 'Lagerplätze' },
+  { href: '/lagerplatz/anlegen', text: 'Lagerorte anlegen' },
   { href: '/lagerplatz/zuweisen', text: 'Zuweisen' },
+  { href: '/lagerplatz/suche', text: 'Artikel suchen' },
+  { href: '/einstellungen', text: 'Einstellungen' },
 ];
 
 /** Hauptnavigation des eingeloggten Bereichs. */

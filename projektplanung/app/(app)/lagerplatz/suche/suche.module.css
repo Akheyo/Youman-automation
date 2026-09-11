@@ -1,0 +1,185 @@
+/* Ergänzungen für die Artikelsuche — die Grundformen kommen aus
+   lagerplatz.module.css, hier steht nur, was dort fehlt: Bildkacheln,
+   Kandidatenliste und Belege. */
+
+.eingabe {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-monospace, 'IBM Plex Mono', SFMono-Regular, Menlo, monospace;
+  min-width: 16rem;
+}
+
+/* ---- Lage des Artikels: der wichtigste Satz der Seite ---- */
+.lage {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  margin-bottom: var(--space-4);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.lageVerbucht { background: var(--blue-soft, #eef4ff); border: 1px solid #c7d9f7; }
+.lageStandard { background: var(--amber-soft); border: 1px solid #f3d38a; color: var(--amber); }
+.lageOhne { background: var(--red-soft); border: 1px solid rgba(217, 45, 32, 0.25); color: var(--red); }
+.lageUnbekannt { background: var(--bg-soft); border: 1px solid var(--border); color: var(--muted); }
+
+/* ---- Kandidatenliste ---- */
+.kandidaten { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.kandidat {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-softer);
+}
+.kandidatSchwach { opacity: 0.62; }
+.punkte {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 0.4rem;
+}
+.punkteZahl { font-size: 1.15rem; font-weight: 700; line-height: 1; }
+.punkteLabel { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.kandidatCode {
+  font-family: ui-monospace, 'IBM Plex Mono', SFMono-Regular, Menlo, monospace;
+  font-weight: 700;
+  font-size: 1rem;
+}
+.kandidatKlartext { color: var(--muted); font-size: 0.82rem; margin: 0.15rem 0 var(--space-3); }
+.belege { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.beleg { display: flex; gap: 0.5rem; align-items: center; font-size: 0.82rem; }
+/* Kleines Vorschaubild direkt am Beleg: zeigt sofort, was dort liegt —
+   eine Kiste Schrauben oder eine Maschine. */
+.belegBild {
+  width: 2.6rem;
+  height: 2.6rem;
+  object-fit: contain;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.belegBildLeer {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 4px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.belegText { flex: 1; min-width: 0; }
+.einwand {
+  margin-top: var(--space-2);
+  font-size: 0.8rem;
+  color: var(--amber);
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+}
+
+/* ---- Artikelkacheln mit Bild ---- */
+.karten { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--space-3); }
+.karte {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+.karteGesucht { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(11, 31, 77, 0.12); }
+.bild {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  background: var(--bg-soft);
+  display: block;
+}
+.bildFehlt {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--bg-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.karteText { padding: var(--space-3); display: grid; gap: 0.25rem; font-size: 0.8rem; }
+.karteNummer {
+  font-family: ui-monospace, 'IBM Plex Mono', SFMono-Regular, Menlo, monospace;
+  font-weight: 600;
+}
+.karteName { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kartePlatz {
+  font-family: ui-monospace, 'IBM Plex Mono', SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+}
+
+/* ---- Laufzettel ---- */
+.laufzettel { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.laufSchritt {
+  display: grid;
+  grid-template-columns: 1.6rem 1fr auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: 0.55rem var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+}
+.laufNr { color: var(--muted); font-size: 0.75rem; text-align: right; }
+.laufCode { font-family: ui-monospace, 'IBM Plex Mono', SFMono-Regular, Menlo, monospace; font-weight: 600; }
+
+@media print {
+  .karten, .kandidaten, .controls, .actions { display: none; }
+  .laufSchritt { break-inside: avoid; }
+}
+
+/* ---- Zeitleiste der Einlagerung ---- */
+.zeitleiste { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+.zeitZeile {
+  display: grid;
+  grid-template-columns: 7.5rem 2.6rem 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: 0.45rem var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.84rem;
+}
+/* Der gesuchte Artikel selbst — Ankerpunkt, an dem man sich orientiert. */
+.zeitGesucht { border-color: var(--navy); background: var(--bg-softer); font-weight: 600; }
+.zeitUhr {
+  font-family: ui-monospace, 'IBM Plex Mono', SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.zeitDatum { display: block; font-size: 0.7rem; color: var(--muted); font-weight: 400; }
+.zeitOrt {
+  font-family: ui-monospace, 'IBM Plex Mono', SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+}
+.zeitVersatz { font-size: 0.75rem; color: var(--muted); white-space: nowrap; text-align: right; }
+.zeitLuecke {
+  /* Sichtbare Pause: Ab hier gehoerte es vermutlich zu einer anderen Palette. */
+  border-top: 2px dashed var(--border-strong);
+  margin-top: 0.4rem;
+  padding-top: 0.65rem;
+}
+@media (max-width: 640px) {
+  .zeitZeile { grid-template-columns: 5.5rem 1fr; }
+  .zeitZeile img, .zeitVersatz { display: none; }
+}
