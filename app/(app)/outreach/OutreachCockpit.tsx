@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './outreach.module.css';
+import { VORLAGEN, SIGNATUR_VORLAGE } from '@/lib/outreach/presets';
 
 /**
  * Paul — das Cockpit für Cold-Outreach per E-Mail.
@@ -257,6 +258,20 @@ export default function OutreachCockpit(props: {
   }
   function removeStep(i: number) {
     setSteps((cur) => (cur.length > 1 ? cur.filter((_, idx) => idx !== i) : cur));
+  }
+
+  /**
+   * Vorlage in den Editor laden — noch nicht gespeichert, damit man vorher
+   * drüberliest. Fehlt der Kampagne eine Signatur, wird die Vorlage mit den
+   * Pflichtangaben gleich gesetzt; eine vorhandene bleibt unangetastet.
+   */
+  async function ladeVorlage(id: string) {
+    const v = VORLAGEN.find((x) => x.id === id);
+    if (!v || !active) return;
+    setSteps(v.steps.map((st) => ({ delay_days: st.delay_days, subject: st.subject, body: st.body })));
+    setPreview(null);
+    if (!(active.signature ?? '').trim()) await patchCampaign(active.id, { signature: SIGNATUR_VORLAGE });
+    say(`Vorlage „${v.name}“ geladen — drüberlesen, dann „Sequenz speichern“.`);
   }
 
   async function saveSteps() {
@@ -643,6 +658,22 @@ export default function OutreachCockpit(props: {
                 <code>{'{{vorname|zusammen}}'}</code>: fehlt der Vorname, steht dort „zusammen“. Ohne Ersatzwert hält Paul die Mail
                 an, statt „Hallo ,“ zu verschicken.
               </p>
+            </div>
+
+            <div className={styles.card}>
+              <h2 className={styles.cardHead}>Vorlage laden</h2>
+              <p className={styles.hint}>
+                Fertige Sequenzen mit vier Schritten (Erstmail, Nachfassen nach 3, 7 und 14 Tagen). Laden ersetzt den Editor-Inhalt,
+                gespeichert wird erst mit „Sequenz speichern“.
+              </p>
+              <div className={styles.vorlagen}>
+                {VORLAGEN.map((v) => (
+                  <button key={v.id} className={styles.vorlage} onClick={() => ladeVorlage(v.id)} disabled={busy}>
+                    <span className={styles.vorlageName}>{v.name}</span>
+                    <span className={styles.vorlageText}>{v.beschreibung}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {steps.map((s, i) => (
