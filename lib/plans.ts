@@ -87,7 +87,7 @@ export function isUnlimited(plan: Plan): boolean {
 
 // Accounts that always get the unlimited plan and skip all quota checks.
 // Built-in owner(s) plus anything in the OWNER_EMAILS env (comma-separated).
-const BUILTIN_OWNER_EMAILS = ['infoall4youstore@gmail.com'];
+const BUILTIN_OWNER_EMAILS = ['infoall4youstore@gmail.com', 'info@youman-automation.com'];
 
 export function ownerEmails(): string[] {
   const fromEnv = (process.env.OWNER_EMAILS || '')
