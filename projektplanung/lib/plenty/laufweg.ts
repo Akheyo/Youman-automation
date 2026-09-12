@@ -20,6 +20,7 @@
  */
 
 import { plentyConfigured, plentyPut, aktuelleConfig } from './client';
+import { HALLEN_REIHENFOLGE, REGAL_REIHENFOLGE, platzIn } from './laufweg-reihenfolge';
 import { istSchreiblimit, ladeStruktur, schreibeMitGeduld, type Knoten } from './lagerort-anlegen';
 
 /** Eine geplante oder erledigte Umnummerierung. */
@@ -103,6 +104,48 @@ export function sortiereKnoten(a: Knoten, b: Knoten): number {
 const gruppeVon = (k: Knoten) => `${k.parentId}|${k.dimensionId}`;
 
 /**
+ * Sortiert eine Geschwistergruppe nach dem echten Rundgang.
+ *
+ * Hallen und Regale stehen nicht in natürlicher Reihenfolge im Lager — H3
+ * liegt am Tor, H1 in der Mitte. Wie gelaufen wird, steht in
+ * `laufweg-reihenfolge.ts`, abgelesen vom Hallenplan. Was dort nicht steht,
+ * kommt hinter die bekannten Knoten und wird untereinander natürlich
+ * sortiert; so verschwindet nie etwas, es steht nur schlechter.
+ *
+ * Ebenen und Felder bleiben natürlich sortiert — die laufen aufsteigend.
+ */
+function sortiereGruppe(geschwister: Knoten[], nachId: Map<number, Knoten>): Knoten[] {
+  const erste = geschwister[0];
+  if (!erste) return [];
+
+  // Oberste Ebene (kein Elternknoten): das sind die Hallen.
+  const istHalle = erste.parentId === 0 || !nachId.has(erste.parentId);
+  if (istHalle) {
+    return [...geschwister].sort(
+      (a, b) =>
+        platzIn(HALLEN_REIHENFOLGE, a.name) - platzIn(HALLEN_REIHENFOLGE, b.name) ||
+        sortiereKnoten(a, b),
+    );
+  }
+
+  // Eine Ebene unter der Halle: die Regale. Welche Reihenfolge gilt, hängt
+  // von der Halle ab, unter der sie hängen.
+  const eltern = nachId.get(erste.parentId);
+  const grosseltern = eltern ? nachId.get(eltern.parentId) : undefined;
+  const istRegal = Boolean(eltern) && !grosseltern;
+  if (istRegal && eltern) {
+    const reihenfolge = REGAL_REIHENFOLGE[eltern.name.trim().toUpperCase()];
+    if (reihenfolge) {
+      return [...geschwister].sort(
+        (a, b) => platzIn(reihenfolge, a.name) - platzIn(reihenfolge, b.name) || sortiereKnoten(a, b),
+      );
+    }
+  }
+
+  return [...geschwister].sort(sortiereKnoten);
+}
+
+/**
  * Rechnet aus, welche Knoten eine neue Position brauchen.
  *
  * Je Geschwistergruppe wird natürlich sortiert und dann 1…n durchnummeriert.
@@ -116,9 +159,10 @@ export function planeLaufweg(knoten: Knoten[]): { aenderungen: Aenderung[]; grup
     gruppen.set(g, [...(gruppen.get(g) ?? []), k]);
   }
 
+  const nachId = new Map(knoten.map((k) => [k.id, k]));
   const aenderungen: Aenderung[] = [];
   for (const geschwister of gruppen.values()) {
-    const sortiert = [...geschwister].sort(sortiereKnoten);
+    const sortiert = sortiereGruppe(geschwister, nachId);
     sortiert.forEach((k, i) => {
       const neu = i + 1;
       if (k.position !== neu) {
