@@ -285,6 +285,17 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
       .toEqual(['R6', 'R1', 'R7']);
   });
 
+  it('lässt Halle 4 unangetastet — dort ist die Reihenfolge nicht geklärt', () => {
+    // Unter H4 haengen rund 2.400 KTL-Plaetze in ungeklaerter Reihenfolge.
+    // Die Halle selbst bekommt ihren Platz im Rundgang, darunter nichts.
+    const knoten = [
+      halle(400, 'H4', 9),
+      regal(1, 'R3', 5, 400), regal(2, 'R1', 9, 400), regal(3, 'R15KTL', 1, 400),
+    ];
+    const { aenderungen } = planeLaufweg(knoten);
+    expect(aenderungen.filter((a) => a.dimensionId === 10)).toHaveLength(0);
+  });
+
   it('lässt Felder natürlich aufsteigend', () => {
     const knoten = [
       halle(100, 'H1', 1),

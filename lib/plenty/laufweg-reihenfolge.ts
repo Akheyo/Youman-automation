@@ -24,14 +24,6 @@ export const REGAL_REIHENFOLGE: Record<string, string[]> = {
   H3: ['R9', 'R8', 'R6', 'R4', 'R3', 'R2', 'R1', 'R11', 'R7', 'R10', 'R5'],
   H2: ['R6', 'R4', 'R5', 'R8', 'R9', 'R10', 'R3', 'R2', 'R1', 'R7', 'RKTL'],
   H1: ['R13', 'R12', 'R11', 'R10', 'R9', 'RKTL', 'R1', 'R8', 'R7', 'R6', 'R5', 'R4', 'R3', 'R2'],
-  // Halle 4 ist im Hallenplan fast leer, im Lagerort-Export steckt dort aber
-  // ein ganzer KTL-Bereich mit 15 Regalen und rund 2.400 Plätzen. Die
-  // Reihenfolge ist geraten (aufsteigend) — sie muss noch bestätigt werden.
-  H4: [
-    'R1', 'R2', 'R3', 'RKTL',
-    'R1KTL', 'R2KTL', 'R3KTL', 'R4KTL', 'R5KTL', 'R6KTL', 'R7KTL', 'R8KTL',
-    'R9KTL', 'R10KTL', 'R11KTL', 'R12KTL', 'R13KTL', 'R14KTL', 'R15KTL',
-  ],
   H5: ['R7', 'R6', 'R2', 'R3', 'R1', 'R4', 'R5', 'R10', 'RKTL'],
   // In Halle 6 beginnt der Rundgang zwischen den roten Fachbodenregalen, und
   // zwar bei R8KTL abwärts. Erst danach die grossen Palettenregale.
@@ -40,6 +32,20 @@ export const REGAL_REIHENFOLGE: Record<string, string[]> = {
     'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7',
   ],
 };
+
+/**
+ * Hallen, unterhalb derer nichts umnummeriert wird.
+ *
+ * Halle 4 ist im Hallenplan fast leer, im Lagerort-Export haengen dort aber
+ * R1KTL bis R15KTL mit rund 2.400 Plaetzen — nach Halle 6 der zweitgroesste
+ * Bereich. In welcher Reihenfolge er abgelaufen wird, ist nicht geklaert.
+ *
+ * Lieber gar nichts schreiben als eine geratene Reihenfolge festschreiben:
+ * Die Halle behaelt ihren Platz im Rundgang, unter ihr bleibt alles, wie es
+ * ist. Sobald die Reihenfolge feststeht, faellt der Eintrag hier weg und ein
+ * Lauf zieht es nach.
+ */
+export const NICHT_ORDNEN: string[] = ['H4'];
 
 /**
  * Regale, in denen die Felder rückwärts gezählt werden — der Mann kommt dort
