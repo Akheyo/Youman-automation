@@ -20,7 +20,12 @@
  */
 
 import { plentyConfigured, plentyPut, aktuelleConfig } from './client';
-import { HALLEN_REIHENFOLGE, REGAL_REIHENFOLGE, platzIn } from './laufweg-reihenfolge';
+import {
+  FELDER_RUECKWAERTS,
+  HALLEN_REIHENFOLGE,
+  REGAL_REIHENFOLGE,
+  platzIn,
+} from './laufweg-reihenfolge';
 import { istSchreiblimit, ladeStruktur, schreibeMitGeduld, type Knoten } from './lagerort-anlegen';
 
 /** Eine geplante oder erledigte Umnummerierung. */
@@ -140,6 +145,17 @@ function sortiereGruppe(geschwister: Knoten[], nachId: Map<number, Knoten>): Kno
         (a, b) => platzIn(reihenfolge, a.name) - platzIn(reihenfolge, b.name) || sortiereKnoten(a, b),
       );
     }
+  }
+
+  // Felder: aufwärts, ausser das Regal wird von hinten betreten.
+  const regal = grosseltern;
+  const halle = regal ? nachId.get(regal.parentId) : undefined;
+  if (regal && halle) {
+    const schluessel = `${halle.name.trim().toUpperCase()}/${regal.name.trim().toUpperCase()}`;
+    const rueckwaerts = FELDER_RUECKWAERTS.some(
+      (x) => x.trim().toUpperCase().replace(/(?<=\D)0+(\d)/g, '$1') === schluessel.replace(/(?<=\D)0+(\d)/g, '$1'),
+    );
+    if (rueckwaerts) return [...geschwister].sort((a, b) => sortiereKnoten(b, a));
   }
 
   return [...geschwister].sort(sortiereKnoten);

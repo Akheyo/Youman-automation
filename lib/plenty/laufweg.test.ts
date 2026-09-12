@@ -131,7 +131,7 @@ describe('findeDubletten', () => {
 describe('ordneLaufweg', () => {
   const KNOTEN = [
     { id: 3046, parentId: 0, dimensionId: 9, name: 'H1', position: 1 },
-    { id: 3100, parentId: 3046, dimensionId: 10, name: 'R6', position: 1 },
+    { id: 3100, parentId: 3046, dimensionId: 10, name: 'R1', position: 1 },
     { id: 3110, parentId: 3100, dimensionId: 11, name: 'EA', position: 1 },
     { id: 3120, parentId: 3110, dimensionId: 7, name: 'F16', position: 1 },
     { id: 3121, parentId: 3110, dimensionId: 7, name: 'F01', position: 2 },
@@ -273,21 +273,22 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
   });
 
   it('nimmt je Halle die eigene Reihenfolge', () => {
-    // In H2 laeuft er R7 zuerst, in H1 kaeme R7 spaet.
+    // In H2 beginnt der Rundgang bei R6; R1 kommt spaet, R7 ganz am Ende.
     const knoten = [
       halle(200, 'H2', 1),
-      regal(1, 'R1', 1, 200), regal(2, 'R7', 2, 200),
+      regal(1, 'R1', 1, 200), regal(2, 'R6', 2, 200), regal(3, 'R7', 3, 200),
     ];
     const { aenderungen } = planeLaufweg(knoten);
-    const neu = new Map(aenderungen.map((a) => [a.name, a.neu]));
-    expect(neu.get('R7')).toBe(1);
-    expect(neu.get('R1')).toBe(2);
+    const platz = new Map([['R1', 1], ['R6', 2], ['R7', 3]]);
+    for (const a of aenderungen) platz.set(a.name, a.neu);
+    expect([...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n))
+      .toEqual(['R6', 'R1', 'R7']);
   });
 
   it('lässt Felder natürlich aufsteigend', () => {
     const knoten = [
       halle(100, 'H1', 1),
-      regal(300, 'R6', 1, 100),
+      regal(300, 'R1', 1, 100),
       { id: 400, name: 'EA', position: 1, parentId: 300, dimensionId: 11 },
       { id: 501, name: 'F16', position: 1, parentId: 400, dimensionId: 7 },
       { id: 502, name: 'F01', position: 2, parentId: 400, dimensionId: 7 },
@@ -295,5 +296,19 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
     const neu = new Map(planeLaufweg(knoten).aenderungen.map((a) => [a.name, a.neu]));
     expect(neu.get('F01')).toBe(1);
     expect(neu.get('F16')).toBe(2);
+  });
+
+  it('dreht die Felder um, wo der Mann von hinten hereinkommt', () => {
+    // H1/R6: Feld 18 liegt links, Feld 1 hinten durch — er laeuft rueckwaerts.
+    const knoten = [
+      halle(100, 'H1', 1),
+      regal(300, 'R6', 1, 100),
+      { id: 400, name: 'EA', position: 1, parentId: 300, dimensionId: 11 },
+      { id: 501, name: 'F01', position: 1, parentId: 400, dimensionId: 7 },
+      { id: 502, name: 'F18', position: 2, parentId: 400, dimensionId: 7 },
+    ];
+    const neu = new Map(planeLaufweg(knoten).aenderungen.map((a) => [a.name, a.neu]));
+    expect(neu.get('F18')).toBe(1);
+    expect(neu.get('F01')).toBe(2);
   });
 });
