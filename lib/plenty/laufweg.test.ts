@@ -9,6 +9,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { findeDubletten, planeLaufweg, sortiereKnoten, vergleichsname, zerlegeName } from './laufweg';
+import { PODEST_REGALE, REGAL_REIHENFOLGE } from './laufweg-reihenfolge';
 import type { Knoten } from './lagerort-anlegen';
 
 const k = (id: number, name: string, position: number, parentId = 100, dimensionId = 7): Knoten =>
@@ -323,5 +324,47 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
     const neu = new Map(planeLaufweg(knoten).aenderungen.map((a) => [a.name, a.neu]));
     expect(neu.get('F18')).toBe(1);
     expect(neu.get('F01')).toBe(2);
+  });
+  it('laeuft in Halle 2 die Podest-Regale zuletzt ab', () => {
+    // R2-R5 tragen ueber Ebene C ein Podest. Weil PlentyONE Halle > Regal >
+    // Ebene sortiert, kann der Podest-Teil nicht ueber alle Regale hinweg
+    // ans Ende — die ganzen Regale wandern stattdessen nach hinten, damit
+    // der Mann nicht mitten in der Halle die Treppe hoch und wieder runter
+    // muss.
+    const folge = REGAL_REIHENFOLGE.H2;
+    const podest = PODEST_REGALE
+      .filter((x) => x.startsWith('H2/'))
+      .map((x) => x.slice('H2/'.length));
+    expect(podest).toHaveLength(4);
+    const plaetze = podest.map((r) => folge.indexOf(r));
+    expect(plaetze).not.toContain(-1);
+    // Die vier stehen am Stueck ganz hinten.
+    expect([...plaetze].sort((a, b) => a - b)).toEqual([
+      folge.length - 4, folge.length - 3, folge.length - 2, folge.length - 1,
+    ]);
+    // Und zwar von der Treppe bei R1/R2 aus nach innen.
+    expect(folge.slice(-5)).toEqual(['RKTL', 'R2', 'R3', 'R4', 'R5']);
+  });
+
+  it('nummeriert die Ebenen eines Podest-Regals von unten nach oben', () => {
+    // Erst A, B, C auf dem Hallenboden, dann D, E, F auf dem Podest —
+    // sonst stiege er als Erstes die Treppe hoch.
+    const knoten = [
+      halle(100, 'H2', 1),
+      regal(300, 'R3', 1, 100),
+      { id: 406, name: 'EF', position: 1, parentId: 300, dimensionId: 11 },
+      { id: 404, name: 'ED', position: 2, parentId: 300, dimensionId: 11 },
+      { id: 401, name: 'EA', position: 3, parentId: 300, dimensionId: 11 },
+      { id: 403, name: 'EC', position: 4, parentId: 300, dimensionId: 11 },
+      { id: 405, name: 'EE', position: 5, parentId: 300, dimensionId: 11 },
+      { id: 402, name: 'EB', position: 6, parentId: 300, dimensionId: 11 },
+    ];
+    const platz = new Map(knoten.map((k) => [k.name, k.position]));
+    for (const a of planeLaufweg(knoten).aenderungen) platz.set(a.name, a.neu);
+
+    expect([...platz.entries()]
+      .filter(([n]) => n.startsWith('E'))
+      .sort((a, b) => a[1] - b[1])
+      .map(([n]) => n)).toEqual(['EA', 'EB', 'EC', 'ED', 'EE', 'EF']);
   });
 });
