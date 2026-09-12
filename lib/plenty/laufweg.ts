@@ -23,6 +23,7 @@ import { plentyConfigured, plentyPut, aktuelleConfig } from './client';
 import {
   FELDER_RUECKWAERTS,
   HALLEN_REIHENFOLGE,
+  NICHT_ORDNEN,
   REGAL_REIHENFOLGE,
   platzIn,
 } from './laufweg-reihenfolge';
@@ -118,10 +119,22 @@ const gruppeVon = (k: Knoten) => `${k.parentId}|${k.dimensionId}`;
  * sortiert; so verschwindet nie etwas, es steht nur schlechter.
  *
  * Ebenen und Felder bleiben natürlich sortiert — die laufen aufsteigend.
+ *
+ * `null` heisst: Diese Gruppe wird gar nicht angefasst.
  */
-function sortiereGruppe(geschwister: Knoten[], nachId: Map<number, Knoten>): Knoten[] {
+function sortiereGruppe(geschwister: Knoten[], nachId: Map<number, Knoten>): Knoten[] | null {
   const erste = geschwister[0];
   if (!erste) return [];
+
+  // Hallen, die ausgenommen sind, bleiben unterhalb unangetastet — dort ist
+  // die Reihenfolge nicht geklaert, und geraten ist schlimmer als gar nicht.
+  const gleich = (a: string, b: string) => a.trim().toUpperCase() === b.trim().toUpperCase();
+  for (let k: Knoten | undefined = nachId.get(erste.parentId); k; k = nachId.get(k.parentId)) {
+    // null, nicht die Gruppe: Wer hier nur die Sortierung ueberspringt,
+    // nummeriert trotzdem 1…n durch und schreibt genau das, was er
+    // vermeiden wollte.
+    if (NICHT_ORDNEN.some((h) => gleich(h, k!.name))) return null;
+  }
 
   // Oberste Ebene (kein Elternknoten): das sind die Hallen.
   const istHalle = erste.parentId === 0 || !nachId.has(erste.parentId);
@@ -179,6 +192,7 @@ export function planeLaufweg(knoten: Knoten[]): { aenderungen: Aenderung[]; grup
   const aenderungen: Aenderung[] = [];
   for (const geschwister of gruppen.values()) {
     const sortiert = sortiereGruppe(geschwister, nachId);
+    if (!sortiert) continue;
     sortiert.forEach((k, i) => {
       const neu = i + 1;
       if (k.position !== neu) {
