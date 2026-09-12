@@ -201,8 +201,10 @@ describe('ordneLaufweg', () => {
     const nachId = new Map(geschrieben.map((g) => [Number(g.url.split('/').pop()?.split('?')[0]), g.body]));
     expect((nachId.get(3121) as { position: number }).position).toBe(1);
     expect((nachId.get(3120) as { position: number }).position).toBe(2);
-    // Der Name bleibt, was er war — umbenannt wird nichts.
-    expect((nachId.get(3121) as { name: string }).name).toBe('F01');
+    // Im Rumpf steht ausschliesslich die Position: Name, Eltern und Dimension
+    // koennen so gar nicht mitgeschrieben werden.
+    expect(Object.keys(nachId.get(3121) as object)).toEqual(['position']);
+    expect(Object.keys(nachId.get(3120) as object)).toEqual(['position']);
   });
 
   it('bricht ab, wenn die Struktur nur teilweise gelesen wurde', async () => {

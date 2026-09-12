@@ -317,10 +317,9 @@ export async function ordneLaufweg(opts: LaufwegOptionen): Promise<LaufwegErgebn
     }
     try {
       await schreibeMitGeduld(() =>
+        // Nur die Position geht raus. Name, Eltern und Dimension bleiben
+        // bewusst aussen vor, damit dieser Lauf sie gar nicht anfassen kann.
         plentyPut(`/rest/warehouses/locations/levels/${a.id}`, {
-          parentId: a.parentId,
-          dimensionId: a.dimensionId,
-          name: a.name,
           position: a.neu,
         }),
       );
