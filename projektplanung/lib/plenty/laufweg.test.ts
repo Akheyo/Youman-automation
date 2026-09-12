@@ -227,3 +227,73 @@ describe('ordneLaufweg', () => {
     expect(res.error).toMatch(/teilweise gelesen/);
   });
 });
+
+describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
+  const halle = (id: number, name: string, position: number): Knoten =>
+    ({ id, name, position, parentId: 0, dimensionId: 9 });
+  const regal = (id: number, name: string, position: number, halleId: number): Knoten =>
+    ({ id, name, position, parentId: halleId, dimensionId: 10 });
+
+  it('ordnet die Hallen H3, H2, H1, H4, H5, H6', () => {
+    const knoten = [
+      halle(1, 'H1', 1), halle(2, 'H2', 2), halle(3, 'H3', 3),
+      halle(4, 'H4', 4), halle(5, 'H5', 5), halle(6, 'H6', 6),
+    ];
+    const { aenderungen } = planeLaufweg(knoten);
+    const platz = new Map(knoten.map((k) => [k.name, k.position]));
+    for (const a of aenderungen) platz.set(a.name, a.neu);
+
+    expect([...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n))
+      .toEqual(['H3', 'H2', 'H1', 'H4', 'H5', 'H6']);
+  });
+
+  it('hängt unbekannte Hallen hinten an, statt sie zu verschlucken', () => {
+    const knoten = [halle(1, 'H1', 1), halle(2, 'HOF', 2), halle(3, 'H3', 3), halle(4, 'HWagen', 4)];
+    const { aenderungen } = planeLaufweg(knoten);
+    const platz = new Map(knoten.map((k) => [k.name, k.position]));
+    for (const a of aenderungen) platz.set(a.name, a.neu);
+
+    const folge = [...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n);
+    expect(folge.slice(0, 2)).toEqual(['H3', 'H1']);
+    expect(folge.slice(2).sort()).toEqual(['HOF', 'HWagen']);
+  });
+
+  it('sortiert die Regale je Halle nach dem Plan', () => {
+    // Halle 1 beginnt laut Plan bei den roten Fachbodenregalen R13 … R9.
+    const knoten = [
+      halle(100, 'H1', 1),
+      regal(1, 'R1', 1, 100), regal(2, 'R5', 2, 100), regal(3, 'R13', 3, 100), regal(4, 'R9', 4, 100),
+    ];
+    const { aenderungen } = planeLaufweg(knoten);
+    const platz = new Map(knoten.filter((k) => k.dimensionId === 10).map((k) => [k.name, k.position]));
+    for (const a of aenderungen.filter((x) => x.dimensionId === 10)) platz.set(a.name, a.neu);
+
+    expect([...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n))
+      .toEqual(['R13', 'R9', 'R1', 'R5']);
+  });
+
+  it('nimmt je Halle die eigene Reihenfolge', () => {
+    // In H2 laeuft er R7 zuerst, in H1 kaeme R7 spaet.
+    const knoten = [
+      halle(200, 'H2', 1),
+      regal(1, 'R1', 1, 200), regal(2, 'R7', 2, 200),
+    ];
+    const { aenderungen } = planeLaufweg(knoten);
+    const neu = new Map(aenderungen.map((a) => [a.name, a.neu]));
+    expect(neu.get('R7')).toBe(1);
+    expect(neu.get('R1')).toBe(2);
+  });
+
+  it('lässt Felder natürlich aufsteigend', () => {
+    const knoten = [
+      halle(100, 'H1', 1),
+      regal(300, 'R6', 1, 100),
+      { id: 400, name: 'EA', position: 1, parentId: 300, dimensionId: 11 },
+      { id: 501, name: 'F16', position: 1, parentId: 400, dimensionId: 7 },
+      { id: 502, name: 'F01', position: 2, parentId: 400, dimensionId: 7 },
+    ];
+    const neu = new Map(planeLaufweg(knoten).aenderungen.map((a) => [a.name, a.neu]));
+    expect(neu.get('F01')).toBe(1);
+    expect(neu.get('F16')).toBe(2);
+  });
+});
