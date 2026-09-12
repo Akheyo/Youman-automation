@@ -276,7 +276,8 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
   });
 
   it('nimmt je Halle die eigene Reihenfolge', () => {
-    // In H2 beginnt der Rundgang bei R6; R1 kommt spaet, R7 ganz am Ende.
+    // In H2 beginnt der Rundgang bei R6; R7 liegt dahinter, R1 als letztes
+    // Bodenregal endet an der Treppe.
     const knoten = [
       halle(200, 'H2', 1),
       regal(1, 'R1', 1, 200), regal(2, 'R6', 2, 200), regal(3, 'R7', 3, 200),
@@ -285,7 +286,7 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
     const platz = new Map([['R1', 1], ['R6', 2], ['R7', 3]]);
     for (const a of aenderungen) platz.set(a.name, a.neu);
     expect([...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n))
-      .toEqual(['R6', 'R1', 'R7']);
+      .toEqual(['R6', 'R7', 'R1']);
   });
 
   it('lässt Halle 4 unangetastet — dort ist die Reihenfolge nicht geklärt', () => {
@@ -342,8 +343,9 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
     expect([...plaetze].sort((a, b) => a - b)).toEqual([
       folge.length - 4, folge.length - 3, folge.length - 2, folge.length - 1,
     ]);
-    // Und zwar von der Treppe bei R1/R2 aus nach innen.
-    expect(folge.slice(-5)).toEqual(['RKTL', 'R2', 'R3', 'R4', 'R5']);
+    // Davor steht R1: an dessen linkem Ende steht die Treppe, er kommt also
+    // aus der Bodenrunde direkt an der Treppe heraus und geht von dort hoch.
+    expect(folge.slice(-5)).toEqual(['R1', 'R2', 'R3', 'R4', 'R5']);
   });
 
   it('nummeriert die Ebenen eines Podest-Regals von unten nach oben', () => {
