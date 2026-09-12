@@ -22,7 +22,21 @@ export const HALLEN_REIHENFOLGE: string[] = ['H3', 'H2', 'H1', 'H4', 'H5', 'H6']
  */
 export const REGAL_REIHENFOLGE: Record<string, string[]> = {
   H3: ['R9', 'R8', 'R6', 'R4', 'R3', 'R2', 'R1', 'R11', 'R7', 'R10', 'R5'],
-  H2: ['R6', 'R4', 'R5', 'R8', 'R9', 'R10', 'R3', 'R2', 'R1', 'R7', 'RKTL'],
+  // Halle 2 hat ein Podest: R2 bis R5 tragen unten die Ebenen A-C und darueber,
+  // auf dem Podest, D-F. Die Treppe steht bei R1/R2, dort wo der Durchgang zu
+  // H3/R6 zu ist.
+  //
+  // PlentyONE sortiert den Laufweg Halle > Regal > Ebene > Feld. Das Regal
+  // steht ueber der Ebene, also liegen die Ebenen eines Regals im Laufweg
+  // immer direkt hintereinander. "Erst alle Regale unten, danach alle oben"
+  // laesst sich mit Positionen nicht ausdruecken — dafuer muessten die
+  // Podest-Ebenen unter einem eigenen Regal-Knoten haengen.
+  //
+  // Das Naechstbeste, und genau das steht hier: die vier Podest-Regale kommen
+  // ans Ende der Halle. Der Mann laeuft erst die reinen Bodenregale ab und
+  // arbeitet das Podest am Stueck hinterher, statt in der Mitte der Halle
+  // hoch- und wieder runterzusteigen.
+  H2: ['R6', 'R8', 'R9', 'R10', 'R1', 'R7', 'RKTL', 'R2', 'R3', 'R4', 'R5'],
   H1: ['R13', 'R12', 'R11', 'R10', 'R9', 'RKTL', 'R1', 'R8', 'R7', 'R6', 'R5', 'R4', 'R3', 'R2'],
   H5: ['R7', 'R6', 'R2', 'R3', 'R1', 'R4', 'R5', 'R10', 'RKTL'],
   // In Halle 6 beginnt der Rundgang zwischen den roten Fachbodenregalen, und
@@ -32,6 +46,13 @@ export const REGAL_REIHENFOLGE: Record<string, string[]> = {
     'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7',
   ],
 };
+
+/**
+ * Regale, die ein Podest tragen: unten Ebene A-C, darueber D-F.
+ * Schluessel: "Halle/Regal". Sie stehen in REGAL_REIHENFOLGE bewusst hinten —
+ * siehe die Begruendung dort.
+ */
+export const PODEST_REGALE: string[] = ['H2/R2', 'H2/R3', 'H2/R4', 'H2/R5'];
 
 /**
  * Hallen, unterhalb derer nichts umnummeriert wird.
