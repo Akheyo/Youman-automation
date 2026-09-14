@@ -29,6 +29,27 @@ import {
 } from './laufweg-reihenfolge';
 import { istSchreiblimit, ladeStruktur, schreibeMitGeduld, type Knoten } from './lagerort-anlegen';
 
+/**
+ * Wie lange eine einmal gelesene Struktur wiederverwendet wird.
+ *
+ * Ein Lauf ueber Burlo schreibt tausende Positionen und passt nicht in eine
+ * Anfrage — die Oberflaeche ruft deshalb Runde um Runde auf. Ohne Puffer liest
+ * jede Runde die kompletten 7.590 Knoten ueber gut 30 Seiten neu und verbraucht
+ * damit ein Drittel ihrer Zeit, bevor der erste Schreibzugriff rausgeht.
+ *
+ * Der Puffer wird nach jedem erfolgreichen Schreibzugriff nachgezogen, damit
+ * die naechste Runde denselben Knoten nicht noch einmal anfasst.
+ */
+export const STRUKTUR_PUFFER_MS = 10 * 60_000;
+
+const strukturPuffer = new Map<number, { zeit: number; knoten: Knoten[] }>();
+
+/** Puffer verwerfen — nach Aenderungen an der Struktur ausserhalb dieses Laufs. */
+export function leereStrukturPuffer(warehouseId?: number): void {
+  if (typeof warehouseId === 'number') strukturPuffer.delete(warehouseId);
+  else strukturPuffer.clear();
+}
+
 /** Eine geplante oder erledigte Umnummerierung. */
 export interface Aenderung {
   id: number;
@@ -270,21 +291,31 @@ export async function ordneLaufweg(opts: LaufwegOptionen): Promise<LaufwegErgebn
     return { ...leer, error: 'PlentyONE ist nicht konfiguriert.', dauerMs: Date.now() - start };
   }
 
+  // Der Probelauf liest immer frisch — er ist die Aussage darueber, wie es in
+  // PlentyONE gerade aussieht, und fuellt den Puffer fuer die Schreibrunden.
+  const gepuffert = probelauf ? undefined : strukturPuffer.get(opts.warehouseId);
+  const pufferFrisch = Boolean(gepuffert && Date.now() - gepuffert.zeit <= STRUKTUR_PUFFER_MS);
+
   let knoten: Knoten[];
-  try {
-    const struktur = await ladeStruktur(opts.warehouseId);
-    // Eine unvollständige Struktur würde falsche Positionen erzeugen: Fehlt
-    // ein Geschwisterknoten, verschiebt sich die ganze Gruppe.
-    if (!struktur.vollstaendig) {
-      return {
-        ...leer,
-        error: 'Die Struktur wurde nur teilweise gelesen — ohne vollständige Liste wird nicht umnummeriert.',
-        dauerMs: Date.now() - start,
-      };
+  if (gepuffert && pufferFrisch) {
+    knoten = gepuffert.knoten;
+  } else {
+    try {
+      const struktur = await ladeStruktur(opts.warehouseId);
+      // Eine unvollständige Struktur würde falsche Positionen erzeugen: Fehlt
+      // ein Geschwisterknoten, verschiebt sich die ganze Gruppe.
+      if (!struktur.vollstaendig) {
+        return {
+          ...leer,
+          error: 'Die Struktur wurde nur teilweise gelesen — ohne vollständige Liste wird nicht umnummeriert.',
+          dauerMs: Date.now() - start,
+        };
+      }
+      knoten = struktur.knoten;
+      strukturPuffer.set(opts.warehouseId, { zeit: Date.now(), knoten });
+    } catch (err) {
+      return { ...leer, error: `Struktur nicht lesbar: ${(err as Error).message}`, dauerMs: Date.now() - start };
     }
-    knoten = struktur.knoten;
-  } catch (err) {
-    return { ...leer, error: `Struktur nicht lesbar: ${(err as Error).message}`, dauerMs: Date.now() - start };
   }
 
   const { aenderungen, gruppen } = planeLaufweg(knoten);
@@ -310,8 +341,13 @@ export async function ordneLaufweg(opts: LaufwegOptionen): Promise<LaufwegErgebn
   let offen = 0;
   let schreiblimit = false;
 
+  // Die Uhr fuers Schreiben laeuft erst ab hier: Das Lesen der Struktur darf
+  // das Budget nicht aufbrauchen, sonst schreibt eine Runde fast nichts.
+  const schreibStart = Date.now();
+  const nachId = new Map(knoten.map((k) => [k.id, k]));
+
   for (const a of aenderungen) {
-    if (schreiblimit || geschrieben >= maxSchreiben || Date.now() - start > budgetMs) {
+    if (schreiblimit || geschrieben >= maxSchreiben || Date.now() - schreibStart > budgetMs) {
       offen += 1;
       continue;
     }
@@ -324,6 +360,10 @@ export async function ordneLaufweg(opts: LaufwegOptionen): Promise<LaufwegErgebn
         }),
       );
       geschrieben += 1;
+      // Puffer nachziehen, sonst plant die naechste Runde denselben Schreib-
+      // zugriff noch einmal ein.
+      const imPuffer = nachId.get(a.id);
+      if (imPuffer) imPuffer.position = a.neu;
     } catch (err) {
       if (istSchreiblimit(err as Error)) {
         // Nicht als Fehler abhaken — die Zeile kommt im nächsten Aufruf dran.
