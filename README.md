@@ -149,6 +149,18 @@ dann Titel. Zu allgemeine Begriffe werden verworfen, statt das halbe Lager als
 Treffer auszugeben. Bei Gebrauchtware ist ein früheres Exemplar die beste
 Preisquelle, die es gibt, und sie gehört euch.
 
+Angezeigt wird die **Artikel-ID**, nicht die Variante — das ist die Nummer, mit
+der in PlentyONE gearbeitet wird („Den haben wir schon, Artikel 65932").
+Zusammengefasst wird ebenfalls über die Artikel-ID: Ein Artikel mit drei
+Varianten ist ein Treffer, nicht drei. Fehlt die Artikel-ID ausnahmsweise, wird
+das gesagt, statt ersatzweise eine Variantennummer zu zeigen, die jemand für
+eine Artikel-ID halten könnte.
+
+Die reine Logik (Suchbegriffe, Zuordnung, Beschriftung) liegt getrennt in
+`lib/erfassung/treffer-kern.ts`. Sie wird auch im Browser gebraucht; läge sie
+beim PlentyONE-Zugriff, zöge der Browser-Bundle den Plenty-Client samt
+`node:crypto` mit und der Build bricht ab.
+
 ### Wie „von selbst" hier funktioniert
 
 Angestoßen wird die Auswertung nach dem Abschicken **und** bei jedem Laden der

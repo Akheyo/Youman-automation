@@ -13,7 +13,7 @@ import {
   type ErkannteRolle,
 } from '@/lib/erfassung/logic';
 import { ZUSTAND_TEXT, type Erkennung } from '@/lib/erfassung/erkennung';
-import type { Treffer } from '@/lib/erfassung/treffer';
+import { trefferText, type Treffer } from '@/lib/erfassung/treffer-kern';
 import {
   arbeite,
   aussichtslos,
@@ -640,7 +640,7 @@ function ArtikelZeile({
           )}
           {treffer.length > 0 && (
             <p className={styles.erkennungZeile}>
-              Schon im Bestand: {treffer.slice(0, 3).map((t) => t.name || t.nummer || t.variationId).join(', ')}
+              Schon im Bestand: {treffer.slice(0, 3).map(trefferText).join(' · ')}
             </p>
           )}
         </div>

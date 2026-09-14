@@ -12,68 +12,20 @@
 
 import { plentyEingerichtet, plentyGet } from '@/lib/plenty/client';
 import type { Erkennung } from './erkennung';
+import {
+  alsTreffer,
+  suchbegriffeOrdnen,
+  trefferSchluessel,
+  type PlentyVariante,
+  type Treffer,
+  type TrefferErgebnis,
+} from './treffer-kern';
 
-export interface Treffer {
-  variationId: number | null;
-  itemId: number | null;
-  name: string | null;
-  nummer: string | null;
-  /** Womit dieser Treffer gefunden wurde — ohne das ist eine Trefferliste nicht prüfbar. */
-  gefundenMit: string;
-}
-
-export interface TrefferErgebnis {
-  treffer: Treffer[];
-  diagnose: string[];
-}
+export * from './treffer-kern';
 
 interface PlentyListe<T> {
   entries?: T[];
 }
-interface PlentyVariante {
-  id?: number | string;
-  itemId?: number | string;
-  number?: string;
-  name?: string;
-  item?: { id?: number | string };
-}
-
-function zahl(wert: unknown): number | null {
-  const n = typeof wert === 'string' ? Number(wert) : typeof wert === 'number' ? wert : NaN;
-  return Number.isFinite(n) ? n : null;
-}
-
-/**
- * Die Suchbegriffe in sinnvoller Reihenfolge.
- *
- * Zu kurze oder zu allgemeine Begriffe werden aussortiert: „Kabel" träfe das
- * halbe Lager und wäre als Treffer wertlos.
- */
-export function suchbegriffeOrdnen(erkennung: Pick<Erkennung, 'modellnummer' | 'hersteller' | 'modell' | 'titel' | 'suchbegriffe'>): string[] {
-  const kandidaten = [
-    erkennung.modellnummer,
-    [erkennung.hersteller, erkennung.modell].filter(Boolean).join(' '),
-    erkennung.titel,
-    ...erkennung.suchbegriffe,
-  ];
-
-  const gesehen = new Set<string>();
-  const raus: string[] = [];
-  for (const roh of kandidaten) {
-    const begriff = (roh ?? '').replace(/\s+/g, ' ').trim();
-    if (begriff.length < 4) continue;
-    // Ein einzelnes allgemeines Wort taugt nicht — außer es ist eine
-    // Modellnummer, die sich an Ziffern erkennen lässt.
-    const einWort = !begriff.includes(' ');
-    if (einWort && !/\d/.test(begriff) && begriff.length < 8) continue;
-    const schluessel = begriff.toLowerCase();
-    if (gesehen.has(schluessel)) continue;
-    gesehen.add(schluessel);
-    raus.push(begriff);
-  }
-  return raus.slice(0, 4);
-}
-
 const MAX_TREFFER = 8;
 
 /**
@@ -120,7 +72,7 @@ export async function sucheAehnliche(
   }
 
   const treffer: Treffer[] = [];
-  const gesehen = new Set<number>();
+  const gesehen = new Set<string>();
 
   for (const begriff of begriffe) {
     const eintraege = await frage(begriff);
@@ -128,17 +80,11 @@ export async function sucheAehnliche(
       diagnose.push(`Keine Treffer für „${begriff}".`);
       continue;
     }
-    for (const eintrag of eintraege) {
-      const variationId = zahl(eintrag?.id);
-      if (variationId && gesehen.has(variationId)) continue;
-      if (variationId) gesehen.add(variationId);
-      treffer.push({
-        variationId,
-        itemId: zahl(eintrag?.itemId) ?? zahl(eintrag?.item?.id),
-        name: eintrag?.name ?? null,
-        nummer: eintrag?.number ?? null,
-        gefundenMit: begriff,
-      });
+    for (const neuerTreffer of alsTreffer(eintraege, begriff)) {
+      const schluessel = trefferSchluessel(neuerTreffer);
+      if (gesehen.has(schluessel)) continue;
+      gesehen.add(schluessel);
+      treffer.push(neuerTreffer);
     }
     diagnose.push(`„${begriff}": ${eintraege.length} Treffer.`);
     // Ein guter Begriff reicht. Weitersuchen verwässert die Liste nur.
