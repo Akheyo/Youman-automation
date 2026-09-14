@@ -276,7 +276,7 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
   });
 
   it('nimmt je Halle die eigene Reihenfolge', () => {
-    // In H2 beginnt der Rundgang bei R6; R7 liegt dahinter, R1 als letztes
+    // In H2 beginnt der Rundgang oben bei R7, dann R6; R1 als letztes
     // Bodenregal endet an der Treppe.
     const knoten = [
       halle(200, 'H2', 1),
@@ -286,7 +286,7 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
     const platz = new Map([['R1', 1], ['R6', 2], ['R7', 3]]);
     for (const a of aenderungen) platz.set(a.name, a.neu);
     expect([...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n))
-      .toEqual(['R6', 'R7', 'R1']);
+      .toEqual(['R7', 'R6', 'R1']);
   });
 
   it('lässt Halle 4 unangetastet — dort ist die Reihenfolge nicht geklärt', () => {
