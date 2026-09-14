@@ -488,6 +488,25 @@ Ein Artikel ist am eingetragenen Platz nicht auffindbar. Diese Seite sammelt aus
 PlentyONE alles, was auf einen anderen Platz hindeutet, und macht daraus eine
 begründete Rangliste. **Nur lesend** — es wird nichts umgebucht.
 
+### Gesucht und benannt wird über die Artikel-ID
+
+Eingegeben wird die **Artikel-ID** — die Nummer, die in PlentyONE eingetippt
+wird („den haben wir schon, Artikel 65932"). Sie wird auch zuerst abgefragt:
+Wer eine Artikelnummer eintippt und stattdessen eine gleichlautende
+Varianten-ID trifft, bekommt sonst wortlos den falschen Artikel. Erst danach
+kommen Varianten-ID, Variantennummer und Barcode.
+
+**Auch die Nachbarschaft zählt über die Artikel-ID**, nicht über die Variante.
+Das sind zwei getrennte Nummernkreise — Nachbarn im einen sind keine Nachbarn
+im anderen. Angelegt und eingeräumt wird je Artikel, also ist die Artikel-ID
+die richtige Achse.
+
+Hat ein Artikel mehrere Varianten, zählt er als **ein** Nachbar, nicht als
+drei — sonst verdrängt er die echten Nachbarn aus der Liste. Fehlt einem
+Treffer ausnahmsweise die Artikel-ID, wird das gesagt („ohne Artikel-ID"),
+statt ersatzweise eine Variantennummer zu zeigen, die jemand für eine
+Artikel-ID halten könnte.
+
 ### Der erste Blick: Wie steht der Artikel im Bestand?
 
 Bevor irgendjemand losläuft, beantwortet die Seite die Frage, die den Suchweg
@@ -513,7 +532,7 @@ Sie bilden den Suchweg nach, der sich im Lager bewährt hat:
 | Artikeltext | 80 | Variantennummer, Modell, Beschreibung — dort steht oft der frühere Platz |
 | Warenbewegung | 70 | Wo lag er schon einmal? Rückläufer wandern an ihren alten Platz |
 | Gleicher Artikel | 65 | Haben wir das Teil nochmal? Bei Gebrauchtware steht Exemplar 2 beim ersten |
-| Nachbar-ID | 55 | ±5 IDs (einstellbar bis ±15) — zusammen angelegt heißt zusammen eingeräumt |
+| Nachbar-Artikel | 55 | ±5 **Artikel-IDs** (einstellbar bis ±15) — zusammen angelegt heißt zusammen eingeräumt |
 | Einlagerung | 50 | Was im selben Zeitfenster gebucht wurde, kam mit derselben Palette |
 | Anlagetag | 45 | Grober Ersatz, wenn keine Bewegungsdaten vorliegen |
 | Vertauscht? | 40 | Wer liegt auf dem Soll-Platz — und wo gehört der eigentlich hin? |
