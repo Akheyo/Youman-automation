@@ -370,3 +370,106 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
       .map(([n]) => n)).toEqual(['EA', 'EB', 'EC', 'ED', 'EE', 'EF']);
   });
 });
+
+describe('Struktur-Puffer über mehrere Runden', () => {
+  beforeEach(async () => {
+    vi.resetModules();
+    process.env.PLENTY_BASE_URL = 'https://test.plentymarkets-cloud01.com';
+    process.env.PLENTY_USER = 'api';
+    process.env.PLENTY_PASSWORD = 'geheim';
+    const { leereStrukturPuffer } = await import('./laufweg');
+    leereStrukturPuffer();
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.PLENTY_BASE_URL;
+    delete process.env.PLENTY_USER;
+    delete process.env.PLENTY_PASSWORD;
+  });
+
+  /** Zaehlt, wie oft die Struktur gelesen und was geschrieben wurde. */
+  function attrappe() {
+    const gelesen = { seiten: 0 };
+    const geschrieben: Array<{ id: number; position: number }> = [];
+    const KNOTEN = [
+      { id: 100, name: 'H2', position: 1, parentId: 0, dimensionId: 9 },
+      { id: 300, name: 'R6', position: 1, parentId: 100, dimensionId: 10 },
+      { id: 400, name: 'EA', position: 1, parentId: 300, dimensionId: 11 },
+      { id: 501, name: 'F01', position: 3, parentId: 400, dimensionId: 7 },
+      { id: 502, name: 'F02', position: 1, parentId: 400, dimensionId: 7 },
+      { id: 503, name: 'F03', position: 2, parentId: 400, dimensionId: 7 },
+    ];
+    const fetchMock = async (url: string, init?: { method?: string; body?: string }) => {
+      const antwort = (b: unknown) =>
+        new Response(JSON.stringify(b), { status: 200, headers: { 'content-type': 'application/json' } });
+      if (url.includes('/rest/login')) return antwort({ access_token: 't', expires_in: 3600, user_id: 1 });
+      if (init?.method === 'PUT') {
+        const id = Number(url.split('/').pop()?.split('?')[0]);
+        const rumpf = JSON.parse(String(init.body)) as { position: number };
+        geschrieben.push({ id, position: rumpf.position });
+        return antwort({ ok: true });
+      }
+      if (url.includes('/locations/dimensions')) {
+        return antwort({
+          entries: [
+            { id: 9, level: 1, name: 'Halle', shortcut: 'H' },
+            { id: 10, level: 2, name: 'Regal', shortcut: 'R' },
+            { id: 11, level: 3, name: 'Ebene', shortcut: 'E' },
+            { id: 7, level: 4, name: 'Feld', shortcut: 'F' },
+          ],
+          isLastPage: true,
+        });
+      }
+      if (url.includes('/locations/levels')) {
+        gelesen.seiten += 1;
+        return antwort({ entries: KNOTEN, isLastPage: true });
+      }
+      return antwort({ entries: [], isLastPage: true });
+    };
+    return { fetchMock, gelesen, geschrieben };
+  }
+
+  it('liest die Struktur in der zweiten Schreibrunde nicht noch einmal', async () => {
+    const { fetchMock, gelesen } = attrappe();
+    vi.stubGlobal('fetch', fetchMock);
+    const { ordneLaufweg } = await import('./laufweg');
+
+    await ordneLaufweg({ warehouseId: 106, probelauf: false, maxSchreiben: 1 });
+    const nachRunde1 = gelesen.seiten;
+    await ordneLaufweg({ warehouseId: 106, probelauf: false, maxSchreiben: 1 });
+
+    expect(nachRunde1).toBe(1);
+    expect(gelesen.seiten).toBe(1);
+  });
+
+  it('schreibt einen Knoten nicht zweimal, weil der Puffer nachgezogen wird', async () => {
+    const { fetchMock, geschrieben } = attrappe();
+    vi.stubGlobal('fetch', fetchMock);
+    const { ordneLaufweg } = await import('./laufweg');
+
+    // Runde fuer Runde je ein Knoten, bis nichts mehr offen ist.
+    for (let runde = 0; runde < 5; runde++) {
+      const res = await ordneLaufweg({ warehouseId: 106, probelauf: false, maxSchreiben: 1 });
+      if (!res.offen) break;
+    }
+
+    const ids = geschrieben.map((g) => g.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    // F01 muss auf 1, F02 auf 2, F03 auf 3.
+    const nachId = new Map(geschrieben.map((g) => [g.id, g.position]));
+    expect(nachId.get(501)).toBe(1);
+    expect(nachId.get(502)).toBe(2);
+    expect(nachId.get(503)).toBe(3);
+  });
+
+  it('liest für den Probelauf trotzdem frisch', async () => {
+    const { fetchMock, gelesen } = attrappe();
+    vi.stubGlobal('fetch', fetchMock);
+    const { ordneLaufweg } = await import('./laufweg');
+
+    await ordneLaufweg({ warehouseId: 106, probelauf: false, maxSchreiben: 1 });
+    await ordneLaufweg({ warehouseId: 106 });
+
+    expect(gelesen.seiten).toBe(2);
+  });
+});
