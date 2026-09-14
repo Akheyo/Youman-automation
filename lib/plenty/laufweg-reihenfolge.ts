@@ -36,9 +36,11 @@ export const REGAL_REIHENFOLGE: Record<string, string[]> = {
   // ans Ende der Halle. Der Mann laeuft erst die reinen Bodenregale ab und
   // arbeitet das Podest am Stueck hinterher, statt in der Mitte der Halle
   // hoch- und wieder runterzusteigen.
-  // R1 steht deshalb als letztes Bodenregal: seine Felder zaehlen von rechts
-  // nach links, er kommt also an der Treppe heraus und steigt von dort hoch.
-  H2: ['R6', 'R8', 'R9', 'R10', 'R7', 'RKTL', 'R1', 'R2', 'R3', 'R4', 'R5'],
+  // R7 liegt ganz oben in der Halle, direkt ueber R6 — es beginnt also den
+  // Rundgang. R8/R9/R10 sind die roten Regale am unteren Ende des R1-Gangs,
+  // am weitesten von R7/R6 entfernt. Von dort laeuft er R1 zurueck (dessen
+  // Felder zaehlen von rechts nach links) und kommt an der Treppe heraus.
+  H2: ['R7', 'R6', 'RKTL', 'R8', 'R9', 'R10', 'R1', 'R2', 'R3', 'R4', 'R5'],
   H1: ['R13', 'R12', 'R11', 'R10', 'R9', 'RKTL', 'R1', 'R8', 'R7', 'R6', 'R5', 'R4', 'R3', 'R2'],
   H5: ['R7', 'R6', 'R2', 'R3', 'R1', 'R4', 'R5', 'R10', 'RKTL'],
   // In Halle 6 beginnt der Rundgang zwischen den roten Fachbodenregalen, und
