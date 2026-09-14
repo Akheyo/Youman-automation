@@ -16,6 +16,16 @@
  * Bricht es zwischendrin ab, wird beim nächsten Anlauf dort weitergemacht, wo
  * es aufgehört hat — Schritt 1 wird nicht zweimal gemacht, sonst lägen doppelte
  * Bilder am Artikel.
+ *
+ * WARUM ARRAYBUFFER UND NICHT BLOB: iOS Safari gibt einen in IndexedDB
+ * abgelegten Blob beim Zurücklesen leer heraus. Der Upload schickte dann eine
+ * 0-Byte-Datei los, und der Speicher antwortete mit „No content provided" —
+ * während die Vorschau weiter das Bild zeigte, weil sie noch auf die
+ * Originaldatei zeigte. Ein ArrayBuffer wird verlässlich kopiert.
+ *
+ * Metadaten und Dateiinhalt liegen in GETRENNTEN Speichern. Sonst lüde jede
+ * Statusabfrage sämtliche Fotos in den Arbeitsspeicher — bei vierzig wartenden
+ * Aufnahmen wären das zweihundert Megabyte auf einem Lager-Handy.
  */
 
 'use client';
@@ -43,16 +53,21 @@ export interface Eintrag {
   angelegt: number;
 }
 
-interface Datensatz extends Eintrag {
-  blob: Blob;
-}
-
 const DB_NAME = 'kk-erfassung';
-const DB_VERSION = 1;
-const STORE = 'warteschlange';
+/**
+ * Fassung 2: getrennte Speicher, Inhalt als ArrayBuffer. Beim Hochziehen wird
+ * der alte Speicher verworfen — was dort liegt, sind genau die Aufnahmen, die
+ * sich ohnehin nicht hochladen ließen.
+ */
+const DB_VERSION = 2;
+const STORE = 'eintraege';
+const STORE_DATEI = 'dateien';
 
 /** Wartezeiten zwischen den Anläufen. Danach bleibt der Eintrag als Fehler stehen. */
 const PAUSEN_MS = [1000, 3000, 8000, 20000, 60000];
+
+/** So viele Vorschaubilder werden nach einem Neustart wiederhergestellt. */
+const VORSCHAU_GRENZE = 12;
 
 // ---------------------------------------------------------------------------
 // IndexedDB — mit ehrlichem Rückfall
@@ -80,7 +95,10 @@ function db(): Promise<IDBDatabase | null> {
       const anfrage = indexedDB.open(DB_NAME, DB_VERSION);
       anfrage.onupgradeneeded = () => {
         const d = anfrage.result;
+        // Fassung 1 hieß "warteschlange" und hielt Blobs — beides ersetzt.
+        if (d.objectStoreNames.contains('warteschlange')) d.deleteObjectStore('warteschlange');
         if (!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE, { keyPath: 'id' });
+        if (!d.objectStoreNames.contains(STORE_DATEI)) d.createObjectStore(STORE_DATEI);
       };
       anfrage.onsuccess = () => abschluss(anfrage.result);
       anfrage.onerror = () => abschluss(null);
@@ -95,7 +113,8 @@ function db(): Promise<IDBDatabase | null> {
 }
 
 /** Rückfallebene, wenn IndexedDB nicht zur Verfügung steht. */
-const speicher = new Map<string, Datensatz>();
+const speicher = new Map<string, Eintrag>();
+const speicherDateien = new Map<string, ArrayBuffer>();
 
 /**
  * Fertig hochgeladene Fotos dieser Sitzung.
@@ -112,7 +131,7 @@ export function laeuftNurImArbeitsspeicher(): boolean {
   return nurArbeitsspeicher;
 }
 
-async function schreibe(satz: Datensatz): Promise<void> {
+async function schreibe(satz: Eintrag): Promise<void> {
   const d = await db();
   if (!d) {
     nurArbeitsspeicher = true;
@@ -128,20 +147,49 @@ async function schreibe(satz: Datensatz): Promise<void> {
   });
 }
 
-async function loesche(id: string): Promise<void> {
-  speicher.delete(id);
+async function schreibeDatei(id: string, daten: ArrayBuffer): Promise<void> {
   const d = await db();
-  if (!d) return;
+  if (!d) {
+    speicherDateien.set(id, daten);
+    return;
+  }
   await new Promise<void>((fertig) => {
-    const t = d.transaction(STORE, 'readwrite');
-    t.objectStore(STORE).delete(id);
+    const t = d.transaction(STORE_DATEI, 'readwrite');
+    t.objectStore(STORE_DATEI).put(daten, id);
     t.oncomplete = () => fertig();
     t.onerror = () => fertig();
     t.onabort = () => fertig();
   });
 }
 
-async function alle(): Promise<Datensatz[]> {
+async function leseDatei(id: string): Promise<ArrayBuffer | null> {
+  const d = await db();
+  if (!d) return speicherDateien.get(id) ?? null;
+  return new Promise((fertig) => {
+    const t = d.transaction(STORE_DATEI, 'readonly');
+    const anfrage = t.objectStore(STORE_DATEI).get(id);
+    anfrage.onsuccess = () => fertig((anfrage.result as ArrayBuffer) ?? null);
+    anfrage.onerror = () => fertig(null);
+  });
+}
+
+async function loesche(id: string): Promise<void> {
+  speicher.delete(id);
+  speicherDateien.delete(id);
+  const d = await db();
+  if (!d) return;
+  await new Promise<void>((fertig) => {
+    const t = d.transaction([STORE, STORE_DATEI], 'readwrite');
+    t.objectStore(STORE).delete(id);
+    t.objectStore(STORE_DATEI).delete(id);
+    t.oncomplete = () => fertig();
+    t.onerror = () => fertig();
+    t.onabort = () => fertig();
+  });
+}
+
+/** Nur die Metadaten — der Dateiinhalt bleibt auf der Platte. */
+async function alle(): Promise<Eintrag[]> {
   const d = await db();
   if (!d) {
     nurArbeitsspeicher = true;
@@ -150,7 +198,7 @@ async function alle(): Promise<Datensatz[]> {
   return new Promise((fertig) => {
     const t = d.transaction(STORE, 'readonly');
     const anfrage = t.objectStore(STORE).getAll();
-    anfrage.onsuccess = () => fertig((anfrage.result as Datensatz[]) ?? []);
+    anfrage.onsuccess = () => fertig((anfrage.result as Eintrag[]) ?? []);
     anfrage.onerror = () => fertig([]);
   });
 }
@@ -188,13 +236,8 @@ type Beobachter = (eintraege: Eintrag[]) => void;
 const beobachter = new Set<Beobachter>();
 let stand: Eintrag[] = [];
 
-function ohneBlob(satz: Datensatz): Eintrag {
-  const { blob: _blob, ...rest } = satz;
-  return rest;
-}
-
 async function melde(): Promise<void> {
-  const saetze = (await alle()).map(ohneBlob);
+  const saetze = await alle();
   stand = [...saetze, ...erledigt.values()].sort((a, b) => a.angelegt - b.angelegt);
   for (const b of beobachter) b(stand);
 }
@@ -220,7 +263,7 @@ function neueId(): string {
 
 /** Nimmt ein frisch aufgenommenes Foto in die Reihe. Kehrt sofort zurück. */
 export async function einreihen(artikelId: string, rolle: Rolle, datei: File): Promise<string> {
-  const satz: Datensatz = {
+  const satz: Eintrag = {
     id: neueId(),
     artikelId,
     rolle,
@@ -230,9 +273,18 @@ export async function einreihen(artikelId: string, rolle: Rolle, datei: File): P
     status: 'wartet',
     versuche: 0,
     angelegt: Date.now(),
-    blob: datei,
   };
+  // Inhalt SOFORT als ArrayBuffer sichern, solange die Datei noch frisch aus
+  // der Kamera kommt. Danach ist sie unabhängig von der Originaldatei, die iOS
+  // jederzeit wegräumen darf.
+  const daten = await datei.arrayBuffer();
+  if (daten.byteLength === 0) {
+    // Lieber hier ablehnen als eine leere Datei in die Reihe stellen, die
+    // dann fünfmal vergeblich hochgeladen wird.
+    throw new Error('Das Foto ist leer angekommen. Bitte noch einmal aufnehmen.');
+  }
   merkeVorschau(satz.id, datei);
+  await schreibeDatei(satz.id, daten);
   await schreibe(satz);
   await melde();
   void arbeite();
@@ -311,7 +363,7 @@ export async function arbeite(): Promise<void> {
         await einenHochladen(naechster);
         // Die Vorschau bleibt absichtlich stehen — das Foto ist oben, aber die
         // Kachel soll es weiter zeigen, bis der Artikel abgeschickt ist.
-        erledigt.set(naechster.id, { ...ohneBlob(naechster), status: 'oben', meldung: undefined });
+        erledigt.set(naechster.id, { ...naechster, status: 'oben', meldung: undefined });
         await loesche(naechster.id);
         await melde();
       } catch (e) {
@@ -354,7 +406,17 @@ export async function nochmal(id: string): Promise<void> {
   void arbeite();
 }
 
-async function einenHochladen(satz: Datensatz): Promise<void> {
+async function einenHochladen(satz: Eintrag): Promise<void> {
+  const daten = await leseDatei(satz.id);
+  if (!daten || daten.byteLength === 0) {
+    // Aussagekräftig statt "No content provided" vom Speicher: Hier ist der
+    // Zwischenspeicher das Problem, nicht das Netz.
+    throw new Error(
+      'Schritt 2 (Upload zum Speicher): Das Foto ist im Zwischenspeicher leer geworden. ' +
+        'Bitte verwerfen und neu aufnehmen.',
+    );
+  }
+
   // Schritt 1 — Platz reservieren. Nur beim ersten Mal.
   if (!satz.bildId || !satz.pfad || !satz.token) {
     const res = await fetch(`/api/erfassung/artikel/${satz.artikelId}/bild`, {
@@ -383,7 +445,9 @@ async function einenHochladen(satz: Datensatz): Promise<void> {
   if (!supabase) throw new Error('Supabase im Browser nicht konfiguriert.');
   const { error } = await supabase.storage
     .from(BILDER_BUCKET)
-    .uploadToSignedUrl(satz.pfad, satz.token, satz.blob, { contentType: satz.contentType });
+    .uploadToSignedUrl(satz.pfad, satz.token, new Blob([daten], { type: satz.contentType }), {
+      contentType: satz.contentType,
+    });
   if (error) {
     // Sonderfall, der sonst ewig haengenbliebe: Der Upload war beim letzten
     // Anlauf schon durch, nur die Bestaetigung (Schritt 3) kam nicht mehr an.
@@ -410,14 +474,21 @@ async function einenHochladen(satz: Datensatz): Promise<void> {
  * wieder auf. Wird beim Öffnen der Seite aufgerufen.
  */
 export async function wiederAufnehmen(): Promise<void> {
-  for (const satz of await alle()) {
-    merkeVorschau(satz.id, satz.blob);
+  const saetze = await alle();
+  for (const satz of saetze) {
     // Ein Eintrag, der beim Schließen mitten im Upload war, steht auf "laedt"
     // und würde sonst nie wieder angefasst.
     if (satz.status === 'laedt') {
       satz.status = 'wartet';
       await schreibe(satz);
     }
+  }
+  // Vorschauen nur für die ersten Einträge herstellen. Nach einer langen
+  // Funklochstrecke können hier dutzende Fotos liegen — die alle in den
+  // Arbeitsspeicher zu holen, nur um Miniaturen zu zeigen, legt ein Handy lahm.
+  for (const satz of saetze.slice(0, VORSCHAU_GRENZE)) {
+    const daten = await leseDatei(satz.id);
+    if (daten) merkeVorschau(satz.id, new Blob([daten], { type: satz.contentType }));
   }
   await melde();
   void arbeite();
