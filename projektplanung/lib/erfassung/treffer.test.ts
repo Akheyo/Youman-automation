@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { suchbegriffeOrdnen } from './treffer';
+import { alsTreffer, suchbegriffeOrdnen, trefferSchluessel, trefferText } from './treffer-kern';
 
 const basis = { modellnummer: null, hersteller: null, modell: null, titel: '', suchbegriffe: [] as string[] };
 
@@ -44,5 +44,66 @@ describe('suchbegriffeOrdnen', () => {
 
   it('kommt mit einer voellig leeren Erkennung klar', () => {
     expect(suchbegriffeOrdnen(basis)).toEqual([]);
+  });
+});
+
+describe('alsTreffer', () => {
+  it('nimmt die Artikel-ID aus itemId', () => {
+    const [t] = alsTreffer([{ id: 991, itemId: 65932, name: 'Bohrmaschine', number: 'KK-1' }], 'Bohrmaschine');
+    expect(t.itemId).toBe(65932);
+    expect(t.variationId).toBe(991);
+  });
+
+  it('holt die Artikel-ID notfalls aus dem eingebetteten item', () => {
+    const [t] = alsTreffer([{ id: 991, item: { id: 65932 } }], 'x');
+    expect(t.itemId).toBe(65932);
+  });
+
+  it('kommt mit Zahlen als Text klar', () => {
+    const [t] = alsTreffer([{ id: '991', itemId: '65932' }], 'x');
+    expect(t.itemId).toBe(65932);
+  });
+});
+
+describe('trefferSchluessel', () => {
+  it('fasst mehrere Varianten desselben Artikels zusammen', () => {
+    // Ein Artikel mit drei Varianten ist EIN Treffer, nicht drei.
+    const eintraege = alsTreffer(
+      [
+        { id: 1, itemId: 65932 },
+        { id: 2, itemId: 65932 },
+        { id: 3, itemId: 70001 },
+      ],
+      'x',
+    );
+    const schluessel = new Set(eintraege.map(trefferSchluessel));
+    expect(schluessel.size).toBe(2);
+  });
+
+  it('haelt Treffer ohne Artikel-ID trotzdem auseinander', () => {
+    const eintraege = alsTreffer([{ id: 1 }, { id: 2 }], 'x');
+    expect(new Set(eintraege.map(trefferSchluessel)).size).toBe(2);
+  });
+});
+
+describe('trefferText', () => {
+  it('stellt die Artikel-ID voran', () => {
+    expect(trefferText({ itemId: 65932, variationId: 991, name: 'Bohrmaschine', nummer: null, gefundenMit: 'x' })).toBe(
+      'Artikel 65932 — Bohrmaschine',
+    );
+  });
+
+  it('kommt ohne Bezeichnung aus', () => {
+    expect(trefferText({ itemId: 65932, variationId: 991, name: null, nummer: null, gefundenMit: 'x' })).toBe(
+      'Artikel 65932',
+    );
+  });
+
+  it('zeigt NIE eine Variantennummer an Stelle der Artikel-ID', () => {
+    // Sonst haelt jemand die Variante fuer die Artikel-ID und sucht in Plenty
+    // nach einer Nummer, die es dort so nicht gibt.
+    const text = trefferText({ itemId: null, variationId: 991, name: 'Bohrmaschine', nummer: 'KK-1', gefundenMit: 'x' });
+    expect(text).toBe('Bohrmaschine (ohne Artikel-ID)');
+    expect(text).not.toContain('991');
   });
 });
