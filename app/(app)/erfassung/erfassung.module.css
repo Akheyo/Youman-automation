@@ -4,7 +4,7 @@
 .seite {
   max-width: 720px;
   margin: 0 auto;
-  padding-bottom: 140px; /* Platz für die feste Fußleiste */
+  padding-bottom: 170px; /* Platz für die feste Fußleiste */
 }
 
 /* ------------------------------------------------------------------ Kopf */
@@ -32,6 +32,11 @@
   line-height: 1.05;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+  .kopf { padding: var(--space-3) 0 var(--space-3); }
+  .nummer { font-size: 32px; }
 }
 
 .verwerfen {
@@ -68,7 +73,7 @@
   border-radius: var(--radius-lg);
   background: var(--blue);
   color: #fff;
-  padding: var(--space-5) var(--space-4);
+  padding: var(--space-4);
   text-align: center;
 }
 .aufnehmen:hover:not(:disabled) { background: var(--blue-h); }
@@ -168,17 +173,22 @@
 
 /* ---------------------------------------------------------------- Rest */
 
-.galerie {
+/* Nebenwege: bewusst klein. Der Regelfall ist der Sucher darüber. */
+.nebenwege {
+  display: flex;
+  gap: var(--space-2);
   margin-top: var(--space-3);
-  width: 100%;
+}
+.nebenwege button {
+  flex: 1;
   background: none;
   border: 1px dashed var(--border-strong);
   color: var(--muted);
   border-radius: var(--radius);
-  padding: 12px;
-  font-size: 14px;
+  padding: 10px;
+  font-size: 13px;
 }
-.galerie:disabled { opacity: 0.5; cursor: not-allowed; }
+.nebenwege button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .notizFeld {
   display: block;
@@ -251,7 +261,7 @@
 
 /* -------------------------------------------------------------- Verlauf */
 
-.verlauf { margin-top: var(--space-6); }
+.verlauf { margin-top: var(--space-5); }
 .verlauf h2 { font-size: 15px; margin: 0 0 var(--space-3); }
 .verlauf ul { list-style: none; margin: 0; padding: 0; }
 .verlaufZeile {

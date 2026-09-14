@@ -1,0 +1,142 @@
+/* Vollbild-Sucher. Bewusst schwarz und ohne Beiwerk: Wer auslöst, soll das
+   Motiv sehen und den Auslöser treffen, sonst nichts. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+}
+
+.bild {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  /* "contain" statt "cover": Der Sucher zeigt genau den Ausschnitt, der auch
+     aufgenommen wird. Mit "cover" wäre das Bild beschnitten, und man hätte das
+     Typenschild im Sucher gesehen, aber nicht auf dem Foto. Schwarze Balken
+     sind der ehrlichere Kompromiss. */
+  object-fit: contain;
+  background: #000;
+}
+
+.blitz {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.zu {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  left: 12px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.fehler {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  text-align: center;
+}
+.fehler p {
+  margin: 0 0 var(--space-4);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.fehlerKnopf {
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--blue);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 20px;
+}
+
+/* ---- Bedienleiste unten: Daumen erreicht alles ---- */
+
+.leiste {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+}
+
+.zaehler {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.letztes {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}
+.zaehlerLeer {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+}
+
+/* Großer Auslöser — am Regal wird nicht gezielt. */
+.ausloeser {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.9);
+  background: transparent;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.ausloeser:disabled { opacity: 0.4; }
+.ausloeserKern {
+  display: block;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #fff;
+}
+.ausloeser:active .ausloeserKern { background: var(--border-strong); }
+
+.fertig {
+  justify-self: end;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--navy);
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 22px;
+}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './erfassung.module.css';
+import Kamera from './Kamera';
 import {
   ERKANNTE_ROLLE_TEXT,
   STATUS_TEXT,
@@ -97,6 +98,7 @@ export default function Erfassung() {
   const [online, setOnline] = useState(true);
   /** Welcher Artikel wird gerade ausgewertet — für die Anzeige in der Liste. */
   const [wertetAus, setWertetAus] = useState<string | null>(null);
+  const [kameraOffen, setKameraOffen] = useState(false);
 
   const kameraRef = useRef<HTMLInputElement>(null);
   const galerieRef = useRef<HTMLInputElement>(null);
@@ -119,7 +121,10 @@ export default function Erfassung() {
       const daten = await alsJson(res);
       if (!res.ok) return [];
       const artikel = (daten.artikel as ServerArtikel[]) ?? [];
-      setListe(artikel);
+      // Leere Entwürfe gehören nicht in den Verlauf: Sie entstehen bei jedem
+      // Öffnen der Seite und würden die Liste auf einem Handy zumüllen. Der
+      // Artikel, an dem gerade gearbeitet wird, steht ohnehin oben im Kopf.
+      setListe(artikel.filter((a) => a.status !== 'offen' || (a.bilder ?? []).some((b) => b.hochgeladen)));
       return artikel;
     } catch {
       // Die Liste ist Beiwerk — ein Fehler hier darf das Fotografieren nicht stören.
@@ -286,22 +291,30 @@ export default function Erfassung() {
   // Fotografieren
   // -------------------------------------------------------------------------
 
-  const dateienUebernehmen = async (dateien: FileList | null) => {
-    if (!dateien || dateien.length === 0 || !artikel) return;
-    for (const datei of Array.from(dateien)) {
+  /**
+   * Ein Foto in die Reihe stellen. Wofür es taugt, entscheidet die Auswertung —
+   * am Regal wird fotografiert, nicht sortiert.
+   */
+  const dateiUebernehmen = useCallback(
+    async (datei: File) => {
+      if (!artikel) return;
       const fehler = validiereBild({ contentType: datei.type, groesse: datei.size });
       if (fehler) {
         setMeldung({ art: 'fehler', text: `${datei.name}: ${fehler}` });
-        continue;
+        return;
       }
-      // Wofür ein Foto taugt, entscheidet die Auswertung. Am Regal wird
-      // fotografiert, nicht sortiert.
       try {
         await einreihen(artikel.id, 'detail', datei);
       } catch (e) {
         setMeldung({ art: 'fehler', text: e instanceof Error ? e.message : String(e) });
       }
-    }
+    },
+    [artikel],
+  );
+
+  const dateienUebernehmen = async (dateien: FileList | null) => {
+    if (!dateien) return;
+    for (const datei of Array.from(dateien)) await dateiUebernehmen(datei);
   };
 
   const fotos: Foto[] = useMemo(() => {
@@ -439,14 +452,26 @@ export default function Erfassung() {
       <button
         type="button"
         className={styles.aufnehmen}
-        onClick={() => kameraRef.current?.click()}
+        onClick={() => setKameraOffen(true)}
         disabled={!artikel || beschaeftigt}
       >
-        <span className={styles.aufnehmenGross}>Foto aufnehmen</span>
+        <span className={styles.aufnehmenGross}>Kamera öffnen</span>
         <span className={styles.aufnehmenKlein}>
-          So viele wie nötig — Übersicht, Typenschild, Schäden. Sortieren macht die Auswertung.
+          Bleibt offen — so oft auslösen wie nötig, dann „Fertig“.
         </span>
       </button>
+
+      <Kamera
+        offen={kameraOffen}
+        onFoto={(datei) => void dateiUebernehmen(datei)}
+        onSchliessen={() => setKameraOffen(false)}
+        onDialog={() => {
+          setKameraOffen(false);
+          // Ein kurzer Moment, sonst öffnet der Dialog hinter dem
+          // verschwindenden Sucher.
+          window.setTimeout(() => kameraRef.current?.click(), 50);
+        }}
+      />
 
       {fotos.length > 0 && (
         <ul className={styles.streifen}>
@@ -513,14 +538,14 @@ export default function Erfassung() {
         </section>
       )}
 
-      <button
-        type="button"
-        className={styles.galerie}
-        onClick={() => galerieRef.current?.click()}
-        disabled={!artikel || beschaeftigt}
-      >
-        Aus der Galerie hinzufügen
-      </button>
+      <div className={styles.nebenwege}>
+        <button type="button" onClick={() => galerieRef.current?.click()} disabled={!artikel || beschaeftigt}>
+          Aus der Galerie
+        </button>
+        <button type="button" onClick={() => kameraRef.current?.click()} disabled={!artikel || beschaeftigt}>
+          Einzelaufnahme
+        </button>
+      </div>
 
       <label className={styles.notizFeld}>
         <span>Notiz — nur was man auf den Fotos nicht sieht</span>
