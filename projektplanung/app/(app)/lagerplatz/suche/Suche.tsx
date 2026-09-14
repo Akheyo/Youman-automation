@@ -26,6 +26,7 @@ interface Beleg {
 }
 interface Zeitpunkt {
   zeit: string;
+  itemId: number | null;
   variationId: number | null;
   nummer: string | null;
   name: string | null;
@@ -55,7 +56,7 @@ interface Artikelkarte {
   itemId: number | null;
   nummer: string | null;
   name: string | null;
-  idAbstand: number;
+  artikelAbstand: number;
   bildUrl: string | null;
   klasse: 'kleinteil' | 'mittel' | 'grossteil' | 'unbekannt';
   belegungen: Belegung[];
@@ -106,6 +107,16 @@ const LAGE_STIL: Record<Ergebnis['lage'], string> = {
   'ohne-bestand': eigen.lageOhne,
   unbekannt: eigen.lageUnbekannt,
 };
+
+/**
+ * Wie ein Artikel benannt wird: mit seiner Artikel-ID — der Nummer, die in
+ * PlentyONE eingetippt wird. Eine Variantennummer sagt am Regal niemandem
+ * etwas; sie steht deshalb nur klein darunter.
+ */
+function bezeichne(k: { itemId: number | null; nummer: string | null; variationId: number }): string {
+  if (k.itemId) return `Artikel ${k.itemId}`;
+  return `Variante ${k.nummer ?? k.variationId} (ohne Artikel-ID)`;
+}
 
 /** Uhrzeit auf die Minute, in der Zeitzone des Betrachters. */
 function uhrzeit(iso: string): string {
@@ -166,11 +177,14 @@ function Karte({ karte, gesucht = false }: { karte: Artikelkarte; gesucht?: bool
       )}
       <div className={eigen.karteText}>
         <span className={eigen.karteNummer}>
-          {karte.nummer ?? karte.variationId}
-          {!gesucht && karte.idAbstand !== 0 && (
-            <span className={styles.cellHint}> ({karte.idAbstand > 0 ? '+' : ''}{karte.idAbstand})</span>
+          {bezeichne(karte)}
+          {!gesucht && karte.artikelAbstand !== 0 && (
+            <span className={styles.cellHint}>
+              {' '}({karte.artikelAbstand > 0 ? '+' : ''}{karte.artikelAbstand})
+            </span>
           )}
         </span>
+        {karte.nummer && <span className={styles.cellHint}>Variante {karte.nummer}</span>}
         <span className={eigen.karteName} title={karte.name ?? ''}>{karte.name ?? '—'}</span>
         <span className={styles.cellHint}>{KLASSE_TEXT[karte.klasse]}</span>
         {plaetze.length ? (
@@ -275,18 +289,18 @@ export default function Suche({ plentyReady }: { plentyReady: boolean }) {
       <form className={styles.card} onSubmit={suchen}>
         <div className={styles.controls}>
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="eingabe">Artikelnummer, Varianten-ID oder EAN</label>
+            <label className={styles.label} htmlFor="eingabe">Artikel-Nr (Artikel-ID)</label>
             <input
               id="eingabe"
               className={eigen.eingabe}
               value={eingabe}
               onChange={(e) => setEingabe(e.target.value)}
-              placeholder="z. B. 44231 oder ART-44231"
+              placeholder="z. B. 65932"
               autoFocus
             />
           </div>
           <div className={styles.field}>
-            <label className={styles.label} htmlFor="spanne">IDs drüber/drunter</label>
+            <label className={styles.label} htmlFor="spanne">Artikel-Nr drüber/drunter</label>
             <select
               id="spanne"
               className={styles.select}
@@ -333,7 +347,7 @@ export default function Suche({ plentyReady }: { plentyReady: boolean }) {
           <section className={styles.card}>
             <div className={styles.cardHead}>
               <h2 className={styles.cardTitle}>
-                {ergebnis.gesucht.nummer ?? ergebnis.gesucht.variationId} — {ergebnis.gesucht.name ?? 'ohne Namen'}
+                {bezeichne(ergebnis.gesucht)} — {ergebnis.gesucht.name ?? 'ohne Namen'}
               </h2>
               <span className={styles.cellHint}>{(ergebnis.dauerMs / 1000).toFixed(1)} s</span>
             </div>
@@ -474,7 +488,11 @@ export default function Suche({ plentyReady }: { plentyReady: boolean }) {
                         <span className={eigen.belegBildLeer} aria-hidden="true" />
                       )}
                       <span>
-                        {z.istGesucht ? '▸ gesuchter Artikel' : (z.nummer ?? z.variationId ?? '—')}
+                        {z.istGesucht
+                          ? '▸ gesuchter Artikel'
+                          : z.itemId
+                            ? `Artikel ${z.itemId}`
+                            : (z.nummer ?? z.variationId ?? '—')}
                         {z.name && !z.istGesucht && <span className={styles.cellHint}> · {z.name}</span>}
                         {z.ortName && <span className={eigen.zeitOrt}> → {z.ortName}</span>}
                       </span>
@@ -492,7 +510,7 @@ export default function Suche({ plentyReady }: { plentyReady: boolean }) {
             karten={ergebnis.dubletten}
           />
           <Kartenblock
-            titel="Nachbar-IDs"
+            titel="Benachbarte Artikel-Nummern"
             hinweis="Zusammen angelegt heißt meist zusammen eingeräumt. Die Bilder zeigen, ob die Größe zum vorgeschlagenen Platz passt."
             karten={ergebnis.nachbarn}
           />
