@@ -54,10 +54,23 @@ export const REGAL_REIHENFOLGE: Record<string, string[]> = {
   // Die Paare bleiben dabei beisammen (…R14/R13, dann R12/R11 …), weil ein
   // Gang immer zwei aufeinanderfolgende Nummern trennt.
   // RKTL steht vorn am Eingang und wird im Vorbeigehen mitgenommen.
+  //
+  // Auf dem Podest darueber steht dieselbe Reihe noch einmal, dort mit P
+  // statt R — nur in Halle 4. Diese Regale kommen komplett ans Ende: erst
+  // unten alles holen, dann einmal hoch. Anders als in Halle 2 geht das hier
+  // sauber, weil das Podest eigene Regal-Knoten hat und nicht an den Ebenen
+  // der Bodenregale haengt.
+  //
+  // Im Export vom 12.09.2026 gibt es diese Regale in PlentyONE noch nicht.
+  // Sie stehen hier trotzdem schon, damit sie beim Anlegen sofort an der
+  // richtigen Stelle einsortiert werden.
   H4: [
     'RKTL',
     'R15KTL', 'R14KTL', 'R13KTL', 'R12KTL', 'R11KTL', 'R10KTL', 'R9KTL',
     'R8KTL', 'R7KTL', 'R6KTL', 'R5KTL', 'R4KTL', 'R3KTL', 'R2KTL', 'R1KTL',
+    // Podest: die Treppe steht hinten bei R1KTL, also von hinten nach vorn.
+    'P1KTL', 'P2KTL', 'P3KTL', 'P4KTL', 'P5KTL', 'P6KTL', 'P7KTL', 'P8KTL',
+    'P9KTL', 'P10KTL', 'P11KTL', 'P12KTL', 'P13KTL', 'P14KTL', 'P15KTL',
   ],
   H5: ['R7', 'R6', 'R2', 'R3', 'R1', 'R4', 'R5', 'R10', 'RKTL'],
   // In Halle 6 beginnt der Rundgang zwischen den roten Fachbodenregalen, und
