@@ -304,18 +304,18 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
     }
     const folge = [...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n);
 
-    expect(folge).toEqual(['R15KTL', 'R1KTL', 'P15KTL', 'P1KTL']);
+    expect(folge).toEqual(['R1KTL', 'R15KTL', 'P1KTL', 'P15KTL']);
     // Kein P-Regal darf vor einem R-Regal stehen.
     const ersteP = folge.findIndex((n) => n.startsWith('P'));
     const letztesR = folge.map((n) => n.startsWith('R')).lastIndexOf(true);
     expect(ersteP).toBeGreaterThan(letztesR);
   });
 
-  it('laeuft die KTL-Reihe in Halle 4 gangweise rueckwaerts ab', () => {
+  it('laeuft die KTL-Reihe in Halle 4 gangweise in der Zahlenreihe ab', () => {
     // Auf der Lagerbuehne stehen Doppelregale: R1 gegenueber R2, R3 gegenueber
     // R4 und so weiter. Aufeinanderfolgende Nummern teilen sich also einen
-    // Gang. Er kommt vorn bei R15KTL rein und arbeitet sich nach hinten zu
-    // R1KTL durch — die Paare bleiben dabei beisammen.
+    // Gang. Er kommt vorn bei R1KTL rein und arbeitet sich nach hinten zu
+    // R15KTL durch — die Paare bleiben dabei beisammen.
     const knoten = [
       halle(400, 'H4', 4),
       regal(1, 'R10KTL', 1, 400), regal(2, 'R2KTL', 2, 400), regal(3, 'RKTL', 3, 400),
@@ -327,7 +327,7 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
     }
 
     expect([...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n))
-      .toEqual(['RKTL', 'R15KTL', 'R10KTL', 'R9KTL', 'R2KTL', 'R1KTL']);
+      .toEqual(['RKTL', 'R1KTL', 'R2KTL', 'R9KTL', 'R10KTL', 'R15KTL']);
   });
 
   it('lässt Felder natürlich aufsteigend', () => {
