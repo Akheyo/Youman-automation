@@ -304,7 +304,7 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
     }
     const folge = [...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n);
 
-    expect(folge).toEqual(['R15KTL', 'R1KTL', 'P1KTL', 'P15KTL']);
+    expect(folge).toEqual(['R15KTL', 'R1KTL', 'P15KTL', 'P1KTL']);
     // Kein P-Regal darf vor einem R-Regal stehen.
     const ersteP = folge.findIndex((n) => n.startsWith('P'));
     const letztesR = folge.map((n) => n.startsWith('R')).lastIndexOf(true);
