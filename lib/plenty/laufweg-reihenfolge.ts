@@ -68,9 +68,11 @@ export const REGAL_REIHENFOLGE: Record<string, string[]> = {
     'RKTL',
     'R15KTL', 'R14KTL', 'R13KTL', 'R12KTL', 'R11KTL', 'R10KTL', 'R9KTL',
     'R8KTL', 'R7KTL', 'R6KTL', 'R5KTL', 'R4KTL', 'R3KTL', 'R2KTL', 'R1KTL',
-    // Podest: die Treppe steht hinten bei R1KTL, also von hinten nach vorn.
-    'P1KTL', 'P2KTL', 'P3KTL', 'P4KTL', 'P5KTL', 'P6KTL', 'P7KTL', 'P8KTL',
-    'P9KTL', 'P10KTL', 'P11KTL', 'P12KTL', 'P13KTL', 'P14KTL', 'P15KTL',
+    // Podest: Die Treppe steht am R15KTL-Ende, am schraffierten Zwischenraum.
+    // Er laeuft unten also bis R1KTL an die Wand, kommt zur Treppe zurueck und
+    // oben bei P15KTL an — dieselbe Richtung wie unten, von 15 nach 1.
+    'P15KTL', 'P14KTL', 'P13KTL', 'P12KTL', 'P11KTL', 'P10KTL', 'P9KTL',
+    'P8KTL', 'P7KTL', 'P6KTL', 'P5KTL', 'P4KTL', 'P3KTL', 'P2KTL', 'P1KTL',
   ],
   H5: ['R7', 'R6', 'R2', 'R3', 'R1', 'R4', 'R5', 'R10', 'RKTL'],
   // In Halle 6 beginnt der Rundgang zwischen den roten Fachbodenregalen, und
