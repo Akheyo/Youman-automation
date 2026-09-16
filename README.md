@@ -64,6 +64,182 @@ nie mit echten Hersteller-GTINs kollidiert. Aufbau: `[Präfix 2][Nutzlast 10]
 [Prüfziffer 1]`. Die Prüfziffer wird korrekt nach dem EAN-13-Standard berechnet
 (siehe [`lib/plenty/ean.ts`](lib/plenty/ean.ts)).
 
+## Erfassung (`/erfassung`)
+
+Artikel am Regal fotografieren — und in derselben Sekunde entsteht der Artikel.
+
+### Was vorher war
+
+Fotos per WhatsApp in eine Gruppe, am PC über WhatsApp Web ins Google Drive
+gezogen, ein Ordner-Watcher hat gepollt und daraus einen Plenty-Artikel gebaut.
+Vier Schwachstellen, die alle zusammen dieselbe Ursache haben — **auf dem Handy
+ist alles da, und jeder Schritt danach wirft etwas davon weg**:
+
+| Stelle | Was verloren ging |
+| --- | --- |
+| WhatsApp | Auflösung. Verkaufsbilder wurden komprimiert, bevor sie irgendwo ankamen. |
+| Drag & Drop am PC | Vollständigkeit. Fehlten drei von vierzig Bildern, merkte es niemand. |
+| Ordner-Watcher | Zeit. Zwischen Foto und Verarbeitung lagen Minuten. |
+| Reihenfolge im Ordner | Zuordnung. Fotografierten zwei Leute gleichzeitig, mischten sich die Artikel. |
+
+### Wie es jetzt läuft
+
+Die Seite ist fürs Handy gebaut und lässt sich über „Zum Startbildschirm"
+wie eine App ablegen (Manifest + Icons, kein App Store). Der Ablauf:
+
+1. Seite öffnen → ein **angefangener Artikel wird fortgesetzt**, sonst entsteht
+   ein neuer. Deshalb kostet ein versehentliches Öffnen keine Karteileiche, und
+   ein zwischendrin geschlossenes Handy keinen Artikel.
+2. **Ein Knopf: „Foto aufnehmen".** So viele Aufnahmen wie nötig, in beliebiger
+   Reihenfolge. Es gibt keine Pflicht-Perspektiven und nichts abzuhaken.
+3. Jedes Foto geht **sofort im Hintergrund** raus, während schon das nächste
+   gemacht wird.
+4. „Artikel fertig" — und ab hier läuft es **von selbst weiter**: Die Auswertung
+   startet ohne weiteres Zutun, während auf dem Tisch schon der nächste Artikel
+   liegt.
+
+### Warum niemand mehr Bildrollen vergibt
+
+Die erste Fassung verlangte vier Aufnahmen in vier Kacheln: Übersicht,
+Typenschild, Zustand, Detail. Das war ein Formular vor der Kamera — abhaken,
+bevor man auslösen darf, mit vollen Händen im Lager.
+
+Wofür ein Foto taugt, **sieht man dem Foto an**. Das entscheidet die Auswertung
+hinterher, und zwar zuverlässiger als jemand, der gerade eine Palette abräumt.
+Fehlt etwas Wichtiges, sagt sie es hinterher — „kein lesbares Typenschild auf
+den Fotos" ist ein Hinweis am Ergebnis, kein Grund, jemanden am Regal stehen zu
+lassen. Zum Abschicken reicht **ein Foto**.
+
+### Warum die Fotos direkt zum Storage gehen
+
+Serverless-Funktionen auf Vercel nehmen nur rund **4,5 MB** Anfrage-Körper an.
+Ein Handyfoto in voller Auflösung liegt darüber. Liefe der Upload über eine
+API-Route, müssten die Bilder vorher kleingerechnet werden — also genau der
+Qualitätsverlust, wegen dem WhatsApp aus der Kette geflogen ist.
+
+Deshalb vergibt die App nur die Erlaubnis (signierte Upload-URL), und der
+Browser lädt direkt in den privaten Bucket `artikelfotos`. Details in
+[`lib/erfassung/speicher.ts`](lib/erfassung/speicher.ts).
+
+### Was die Auswertung macht
+
+Alle Fotos **eines** Artikels gehen in **einen** Aufruf an Claude. Das ist der
+Kern: Erst im Zusammenhang ergibt sich aus Übersicht, Typenschild und
+Detailaufnahme ein Gerät — einzeln ausgewertet sieht man dreimal etwas
+Metallisches.
+
+Zurück kommt ein festes Schema (`lib/erfassung/erkennung.ts`): Gerätetyp,
+Hersteller, Modell, Modellnummer, Zustand, Schäden, Lieferumfang, technische
+Merkmale, dazu je Foto, wofür es taugt.
+
+**Jedes Feld darf „unbekannt" sein**, und das ist die wichtigste Regel hier:
+Eine geratene Modellnummer sieht aus wie eine echte, und die Preisrecherche
+baut später darauf auf. Lieber eine Lücke, die jemand füllt, als eine Angabe,
+der niemand widerspricht.
+
+**Schäden landen in der Notiz.** Der maschinelle Teil steht unter einer
+Trennzeile und wird bei jeder neuen Auswertung ersetzt, damit er sich nicht
+stapelt. Was ein Mensch getippt hat, steht darüber und wird **nie**
+überschrieben — wer „Fernbedienung fehlt" notiert, weiß etwas, das auf keinem
+Foto zu sehen ist.
+
+Anschließend wird in PlentyONE gesucht, ob es dasselbe Teil schon einmal gab
+(`lib/erfassung/treffer.ts`) — Modellnummer zuerst, dann Hersteller + Modell,
+dann Titel. Zu allgemeine Begriffe werden verworfen, statt das halbe Lager als
+Treffer auszugeben. Bei Gebrauchtware ist ein früheres Exemplar die beste
+Preisquelle, die es gibt, und sie gehört euch.
+
+Angezeigt wird die **Artikel-ID**, nicht die Variante — das ist die Nummer, mit
+der in PlentyONE gearbeitet wird („Den haben wir schon, Artikel 65932").
+Zusammengefasst wird ebenfalls über die Artikel-ID: Ein Artikel mit drei
+Varianten ist ein Treffer, nicht drei. Fehlt die Artikel-ID ausnahmsweise, wird
+das gesagt, statt ersatzweise eine Variantennummer zu zeigen, die jemand für
+eine Artikel-ID halten könnte.
+
+Die reine Logik (Suchbegriffe, Zuordnung, Beschriftung) liegt getrennt in
+`lib/erfassung/treffer-kern.ts`. Sie wird auch im Browser gebraucht; läge sie
+beim PlentyONE-Zugriff, zöge der Browser-Bundle den Plenty-Client samt
+`node:crypto` mit und der Build bricht ab.
+
+### Wie „von selbst" hier funktioniert
+
+Angestoßen wird die Auswertung nach dem Abschicken **und** bei jedem Laden der
+Liste: Was auf `bereit` steht, wird nachgezogen, eines nach dem anderen. Bleibt
+ein Artikel liegen, weil jemand die App zugemacht hat, holt ihn der nächste
+Aufruf nach.
+
+Das ist bewusst noch kein eigener Dienst. Ein Artikel, dessen Auswertung nicht
+durchgeht, wird in derselben Sitzung nicht erneut angestoßen — sonst liefe eine
+Schleife, die Geld kostet. Ein richtiger Worker (mit Wiederholung über Tage
+hinweg) kommt mit den nächsten Ausbaustufen.
+
+**Zeitgrenze:** Die Auswertung läuft als Serverless-Funktion mit
+`maxDuration = 60`. Das ist die Obergrenze, die auch im kleinsten Vercel-Tarif
+erlaubt ist. Reicht sie bei vielen Fotos nicht, ist die Stellschraube
+`output_config.effort` in `lib/erfassung/erkennung.ts`.
+
+**HEIC:** iPhones speichern je nach Einstellung im HEIC-Format, das die
+Auswertung nicht lesen kann. Solche Bilder werden übersprungen **und benannt** —
+still weglassen wäre der schlechtere Weg, weil dann unerklärlich weniger
+erkannt würde. Abhilfe am Gerät: Einstellungen → Kamera → Formate → „Maximale
+Kompatibilität".
+
+### Funkloch im Lager
+
+Jedes Foto liegt **zuerst in IndexedDB**, dann geht es hoch
+([`lib/erfassung/warteschlange.ts`](lib/erfassung/warteschlange.ts)). Ein
+Neuladen, ein Akku-Aus, ein Wegwischen der App — die Aufnahmen stehen noch in
+der Reihe und gehen raus, sobald wieder Empfang da ist. Der Weg je Foto hat drei
+einzeln wiederholbare Schritte:
+
+```
+1. Platz reservieren   POST /api/erfassung/artikel/{id}/bild
+2. Datei hochladen     direkt zum Supabase-Storage
+3. Ankunft bestätigen  PUT  /api/erfassung/artikel/{id}/bild
+```
+
+Schritt 3 ist der wichtige: **Erst die Bestätigung macht ein Foto zu einem
+Foto.** Ein Bild, das noch in der Warteschlange hängt, zählt nicht für die
+Pflichtaufnahmen — sonst ginge der Artikel als vollständig durch und das
+Typenschild fehlte hinterher. Genau der Fehler, den die alte Strecke hatte.
+
+**Eine Einschränkung ehrlich vorweg:** Auf dem iPhone laufen Uploads nur,
+solange die Seite offen ist. Wer mitten im Übertragen wegwischt, dessen Rest
+geht beim nächsten Öffnen raus — verloren ist nichts, aber es ist nicht ganz
+unsichtbar. Die Seite sagt deshalb jederzeit, wie viele Fotos noch unterwegs
+sind.
+
+### Sichtbarkeit
+
+Anders als bei den Projekten sieht hier **jeder angemeldete Nutzer alle
+Artikel**. Das ist Absicht: Im Lager wird fotografiert, im Büro geprüft und
+freigegeben. Wären die Artikel je Nutzer abgeschottet, könnte niemand die
+Arbeit eines anderen weiterführen. Anlegen darf man aber nur auf den eigenen
+Namen, damit die Spur stimmt, wer fotografiert hat.
+
+### Status eines Artikels
+
+`offen` → `bereit` → `erkannt` → `bepreist` → `listing` → `freigabe` →
+`veroeffentlicht`, dazu `fehler`. Heute endet der Weg bei `erkannt`; die
+folgenden Stufen sind die nächsten Ausbauschritte (Preis aus der eigenen
+Verkaufshistorie vorschlagen, Listing erzeugen, in Plenty anlegen).
+
+### Einrichtung
+
+Einmalig [`supabase/schema.sql`](supabase/schema.sql) im SQL-Editor laufen
+lassen — das legt `erfassung_artikel`, `erfassung_bilder` und den privaten
+Bucket `artikelfotos` an. Die Datei ist idempotent und kann nach einem Update
+erneut laufen.
+
+| Variable | Nötig wofür |
+| --- | --- |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Pflicht** — ohne ihn keine Upload-Erlaubnisse, keine Fotos |
+| `ANTHROPIC_API_KEY` | **Pflicht für die Auswertung** — ohne ihn läuft das Fotografieren, die Erkennung nicht |
+| `ERFASSUNG_WEBHOOK_URL` | optional, Anstoß nach außen |
+
+Der Status eines Artikels sagt, wo er steht: `offen` → `bereit` → `erkannt`.
+Bleibt einer auf `fehler` stehen, steht die Meldung im Klartext an der Zeile.
+
 ## Lagerplatz-Scan (`/lagerplatz`)
 
 Viele Artikel tragen ihren Lagerplatz bis heute nur im Text — in der
@@ -312,6 +488,25 @@ Ein Artikel ist am eingetragenen Platz nicht auffindbar. Diese Seite sammelt aus
 PlentyONE alles, was auf einen anderen Platz hindeutet, und macht daraus eine
 begründete Rangliste. **Nur lesend** — es wird nichts umgebucht.
 
+### Gesucht und benannt wird über die Artikel-ID
+
+Eingegeben wird die **Artikel-ID** — die Nummer, die in PlentyONE eingetippt
+wird („den haben wir schon, Artikel 65932"). Sie wird auch zuerst abgefragt:
+Wer eine Artikelnummer eintippt und stattdessen eine gleichlautende
+Varianten-ID trifft, bekommt sonst wortlos den falschen Artikel. Erst danach
+kommen Varianten-ID, Variantennummer und Barcode.
+
+**Auch die Nachbarschaft zählt über die Artikel-ID**, nicht über die Variante.
+Das sind zwei getrennte Nummernkreise — Nachbarn im einen sind keine Nachbarn
+im anderen. Angelegt und eingeräumt wird je Artikel, also ist die Artikel-ID
+die richtige Achse.
+
+Hat ein Artikel mehrere Varianten, zählt er als **ein** Nachbar, nicht als
+drei — sonst verdrängt er die echten Nachbarn aus der Liste. Fehlt einem
+Treffer ausnahmsweise die Artikel-ID, wird das gesagt („ohne Artikel-ID"),
+statt ersatzweise eine Variantennummer zu zeigen, die jemand für eine
+Artikel-ID halten könnte.
+
 ### Der erste Blick: Wie steht der Artikel im Bestand?
 
 Bevor irgendjemand losläuft, beantwortet die Seite die Frage, die den Suchweg
@@ -337,7 +532,7 @@ Sie bilden den Suchweg nach, der sich im Lager bewährt hat:
 | Artikeltext | 80 | Variantennummer, Modell, Beschreibung — dort steht oft der frühere Platz |
 | Warenbewegung | 70 | Wo lag er schon einmal? Rückläufer wandern an ihren alten Platz |
 | Gleicher Artikel | 65 | Haben wir das Teil nochmal? Bei Gebrauchtware steht Exemplar 2 beim ersten |
-| Nachbar-ID | 55 | ±5 IDs (einstellbar bis ±15) — zusammen angelegt heißt zusammen eingeräumt |
+| Nachbar-Artikel | 55 | ±5 **Artikel-IDs** (einstellbar bis ±15) — zusammen angelegt heißt zusammen eingeräumt |
 | Einlagerung | 50 | Was im selben Zeitfenster gebucht wurde, kam mit derselben Palette |
 | Anlagetag | 45 | Grober Ersatz, wenn keine Bewegungsdaten vorliegen |
 | Vertauscht? | 40 | Wer liegt auf dem Soll-Platz — und wo gehört der eigentlich hin? |
@@ -442,8 +637,10 @@ npm run typecheck
 ```
 projektplanung/
 ├── app/
+│   ├── (app)/erfassung/       # Artikel am Regal fotografieren (Handy)
 │   ├── (app)/projekte/        # Dashboard (Formular + Suchverlauf)
 │   ├── (app)/lagerplatz/      # Lagerplatz-Scan (Vorschau, nur lesend)
+│   ├── api/erfassung/         # Artikel anlegen, Fotos hochladen, abschicken
 │   ├── api/projekte/          # GET Suche / POST Anlegen / [id] löschen
 │   ├── (app)/lagerplatz/suche/ # Artikel nicht gefunden — alternative Plätze
 │   ├── (app)/einstellungen/   # Plenty-Zugang pflegen + Prozessübersicht
@@ -456,6 +653,7 @@ projektplanung/
 ├── components/                # App-Shell (Header)
 ├── lib/
 │   ├── einstellungen/         # Zugang laden/speichern + Verschlüsselung (getestet)
+│   ├── erfassung/             # Aufnahme-Regeln, Storage, Upload-Warteschlange (getestet)
 │   ├── lagerplatz/            # Erkennung, Befunde, Nachbarschaftslogik (getestet)
 │   ├── plenty/                # PlentyONE-Client, EAN, Bestands-Scan, Platzsuche
 │   ├── projekte/              # Reine Geschäftslogik (getestet)

@@ -89,8 +89,12 @@ export interface Artikelkarte {
   itemId: number | null;
   nummer: string | null;
   name: string | null;
-  /** Abstand zur gesuchten ID — 0 beim gesuchten Artikel selbst. */
-  idAbstand: number;
+  /**
+   * Abstand der ARTIKEL-ID zur gesuchten — 0 beim gesuchten Artikel selbst.
+   * Bewusst die Artikel- und nicht die Varianten-ID: Angelegt wird je Artikel,
+   * eingeräumt wird je Artikel, und die Nummer am Regal ist die Artikel-ID.
+   */
+  artikelAbstand: number;
   bildUrl: string | null;
   masse: Masse;
   klasse: Groessenklasse;
@@ -110,6 +114,8 @@ export interface Artikelkarte {
 export interface Zeitpunkt {
   /** ISO-Zeitstempel, in der Oberfläche als Datum und Uhrzeit dargestellt. */
   zeit: string;
+  /** Die Artikel-ID — damit die Zeile dieselbe Nummer nennt wie überall sonst. */
+  itemId: number | null;
   variationId: number | null;
   nummer: string | null;
   name: string | null;
@@ -253,6 +259,10 @@ async function inGruppen<T, R>(werte: T[], groesse: number, fn: (wert: T) => Pro
 }
 
 function zahl(wert: unknown): number | null {
+  // null und Leerstring gelten als „nicht da". Ohne diese Vorpruefung macht
+  // Number(null) daraus eine 0 — und aus einem Artikel ohne Artikel-ID wurde
+  // so „Artikel 0", samt Nachbarsuche um die Null herum.
+  if (wert === null || wert === undefined || wert === '') return null;
   const n = Number(wert);
   return Number.isFinite(n) ? n : null;
 }
@@ -262,11 +272,14 @@ function zahl(wert: unknown): number | null {
 // ---------------------------------------------------------------------------
 
 /**
- * Löst die Eingabe zu einer Variante auf. Probiert der Reihe nach:
- * Varianten-ID, Variantennummer, EAN/Barcode, Artikel-ID.
+ * Löst die Eingabe zu einer Variante auf.
  *
- * Die Reihenfolge ist Absicht: Eine reine Zahl ist am häufigsten die ID vom
- * Etikett; erst wenn dort nichts liegt, wird sie als Nummer gelesen.
+ * DIE ARTIKEL-ID ZUERST. Das ist die Nummer, die im Lager und in PlentyONE
+ * tatsächlich benutzt wird — „den haben wir schon, Artikel 65932". Eine
+ * Variantennummer sagt am Regal niemandem etwas, und wer eine Artikelnummer
+ * eintippt und stattdessen eine gleichlautende Varianten-ID trifft, bekommt
+ * wortlos den falschen Artikel. Erst danach kommen Varianten-ID,
+ * Variantennummer und Barcode.
  */
 async function findeVariante(
   eingabe: string,
@@ -277,6 +290,7 @@ async function findeVariante(
 
   const versuche: Array<{ pfad: string; was: string }> = [];
   if (/^\d+$/.test(roh)) {
+    versuche.push({ pfad: `/rest/items/variations?itemId=${roh}&itemsPerPage=1`, was: 'Artikel-ID' });
     versuche.push({ pfad: `/rest/items/variations?id=${roh}&itemsPerPage=1`, was: 'Varianten-ID' });
   }
   versuche.push({
@@ -285,9 +299,6 @@ async function findeVariante(
   });
   if (/^\d{8,14}$/.test(roh)) {
     versuche.push({ pfad: `/rest/items/variations?barcode=${roh}&itemsPerPage=1`, was: 'Barcode/EAN' });
-  }
-  if (/^\d+$/.test(roh)) {
-    versuche.push({ pfad: `/rest/items/variations?itemId=${roh}&itemsPerPage=1`, was: 'Artikel-ID' });
   }
 
   for (const v of versuche) {
@@ -322,6 +333,92 @@ async function ladeVarianten(ids: number[], diagnose: string[]): Promise<Map<num
     } catch (err) {
       diagnose.push(`Nachbar-Varianten nicht ladbar: ${(err as Error).message.slice(0, 100)}`);
     }
+  }
+  return map;
+}
+
+/**
+ * Ob `/rest/items/variations` mehrere Artikel-IDs auf einmal filtern kann.
+ * Wird beim ersten Bedarf ermittelt, nicht geraten — je nach Plenty-Ausbaustufe
+ * antwortet der Filter unterschiedlich.
+ */
+let mehrfachItemFilter: boolean | null = null;
+
+/**
+ * Lädt zu Artikel-IDs je eine Variante — die Hauptvariante, ersatzweise die
+ * mit der kleinsten Varianten-ID.
+ *
+ * Ein Artikel ist ein Treffer, nicht drei: Hat ein Artikel mehrere Varianten,
+ * würde er die Nachbarliste sonst dreifach belegen und die echten Nachbarn
+ * verdrängen.
+ */
+async function ladeVariantenNachItem(
+  itemIds: number[],
+  diagnose: string[],
+): Promise<Map<number, PlentyVariante>> {
+  const map = new Map<number, PlentyVariante>();
+  if (!itemIds.length) return map;
+
+  const aufnehmen = (liste: PlentyVariante[] | undefined) => {
+    for (const v of liste ?? []) {
+      const iid = zahl(v?.itemId);
+      if (!iid || !zahl(v?.id)) continue;
+      const bisher = map.get(iid);
+      if (!bisher || (zahl(v.id) ?? 0) < (zahl(bisher.id) ?? 0)) map.set(iid, v);
+    }
+  };
+
+  const einzeln = async (id: number) => {
+    try {
+      const res = await plentyGet<PlentyListe<PlentyVariante>>(
+        `/rest/items/variations?itemId=${id}&itemsPerPage=20`,
+      );
+      aufnehmen(res?.entries);
+    } catch {
+      // Ein fehlender Nachbar ist kein Grund, die Suche abzubrechen.
+    }
+  };
+
+  if (mehrfachItemFilter !== false) {
+    const probe = itemIds.slice(0, Math.min(10, itemIds.length));
+    try {
+      const res = await plentyGet<PlentyListe<PlentyVariante>>(
+        `/rest/items/variations?itemId=${probe.join(',')}&itemsPerPage=${probe.length * 5}`,
+      );
+      const gefunden = new Set((res?.entries ?? []).map((v) => zahl(v?.itemId)).filter(Boolean));
+      // Zwei verschiedene Artikel in einer Antwort beweisen, dass der Filter
+      // die Liste versteht. Kommt nur einer, filtert er nicht — dann einzeln.
+      if (probe.length > 1 && gefunden.size < 2) {
+        mehrfachItemFilter = false;
+        diagnose.push('Plenty filtert Artikel-IDs nicht als Liste — Nachbarn werden einzeln geladen.');
+      } else {
+        mehrfachItemFilter = true;
+        aufnehmen(res?.entries);
+      }
+    } catch {
+      mehrfachItemFilter = false;
+    }
+  }
+
+  if (mehrfachItemFilter) {
+    const offen = itemIds.filter((id) => !map.has(id));
+    for (let i = 0; i < offen.length; i += 50) {
+      const gruppe = offen.slice(i, i + 50);
+      try {
+        const res = await plentyGet<PlentyListe<PlentyVariante>>(
+          `/rest/items/variations?itemId=${gruppe.join(',')}&itemsPerPage=${gruppe.length * 5}`,
+        );
+        aufnehmen(res?.entries);
+      } catch (err) {
+        diagnose.push(`Nachbar-Artikel nicht ladbar: ${(err as Error).message.slice(0, 100)}`);
+      }
+    }
+  } else {
+    await inGruppen(
+      itemIds.filter((id) => !map.has(id)),
+      GLEICHZEITIG,
+      einzeln,
+    );
   }
   return map;
 }
@@ -515,7 +612,7 @@ async function ladePlatzbelegung(lagerortId: number): Promise<number[]> {
 
 function karteAus(
   v: PlentyVariante,
-  idAbstand: number,
+  artikelAbstand: number,
   belegungen: Belegung[],
   bildUrl: string | null,
   text: string,
@@ -532,7 +629,7 @@ function karteAus(
     itemId: zahl(v.itemId),
     nummer: v.number ?? null,
     name: v.name ?? null,
-    idAbstand,
+    artikelAbstand,
     bildUrl,
     masse,
     klasse: groessenklasse(masse),
@@ -542,6 +639,19 @@ function karteAus(
       .map((t) => t.code),
     angelegtAm: v.createdAt ?? null,
   };
+}
+
+/**
+ * Wie ein Artikel benannt wird: mit seiner ARTIKEL-ID.
+ *
+ * Am Regal sagt eine Variantennummer niemandem etwas — gebraucht wird die
+ * Nummer, die in PlentyONE eingetippt wird. Fehlt sie ausnahmsweise, wird das
+ * gesagt, statt ersatzweise eine Variantennummer zu zeigen, die jemand für
+ * eine Artikel-ID halten könnte.
+ */
+export function bezeichne(karte: Pick<Artikelkarte, 'itemId' | 'nummer' | 'variationId'>): string {
+  if (karte.itemId) return `Artikel ${karte.itemId}`;
+  return `Variante ${karte.nummer ?? karte.variationId} (ohne Artikel-ID)`;
 }
 
 function beschreibeLage(lage: Bestandslage, karte: Artikelkarte | null): string {
@@ -685,7 +795,10 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
       iid ? ladeBild(iid, id) : Promise.resolve(null),
       mitText && iid ? ladeTexte(iid, id) : Promise.resolve(''),
     ]);
-    return karteAus(v, id - variationId, belegungen ?? [], bild, text);
+    // Der Abstand zählt über die Artikel-ID. Fehlt sie ausnahmsweise, gibt es
+    // keinen sinnvollen Abstand — dann 0 statt einer erfundenen Zahl.
+    const abstand = iid && itemId ? iid - itemId : 0;
+    return karteAus(v, abstand, belegungen ?? [], bild, text);
   };
 
   /** Lädt mehrere Varianten als Karten — gleichzeitig, aber gedeckelt. */
@@ -744,7 +857,7 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
         gefunden.push({
           code: b.code,
           signal: 'namensdublette',
-          text: `Gleichnamiger Artikel ${karte.nummer ?? karte.variationId} liegt hier`,
+          text: `Gleichnamiger ${bezeichne(karte)} liegt hier`,
           variationId: karte.variationId,
         });
       }
@@ -753,24 +866,30 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
     return { hinweise: gefunden, karten };
   };
 
-  /** Signal: ID-Nachbarn — und wer davon am selben Tag angelegt wurde. */
+  /** Signal: Nachbarn der ARTIKEL-ID — und wer davon am selben Tag angelegt wurde. */
   const phaseNachbarn = async () => {
-    const ids = idNachbarn(variationId, idSpanne);
+    if (!itemId) {
+      diagnose.push('Der Artikel hat keine Artikel-ID — Nachbarn lassen sich nicht bestimmen.');
+      return { hinweise: [] as Hinweis[], karten: [] };
+    }
+    const ids = idNachbarn(itemId, idSpanne);
     if (!ids.length) return { hinweise: [] as Hinweis[], karten: [] };
+    const varianten = await ladeVariantenNachItem(ids, diagnose);
+    const vorhanden = ids.filter((id) => varianten.has(id));
     // Ohne Beschreibungstexte: Deren Lagerplatz-Hinweise werden hier nicht
     // ausgewertet, der Aufruf wäre je Nachbar reine Wartezeit.
-    const karten = await ladeKarten(ids, false);
+    const karten = await inGruppen(vorhanden, GLEICHZEITIG, (id) => ladeKarte(varianten.get(id)!, false));
     const eigenerTag = (gesucht.angelegtAm ?? '').slice(0, 10);
     const gefunden: Hinweis[] = [];
     for (const karte of karten) {
-      const abstand = Math.abs(karte.idAbstand);
+      const abstand = Math.abs(karte.artikelAbstand);
       const gleicherTag = !!eigenerTag && (karte.angelegtAm ?? '').slice(0, 10) === eigenerTag;
       for (const b of karte.belegungen) {
         if (!b.code || b.lagerortId === 0) continue;
         gefunden.push({
           code: b.code,
           signal: 'id-nachbar',
-          text: `${karte.nummer ?? karte.variationId} (ID ${karte.idAbstand > 0 ? '+' : ''}${karte.idAbstand}) liegt hier`,
+          text: `${bezeichne(karte)} (Artikel ${karte.artikelAbstand > 0 ? '+' : ''}${karte.artikelAbstand}) liegt hier`,
           variationId: karte.variationId,
           abstand,
         });
@@ -781,14 +900,14 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
           gefunden.push({
             code: b.code,
             signal: 'anlagedatum',
-            text: `${karte.nummer ?? karte.variationId} wurde am selben Tag angelegt (${eigenerTag}) und liegt hier`,
+            text: `${bezeichne(karte)} wurde am selben Tag angelegt (${eigenerTag}) und liegt hier`,
             variationId: karte.variationId,
             abstand,
           });
         }
       }
     }
-    diagnose.push(`${karten.length} von ${ids.length} Nachbar-IDs existieren.`);
+    diagnose.push(`${karten.length} von ${ids.length} Nachbar-Artikeln existieren.`);
     return { hinweise: gefunden, karten };
   };
 
@@ -813,7 +932,7 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
         gefunden.push({
           code,
           signal: 'platztausch',
-          text: `Auf dem Soll-Platz liegt ${karte.nummer ?? karte.variationId} — laut dessen Text gehört der hierher, womöglich vertauscht`,
+          text: `Auf dem Soll-Platz liegt ${bezeichne(karte)} — laut dessen Text gehört der hierher, womöglich vertauscht`,
           variationId: karte.variationId,
         });
       }
@@ -897,6 +1016,7 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
         const ort = nachId.get(zahl(b.storageLocationId) ?? 0);
         zeitleiste.push({
           zeit: wann,
+          itemId: karte?.itemId ?? null,
           variationId: vid,
           nummer: karte?.nummer ?? (istGesucht ? gesucht.nummer : null),
           name: karte?.name ?? null,
@@ -947,7 +1067,7 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
     lageText: beschreibeLage(lage, gesucht),
     kandidaten,
     laufzettel: laufzettel(kandidaten),
-    nachbarn: nachbarn.karten.sort((a, b) => Math.abs(a.idAbstand) - Math.abs(b.idAbstand)),
+    nachbarn: nachbarn.karten.sort((a, b) => Math.abs(a.artikelAbstand) - Math.abs(b.artikelAbstand)),
     einlagerung: einlagerungKarten,
     zeitleiste,
     dubletten: dubletten.karten,
