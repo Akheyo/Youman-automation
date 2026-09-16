@@ -42,6 +42,21 @@ export const REGAL_REIHENFOLGE: Record<string, string[]> = {
   // Felder zaehlen von rechts nach links) und kommt an der Treppe heraus.
   H2: ['R7', 'R6', 'RKTL', 'R8', 'R9', 'R10', 'R1', 'R2', 'R3', 'R4', 'R5'],
   H1: ['R13', 'R12', 'R11', 'R10', 'R9', 'RKTL', 'R1', 'R8', 'R7', 'R6', 'R5', 'R4', 'R3', 'R2'],
+  // Halle 4: die KTL-Reihe auf der Lagerbuehne. Sie besteht aus Doppelregalen,
+  // und zwar so, dass sich aufeinanderfolgende Nummern einen Gang teilen:
+  //
+  //   Wand | R1KTL : R2KTL||R3KTL : R4KTL||R5KTL : R6KTL||R7KTL : …
+  //          \_Gang_/       \_Gang_/       \_Gang_/
+  //
+  // R1KTL steht allein in der hinteren Ecke an der Wand, alles Weitere sind
+  // Doppelregale. Damit ist die Zahlenreihe zugleich die Laufreihenfolge: er
+  // geht bis nach hinten durch und arbeitet sich Gang um Gang zum Ausgang vor.
+  // RKTL steht vorn am Eingang und wird im Vorbeigehen mitgenommen.
+  H4: [
+    'RKTL',
+    'R1KTL', 'R2KTL', 'R3KTL', 'R4KTL', 'R5KTL', 'R6KTL', 'R7KTL', 'R8KTL',
+    'R9KTL', 'R10KTL', 'R11KTL', 'R12KTL', 'R13KTL', 'R14KTL', 'R15KTL',
+  ],
   H5: ['R7', 'R6', 'R2', 'R3', 'R1', 'R4', 'R5', 'R10', 'RKTL'],
   // In Halle 6 beginnt der Rundgang zwischen den roten Fachbodenregalen, und
   // zwar bei R8KTL abwärts. Erst danach die grossen Palettenregale.
@@ -61,16 +76,10 @@ export const PODEST_REGALE: string[] = ['H2/R2', 'H2/R3', 'H2/R4', 'H2/R5'];
 /**
  * Hallen, unterhalb derer nichts umnummeriert wird.
  *
- * Halle 4 ist im Hallenplan fast leer, im Lagerort-Export haengen dort aber
- * R1KTL bis R15KTL mit rund 2.400 Plaetzen — nach Halle 6 der zweitgroesste
- * Bereich. In welcher Reihenfolge er abgelaufen wird, ist nicht geklaert.
- *
- * Lieber gar nichts schreiben als eine geratene Reihenfolge festschreiben:
- * Die Halle behaelt ihren Platz im Rundgang, unter ihr bleibt alles, wie es
- * ist. Sobald die Reihenfolge feststeht, faellt der Eintrag hier weg und ein
- * Lauf zieht es nach.
+ * Zurzeit keine. Halle 4 stand hier, solange die Reihenfolge der KTL-Reihe auf
+ * der Lagerbuehne ungeklaert war; sie steht jetzt in REGAL_REIHENFOLGE.
  */
-export const NICHT_ORDNEN: string[] = ['H4'];
+export const NICHT_ORDNEN: string[] = [];
 
 /**
  * Regale, in denen die Felder rückwärts gezählt werden — der Mann kommt dort
