@@ -48,11 +48,10 @@ export const REGAL_REIHENFOLGE: Record<string, string[]> = {
   //   Wand | R1KTL : R2KTL||R3KTL : R4KTL||R5KTL : R6KTL||R7KTL : …
   //          \_Gang_/       \_Gang_/       \_Gang_/
   //
-  // R1KTL steht allein in der hinteren Ecke an der Wand, alles Weitere sind
-  // Doppelregale. Die Gaenge nimmt er also paarweise, und zwar rueckwaerts
-  // durch die Zahlenreihe: R15KTL liegt vorn am Eingang, R1KTL ganz hinten.
-  // Die Paare bleiben dabei beisammen (…R14/R13, dann R12/R11 …), weil ein
-  // Gang immer zwei aufeinanderfolgende Nummern trennt.
+  // R1KTL liegt vorn, an der Treppe zum Podest; von dort geht es nach hinten
+  // durch bis R15KTL. Alles ausser R1KTL sind Doppelregale, ein Gang trennt
+  // immer zwei aufeinanderfolgende Nummern (R1/R2, R3/R4, …) — die Zahlenreihe
+  // ist damit zugleich die Gangfolge.
   // RKTL steht vorn am Eingang und wird im Vorbeigehen mitgenommen.
   //
   // Auf dem Podest darueber steht dieselbe Reihe noch einmal, dort mit P
@@ -66,13 +65,13 @@ export const REGAL_REIHENFOLGE: Record<string, string[]> = {
   // richtigen Stelle einsortiert werden.
   H4: [
     'RKTL',
-    'R15KTL', 'R14KTL', 'R13KTL', 'R12KTL', 'R11KTL', 'R10KTL', 'R9KTL',
-    'R8KTL', 'R7KTL', 'R6KTL', 'R5KTL', 'R4KTL', 'R3KTL', 'R2KTL', 'R1KTL',
-    // Podest: Die Treppe steht am R15KTL-Ende, am schraffierten Zwischenraum.
-    // Er laeuft unten also bis R1KTL an die Wand, kommt zur Treppe zurueck und
-    // oben bei P15KTL an — dieselbe Richtung wie unten, von 15 nach 1.
-    'P15KTL', 'P14KTL', 'P13KTL', 'P12KTL', 'P11KTL', 'P10KTL', 'P9KTL',
-    'P8KTL', 'P7KTL', 'P6KTL', 'P5KTL', 'P4KTL', 'P3KTL', 'P2KTL', 'P1KTL',
+    'R1KTL', 'R2KTL', 'R3KTL', 'R4KTL', 'R5KTL', 'R6KTL', 'R7KTL', 'R8KTL',
+    'R9KTL', 'R10KTL', 'R11KTL', 'R12KTL', 'R13KTL', 'R14KTL', 'R15KTL',
+    // Podest: Die Treppe steht am R1KTL-Ende, am schraffierten Zwischenraum.
+    // Er laeuft unten bis R15KTL nach hinten, kommt zur Treppe zurueck und
+    // beginnt oben bei P1KTL — dieselbe Richtung wie unten, von 1 nach 15.
+    'P1KTL', 'P2KTL', 'P3KTL', 'P4KTL', 'P5KTL', 'P6KTL', 'P7KTL', 'P8KTL',
+    'P9KTL', 'P10KTL', 'P11KTL', 'P12KTL', 'P13KTL', 'P14KTL', 'P15KTL',
   ],
   H5: ['R7', 'R6', 'R2', 'R3', 'R1', 'R4', 'R5', 'R10', 'RKTL'],
   // In Halle 6 beginnt der Rundgang zwischen den roten Fachbodenregalen, und
@@ -117,7 +116,13 @@ export const FELDER_RUECKWAERTS: string[] = [
   'H4/R2', 'H4/R3',
   // Halle 5
   'H5/R3', 'H5/R1', 'H5/R5', 'H5/R10',
-  // Halle 6 — R7 hat 12 Felder, der Mann sieht Feld 12 rechts.
+  // Halle 6 — dieselbe Doppelregal-Struktur wie Halle 4: an der Wand R1, dann
+  // die Paare R2/R3 und R4/R5, an der anderen Wand R6. In allen diesen Regalen
+  // liegt Feld 1 an dem Ende, das im Hallenplan das hohe Feld trug — der Mann
+  // laeuft sie also rueckwaerts durch die Zahlenreihe ab.
+  // R1 ist die Ausnahme: es geht ums Eck, an der Ecke liegen F1 bis F3 und ab
+  // F4 laeuft der lange Schenkel durch.
+  'H6/R2', 'H6/R3', 'H6/R4', 'H6/R5', 'H6/R6',
   'H6/R7',
 ];
 
