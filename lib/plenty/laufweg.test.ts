@@ -289,15 +289,23 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
       .toEqual(['R7', 'R6', 'R1']);
   });
 
-  it('lässt Halle 4 unangetastet — dort ist die Reihenfolge nicht geklärt', () => {
-    // Unter H4 haengen rund 2.400 KTL-Plaetze in ungeklaerter Reihenfolge.
-    // Die Halle selbst bekommt ihren Platz im Rundgang, darunter nichts.
+  it('laeuft die KTL-Reihe in Halle 4 gangweise in der Zahlenreihe ab', () => {
+    // Auf der Lagerbuehne stehen Doppelregale: R1 gegenueber R2, R3 gegenueber
+    // R4 und so weiter. Aufeinanderfolgende Nummern teilen sich also einen
+    // Gang — die Zahlenreihe ist der Laufweg. Wichtig ist dabei, dass R10KTL
+    // hinter R9KTL landet und nicht hinter R1KTL (Textsortierung).
     const knoten = [
-      halle(400, 'H4', 9),
-      regal(1, 'R3', 5, 400), regal(2, 'R1', 9, 400), regal(3, 'R15KTL', 1, 400),
+      halle(400, 'H4', 4),
+      regal(1, 'R10KTL', 1, 400), regal(2, 'R2KTL', 2, 400), regal(3, 'RKTL', 3, 400),
+      regal(4, 'R9KTL', 4, 400), regal(5, 'R1KTL', 5, 400), regal(6, 'R15KTL', 6, 400),
     ];
-    const { aenderungen } = planeLaufweg(knoten);
-    expect(aenderungen.filter((a) => a.dimensionId === 10)).toHaveLength(0);
+    const platz = new Map(knoten.filter((k) => k.dimensionId === 10).map((k) => [k.name, k.position]));
+    for (const a of planeLaufweg(knoten).aenderungen) {
+      if (a.dimensionId === 10) platz.set(a.name, a.neu);
+    }
+
+    expect([...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n))
+      .toEqual(['RKTL', 'R1KTL', 'R2KTL', 'R9KTL', 'R10KTL', 'R15KTL']);
   });
 
   it('lässt Felder natürlich aufsteigend', () => {
