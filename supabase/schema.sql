@@ -668,3 +668,11 @@ alter table public.outreach_campaigns add column if not exists paused_reason tex
 --   kein_mx   = Domain nimmt gar keine Mails an -> sicherer Bounce
 --   ungeprueft = Pruefung war nicht moeglich (DNS-Fehler)
 alter table public.outreach_contacts add column if not exists mx_status text;
+
+-- ============================================================================
+--  Phase J — Tagesbericht
+-- ============================================================================
+-- Einmal am Abend eine Mail: was ist heute passiert, wer genau hat geoeffnet
+-- oder geantwortet. Fuer alle, die tagsueber nicht ins Cockpit schauen.
+-- Opt-in je Konto; Standard an, weil der Bericht schweigt, wenn nichts war.
+alter table public.profiles add column if not exists tagesbericht boolean not null default true;

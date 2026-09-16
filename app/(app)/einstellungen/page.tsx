@@ -4,6 +4,7 @@ import { requireUser } from '@/lib/supabase/server';
 import { planForUser, isOwnerEmail } from '@/lib/plans';
 import BillingButtons from '../dashboard/BillingButtons';
 import Webhooks from './Webhooks';
+import Tagesbericht from './Tagesbericht';
 import styles from '../dashboard/dashboard.module.css';
 
 export const metadata: Metadata = { title: 'Einstellungen · Youman Automation' };
@@ -83,6 +84,7 @@ export default async function EinstellungenPage() {
               Bearbeiten
             </Link>
           </div>
+          <Tagesbericht />
           <div className={styles.settingRow}>
             <div>
               <div className={styles.settingName}>Paul-Sequenzen</div>
