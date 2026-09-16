@@ -289,6 +289,28 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
       .toEqual(['R7', 'R6', 'R1']);
   });
 
+  it('haengt das Podest in Halle 4 hinter alle Bodenregale', () => {
+    // Oben auf dem Podest steht dieselbe Reihe mit P statt R. Erst unten
+    // alles holen, dann hoch — also muessen alle P-Regale hinter alle
+    // R-Regale, egal wie die Positionen vorher standen.
+    const knoten = [
+      halle(400, 'H4', 4),
+      regal(1, 'P1KTL', 1, 400), regal(2, 'R1KTL', 2, 400),
+      regal(3, 'P15KTL', 3, 400), regal(4, 'R15KTL', 4, 400),
+    ];
+    const platz = new Map(knoten.filter((k) => k.dimensionId === 10).map((k) => [k.name, k.position]));
+    for (const a of planeLaufweg(knoten).aenderungen) {
+      if (a.dimensionId === 10) platz.set(a.name, a.neu);
+    }
+    const folge = [...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n);
+
+    expect(folge).toEqual(['R15KTL', 'R1KTL', 'P1KTL', 'P15KTL']);
+    // Kein P-Regal darf vor einem R-Regal stehen.
+    const ersteP = folge.findIndex((n) => n.startsWith('P'));
+    const letztesR = folge.map((n) => n.startsWith('R')).lastIndexOf(true);
+    expect(ersteP).toBeGreaterThan(letztesR);
+  });
+
   it('laeuft die KTL-Reihe in Halle 4 gangweise rueckwaerts ab', () => {
     // Auf der Lagerbuehne stehen Doppelregale: R1 gegenueber R2, R3 gegenueber
     // R4 und so weiter. Aufeinanderfolgende Nummern teilen sich also einen
