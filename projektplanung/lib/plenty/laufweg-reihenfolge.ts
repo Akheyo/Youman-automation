@@ -49,13 +49,15 @@ export const REGAL_REIHENFOLGE: Record<string, string[]> = {
   //          \_Gang_/       \_Gang_/       \_Gang_/
   //
   // R1KTL steht allein in der hinteren Ecke an der Wand, alles Weitere sind
-  // Doppelregale. Damit ist die Zahlenreihe zugleich die Laufreihenfolge: er
-  // geht bis nach hinten durch und arbeitet sich Gang um Gang zum Ausgang vor.
+  // Doppelregale. Die Gaenge nimmt er also paarweise, und zwar rueckwaerts
+  // durch die Zahlenreihe: R15KTL liegt vorn am Eingang, R1KTL ganz hinten.
+  // Die Paare bleiben dabei beisammen (…R14/R13, dann R12/R11 …), weil ein
+  // Gang immer zwei aufeinanderfolgende Nummern trennt.
   // RKTL steht vorn am Eingang und wird im Vorbeigehen mitgenommen.
   H4: [
     'RKTL',
-    'R1KTL', 'R2KTL', 'R3KTL', 'R4KTL', 'R5KTL', 'R6KTL', 'R7KTL', 'R8KTL',
-    'R9KTL', 'R10KTL', 'R11KTL', 'R12KTL', 'R13KTL', 'R14KTL', 'R15KTL',
+    'R15KTL', 'R14KTL', 'R13KTL', 'R12KTL', 'R11KTL', 'R10KTL', 'R9KTL',
+    'R8KTL', 'R7KTL', 'R6KTL', 'R5KTL', 'R4KTL', 'R3KTL', 'R2KTL', 'R1KTL',
   ],
   H5: ['R7', 'R6', 'R2', 'R3', 'R1', 'R4', 'R5', 'R10', 'RKTL'],
   // In Halle 6 beginnt der Rundgang zwischen den roten Fachbodenregalen, und

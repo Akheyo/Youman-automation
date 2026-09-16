@@ -289,11 +289,11 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
       .toEqual(['R7', 'R6', 'R1']);
   });
 
-  it('laeuft die KTL-Reihe in Halle 4 gangweise in der Zahlenreihe ab', () => {
+  it('laeuft die KTL-Reihe in Halle 4 gangweise rueckwaerts ab', () => {
     // Auf der Lagerbuehne stehen Doppelregale: R1 gegenueber R2, R3 gegenueber
     // R4 und so weiter. Aufeinanderfolgende Nummern teilen sich also einen
-    // Gang — die Zahlenreihe ist der Laufweg. Wichtig ist dabei, dass R10KTL
-    // hinter R9KTL landet und nicht hinter R1KTL (Textsortierung).
+    // Gang. Er kommt vorn bei R15KTL rein und arbeitet sich nach hinten zu
+    // R1KTL durch — die Paare bleiben dabei beisammen.
     const knoten = [
       halle(400, 'H4', 4),
       regal(1, 'R10KTL', 1, 400), regal(2, 'R2KTL', 2, 400), regal(3, 'RKTL', 3, 400),
@@ -305,7 +305,7 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
     }
 
     expect([...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n))
-      .toEqual(['RKTL', 'R1KTL', 'R2KTL', 'R9KTL', 'R10KTL', 'R15KTL']);
+      .toEqual(['RKTL', 'R15KTL', 'R10KTL', 'R9KTL', 'R2KTL', 'R1KTL']);
   });
 
   it('lässt Felder natürlich aufsteigend', () => {
