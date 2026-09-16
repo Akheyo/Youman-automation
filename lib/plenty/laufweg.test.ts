@@ -262,7 +262,8 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
   });
 
   it('sortiert die Regale je Halle nach dem Plan', () => {
-    // Halle 1 beginnt laut Plan bei den roten Fachbodenregalen R13 … R9.
+    // Halle 1 wird von unten links abgelaufen: R5 liegt am Eingang aus Halle 2,
+    // die roten Fachbodenregale R9 … R13 stehen oben am Ausgang zu Tor 3.
     const knoten = [
       halle(100, 'H1', 1),
       regal(1, 'R1', 1, 100), regal(2, 'R5', 2, 100), regal(3, 'R13', 3, 100), regal(4, 'R9', 4, 100),
@@ -272,12 +273,12 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
     for (const a of aenderungen.filter((x) => x.dimensionId === 10)) platz.set(a.name, a.neu);
 
     expect([...platz.entries()].sort((a, b) => a[1] - b[1]).map(([n]) => n))
-      .toEqual(['R13', 'R9', 'R1', 'R5']);
+      .toEqual(['R5', 'R1', 'R9', 'R13']);
   });
 
   it('nimmt je Halle die eigene Reihenfolge', () => {
-    // In H2 beginnt der Rundgang oben bei R7, dann R6; R1 als letztes
-    // Bodenregal endet an der Treppe.
+    // In H2 beginnt der Rundgang bei R7 an der linken Wand, dann R6; R1 liegt
+    // dazwischen und kommt vor den roten Regalen am anderen Hallenende.
     const knoten = [
       halle(200, 'H2', 1),
       regal(1, 'R1', 1, 200), regal(2, 'R6', 2, 200), regal(3, 'R7', 3, 200),
@@ -373,9 +374,9 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
     expect([...plaetze].sort((a, b) => a - b)).toEqual([
       folge.length - 4, folge.length - 3, folge.length - 2, folge.length - 1,
     ]);
-    // Davor steht R1: an dessen linkem Ende steht die Treppe, er kommt also
-    // aus der Bodenrunde direkt an der Treppe heraus und geht von dort hoch.
-    expect(folge.slice(-5)).toEqual(['R1', 'R2', 'R3', 'R4', 'R5']);
+    // Davor stehen die roten Regale R8/R9/R10 am Ende des R1-Gangs — von dort
+    // geht es auf das Podest.
+    expect(folge.slice(-5)).toEqual(['R10', 'R2', 'R3', 'R4', 'R5']);
   });
 
   it('nummeriert die Ebenen eines Podest-Regals von unten nach oben', () => {

@@ -36,12 +36,24 @@ export const REGAL_REIHENFOLGE: Record<string, string[]> = {
   // ans Ende der Halle. Der Mann laeuft erst die reinen Bodenregale ab und
   // arbeitet das Podest am Stueck hinterher, statt in der Mitte der Halle
   // hoch- und wieder runterzusteigen.
-  // R7 liegt ganz oben in der Halle, direkt ueber R6 — es beginnt also den
-  // Rundgang. R8/R9/R10 sind die roten Regale am unteren Ende des R1-Gangs,
-  // am weitesten von R7/R6 entfernt. Von dort laeuft er R1 zurueck (dessen
-  // Felder zaehlen von rechts nach links) und kommt an der Treppe heraus.
-  H2: ['R7', 'R6', 'RKTL', 'R8', 'R9', 'R10', 'R1', 'R2', 'R3', 'R4', 'R5'],
-  H1: ['R13', 'R12', 'R11', 'R10', 'R9', 'RKTL', 'R1', 'R8', 'R7', 'R6', 'R5', 'R4', 'R3', 'R2'],
+  // R7 laeuft die komplette linke Wand entlang, R6 und die KTL-Plaetze liegen
+  // oben daran. Von dort geht es hinunter zu R1 und erst am Ende des R1-Gangs
+  // zu den roten Regalen R8/R9/R10.
+  //
+  // Die Stelle "R1 vor R8" stammt aus der ersten Testtour: Die Route schickte
+  // den Kommissionierer von R7 (linke Ecke) quer zu R10 (rechte Ecke) und erst
+  // danach zu R1 — einmal durch die Halle und wieder zurueck. R1 liegt
+  // dazwischen.
+  H2: ['R7', 'R6', 'RKTL', 'R1', 'R8', 'R9', 'R10', 'R2', 'R3', 'R4', 'R5'],
+  // Halle 1 lief bis zur Testtour verkehrt herum: Der Rundgang begann bei den
+  // roten Regalen R13 bis R9, die oben am Ausgang Richtung Tor 3 stehen — er
+  // lief also zuerst zum Ausgang, arbeitete sich zum Eingang vor und musste
+  // anschliessend wieder hoch.
+  //
+  // Er kommt unten links aus Halle 2 herein. Dort liegen R2, die KTL-Plaetze
+  // und R5 (R4 steht rechts daneben); darueber folgen R6 und R7, dann R8 und
+  // R1, und ganz oben am Ausgang die roten Regale R9 bis R13.
+  H1: ['R2', 'RKTL', 'R5', 'R4', 'R6', 'R7', 'R8', 'R1', 'R9', 'R10', 'R11', 'R12', 'R13'],
   // Halle 4: die KTL-Reihe auf der Lagerbuehne. Sie besteht aus Doppelregalen,
   // und zwar so, dass sich aufeinanderfolgende Nummern einen Gang teilen:
   //
