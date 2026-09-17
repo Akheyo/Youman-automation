@@ -402,6 +402,48 @@ describe('Laufweg folgt dem Hallenplan, nicht der Zahlenreihe', () => {
   });
 });
 
+describe('Fremde Lager', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    process.env.PLENTY_BASE_URL = 'https://test.plentymarkets-cloud01.com';
+    process.env.PLENTY_USER = 'api';
+    process.env.PLENTY_PASSWORD = 'geheim';
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.PLENTY_BASE_URL;
+    delete process.env.PLENTY_USER;
+    delete process.env.PLENTY_PASSWORD;
+  });
+
+  it('fasst ein Lager ohne hinterlegte Reihenfolge nicht an', async () => {
+    // Borken hat Hallen, die genauso heissen koennen wie in Burlo. Ohne diese
+    // Sperre bekaeme es Burlos Regalfolge aufgedrueckt — und in Borken darf
+    // ueberhaupt nichts geaendert werden.
+    let gelesen = false;
+    vi.stubGlobal('fetch', async (url: string) => {
+      if (!url.includes('/rest/login')) gelesen = true;
+      return new Response(JSON.stringify({ access_token: 't', expires_in: 3600, user_id: 1 }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    const { ordneLaufweg } = await import('./laufweg');
+    const res = await ordneLaufweg({ warehouseId: 999, probelauf: false });
+
+    expect(res.error).toMatch(/keine Laufreihenfolge/i);
+    expect(res.geschrieben).toBe(0);
+    expect(res.aenderungen).toHaveLength(0);
+    // Nicht einmal gelesen wird dort.
+    expect(gelesen).toBe(false);
+  });
+
+  it('lässt Burlo durch', async () => {
+    const { LAUFWEG_LAGER } = await import('./laufweg-reihenfolge');
+    expect(LAUFWEG_LAGER).toContain(106);
+  });
+});
+
 describe('Struktur-Puffer über mehrere Runden', () => {
   beforeEach(async () => {
     vi.resetModules();
