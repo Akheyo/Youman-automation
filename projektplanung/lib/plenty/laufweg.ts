@@ -23,6 +23,7 @@ import { plentyConfigured, plentyPut, aktuelleConfig } from './client';
 import {
   FELDER_RUECKWAERTS,
   HALLEN_REIHENFOLGE,
+  LAUFWEG_LAGER,
   NICHT_ORDNEN,
   REGAL_REIHENFOLGE,
   platzIn,
@@ -289,6 +290,18 @@ export async function ordneLaufweg(opts: LaufwegOptionen): Promise<LaufwegErgebn
 
   if (!plentyConfigured(await aktuelleConfig())) {
     return { ...leer, error: 'PlentyONE ist nicht konfiguriert.', dauerMs: Date.now() - start };
+  }
+
+  // Die Reihenfolge-Listen gelten nur fuer Burlo. Ein anderes Lager mit gleich
+  // benannten Hallen wuerde sonst Burlos Laufweg aufgedrueckt bekommen.
+  if (!LAUFWEG_LAGER.includes(opts.warehouseId)) {
+    return {
+      ...leer,
+      error:
+        `Fuer Lager ${opts.warehouseId} ist keine Laufreihenfolge hinterlegt — ` +
+        'es wird nichts geschrieben. Hinterlegt ist nur Burlo.',
+      dauerMs: Date.now() - start,
+    };
   }
 
   // Der Probelauf liest immer frisch — er ist die Aussage darueber, wie es in
