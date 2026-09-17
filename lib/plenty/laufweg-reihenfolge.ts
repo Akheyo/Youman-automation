@@ -11,6 +11,21 @@
  */
 
 /** Hallen in Laufreihenfolge. Was hier fehlt, kommt hinten, natürlich sortiert. */
+/**
+ * Lager, fuer die hier eine Laufreihenfolge hinterlegt ist.
+ *
+ * Die Listen unten haengen allein an Hallennamen wie "H1" oder "H2" — nicht am
+ * Lager. Ein anderes Lager mit gleich benannten Hallen wuerde also Burlos
+ * Reihenfolge aufgedrueckt bekommen und seinen Laufweg verlieren. Fuer Borken
+ * gilt ohnehin: dort wird nichts geaendert.
+ *
+ * Darum laesst `ordneLaufweg` nur diese Lager zu. Kommt ein Lager dazu,
+ * braucht es eigene Listen und muss hier eingetragen werden.
+ */
+export const LAUFWEG_LAGER: number[] = [
+  106, // Burlo
+];
+
 export const HALLEN_REIHENFOLGE: string[] = ['H3', 'H2', 'H1', 'H4', 'H5', 'H6'];
 
 /**
