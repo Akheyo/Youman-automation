@@ -19,6 +19,7 @@ async function icon(name, color = 'FFFFFF', px = 256) {
   if (!Comp) throw new Error(`Icon nicht gefunden: ${name}`);
   let svg = renderToStaticMarkup(React.createElement(Comp, { size: px }));
   svg = svg.replace(/currentColor/g, `#${color}`);
+  svg = svg.replace(/stroke-width="2"/g, 'stroke-width="2.6"'); // kraeftigere Strichstaerke fuer die brutalistische Optik
   if (!/xmlns=/.test(svg)) svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
   const buf = await sharp(Buffer.from(svg)).resize(px, px).png().toBuffer();
   const uri = 'image/png;base64,' + buf.toString('base64');

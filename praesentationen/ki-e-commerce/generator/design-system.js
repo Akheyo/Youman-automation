@@ -1,86 +1,76 @@
 /**
- * DESIGNSYSTEM — "KI & E-Commerce"
- * Abgeleitet aus dem Skill ui-ux-pro-max (--design-system):
- *   Pattern "Enterprise Gateway" · Style "Data-Dense Dashboard"
- *   Farbnotiz der Quelle: "Blue data + amber highlights [Accent adjusted from #F59E0B]"
- * Verbindlich fuer ALLE Slides. Keine Abweichung, keine Standard-PowerPoint-Optik.
+ * DESIGNSYSTEM v2 — "KI & E-Commerce", Neo-Brutalismus.
+ * Loest die blaue Karten-Optik von v1 vollstaendig ab.
+ *
+ * Prinzipien:
+ *   1. Flaeche statt Karte. Harte 2,25-pt-Kanten, 0 Radius, KEIN Weichzeichner-Schatten.
+ *   2. Schatten = zweites schwarzes Rechteck dahinter, exakt versetzt.
+ *   3. Drei Farben tragen alles: Schwarz, Gelb, Weiss. Rot und Mint nur als Flaeche.
+ *   4. Bloecke sitzen versetzt, nicht in Reih und Glied.
+ *   5. Wenig Text, grosse Zahlen.
  */
 
 // ---------------------------------------------------------------- FARBPALETTE
-// Dominanz 60-70 % Navy, 1-2 Stuetztoene, EIN scharfer Akzent (Amber).
 const C = {
-  ink:        '1E3A8A', // dunkler Navy  — Hintergrund dunkler Slides, Headline-Farbe hell
-  primary:    '1E40AF', // Primaer       — Balken, Badges, Kernflaechen
-  secondary:  '3B82F6', // Stuetzton     — zweite Datenreihe, sekundaere Flaechen
-  tertiary:   '93C5FD', // Stuetzton     — dritte Datenreihe
-  accent:     'D97706', // Akzent hell   — Amber auf HELLEM Grund (kontrastgeprueft)
-  accentDark: 'F59E0B', // Akzent dunkel — Amber auf DUNKLEM Grund
-  bg:         'F8FAFC', // Slide-Hintergrund hell
-  card:       'FFFFFF', // Kartenflaeche
-  muted:      'E9EEF6', // stille Flaeche
-  mutedFg:    '475569', // stille Schrift (Kontrast 7.4:1 auf F8FAFC)
-  border:     'DBEAFE', // Kartenrahmen
-  danger:     'DC2626', // Risiko / Rueckgang
-  white:      'FFFFFF',
-  inkSoft:    'C7D7F5', // Fliesstext auf dunklem Grund (Kontrast 8.9:1 auf 1E3A8A)
+  ink:    '111111', // Schwarz — Kanten, Schatten, Schrift, Flaechen
+  yellow: 'FFD84D', // Signalgelb — die tragende Flaeche
+  white:  'FFFFFF',
+  red:    'FF4D2E', // nur Flaeche/Grosszahl (Kontrast auf Weiss 3,4:1 — kein Fliesstext)
+  mint:   '00D6A3', // nur Flaeche (kein Text)
+  smoke:  'EFEFEF', // stille Flaeche fuer Nebenzeilen
+  grey:   '5A5A5A', // Sekundaerschrift auf Weiss (7,0:1)
 };
 
-// Diagrammpalette — feste Reihenfolge, auf jeder Slide identisch.
-const CHART_COLORS = [C.primary, C.accent, C.secondary, C.tertiary, C.mutedFg];
+/** Schriftfarbe ist IMMER Schwarz auf Weiss/Gelb oder Weiss auf Schwarz. Keine Ausnahmen. */
+const CHART_COLORS = [C.ink, C.yellow, C.red, C.mint];
 
 // ---------------------------------------------------------------- TYPOGRAFIE
-// Serif-Headline + Sans-Body: editorial, klar unterscheidbar von der PPT-Default-Optik.
-// Beide Familien sind Office-Standard -> identische Darstellung beim Empfaenger.
+// Arial Black traegt die Plakatwirkung, Courier New die brutalistische Signatur.
+// Beide liegen jeder Office-Installation bei -> beim Empfaenger identisch.
+// Kontrollrendering: Arial/Courier haben metrisch kompatible Ersatzschriften,
+// Arial Black nicht — dort ist bewusst Reserve eingeplant (siehe SLACK).
 const F = {
-  display: 'Cambria', // Headlines, Grosszahlen
-  body:    'Arial',   // Fliesstext, Labels, Diagramme
+  black: 'Arial Black',
+  mono:  'Courier New',
+  body:  'Arial',
 };
+/** Breitenreserve fuer Arial Black, weil die Kontrollschrift schmaler baut. */
+const SLACK = 1.22;
 
 const T = {
-  heroTitle:  { fontFace: F.display, fontSize: 46, bold: true },
-  heroSub:    { fontFace: F.display, fontSize: 25, bold: false },
-  title:      { fontFace: F.display, fontSize: 29, bold: true },
-  kicker:     { fontFace: F.body, fontSize: 10.5, bold: true, charSpacing: 1.8 }, // IMMER UPPERCASE
-  lead:       { fontFace: F.body, fontSize: 14.5 },
-  cardHead:   { fontFace: F.body, fontSize: 14, bold: true },
-  body:       { fontFace: F.body, fontSize: 12.5 },
-  small:      { fontFace: F.body, fontSize: 11 },
-  statHuge:   { fontFace: F.display, fontSize: 96, bold: true },
-  statBig:    { fontFace: F.display, fontSize: 40, bold: true },
-  statMid:    { fontFace: F.display, fontSize: 26, bold: true },
-  statLabel:  { fontFace: F.body, fontSize: 10.5 },
-  footnote:   { fontFace: F.body, fontSize: 9 },
+  hero:      { fontFace: F.black, fontSize: 58 },
+  statHuge:  { fontFace: F.black, fontSize: 84 },
+  statBig:   { fontFace: F.black, fontSize: 38 },
+  statMid:   { fontFace: F.black, fontSize: 25 },
+  title:     { fontFace: F.black, fontSize: 28 },
+  cardHead:  { fontFace: F.black, fontSize: 14 },
+  kicker:    { fontFace: F.mono, fontSize: 11, bold: true, charSpacing: 2.2 }, // IMMER UPPERCASE
+  mono:      { fontFace: F.mono, fontSize: 10, bold: true },
+  lead:      { fontFace: F.body, fontSize: 14.5 },
+  body:      { fontFace: F.body, fontSize: 12.5 },
+  small:     { fontFace: F.body, fontSize: 11 },
+  footnote:  { fontFace: F.mono, fontSize: 8 },
 };
 
 // ---------------------------------------------------------------- RASTER 16:9
-// Buehne 13.333 x 7.5 Zoll (LAYOUT_WIDE). 12 Spalten, 0.18" Rinne.
 const G = {
   W: 13.333, H: 7.5,
-  M: 0.62,                 // Aussenrand (> 0.5" Mindestmass)
-  GUT: 0.18,               // Rinne
-  KICKER_Y: 0.50,
-  TITLE_Y: 0.80,
-  CONTENT_TOP: 1.72,       // Oberkante Inhaltsflaeche
-  CONTENT_BOTTOM: 6.58,    // Unterkante Inhaltsflaeche
-  FOOT_Y: 6.80,            // Quellen-Fussnote
-  GAP: 0.30,               // Standardabstand zwischen Bloecken
+  M: 0.62,
+  GUT: 0.20,
+  KICKER_Y: 0.46,
+  TITLE_Y: 0.76,
+  CONTENT_TOP: 1.70,
+  CONTENT_BOTTOM: 6.56,
+  FOOT_Y: 6.82,
+  STEP: 0.22,   // Versatz fuer den harten Schatten UND fuer die Staffelung der Bloecke
+  BORDER: 2.25, // Kantenstaerke in pt
+  SHADOW: 0.10, // Versatz des Schattenblocks in Zoll
 };
-G.CW = G.W - 2 * G.M;                       // 12.093 nutzbare Breite
-G.COL = (G.CW - 11 * G.GUT) / 12;           // eine Spalte
-G.CH = G.CONTENT_BOTTOM - G.CONTENT_TOP;    // 4.86 nutzbare Hoehe
+G.CW = G.W - 2 * G.M;
+G.COL = (G.CW - 11 * G.GUT) / 12;
+G.CH = G.CONTENT_BOTTOM - G.CONTENT_TOP;
 
-/** x-Position von Spalte i (0-basiert) */
 const colX = (i) => G.M + i * (G.COL + G.GUT);
-/** Breite ueber n Spalten */
 const colW = (n) => n * G.COL + (n - 1) * G.GUT;
 
-// ---------------------------------------------------------------- IKONOGRAFIE
-// Lucide (react-icons/lu), Strichstaerke 2, quadratisch, 256 px gerastert.
-// Motiv der gesamten Praesentation: abgerundetes Quadrat ("Badge") 0.44",
-// Radius 0.10, Navy-Flaeche, weisses Icon. Wiederholt sich auf JEDER Inhaltsslide.
-const BADGE = { size: 0.44, radius: 0.10, iconInset: 0.105 };
-
-// Weicher Schatten fuer Karten. pptxgenjs mutiert Optionsobjekte -> immer neu erzeugen.
-const cardShadow = () => ({ type: 'outer', color: '1E3A8A', opacity: 0.10, blur: 10, offset: 2, angle: 90 });
-
-module.exports = { C, F, T, G, colX, colW, CHART_COLORS, BADGE, cardShadow };
+module.exports = { C, F, T, G, colX, colW, CHART_COLORS, SLACK };
