@@ -41,5 +41,9 @@ scripts/lod2-pipeline/3dtiles/
 scripts/lod2-pipeline/.cache/
 scripts/lod2-pipeline/venv/
 scripts/lod2-pipeline/__pycache__/
+
+# Python-Bytecode (entsteht z. B. beim Ausfuehren der Skill-Skripte)
+__pycache__/
+*.pyc
 *.gml
 *.xml.gz
