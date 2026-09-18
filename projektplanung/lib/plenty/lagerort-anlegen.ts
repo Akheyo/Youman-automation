@@ -440,13 +440,21 @@ export async function legeLagerorteAn(
   );
 
   // Wurzel: der Elternknoten, unter dem die obersten Knoten hängen.
+  //
+  // In einem leeren Lager gibt es keinen, an dem man sie ablesen könnte. Dann
+  // wird 0 genommen — so hängen die obersten Knoten in Burlo, und das Lager
+  // selbst steckt ohnehin schon in der dimensionId. Sollte Plenty das nicht
+  // annehmen, scheitert die allererste Zeile und sonst nichts; deshalb steht
+  // es auch im Probelauf, bevor geschrieben wird.
   const oberste = struktur.knoten.filter((k) => k.dimensionId === dHalle.id);
+  const wurzelId = oberste.length ? oberste[0].parentId : 0;
   if (!oberste.length) {
-    return leer(
-      'Im Lager gibt es noch keinen einzigen Knoten der obersten Spalte. Der erste muss von Hand angelegt werden, damit die Wurzel-ID bekannt ist.',
+    diagnose.push(
+      'Das Lager ist noch leer — der erste Knoten der obersten Spalte wird unter ' +
+        'der Wurzel 0 angelegt. Falls Plenty das ablehnt, bricht schon die erste ' +
+        'Zeile ab; dann eine Halle von Hand anlegen und erneut starten.',
     );
   }
-  const wurzelId = oberste[0].parentId;
 
   // Schreibweise je Spalte von den vorhandenen Knoten ablesen.
   const stellen = new Map<number, number>();
@@ -473,10 +481,16 @@ export async function legeLagerorteAn(
   const status = opts.status ?? haeufigster(bestehende.orte.map((o) => o.status));
   if (!zweck || !status) {
     return leer(
-      'Zweck oder Status ließen sich aus den vorhandenen Lagerorten nicht ablesen. Bitte beides ausdrücklich angeben.',
+      'Zweck oder Status ließen sich aus den vorhandenen Lagerorten nicht ablesen — ' +
+        'in einem noch leeren Lager gibt es nichts, wovon man sie ablesen könnte. ' +
+        'Bitte beides oben ausdrücklich angeben; die Werte stehen an jedem ' +
+        'vorhandenen Lagerort eines eingerichteten Lagers.',
     );
   }
-  diagnose.push(`Neue Lagerorte bekommen Zweck "${zweck}" und Status "${status}" — abgelesen vom Bestand.`);
+  diagnose.push(
+    `Neue Lagerorte bekommen Zweck "${zweck}" und Status "${status}" — ` +
+      (opts.zweck && opts.status ? 'ausdrücklich angegeben.' : 'abgelesen vom Bestand.'),
+  );
 
   // Knotenindex aufbauen; er wächst mit, sobald ein Knoten angelegt wurde.
   const index = new Map<string, Knoten>();
