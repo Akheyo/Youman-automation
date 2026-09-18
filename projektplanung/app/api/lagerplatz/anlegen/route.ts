@@ -70,8 +70,14 @@ export async function POST(request: Request) {
   const ab = Number(body.ab);
   const rest = Number.isFinite(ab) && ab > 0 ? codes.slice(Math.floor(ab)) : codes;
 
+  // Zweck und Status werden sonst vom Bestand abgelesen. In einem noch leeren
+  // Lager gibt es keinen Bestand — dann müssen sie mitkommen.
+  const text = (w: unknown) => (typeof w === 'string' && w.trim() ? w.trim() : undefined);
+
   const ergebnis = await legeLagerorteAn(rest, {
     warehouseId,
+    zweck: text(body.zweck),
+    status: text(body.status),
     // Schreiben nur, wenn ausdrücklich verlangt.
     probelauf: body.probelauf !== false,
     maxAnlagen: Math.min(1000, Number(body.maxAnlagen) > 0 ? Number(body.maxAnlagen) : 200),
