@@ -482,6 +482,43 @@ describe('legeLagerorteAn', () => {
     expect(geschrieben).toHaveLength(1);
   }, 15_000);
 
+  it('legt im leeren Lager die erste Halle unter der Wurzel 0 an', async () => {
+    // Borken 1 ist so ein Lager: Die vier Spalten sind eingerichtet, Knoten
+    // gibt es noch keinen. Früher brach der Lauf hier ab, weil er die Wurzel
+    // von einem vorhandenen Knoten ablesen wollte.
+    const { fetchMock, geschrieben } = attrappe({ orte: [], knoten: [] });
+    vi.stubGlobal('fetch', fetchMock);
+    const legeLagerorteAn = await lade();
+    const res = await legeLagerorteAn(['H1/R1/EA F01-0'], {
+      warehouseId: 110,
+      probelauf: false,
+      // Im leeren Lager gibt es keinen Bestand, von dem sich das ablesen ließe.
+      zweck: 'pickup',
+      status: 'active',
+    });
+
+    expect(res.error).toBeNull();
+    expect(res.angelegt).toBe(1);
+    const halle = geschrieben.find(
+      (g) => g.url.includes('/locations/levels') && g.body.name === 'H1',
+    );
+    expect(halle?.body.parentId).toBe(0);
+  });
+
+  it('kündigt die Wurzel 0 schon im Probelauf an', async () => {
+    const { fetchMock, geschrieben } = attrappe({ orte: [], knoten: [] });
+    vi.stubGlobal('fetch', fetchMock);
+    const legeLagerorteAn = await lade();
+    const res = await legeLagerorteAn(['H1/R1/EA F01-0'], {
+      warehouseId: 110,
+      zweck: 'pickup',
+      status: 'active',
+    });
+
+    expect(geschrieben).toHaveLength(0);
+    expect(res.diagnose.some((d) => d.includes('Wurzel 0'))).toBe(true);
+  });
+
   it('legt denselben Code in einer Liste nur einmal an', async () => {
     const { fetchMock, geschrieben } = attrappe();
     vi.stubGlobal('fetch', fetchMock);

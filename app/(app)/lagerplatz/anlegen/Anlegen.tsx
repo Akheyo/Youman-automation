@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import styles from '../lagerplatz.module.css';
 import { codesAusTabelle } from '@/lib/lagerplatz/laeufe';
+import { strukturBericht, type StrukturAntwort } from '@/lib/plenty/struktur-bericht';
 
 interface Lager { id: number; name: string }
 interface Zeile {
@@ -108,6 +109,9 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
   const [lager, setLager] = useState<Lager[]>([]);
   const [warehouseId, setWarehouseId] = useState<number | null>(null);
   const [lagerInfo, setLagerInfo] = useState<string | null>(null);
+  const [struktur, setStruktur] = useState<string[] | null>(null);
+  const [zweck, setZweck] = useState('');
+  const [status, setStatus] = useState('');
   const [tabelle, setTabelle] = useState('');
   const [ergebnis, setErgebnis] = useState<Ergebnis | null>(null);
   const [laeuft, setLaeuft] = useState<string | null>(null);
@@ -150,6 +154,23 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
   }
 
   /**
+   * Liest die Strukturspalten des Lagers — Halle, Regal, Ebene, Feld.
+   *
+   * Rein lesend, und die einzige Frage, die vor dem ersten Anlegen wirklich
+   * zählt: Gibt es in diesem Lager überhaupt die vier Stufen, an denen ein
+   * Lagerort hängen kann? Ohne sie bricht der Lauf in der ersten Zeile ab.
+   */
+  async function pruefeStruktur(id: number) {
+    setLaeuft('struktur'); setFehler(null); setStruktur(null);
+    try {
+      const res = await fetch(`/api/lagerplatz/lagerorte?struktur=1&warehouseId=${id}`);
+      const d = await alsJson(res);
+      if (!res.ok) throw new Error(String(d.error ?? 'Struktur nicht lesbar.'));
+      setStruktur(strukturBericht(d as StrukturAntwort));
+    } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(null); }
+  }
+
+  /**
    * Arbeitet die ganze Liste ab — in so vielen Teilaufrufen, wie nötig sind.
    * Jeder Aufruf hat ein eigenes Zeitbudget; danach meldet der Server, ab
    * welcher Zeile es weitergeht. Genau das macht den Unterschied zur Maske:
@@ -175,7 +196,7 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
         }
 
         const d = (await schicke('/api/lagerplatz/anlegen', {
-          warehouseId, probelauf, tabelle, ab, maxAnlagen: 1000,
+          warehouseId, probelauf, tabelle, ab, maxAnlagen: 1000, zweck, status,
         })) as unknown as Antwort;
         if (d.error) throw new Error(d.error);
 
@@ -330,15 +351,45 @@ export default function Anlegen({ plentyReady }: { plentyReady: boolean }) {
             <div className={styles.field}>
               <label className={styles.label} htmlFor="lager">Lager</label>
               <select id="lager" className={styles.select} value={warehouseId ?? ''}
-                onChange={(e) => { const id = Number(e.target.value); setWarehouseId(id || null); if (id) pruefeLagerorte(id); }}>
+                onChange={(e) => { const id = Number(e.target.value); setWarehouseId(id || null); setStruktur(null); if (id) pruefeLagerorte(id); }}>
                 <option value="">— bitte wählen —</option>
                 {lager.map((l) => <option key={l.id} value={l.id}>{l.name} (ID {l.id})</option>)}
               </select>
             </div>
           )}
         </div>
+        {warehouseId != null && (
+          <div className={styles.actions}>
+            <button type="button" className={styles.secondary}
+              onClick={() => pruefeStruktur(warehouseId)} disabled={!!laeuft}>
+              {laeuft === 'struktur' ? 'liest …' : 'Struktur prüfen (Halle/Regal/Ebene/Feld)'}
+            </button>
+          </div>
+        )}
         {laeuft === 'orte' && <p className={styles.progress}>Lagerorte werden gelesen …</p>}
         {lagerInfo && <p className={styles.progress}>{lagerInfo}</p>}
+        {struktur && (
+          <ul className={`${styles.diagnose} ${styles.mono}`}>
+            {struktur.map((z) => <li key={z}>{z}</li>)}
+          </ul>
+        )}
+        <p className={styles.checkHint}>
+          Zweck und Status neuer Lagerorte werden sonst vom Bestand abgelesen. In einem noch
+          leeren Lager gibt es keinen Bestand — dann hier eintragen, was in einem eingerichteten
+          Lager an den vorhandenen Lagerorten steht. Leer lassen heißt: ablesen.
+        </p>
+        <div className={styles.controls}>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="zweck">Zweck (leer = ablesen)</label>
+            <input id="zweck" className={styles.input} value={zweck} placeholder="wird abgelesen"
+              onChange={(e) => setZweck(e.target.value)} disabled={!!laeuft} />
+          </div>
+          <div className={styles.field}>
+            <label className={styles.label} htmlFor="status">Status (leer = ablesen)</label>
+            <input id="status" className={styles.input} value={status} placeholder="wird abgelesen"
+              onChange={(e) => setStatus(e.target.value)} disabled={!!laeuft} />
+          </div>
+        </div>
         {unbekannt.length > 0 && (
           <>
             <p className={styles.checkHint}>
