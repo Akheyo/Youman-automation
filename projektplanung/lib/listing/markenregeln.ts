@@ -44,14 +44,13 @@ const PFLICHTSATZ_KERN = /laut\s+hersteller\s+d(?:ü|ue|u)rfen\s+wir\s+nicht\s+n
 export const LAPP_HERSTELLER = 'LAPP';
 
 /**
- * Produktlinien, an denen ein LAPP-Artikel zu erkennen ist. Sie lösen die
- * Regel aus.
+ * Produktlinien von LAPP. Sie dürfen im Listing ebenso wenig vorkommen wie der
+ * Herstellername selbst (bestätigt September 2026).
  *
- * OFFEN: Das Dokument verlangt ausdrücklich nur, dass der HERSTELLERNAME nicht
- * erscheint. Ob auch die Linienbezeichnungen verschwinden müssen, steht dort
- * nicht — und ohne sie wäre ein Kabellisting praktisch unauffindbar. Deshalb
- * sperrt die Prüfung nur „LAPP" und weist auf die Linien hin, statt sie
- * eigenmächtig zu verbieten.
+ * FOLGE FÜR DEN TEXT: Ein solcher Artikel muss generisch beschrieben werden —
+ * Bauart, Aderzahl, Querschnitt, Mantelwerkstoff, Norm. „ÖLFLEX CLASSIC 110
+ * 5G1,5" wird zu „Steuerleitung 5G1,5 mm² PVC, ölbeständig". Das ist kein
+ * Schönheitsfehler, sondern die einzige zulässige Form.
  */
 export const LAPP_LINIEN = [
   'ÖLFLEX',
@@ -65,6 +64,14 @@ export const LAPP_LINIEN = [
   'ETHERLINE',
 ];
 
+/**
+ * „EPIC" ist auch ein normales Wort und taugt allein nicht als Nachweis, dass
+ * ein Artikel von LAPP stammt — sonst sperrte die Prüfung jedes Listing, in
+ * dem zufällig „epic" steht. Als LAPP-Hinweis zählt es erst, wenn etwas
+ * anderes bereits darauf deutet. Verboten ist es dann trotzdem.
+ */
+const LAPP_SCHWACHE_HINWEISE = ['EPIC'];
+
 /** Sucht ein Wort als eigenständiges Wort, nicht als Silbe. */
 function enthaeltWort(text: string, wort: string): boolean {
   const geschuetzt = wort.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -73,7 +80,9 @@ function enthaeltWort(text: string, wort: string): boolean {
 
 export function istLappArtikel(hersteller: string | null | undefined, texte: string[]): boolean {
   if (hersteller && enthaeltWort(hersteller, LAPP_HERSTELLER)) return true;
-  return LAPP_LINIEN.some((linie) => texte.some((t) => enthaeltWort(t ?? '', linie)));
+  if (texte.some((t) => enthaeltWort(t ?? '', LAPP_HERSTELLER))) return true;
+  const eindeutig = LAPP_LINIEN.filter((l) => !LAPP_SCHWACHE_HINWEISE.includes(l));
+  return eindeutig.some((linie) => texte.some((t) => enthaeltWort(t ?? '', linie)));
 }
 
 // ---------------------------------------------------------------------------
@@ -142,11 +151,11 @@ export function pruefeListing(entwurf: ListingEntwurf): Befund[] {
     const linien = LAPP_LINIEN.filter((l) => enthaeltWort(alles, l));
     if (linien.length > 0) {
       befunde.push({
-        schwere: 'warnung',
+        schwere: 'sperre',
         regel: 'LAPP',
         meldung:
-          `Produktlinie im Text (${linien.join(', ')}). Das Dokument verbietet nur den Herstellernamen — ` +
-          'ob die Linienbezeichnung bleiben darf, ist ungeklärt.',
+          `Produktlinie im Text (${linien.join(', ')}) — auch die darf nicht vorkommen. ` +
+          'Den Artikel generisch beschreiben: Bauart, Aderzahl, Querschnitt, Mantelwerkstoff, Norm.',
       });
     }
   }
