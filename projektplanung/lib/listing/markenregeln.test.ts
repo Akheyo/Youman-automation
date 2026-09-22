@@ -71,12 +71,40 @@ describe('LAPP', () => {
     expect(befunde.some((b) => b.regel === 'LAPP' && b.schwere === 'sperre')).toBe(true);
   });
 
-  it('laesst die Produktlinie durch, warnt aber', () => {
-    // Das Dokument verbietet nur den Herstellernamen. Ohne Linienbezeichnung
-    // waere ein Kabellisting unauffindbar — deshalb Hinweis statt Sperre.
+  it('sperrt auch die Produktlinie', () => {
+    // Bestaetigt September 2026: weder Hersteller noch Linie duerfen irgendwo stehen.
     const befunde = pruefeListing(entwurf({ hersteller: null, titel1: 'ÖLFLEX CLASSIC 110 5G1,5 Steuerleitung' }));
+    expect(darfVeroeffentlichen(befunde)).toBe(false);
+    expect(befunde.some((b) => b.regel === 'LAPP' && b.schwere === 'sperre')).toBe(true);
+  });
+
+  it('sagt, wie es stattdessen gehen muss', () => {
+    // Eine Sperre ohne Ausweg blockiert nur; der Bearbeiter muss wissen,
+    // welche Form zulaessig ist.
+    const befunde = pruefeListing(entwurf({ titel1: 'UNITRONIC LiYY 4x0,25 Datenleitung' }));
+    expect(befunde.find((b) => b.regel === 'LAPP')?.meldung).toMatch(/generisch beschreiben/);
+  });
+
+  it('laesst ein generisch beschriebenes LAPP-Kabel durch', () => {
+    const befunde = pruefeListing(
+      entwurf({
+        hersteller: null,
+        titel1: 'Steuerleitung 5G1,5 mm² PVC ölbeständig',
+        beschreibung: 'Steuerleitung, 5 Adern à 1,5 mm², PVC-Mantel, ölbeständig. Restlänge 25 m.',
+      }),
+    );
     expect(darfVeroeffentlichen(befunde)).toBe(true);
-    expect(befunde.some((b) => b.schwere === 'warnung' && b.regel === 'LAPP')).toBe(true);
+  });
+
+  it('haelt "epic" allein nicht fuer einen LAPP-Artikel', () => {
+    // Sonst sperrte jedes Listing, in dem zufaellig das Wort vorkommt.
+    expect(istLappArtikel(null, ['Epic Games Poster'])).toBe(false);
+  });
+
+  it('sperrt EPIC aber sehr wohl, wenn es wirklich LAPP ist', () => {
+    const befunde = pruefeListing(entwurf({ hersteller: 'LAPP', titel1: 'EPIC Steckverbinder H-A 10' }));
+    expect(darfVeroeffentlichen(befunde)).toBe(false);
+    expect(befunde.some((b) => b.meldung.includes('EPIC'))).toBe(true);
   });
 
   it('haelt LAPP nicht in unbeteiligten Woertern fuer einen Treffer', () => {
