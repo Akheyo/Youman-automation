@@ -49,6 +49,27 @@ Alle Variablen sind in [`.env.example`](.env.example) dokumentiert.
 | `PLENTY_EAN_BARCODE_ID` | ID der Barcode-Konfiguration (z. B. `EAN13_2`) |
 | `PLENTY_EAN_PREFIX` | 2-stelliger EAN-Präfix, Standard `20` (interner Bereich) |
 
+### Plenty von der Kommandozeile (`scripts/plenty.mjs`)
+
+Für einmalige Arbeiten — nachsehen, korrigieren, nachtragen — gibt es einen
+Zugang zur REST-API ohne Browser und ohne Deploy:
+
+```bash
+node scripts/plenty.mjs test                                  # Login prüfen
+node scripts/plenty.mjs get /rest/items 'itemsPerPage=5'
+node scripts/plenty.mjs get /rest/stockmanagement/warehouses
+node scripts/plenty.mjs post /rest/items @neuer-artikel.json  # fragt vorher nach
+```
+
+Die Zugangsdaten kommen aus der Umgebung oder aus `.env.local` — nie aus
+Argumenten, damit kein Passwort in der Shell-History steht. Schreibende Aufrufe
+(`post`, `put`, `delete`) fragen einmal nach, weil sie im Live-System landen;
+`--ja` überspringt die Rückfrage.
+
+Läuft der Aufruf durch einen Proxy — etwa in einer Claude-Code-Web-Session —,
+muss dessen Netzwerk-Policy `*.plentysystems.com` durchlassen. Sonst bricht schon
+der Login ab, und zwar mit einem Hinweis genau darauf.
+
 ### Datenbank einrichten
 
 Einmalig im Supabase-Dashboard **SQL Editor** den Inhalt von
