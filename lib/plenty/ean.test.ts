@@ -44,3 +44,20 @@ describe('isValidEan13', () => {
     expect(isValidEan13('123')).toBe(false);
   });
 });
+
+describe('EAN aus der Artikelnummer', () => {
+  it('liefert fuer dieselbe Artikelnummer immer dieselbe EAN', () => {
+    // Ein zweiter Anlauf nach einem Fehlschlag darf keine zweite EAN
+    // vergeben — sonst steht in der Beschreibung eine andere als am Barcode.
+    expect(generateEan13(4711, '20')).toBe(generateEan13(4711, '20'));
+  });
+
+  it('gibt verschiedenen Artikeln verschiedene EANs', () => {
+    expect(generateEan13(4711, '20')).not.toBe(generateEan13(4712, '20'));
+  });
+
+  it('erzeugt eine gueltige EAN-13 auch fuer kleine Nummern', () => {
+    expect(isValidEan13(generateEan13(1, '20'))).toBe(true);
+    expect(generateEan13(1, '20').startsWith('20')).toBe(true);
+  });
+});

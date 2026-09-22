@@ -18,6 +18,8 @@ import { adminOderFehler, ansichtsLinks } from '@/lib/erfassung/speicher';
 import { anthropicKonfiguriert, schreibeFliesstext } from '@/lib/listing/fliesstext';
 import { istLappArtikel } from '@/lib/listing/markenregeln';
 import { baueListingpaket } from '@/lib/listing/zusammenbau';
+import { getPlentyConfig } from '@/lib/plenty/client';
+import { generateEan13 } from '@/lib/plenty/ean';
 import type { Fliesstext } from '@/lib/listing/texte';
 import type { Zustand } from '@/lib/preis/regelwerk';
 
@@ -47,7 +49,7 @@ export async function POST(_request: Request, { params }: { params: { id: string
   const { data: artikel, error: ladeFehler } = await supabase
     .from('erfassung_artikel')
     .select(
-      'id, nummer, erkennung, notiz, zustand, gravierende_schaeden, bestand, erfasst_von, preis, bilder:erfassung_bilder (position, pfad, rolle_erkannt, hochgeladen)',
+      'id, nummer, erkennung, notiz, zustand, gravierende_schaeden, bestand, erfasst_von, preis, ean, bilder:erfassung_bilder (position, pfad, rolle_erkannt, hochgeladen)',
     )
     .eq('id', params.id)
     .single();
@@ -110,10 +112,18 @@ export async function POST(_request: Request, { params }: { params: { id: string
   const preis = (artikel.preis ?? null) as { webshop?: number | null } | null;
   const shopBasis = process.env.SHOP_BASIS_URL?.trim() || null;
 
+  // Die EAN entsteht hier und nicht erst bei der Plenty-Anlage: Das SOP
+  // verlangt sie in der Beschreibung, und die wird in diesem Schritt gebaut.
+  // Abgeleitet wird sie aus der Artikelnummer, also deterministisch — ein
+  // zweiter Anlauf vergibt dieselbe und nicht eine zweite, sonst stünde in
+  // der Beschreibung eine andere als am Barcode.
+  const ean = artikel.ean ?? generateEan13(artikel.nummer, getPlentyConfig().eanPrefix);
+
   const paket = baueListingpaket({
     erkennung,
     zustand,
     notiz: artikel.notiz,
+    ean,
     bearbeiter: artikel.erfasst_von,
     bestand: Number(artikel.bestand) || 1,
     preis: preis?.webshop ?? null,
@@ -131,6 +141,7 @@ export async function POST(_request: Request, { params }: { params: { id: string
   }
 
   const listingfeld = {
+    ean,
     titel1: paket.listing.titel1,
     titel2: paket.listing.titel2,
     titel3: paket.listing.titel3,
@@ -153,7 +164,7 @@ export async function POST(_request: Request, { params }: { params: { id: string
 
   const { error: schreibFehler } = await supabase
     .from('erfassung_artikel')
-    .update({ listing: listingfeld, listing_am: new Date().toISOString(), listing_fehler: null })
+    .update({ listing: listingfeld, ean, listing_am: new Date().toISOString(), listing_fehler: null })
     .eq('id', params.id);
   if (schreibFehler) return NextResponse.json({ error: schreibFehler.message }, { status: 400 });
 

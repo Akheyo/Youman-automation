@@ -78,7 +78,7 @@ export async function POST(_request: Request, { params }: { params: { id: string
   const { data: artikel, error: ladeFehler } = await supabase
     .from('erfassung_artikel')
     .select(
-      'id, nummer, erkennung, listing, preis, zustand, bestand, gewicht_kg, packklasse, plenty_item_id, bilder:erfassung_bilder (position, pfad, hochgeladen)',
+      'id, nummer, erkennung, listing, preis, zustand, bestand, gewicht_kg, packklasse, ean, plenty_item_id, bilder:erfassung_bilder (position, pfad, hochgeladen)',
     )
     .eq('id', params.id)
     .single();
@@ -161,7 +161,8 @@ export async function POST(_request: Request, { params }: { params: { id: string
       zustand,
       bestand: Number(artikel.bestand) || 1,
       kategorieId,
-      ean: null,
+      // Dieselbe EAN, die schon in der Beschreibung steht — nicht eine neue.
+      ean: artikel.ean ?? null,
       preisEbay: preisfeld?.ebay ?? null,
       preisWebshop: preisfeld?.webshop ?? null,
       gewichtKg: artikel.gewicht_kg == null ? null : Number(artikel.gewicht_kg),
