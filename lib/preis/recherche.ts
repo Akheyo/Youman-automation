@@ -162,11 +162,22 @@ export function anthropicKonfiguriert(): boolean {
 }
 
 /** Wie viele Websuchen ein einzelner Suchauftrag auslösen darf. */
-export const MAX_SUCHEN_JE_AUFTRAG = 6;
+export const MAX_SUCHEN_JE_AUFTRAG = 5;
+
+/**
+ * Eigene Frist, knapp unter der von Vercel.
+ *
+ * Läuft eine Serverless-Funktion in die 60 Sekunden, antwortet das Netz mit
+ * 504 — ohne Rumpf, ohne Meldung, und alles, was der Aufruf bis dahin
+ * gesammelt hat, ist weg. Mit einer eigenen, kürzeren Frist bricht statt
+ * dessen der Claude-Aufruf ab, die Funktion antwortet normal, und der
+ * Zwischenstand wird gespeichert.
+ */
+export const FRIST_MS = 50_000;
 
 /** Führt einen einzelnen Suchauftrag aus. */
 export async function sucheAngebote(auftrag: Suchauftrag): Promise<Suchergebnis> {
-  const client = new Anthropic();
+  const client = new Anthropic({ timeout: FRIST_MS, maxRetries: 0 });
 
   const antwort = await client.messages.parse({
     model: 'claude-opus-5',
@@ -239,7 +250,48 @@ export const MAX_AUFTRAEGE = 4;
  * Ergebnis nur — die Baureihe enthält immer auch die größeren und kleineren
  * Modelle.
  */
-export async function recherchiere(e: RechercheEingabe): Promise<RechercheErgebnis> {
+/**
+ * Der Zwischenstand einer Recherche.
+ *
+ * Er wird zwischen den Aufrufen in der Datenbank gehalten. Ohne ihn müsste
+ * jeder Anlauf wieder bei der vollständigen Typennummer beginnen — und weil
+ * jede Sprosse Websuchen kostet, wäre das jedes Mal neu bezahlt.
+ */
+export interface Rechercheestand {
+  /** Index der nächsten Sprosse in der Kürzungsleiter. */
+  naechsterAuftrag: number;
+  angebote: MarktAngebot[];
+  bemerkungen: string[];
+  versuche: Herleitung['versuche'];
+  /** Güte der Sprosse, die zuletzt etwas geliefert hat. */
+  letzteGuete: Suchauftrag['guete'];
+}
+
+export function leererStand(): Rechercheestand {
+  return { naechsterAuftrag: 0, angebote: [], bemerkungen: [], versuche: [], letzteGuete: 'niedrig' };
+}
+
+export interface SchrittErgebnis {
+  stand: Rechercheestand;
+  /** Wahr, wenn die Leiter abgearbeitet oder genug gefunden ist. */
+  fertig: boolean;
+  /** Der Suchauftrag, der gerade gelaufen ist — für die Anzeige. */
+  gelaufen: Suchauftrag | null;
+}
+
+/**
+ * Arbeitet GENAU EINE Sprosse der Kürzungsleiter ab.
+ *
+ * Eine Sprosse je Aufruf, nicht alle vier. Das ist keine Feinheit: Ein
+ * einzelner Suchlauf mit fünf Websuchen braucht schon eine halbe Minute, vier
+ * hintereinander reißen jede Serverless-Frist. Vorher lief der ganze Schritt
+ * in einen 504 — bezahlt, nichts gespeichert. Jetzt wird nach jeder Sprosse
+ * festgeschrieben, und ein Abbruch kostet höchstens die eine.
+ */
+export async function recherchiereSchritt(
+  e: RechercheEingabe,
+  stand: Rechercheestand,
+): Promise<SchrittErgebnis> {
   if (!anthropicKonfiguriert()) {
     throw new Error('ANTHROPIC_API_KEY fehlt — ohne ihn gibt es keine Preisrecherche.');
   }
@@ -249,41 +301,58 @@ export async function recherchiere(e: RechercheEingabe): Promise<RechercheErgebn
     e.maxAuftraege ?? MAX_AUFTRAEGE,
   );
 
-  const gesammelt: MarktAngebot[] = [];
-  const bemerkungen: string[] = [];
-  const versuche: Herleitung['versuche'] = [];
-  let letzteGuete: Suchauftrag['guete'] = 'niedrig';
+  const auftrag = auftraege[stand.naechsterAuftrag];
+  if (!auftrag) return { stand, fertig: true, gelaufen: null };
 
-  for (const auftrag of auftraege) {
-    let ergebnis: Suchergebnis;
-    try {
-      ergebnis = await sucheAngebote(auftrag);
-    } catch (fehler) {
-      // Ein gescheiterter Suchlauf beendet nicht die Recherche: Die nächste
-      // Sprosse kann trotzdem etwas finden, und ein Preis von der Baureihe ist
-      // besser als gar keiner.
-      versuche.push({
-        begriff: auftrag.begriff,
-        treffer: 0,
-        erklaerung: `${auftrag.erklaerung} (Suche fehlgeschlagen: ${(fehler as Error).message})`,
-      });
-      continue;
-    }
+  const neu: Rechercheestand = { ...stand, naechsterAuftrag: stand.naechsterAuftrag + 1 };
+
+  try {
+    const ergebnis = await sucheAngebote(auftrag);
 
     const durchgekommen = ergebnis.angebote
       .filter(brauchbar)
       .map((a) => alsMarktangebot(a, e.zustand, e.gravierendeSchaeden === true))
       .filter((a): a is MarktAngebot => a !== null);
 
-    versuche.push({ begriff: auftrag.begriff, treffer: durchgekommen.length, erklaerung: auftrag.erklaerung });
-    bemerkungen.push(...ergebnis.bemerkungen);
-    gesammelt.push(...durchgekommen);
-
-    if (durchgekommen.length > 0) letzteGuete = auftrag.guete;
-    if (gesammelt.length >= GENUG_ANGEBOTE) break;
+    neu.versuche = [
+      ...stand.versuche,
+      { begriff: auftrag.begriff, treffer: durchgekommen.length, erklaerung: auftrag.erklaerung },
+    ];
+    neu.bemerkungen = [...stand.bemerkungen, ...ergebnis.bemerkungen];
+    neu.angebote = [...stand.angebote, ...durchgekommen];
+    if (durchgekommen.length > 0) neu.letzteGuete = auftrag.guete;
+  } catch (fehler) {
+    // Eine gescheiterte Sprosse beendet die Recherche nicht: Die nächste kann
+    // trotzdem etwas finden, und ein Preis von der Baureihe ist besser als
+    // gar keiner.
+    neu.versuche = [
+      ...stand.versuche,
+      {
+        begriff: auftrag.begriff,
+        treffer: 0,
+        erklaerung: `${auftrag.erklaerung} (Suche fehlgeschlagen: ${(fehler as Error).message})`,
+      },
+    ];
   }
 
-  const quellen = waehleQuellen(gesammelt);
+  const fertig = neu.angebote.length >= GENUG_ANGEBOTE || neu.naechsterAuftrag >= auftraege.length;
+  return { stand: neu, fertig, gelaufen: auftrag };
+}
+
+/** Wie viele Sprossen es insgesamt gibt — für die Fortschrittsanzeige. */
+export function anzahlAuftraege(e: RechercheEingabe): number {
+  return baueSuchauftraege(e.erkennung, { generisch: e.generisch }).slice(0, e.maxAuftraege ?? MAX_AUFTRAEGE).length;
+}
+
+/**
+ * Rechnet aus dem gesammelten Stand den Preis.
+ *
+ * Getrennt vom Suchen, weil es jederzeit aufgerufen werden kann — auch wenn
+ * die Leiter noch nicht zu Ende ist. Ein Preis aus zwei Angeboten ist ein
+ * Ergebnis; er trägt nur eine schlechtere Güte.
+ */
+export function werteAus(stand: Rechercheestand, e: RechercheEingabe): RechercheErgebnis {
+  const quellen = waehleQuellen(stand.angebote);
   const preis = preisBestimmen({ angebote: quellen.angebote, unserVersand: e.unserVersand });
   const lohnt = lohntListing(preis.ebay, e.bestand);
 
@@ -291,16 +360,16 @@ export async function recherchiere(e: RechercheEingabe): Promise<RechercheErgebn
   // ist nicht verlässlicher als die Quelle, aus der er stammt.
   const quellGuete = stufenGuete(quellen.stufe);
   const rang = { hoch: 2, mittel: 1, niedrig: 0 } as const;
-  const guete = rang[quellGuete] <= rang[letzteGuete] ? quellGuete : letzteGuete;
+  const guete = rang[quellGuete] <= rang[stand.letzteGuete] ? quellGuete : stand.letzteGuete;
 
   return {
     preis,
     quellen,
     lohnt,
     angebote: quellen.angebote,
-    bemerkungen,
+    bemerkungen: stand.bemerkungen,
     herleitung: {
-      versuche,
+      versuche: stand.versuche,
       quelle: quellen.stufe ? quellen.begruendung.find((z) => z.includes('diese Stufe')) ?? null : null,
       guete,
       zeilen: [...quellen.begruendung, ...preis.begruendung, lohnt.begruendung].filter(Boolean),

@@ -5,17 +5,33 @@
  * Menschen (Zustand, Bestand, Gewicht) und liefert Verkaufspreise für eBay
  * und Webshop samt Herleitung.
  *
- * Eigener Aufruf, weil die Websuchen allein schon an die 60-Sekunden-Grenze
- * stoßen. Das Ergebnis landet vollständig am Artikel — auch wenn kein Preis
- * herauskam. Ein Artikel, für den nichts gefunden wurde, ist eine Information;
- * ein Artikel ohne Eintrag sieht aus wie einer, den niemand angefasst hat.
+ * Der Aufruf arbeitet GENAU EINE Sprosse der Kürzungsleiter ab und gibt dann
+ * zurück. Mehr passt nicht in die 60 Sekunden einer Serverless-Funktion: Ein
+ * Suchlauf mit fünf Websuchen braucht eine halbe Minute, vier hintereinander
+ * enden im 504 — bezahlt, nichts gespeichert. Der Zwischenstand steht nach
+ * jeder Sprosse in der Datenbank; der nächste Aufruf macht dort weiter.
+ *
+ * `preis_am` wird erst gesetzt, wenn die Leiter zu Ende oder genug gefunden
+ * ist. Bis dahin gilt der Schritt als offen, und der Durchlauf ruft erneut auf.
+ *
+ * Das Ergebnis landet vollständig am Artikel — auch wenn kein Preis herauskam.
+ * Ein Artikel, für den nichts gefunden wurde, ist eine Information; ein
+ * Artikel ohne Eintrag sieht aus wie einer, den niemand angefasst hat.
  */
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import type { Erkennung } from '@/lib/erfassung/erkennung';
 import { istLappArtikel } from '@/lib/listing/markenregeln';
-import { anthropicKonfiguriert, recherchiere } from '@/lib/preis/recherche';
+import {
+  anthropicKonfiguriert,
+  anzahlAuftraege,
+  leererStand,
+  recherchiereSchritt,
+  werteAus,
+  type Rechercheestand,
+  type RechercheEingabe,
+} from '@/lib/preis/recherche';
 import { herleitungText } from '@/lib/preis/recherche-kern';
 import { versandkosten, type Packklasse } from '@/lib/preis/versand';
 import type { Zustand } from '@/lib/preis/regelwerk';
@@ -46,7 +62,7 @@ export async function POST(_request: Request, { params }: { params: { id: string
 
   const { data: artikel, error: ladeFehler } = await supabase
     .from('erfassung_artikel')
-    .select('id, nummer, erkennung, zustand, gravierende_schaeden, bestand, gewicht_kg, packklasse')
+    .select('id, nummer, erkennung, zustand, gravierende_schaeden, bestand, gewicht_kg, packklasse, preis')
     .eq('id', params.id)
     .single();
   if (ladeFehler || !artikel) return NextResponse.json({ error: 'Artikel nicht gefunden.' }, { status: 404 });
@@ -75,36 +91,54 @@ export async function POST(_request: Request, { params }: { params: { id: string
     erkennung.modell ?? '',
   ]);
 
-  let ergebnis;
+  const eingabe: RechercheEingabe = {
+    erkennung,
+    zustand,
+    gravierendeSchaeden: artikel.gravierende_schaeden === true,
+    unserVersand: versand.kosten ?? 0,
+    bestand: Number(artikel.bestand) || 1,
+    generisch,
+  };
+
+  // Da weitermachen, wo der vorige Aufruf aufgehört hat.
+  const bisher = (artikel.preis ?? null) as { stand?: Rechercheestand } | null;
+  const vorher: Rechercheestand = bisher?.stand ?? leererStand();
+
+  let schritt;
   try {
-    ergebnis = await recherchiere({
-      erkennung,
-      zustand,
-      gravierendeSchaeden: artikel.gravierende_schaeden === true,
-      unserVersand: versand.kosten ?? 0,
-      bestand: Number(artikel.bestand) || 1,
-      generisch,
-    });
+    schritt = await recherchiereSchritt(eingabe, vorher);
   } catch (e) {
     const meldung = e instanceof Error ? e.message : String(e);
     await supabase.from('erfassung_artikel').update({ preis_fehler: meldung }).eq('id', params.id);
     return NextResponse.json({ error: meldung }, { status: 502 });
   }
 
+  const ergebnis = werteAus(schritt.stand, eingabe);
+  const gesamt = anzahlAuftraege(eingabe);
+
   const hinweise: string[] = [];
   if (versand.kosten == null && !versand.spedition) {
     hinweise.push(`${versand.begruendung} Der Preis ist ohne Versandabzug gerechnet und damit zu hoch.`);
   }
   if (versand.spedition) hinweise.push(versand.begruendung);
-  if (!ergebnis.lohnt.lohntSich) hinweise.push(ergebnis.lohnt.begruendung);
+  if (schritt.fertig && !ergebnis.lohnt.lohntSich) hinweise.push(ergebnis.lohnt.begruendung);
   if (ergebnis.preis.versandFrisstPreis) {
     hinweise.push('Unser Versand ist so hoch, dass wir über Preis plus Versand nicht zu gewinnen sind.');
   }
-  if (ergebnis.preis.ebay == null) hinweise.push('Kein Verkaufspreis ableitbar — es fehlen Vergleichsangebote.');
+  if (schritt.fertig && ergebnis.preis.ebay == null) {
+    hinweise.push('Kein Verkaufspreis ableitbar — es fehlen Vergleichsangebote.');
+  }
 
   const herleitung = herleitungText(ergebnis.herleitung);
 
   const preisfeld = {
+    // Der Zwischenstand bleibt am Artikel, damit der nächste Aufruf nicht
+    // wieder bei der vollständigen Typennummer anfängt — jede Sprosse kostet
+    // Websuchen.
+    stand: schritt.stand,
+    fertig: schritt.fertig,
+    sprosse: schritt.stand.naechsterAuftrag,
+    sprossenGesamt: gesamt,
     ebay: ergebnis.preis.ebay,
     webshop: ergebnis.preis.webshop,
     versand: versand.kosten,
@@ -122,9 +156,20 @@ export async function POST(_request: Request, { params }: { params: { id: string
 
   const { error: schreibFehler } = await supabase
     .from('erfassung_artikel')
-    .update({ preis: preisfeld, preis_am: new Date().toISOString(), preis_fehler: null })
+    .update({
+      preis: preisfeld,
+      // Erst wenn die Leiter durch ist, gilt der Schritt als erledigt. Sonst
+      // ruft der Durchlauf noch einmal auf und arbeitet die nächste Sprosse ab.
+      preis_am: schritt.fertig ? new Date().toISOString() : null,
+      preis_fehler: null,
+    })
     .eq('id', params.id);
   if (schreibFehler) return NextResponse.json({ error: schreibFehler.message }, { status: 400 });
 
-  return NextResponse.json({ preis: preisfeld, hinweise });
+  return NextResponse.json({
+    preis: preisfeld,
+    fertig: schritt.fertig,
+    sprosse: schritt.gelaufen?.begriff ?? null,
+    hinweise,
+  });
 }

@@ -128,6 +128,16 @@ export function fortschritt(stand: Artikelstand): Fortschritt {
  */
 export const MAX_VERSUCHE = 3;
 
+/**
+ * Wie viele Aufrufe ein Artikel höchstens braucht, um durchzulaufen.
+ *
+ * Nicht vier. Der Preis-Schritt arbeitet die Kürzungsleiter sprossenweise ab
+ * — eine Sprosse je Aufruf, weil vier Suchläufe hintereinander die
+ * 60-Sekunden-Frist reißen. Er meldet sich also mehrfach als „noch nicht
+ * fertig", und eine Schleife mit vier Runden käme nie bis Plenty.
+ */
+export const MAX_RUNDEN = 10;
+
 export function darfWeiterlaufen(versuche: number | null | undefined): boolean {
   return (versuche ?? 0) < MAX_VERSUCHE;
 }

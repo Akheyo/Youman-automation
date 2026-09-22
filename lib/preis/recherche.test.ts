@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { alsMarktangebot, brauchbar, type GefundenesAngebot } from './recherche';
+import {
+  alsMarktangebot,
+  brauchbar,
+  leererStand,
+  werteAus,
+  type GefundenesAngebot,
+  type RechercheEingabe,
+} from './recherche';
+import type { Erkennung } from '@/lib/erfassung/erkennung';
 
 function angebot(teil: Partial<GefundenesAngebot> = {}): GefundenesAngebot {
   return {
@@ -92,5 +100,83 @@ describe('alsMarktangebot', () => {
   it('merkt sich die Fremdwaehrung', () => {
     const m = alsMarktangebot(angebot({ land: 'CH', originalWaehrung: 'CHF' }), 'gebraucht', false);
     expect(m?.originalWaehrung).toBe('CHF');
+  });
+});
+
+function erkennung(): Erkennung {
+  return {
+    artikelTyp: 'Akkuschrauber',
+    titel: 'Bosch GSR 18V-55 Akkuschrauber',
+    hersteller: 'Bosch',
+    modell: 'GSR 18V-55',
+    modellnummer: '06019H5200',
+    seriennummer: null,
+    baujahr: null,
+    zustand: 'gebraucht_spuren',
+    schaeden: [],
+    lieferumfang: [],
+    merkmale: [],
+    masseCm: null,
+    typenschildGefunden: true,
+    suchbegriffe: [],
+    sicherheit: 'hoch',
+    unsicherheiten: [],
+    bilder: [],
+  };
+}
+
+const eingabe: RechercheEingabe = {
+  erkennung: erkennung(),
+  zustand: 'gebraucht',
+  unserVersand: 7.9,
+  bestand: 1,
+};
+
+describe('leererStand', () => {
+  it('faengt bei der ersten Sprosse an', () => {
+    const s = leererStand();
+    expect(s.naechsterAuftrag).toBe(0);
+    expect(s.angebote).toHaveLength(0);
+  });
+});
+
+describe('werteAus', () => {
+  it('rechnet auch aus einem unfertigen Stand einen Preis', () => {
+    // Ein Preis aus zwei Angeboten ist ein Ergebnis — er traegt nur eine
+    // schlechtere Guete.
+    const stand = {
+      ...leererStand(),
+      naechsterAuftrag: 1,
+      letzteGuete: 'hoch' as const,
+      angebote: [
+        { preis: 60, versand: 6, land: 'DE', plattform: 'ebay' as const, quelle: 'a' },
+        { preis: 62, versand: 6, land: 'DE', plattform: 'ebay' as const, quelle: 'b' },
+        { preis: 58, versand: 6, land: 'DE', plattform: 'ebay' as const, quelle: 'c' },
+      ],
+    };
+    const r = werteAus(stand, eingabe);
+    expect(r.preis.ebay).toBeGreaterThan(0);
+    expect(r.quellen.stufe).toBe('ebay_de');
+  });
+
+  it('liefert ohne Angebote keinen Preis, aber eine Begruendung', () => {
+    const r = werteAus(leererStand(), eingabe);
+    expect(r.preis.ebay).toBeNull();
+    expect(r.herleitung.zeilen.length).toBeGreaterThan(0);
+  });
+
+  it('nimmt die schlechtere der beiden Gueten', () => {
+    // Ein exakter Treffer aus Tschechien ist nicht verlaesslicher als die
+    // Quelle, aus der er stammt.
+    const stand = {
+      ...leererStand(),
+      letzteGuete: 'hoch' as const,
+      angebote: [
+        { preis: 60, versand: 6, land: 'CZ', plattform: 'netz' as const, quelle: 'a' },
+        { preis: 62, versand: 6, land: 'CZ', plattform: 'netz' as const, quelle: 'b' },
+        { preis: 58, versand: 6, land: 'CZ', plattform: 'netz' as const, quelle: 'c' },
+      ],
+    };
+    expect(werteAus(stand, eingabe).herleitung.guete).toBe('niedrig');
   });
 });

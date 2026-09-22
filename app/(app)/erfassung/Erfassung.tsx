@@ -18,6 +18,7 @@ import {
 import { ZUSTAND_TEXT, type Erkennung } from '@/lib/erfassung/erkennung';
 import { trefferText, type Treffer } from '@/lib/erfassung/treffer-kern';
 import {
+  MAX_RUNDEN,
   SCHRITTE,
   SCHRITT_TEXT,
   fortschritt,
@@ -236,7 +237,7 @@ export default function Erfassung() {
 
           let stand: Artikelstand = eintrag;
           try {
-            for (let runde = 0; runde < SCHRITTE.length; runde++) {
+            for (let runde = 0; runde < MAX_RUNDEN; runde++) {
               const naechster = naechsterSchritt(stand);
               if (naechster === 'fertig') break;
               setSchritt(SCHRITT_TEXT[naechster]);
@@ -286,7 +287,7 @@ export default function Erfassung() {
       versuchtRef.current.delete(id);
       try {
         let stand: Artikelstand = (await ladeListe()).find((a) => a.id === id) ?? {};
-        for (let runde = 0; runde < SCHRITTE.length; runde++) {
+        for (let runde = 0; runde < MAX_RUNDEN; runde++) {
           const naechster = naechsterSchritt(stand);
           if (naechster === 'fertig') break;
           setSchritt(SCHRITT_TEXT[naechster]);
