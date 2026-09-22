@@ -170,15 +170,45 @@ export { PREIS_ZUSTAND_TEXT };
 
 export const MAX_BESTAND = 9999;
 
+/**
+ * Schwerstes Paket, das wir noch annehmen — darüber geht nur Spedition.
+ * 300 kg ist keine Grenze der Logistik, sondern eine gegen den Zahlendreher:
+ * Wer 2,5 kg als 2500 eintippt, soll das gesagt bekommen.
+ */
+export const MAX_GEWICHT_KG = 300;
+
+export type Packklasse = 'normal' | 'sperrig' | 'schwierig';
+
 export interface Angaben {
   zustand: Zustand;
   zustandBestaetigt: boolean;
   gravierendeSchaeden: boolean;
   bestand: number;
+  /** Ohne Gewicht kein Versandsatz und damit kein belastbarer Verkaufspreis. */
+  gewichtKg: number | null;
+  packklasse: Packklasse;
 }
 
 function istZustand(wert: unknown): wert is Zustand {
   return wert === 'neu_versiegelt' || wert === 'neu' || wert === 'gebraucht' || wert === 'defekt';
+}
+
+function istPackklasse(wert: unknown): wert is Packklasse {
+  return wert === 'normal' || wert === 'sperrig' || wert === 'schwierig';
+}
+
+/**
+ * Das Gewicht, gerundet auf Gramm und auf Plausibilität geprüft.
+ *
+ * Null heißt ausdrücklich „nicht gewogen" und ist ein gültiger Wert: Der
+ * Artikel wird dann trotzdem angelegt, und das fehlende Versandprofil steht
+ * als offener Punkt daran. Geraten wird nicht — ein geschätztes Gewicht
+ * verschiebt über die Versandstaffel unmittelbar den Verkaufspreis.
+ */
+export function normalisiereGewicht(roh: unknown): number | null {
+  const zahl = Number(roh);
+  if (!Number.isFinite(zahl) || zahl <= 0) return null;
+  return Math.min(Math.round(zahl * 1000) / 1000, MAX_GEWICHT_KG);
 }
 
 /**
@@ -193,15 +223,22 @@ function istZustand(wert: unknown): wert is Zustand {
  * 2. „Gravierende Schäden" gilt nur bei Gebrauchtware. Bei neuer Ware ergibt
  *    es keinen Sinn, bei defekter ist es bereits im Zustand enthalten — sonst
  *    zöge der Faktor doppelt ab.
+ * 3. Die Packklasse zählt erst über 10 kg. Darunter kostet der Versand
+ *    ohnehin denselben Satz, und „sperrig" an einer 2-kg-Sendung wäre eine
+ *    Angabe, die nichts bewirkt, aber im Büro nach Absicht aussieht.
  */
 export function normalisiereAngaben(roh: Partial<Record<keyof Angaben, unknown>>): Angaben {
   const zustand: Zustand = istZustand(roh.zustand) ? roh.zustand : 'gebraucht';
   const zahl = Number(roh.bestand);
   const bestand = Number.isFinite(zahl) ? Math.min(Math.max(Math.round(zahl), 1), MAX_BESTAND) : 1;
+  const gewichtKg = normalisiereGewicht(roh.gewichtKg);
+  const gewaehlt: Packklasse = istPackklasse(roh.packklasse) ? roh.packklasse : 'normal';
   return {
     zustand,
     zustandBestaetigt: roh.zustandBestaetigt === true,
     gravierendeSchaeden: zustand === 'gebraucht' && roh.gravierendeSchaeden === true,
     bestand,
+    gewichtKg,
+    packklasse: gewichtKg != null && gewichtKg > 10 ? gewaehlt : 'normal',
   };
 }

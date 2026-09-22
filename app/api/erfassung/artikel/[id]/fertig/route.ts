@@ -80,10 +80,14 @@ export async function POST(request: Request, { params }: { params: { id: string 
       zustand_bestaetigt: angaben.zustandBestaetigt,
       gravierende_schaeden: angaben.gravierendeSchaeden,
       bestand: angaben.bestand,
+      gewicht_kg: angaben.gewichtKg,
+      packklasse: angaben.packklasse,
     })
     .eq('id', params.id)
     .eq('status', 'offen') // niemand hat in der Zwischenzeit schon abgeschickt
-    .select('id, nummer, status, notiz, fertig_am, zustand, zustand_bestaetigt, gravierende_schaeden, bestand')
+    .select(
+      'id, nummer, status, notiz, fertig_am, zustand, zustand_bestaetigt, gravierende_schaeden, bestand, gewicht_kg, packklasse',
+    )
     .single();
 
   if (updateFehler || !aktualisiert) {

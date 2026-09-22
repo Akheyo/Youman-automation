@@ -132,3 +132,48 @@
   color: var(--muted);
   line-height: 1.4;
 }
+
+/* Gewicht: ein breites Feld mit der Einheit daneben. Am Regal wird das mit
+   nassen oder behandschuhten Fingern getippt — deshalb dieselbe Größe wie
+   der Bestandszähler. */
+.gewichtZeile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gewicht {
+  flex: 1;
+  padding: 14px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy);
+  min-width: 0;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.gewicht::-webkit-outer-spin-button,
+.gewicht::-webkit-inner-spin-button { appearance: none; margin: 0; }
+
+.einheit {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Über 30 kg geht kein Paket mehr. Das muss auffallen, solange das Teil noch
+   vor einem steht — nicht erst, wenn jemand im Büro das Versandprofil sucht. */
+.spedition {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: #fff4e5;
+  border: 1px solid #f0c48a;
+  color: #7a4a00;
+  font-size: 13px;
+  line-height: 1.4;
+}
