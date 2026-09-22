@@ -82,6 +82,7 @@ function eingabe(teil: Partial<ArtikelEingabe> = {}): ArtikelEingabe {
 }
 
 const anlage = {
+  clientId: 14616,
   salesPriceEbayId: 1,
   salesPriceWebshopId: 2,
   warehouseId: 7,
@@ -177,5 +178,22 @@ describe('legeArtikelAn', () => {
   it('schreibt die Herleitung in die Notiz', async () => {
     const r = await legeArtikelAn(eingabe({ herleitung: 'Preisfindung: eBay.de, 3 Angebote' }), { anlage });
     expect(r.notiz).toContain('eBay.de, 3 Angebote');
+  });
+});
+
+describe('Mandant des angelegten Artikels', () => {
+  it('nimmt den eigens gesetzten Mandanten, nicht den der Zugangsdaten', async () => {
+    // Der Zugang gilt fuers ganze System; gelistet wird aber moeglicherweise
+    // in einem anderen Shop. Steht dort der falsche Mandant, ist der Artikel
+    // sauber angelegt und im Zielshop trotzdem unsichtbar.
+    await legeArtikelAn(eingabe(), { anlage });
+    const [, , koerper] = plentyJson.mock.calls[0];
+    expect((koerper as any).variations[0].variationClients).toEqual([{ plentyId: 14616 }]);
+  });
+
+  it('faellt ohne eigene Angabe auf den Mandanten der Zugangsdaten zurueck', async () => {
+    await legeArtikelAn(eingabe(), { anlage: { ...anlage, clientId: null } });
+    const [, , koerper] = plentyJson.mock.calls[0];
+    expect((koerper as any).variations[0].variationClients).toEqual([{ plentyId: 0 }]);
   });
 });
