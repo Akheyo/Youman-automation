@@ -301,3 +301,18 @@ alter table public.erfassung_artikel
 -- jedem erfassten Artikel langsamer.
 create index if not exists erfassung_artikel_durchlauf_idx
   on public.erfassung_artikel (status, erkannt_am desc nulls last);
+
+-- ---------------------------------------------------------------------------
+-- EAN für erfasste Artikel
+--
+-- Das SOP verlangt sie ausdrücklich in der Artikelbeschreibung, und Plenty
+-- hängt sie als Barcode an die Variante. Erzeugt wird sie aus der laufenden
+-- Artikelnummer — also DETERMINISTISCH: Ein zweiter Anlauf nach einem
+-- Fehlschlag vergibt dieselbe EAN und nicht eine zweite. Sonst stünde in der
+-- Beschreibung eine andere als am Barcode.
+-- ---------------------------------------------------------------------------
+alter table public.erfassung_artikel
+  add column if not exists ean text;
+
+create unique index if not exists erfassung_artikel_ean_idx
+  on public.erfassung_artikel (ean) where ean is not null;
