@@ -396,3 +396,12 @@
   padding: 8px 14px;
   font-size: 14px;
 }
+
+/* Die Abhilfe steht unter dem Fehler, etwas ruhiger gesetzt: Was los ist,
+   liest man zuerst — was zu tun ist, direkt danach. */
+.abhilfe {
+  display: inline-block;
+  margin-top: 4px;
+  font-weight: 400;
+  opacity: 0.85;
+}
