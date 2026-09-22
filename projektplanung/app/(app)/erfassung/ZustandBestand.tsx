@@ -1,10 +1,11 @@
 'use client';
 
 import styles from './zustand-bestand.module.css';
+import { MAX_GEWICHT_KG, type Packklasse } from '@/lib/erfassung/logic';
 import type { Zustand } from '@/lib/preis/regelwerk';
 
 /**
- * Die zwei Angaben, die kein Foto liefern kann.
+ * Die drei Angaben, die kein Foto liefern kann.
  *
  * Der BESTAND ist auf keinem Bild zu sehen — zehn gleiche Kartons sehen aus
  * wie einer. Er entscheidet über den Gesamtwert und damit, ob sich ein
@@ -14,6 +15,12 @@ import type { Zustand } from '@/lib/preis/regelwerk';
  * Hand hat, dreht es um, rüttelt daran und sieht, was auf keinem Foto ist.
  * Für den Preis zählt deshalb diese Angabe; die der Kamera bleibt als
  * Gegenprobe stehen.
+ *
+ * Das GEWICHT entscheidet über den Versandsatz (7,90 / 9,90 / 14,90–29,90),
+ * und der geht direkt vom Verkaufspreis ab: eBay sortiert nach Preis plus
+ * Versand, also muss die Summe unterbieten. Geschätzt wird es deshalb nicht.
+ * Bleibt das Feld leer, wird der Artikel trotzdem angelegt — das fehlende
+ * Versandprofil steht dann als offener Punkt daran.
  *
  * Vorausgewählt ist „gebraucht" — bei einer Verwertung ist das der Regelfall,
  * und eine Vorauswahl spart bei neun von zehn Artikeln einen Tipp. Ob jemand
@@ -31,24 +38,41 @@ const ZUSTAENDE: Array<{ wert: Zustand; titel: string; hinweis: string }> = [
 
 export const MAX_BESTAND = 9999;
 
+/** Ab hier entscheidet die Packklasse mit; darunter kostet alles dasselbe. */
+export const PACKKLASSE_AB_KG = 10;
+
+const PACKKLASSEN: Array<{ wert: Packklasse; titel: string; hinweis: string }> = [
+  { wert: 'normal', titel: 'Normal', hinweis: 'passt in einen Karton' },
+  { wert: 'sperrig', titel: 'Sperrig', hinweis: 'lang oder unhandlich' },
+  { wert: 'schwierig', titel: 'Schwierig', hinweis: 'sperrig und aufwendig zu packen' },
+];
+
 interface Props {
   zustand: Zustand;
   gravierendeSchaeden: boolean;
   bestand: number;
+  gewichtKg: number | null;
+  packklasse: Packklasse;
   gesperrt?: boolean;
   onZustand: (zustand: Zustand) => void;
   onGravierendeSchaeden: (wert: boolean) => void;
   onBestand: (bestand: number) => void;
+  onGewicht: (kg: number | null) => void;
+  onPackklasse: (klasse: Packklasse) => void;
 }
 
 export default function ZustandBestand({
   zustand,
   gravierendeSchaeden,
   bestand,
+  gewichtKg,
+  packklasse,
   gesperrt = false,
   onZustand,
   onGravierendeSchaeden,
   onBestand,
+  onGewicht,
+  onPackklasse,
 }: Props) {
   const setzeBestand = (wert: number) => {
     if (!Number.isFinite(wert)) return;
@@ -136,6 +160,59 @@ export default function ZustandBestand({
         <p className={styles.bestandHinweis}>
           Wie viele Stück von genau diesem Artikel. Entscheidet mit, ob sich ein Listing lohnt.
         </p>
+      </section>
+
+      <section>
+        <h2 className={styles.titel}>Gewicht</h2>
+        <div className={styles.gewichtZeile}>
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.1"
+            min={0}
+            max={MAX_GEWICHT_KG}
+            className={styles.gewicht}
+            value={gewichtKg ?? ''}
+            placeholder="—"
+            onChange={(e) => {
+              const zahl = Number(e.target.value);
+              onGewicht(e.target.value === '' || !Number.isFinite(zahl) || zahl <= 0 ? null : zahl);
+            }}
+            disabled={gesperrt}
+            aria-label="Gewicht in Kilogramm"
+          />
+          <span className={styles.einheit}>kg</span>
+        </div>
+        <p className={styles.bestandHinweis}>
+          Ein Stück, verpackt. Ohne Gewicht kein Versandprofil — und damit kein belastbarer Preis.
+          Lieber leer lassen als schätzen.
+        </p>
+
+        {/* Erst über 10 kg macht die Packklasse einen Unterschied: Darunter
+            kostet jede Sendung denselben Satz. */}
+        {gewichtKg != null && gewichtKg > PACKKLASSE_AB_KG && (
+          <div className={styles.raster}>
+            {PACKKLASSEN.map((k) => (
+              <button
+                key={k.wert}
+                type="button"
+                className={`${styles.wahl} ${packklasse === k.wert ? styles.wahlAktiv : ''}`}
+                onClick={() => onPackklasse(k.wert)}
+                disabled={gesperrt}
+                aria-pressed={packklasse === k.wert}
+              >
+                <span className={styles.wahlTitel}>{k.titel}</span>
+                <span className={styles.wahlHinweis}>{k.hinweis}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {gewichtKg != null && gewichtKg > 30 && (
+          <p className={styles.spedition}>
+            Über 30 kg: kein Paketversand. Der Artikel geht nur per Spedition oder Abholung.
+          </p>
+        )}
       </section>
     </div>
   );

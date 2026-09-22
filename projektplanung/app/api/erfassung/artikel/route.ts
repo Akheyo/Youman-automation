@@ -44,7 +44,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from('erfassung_artikel')
-    .select('id, nummer, status, notiz, erfasst_von, created_at, fertig_am, fehler, plenty_item_id, erkennung, treffer, erkannt_am, erkennung_fehler, zustand, zustand_bestaetigt, gravierende_schaeden, bestand, bilder:erfassung_bilder (id, rolle, rolle_erkannt, position, pfad, hochgeladen)')
+    .select('id, nummer, status, notiz, erfasst_von, created_at, fertig_am, fehler, plenty_item_id, plenty_variation_id, erkennung, treffer, erkannt_am, erkennung_fehler, zustand, zustand_bestaetigt, gravierende_schaeden, bestand, gewicht_kg, packklasse, preis, preis_am, preis_fehler, listing, listing_am, listing_fehler, plenty, plenty_am, plenty_fehler, bilder:erfassung_bilder (id, rolle, rolle_erkannt, position, pfad, hochgeladen)')
     .order('created_at', { ascending: false })
     .limit(LISTE_LIMIT);
   if (status) query = query.eq('status', status);

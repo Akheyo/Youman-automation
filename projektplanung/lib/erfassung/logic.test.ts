@@ -106,8 +106,48 @@ describe('Typwaechter', () => {
 describe('normalisiereAngaben', () => {
   it('uebernimmt gueltige Angaben', () => {
     expect(
-      normalisiereAngaben({ zustand: 'defekt', zustandBestaetigt: true, gravierendeSchaeden: false, bestand: 7 }),
-    ).toEqual({ zustand: 'defekt', zustandBestaetigt: true, gravierendeSchaeden: false, bestand: 7 });
+      normalisiereAngaben({
+        zustand: 'defekt',
+        zustandBestaetigt: true,
+        gravierendeSchaeden: false,
+        bestand: 7,
+        gewichtKg: 2.5,
+        packklasse: 'normal',
+      }),
+    ).toEqual({
+      zustand: 'defekt',
+      zustandBestaetigt: true,
+      gravierendeSchaeden: false,
+      bestand: 7,
+      gewichtKg: 2.5,
+      packklasse: 'normal',
+    });
+  });
+
+  it('macht aus einem fehlenden Gewicht null, nicht null Kilo', () => {
+    // „Nicht gewogen" ist etwas anderes als „wiegt nichts": Nur das erste
+    // darf zu einem Artikel ohne Versandprofil fuehren statt zu einem mit
+    // falschem.
+    expect(normalisiereAngaben({}).gewichtKg).toBeNull();
+    expect(normalisiereAngaben({ gewichtKg: 0 }).gewichtKg).toBeNull();
+    expect(normalisiereAngaben({ gewichtKg: -3 }).gewichtKg).toBeNull();
+    expect(normalisiereAngaben({ gewichtKg: 'schwer' }).gewichtKg).toBeNull();
+  });
+
+  it('rundet das Gewicht auf Gramm und deckelt Zahlendreher', () => {
+    expect(normalisiereAngaben({ gewichtKg: 2.4567 }).gewichtKg).toBe(2.457);
+    expect(normalisiereAngaben({ gewichtKg: 2500 }).gewichtKg).toBe(300);
+  });
+
+  it('laesst die Packklasse erst ueber zehn Kilo gelten', () => {
+    // Darunter kostet jede Sendung denselben Satz — „sperrig" an einer
+    // 2-kg-Sendung waere eine Angabe, die nichts bewirkt.
+    expect(normalisiereAngaben({ gewichtKg: 2, packklasse: 'sperrig' }).packklasse).toBe('normal');
+    expect(normalisiereAngaben({ gewichtKg: 25, packklasse: 'sperrig' }).packklasse).toBe('sperrig');
+  });
+
+  it('faellt bei unbekannter Packklasse auf normal zurueck', () => {
+    expect(normalisiereAngaben({ gewichtKg: 25, packklasse: 'riesig' }).packklasse).toBe('normal');
   });
 
   it('faellt bei unbekanntem Zustand auf gebraucht zurueck', () => {
