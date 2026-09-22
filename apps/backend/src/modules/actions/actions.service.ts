@@ -672,6 +672,11 @@ export class ActionsService {
         : texts.quotePaymentMethod,
       zahlungsziel: texts.quotePaymentTerms,
       versandart: texts.quoteShippingMethod,
+      // Ab dieser Anzahl Positionen ruecken die Angaben unter der Tabelle
+      // (Lieferdatum, Summen, Schlusstext) auf eine zweite Seite. Die Vorlage
+      // wertet den Wert als Bedingung aus; Vorlagen ohne die Bedingung
+      // ignorieren ihn.
+      seitenumbruch: dto.lineItems.length >= POSITIONEN_BIS_SEITENUMBRUCH,
     };
 
     const template = await this.templates.findDefault(tenantId, "OFFER", dto.language);
@@ -853,3 +858,11 @@ function formatPostalAddress(addr: {
     .filter(Boolean)
     .join("\n");
 }
+
+/**
+ * Ab vier Positionen wird das Angebot bewusst zweiseitig.
+ *
+ * Nicht weil der Platz nicht reichte, sondern weil die Angaben unter der
+ * Tabelle sonst je nach Zeilenzahl mal oben, mal unten auf der Seite stehen.
+ */
+const POSITIONEN_BIS_SEITENUMBRUCH = 4;

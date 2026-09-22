@@ -99,17 +99,30 @@ export function formatTemplateData(
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const tag of structure.scalars) {
-    out[tag] = formatValue(data[tag], language) ?? "";
+    out[tag] = prepare(data[tag], language);
   }
   for (const [loop, children] of Object.entries(structure.loops)) {
     const rows = Array.isArray(data[loop]) ? (data[loop] as Record<string, unknown>[]) : [];
     out[loop] = rows.map((item) => {
       const row: Record<string, unknown> = {};
-      for (const child of children) row[child] = formatValue(item[child], language) ?? "";
+      for (const child of children) row[child] = prepare(item[child], language);
       return row;
     });
   }
   return out;
+}
+
+/**
+ * Wert für die Vorlage aufbereiten.
+ *
+ * Wahrheitswerte bleiben unangetastet: Sie steuern Abschnitte der Form
+ * {{#tag}}…{{/tag}} und sind kein anzuzeigender Text. Formatiert würden sie zu
+ * "true" bzw. "false" – beides nicht leer und damit immer wahr, ein
+ * ausgeschalteter Abschnitt wäre so nie auszuschalten.
+ */
+function prepare(value: unknown, language: QuoteLanguage): unknown {
+  if (typeof value === "boolean") return value;
+  return formatValue(value, language) ?? "";
 }
 
 /**
