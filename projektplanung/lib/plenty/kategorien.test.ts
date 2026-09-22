@@ -3,6 +3,7 @@ import {
   MINDEST_PUNKTE,
   baumAusZeilen,
   bewerte,
+  namenFehlen,
   gleichesWort,
   nameAusZeile,
   stamm,
@@ -163,5 +164,24 @@ describe('baumAusZeilen', () => {
     expect(nameAusZeile({ id: 1, details: [{ lang: 'en', name: 'Tools' }, { lang: 'de', name: 'Werkzeug' }] })).toBe(
       'Werkzeug',
     );
+  });
+});
+
+describe('Kategoriebaum ohne Namen', () => {
+  it('erkennt, dass Zeilen ankamen, aber keine Namen', () => {
+    // Plenty antwortet 200, liefert die Kategorien und die Bezeichnungen
+    // nicht. Ohne Namen trifft keine Zuordnung, und es sieht aus wie eine
+    // schlechte Bewertung statt wie eine fehlende Grundlage.
+    const zeilen = [{ id: 1, parentCategoryId: null, details: [] }];
+    expect(namenFehlen(zeilen, baumAusZeilen(zeilen))).toBe(true);
+  });
+
+  it('meldet nichts, wenn Namen da sind', () => {
+    const zeilen = [{ id: 1, parentCategoryId: null, details: [{ lang: 'de', name: 'Werkzeug' }] }];
+    expect(namenFehlen(zeilen, baumAusZeilen(zeilen))).toBe(false);
+  });
+
+  it('meldet nichts bei einem wirklich leeren Baum', () => {
+    expect(namenFehlen([], [])).toBe(false);
   });
 });

@@ -328,7 +328,11 @@ export async function ladeKategoriebaum(opts: { frisch?: boolean } = {}): Promis
   const proSeite = 100;
   for (let seite = 1; seite <= 50; seite++) {
     const antwort = await plentyGet<{ entries?: PlentyKategorieZeile[]; isLastPage?: boolean }>(
-      `/rest/categories?type=item&with=details&itemsPerPage=${proSeite}&page=${seite}`,
+      // Kein „with=details": Plenty liefert die Namen ohnehin mit, und ein
+      // with-Wert, den Plenty nicht kennt, wird STILL verworfen — Antwort 200,
+      // Feld fehlt, kein Fehler. Was man nicht anfragt, kann auch nicht
+      // stillschweigend wegfallen.
+      `/rest/categories?type=item&itemsPerPage=${proSeite}&page=${seite}`,
     );
     const teil = antwort?.entries ?? [];
     zeilen.push(...teil);
@@ -338,6 +342,19 @@ export async function ladeKategoriebaum(opts: { frisch?: boolean } = {}): Promis
   const baum = baumAusZeilen(zeilen);
   gecacht = { baum, bis: Date.now() + BAUM_GUELTIG_MS };
   return baum;
+}
+
+/**
+ * Kam der Baum zwar an, aber ohne Namen?
+ *
+ * Dann hat Plenty die Kategorien geliefert und die Bezeichnungen nicht — und
+ * genau das ist der Fall, den man sonst nie bemerkt: Ohne Namen trifft keine
+ * Zuordnung, jeder Artikel landet in der Sammelkategorie, und es sieht aus,
+ * als sei die Bewertung einfach schlecht. Ein Aufruf, der 200 antwortet und
+ * nichts bewirkt, muss sich melden.
+ */
+export function namenFehlen(zeilen: PlentyKategorieZeile[], baum: KategorieKnoten[]): boolean {
+  return zeilen.length > 0 && baum.length === 0;
 }
 
 /**
@@ -351,6 +368,18 @@ export async function ladeKategoriebaum(opts: { frisch?: boolean } = {}): Promis
 export async function findeKategorie(suche: Suchbegriffe): Promise<Kategoriewahl & { sammelId: number | null }> {
   const sammelId = process.env.PLENTY_SAMMEL_CATEGORY_ID ? Number(process.env.PLENTY_SAMMEL_CATEGORY_ID) : null;
   const baum = await ladeKategoriebaum();
+  if (baum.length === 0) {
+    return {
+      treffer: null,
+      punkte: 0,
+      alternativen: [],
+      begruendung: [
+        'Der Kategoriebaum kam leer oder ohne Namen zurück — es wurde gar nicht erst zugeordnet.',
+        'Das ist kein schlechter Treffer, sondern eine fehlende Grundlage: bitte nachsehen.',
+      ],
+      sammelId: Number.isFinite(sammelId as number) ? sammelId : null,
+    };
+  }
   const wahl = waehleKategorie(baum, suche);
   return { ...wahl, sammelId: Number.isFinite(sammelId as number) ? sammelId : null };
 }
