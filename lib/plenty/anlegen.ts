@@ -18,6 +18,7 @@
  *   PLENTY_WAREHOUSE_ID           Lager für die Bestandsbuchung
  *   PLENTY_MARKET_IDS             Märkte, z. B. "103.00,0.00" (eBay, Webshop)
  *   PLENTY_VERSANDPROFILE         "7.90=6,9.90=7,14.90=8,19.90=9,29.90=10,spedition=11"
+ *   PLENTY_ANLAGE_CLIENT_ID       Mandant, DEM DER ARTIKEL GEHÖRT — siehe unten
  */
 
 import { aktuelleConfig, plentyConfigured, plentyJson, type PlentyConfig } from './client';
@@ -36,6 +37,20 @@ import {
 // ---------------------------------------------------------------------------
 
 export interface AnlageConfig {
+  /**
+   * Der Mandant, dem der angelegte Artikel gehört.
+   *
+   * NICHT zwangsläufig derselbe wie `PLENTY_ID`. Die Zugangsdaten in den
+   * Einstellungen gelten für das ganze System, und dort steht der Mandant,
+   * unter dem die Projektplanung arbeitet. Die Erfassung listet aber
+   * möglicherweise in einem anderen Shop — und `variationClients` entscheidet,
+   * in welchem der Artikel überhaupt auftaucht. Steht hier der falsche
+   * Mandant, wird der Artikel sauber angelegt und ist im Zielshop trotzdem
+   * unsichtbar. Das fällt erst auf, wenn jemand ihn dort sucht.
+   *
+   * Leer = derselbe wie `PLENTY_ID`.
+   */
+  clientId: number | null;
   salesPriceEbayId: number | null;
   salesPriceWebshopId: number | null;
   warehouseId: number | null;
@@ -51,6 +66,7 @@ function zahlOderNull(roh: string | undefined): number | null {
 
 export function getAnlageConfig(): AnlageConfig {
   return {
+    clientId: zahlOderNull(process.env.PLENTY_ANLAGE_CLIENT_ID),
     salesPriceEbayId: zahlOderNull(process.env.PLENTY_SALES_PRICE_EBAY_ID),
     salesPriceWebshopId: zahlOderNull(process.env.PLENTY_SALES_PRICE_WEBSHOP_ID),
     warehouseId: zahlOderNull(process.env.PLENTY_WAREHOUSE_ID),
@@ -173,7 +189,7 @@ export async function legeArtikelAn(
 
   // --- 1. Artikel mit Hauptvariante -----------------------------------------
   const payload = baueItemPayload(e, {
-    plentyId: cfg.plentyId,
+    plentyId: anlage.clientId ?? cfg.plentyId,
     eanBarcodeId: cfg.eanBarcodeId,
     salesPriceEbayId: anlage.salesPriceEbayId,
     salesPriceWebshopId: anlage.salesPriceWebshopId,
