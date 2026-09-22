@@ -35,6 +35,7 @@ import {
 import { herleitungText } from '@/lib/preis/recherche-kern';
 import { versandkosten, type Packklasse } from '@/lib/preis/versand';
 import type { Zustand } from '@/lib/preis/regelwerk';
+import { zustandAbgleichen } from '@/lib/erfassung/logic';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -117,6 +118,12 @@ export async function POST(_request: Request, { params }: { params: { id: string
   const gesamt = anzahlAuftraege(eingabe);
 
   const hinweise: string[] = [];
+
+  // Der Zustand steuert den Umrechnungsfaktor. Weichen Erfassung und Fotos
+  // voneinander ab, ist der Preis darauf gebaut — das muss dranstehen.
+  const abgleich = zustandAbgleichen(zustand, erkennung.zustand, erkennung.schaeden ?? []);
+  if (abgleich.hinweis) hinweise.push(abgleich.hinweis);
+
   if (versand.kosten == null && !versand.spedition) {
     hinweise.push(`${versand.begruendung} Der Preis ist ohne Versandabzug gerechnet und damit zu hoch.`);
   }
