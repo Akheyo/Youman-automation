@@ -42,6 +42,10 @@ export const IconNutzer = (p: P) => (
 export const IconEinstellungen = (p: P) => (
   <Icon {...p}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 7 2.6h.1A1.7 1.7 0 0 0 8.3 1V1a2 2 0 1 1 4 0v.1A1.7 1.7 0 0 0 15 2.6" /></Icon>
 )
+export const IconMarkt = (p: P) => (
+  <Icon {...p}><path d="M3 9h18l-1.5-5H4.5L3 9Z" /><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9" /><path d="M9 20v-6h6v6" /></Icon>
+)
+
 export const IconStart = (p: P) => (
   <Icon {...p}><path d="M6 4.5v15l13-7.5-13-7.5Z" fill="currentColor" stroke="none" /></Icon>
 )

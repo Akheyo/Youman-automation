@@ -227,6 +227,149 @@ Der Zustand liegt vollständig bei Supabase — `docker compose down` löscht ni
 
 ---
 
+## Maschinensucher — die erste echte Automation
+
+Markierte Artikel stehen auf **Maschinensucher**, ohne dass jemand sie dort
+einzeln einträgt. Die Strecke besteht aus zwei Hälften, die sich nicht
+gegenseitig aufhalten:
+
+```
+1. Abgleich (nach Zeitplan)     PlentyONE  ──►  Tabelle "artikel"
+2. Abholung (nachts durch MS)   Tabelle "artikel"  ──►  Importdatei
+```
+
+**Die Datei entsteht ausschließlich aus der Datenbank.** Beim Abholen wird
+PlentyONE nicht angefasst. Das ist der Grund für den Zuschnitt: Ist Plenty
+nachts langsam oder in Wartung, geht trotzdem heraus, was zuletzt bekannt war
+— statt einer leeren Datei, die den Bestand vom Markt nimmt.
+
+### Die Markierung ist der ganze Schalter
+
+Was markiert ist, steht in der Datei und damit auf Maschinensucher. Was nicht
+mehr darin steht, verschwindet dort wieder — eine zurückgenommene Markierung
+ist deshalb kein Aufräumen, sondern eine Rücknahme vom Markt. Die Oberfläche
+fragt vorher, und im Protokoll steht, wer es war.
+
+Markiert wird unter **Maschinensucher** in der Seitenleiste; dafür reicht die
+Rolle *Bediener*.
+
+### Was nicht rausgeht
+
+Ein markierter Artikel, dem etwas Wesentliches fehlt, wird **übersprungen und
+nicht halb hochgeladen**. Der Grund steht an seiner Zeile:
+
+| Fehlt | Warum es aufhält |
+|---|---|
+| Preis | ohne Preis kein Inserat |
+| Foto | ein Inserat ohne Bild wird nicht angesehen |
+| Titel / Beschreibung | in Plenty steht nichts am Artikel |
+| Kategorie | Maschinensucher nimmt kein Inserat ohne Rubrik |
+| Standort | Pflichtangabe, steht in der `.env` |
+| inaktiv / kein Bestand | eine Anfrage zu verkaufter Ware kostet Vertrauen |
+
+Alles andere ist ein **Hinweis** und hält nicht auf: fehlendes Baujahr,
+fehlendes Gewicht, Auffangkategorie, veraltete Daten.
+
+### Der Preis wird netto ausgezeichnet
+
+Auf einem Händlermarktplatz steht der Nettopreis. Führt Plenty brutto
+(Voreinstellung), wird mit `MASCHINENSUCHER_MWST` heruntergerechnet. Ein
+Bruttopreis, der als Netto eingestellt wird, macht uns um den Steuersatz
+teurer als gewollt — und niemand sieht es dem Inserat an. Steht in Plenty
+bereits netto: `MASCHINENSUCHER_PREIS_IST=netto`.
+
+### Die Spaltenreihenfolge kommt aus ihrer Beispieldatei
+
+Maschinensucher liest die Datei **spaltenweise**; die Reihenfolge ist die
+Schnittstelle, nicht die Überschrift. Eine verrutschte Spalte schreibt das
+Baujahr in den Preis, und das fällt erst auf, wenn ein Gerät für 1.998 €
+online steht.
+
+Verbindlich ist die **Beispieldatei aus dem Maschinensucher-Konto**. Ihre
+Kopfzeile wird unverändert in `MASCHINENSUCHER_KOPFZEILE` eingetragen;
+`lib/maschinensucher/felder.ts` ordnet unsere Felder darauf zu, unabhängig von
+der Schreibweise („Bild-URL 1" = `bildurl1`). Fehlt darin eine Pflichtspalte,
+liefert der Endpunkt **gar nichts** (HTTP 500) statt eine Datei ohne
+Preisspalte. Ohne hinterlegte Kopfzeile geht unsere Standardreihenfolge raus
+(33 Spalten, die genannte Mindestbreite ist 32) — die Seite sagt ausdrücklich,
+dass sie eine Annahme ist.
+
+### Die Notbremse gegen den leeren Feed
+
+Der Import ist ein **Abgleich**: Was fehlt, verschwindet. Ein falscher Haken
+oder ein Fehler in einer Bedingung, und die Nacht nimmt den ganzen Bestand vom
+Markt — lautlos, denn der Abruf war erfolgreich und die Datei gültig, sie war
+nur leer.
+
+Deshalb hält der Endpunkt sich zurück, wenn die Zahl der Inserate gegenüber
+der letzten erfolgreichen Abholung **auf weniger als die Hälfte** fällt (erst
+ab 10 Inseraten — bei sechs ist „nur noch zwei" ein normaler Dienstag). Statt
+der Datei kommt ein Fehler, und ein fehlgeschlagener Import lässt die
+bestehenden Inserate stehen. Ist die Verkleinerung gewollt, gibt sie ein
+Mensch auf der Seite frei; die Freigabe gilt zwölf Stunden und läuft dann von
+selbst ab.
+
+### Die Adresse ist das Passwort
+
+Maschinensucher holt die Datei von einem Server ab, dem wir keine Anmeldung
+beibringen können. Das Geheimnis steckt deshalb in der Adresse (`?token=…`,
+alternativ `Bearer` oder HTTP-Basic). Sie zeigt unseren markierten Bestand
+samt Preisen — wie ein Passwort behandeln. Ein neues
+`MASCHINENSUCHER_FEED_TOKEN` macht jede alte Adresse sofort wertlos. Ohne
+Token ist die Strecke aus, nicht offen.
+
+Die Fotos brauchen keinen eigenen Weg: Plenty liefert öffentliche
+Bild-Adressen, die unverändert ins Inserat gehen.
+
+### Woran man sieht, dass es läuft
+
+Es gibt **keine eigene Protokollliste**. Jeder Abgleich und jede Abholung ist
+ein Lauf unter **Ausführungen** — mit Dauer, Anzahl, Logzeilen und im
+Fehlerfall einem Eintrag unter **Fehler**. Auch ein **abgewiesener** Abruf
+steht dort: Ein falsches Token in der hinterlegten Adresse ist der
+wahrscheinlichste Fehler dieser Strecke und sonst von innen nicht zu sehen.
+
+Am Artikel steht, wann er zuletzt in einer abgeholten Datei war. **Erst das**
+heißt „ist draußen" — markiert allein heißt nur „ist gewollt".
+
+### Einrichtung
+
+1. `npm run db:migrate` (bzw. Neustart des Containers) — legt `artikel` und die
+   beiden Automationen an.
+2. Werte aus [`.env.example`](.env.example) setzen, Abschnitt *Maschinensucher*:
+   Plenty-Zugang, Token, Kategorie, Standort, Kontakt.
+3. Beispieldatei im Maschinensucher-Konto herunterladen, deren Kopfzeile in
+   `MASCHINENSUCHER_KOPFZEILE` eintragen.
+4. Im Dashboard unter **Maschinensucher** „Jetzt abgleichen" drücken, bis der
+   Stamm einmal durch ist (jeder Klick liest einige Seiten), oder den Zeitplan
+   einrichten:
+
+   ```bash
+   # stündlich, z. B. als Cronjob auf dem Server
+   curl -fsS -XPOST https://dashboard.beispiel.de/api/maschinensucher/sync \
+        -H "Authorization: Bearer $INGEST_TOKEN"
+   ```
+
+5. Erste Artikel markieren, die Abholadresse kopieren und im
+   Maschinensucher-Konto unter *Datenimport → Automatischer Import*
+   hinterlegen.
+6. Die Adresse einmal selbst im Browser aufrufen und die Datei ansehen —
+   **vor** dem ersten nächtlichen Lauf.
+
+### Was bewusst fehlt
+
+Die Echtzeit-API von Maschinensucher ist nicht angebunden. Sie wäre schneller,
+hätte aber einen Zustand auf der Gegenseite, den wir pflegen müssten (welches
+Inserat dort unter welcher ID existiert, was beim letzten Aufruf schiefging).
+Der nächtliche Abgleich hat diesen Zustand nicht: Die Datei ist jedes Mal die
+ganze Wahrheit. Wird die Nacht zu langsam, ist das die nächste Ausbaustufe —
+`lib/maschinensucher/inserat.ts` liefert dann dieselben Daten.
+
+Ebenso fehlt das Zurückschreiben nach Plenty. Der Abgleich liest; die
+Markierung gehört uns und hat in Plenty nichts zu suchen.
+
+---
+
 ## Rollen
 
 | Rolle | Ansehen | Steuern | Nutzer verwalten |

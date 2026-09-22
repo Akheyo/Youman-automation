@@ -7,6 +7,7 @@ import {
   IconEinstellungen,
   IconFehler,
   IconLauf,
+  IconMarkt,
   IconNutzer,
   IconProtokoll,
   IconUebersicht,
@@ -18,6 +19,7 @@ const PUNKTE = [
     { href: '/automationen', text: 'Automationen', Icon: IconAutomation },
     { href: '/executions', text: 'Ausführungen', Icon: IconLauf },
     { href: '/fehler', text: 'Fehler', Icon: IconFehler, zaehler: 'fehler' as const },
+    { href: '/maschinensucher', text: 'Maschinensucher', Icon: IconMarkt },
   ]},
   { gruppe: 'Verwaltung', eintraege: [
     { href: '/protokoll', text: 'Protokoll', Icon: IconProtokoll },
