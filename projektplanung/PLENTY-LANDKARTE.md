@@ -529,12 +529,24 @@ gehalten.
 
 Geordnet nach Nutzen. Die ersten beiden sind neu aus der Inventur.
 
-1. **Ein Suchsignal ist vermutlich tot.** `suche.ts:529` ruft Warenbewegungen ab —
-   `/rest/stockmanagement/stock/movements` antwortet in diesem Mandanten mit
-   **404**. Der Code fängt das ab und macht ohne weiter, das Signal „Wo lag er
-   früher?" fällt also stillschweigend aus. Von neun Signalen bleiben acht. Ob die
-   lagerbezogene Schreibweise funktioniert, wird gerade geprüft
-   (`PLENTY-ENDPUNKTE-GEPRUEFT.md`).
+1. **Fünf Auswertungen laufen ins Leere, ohne dass der Code es merkt.** Alle
+   antworten mit HTTP 200 — es gibt weder Ausnahme noch Diagnosemeldung.
+   Nachgewiesen in [`PLENTY-ENDPUNKTE-GEPRUEFT.md`](PLENTY-ENDPUNKTE-GEPRUEFT.md):
+
+   | Stelle | Was passiert |
+   | --- | --- |
+   | `suche.ts:828`, `suche.ts:977` | Warenbewegungen führen **`storageLocationName`** (Klartext `"H5/R10/EC F19-0"`), nicht `storageLocationId`. Beide Bewegungs-Signale liefern garantiert null Treffer, obwohl 35.779 Bewegungen bereitstehen |
+   | `suche.ts:ladePlatzbelegung` | `/rest/warehouses/locations/stock/{id}` antwortet in **snake_case** (`variation_id`, `item_id`, `warehouse_id`). Der Code liest `variationId` → alles weggefiltert. Das Signal „Platztausch" ist tot |
+   | `lagerplatz-scan.ts:handleWithAus` | `with=variationDescription` wird von Plenty **stillschweigend verworfen** (unbekannte `with`-Werte liefern 200 ohne Feld). Die Diagnose meldet trotzdem, es werde damit gelesen. `with=item` liefert den Artikel **ohne `texts`** — die Textbewertung arbeitet für die meisten Varianten auf `null` |
+   | `client.ts:222` | `/rest/categories?parentCategoryId=` wird **ignoriert**, jeder Wert liefert alle 1.242. Der Eltern-Guard im Code fängt das ab, aber jede Kategoriesuche blättert 25 Seiten. Ab ~2.000 Kategorien greift die Obergrenze `page > 40`, dann werden Kategorien **doppelt angelegt** |
+   | `suche.ts:572` | `/rest/items?name=` liefert **Artikel**-IDs, die der Code als Varianten-IDs weiterreicht — IDs aus der falschen Nummernreihe |
+
+   Dazu zwei Kleinigkeiten: `/rest/items/variations?name=` gibt es nicht (HTTP 422,
+   der Filter heißt `itemName`), und `/rest/warehouses/{id}/locations/levels`
+   ignoriert `itemsPerPage`/`page` und liefert immer alle 7.636 Knoten.
+
+   Gut zu wissen für Massenläufe: Der Mandant drosselt mit **HTTP 429
+   `short period read limit reached`**.
 2. **Der API-Zugang ist ein normaler Backend-Benutzer**, kein dedizierter
    REST-Benutzer (`userType: backend`, `loginType: legacy`, `plenty_api: 0`,
    `user_role_id: null`). Er sieht **alles** — auch 60.380 Kontakte mit Klarnamen,
