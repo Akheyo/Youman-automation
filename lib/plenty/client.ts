@@ -967,6 +967,27 @@ export async function plentyDelete<T>(path: string, cfg?: PlentyConfig): Promise
 }
 
 /**
+ * Schickt einen JSON-Rumpf, und NUR den — keine Wiederholung als
+ * Query-Parameter.
+ *
+ * `plentyPost` und `plentyPut` schicken beides, weil die PlentyONE-Doku bei
+ * manchen Endpunkten Query-Parameter und bei anderen einen Body zeigt. Bei
+ * verschachtelten Rümpfen geht das nicht: `String({...})` ergibt
+ * „[object Object]", und dieser Unsinn landete dann in der URL. Für die
+ * Artikelanlage — Varianten, Preise, Texte — führt deshalb dieser Weg.
+ */
+export async function plentyJson<T>(
+  methode: 'POST' | 'PUT',
+  path: string,
+  koerper: unknown,
+  cfg?: PlentyConfig,
+): Promise<T> {
+  const zugang = cfg ?? (await aktuelleConfig());
+  const token = await login(zugang);
+  return api<T>(zugang, token, path, { method: methode, body: JSON.stringify(koerper) });
+}
+
+/**
  * Liefert einen gültigen Bearer-Token (aus dem modulweiten Cache oder per
  * frischem Login). Für Aufrufe, die nicht über `plentyGet` laufen — etwa
  * schreibende PUT-Anfragen.
