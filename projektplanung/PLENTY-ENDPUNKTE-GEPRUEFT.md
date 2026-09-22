@@ -274,7 +274,7 @@ geht kein Aufruf.
 
 ## Zählung
 
-**28 lesende Aufrufe geprüft.** 27 × HTTP 200, 1 × HTTP 404
+**28 lesende Aufrufe geprüft.** 26 × HTTP 200, 1 × HTTP 404
 (`/rest/stockmanagement/stock/movements`), 1 × HTTP 422
 (`/rest/items/variations?name=` — der Filter existiert nicht; derselbe Endpunkt
 antwortet mit anderen Filtern mit 200).
