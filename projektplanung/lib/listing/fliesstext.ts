@@ -24,7 +24,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
 import type { Erkennung } from '@/lib/erfassung/erkennung';
-import { ZUSTAND_TEXT as ERKENNUNG_ZUSTAND_TEXT } from '@/lib/erfassung/erkennung';
+import { masseText, ZUSTAND_TEXT as ERKENNUNG_ZUSTAND_TEXT } from '@/lib/erfassung/erkennung';
 import type { Zustand } from '@/lib/preis/regelwerk';
 import { ZUSTAND_TEXT } from '@/lib/preis/regelwerk';
 import { ANZAHL_BULLETS, MAX_BULLET_ZEICHEN, type FaqEintrag, type Fliesstext } from './texte';
@@ -141,7 +141,8 @@ export function datengrundlage(e: FliesstextEingabe): string {
     zeilen.push('Merkmale: keine erfasst');
   }
 
-  if (erk.masseCm) zeilen.push(`Maße (cm): ${erk.masseCm}`);
+  const masse = masseText(erk.masseCm);
+  if (masse) zeilen.push(`Maße: ${masse}`);
   if (!erk.typenschildGefunden) zeilen.push('Kein lesbares Typenschild — Angaben entsprechend unsicher.');
   if (erk.unsicherheiten.length > 0) zeilen.push(`Unklar: ${erk.unsicherheiten.join('; ')}`);
 
@@ -198,7 +199,12 @@ export function gedeckteAngaben(e: FliesstextEingabe): Set<string> {
     erk.modell ?? '',
     erk.modellnummer ?? '',
     erk.baujahr ? String(erk.baujahr) : '',
-    erk.masseCm ?? '',
+    // Jede Länge einzeln mit Einheit: In „60 x 40 x 20 cm" steht die Einheit
+    // nur hinten, ein Text über „60 cm Breite" wäre sonst nicht gedeckt.
+    [erk.masseCm?.laenge, erk.masseCm?.breite, erk.masseCm?.hoehe]
+      .filter((w): w is number => typeof w === 'number' && Number.isFinite(w))
+      .map((w) => `${w} cm`)
+      .join(' '),
     e.notiz ?? '',
     ...erk.schaeden,
     ...erk.lieferumfang,

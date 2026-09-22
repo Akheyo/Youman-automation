@@ -168,3 +168,22 @@ describe('fliesstextAlsText', () => {
     expect(t).toContain('D');
   });
 });
+
+describe('Masse in der Datengrundlage', () => {
+  it('schreibt die Masse als Text, nicht als Objekt', () => {
+    // Das Objekt direkt in eine Zeichenkette zu setzen ergab "[object Object]".
+    const t = datengrundlage(eingabe({ erkennung: erkennung({ masseCm: { laenge: 60, breite: 40, hoehe: 20 } }) }));
+    expect(t).toContain('60 x 40 x 20 cm');
+    expect(t).not.toContain('object Object');
+  });
+
+  it('deckt die Masse ab, damit sie nicht als erfunden gilt', () => {
+    const e = eingabe({ erkennung: erkennung({ masseCm: { laenge: 60, breite: 40, hoehe: 20 } }) });
+    expect(pruefeFliesstext('Der Schrank misst 60 cm in der Breite.', e).erfundeneAngaben).toHaveLength(0);
+  });
+
+  it('kommt mit teilweise fehlenden Massen zurecht', () => {
+    const t = datengrundlage(eingabe({ erkennung: erkennung({ masseCm: { laenge: 60, breite: null, hoehe: 20 } }) }));
+    expect(t).toContain('60 x 20 cm');
+  });
+});
