@@ -39,6 +39,8 @@ und der Login/Verlauf werden übersprungen (mit deutlichem Hinweis in der UI).
 ## Konfiguration
 
 Alle Variablen sind in [`.env.example`](.env.example) dokumentiert.
+Welche Plenty-Endpunkte wir überhaupt benutzen, wer sie aufruft und welches Feld
+wohin geht, steht in [`PLENTY-LANDKARTE.md`](PLENTY-LANDKARTE.md).
 
 | Variable | Zweck |
 | --- | --- |
