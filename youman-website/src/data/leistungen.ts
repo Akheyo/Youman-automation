@@ -288,10 +288,6 @@ export const leistungen: Leistung[] = [
         titel: 'Eine Regel, die im Haus bleibt',
         text: 'Am Ende steht eine knappe Festlegung, was im Betrieb erlaubt ist und was nicht. Sie gilt auch für die, die an dem Tag nicht dabei waren.',
       },
-      {
-        titel: 'Unterlagen für einen Förderantrag',
-        text: 'Weiterbildung ist in Deutschland an vielen Stellen förderfähig. Ob für Ihren Betrieb ein Programm greift und in welcher Höhe, hängt von Bundesland, Betriebsgröße und Anlass ab und entscheidet die bewilligende Stelle, nicht wir. Wir liefern, was ein Antrag braucht: Inhalte, Umfang, Termine und ein Angebot mit einzeln ausgewiesenen Posten.',
-      },
     ],
   },
 ];
