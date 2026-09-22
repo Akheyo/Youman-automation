@@ -14,6 +14,8 @@ import type { Erkennung } from '@/lib/erfassung/erkennung';
 import { baueTexte } from '@/lib/plenty/anlegen-kern';
 import { getAnlageConfig, legeArtikelAn } from '@/lib/plenty/anlegen';
 import { findeKategorie } from '@/lib/plenty/kategorien';
+import { uebertrageBilder, type Quellbild } from '@/lib/plenty/bilder';
+import { adminOderFehler, ansichtsLinks } from '@/lib/erfassung/speicher';
 import { plentyEingerichtet } from '@/lib/plenty/client';
 import type { Listing } from '@/lib/listing/texte';
 import type { Zustand } from '@/lib/preis/regelwerk';
@@ -44,6 +46,13 @@ interface Listingfeld {
   generisch?: boolean;
   darfVeroeffentlichtWerden?: boolean;
   befunde?: Array<{ schwere: string; regel: string; meldung: string }>;
+  bilder?: Array<{ url: string; alt: string; dateiname?: string | null }>;
+}
+
+interface BildZeile {
+  position: number;
+  pfad: string;
+  hochgeladen: boolean;
 }
 
 interface Preisfeld {
@@ -68,7 +77,9 @@ export async function POST(_request: Request, { params }: { params: { id: string
 
   const { data: artikel, error: ladeFehler } = await supabase
     .from('erfassung_artikel')
-    .select('id, nummer, erkennung, listing, preis, zustand, bestand, gewicht_kg, packklasse, plenty_item_id')
+    .select(
+      'id, nummer, erkennung, listing, preis, zustand, bestand, gewicht_kg, packklasse, plenty_item_id, bilder:erfassung_bilder (position, pfad, hochgeladen)',
+    )
     .eq('id', params.id)
     .single();
   if (ladeFehler || !artikel) return NextResponse.json({ error: 'Artikel nicht gefunden.' }, { status: 404 });
@@ -163,6 +174,45 @@ export async function POST(_request: Request, { params }: { params: { id: string
     { anlage: getAnlageConfig() },
   );
 
+  // ---- Bilder ------------------------------------------------------------
+  // Erst jetzt: Vorher gibt es keine Artikel-ID, an die sie gehören. Ohne
+  // Bilder ist der Artikel in Plenty kein Artikel, sondern ein Datensatz —
+  // Gebrauchtware verkauft sich über Fotos.
+  let bilderErgebnis: Awaited<ReturnType<typeof uebertrageBilder>> | null = null;
+  if (ergebnis.ok && ergebnis.itemId && ergebnis.variationId) {
+    const zeilen = ((artikel.bilder ?? []) as BildZeile[])
+      .filter((b) => b.hochgeladen)
+      .sort((a, b) => a.position - b.position);
+    const admin = adminOderFehler();
+    if ('fehler' in admin) {
+      hinweise.push(`Bilder nicht übertragen: ${admin.fehler}`);
+    } else if (zeilen.length > 0) {
+      // Die Alt-Texte und SEO-Dateinamen stehen im Listing; die Adressen
+      // dort sind aber abgelaufene Signaturen. Beides wird hier frisch
+      // zusammengeführt.
+      const links = await ansichtsLinks(
+        admin.admin,
+        zeilen.map((b) => b.pfad),
+      );
+      const ausListing = listingfeld.bilder ?? [];
+      const quellen: Quellbild[] = zeilen
+        .map((zeile, i) => ({ zeile, i }))
+        .filter(({ zeile }) => Boolean(links[zeile.pfad]))
+        .map(({ zeile, i }) => ({
+          url: links[zeile.pfad],
+          dateiname: ausListing[i]?.dateiname ?? `artikel-${artikel.nummer}-${i + 1}.jpg`,
+          altText: ausListing[i]?.alt ?? `${erkennung.artikelTyp}, Ansicht ${i + 1}`,
+          position: i,
+        }));
+
+      bilderErgebnis = await uebertrageBilder(ergebnis.itemId, ergebnis.variationId, quellen);
+      if (bilderErgebnis.uebertragen === 0 && quellen.length > 0) {
+        hinweise.push('Kein einziges Bild übertragen — der Artikel steht ohne Fotos in Plenty.');
+      }
+      for (const f of bilderErgebnis.fehler) hinweise.push(`Bild ${f.dateiname}: ${f.grund}`);
+    }
+  }
+
   const plentyfeld = {
     itemId: ergebnis.itemId,
     variationId: ergebnis.variationId,
@@ -170,6 +220,7 @@ export async function POST(_request: Request, { params }: { params: { id: string
     offen: [...hinweise, ...ergebnis.offen],
     notiz: ergebnis.notiz,
     kategorieId,
+    bilder: bilderErgebnis,
     inaktiv: true,
   };
 
