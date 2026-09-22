@@ -1,0 +1,179 @@
+/* Zustand und Bestand — fürs Handy: große Flächen, nichts zum Zielen. */
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+}
+
+.titel {
+  margin: 0 0 var(--space-3);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---- Zustandswahl ---- */
+
+.raster {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.wahl {
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  /* Fingerkuppe, nicht Mauszeiger. */
+  min-height: 62px;
+}
+.wahl:disabled { opacity: 0.5; }
+
+.wahlAktiv {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  box-shadow: inset 0 0 0 1px var(--blue);
+}
+
+.wahlTitel {
+  display: block;
+  font-weight: 600;
+  color: var(--navy);
+  font-size: 15px;
+}
+.wahlAktiv .wahlTitel { color: var(--blue-h); }
+
+.wahlHinweis {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+/* ---- Schalter für gravierende Schäden ---- */
+
+.schalter {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  margin-top: var(--space-2);
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--text);
+}
+.schalterAn { border-color: var(--amber); background: var(--amber-soft); }
+
+.haken {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border-strong);
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--amber);
+}
+.schalterAn .haken { border-color: var(--amber); }
+
+.schalterHinweis { font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+/* ---- Bestand ---- */
+
+.zaehler {
+  display: grid;
+  grid-template-columns: 64px 1fr 64px;
+  gap: var(--space-2);
+  align-items: stretch;
+}
+
+.stufe {
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  border-radius: var(--radius);
+  font-size: 28px;
+  line-height: 1;
+  color: var(--navy);
+  min-height: 56px;
+}
+.stufe:disabled { opacity: 0.35; }
+
+.menge {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy);
+  min-width: 0;
+  /* Die Pfeilchen des Zahlenfelds sind auf dem Handy nur im Weg. */
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.menge::-webkit-outer-spin-button,
+.menge::-webkit-inner-spin-button { appearance: none; margin: 0; }
+
+.bestandHinweis {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* Gewicht: ein breites Feld mit der Einheit daneben. Am Regal wird das mit
+   nassen oder behandschuhten Fingern getippt — deshalb dieselbe Größe wie
+   der Bestandszähler. */
+.gewichtZeile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gewicht {
+  flex: 1;
+  padding: 14px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy);
+  min-width: 0;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.gewicht::-webkit-outer-spin-button,
+.gewicht::-webkit-inner-spin-button { appearance: none; margin: 0; }
+
+.einheit {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Über 30 kg geht kein Paket mehr. Das muss auffallen, solange das Teil noch
+   vor einem steht — nicht erst, wenn jemand im Büro das Versandprofil sucht. */
+.spedition {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: #fff4e5;
+  border: 1px solid #f0c48a;
+  color: #7a4a00;
+  font-size: 13px;
+  line-height: 1.4;
+}
