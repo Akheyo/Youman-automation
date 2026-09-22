@@ -3,16 +3,20 @@
 Was wir von PlentyONE benutzen, wo es im Code steht, welches Feld wohin geht —
 und was Plenty darüber hinaus kann.
 
-**Woher die Angaben stammen.** Alles unter „Was wir nutzen" (Abschnitte 1–7) ist
-aus diesem Repository gelesen, Datei für Datei, mit Zeilenangaben. Das ist der
-belastbare Teil. Abschnitt 8 („Was Plenty sonst noch kann") ist **nicht geprüft**:
-Die Entwicklerdoku (`developers.plentymarkets.com`) und der Mandant selbst waren
-beim Schreiben von der Netzwerk-Policy der Arbeitsumgebung gesperrt. Er dient der
-Orientierung — welcher Bereich existiert und wofür er zuständig ist —, die genauen
-Pfade gehören vor Gebrauch in der Doku nachgeschlagen.
+**Woher die Angaben stammen.** Abschnitte 1–7 sind aus diesem Repository gelesen,
+Datei für Datei, mit Zeilenangaben. Abschnitt 8 stand zunächst nur als
+Erfahrungswissen da — inzwischen ist im System selbst nachgesehen worden. Das
+Ergebnis steht vollständig in [`PLENTY-INVENTUR.md`](PLENTY-INVENTUR.md)
+(erhoben am 22.09.2026, 36 Bereiche, ausschließlich lesend); hier stehen nur die
+Schlüsse daraus.
 
 Mandant: **plentyId 14443**, Shop `besttra.de`, REST-Basis
 `https://p14443.my.plentysystems.com` (ohne `/rest`).
+
+**Achtung bei der plentyId:** Der Mandant heißt zwar 14443, aber **94 % der
+Aufträge laufen unter plentyId 14616 („Komplett Konzept")** — in den letzten 30
+Tagen 828 von 877, gegenüber 41 auf 14443. Jede Auswertung, die stillschweigend
+den Hauptmandanten annimmt, misst ein Zwanzigstel des Geschäfts.
 
 ---
 
@@ -30,14 +34,14 @@ Mandant: **plentyId 14443**, Shop `besttra.de`, REST-Basis
 | Warehouse / Locations / Levels / Dimensions | **ja, intensiv** | Lagerorte lesen, anlegen, aufräumen, Laufweg ordnen |
 | Stock redistribute | **ja** | Artikel auf einen Lagerplatz umbuchen |
 | Plentys interne `ui.php` (kein REST) | **ja** | Datei-Upload, weil REST dafür keinen Weg bietet |
-| Order | **nein** | — kein einziger Aufruf im Repo |
+| Order | **nein** | — kein einziger Aufruf im Repo, dabei liegen dort **63.038 Aufträge** |
 | Payment / Shipping / Document | **nein** | — |
-| Contact / Adressen (CRM) | **nein** | — |
-| Sales price | **nein** | Preisregeln existieren nur als Text (`lib/listing/markenregeln.ts`) |
+| Contact / Adressen (CRM) | **nein** | 60.380 Kontakte — der Zugang darf sie lesen, obwohl er es nicht müsste |
+| Sales price | **nein** | 29 Preislisten vorhanden; Preisregeln existieren nur als Text (`lib/listing/markenregeln.ts`) |
 | Listing / Markets / Webstore | **nein** | — |
 | Plugin / Cron / Log / System | **nein** | — |
 | User / Rechte | **nein** | wird im Backend von Hand gepflegt |
-| Attribute, Hersteller, Einheiten, Item-Sets | **nein** | Einheit fest auf `unitId: 1` verdrahtet |
+| Attribute, Hersteller, Einheiten, Item-Sets | **nein** | `unitId: 1` = Stück, bestätigt. Item-Sets: **0 im Mandanten** |
 
 Kurz: Wir benutzen Plenty heute als **Artikel- und Lagerortverwaltung**. Die
 gesamte kaufmännische Seite — Aufträge, Zahlungen, Versand, Belege, Kunden —
@@ -77,18 +81,24 @@ hunderte Datenbankabfragen kostet.
 
 ### Umgebungsvariablen
 
-| Variable | Bedeutung | Ohne sie |
-| --- | --- | --- |
-| `PLENTY_BASE_URL` | REST-Basis, ein angehängtes `/rest` wird abgeschnitten | kein Sync, App läuft weiter |
-| `PLENTY_USER`, `PLENTY_PASSWORD` | REST-Zugangsdaten | wie oben |
-| `PLENTY_ID` | plentyId (Mandant), hier `14443`, Standard `0` | Kategorien landen unter Mandant 0 |
-| `PLENTY_WAREHOUSE_ID` | Lager für die Lagerwerkzeuge | erstes gemeldetes Lager |
-| `PLENTY_PROJEKTE_CATEGORY_ID` | Elternkategorie „Projekte" | Projekt-Sync bricht mit Fehler ab |
-| `PLENTY_EAN_BARCODE_ID` | Barcode-Konfiguration (z. B. EAN13_2) | EAN wird erzeugt, aber nicht angehängt |
-| `PLENTY_EAN_PREFIX` | 2-stelliger Präfix, Standard `20` | — |
-| `PLENTY_INVOICE_PROPERTY_ID` | Eigenschaft vom Typ Datei („Dokument 1") | Rechnung wird nicht angehängt |
-| `PLENTY_INVOICE_PROPERTY_NAME` | nur für Fehlermeldungen | — |
-| `PLENTY_UI_UPLOAD` | `0` schaltet den `ui.php`-Upload ab | — |
+Die Spalte „Wert" ist im System nachgesehen (22.09.2026) — sie muss nicht mehr
+gesucht werden.
+
+| Variable | Bedeutung | Wert in diesem Mandanten | Ohne sie |
+| --- | --- | --- | --- |
+| `PLENTY_BASE_URL` | REST-Basis, ein angehängtes `/rest` wird abgeschnitten | `https://p14443.my.plentysystems.com` | kein Sync, App läuft weiter |
+| `PLENTY_USER`, `PLENTY_PASSWORD` | REST-Zugangsdaten | — | wie oben |
+| `PLENTY_ID` | plentyId (Mandant) | `14443` (aber siehe Hinweis oben: das Geschäft läuft auf 14616) | Kategorien landen unter Mandant 0 |
+| `PLENTY_WAREHOUSE_ID` | Lager für die Lagerwerkzeuge | **`106`** (Burlo — 61.114 der 67.240 Bestandszeilen, einziges Lager mit Lagerort-Struktur) | erstes gemeldetes Lager |
+| `PLENTY_PROJEKTE_CATEGORY_ID` | Elternkategorie „Projekte" | **`2632`** (eindeutig, 8 Unterkategorien, 95 Varianten) | Projekt-Sync bricht mit Fehler ab |
+| `PLENTY_EAN_BARCODE_ID` | Barcode-Konfiguration | **`2`** („EAN_13 2", Typ `GTIN_13`) | EAN wird erzeugt, aber nicht angehängt |
+| `PLENTY_EAN_PREFIX` | 2-stelliger Präfix, Standard `20` | `20` | — |
+| `PLENTY_INVOICE_PROPERTY_ID` | Eigenschaft vom Typ Datei | **`9`** („Dokument 1", `cast: file`; 10–12 sind „Dokument 2–4") | Rechnung wird nicht angehängt |
+| `PLENTY_INVOICE_PROPERTY_NAME` | nur für Fehlermeldungen | `Dokument 1` | — |
+| `PLENTY_UI_UPLOAD` | `0` schaltet den `ui.php`-Upload ab | — | — |
+
+Ebenfalls bestätigt: Die im Code fest verdrahtete **`unitId: 1`** ist „Stück"
+(`C62`) — korrekt, keine Korrektur nötig.
 
 ### Werkzeuge im Code
 
@@ -411,77 +421,154 @@ er soll.
 
 ---
 
-## 8. Was Plenty sonst noch kann — und wir nicht nutzen
+## 8. Was Plenty sonst noch kann — nachgesehen
 
-**Ungeprüft.** Die Doku war beim Schreiben nicht erreichbar; die folgenden Pfade
-stammen aus Erfahrungswissen und gehören vor Gebrauch nachgeschlagen. Verlässlich
-ist die Aussage, **dass** es den Bereich gibt und wofür er zuständig ist — nicht
-die exakte Schreibweise.
+Nicht mehr geraten: Am 22.09.2026 wurden 36 Bereiche im Mandanten abgefragt, nur
+lesend. Vollständig in [`PLENTY-INVENTUR.md`](PLENTY-INVENTUR.md), hier das
+Wesentliche.
 
-### Aufträge (der Bereich, den du verlinkt hast)
+**Der API-Benutzer hat kein einziges Recht zu wenig** — kein einziger 403 in der
+gesamten Inventur. Was fehlt, fehlt im Mandanten, nicht an der Berechtigung.
 
-Der komplette kaufmännische Kern ist bei uns unberührt. Was dort liegt:
+### Das Mengengerüst
 
-| Thema | Grob | Wofür es bei uns taugen würde |
+| Was | Anzahl |
+| --- | --- |
+| Artikel | 58.660 |
+| Varianten | 60.430 |
+| Bestandszeilen | 67.240 |
+| Lagerorte (Burlo) | 13.409 |
+| Struktur-Knoten (Burlo) | 7.636 |
+| Kategorien | 1.242 |
+| **Aufträge** | **63.038** (877 in den letzten 30 Tagen) |
+| Belege | 141.220 |
+| Kontakte | 60.380 |
+| Listings | 55.104 |
+
+### Aufträge — der Bereich, nach dem du gefragt hast
+
+Vorhanden und vollständig lesbar. 63.038 Aufträge, 877 in den letzten 30 Tagen.
+
+| Thema | Pfad | Befund |
 | --- | --- | --- |
-| Aufträge lesen/anlegen | `/rest/orders`, `/rest/orders/{id}` | Auftragslage auswerten, Aufträge aus eigenen Quellen anlegen |
-| Auftragspositionen | Unterressourcen des Auftrags | was wurde bestellt, in welcher Menge |
-| Status ändern | Statuswechsel am Auftrag | „in Bearbeitung", „versandbereit" automatisch setzen |
-| Auftragseigenschaften | Order properties | eigene Kennzeichen an den Auftrag hängen |
-| Belege | Rechnung, Lieferschein als PDF | Belege ziehen, statt sie im Backend zu suchen |
-| Versand | Pakete, Versandprofile, Labels | Versandabwicklung anstoßen |
-| Retouren, Gutschriften | eigene Auftragstypen | Rückläufer erfassen — passt zu unserer Suche, die Rückläufer schon berücksichtigt |
-| Zahlungen | Zahlungen und Zuordnung | Zahlungseingang prüfen |
+| Aufträge | `/rest/orders` | 63.038, mit `?with=orderItems` |
+| Status | `/rest/orders/statuses` | 58 konfiguriert, **19 in Gebrauch** — `/rest/orders/status` (ohne „es") ist 404 |
+| Herkünfte | `/rest/orders/referrers` | 340 konfiguriert, **6 in Gebrauch**: eBay Germany (571), manuelle Eingabe (192), Shop (84), Amazon (24), zwei namenlose |
+| Belege | `/rest/orders/documents` | 141.220 — aber der `?type=`-Filter wirkt **nicht** |
+| Zahlungen | `/rest/payments` | vorhanden, Array **ohne** `totalsCount` |
+| Zahlungsarten | `/rest/payments/methods` | 282 |
+| Versandprofile | `/rest/orders/shipping/presets` | 32 |
+| Kontakte | `/rest/accounts/contacts` | 60.380 — **gibt Klarnamen, E-Mail und Telefon direkt in der Liste aus** |
+| Auftragstypen | — | **gibt es nicht** (404). Aus den Aufträgen ausgezählt: typeId 1 = Auftrag (707), 7 = Gutschrift (99), 4 = Angebot (71) |
+| Versanddienstleister | — | **gibt es nicht** (404) |
 
-Anschließen ließe sich das ohne neue Infrastruktur: `plentyGet`/`plentyPost` gibt
-es, der Token auch, `scripts/plenty.mjs test` prüft den Zugang. Es fehlt nur das
-Recht am API-Benutzer und ein Modul `lib/plenty/auftraege.ts` in derselben Form
-wie die übrigen.
+Kundendaten hängen **nicht** direkt am Auftrag, sondern nur als `addressId` in
+`addressRelations[]`. Wer Aufträge auswertet, ohne das aufzulösen, sieht keine
+personenbezogenen Daten — das macht eine Auftragsauswertung deutlich unkritischer,
+als man erwarten würde.
 
-### Weitere Bereiche
+### Was es in diesem Mandanten NICHT gibt
 
-| Bereich | Wofür zuständig | Für uns interessant? |
+Alles 404, nicht 403 — es fehlt also nicht am Recht:
+
+| Bereich | Pfad |
+| --- | --- |
+| Umlagerungsaufträge | `/rest/redistributions` |
+| Nachbestellungen | `/rest/reorders` |
+| Bestandspuffer | `/rest/stockmanagement/buffer` |
+| **Warenbewegungen** | `/rest/stockmanagement/stock/movements` — **das benutzt unser Code** (siehe Abschnitt 9) |
+| Auftragstypen, Versanddienstleister, Belegarten | siehe oben |
+| Rollen | `/rest/roles` — Rechte sind über die API nicht auflösbar |
+| Marktplatz-Referrer | `/rest/markets/orders/referrers` (die Herkünfte stehen in `/rest/orders/referrers`) |
+
+Zwei Pfade hießen nur anders: `/rest/orders/statuses` statt `…/status`, und
+`/rest/item_sets` statt `/rest/items/item_sets` (dort: **0 Einträge**, Bundles gibt
+es in diesem Mandanten also gar nicht).
+
+`/rest/plugins` antwortet mit **HTTP 500** (`Too few arguments to function
+PluginController::listAllPlugins()`) — die Plugin-Liste ist über die API nicht
+abrufbar.
+
+### Vorhanden und ungenutzt
+
+| Bereich | Umfang | Für uns interessant |
 | --- | --- | --- |
-| Verkaufspreise | Preise je Variante und Preisliste | **ja** — `lib/listing/markenregeln.ts` beschreibt Preisregeln, die heute niemand ausführt |
-| Item-Sets / Bundles | Bundle-Artikel | **ja** — die Umbuchung stolpert heute über Bundles |
-| Nachbestellung / Umlagerung als Beleg | Bestellungen beim Lieferanten, Umlagerungsaufträge **zwischen** Lagern | evtl. — unsere Umbuchung läuft innerhalb eines Lagers |
-| Bestandspuffer, Verfügbarkeiten | Reservierungen, Lieferzeiten | evtl. |
-| Kontakte / Adressen | Kunden und Lieferanten | bei Auftragsanlage nötig |
-| Hersteller, Attribute, Einheiten, Merkmale allgemein | Artikelstammdaten | heute fest verdrahtet (`unitId: 1`) |
-| Bilder schreiben | Artikelbilder hochladen | **ja** — die Erfassung fotografiert bereits, lädt aber nichts nach Plenty hoch |
-| Listings / Marktplätze / Webshop | eBay, Amazon, Shop | passt zum Quellen-Wasserfall im Repo |
-| Plugins, Ereignisaktionen | Automatisierung im Backend | Alternative zu eigenem Code — Plentys Automatik läuft überwiegend über Ereignisaktionen im Backend, nicht über REST-Webhooks (**bitte prüfen**) |
-| Benutzer und Rechte | API-Benutzer verwalten | heute Handarbeit im Backend |
-| Logs, Systeminfos | Fehlersuche | selten |
-| PIM | neuere Artikel-API parallel zur alten | mittelfristig relevant, wenn Plenty die alte ablöst |
+| Verkaufspreise | 29 Preislisten | **ja** — `lib/listing/markenregeln.ts` beschreibt Preisregeln, die niemand ausführt |
+| Hersteller | 4.170 | evtl. |
+| Einheiten | 52 | `unitId: 1` = Stück bestätigt |
+| Attribute | 125 | — |
+| Verfügbarkeiten | 10 | — |
+| Webshops | 6 | **ja** — das Geschäft läuft auf 14616, nicht auf 14443 |
+| Listings | 55.104 | fast jede Variante ist in Kanäle ausgespielt |
+| USt-Sätze | 116 | — |
+| Logs | 32.644 | Fehlersuche |
+| Benutzer | 68 | — |
+
+### Fallen, die die Inventur zusätzlich gefunden hat
+
+| Falle | Folge |
+| --- | --- |
+| **`itemsPerPage` wird bei den Lagerort-Endpunkten ignoriert** | `?itemsPerPage=250` liefert trotzdem 100 Zeilen je Seite. Wer der Seitengröße vertraut, holt 8.000 statt 13.409 Lagerorte und merkt nichts, weil `totalsCount` stimmt |
+| **`statusId` und `referrerId` sind Dezimal-Strings** (`"5.7"`, `"2.08"`) | `parseInt` macht aus „Wird kommissioniert" (5.7) den Status „Freigabe Versand" (5) und aus eBay Germany (2.08) eBay allgemein |
+| **Sechs Listen-Endpunkte liefern blanke Arrays ohne `entries`/`totalsCount`** | `warehouses`, `orders/referrers`, `payments`, `payments/methods`, `shipping/presets`, `webstores`. `daten.entries ?? daten` greift ins Leere, weil `Array.prototype.entries` existiert |
+| **`?type=` auf `/rest/orders/documents` wirkt nicht** | jeder Wert, auch ein erfundener, liefert dieselbe Zahl |
+| **`?with=names,groups` auf `/rest/properties` wirft 500** | `with` weglassen, die Daten kommen ohnehin mit |
+| **144 Kategorienamen sind mehrfach vergeben** | „Sonstiges" 53×, „Zubehör" 26×, „Elektronik & Elektrotechnik" zweimal als Wurzel. Eine Kategorie über den Namen zu suchen, ist unsicher — nur „Projekte" ist eindeutig |
+| **Die Halle-Ebene ist nicht durchgehend numerisch** | neben H1–H9 gibt es `HWagen` (100 Lagerorte) und `HOF` (1). Ein Parser auf `H(\d+)` verliert 101 Lagerorte |
+| **Alle 13.409 Lagerorte haben `statusKey = active`** | Code, der auf `statusKey` verzweigt, hat hier nur einen Zweig — und damit einen ungetesteten |
+| **Die Dimensions-`id` folgt nicht der Hierarchie** | Halle=9, Regal=10, Ebene=11, Feld=**7**. Nach `id` sortieren kehrt die unterste Stufe nach oben; es gilt `level` |
+
+Positiv, und das ist bemerkenswert bei 13.409 Lagerorten: **kein einziger ohne
+`label`, keiner ohne `fullLabel`, kein doppeltes `fullLabel`**, und alle passen auf
+das Muster `H…/R…/E… F…-…`. Die Aufräumarbeit aus `lagerort-aufraeumen.ts` hat
+gehalten.
 
 ---
 
 ## 9. Lücken und nächste Schritte
 
-Was mir beim Durchgehen aufgefallen ist, geordnet nach Nutzen:
+Geordnet nach Nutzen. Die ersten beiden sind neu aus der Inventur.
 
-1. **Preisregeln laufen nirgends.** `lib/listing/markenregeln.ts` hält Markensperren
+1. **Ein Suchsignal ist vermutlich tot.** `suche.ts:529` ruft Warenbewegungen ab —
+   `/rest/stockmanagement/stock/movements` antwortet in diesem Mandanten mit
+   **404**. Der Code fängt das ab und macht ohne weiter, das Signal „Wo lag er
+   früher?" fällt also stillschweigend aus. Von neun Signalen bleiben acht. Ob die
+   lagerbezogene Schreibweise funktioniert, wird gerade geprüft
+   (`PLENTY-ENDPUNKTE-GEPRUEFT.md`).
+2. **Der API-Zugang ist ein normaler Backend-Benutzer**, kein dedizierter
+   REST-Benutzer (`userType: backend`, `loginType: legacy`, `plenty_api: 0`,
+   `user_role_id: null`). Er sieht **alles** — auch 60.380 Kontakte mit Klarnamen,
+   E-Mail und Telefonnummer. Für eine Automatisierung, die Artikel und Lagerorte
+   braucht, ist das erheblich mehr Zugriff als nötig. Ein eigener API-Benutzer mit
+   den Rechten aus Abschnitt 7 wäre die saubere Lösung.
+3. **Preisregeln laufen nirgends.** `lib/listing/markenregeln.ts` hält Markensperren
    und Preislogik aus dem SOP fest — aber kein Code schreibt je einen Preis nach
-   Plenty. Entweder anschließen oder als Dokument kenntlich machen.
-2. **Erfasste Bilder bleiben liegen.** Die Erfassung fotografiert und erkennt,
+   Plenty. 29 Preislisten liegen bereit. Entweder anschließen oder als Dokument
+   kenntlich machen.
+4. **Erfasste Bilder bleiben liegen.** Die Erfassung fotografiert und erkennt,
    lädt aber nichts nach Plenty hoch; gelesen werden Bilder nur für die Suche.
-3. **Bundles bei der Zuweisung.** Heute wird der Fehler erkannt und die Zeile
-   übersprungen. Über die Item-Set-Ressource ließe sich auf die Bestandteile
-   auflösen.
-4. **`ui.php` ist eine Zeitbombe.** Ein interner, nicht dokumentierter Endpunkt,
+5. **Bundles sind kein Thema mehr.** `/rest/item_sets` meldet **0 Einträge** — in
+   diesem Mandanten gibt es keine Bundles. Die Sonderbehandlung in `zuweisung.ts`
+   schadet nicht, greift aber ins Leere.
+6. **`ui.php` ist eine Zeitbombe.** Ein interner, nicht dokumentierter Endpunkt,
    per Mitschnitt nachgebaut. Er kann mit jedem Plenty-Update brechen. Der
    Abschalter (`PLENTY_UI_UPLOAD=0`) ist da, ein REST-Ersatz nicht.
-5. **Aufträge sind unerschlossen** — siehe oben.
+7. **Aufträge sind unerschlossen** — 63.038 Stück, vollständig lesbar, und die
+   personenbezogenen Daten hängen nicht am Auftrag selbst. Der Einstieg ist
+   billiger als gedacht.
+8. **Sechs der neun Lager sind leere Hüllen.** Nur Burlo (106) hat eine
+   Lagerort-Struktur; Borken I und II haben je zwei Dimensionen und genau einen
+   Lagerort — angefangen und liegengelassen. `107 FBA` hat gar keinen Bestand.
 
 ### So kommt man an alles heran
 
 ```bash
 cd projektplanung
-node scripts/plenty.mjs test
-node scripts/plenty.mjs get /rest/items/variations 'itemsPerPage=5&with=item'
-node scripts/plenty.mjs get /rest/stockmanagement/warehouses
+node scripts/plenty.mjs test                       # Verbindung prüfen
+node scripts/plenty-inventur.mjs --md              # die ganze Inventur neu erheben
+node scripts/plenty.mjs get /rest/orders 'itemsPerPage=1'
 ```
 
-Für die ungeprüften Teile aus Abschnitt 8 ist das auch der schnellste Weg: Pfad
-raten, aufrufen, Antwort ansehen. Ein `GET` kann nichts kaputt machen.
+Voraussetzung ist eine Umgebung, deren Netzwerk-Policy `*.plentysystems.com`
+durchlässt — in der Umgebung „Voll-Netz" ist das der Fall, in „Default" nicht.
+Ein `GET` kann nichts kaputt machen.
