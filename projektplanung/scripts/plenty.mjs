@@ -76,13 +76,16 @@ function zugang() {
     .replace(/\/+$/, '');
   const user = (process.env.PLENTY_USER ?? '').trim();
   const password = process.env.PLENTY_PASSWORD ?? '';
-  if (!baseUrl || !user || !password) {
+  if (!baseUrl || !user) {
     abbruch(
-      'Es fehlen Zugangsdaten. Bitte PLENTY_BASE_URL, PLENTY_USER und PLENTY_PASSWORD setzen\n' +
+      'Es fehlen Zugangsdaten. Bitte PLENTY_BASE_URL und PLENTY_USER setzen\n' +
         '(in der Umgebung oder in projektplanung/.env.local).',
     );
   }
-  return { baseUrl, user, password };
+  // Ohne Passwort wird der Login trotzdem versucht: Manche Umgebungen speisen
+  // es unterwegs in den Anfrageinhalt ein, damit die Session es nie sieht.
+  // Klappt das nicht, sagt es die Login-Antwort deutlich genug (HTTP 401).
+  return { baseUrl, user, password, eingespeist: !password };
 }
 
 // ---------------------------------------------------------------------------
@@ -93,10 +96,20 @@ async function login(cfg) {
   const res = await hole(`${cfg.baseUrl}/rest/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ username: cfg.user, password: cfg.password }),
+    // Ohne eigenes Passwort geht nur der Benutzername raus — den Rest muss
+    // dann die Umgebung beisteuern.
+    body: JSON.stringify(cfg.eingespeist ? { username: cfg.user } : { username: cfg.user, password: cfg.password }),
   });
   const roh = await res.text();
-  if (res.status === 401) abbruch('Benutzername oder Passwort stimmen nicht (HTTP 401).');
+  if (res.status === 401) {
+    abbruch(
+      cfg.eingespeist
+        ? 'Login abgelehnt (HTTP 401), und PLENTY_PASSWORD war nicht gesetzt.\n' +
+            'Die Umgebung hat das Passwort also nicht in die Anfrage eingespeist.\n' +
+            'Dann hilft nur, PLENTY_PASSWORD doch als Umgebungsvariable zu setzen.'
+        : 'Benutzername oder Passwort stimmen nicht (HTTP 401).',
+    );
+  }
   if (!res.ok) abbruch(`Login fehlgeschlagen (HTTP ${res.status}): ${roh.slice(0, 300)}`);
 
   let daten;

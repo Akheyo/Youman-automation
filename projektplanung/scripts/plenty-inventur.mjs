@@ -119,11 +119,12 @@ function zugang() {
   const baseUrl = (process.env.PLENTY_BASE_URL ?? '').trim().replace(/\/+$/, '').replace(/\/rest$/i, '').replace(/\/+$/, '');
   const user = (process.env.PLENTY_USER ?? '').trim();
   const password = process.env.PLENTY_PASSWORD ?? '';
-  if (!baseUrl || !user || !password) {
-    console.error('\n✖ Es fehlen PLENTY_BASE_URL, PLENTY_USER oder PLENTY_PASSWORD.\n');
+  if (!baseUrl || !user) {
+    console.error('\n✖ Es fehlen PLENTY_BASE_URL oder PLENTY_USER.\n');
     process.exit(1);
   }
-  return { baseUrl, user, password };
+  // Fehlt das Passwort, wird der Login trotzdem versucht — siehe scripts/plenty.mjs.
+  return { baseUrl, user, password, eingespeist: !password };
 }
 
 async function login(cfg) {
@@ -132,7 +133,7 @@ async function login(cfg) {
     res = await fetch(`${cfg.baseUrl}/rest/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ username: cfg.user, password: cfg.password }),
+      body: JSON.stringify(cfg.eingespeist ? { username: cfg.user } : { username: cfg.user, password: cfg.password }),
     });
   } catch (e) {
     const kette = [];
@@ -148,7 +149,13 @@ async function login(cfg) {
   }
   const roh = await res.text();
   if (!res.ok) {
-    console.error(`\n✖ Login fehlgeschlagen (HTTP ${res.status}): ${roh.slice(0, 200)}\n`);
+    console.error(
+      `\n✖ Login fehlgeschlagen (HTTP ${res.status}): ${roh.slice(0, 200)}\n` +
+        (cfg.eingespeist && res.status === 401
+          ? '  PLENTY_PASSWORD war nicht gesetzt — die Umgebung hat es offenbar nicht\n' +
+            '  in die Anfrage eingespeist. Dann muss es doch als Umgebungsvariable stehen.\n'
+          : ''),
+    );
     process.exit(1);
   }
   const daten = JSON.parse(roh);
