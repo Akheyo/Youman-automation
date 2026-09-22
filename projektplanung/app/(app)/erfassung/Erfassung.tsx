@@ -18,6 +18,7 @@ import {
 } from '@/lib/erfassung/logic';
 import { ZUSTAND_TEXT, type Erkennung } from '@/lib/erfassung/erkennung';
 import { trefferText, type Treffer } from '@/lib/erfassung/treffer-kern';
+import { fehlerZeile, lesbarerFehler } from '@/lib/erfassung/fehlertext';
 import {
   MAX_RUNDEN,
   SCHRITTE,
@@ -189,7 +190,7 @@ export default function Erfassung() {
         if (!res.ok) {
           setMeldung({
             art: 'fehler',
-            text: `Artikel ${nummer}, ${SCHRITT_TEXT[schritt]}: ${String(daten.error ?? 'fehlgeschlagen')}`,
+            text: `Artikel ${nummer}, ${SCHRITT_TEXT[schritt]}: ${fehlerZeile(String(daten.error ?? ''))}`,
           });
           return false;
         }
@@ -203,7 +204,9 @@ export default function Erfassung() {
       } catch (e) {
         setMeldung({
           art: 'fehler',
-          text: `Artikel ${nummer}, ${SCHRITT_TEXT[schritt]}: ${e instanceof Error ? e.message : String(e)}`,
+          text: `Artikel ${nummer}, ${SCHRITT_TEXT[schritt]}: ${fehlerZeile(
+            e instanceof Error ? e.message : String(e),
+          )}`,
         });
         return false;
       }
@@ -759,6 +762,11 @@ function ArtikelZeile({
   const preis = artikel.preis;
   // Was der Mensch am Regal angegeben hat, gegen das, was auf den Fotos war.
   const abgleich = zustandAbgleichen(artikel.zustand ?? 'gebraucht', e?.zustand, e?.schaeden ?? []);
+  // Nur der Fehler des Schritts, der gerade dran ist — ältere sind erledigt
+  // und würden nur davon ablenken, woran es jetzt hängt.
+  const rohFehler =
+    artikel.plenty_fehler ?? artikel.listing_fehler ?? artikel.preis_fehler ?? artikel.erkennung_fehler ?? artikel.fehler;
+  const grund = rohFehler ? lesbarerFehler(rohFehler) : null;
 
   return (
     <li className={styles.verlaufZeile}>
@@ -817,13 +825,21 @@ function ArtikelZeile({
         </p>
       )}
 
-      {artikel.erkennung_fehler && <p className={styles.verlaufFehler}>{artikel.erkennung_fehler}</p>}
-      {artikel.preis_fehler && <p className={styles.verlaufFehler}>Preis: {artikel.preis_fehler}</p>}
-      {artikel.listing_fehler && <p className={styles.verlaufFehler}>Listing: {artikel.listing_fehler}</p>}
-      {artikel.plenty_fehler && <p className={styles.verlaufFehler}>Plenty: {artikel.plenty_fehler}</p>}
-      {artikel.fehler && <p className={styles.verlaufFehler}>{artikel.fehler}</p>}
+      {grund && (
+        <p className={styles.verlaufFehler}>
+          {grund.text}
+          {grund.abhilfe && (
+            <>
+              <br />
+              <span className={styles.abhilfe}>{grund.abhilfe}</span>
+            </>
+          )}
+        </p>
+      )}
 
-      {haengt && (
+      {/* Der Knopf erscheint nur, wenn ein zweiter Anlauf überhaupt etwas
+          ändern kann. Ohne Guthaben wäre er eine Lüge. */}
+      {haengt && (grund?.nochmalSinnvoll ?? true) && (
         <button
           type="button"
           className={styles.erneut}
