@@ -98,6 +98,23 @@ export const ZUSTAND_TEXT: Record<Erkennung['zustand'], string> = {
 // Notiz
 // ---------------------------------------------------------------------------
 
+/**
+ * Die Maße als Text, z. B. „60 x 40 x 20 cm".
+ *
+ * Es gibt sie als Objekt mit drei Feldern, von denen jedes einzeln fehlen
+ * darf — ein Karton mit aufgedruckter Länge und Breite, aber ohne Höhe, ist
+ * der Normalfall. Ohne diese Funktion landet das Objekt irgendwo in einer
+ * Zeichenkette und wird zu „[object Object]"; das ist schon passiert.
+ */
+export function masseText(masse: Erkennung['masseCm']): string | null {
+  if (!masse) return null;
+  const werte = [masse.laenge, masse.breite, masse.hoehe].filter(
+    (w): w is number => typeof w === 'number' && Number.isFinite(w),
+  );
+  if (werte.length === 0) return null;
+  return `${werte.join(' x ')} cm`;
+}
+
 /** Kopfzeile des maschinellen Teils. Daran wird er beim Neuschreiben erkannt. */
 const MARKE = '— Aus den Fotos erkannt —';
 
