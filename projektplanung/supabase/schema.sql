@@ -228,3 +228,26 @@ alter table public.erfassung_artikel
 alter table public.erfassung_bilder
   add column if not exists rolle_erkannt  text,
   add column if not exists bildbeschreibung text;
+
+-- ---------------------------------------------------------------------------
+-- Zustand und Bestand: was der Mensch am Regal weiß und kein Foto zeigt
+--
+-- Beides geht direkt in die Preisfindung ein. Der Zustand steuert den
+-- Umrechnungsfaktor (65 / 60 / 40 / 30 %), der Bestand entscheidet über den
+-- Gesamtwert und damit, ob sich ein Listing überhaupt lohnt.
+--
+-- Die Bilderkennung schätzt den Zustand ebenfalls — ihr Wert bleibt in
+-- "erkennung" stehen. Für den Preis zählt der des Menschen: Wer das Teil in
+-- der Hand hat, dreht es um, rüttelt daran und sieht, was auf keinem Foto ist.
+-- Weichen beide voneinander ab, ist das ein Prüfhinweis, kein Fehler.
+-- ---------------------------------------------------------------------------
+alter table public.erfassung_artikel
+  add column if not exists zustand              text    default 'gebraucht',
+  -- Ob jemand den Zustand ausdrücklich angetippt hat oder die Vorauswahl stehen
+  -- blieb. Ohne dieses Feld ließe sich später nicht unterscheiden, ob
+  -- "gebraucht" eine Aussage war oder nur niemand hingesehen hat.
+  add column if not exists zustand_bestaetigt   boolean not null default false,
+  -- Nur was den Gebrauchswert angreift: tiefe Kratzer, Risse, fehlende Teile.
+  -- Schmutz und normale Gebrauchsspuren gehören NICHT hierher.
+  add column if not exists gravierende_schaeden boolean not null default false,
+  add column if not exists bestand              integer not null default 1;

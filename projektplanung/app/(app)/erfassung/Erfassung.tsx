@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './erfassung.module.css';
 import Kamera from './Kamera';
+import ZustandBestand from './ZustandBestand';
+import { ZUSTAND_TEXT as PREIS_ZUSTAND_TEXT, type Zustand } from '@/lib/preis/regelwerk';
 import {
   ERKANNTE_ROLLE_TEXT,
   STATUS_TEXT,
@@ -51,6 +53,9 @@ interface ServerArtikel {
   treffer: { treffer: Treffer[]; diagnose: string[] } | null;
   erkannt_am: string | null;
   erkennung_fehler: string | null;
+  zustand: Zustand | null;
+  gravierende_schaeden: boolean | null;
+  bestand: number | null;
   bilder: ServerBild[] | null;
 }
 
@@ -99,6 +104,10 @@ export default function Erfassung() {
   /** Welcher Artikel wird gerade ausgewertet — für die Anzeige in der Liste. */
   const [wertetAus, setWertetAus] = useState<string | null>(null);
   const [kameraOffen, setKameraOffen] = useState(false);
+  const [zustand, setZustand] = useState<Zustand>('gebraucht');
+  const [zustandBestaetigt, setZustandBestaetigt] = useState(false);
+  const [gravierendeSchaeden, setGravierendeSchaeden] = useState(false);
+  const [bestand, setBestand] = useState(1);
 
   const kameraRef = useRef<HTMLInputElement>(null);
   const galerieRef = useRef<HTMLInputElement>(null);
@@ -226,6 +235,12 @@ export default function Erfassung() {
     setArtikel({ id: a.id, nummer: a.nummer });
     setServerBilder([]);
     setNotiz('');
+    // Zustand bewusst wieder auf die Vorauswahl: Der naechste Artikel ist ein
+    // anderer, und ein stehengebliebenes "defekt" waere teuer.
+    setZustand('gebraucht');
+    setZustandBestaetigt(false);
+    setGravierendeSchaeden(false);
+    setBestand(1);
   }, []);
 
   /**
@@ -244,6 +259,9 @@ export default function Erfassung() {
         setArtikel({ id: a.id, nummer: a.nummer });
         setServerBilder((a.bilder ?? []).filter((b) => b.hochgeladen));
         setNotiz(a.notiz ?? '');
+        setZustand(a.zustand ?? 'gebraucht');
+        setGravierendeSchaeden(Boolean(a.gravierende_schaeden));
+        setBestand(a.bestand ?? 1);
       } else {
         await neuerArtikel();
       }
@@ -358,7 +376,7 @@ export default function Erfassung() {
       const res = await fetch(`/api/erfassung/artikel/${fertiger.id}/fertig`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notiz }),
+        body: JSON.stringify({ notiz, zustand, zustandBestaetigt, gravierendeSchaeden, bestand }),
       });
       const daten = await alsJson(res);
       if (!res.ok) throw new Error(String(daten.error ?? 'Abschicken fehlgeschlagen.'));
@@ -547,6 +565,24 @@ export default function Erfassung() {
         </button>
       </div>
 
+      <ZustandBestand
+        zustand={zustand}
+        gravierendeSchaeden={gravierendeSchaeden}
+        bestand={bestand}
+        gesperrt={!artikel || beschaeftigt}
+        onZustand={(z) => {
+          setZustand(z);
+          // Ab jetzt ist es eine Aussage und nicht mehr die Vorauswahl.
+          setZustandBestaetigt(true);
+          if (z !== 'gebraucht') setGravierendeSchaeden(false);
+        }}
+        onGravierendeSchaeden={(w) => {
+          setGravierendeSchaeden(w);
+          setZustandBestaetigt(true);
+        }}
+        onBestand={setBestand}
+      />
+
       <label className={styles.notizFeld}>
         <span>Notiz — nur was man auf den Fotos nicht sieht</span>
         <textarea
@@ -618,7 +654,11 @@ function ArtikelZeile({
           {wertetAus ? 'wird ausgewertet …' : status}
         </span>
         <span className={styles.verlaufMeta}>
-          {anzahl} Bild{anzahl === 1 ? '' : 'er'} · {uhrzeit(artikel.fertig_am ?? artikel.created_at)}
+          {anzahl} Bild{anzahl === 1 ? '' : 'er'}
+          {artikel.zustand ? ` · ${PREIS_ZUSTAND_TEXT[artikel.zustand]}` : ''}
+          {artikel.bestand && artikel.bestand > 1 ? ` · ${artikel.bestand}×` : ''}
+          {' · '}
+          {uhrzeit(artikel.fertig_am ?? artikel.created_at)}
         </span>
       </div>
 

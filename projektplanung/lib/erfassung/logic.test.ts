@@ -8,6 +8,7 @@ import {
   istRolle,
   istStatus,
   naechstePosition,
+  normalisiereAngaben,
   validiereBild,
   MAX_BILD_BYTES,
 } from './logic';
@@ -99,5 +100,43 @@ describe('Typwaechter', () => {
     expect(istRolle('rueckseite')).toBe(false);
     expect(istStatus('bereit')).toBe(true);
     expect(istStatus('irgendwas')).toBe(false);
+  });
+});
+
+describe('normalisiereAngaben', () => {
+  it('uebernimmt gueltige Angaben', () => {
+    expect(
+      normalisiereAngaben({ zustand: 'defekt', zustandBestaetigt: true, gravierendeSchaeden: false, bestand: 7 }),
+    ).toEqual({ zustand: 'defekt', zustandBestaetigt: true, gravierendeSchaeden: false, bestand: 7 });
+  });
+
+  it('faellt bei unbekanntem Zustand auf gebraucht zurueck', () => {
+    // Bei einer Verwertung der Regelfall — ein erfundener Wert waere schlimmer.
+    expect(normalisiereAngaben({ zustand: 'irgendwas' }).zustand).toBe('gebraucht');
+    expect(normalisiereAngaben({}).zustand).toBe('gebraucht');
+  });
+
+  it('merkt sich, ob jemand den Zustand bestaetigt hat', () => {
+    // Sonst liesse sich nicht unterscheiden, ob "gebraucht" eine Aussage war
+    // oder nur niemand hingesehen hat.
+    expect(normalisiereAngaben({}).zustandBestaetigt).toBe(false);
+    expect(normalisiereAngaben({ zustandBestaetigt: true }).zustandBestaetigt).toBe(true);
+    expect(normalisiereAngaben({ zustandBestaetigt: 'ja' }).zustandBestaetigt).toBe(false);
+  });
+
+  it('laesst gravierende Schaeden nur bei Gebrauchtware gelten', () => {
+    // Bei neuer Ware ergibt es keinen Sinn, bei defekter zoege der Faktor doppelt ab.
+    expect(normalisiereAngaben({ zustand: 'gebraucht', gravierendeSchaeden: true }).gravierendeSchaeden).toBe(true);
+    expect(normalisiereAngaben({ zustand: 'neu', gravierendeSchaeden: true }).gravierendeSchaeden).toBe(false);
+    expect(normalisiereAngaben({ zustand: 'defekt', gravierendeSchaeden: true }).gravierendeSchaeden).toBe(false);
+  });
+
+  it('haelt den Bestand in vernuenftigen Grenzen', () => {
+    expect(normalisiereAngaben({ bestand: 0 }).bestand).toBe(1);
+    expect(normalisiereAngaben({ bestand: -5 }).bestand).toBe(1);
+    expect(normalisiereAngaben({ bestand: 2.6 }).bestand).toBe(3);
+    expect(normalisiereAngaben({ bestand: 99999 }).bestand).toBe(9999);
+    expect(normalisiereAngaben({ bestand: 'viele' }).bestand).toBe(1);
+    expect(normalisiereAngaben({}).bestand).toBe(1);
   });
 });
