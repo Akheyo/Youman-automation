@@ -30,6 +30,7 @@ export const mainNav: NavItem[] = [
       { label: 'Webseiten', href: '/leistungen/webseiten' },
       { label: 'E-Commerce-Lösungen', href: '/leistungen/e-commerce' },
       { label: 'Individuelle Software', href: '/leistungen/individuelle-software' },
+      { label: 'KI-Schulungen', href: '/leistungen/ki-schulungen' },
     ],
   },
   {

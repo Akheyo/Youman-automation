@@ -26,14 +26,18 @@ export type Leistung = {
   title: string;
   /** Was auf dem Bild zu dieser Leistung zu sehen sein soll, solange keines vorliegt. */
   bildhinweis: string;
-  /** Das Motiv. Steht hier und nicht in der Seite, damit es an allen Stellen dasselbe ist. */
-  bild: ImageMetadata;
+  /**
+   * Das Motiv. Steht hier und nicht in der Seite, damit es an allen Stellen
+   * dasselbe ist. Fehlt es, bleibt der Bildplatz stehen; eine Leistung
+   * deshalb wegzulassen waere der schlechtere Tausch.
+   */
+  bild?: ImageMetadata;
   /**
    * Bildbeschreibung. Sie ist das, was statt des Bildes gehoert wird, und
    * das Einzige, was eine Suchmaschine ueber den Inhalt erfaehrt. Deshalb
    * beschreibt sie, was zu sehen ist, und wiederholt nicht den Titel.
    */
-  bildAlt: string;
+  bildAlt?: string;
   /** Kurzzeile fuer Uebersichten und Kacheln. */
   teaser: string;
   /** Titel fuer die Suche, wo der Bereichsname allein zu wenig traegt. */
@@ -247,6 +251,46 @@ export const leistungen: Leistung[] = [
       {
         titel: 'Auswertbar von Anfang an',
         text: 'Was das Modul entscheidet, wird festgehalten. Damit ist zum ersten Mal messbar, was vorher Erfahrung war.',
+      },
+    ],
+  },
+  {
+    slug: 'ki-schulungen',
+    bildhinweis: 'Schulung im Besprechungsraum',
+    title: 'KI-Schulungen',
+    teaser: 'Ihr Team lernt an den eigenen Vorgängen, wo KI trägt und wo nicht.',
+    seoTitel: 'KI-Schulungen für Unternehmen',
+    seoBeschreibung:
+      'KI-Schulungen für Mitarbeitende: Grundlagen, sicherer Umgang mit Unternehmensdaten und Anwendungsfälle aus dem eigenen Betrieb. Inhouse oder online, von youman.',
+    intro:
+      'Die meisten Betriebe scheitern nicht an der Technik, sondern daran, dass nie jemand gezeigt hat, wofür sie im eigenen Haus taugt. Eine Schulung bei uns arbeitet deshalb mit Ihren Vorgängen: Anfragen, Angebote, Berichte, das, was täglich anfällt. Am Ende weiß jede Rolle, wo sie KI einsetzt, wo sie die Finger davon lässt und welche Angaben nicht in ein fremdes System gehören.',
+    painpoints: [
+      'Einzelne nutzen KI längst auf eigene Faust, und niemand weiß, welche Daten dabei das Haus verlassen.',
+      'Die Werkzeuge sind da, aber es hat nie jemand gezeigt, wofür sie im eigenen Ablauf taugen.',
+      'Die Ergebnisse schwanken, und keiner kann sagen, ob das am Werkzeug liegt oder an der Frage.',
+      'Nach der ersten Begeisterung benutzt es niemand mehr, weil der Bezug zur täglichen Arbeit fehlte.',
+      'Unklar ist, was im Betrieb erlaubt sein soll und wer das entscheidet.',
+    ],
+    bausteine: [
+      {
+        titel: 'Am eigenen Material',
+        text: 'Geübt wird an Vorgängen aus Ihrem Haus, nicht an Beispielen aus dem Lehrbuch. Was am Ende steht, ist in der Woche darauf benutzbar.',
+      },
+      {
+        titel: 'Grenzen statt Begeisterung',
+        text: 'Dazu gehört, wofür KI nicht taugt und welche Angaben nicht hineingehören. Wer das weiß, benutzt sie danach sicherer.',
+      },
+      {
+        titel: 'Nach Rollen zugeschnitten',
+        text: 'Vertrieb, Buchhaltung und Lager brauchen nicht dieselbe Schulung. Der Zuschnitt entsteht aus dem, was diese Rollen tatsächlich tun.',
+      },
+      {
+        titel: 'Eine Regel, die im Haus bleibt',
+        text: 'Am Ende steht eine knappe Festlegung, was im Betrieb erlaubt ist und was nicht. Sie gilt auch für die, die an dem Tag nicht dabei waren.',
+      },
+      {
+        titel: 'Unterlagen für einen Förderantrag',
+        text: 'Weiterbildung ist in Deutschland an vielen Stellen förderfähig. Ob für Ihren Betrieb ein Programm greift und in welcher Höhe, hängt von Bundesland, Betriebsgröße und Anlass ab und entscheidet die bewilligende Stelle, nicht wir. Wir liefern, was ein Antrag braucht: Inhalte, Umfang, Termine und ein Angebot mit einzeln ausgewiesenen Posten.',
       },
     ],
   },
