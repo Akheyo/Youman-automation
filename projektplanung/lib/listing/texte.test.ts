@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_TITEL_1, MAX_TITEL_2_3, pruefeListing, darfVeroeffentlichen } from './markenregeln';
-import { ABSCHLUSSTEXT_FEHLT, baueListing, baueProduktkarte, baueTitel, begrenzeBullets } from './texte';
+import {
+  ABSCHLUSSTEXT_FEST,
+  abschlusstext,
+  baueListing,
+  baueProduktkarte,
+  baueSortimentsverweis,
+  baueTitel,
+  begrenzeBullets,
+  plural,
+} from './texte';
 import type { Erkennung } from '@/lib/erfassung/erkennung';
 
 function erkennung(teil: Partial<Erkennung> = {}): Erkennung {
@@ -110,9 +119,41 @@ describe('baueListing', () => {
     expect(l.beschreibung).toMatch(/Fernbedienung fehlt/);
   });
 
-  it('macht den fehlenden Abschlusstext sichtbar', () => {
-    // Still eine Luecke zu lassen waere der schlechtere Weg.
-    expect(baueListing({ erkennung: erkennung(), zustand: 'gebraucht' }).beschreibung).toContain(ABSCHLUSSTEXT_FEHLT);
+  it('setzt den Abschlusstext unter die Beschreibung', () => {
+    const b = baueListing({ erkennung: erkennung(), zustand: 'gebraucht' }).beschreibung;
+    expect(b).toContain(ABSCHLUSSTEXT_FEST);
+  });
+
+  it('passt den Abschlusstext an den Artikel an', () => {
+    const b = baueListing({
+      erkennung: erkennung({ artikelTyp: 'Schneidemaschine' }),
+      zustand: 'gebraucht',
+    }).beschreibung;
+    expect(b).toContain(
+      'Weitere Schneidemaschinen in anderen Gr\u00f6\u00dfen \u2013 neu und gebraucht \u2013 finden Sie in unserem Shop! ' +
+        'Internationale Versandkosten auf Anfrage!',
+    );
+  });
+
+  it('uebernimmt einen vorgegebenen Sortimentsverweis', () => {
+    const b = baueListing({
+      erkennung: erkennung(),
+      zustand: 'gebraucht',
+      sortimentsverweis: 'Weitere Akkuschrauber in anderen Spannungen',
+    }).beschreibung;
+    expect(b).toContain(
+      'Weitere Akkuschrauber in anderen Spannungen \u2013 neu und gebraucht \u2013 finden Sie in unserem Shop!',
+    );
+  });
+
+  it('setzt keine Anfuehrungszeichen um den Verweis', () => {
+    // Die Anfuehrungszeichen der Vorlage markieren den variablen Teil,
+    // sie gehoeren nicht in den Text.
+    const b = baueListing({
+      erkennung: erkennung({ artikelTyp: 'Schneidemaschine' }),
+      zustand: 'gebraucht',
+    }).beschreibung;
+    expect(b).not.toMatch(/["\u201e\u201c]Weitere/);
   });
 });
 
@@ -175,5 +216,62 @@ describe('baueProduktkarte', () => {
       generisch: false,
     });
     expect(html).not.toMatch(/<script>/);
+  });
+});
+
+describe('plural', () => {
+  it('bildet sichere Plurale', () => {
+    expect(plural('Schneidemaschine')).toBe('Schneidemaschinen');
+    expect(plural('Schraube')).toBe('Schrauben');
+    expect(plural('Motor')).toBe('Motoren');
+    expect(plural('Dichtung')).toBe('Dichtungen');
+  });
+
+  it('laesst gleichlautende Plurale stehen', () => {
+    expect(plural('Akkuschrauber')).toBe('Akkuschrauber');
+    expect(plural('Hebel')).toBe('Hebel');
+  });
+
+  it('raet nicht, wenn die Endung nicht eindeutig ist', () => {
+    // Lieber ein blasserer Satz als „Weitere Schranks".
+    expect(plural('Schrank')).toBeNull();
+    expect(plural('Ventil')).toBeNull();
+    expect(plural('')).toBeNull();
+    expect(plural(null)).toBeNull();
+  });
+
+  it('raet bei mehrteiligen Bezeichnungen gar nicht', () => {
+    expect(plural('hydraulische Presse')).toBeNull();
+  });
+});
+
+describe('baueSortimentsverweis', () => {
+  it('nennt die Warengruppe im Plural', () => {
+    expect(baueSortimentsverweis('Schneidemaschine')).toBe('Weitere Schneidemaschinen in anderen Gr\u00f6\u00dfen');
+  });
+
+  it('nimmt die uebergebene Dimension', () => {
+    expect(baueSortimentsverweis('Schraube', 'L\u00e4ngen')).toBe('Weitere Schrauben in anderen L\u00e4ngen');
+  });
+
+  it('weicht aus, wenn der Plural unsicher ist', () => {
+    expect(baueSortimentsverweis('Schrank')).toBe('Weitere Artikel dieser Art in anderen Gr\u00f6\u00dfen');
+  });
+});
+
+describe('abschlusstext', () => {
+  it('haengt den festen Teil an den Verweis', () => {
+    expect(abschlusstext('Weitere Pumpen in anderen Gr\u00f6\u00dfen')).toBe(
+      'Weitere Pumpen in anderen Gr\u00f6\u00dfen \u2013 ' + ABSCHLUSSTEXT_FEST,
+    );
+  });
+
+  it('bleibt ohne Verweis ein ganzer Satz', () => {
+    expect(abschlusstext(null)).toBe('Weitere Artikel \u2013 ' + ABSCHLUSSTEXT_FEST);
+    expect(abschlusstext('   ')).toBe('Weitere Artikel \u2013 ' + ABSCHLUSSTEXT_FEST);
+  });
+
+  it('haengt keinen zweiten Gedankenstrich an', () => {
+    expect(abschlusstext('Weitere Pumpen \u2013')).toBe('Weitere Pumpen \u2013 ' + ABSCHLUSSTEXT_FEST);
   });
 });

@@ -43,12 +43,63 @@ export function sortimentsHinweis(stichwort: string): string {
 }
 
 /**
- * OFFEN: Der Standard-Abschlusstext steht im SOP nur als Verweis („make sure
- * this text always appears at the bottom"), nicht im Wortlaut. Solange er
- * fehlt, wird diese Marke gesetzt — sichtbar, damit es niemandem entgeht,
- * statt still eine leere Stelle zu lassen.
+ * Der feste Teil des Abschlusstextes, der unter jedem Listing steht.
  */
-export const ABSCHLUSSTEXT_FEHLT = '<!-- ABSCHLUSSTEXT FEHLT — bitte im Regelwerk hinterlegen -->';
+export const ABSCHLUSSTEXT_FEST =
+  'neu und gebraucht – finden Sie in unserem Shop! Internationale Versandkosten auf Anfrage!';
+
+/**
+ * Plural einer Warenbezeichnung — für den Sortimentsverweis („Weitere
+ * Schneidemaschinen …").
+ *
+ * Deutsche Pluralbildung ist nicht durchgängig regelhaft. Gebildet wird
+ * deshalb nur dort, wo die Endung eindeutig ist; in allen anderen Fällen
+ * liefert die Funktion null, und der Verweis weicht auf eine Formulierung
+ * aus, die ohne Plural auskommt. „Weitere Motors in anderen Größen" wäre
+ * schlimmer als ein etwas blasserer Satz.
+ */
+export function plural(bezeichnung: string | null | undefined): string | null {
+  const wort = (bezeichnung ?? '').trim();
+  if (!wort || /\s/.test(wort)) return null; // mehrteilige Bezeichnungen nicht raten
+  const klein = wort.toLowerCase();
+
+  // Endungen, bei denen der Plural gleich lautet.
+  if (/(er|el|en|chen|lein)$/.test(klein)) return wort;
+  // -ung, -heit, -keit, -schaft, -ion → +en
+  if (/(ung|heit|keit|schaft|ion|ur|ik)$/.test(klein)) return `${wort}en`;
+  // -or → -oren (Motor, Kompressor, Transformator)
+  if (/or$/.test(klein)) return `${wort}en`;
+  // -e → -n (Maschine, Schraube, Lampe, Pumpe)
+  if (/e$/.test(klein)) return `${wort}n`;
+  // Alles andere ist zu unsicher.
+  return null;
+}
+
+/**
+ * Der individuelle Teil des Abschlusstextes.
+ *
+ * Aus „Schneidemaschine" wird „Weitere Schneidemaschinen in anderen Größen".
+ * Lässt sich der Plural nicht sicher bilden, wird ausgewichen statt geraten.
+ */
+export function baueSortimentsverweis(artikelTyp: string, dimension = 'Größen'): string {
+  const mehrzahl = plural(artikelTyp);
+  const was = mehrzahl ? mehrzahl : 'Artikel dieser Art';
+  return `Weitere ${was} in anderen ${dimension}`;
+}
+
+/**
+ * Der vollständige Abschlusstext, der unter jedem Listing steht.
+ *
+ * Der erste Teil wird je Artikel angepasst, der Rest ist fest. Ohne
+ * brauchbaren Verweis bleibt nur der feste Teil — ein halber Satz wäre
+ * schlechter als ein kürzerer.
+ */
+export function abschlusstext(verweis?: string | null): string {
+  const individuell = (verweis ?? '').trim().replace(/[–\-\s]+$/, '');
+  return individuell
+    ? `${individuell} – ${ABSCHLUSSTEXT_FEST}`
+    : `Weitere Artikel – ${ABSCHLUSSTEXT_FEST}`;
+}
 
 const ZUSTANDSSATZ: Record<Zustand, string> = {
   neu_versiegelt: 'Neuware, originalverpackt und ungeöffnet.',
@@ -169,8 +220,13 @@ export interface BeschreibungEingabe {
   bearbeiter?: string | null;
   /** Das Titelbild stammt vom Hersteller, nicht von uns. */
   herstellerbild?: boolean;
-  /** Warengruppe für den Sortiments-Querverweis, z. B. „Rosetten". Leer = kein Verweis. */
+  /** Warengruppe für den Türbeschlag-Querverweis aus dem SOP, z. B. „Rosetten". Leer = kein Verweis. */
   sortimentStichwort?: string | null;
+  /**
+   * Der individuelle Teil des Abschlusstextes, z. B. „Weitere Schneidemaschinen
+   * in anderen Größen". Fehlt er, wird er aus dem Artikeltyp gebildet.
+   */
+  sortimentsverweis?: string | null;
   generisch: boolean;
 }
 
@@ -241,7 +297,7 @@ export function baueBeschreibung(e: BeschreibungEingabe): string {
   if (e.sortimentStichwort) teile.push(`<p>${entkomme(sortimentsHinweis(e.sortimentStichwort))}</p>`);
   if (e.herstellerbild) teile.push(`<p>${entkomme(HINWEIS_HERSTELLERBILD)}</p>`);
 
-  teile.push(ABSCHLUSSTEXT_FEHLT);
+  teile.push(`<p>${entkomme(abschlusstext(e.sortimentsverweis ?? baueSortimentsverweis(erkennung.artikelTyp)))}</p>`);
 
   if (e.bearbeiter) teile.push(`<p>Erstellt von: ${entkomme(e.bearbeiter)}</p>`);
 
@@ -445,7 +501,7 @@ export function baueProduktkarte(e: ProduktkarteEingabe): string {
   if (e.sortimentStichwort) teile.push(`<p>${entkomme(sortimentsHinweis(e.sortimentStichwort))}</p>`);
   if (e.herstellerbild) teile.push(`<p>${entkomme(HINWEIS_HERSTELLERBILD)}</p>`);
 
-  teile.push(ABSCHLUSSTEXT_FEHLT);
+  teile.push(`<p>${entkomme(abschlusstext(e.sortimentsverweis ?? baueSortimentsverweis(erkennung.artikelTyp)))}</p>`);
   if (e.bearbeiter) teile.push(`<p>Erstellt von: ${entkomme(e.bearbeiter)}</p>`);
 
   return teile.join('\n');
