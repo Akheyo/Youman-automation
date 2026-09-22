@@ -294,12 +294,44 @@ describe('scanneLagerplaetze — gesamter Artikelstamm (quelle: alle)', () => {
       if (url.includes('/rest/login')) return ANTWORT({ access_token: 't', expires_in: 3600, user_id: 1 });
       if (url.includes('variationDescription')) return ANTWORT({ error: 'unknown relation' }, 400);
       const nr = Number(new URL(url).searchParams.get('page'));
-      return ANTWORT(seite(nr, 1, [{ id: 1, itemId: 1, number: 'H1R1A1' }], 1));
+      // Wird `item` angefordert, liefert diese Plenty-Ausbaustufe die Texte auch mit.
+      const variante = url.includes('with=item')
+        ? { id: 1, itemId: 1, number: 'H1R1A1', item: { texts: [{ lang: 'de', name1: 'Ein Artikel' }] } }
+        : { id: 1, itemId: 1, number: 'H1R1A1' };
+      return ANTWORT(seite(nr, 1, [variante], 1));
     });
 
     const { scanneLagerplaetze } = await import('./lagerplatz-scan');
     const res = await scanneLagerplaetze({ quelle: 'alle', proSeite: 1 });
     expect(res.ok).toBe(true);
-    expect(res.diagnose.some((d) => d.includes('with=item"'))).toBe(true);
+    expect(res.diagnose.some((d) => d.includes('with=item" gelesen'))).toBe(true);
+  });
+
+  it('merkt sich keinen with-Parameter, den Plenty stillschweigend verwirft', async () => {
+    // Der Fall, der jahrelang unbemerkt blieb: Plenty prüft `with` nicht. Ein
+    // unbekannter Wert liefert HTTP 200 und eine Antwort OHNE das Zusatzfeld.
+    // Wer nur den Status prüft, merkt sich den ersten Kandidaten und meldet
+    // stolz, er lese damit — angekommen ist nie etwas.
+    const angefragt: string[] = [];
+    vi.stubGlobal('fetch', async (url: string) => {
+      if (url.includes('/rest/login')) return ANTWORT({ access_token: 't', expires_in: 3600, user_id: 1 });
+      if (url.includes('with=')) angefragt.push(new URL(url).searchParams.get('with') ?? '');
+      const nr = Number(new URL(url).searchParams.get('page'));
+      // Immer 200, nie ein Zusatzfeld — egal was angefordert wurde.
+      return ANTWORT(seite(nr, 1, [{ id: 1, itemId: 1, number: 'H1R1A1' }], 1));
+    });
+
+    const { scanneLagerplaetze } = await import('./lagerplatz-scan');
+    const res = await scanneLagerplaetze({ quelle: 'alle', proSeite: 1 });
+
+    expect(res.ok).toBe(true);
+    // Alle drei Kandidaten wurden probiert, keiner wurde übernommen.
+    expect(angefragt).toContain('item,variationDescription');
+    expect(angefragt).toContain('variationDescription');
+    expect(angefragt).toContain('item');
+    expect(res.diagnose.some((d) => d.includes('kommt nicht an'))).toBe(true);
+    expect(res.diagnose.some((d) => d.includes('ohne „with" gelesen'))).toBe(true);
+    // Und vor allem: keine Meldung, es werde mit einem Parameter gelesen.
+    expect(res.diagnose.some((d) => /with=.+" gelesen/.test(d))).toBe(false);
   });
 });

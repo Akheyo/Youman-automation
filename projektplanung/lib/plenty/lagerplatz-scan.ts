@@ -142,13 +142,49 @@ function variantenPfad(seite: number, proSeite: number, withParam: string): stri
   return mitWith(`/rest/items/variations?itemsPerPage=${proSeite}&page=${seite}`, withParam);
 }
 
+/**
+ * Ist angekommen, was der Kandidat angefordert hat?
+ *
+ * Der Grund für diese Prüfung: PlentyONE **validiert `with` nicht**. Ein
+ * unbekannter Wert liefert dasselbe wie ein bekannter — HTTP 200 und eine
+ * Antwort ohne das Zusatzfeld. Wer nur auf den Status schaut, nimmt deshalb
+ * immer den ersten Kandidaten und merkt sich einen Parameter, der nichts
+ * bewirkt. Genau so stand es hier: Die Diagnose meldete
+ * „with=item,variationDescription", angekommen ist nie etwas.
+ *
+ * Geprüft wird auf die Felder, um derentwillen der Parameter überhaupt gesetzt
+ * wird — die Texte. `with=item` liefert in der Praxis den Artikel OHNE `texts`;
+ * das ist für den Scan wertlos und gilt hier deshalb als nicht angekommen.
+ */
+function withAngekommen(kandidat: string, v: PlentyVariante | undefined): boolean {
+  if (!kandidat) return true; // „ohne with" fordert nichts an
+  if (!v) return false;
+  return kandidat.split(',').every((teil) => {
+    const feld = teil.trim();
+    if (feld === 'item') return Array.isArray(v.item?.texts);
+    if (feld === 'variationDescription') return Array.isArray(v.variationDescription);
+    return true;
+  });
+}
+
 async function handleWithAus(diagnose: string[]): Promise<string> {
   if (gemerktesWith !== null) return gemerktesWith;
   for (const kandidat of WITH_KANDIDATEN) {
     try {
-      await plentyGet<PlentyListe<PlentyVariante>>(variantenPfad(1, 1, kandidat));
+      const res = await plentyGet<PlentyListe<PlentyVariante>>(variantenPfad(1, 1, kandidat));
+      const probe = res?.entries?.[0];
+      if (!kandidat) break; // Der leere Kandidat ist der Schlussstein, siehe unten.
+      if (!probe) {
+        diagnose.push('Der Probeabruf lieferte keine Variante — „with" ist nicht prüfbar, es wird ohne gelesen.');
+        break;
+      }
+      if (!withAngekommen(kandidat, probe)) {
+        // Kein Fehler, nur wirkungslos: Plenty verwirft den Wert stillschweigend.
+        diagnose.push(`„with=${kandidat}" kommt nicht an (HTTP 200, Feld fehlt) – nächste Variante wird probiert.`);
+        continue;
+      }
       gemerktesWith = kandidat;
-      diagnose.push(kandidat ? `Varianten werden mit „with=${kandidat}" gelesen.` : 'Varianten werden ohne „with" gelesen.');
+      diagnose.push(`Varianten werden mit „with=${kandidat}" gelesen — die Felder kommen an.`);
       return kandidat;
     } catch (err) {
       const msg = (err as Error).message;
@@ -159,6 +195,9 @@ async function handleWithAus(diagnose: string[]): Promise<string> {
     }
   }
   gemerktesWith = '';
+  // Die Meldung sagt jetzt, was das für den Lauf bedeutet, statt nur einen
+  // Parameter zu nennen: Ohne Texte aus der Liste bleibt nur der Einzelabruf.
+  diagnose.push('Varianten werden ohne „with" gelesen — Texte kommen nur über den Einzelabruf /descriptions.');
   return '';
 }
 

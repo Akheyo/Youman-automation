@@ -29,6 +29,10 @@ function attrappe(
     ohneListenfilter?: boolean;
     /** Der gesuchte Artikel hat ausnahmsweise keine Artikel-ID. */
     ohneArtikelId?: boolean;
+    /** Bewegungen nennen den Platz als ID statt als Namen (andere Ausbaustufe). */
+    bewegungenMitId?: boolean;
+    /** `itemName` findet nichts, nur `/rest/items?name=` (voller Name). */
+    nurArtikelname?: boolean;
   } = {},
 ) {
   // Artikel-ID → Varianten-ID. Zwei getrennte Nummernkreise, genau wie in
@@ -84,25 +88,37 @@ function attrappe(
     }
 
     if (url.includes('/stock/movements')) {
+      // Nur der lagerbezogene Pfad existiert; die globale Schreibweise nicht.
+      // Genau so antwortet der Mandant (am Live-System geprüft).
+      if (url.includes('/rest/stockmanagement/stock/movements')) return ANTWORT({ error: 'not found' }, 404);
       if (!opts.bewegungen) return ANTWORT({ error: 'nicht verfügbar' }, 404);
       const p = new URL(url).searchParams;
+      // WICHTIG: Die Bewegungsliste nennt den Platz als NAMEN, nicht als ID —
+      // anders als jede andere Bestandsantwort. Diese Attrappe bildete früher
+      // `storageLocationId` ab; dadurch waren die Tests grün, während die
+      // Auswertung am echten System jede Bewegung verwarf.
+      const ort = (id: number, name: string) =>
+        opts.bewegungenMitId ? { storageLocationId: id } : { storageLocationName: name };
       // Abfrage zum Artikel selbst: seine Vergangenheit (lag mal auf 200).
       if (p.get('variationId') === '5000') {
         return ANTWORT({
-          entries: [{ variationId: 5000, storageLocationId: 200, createdAt: '2026-03-02T09:00:00+01:00' }],
+          entries: [
+            { variationId: 5000, ...ort(200, 'H2/R3/EA F01-P16'), createdAt: '2026-03-02T09:00:00+01:00' },
+          ],
         });
       }
       // Abfrage übers Zeitfenster: was gleichzeitig gebucht wurde.
       return ANTWORT({
         entries: [
-          { variationId: 5000, storageLocationId: 200, createdAt: '2026-03-02T09:00:00+01:00' },
-          { variationId: 7777, storageLocationId: 300, createdAt: '2026-03-02T09:05:00+01:00' },
+          { variationId: 5000, ...ort(200, 'H2/R3/EA F01-P16'), createdAt: '2026-03-02T09:00:00+01:00' },
+          { variationId: 7777, ...ort(300, 'H3/R1/EB F09-0'), createdAt: '2026-03-02T09:05:00+01:00' },
         ],
       });
     }
     if (url.includes('/rest/warehouses/locations/stock/')) {
       if (!opts.fremdAufPlatz) return ANTWORT({ entries: [] });
-      return ANTWORT({ entries: [{ variationId: 5000 }, { variationId: 5003 }] });
+      // Dieser eine Endpunkt antwortet in snake_case — ebenfalls geprüft.
+      return ANTWORT({ entries: [{ variation_id: 5000 }, { variation_id: 5003 }] });
     }
     if (url.includes('/stock/storageLocations')) {
       const id = Number(new URL(url).searchParams.get('variationId'));
@@ -134,9 +150,21 @@ function attrappe(
       } else if (p.get('numberExact') === 'ART-5000') {
         gefragt = [5000];
       } else if (p.has('name')) {
-        gefragt = opts.dublette ? [6000] : [];
+        // Den Filter `name` gibt es an diesem Endpunkt nicht — Plenty antwortet
+        // mit 422 und nennt die gültigen Filter. Früher tat die Attrappe so,
+        // als gäbe es ihn.
+        return ANTWORT({ error: 'The following filter do not exist: name' }, 422);
+      } else if (p.has('itemName')) {
+        gefragt = opts.dublette && !opts.nurArtikelname ? [6000] : [];
       }
       return ANTWORT({ entries: gefragt.map(bauVariante) });
+    }
+    // /rest/items?name= liefert ARTIKEL, deren `id` eine itemId ist — und nur
+    // beim vollständigen Namen. Wer sie als Varianten-ID weiterreicht, zeigt
+    // auf einen fremden Artikel.
+    if (url.includes('/rest/items?') && new URL(url).searchParams.has('name')) {
+      if (!opts.dublette) return ANTWORT({ entries: [] });
+      return ANTWORT({ entries: [{ id: 66000 }] });
     }
     return ANTWORT({ entries: [] });
   };
@@ -365,6 +393,54 @@ describe('sucheAlternativePlaetze', () => {
     expect(res.dubletten.map((d) => d.variationId)).toContain(6000);
     const platz = res.kandidaten.find((k) => k.code === 'H3/R1/EB F09-0');
     expect(platz?.belege.some((b) => b.signal === 'namensdublette')).toBe(true);
+  });
+
+  it('löst den Lagerort einer Bewegung über den Namen auf', async () => {
+    // Die Bewegungsliste nennt den Platz nur als vollen Namen. Wer hier eine
+    // `storageLocationId` erwartet, verwirft jede Bewegung — und das Signal
+    // sieht aus wie „nichts gefunden", obwohl Zehntausende Buchungen
+    // bereitstehen.
+    const res = await suche(attrappe({ bewegungen: true, bestand: { 5000: null } }));
+    const frueher = res.kandidaten.find((k) => k.code === 'H2/R3/EA F01-P16');
+    expect(frueher?.belege.some((b) => b.signal === 'historie')).toBe(true);
+    expect(res.diagnose.join(' ')).toMatch(/einem bekannten Lagerort zugeordnet/);
+  });
+
+  it('löst den Lagerort einer Bewegung auch über die ID auf', async () => {
+    // Die andere Ausbaustufe: liefert sie doch eine ID, muss der Weg weiter gehen.
+    const res = await suche(attrappe({ bewegungen: true, bewegungenMitId: true, bestand: { 5000: null } }));
+    const frueher = res.kandidaten.find((k) => k.code === 'H2/R3/EA F01-P16');
+    expect(frueher?.belege.some((b) => b.signal === 'historie')).toBe(true);
+  });
+
+  it('meldet, wenn Bewegungen gelesen, aber keinem Lagerort zuzuordnen sind', async () => {
+    const mock = attrappe({ bewegungen: true, bestand: { 5000: null } });
+    const echt = mock.fetchMock;
+    // Bewegungen mit einem Platznamen, den es im Lager nicht gibt.
+    mock.fetchMock = (async (url: string, init?: RequestInit) => {
+      if (url.includes('/stock/movements') && !url.includes('/rest/stockmanagement/stock/movements')) {
+        return new Response(
+          JSON.stringify({
+            entries: [{ variationId: 5000, storageLocationName: 'XX/GIBTS/NICHT', createdAt: '2026-03-02T09:00:00+01:00' }],
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      return echt(url, init);
+    }) as typeof echt;
+
+    const res = await suche(mock);
+    expect(res.diagnose.join(' ')).toMatch(/keine der bewegungen ließ sich/i);
+  });
+
+  it('reicht Artikel-IDs aus der Namenssuche nicht als Varianten-IDs weiter', async () => {
+    // /rest/items?name= liefert ARTIKEL. Deren id (66000) ist eine itemId; die
+    // gesuchte Variante ist 6000. Früher wurde 66000 als Varianten-ID
+    // weitergereicht — eine Zahl aus der falschen Nummernreihe.
+    const res = await suche(attrappe({ dublette: true, nurArtikelname: true, bestand: { 5000: null, 6000: 300 } }));
+    const ids = res.dubletten.map((d) => d.variationId);
+    expect(ids).toContain(6000);
+    expect(ids).not.toContain(66000);
   });
 
   it('sucht nicht nach zu unspezifischen Namen', async () => {

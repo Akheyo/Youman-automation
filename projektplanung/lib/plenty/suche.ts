@@ -196,17 +196,66 @@ interface PlentyBestandsort {
   variationId?: number;
   storageLocationId?: number;
   quantity?: number;
+  // Dieselbe Antwort, andere Schreibweise: /rest/warehouses/locations/stock/{id}
+  // liefert snake_case, während jeder andere Bestandsendpunkt camelCase liefert.
+  // Wer nur `variationId` liest, bekommt hier bei JEDER Zeile `undefined` und
+  // verwirft sie — das Signal sieht dann aus wie „nichts gefunden".
+  variation_id?: number;
+  item_id?: number;
+  storage_location?: number;
 }
 
 interface PlentyBewegung {
   variationId?: number;
+  /**
+   * Die Bewegungsliste nennt den Platz NICHT als ID, sondern als vollen Namen
+   * („H5/R10/EC F19-0") — anders als jede andere Bestandsantwort. Das Feld
+   * `storageLocationId` gibt es dort gar nicht.
+   */
+  storageLocationName?: string | null;
   storageLocationId?: number;
   warehouseId?: number;
+  warehouseName?: string | null;
   quantity?: number;
+  /** Heißt in der Bewegungsliste `reason` (Zahl) plus `reasonString`. */
+  reason?: number;
+  reasonString?: string | null;
   reasonId?: number;
   createdAt?: string | null;
   bookingTime?: string | null;
   userId?: number | null;
+}
+
+/** Ein Lagerort, so wie ihn die Suche für die Auflösung braucht. */
+interface Ortseintrag {
+  name: string;
+  code: string | null;
+}
+
+/** Bringt einen Lagerortnamen auf eine vergleichbare Form. */
+function ortsschluessel(name: string): string {
+  return (name ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+/**
+ * Der Lagerort einer Bewegung.
+ *
+ * Erst über die ID, falls eine da ist — und sonst über den Namen, denn genau
+ * den liefert `/rest/stockmanagement/warehouses/{id}/stock/movements`. Ohne
+ * diesen zweiten Weg liefert das Signal „wo lag er früher" zuverlässig null
+ * Treffer, obwohl der Abruf einwandfrei funktioniert und Zehntausende
+ * Bewegungen bereitstehen. Kein Fehler, keine Diagnosemeldung — nur nie ein
+ * Ergebnis.
+ */
+function ortDerBewegung(
+  b: PlentyBewegung,
+  nachId: Map<number, Ortseintrag>,
+  nachName: Map<string, Ortseintrag>,
+): Ortseintrag | undefined {
+  const id = zahl(b.storageLocationId);
+  if (id) return nachId.get(id);
+  const schluessel = ortsschluessel(b.storageLocationName ?? '');
+  return schluessel ? nachName.get(schluessel) : undefined;
 }
 
 interface PlentyBild {
@@ -566,22 +615,43 @@ async function findeGleichnamige(
     return [];
   }
   const q = encodeURIComponent(sauber);
-  const pfade = [
-    `/rest/items/variations?name=${q}&itemsPerPage=20`,
-    `/rest/items/variations?itemName=${q}&itemsPerPage=20`,
-    `/rest/items?name=${q}&itemsPerPage=20`,
-  ];
-  for (const pfad of pfade) {
-    try {
-      const res = await plentyGet<PlentyListe<PlentyVariante>>(pfad);
-      const ids = (res?.entries ?? [])
+
+  // 1) `itemName` ist der Filter, den /rest/items/variations wirklich kennt —
+  //    und er sucht auch Teilwörter. Ein `name=` gibt es dort NICHT: der Aufruf
+  //    quittiert ihn mit HTTP 422 samt Liste der gültigen Filter. Er stand hier
+  //    jahrelang als erster Versuch und hat bei jeder Suche einen Fehlschlag
+  //    erzeugt, bevor der zweite Pfad griff.
+  try {
+    const res = await plentyGet<PlentyListe<PlentyVariante>>(
+      `/rest/items/variations?itemName=${q}&itemsPerPage=20`,
+    );
+    const ids = (res?.entries ?? [])
+      .map((v) => zahl(v?.id))
+      .filter((id): id is number => !!id && id !== eigeneId);
+    // Ein Filter, der alles zurückgibt, hat nicht gefiltert — dann lieber nichts.
+    if (ids.length && ids.length < 20) return ids;
+  } catch {
+    // Nächster Weg.
+  }
+
+  // 2) /rest/items?name= verlangt den VOLLSTÄNDIGEN Namen und liefert ARTIKEL.
+  //    Deren `id` ist eine itemId. Sie wurde hier als Varianten-ID
+  //    weitergereicht — Zahlen aus der falschen Nummernreihe, die auf fremde
+  //    Artikel zeigen. Also erst in Varianten auflösen.
+  try {
+    const res = await plentyGet<PlentyListe<{ id?: number }>>(`/rest/items?name=${q}&itemsPerPage=20`);
+    const itemIds = (res?.entries ?? []).map((i) => zahl(i?.id)).filter((id): id is number => !!id);
+    if (itemIds.length && itemIds.length < 20) {
+      const varianten = await plentyGet<PlentyListe<PlentyVariante>>(
+        `/rest/items/variations?itemId=${itemIds.join(',')}&itemsPerPage=${itemIds.length * 5}`,
+      );
+      const ids = (varianten?.entries ?? [])
         .map((v) => zahl(v?.id))
         .filter((id): id is number => !!id && id !== eigeneId);
-      // Ein Filter, der alles zurückgibt, hat nicht gefiltert — dann lieber nichts.
-      if (ids.length && ids.length < 20) return ids;
-    } catch {
-      // Nächsten Pfad probieren.
+      if (ids.length) return ids;
     }
+  } catch {
+    // Fällt unten durch.
   }
   diagnose.push('Namenssuche über die API nicht möglich — dieses Signal entfällt.');
   return [];
@@ -600,7 +670,10 @@ async function ladePlatzbelegung(lagerortId: number): Promise<number[]> {
       `/rest/warehouses/locations/stock/${lagerortId}`,
     );
     const eintraege = Array.isArray(res) ? res : (res?.entries ?? []);
-    return eintraege.map((z) => zahl(z?.variationId)).filter((id): id is number => !!id);
+    // Beide Schreibweisen lesen: dieser eine Endpunkt antwortet in snake_case.
+    return eintraege
+      .map((z) => zahl(z?.variationId) ?? zahl(z?.variation_id))
+      .filter((id): id is number => !!id);
   } catch {
     return [];
   }
@@ -725,12 +798,17 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
 
   // 3) Lagerorte lesen — sie liefern die Namen zu den IDs und sagen, welche
   //    vorgeschlagenen Plätze es überhaupt gibt.
-  const nachId = new Map<number, { name: string; code: string | null }>();
+  const nachId = new Map<number, Ortseintrag>();
+  // Zweiter Zugang über den Namen — die Bewegungsliste kennt nur den.
+  const nachName = new Map<string, Ortseintrag>();
   const bekannteOrte = new Map<string, number>();
   try {
     const { orte, ohneCode, ausCache } = await ladeLagerorteGepuffert(warehouseId);
     for (const o of orte) {
-      nachId.set(o.id, { name: o.name, code: o.code });
+      const eintrag: Ortseintrag = { name: o.name, code: o.code };
+      nachId.set(o.id, eintrag);
+      const schluessel = ortsschluessel(o.name);
+      if (schluessel && !nachName.has(schluessel)) nachName.set(schluessel, eintrag);
       if (o.code && !bekannteOrte.has(o.code)) bekannteOrte.set(o.code, o.id);
     }
     diagnose.push(
@@ -825,9 +903,7 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
     const gefunden: Hinweis[] = [];
     const gesehen = new Set(echteBelegungen.map((b) => b.code));
     for (const b of bewegungen ?? []) {
-      const ortId = zahl(b.storageLocationId) ?? 0;
-      if (!ortId) continue;
-      const ort = nachId.get(ortId);
+      const ort = ortDerBewegung(b, nachId, nachName);
       if (!ort?.code || gesehen.has(ort.code)) continue;
       gesehen.add(ort.code);
       const wann = b.bookingTime || b.createdAt;
@@ -841,7 +917,18 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
         zeit: wann ?? null,
       });
     }
-    if (bewegungen?.length) diagnose.push(`${bewegungen.length} Warenbewegungen zum Artikel gelesen.`);
+    if (bewegungen?.length) {
+      diagnose.push(
+        `${bewegungen.length} Warenbewegungen zum Artikel gelesen, ${gefunden.length} davon einem bekannten Lagerort zugeordnet.`,
+      );
+      // Gelesen, aber keine einzige zuzuordnen: das ist der Zustand, der jahrelang
+      // wie „keine Treffer" aussah. Er gehört benannt, nicht verschwiegen.
+      if (!gefunden.length) {
+        diagnose.push(
+          'Keine der Bewegungen ließ sich einem Lagerort zuordnen — Feldnamen der API prüfen (storageLocationName).',
+        );
+      }
+    }
     return { hinweise: gefunden, bewegungen };
   };
 
@@ -974,11 +1061,14 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
         diagnose,
       );
       const fremde = (fenster ?? []).filter(
-        (b) => zahl(b.variationId) && zahl(b.variationId) !== variationId && (zahl(b.storageLocationId) ?? 0) !== 0,
+        (b) =>
+          zahl(b.variationId) &&
+          zahl(b.variationId) !== variationId &&
+          ortDerBewegung(b, nachId, nachName) !== undefined,
       );
 
       for (const b of fremde) {
-        const ort = nachId.get(zahl(b.storageLocationId)!);
+        const ort = ortDerBewegung(b, nachId, nachName);
         if (!ort?.code) continue;
         const minuten = b.createdAt
           ? Math.round(Math.abs(new Date(b.createdAt).getTime() - anker) / 60_000)
@@ -1013,7 +1103,7 @@ export async function sucheAlternativePlaetze(opts: SucheOptionen): Promise<Such
         if (!wann) continue;
         const vid = zahl(b.variationId);
         const karte = istGesucht ? gesucht : vid !== null ? kartenNachId.get(vid) : undefined;
-        const ort = nachId.get(zahl(b.storageLocationId) ?? 0);
+        const ort = ortDerBewegung(b, nachId, nachName);
         zeitleiste.push({
           zeit: wann,
           itemId: karte?.itemId ?? null,

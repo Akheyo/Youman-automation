@@ -213,8 +213,19 @@ async function findChildCategory(
   // direkte Kinder des Elternknotens (parentCategoryId), damit garantiert keine
   // zweite Unterkategorie gleichen Namens angelegt wird. Der parentCategoryId-
   // Guard greift auch, falls der Query-Filter serverseitig ignoriert würde.
+  //
+  // Er greift nicht nur „falls" — er greift immer: Der Filter WIRD serverseitig
+  // ignoriert, jeder Wert liefert alle Kategorien (am Live-Mandanten geprüft,
+  // auch mit parentCategoryId=999999). Diese Schleife blättert also jedes Mal
+  // den gesamten Baum durch. Bei 1.242 Kategorien sind das 25 Seiten.
+  //
+  // Daran hängt eine Falle mit Verfallsdatum: Reicht die Seitengrenze nicht mehr
+  // aus, findet die Suche eine vorhandene Kategorie nicht — und der Aufrufer
+  // legt sie ein zweites Mal an. Deshalb wird hier abgebrochen statt „nicht
+  // gefunden" zurückgegeben: Ein Abbruch ist sichtbar, eine Dublette nicht.
   let page = 1;
   const perPage = 50;
+  const maxSeiten = 400; // 20.000 Kategorien
   for (;;) {
     const res = await api<{ entries?: PlentyCategory[]; isLastPage?: boolean }>(
       cfg,
@@ -227,7 +238,13 @@ async function findChildCategory(
       const match = (cat.details ?? []).some((d) => (d.name ?? '').trim().toLowerCase() === wanted);
       if (match) return cat.id;
     }
-    if (!entries.length || res?.isLastPage || page > 40) break;
+    if (!entries.length || res?.isLastPage) break;
+    if (page >= maxSeiten) {
+      throw new Error(
+        `Kategoriesuche nach „${name}" abgebrochen: mehr als ${maxSeiten * perPage} Kategorien durchsucht, ` +
+          'ohne das Ende zu erreichen. Es wird nichts angelegt, um keine Dublette zu erzeugen.',
+      );
+    }
     page += 1;
   }
   return null;
