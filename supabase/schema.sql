@@ -251,3 +251,53 @@ alter table public.erfassung_artikel
   -- Schmutz und normale Gebrauchsspuren gehören NICHT hierher.
   add column if not exists gravierende_schaeden boolean not null default false,
   add column if not exists bestand              integer not null default 1;
+
+-- ---------------------------------------------------------------------------
+-- Gewicht und Packklasse: ohne sie kein Versandpreis, ohne Versandpreis kein
+-- Verkaufspreis
+--
+-- eBay sortiert nach Preis PLUS Versand. Unser Versandprofil hängt am Gewicht
+-- (7,90 bis 5 kg / 9,90 bis 10 kg / darüber 14,90–29,90 je nach Sperrigkeit),
+-- und dieser Betrag geht vom Zielpreis ab. Ein geschätztes Gewicht verschiebt
+-- also unmittelbar den Verkaufspreis — deshalb wird es NICHT geschätzt,
+-- sondern am Regal eingegeben, wo eine Waage steht.
+--
+-- Bleibt es leer, wird der Artikel trotzdem angelegt; das Versandprofil steht
+-- dann als offener Punkt am Artikel.
+-- ---------------------------------------------------------------------------
+alter table public.erfassung_artikel
+  add column if not exists gewicht_kg  numeric(8,3),
+  -- 'normal' | 'sperrig' | 'schwierig' — zählt erst über 10 kg.
+  add column if not exists packklasse  text default 'normal';
+
+-- ---------------------------------------------------------------------------
+-- Der Durchlauf: Preis → Listing → Plenty
+--
+-- Jeder Schritt bekommt sein eigenes Ergebnisfeld und seinen eigenen
+-- Zeitstempel. Das ist kein Ordnungssinn: Die Schritte laufen einzeln, weil
+-- jeder für sich an die 60-Sekunden-Grenze der Serverless-Funktionen stößt.
+-- Steht das Zwischenergebnis in der Datenbank, kann der nächste Aufruf dort
+-- weitermachen, statt alles noch einmal zu bezahlen.
+--
+-- "fehler" je Schritt statt eines gemeinsamen Feldes, damit ein
+-- fehlgeschlagener Plenty-Aufruf nicht die Begründung des Preises überschreibt.
+-- ---------------------------------------------------------------------------
+alter table public.erfassung_artikel
+  -- Vergleichsangebote, gewählte Quellenstufe, Preise, Herleitung (SOP 8).
+  add column if not exists preis           jsonb,
+  add column if not exists preis_am        timestamptz,
+  add column if not exists preis_fehler    text,
+  -- Titel, Beschreibung, Produktkarte, Meta-Angaben, JSON-LD.
+  add column if not exists listing         jsonb,
+  add column if not exists listing_am      timestamptz,
+  add column if not exists listing_fehler  text,
+  -- Was in Plenty entstanden ist, samt Protokoll der einzelnen Schritte.
+  add column if not exists plenty          jsonb,
+  add column if not exists plenty_am       timestamptz,
+  add column if not exists plenty_fehler   text,
+  add column if not exists plenty_variation_id bigint;
+
+-- Der Durchlauf sucht "was ist als Nächstes dran?" — ohne Index wird das mit
+-- jedem erfassten Artikel langsamer.
+create index if not exists erfassung_artikel_durchlauf_idx
+  on public.erfassung_artikel (status, erkannt_am desc nulls last);
