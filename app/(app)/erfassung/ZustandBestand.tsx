@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 import styles from './zustand-bestand.module.css';
 import { MAX_GEWICHT_KG, type Packklasse } from '@/lib/erfassung/logic';
 import type { Zustand } from '@/lib/preis/regelwerk';
@@ -47,6 +49,17 @@ const PACKKLASSEN: Array<{ wert: Packklasse; titel: string; hinweis: string }> =
   { wert: 'schwierig', titel: 'Schwierig', hinweis: 'sperrig und aufwendig zu packen' },
 ];
 
+/** „2,5" und „2.5" sind dasselbe Gewicht — in Deutschland wird mit Komma getippt. */
+export function leseGewicht(text: string): number | null {
+  const zahl = Number(text.replace(',', '.'));
+  if (!Number.isFinite(zahl) || zahl <= 0) return null;
+  return Math.min(Math.round(zahl * 1000) / 1000, MAX_GEWICHT_KG);
+}
+
+function alsText(kg: number | null): string {
+  return kg == null ? '' : String(kg).replace('.', ',');
+}
+
 interface Props {
   zustand: Zustand;
   gravierendeSchaeden: boolean;
@@ -74,6 +87,30 @@ export default function ZustandBestand({
   onGewicht,
   onPackklasse,
 }: Props) {
+  /**
+   * Der getippte Text, getrennt vom Zahlenwert.
+   *
+   * Zwei Gründe, und beide haben wehgetan: Ein `type="number"` verwirft in
+   * deutscher Eingabe das Komma — wer „2,5" tippt, bekommt ein leeres Feld
+   * zurück und merkt es nicht, weil die Ziffern trotzdem dastehen. Und ohne
+   * eigenen Text würde „2," bei jedem Tastendruck weggeräumt, sobald die
+   * Zahl noch unvollständig ist.
+   */
+  const [eingabe, setEingabe] = useState(() => alsText(gewichtKg));
+
+  // Von außen gesetzt — etwa beim Wechsel auf einen neuen Artikel.
+  useEffect(() => {
+    setEingabe((bisher) => (leseGewicht(bisher) === gewichtKg ? bisher : alsText(gewichtKg)));
+  }, [gewichtKg]);
+
+  const tippe = (roh: string) => {
+    // Nur Ziffern und ein Trennzeichen zulassen; alles andere kommt ohnehin
+    // nicht als Gewicht in Frage und erzeugt nur stille Fehleingaben.
+    const sauber = roh.replace(/[^0-9.,]/g, '').slice(0, 8);
+    setEingabe(sauber);
+    onGewicht(leseGewicht(sauber));
+  };
+
   const setzeBestand = (wert: number) => {
     if (!Number.isFinite(wert)) return;
     onBestand(Math.min(Math.max(Math.round(wert), 1), MAX_BESTAND));
@@ -166,18 +203,12 @@ export default function ZustandBestand({
         <h2 className={styles.titel}>Gewicht</h2>
         <div className={styles.gewichtZeile}>
           <input
-            type="number"
+            type="text"
             inputMode="decimal"
-            step="0.1"
-            min={0}
-            max={MAX_GEWICHT_KG}
             className={styles.gewicht}
-            value={gewichtKg ?? ''}
+            value={eingabe}
             placeholder="—"
-            onChange={(e) => {
-              const zahl = Number(e.target.value);
-              onGewicht(e.target.value === '' || !Number.isFinite(zahl) || zahl <= 0 ? null : zahl);
-            }}
+            onChange={(e) => tippe(e.target.value)}
             disabled={gesperrt}
             aria-label="Gewicht in Kilogramm"
           />

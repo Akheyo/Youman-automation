@@ -61,6 +61,9 @@
 .leisteOk { background: var(--green-soft); color: var(--green); }
 .leisteFehler { background: var(--red-soft); color: var(--red); }
 .leisteWarnung { background: var(--amber-soft); color: var(--amber); }
+/* Ein Hinweis ist kein Fehler: Der Durchlauf geht weiter, es ist nur etwas
+   nachzutragen. In Rot sah das aus wie ein Abbruch. */
+.leisteHinweis { background: var(--amber-soft); color: var(--amber); }
 
 /* ------------------------------------------------------- Aufnahme-Knopf */
 
