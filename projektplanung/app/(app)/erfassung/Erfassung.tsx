@@ -118,7 +118,10 @@ export default function Erfassung() {
   const [reihe, setReihe] = useState<Eintrag[]>([]);
   const [liste, setListe] = useState<ServerArtikel[]>([]);
   const [notiz, setNotiz] = useState('');
-  const [meldung, setMeldung] = useState<{ art: 'ok' | 'fehler'; text: string } | null>(null);
+  // „hinweis" ist ausdrücklich KEIN Fehler: Der Durchlauf geht weiter, es ist
+  // nur etwas nachzutragen. Beides gleich rot anzuzeigen hat schon dazu
+  // geführt, dass ein weiterlaufender Artikel wie ein abgebrochener aussah.
+  const [meldung, setMeldung] = useState<{ art: 'ok' | 'hinweis' | 'fehler'; text: string } | null>(null);
   const [beschaeftigt, setBeschaeftigt] = useState(false);
   const [startet, setStartet] = useState(true);
   const [online, setOnline] = useState(true);
@@ -192,7 +195,9 @@ export default function Erfassung() {
         }
         const hinweise = (daten.hinweise as string[]) ?? [];
         if (hinweise.length > 0) {
-          setMeldung({ art: 'fehler', text: `Artikel ${nummer}: ${hinweise[0]}` });
+          // Der Schritt ist durchgelaufen — das hier ist etwas zum Nachtragen,
+          // kein Abbruch.
+          setMeldung({ art: 'hinweis', text: `Artikel ${nummer}: ${hinweise[0]}` });
         }
         return true;
       } catch (e) {
@@ -550,7 +555,15 @@ export default function Erfassung() {
         </p>
       )}
       {meldung && (
-        <p className={`${styles.leiste} ${meldung.art === 'ok' ? styles.leisteOk : styles.leisteFehler}`}>
+        <p
+          className={`${styles.leiste} ${
+            meldung.art === 'ok'
+              ? styles.leisteOk
+              : meldung.art === 'hinweis'
+                ? styles.leisteHinweis
+                : styles.leisteFehler
+          }`}
+        >
           {meldung.text}
         </p>
       )}
