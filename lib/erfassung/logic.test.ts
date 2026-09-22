@@ -11,6 +11,7 @@ import {
   normalisiereAngaben,
   validiereBild,
   MAX_BILD_BYTES,
+  zustandAbgleichen,
 } from './logic';
 
 describe('dateiEndung', () => {
@@ -178,5 +179,46 @@ describe('normalisiereAngaben', () => {
     expect(normalisiereAngaben({ bestand: 99999 }).bestand).toBe(9999);
     expect(normalisiereAngaben({ bestand: 'viele' }).bestand).toBe(1);
     expect(normalisiereAngaben({}).bestand).toBe(1);
+  });
+});
+
+describe('zustandAbgleichen', () => {
+  it('meldet als neu erfasste Ware, die auf den Fotos gebraucht aussieht', () => {
+    // Der Fall, der wirklich wehtut: kein Gebrauchtabschlag, und im Listing
+    // steht „Neuware, unbenutzt" ueber einem Artikel mit Kratzern.
+    const a = zustandAbgleichen('neu', 'gebraucht_gut', ['Kratzer am Gehaeuse']);
+    expect(a.widerspruch).toBe(true);
+    expect(a.hinweis).toContain('zu hoch');
+    expect(a.hinweis).toContain('1 Schaden');
+  });
+
+  it('meldet auch neu_versiegelt gegen Gebrauchsspuren', () => {
+    expect(zustandAbgleichen('neu_versiegelt', 'gebraucht_spuren').widerspruch).toBe(true);
+  });
+
+  it('schweigt, wenn beide Urteile zusammenpassen', () => {
+    expect(zustandAbgleichen('gebraucht', 'gebraucht_gut').widerspruch).toBe(false);
+    expect(zustandAbgleichen('gebraucht', 'gebraucht_spuren').widerspruch).toBe(false);
+    expect(zustandAbgleichen('neu', 'neuwertig').widerspruch).toBe(false);
+  });
+
+  it('schweigt, wenn der Mensch strenger ist als die Kamera', () => {
+    // Zu vorsichtig verkaufen kostet Marge, nicht Vertrauen — und wer das
+    // Teil in der Hand hatte, weiss mehr als die Kamera.
+    expect(zustandAbgleichen('gebraucht', 'neuwertig').widerspruch).toBe(false);
+    expect(zustandAbgleichen('defekt', 'gebraucht_gut').widerspruch).toBe(false);
+  });
+
+  it('meldet stark gebraucht gegen gebraucht', () => {
+    expect(zustandAbgleichen('gebraucht', 'stark_gebraucht').widerspruch).toBe(true);
+  });
+
+  it('meldet defekt auf den Fotos gegen gebraucht in der Erfassung', () => {
+    expect(zustandAbgleichen('gebraucht', 'defekt').widerspruch).toBe(true);
+  });
+
+  it('macht aus einem unklaren Kamera-Urteil keinen Widerspruch', () => {
+    expect(zustandAbgleichen('neu', 'unbekannt').widerspruch).toBe(false);
+    expect(zustandAbgleichen('neu', null).widerspruch).toBe(false);
   });
 });

@@ -242,3 +242,96 @@ export function normalisiereAngaben(roh: Partial<Record<keyof Angaben, unknown>>
     packklasse: gewichtKg != null && gewichtKg > 10 ? gewaehlt : 'normal',
   };
 }
+
+// ---------------------------------------------------------------------------
+// Zustand: was der Mensch sagt gegen das, was die Fotos zeigen
+// ---------------------------------------------------------------------------
+
+/**
+ * Was die Bilderkennung über den Zustand melden kann.
+ *
+ * Nur der Typ, kein Wert — `erkennung.ts` zieht das Anthropic-SDK nach sich,
+ * und diese Datei läuft auch im Browser.
+ */
+export type ErkannterZustand =
+  | 'neuwertig'
+  | 'gebraucht_gut'
+  | 'gebraucht_spuren'
+  | 'stark_gebraucht'
+  | 'defekt'
+  | 'unbekannt';
+
+/** Grobe Ordnung: je höher, desto schlechter. Für den Vergleich der beiden Urteile. */
+const STUFE_MENSCH: Record<Zustand, number> = {
+  neu_versiegelt: 0,
+  neu: 0,
+  gebraucht: 2,
+  defekt: 4,
+};
+
+const STUFE_KAMERA: Record<ErkannterZustand, number> = {
+  // „neuwertig" heißt wie neu und ist gegen „Neu, offen" KEIN Widerspruch.
+  // Eine Warnung, die grundlos anschlägt, liest nach einer Woche niemand mehr.
+  neuwertig: 0,
+  gebraucht_gut: 2,
+  gebraucht_spuren: 2,
+  stark_gebraucht: 3,
+  defekt: 4,
+  unbekannt: -1, // kein Urteil, also kein Widerspruch
+};
+
+export interface Zustandsabgleich {
+  /** Wahr, wenn die beiden Urteile so weit auseinanderliegen, dass es Geld kostet. */
+  widerspruch: boolean;
+  /** Ein Satz für die Anzeige. Null, wenn nichts zu melden ist. */
+  hinweis: string | null;
+}
+
+/**
+ * Vergleicht die Angabe des Menschen mit dem, was auf den Fotos zu sehen war.
+ *
+ * Gemeldet wird nur der Fall, der wirklich wehtut: **als neu erfasst, auf den
+ * Fotos aber gebraucht.** Dann rechnet das Regelwerk ohne den 60-bis-65-%-
+ * Abschlag, der Preis liegt um ein Drittel zu hoch, und im Listing steht
+ * „Neuware, unbenutzt" über einem Artikel mit Kratzern. Das ist nicht nur ein
+ * falscher Preis, das ist eine falsche Zusage an den Käufer.
+ *
+ * Der umgekehrte Fall — als gebraucht erfasst, Fotos sagen neuwertig — wird
+ * NICHT gemeldet. Zu vorsichtig verkaufen kostet Marge, nicht Vertrauen, und
+ * wer das Teil in der Hand hatte, weiß mehr als die Kamera.
+ */
+export function zustandAbgleichen(
+  mensch: Zustand,
+  kamera: ErkannterZustand | null | undefined,
+  schaeden: string[] = [],
+): Zustandsabgleich {
+  if (!kamera) return { widerspruch: false, hinweis: null };
+  const k = STUFE_KAMERA[kamera];
+  if (k < 0) return { widerspruch: false, hinweis: null };
+
+  const m = STUFE_MENSCH[mensch];
+  // Nur wenn die Fotos deutlich schlechter urteilen als der Mensch.
+  if (k <= m) return { widerspruch: false, hinweis: null };
+
+  const alsNeu = mensch === 'neu' || mensch === 'neu_versiegelt';
+  const anzahl = schaeden.length;
+  const schadenText =
+    anzahl > 0 ? ` und ${anzahl} Schaden/Schäden festgehalten` : '';
+
+  if (alsNeu) {
+    return {
+      widerspruch: true,
+      hinweis:
+        `Als Neuware erfasst, die Fotos zeigen aber Gebrauchsspuren${schadenText}. ` +
+        'Der Preis wird ohne Gebrauchtabschlag gerechnet und liegt damit deutlich zu hoch — ' +
+        'und im Listing stünde „Neuware, unbenutzt". Bitte den Zustand prüfen.',
+    };
+  }
+
+  return {
+    widerspruch: true,
+    hinweis:
+      `Die Fotos urteilen strenger als die Erfassung${schadenText}. ` +
+      'Bitte kurz prüfen, ob der Zustand stimmt.',
+  };
+}

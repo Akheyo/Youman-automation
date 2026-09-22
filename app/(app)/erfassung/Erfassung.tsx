@@ -12,6 +12,7 @@ import {
   bereitHinweis,
   istStatus,
   validiereBild,
+  zustandAbgleichen,
   type ErkannteRolle,
   type Packklasse,
 } from '@/lib/erfassung/logic';
@@ -743,6 +744,8 @@ function ArtikelZeile({
   // egal an welchem der vier Schritte.
   const haengt = !wertetAus && artikel.status !== 'offen' && !stand.fertig;
   const preis = artikel.preis;
+  // Was der Mensch am Regal angegeben hat, gegen das, was auf den Fotos war.
+  const abgleich = zustandAbgleichen(artikel.zustand ?? 'gebraucht', e?.zustand, e?.schaeden ?? []);
 
   return (
     <li className={styles.verlaufZeile}>
@@ -776,6 +779,7 @@ function ArtikelZeile({
           {!e.typenschildGefunden && (
             <p className={styles.warnZeile}>Kein lesbares Typenschild — Modellnummer fehlt.</p>
           )}
+          {abgleich.hinweis && <p className={styles.warnZeile}>{abgleich.hinweis}</p>}
           {treffer.length > 0 && (
             <p className={styles.erkennungZeile}>
               Schon im Bestand: {treffer.slice(0, 3).map(trefferText).join(' · ')}

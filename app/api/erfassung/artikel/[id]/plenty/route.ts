@@ -20,6 +20,7 @@ import { plentyEingerichtet } from '@/lib/plenty/client';
 import type { Listing } from '@/lib/listing/texte';
 import type { Zustand } from '@/lib/preis/regelwerk';
 import type { Packklasse } from '@/lib/preis/versand';
+import { zustandAbgleichen } from '@/lib/erfassung/logic';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -101,6 +102,16 @@ export async function POST(_request: Request, { params }: { params: { id: string
   if (!listingfeld) return NextResponse.json({ error: 'Für den Artikel gibt es noch kein Listing.' }, { status: 400 });
 
   const hinweise: string[] = [];
+
+  // Geht mit nach Plenty, damit im Buero vor der Freigabe dransteht, dass
+  // Erfassung und Fotos den Zustand verschieden beurteilt haben.
+  const abgleich = zustandAbgleichen(
+    (artikel.zustand as Zustand) ?? 'gebraucht',
+    erkennung.zustand,
+    erkennung.schaeden ?? [],
+  );
+  if (abgleich.hinweis) hinweise.push(abgleich.hinweis);
+
   if (listingfeld.darfVeroeffentlichtWerden === false) {
     // Angelegt wird er trotzdem — inaktiv, mit dem Befund am Artikel. Im Büro
     // ist ein gesperrter Artikel mit Begründung nützlicher als keiner.
