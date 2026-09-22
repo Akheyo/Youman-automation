@@ -9,7 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { artikelBereit, bereitHinweis } from '@/lib/erfassung/logic';
+import { artikelBereit, bereitHinweis, normalisiereAngaben } from '@/lib/erfassung/logic';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -48,7 +48,11 @@ export async function POST(request: Request, { params }: { params: { id: string 
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Bitte anmelden.' }, { status: 401 });
 
-  const { notiz } = (await request.json().catch(() => ({}))) as { notiz?: string };
+  const koerper = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+  const notiz = typeof koerper.notiz === 'string' ? koerper.notiz : undefined;
+  // Zustand und Bestand gehen direkt in die Preisfindung — deshalb werden sie
+  // hier geradegezogen und nicht so uebernommen, wie sie ankommen.
+  const angaben = normalisiereAngaben(koerper);
 
   const { data: artikel, error: ladeFehler } = await supabase
     .from('erfassung_artikel')
@@ -72,10 +76,14 @@ export async function POST(request: Request, { params }: { params: { id: string 
       status: 'bereit',
       fertig_am: new Date().toISOString(),
       notiz: notiz?.trim() || null,
+      zustand: angaben.zustand,
+      zustand_bestaetigt: angaben.zustandBestaetigt,
+      gravierende_schaeden: angaben.gravierendeSchaeden,
+      bestand: angaben.bestand,
     })
     .eq('id', params.id)
     .eq('status', 'offen') // niemand hat in der Zwischenzeit schon abgeschickt
-    .select('id, nummer, status, notiz, fertig_am')
+    .select('id, nummer, status, notiz, fertig_am, zustand, zustand_bestaetigt, gravierende_schaeden, bestand')
     .single();
 
   if (updateFehler || !aktualisiert) {
@@ -87,6 +95,8 @@ export async function POST(request: Request, { params }: { params: { id: string 
     artikelId: aktualisiert.id,
     nummer: aktualisiert.nummer,
     bilder: bilder.length,
+    zustand: angaben.zustand,
+    bestand: angaben.bestand,
   });
 
   return NextResponse.json({ artikel: aktualisiert, warnung });

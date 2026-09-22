@@ -159,3 +159,49 @@ export function artikelBereit(bilder: Array<{ hochgeladen: boolean }>): boolean 
 export function bereitHinweis(bilder: Array<{ hochgeladen: boolean }>): string | null {
   return artikelBereit(bilder) ? null : 'Mindestens ein Foto machen.';
 }
+
+// ---------------------------------------------------------------------------
+// Zustand und Bestand
+// ---------------------------------------------------------------------------
+
+import { ZUSTAND_TEXT as PREIS_ZUSTAND_TEXT, type Zustand } from '@/lib/preis/regelwerk';
+
+export { PREIS_ZUSTAND_TEXT };
+
+export const MAX_BESTAND = 9999;
+
+export interface Angaben {
+  zustand: Zustand;
+  zustandBestaetigt: boolean;
+  gravierendeSchaeden: boolean;
+  bestand: number;
+}
+
+function istZustand(wert: unknown): wert is Zustand {
+  return wert === 'neu_versiegelt' || wert === 'neu' || wert === 'gebraucht' || wert === 'defekt';
+}
+
+/**
+ * Bringt die Angaben vom Handy in eine Form, auf die sich die Preisfindung
+ * verlassen kann.
+ *
+ * Zwei Dinge werden dabei stillschweigend geradegezogen, weil sie sonst
+ * später falsche Preise erzeugen:
+ *
+ * 1. Ein unbekannter Zustand wird „gebraucht" — bei einer Verwertung der
+ *    Regelfall, und ein erfundener Wert wäre schlimmer als der häufigste.
+ * 2. „Gravierende Schäden" gilt nur bei Gebrauchtware. Bei neuer Ware ergibt
+ *    es keinen Sinn, bei defekter ist es bereits im Zustand enthalten — sonst
+ *    zöge der Faktor doppelt ab.
+ */
+export function normalisiereAngaben(roh: Partial<Record<keyof Angaben, unknown>>): Angaben {
+  const zustand: Zustand = istZustand(roh.zustand) ? roh.zustand : 'gebraucht';
+  const zahl = Number(roh.bestand);
+  const bestand = Number.isFinite(zahl) ? Math.min(Math.max(Math.round(zahl), 1), MAX_BESTAND) : 1;
+  return {
+    zustand,
+    zustandBestaetigt: roh.zustandBestaetigt === true,
+    gravierendeSchaeden: zustand === 'gebraucht' && roh.gravierendeSchaeden === true,
+    bestand,
+  };
+}
