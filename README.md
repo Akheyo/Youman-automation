@@ -50,6 +50,21 @@ nicht halb hochgeladen** — mit Grund im Log:
 Alles andere ist ein Hinweis und hält nicht auf: fehlendes Baujahr, fehlendes
 Gewicht, Auffangkategorie.
 
+## Die Inseratsnummer entscheidet über Aktualisieren oder Verdoppeln
+
+Maschinensucher erkennt ein bestehendes Inserat an **seiner Nummer** wieder.
+Liefert die Datei eine andere, entsteht neben jedem laufenden Inserat ein
+zweites — bei mehreren hundert Inseraten ein Schaden, den niemand von Hand
+aufräumt.
+
+Deshalb ist einstellbar, woraus sie gebildet wird: **Plenty-Artikel-ID**
+(Voreinstellung), Variantennummer oder Varianten-ID, jeweils mit optionalem
+Vorsatz. Wer seine Inserate bisher unter der Artikel-ID geführt hat, stellt
+genau das ein und lässt den Vorsatz leer.
+
+Die Variantennummer bleibt als *interne Nummer* im Inserat erhalten — damit
+eine Anfrage im Haus zugeordnet werden kann.
+
 ## Der Preis wird netto ausgezeichnet
 
 Auf einem Händlermarktplatz steht der Nettopreis. Führt Plenty brutto
@@ -58,8 +73,16 @@ Bruttopreis, der als Netto eingestellt wird, macht uns um den Steuersatz
 teurer als gewollt — und niemand sieht es dem Inserat an.
 
 Gibt es mehrere Preislisten, entscheidet die eingestellte ID. Ist sie an einem
-Artikel nicht geführt, bekommt er **keinen** Preis und fällt aus der Datei:
-lieber kein Inserat als eines mit dem Preis einer fremden Liste.
+Artikel nicht geführt, springt die **Ersatz-Preisliste** ein — ohne sie ginge
+am Anfang fast nichts raus, weil die eigene Marktplatz-Liste frisch angelegt
+meist leer ist, während im Webshop längst ein Preis steht. Hat der Artikel in
+keiner der beiden einen Preis, fällt er aus der Datei: lieber kein Inserat als
+eines mit dem Preis einer fremden Liste.
+
+**Netto oder brutto wird je Liste eingestellt**, denn die eine kann netto
+geführt sein und die andere brutto. Wer das verwechselt, stellt jedes Gerät um
+ein Sechstel zu billig oder um ein Fünftel zu teuer ein — und sieht es dem
+Inserat nicht an.
 
 ## Die Spaltenreihenfolge kommt aus ihrer Beispieldatei
 
@@ -87,6 +110,24 @@ Also baut der Cron im Hintergrund und legt die Datei im Plugin-Storage ab; der
 Abruf liefert nur noch aus. Der Nebeneffekt ist der eigentliche Gewinn:
 **Geht beim Bauen etwas schief, bleibt die zuletzt gute Datei liegen.** Eine
 kaputte Nacht nimmt dann nichts vom Markt.
+
+## Vor dem ersten Abgleich: was schon online ist
+
+Der Import ist ein **Abgleich**. Laufen auf Maschinensucher bereits Inserate,
+die nicht aus diesem Plugin stammen, dann gilt: Was in der ersten Datei fehlt,
+nimmt der erste Lauf vom Markt. Die Notbremse unten schützt davor **nicht** —
+sie vergleicht mit dem letzten Lauf des Plugins, und den gibt es beim ersten
+Mal nicht.
+
+Also vorher:
+
+1. **Alles markieren, was online bleiben soll** (Markierung in Plenty), und
+   sicherstellen, dass diese Artikel einen Preis haben.
+2. **Die Inseratsnummer so einstellen, dass sie die bestehenden Inserate
+   trifft** (siehe oben).
+3. Die Datei im Browser aufrufen und **zählen**: Stehen dort ungefähr so viele
+   Zeilen wie Inserate online sind? Wenn nicht, fehlt etwas — und der
+   Unterschied ist genau das, was der erste Lauf löschen würde.
 
 ## Die Notbremse gegen den leeren Feed
 

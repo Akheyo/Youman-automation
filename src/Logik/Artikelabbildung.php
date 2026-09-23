@@ -88,13 +88,22 @@ class Artikelabbildung
     /**
      * Der Verkaufspreis.
      *
-     * Gibt es mehrere Preislisten, entscheidet die konfigurierte ID. Ohne
-     * Vorgabe wird die KLEINSTE genommen — in Plenty üblicherweise die
-     * Hauptpreisliste. Ist die konfigurierte Liste nicht dabei, gibt es
-     * KEINEN Preis: Lieber kein Inserat als eines mit dem Preis einer
-     * fremden Liste, den so niemand beschlossen hat.
+     * Reihenfolge: die konfigurierte Preisliste, sonst die Ersatzliste, sonst
+     * nichts. Die Ersatzliste ist kein Schönheitsfeature — die eigene
+     * Marktplatz-Liste ist am Anfang meist leer, während im Webshop längst
+     * ein Preis steht. Ohne sie ginge fast nichts raus.
+     *
+     * WELCHE LISTE ES WAR, WIRD MITGEGEBEN: Die eine kann netto geführt sein
+     * und die andere brutto. Wer das verwechselt, stellt jedes Gerät um ein
+     * Sechstel zu billig oder um ein Fünftel zu teuer ein — und sieht es dem
+     * Inserat nicht an.
+     *
+     * Ohne jede Vorgabe wird die KLEINSTE ID genommen, in Plenty üblicherweise
+     * die Hauptpreisliste.
+     *
+     * @return array ['preis' => float|null, 'ausListe' => int|null, 'ersatz' => bool]
      */
-    public static function preis(array $variante, $preislisteId = null)
+    public static function preis(array $variante, $preislisteId = null, $ersatzId = null)
     {
         $preise = self::wert($variante, 'variationSalesPrices', array());
         $brauchbar = array();
@@ -109,22 +118,29 @@ class Artikelabbildung
             }
         }
         if (count($brauchbar) === 0) {
-            return null;
+            return array('preis' => null, 'ausListe' => null, 'ersatz' => false);
         }
 
         if ($preislisteId !== null && (int) $preislisteId > 0) {
             foreach ($brauchbar as $eintrag) {
                 if ($eintrag['id'] === (int) $preislisteId) {
-                    return $eintrag['preis'];
+                    return array('preis' => $eintrag['preis'], 'ausListe' => $eintrag['id'], 'ersatz' => false);
                 }
             }
-            return null;
+            if ($ersatzId !== null && (int) $ersatzId > 0) {
+                foreach ($brauchbar as $eintrag) {
+                    if ($eintrag['id'] === (int) $ersatzId) {
+                        return array('preis' => $eintrag['preis'], 'ausListe' => $eintrag['id'], 'ersatz' => true);
+                    }
+                }
+            }
+            return array('preis' => null, 'ausListe' => null, 'ersatz' => false);
         }
 
         usort($brauchbar, function ($a, $b) {
             return $a['id'] - $b['id'];
         });
-        return $brauchbar[0]['preis'];
+        return array('preis' => $brauchbar[0]['preis'], 'ausListe' => $brauchbar[0]['id'], 'ersatz' => false);
     }
 
     /** Der deutsche Textblock, sonst der erste vorhandene. */
@@ -160,11 +176,18 @@ class Artikelabbildung
      * @param array $variante   Rohdaten aus der Suche
      * @param array $hersteller Herstellernamen nach Plenty-ID
      * @param array $bilder     Bild-Adressen (öffentliche Plenty-URLs)
-     * @param int|null $preislisteId
+     * @param int|null $preislisteId Preisliste, die gilt
+     * @param int|null $ersatzId      Liste, die einspringt, wenn die erste leer ist
      */
-    public static function ausVariante(array $variante, array $hersteller = array(), array $bilder = array(), $preislisteId = null)
-    {
+    public static function ausVariante(
+        array $variante,
+        array $hersteller = array(),
+        array $bilder = array(),
+        $preislisteId = null,
+        $ersatzId = null
+    ) {
         $texte = self::text($variante);
+        $preis = self::preis($variante, $preislisteId, $ersatzId);
         $herstellerId = (int) self::tief($variante, array('item', 'manufacturerId'), 0);
         $zustandId = self::tief($variante, array('item', 'condition'), null);
         if (is_array($zustandId) && isset($zustandId['id'])) {
@@ -191,7 +214,9 @@ class Artikelabbildung
             'modell'      => (string) self::wert($variante, 'model', ''),
             'baujahr'     => '',
             'zustand'     => $zustandId !== null && isset(self::$zustandText[(int) $zustandId]) ? self::$zustandText[(int) $zustandId] : '',
-            'preis'       => self::preis($variante, $preislisteId),
+            'preis'       => $preis['preis'],
+            // Aus welcher Liste er stammt, entscheidet über netto/brutto.
+            'preisErsatz' => $preis['ersatz'],
             'bestand'     => self::bestand($variante),
             'gewichtG'    => self::wert($variante, 'weightG', self::wert($variante, 'weightNetG', null)),
             'laengeMM'    => self::wert($variante, 'lengthMM', null),

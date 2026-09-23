@@ -132,7 +132,11 @@ $artikel = array(
 
 $voll = Inserat::bauen($artikel, $umgebung);
 $p->gleich(array(), $voll['maengel'], 'ein vollständiger Artikel hat keine Mängel');
-$p->gleich('KK-2024-0815', $voll['werte']['inseratsnummer'], 'setzt den Vorsatz nicht doppelt davor');
+// Voreinstellung ist die Plenty-Artikel-ID: Danach sucht Maschinensucher ein
+// bestehendes Inserat.
+$p->gleich('KK-65932', $voll['werte']['inseratsnummer'], 'bildet die Nummer aus der Artikel-ID');
+$mitVariantennummer = Inserat::bauen($artikel, array_merge($umgebung, array('nummernQuelle' => 'variantennummer')));
+$p->gleich('KK-2024-0815', $mitVariantennummer['werte']['inseratsnummer'], 'setzt den Vorsatz nicht doppelt davor');
 $p->gleich('1900,00', $voll['werte']['preis'], 'rechnet 2261 brutto auf 1900 netto');
 $p->gleich('netto', $voll['werte']['preisart'], 'zeichnet netto aus');
 $p->gleich('1234', $voll['werte']['kategorie'], 'nimmt die Kategorie aus der Zuordnung');
@@ -255,9 +259,17 @@ $p->gleich(3.0, Artikelabbildung::bestand($variante), 'zählt den Bestand über 
 $p->gleich(null, Artikelabbildung::bestand(array('id' => 1)), 'unterscheidet "unbekannt" von "keiner"');
 $p->gleich(0.0, Artikelabbildung::bestand(array('stock' => array(array('netStock' => 0)))), 'Bestand 0 bleibt 0');
 
-$p->gleich(2261.0, Artikelabbildung::preis($variante, null), 'nimmt ohne Vorgabe die kleinste Preislisten-ID');
-$p->gleich(2600.0, Artikelabbildung::preis($variante, 4), 'nimmt die vorgegebene Preisliste');
-$p->gleich(null, Artikelabbildung::preis($variante, 99), 'lieber kein Preis als der einer fremden Liste');
+$p->gleich(2261.0, Artikelabbildung::preis($variante, null)['preis'], 'nimmt ohne Vorgabe die kleinste Preislisten-ID');
+$p->gleich(2600.0, Artikelabbildung::preis($variante, 4)['preis'], 'nimmt die vorgegebene Preisliste');
+$p->gleich(null, Artikelabbildung::preis($variante, 99)['preis'], 'lieber kein Preis als der einer fremden Liste');
+
+// Die Ersatzliste: Die eigene Marktplatz-Liste ist am Anfang meist leer,
+// waehrend im Webshop laengst ein Preis steht.
+$ersatz = Artikelabbildung::preis($variante, 25, 1);
+$p->gleich(2261.0, $ersatz['preis'], 'springt auf die Ersatzliste, wenn die erste leer ist');
+$p->gleich(true, $ersatz['ersatz'], 'und sagt, dass der Preis von dort kam');
+$p->gleich(false, Artikelabbildung::preis($variante, 4, 1)['ersatz'], 'nimmt die erste Liste, wenn sie gefuellt ist');
+$p->gleich(null, Artikelabbildung::preis($variante, 25, 99)['preis'], 'ohne beide bleibt es beim Nichts');
 
 $abgebildet = Artikelabbildung::ausVariante($variante, array(7 => 'Weiler'), array('https://cdn/1.jpg'), null);
 $p->gleich('Weiler Drehmaschine', $abgebildet['titel'], 'nimmt den deutschen Titel');
@@ -265,10 +277,38 @@ $p->gleich('Weiler', $abgebildet['hersteller'], 'löst die Hersteller-ID auf');
 $p->gleich('Gebraucht', $abgebildet['zustand'], 'übersetzt den Plenty-Zustand');
 $p->gleich('2000000047119', $abgebildet['ean'], 'nimmt den ersten Barcode');
 $p->gleich(3.0, $abgebildet['bestand'], 'trägt den Bestand mit');
+$p->gleich(false, $abgebildet['preisErsatz'], 'merkt sich, aus welcher Liste der Preis kam');
 
 $nackt = Artikelabbildung::ausVariante(array('id' => 1), array(), array(), null);
 $p->gleich('', $nackt['titel'], 'kommt mit einer nackten Variante zurecht');
 $p->gleich(null, $nackt['preis'], 'und erfindet keinen Preis');
+
+// ---------------------------------------------------------------------------
+$p->gruppe('Inseratsnummer');
+
+// Daran erkennt Maschinensucher ein bestehendes Inserat wieder. Eine andere
+// Nummer legt neben jedem laufenden Inserat ein zweites an.
+$mitIds = array('itemId' => 62923, 'nummer' => 'NEW-33177', 'variationId' => 56103);
+$p->gleich('62923', Inserat::nummernQuelle($mitIds, 'itemId'), 'nimmt die Plenty-Artikel-ID');
+$p->gleich('NEW-33177', Inserat::nummernQuelle($mitIds, 'variantennummer'), 'oder die Variantennummer');
+$p->gleich('56103', Inserat::nummernQuelle($mitIds, 'variationId'), 'oder die Varianten-ID');
+$p->gleich('62923', Inserat::nummernQuelle($mitIds, 'quatsch'), 'und im Zweifel die Artikel-ID');
+$p->gleich('56103', Inserat::nummernQuelle(array('variationId' => 56103, 'nummer' => ''), 'variantennummer'),
+    'faellt ohne Variantennummer auf die Varianten-ID zurueck');
+
+$nachPlenty = Inserat::bauen(
+    array_merge($artikel, array('itemId' => 62923)),
+    array_merge($umgebung, array('nummernQuelle' => 'itemId', 'nummernPraefix' => ''))
+);
+$p->gleich('62923', $nachPlenty['werte']['inseratsnummer'], 'im Inserat steht dann genau die Artikel-ID');
+$p->gleich('KK-2024-0815', $nachPlenty['werte']['interne_nummer'], 'die Variantennummer bleibt als interne Nummer erhalten');
+
+$mitErsatzpreis = Inserat::bauen(
+    array_merge($artikel, array('preis' => 2261.00, 'preisErsatz' => true)),
+    array_merge($umgebung, array('preisIst' => 'netto', 'preisIstErsatz' => 'brutto'))
+);
+$p->gleich('1900,00', $mitErsatzpreis['werte']['preis'],
+    'ein Preis aus der Ersatzliste wird nach DEREN Einstellung gerechnet');
 
 // Die ganze Kette: Variante aus Plenty -> Inserat -> Zeile in der Datei.
 $p->gruppe('Ganze Kette');

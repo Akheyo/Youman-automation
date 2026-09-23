@@ -88,7 +88,11 @@ class Inserat
             $maengel[] = 'Kein Preis — ohne Preis kein Inserat.';
         } else {
             $mwst = (float) self::wert($umgebung, 'mwst', 19);
-            $istNetto = self::wert($umgebung, 'preisIst', 'brutto') === 'netto';
+            // Welche Liste den Preis geliefert hat, entscheidet: Die eine kann
+            // netto geführt sein, die andere brutto.
+            $ausErsatz = self::wert($artikel, 'preisErsatz', false) === true;
+            $schluessel = $ausErsatz ? 'preisIstErsatz' : 'preisIst';
+            $istNetto = self::wert($umgebung, $schluessel, 'brutto') === 'netto';
             $preisFeld = self::zahl($istNetto ? $brutto : self::netto($brutto, $mwst), 2);
         }
 
@@ -137,10 +141,11 @@ class Inserat
         // ---- Zusammensetzen ---------------------------------------------------
         $shopBasis = rtrim((string) self::wert($umgebung, 'shopBasisUrl', ''), '/');
         $itemId = self::wert($artikel, 'itemId', 0);
-        $nummer = trim((string) self::wert($artikel, 'nummer', ''));
-        if ($nummer === '') {
-            $nummer = (string) self::wert($artikel, 'variationId', '');
+        $variantennummer = trim((string) self::wert($artikel, 'nummer', ''));
+        if ($variantennummer === '') {
+            $variantennummer = (string) self::wert($artikel, 'variationId', '');
         }
+        $nummer = self::nummernQuelle($artikel, (string) self::wert($umgebung, 'nummernQuelle', 'itemId'));
 
         $werte = array(
             'inseratsnummer'  => self::inseratsnummer($nummer, (string) self::wert($umgebung, 'nummernPraefix', 'KK-')),
@@ -157,7 +162,7 @@ class Inserat
             'mwst'            => self::zahl((float) self::wert($umgebung, 'mwst', 19), 0),
             'menge'           => (string) max(1, (int) ($bestand === null ? 1 : $bestand)),
             'seriennummer'    => '',
-            'interne_nummer'  => $nummer !== '' ? $nummer : (string) self::wert($artikel, 'ean', ''),
+            'interne_nummer'  => $variantennummer !== '' ? $variantennummer : (string) self::wert($artikel, 'ean', ''),
             'land'            => $land,
             'plz'             => $plz,
             'ort'             => $ort,
@@ -200,7 +205,32 @@ class Inserat
     }
 
     /**
-     * Die feste Nummer des Inserats — aus der Variantennummer.
+     * Woraus die Inseratsnummer gebildet wird.
+     *
+     * DAS IST DIE STELLE, AN DER SICH ENTSCHEIDET, OB EIN LAUF BESTEHENDE
+     * INSERATE AKTUALISIERT ODER VERDOPPELT. Maschinensucher erkennt ein
+     * Inserat an dieser Nummer wieder. Wer seine Inserate bisher unter der
+     * Plenty-Artikel-ID geführt hat, muss genau die liefern — eine andere
+     * Nummer legt neben jedem laufenden Inserat ein zweites an.
+     *
+     * 'itemId'          — die Plenty-Artikel-ID (Vorgabe)
+     * 'variantennummer' — die Variantennummer, sonst die Varianten-ID
+     * 'variationId'     — die Varianten-ID
+     */
+    public static function nummernQuelle(array $artikel, $quelle = 'itemId')
+    {
+        if ($quelle === 'variationId') {
+            return (string) self::wert($artikel, 'variationId', '');
+        }
+        if ($quelle === 'variantennummer') {
+            $nummer = trim((string) self::wert($artikel, 'nummer', ''));
+            return $nummer !== '' ? $nummer : (string) self::wert($artikel, 'variationId', '');
+        }
+        return (string) self::wert($artikel, 'itemId', '');
+    }
+
+    /**
+     * Die feste Nummer des Inserats.
      *
      * Trägt sie den Vorsatz schon (unsere Nummern beginnen oft mit „KK-"),
      * wird er nicht noch einmal davorgesetzt: „KK-KK-2024-0815" funktioniert
