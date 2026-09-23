@@ -2,6 +2,7 @@
 
 namespace MaschinensucherMarkt\Services;
 
+use MaschinensucherMarkt\Logik\Bestandsabgleich;
 use MaschinensucherMarkt\Models\Merker;
 use MaschinensucherMarkt\Models\Verknuepfung;
 use Plenty\Modules\Plugin\DataBase\Contracts\DataBase;
@@ -124,17 +125,62 @@ class Zuordnung
         $this->zeitpunktMerken('bestandGelesen', time());
     }
 
-    private function zeitpunkt($name)
+    /**
+     * Bei welcher Seite die naechste Etappe der Bestandsaufnahme weitermacht.
+     */
+    public function naechsteSeite()
+    {
+        return max(1, $this->merker('bestandSeite')->wert);
+    }
+
+    public function naechsteSeiteMerken($seite)
+    {
+        $merker = $this->merker('bestandSeite');
+        $merker->wert = max(1, (int) $seite);
+        $merker->zeit = time();
+        $this->db->save($merker);
+    }
+
+    /**
+     * Die Zahlen ueber die ganze Tabelle.
+     *
+     * Aus der Tabelle, nicht aus dem letzten Lauf: Seit die Aufnahme in
+     * Etappen laeuft, sieht keine einzelne Etappe alle Inserate.
+     */
+    public function bilanz()
+    {
+        $zeilen = array();
+        foreach ($this->alle() as $zeile) {
+            $zeilen[] = array(
+                'inseratId' => (int) $zeile->inseratId,
+                'artikelId' => (int) $zeile->artikelId,
+                'zustand'   => (string) $zeile->zustand,
+            );
+        }
+        return Bestandsabgleich::bilanz($zeilen);
+    }
+
+    private function merker($name)
     {
         $zeilen = $this->db->query(Merker::class)->where('name', '=', (string) $name)->get();
-        return is_array($zeilen) && count($zeilen) > 0 ? (int) $zeilen[0]->zeit : 0;
+        if (is_array($zeilen) && count($zeilen) > 0) {
+            return $zeilen[0];
+        }
+        $merker = pluginApp(Merker::class);
+        $merker->name = (string) $name;
+        $merker->zeit = 0;
+        $merker->wert = 0;
+        return $merker;
+    }
+
+    private function zeitpunkt($name)
+    {
+        return (int) $this->merker($name)->zeit;
     }
 
     private function zeitpunktMerken($name, $zeit)
     {
-        $zeilen = $this->db->query(Merker::class)->where('name', '=', (string) $name)->get();
-        $merker = is_array($zeilen) && count($zeilen) > 0 ? $zeilen[0] : pluginApp(Merker::class);
-        $merker->name = (string) $name;
+        $merker = $this->merker($name);
         $merker->zeit = (int) $zeit;
         $this->db->save($merker);
     }

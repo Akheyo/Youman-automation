@@ -131,7 +131,14 @@ class Abgleich
         // nicht, ob die Tabelle Zeilen hat. Eine halbe Tabelle aus einem
         // abgebrochenen Lauf saehe sonst aus wie eine fertige. Wer wirklich
         // bei null anfaengt, hat drueben auch keine Inserate zu verlieren.
-        if (!$this->zuordnung->bestandGelesen() && $this->api->hatInserate()) {
+        $probelauf = $this->einstellungen->probelauf();
+        $bestandVollstaendig = $this->zuordnung->bestandGelesen();
+
+        // Im Probelauf wird ohnehin nichts geschrieben, also gibt es auch
+        // nichts zu sperren. So laesst sich ein einzelner Artikel pruefen,
+        // bevor die Aufnahme durch ist — der Bericht sagt dazu, dass die
+        // Zuordnung noch unvollstaendig war.
+        if (!$probelauf && !$bestandVollstaendig && $this->api->hatInserate()) {
             return array(
                 'ok' => false,
                 'meldung' => 'Die Bestandsaufnahme ist noch nicht gelaufen. '
@@ -140,7 +147,6 @@ class Abgleich
             );
         }
 
-        $probelauf = $this->einstellungen->probelauf();
         $vorhaben  = array();
         $umgebung  = $this->einstellungen->umgebung();
         $flagId    = $this->einstellungen->markierungId();
@@ -244,6 +250,7 @@ class Abgleich
         $bericht = array(
             'ok'          => true,
             'probelauf'   => $probelauf,
+            'zuordnungVollstaendig' => $bestandVollstaendig,
             'gelesen'     => $gelesen,
             'angelegt'    => $zaehler[Entscheidung::ANLEGEN],
             'geaendert'   => $zaehler[Entscheidung::AENDERN],
@@ -272,6 +279,11 @@ class Abgleich
         }
 
         $bericht['gruende'] = array_slice($gescheitert, 0, 50);
+        if ($probelauf) {
+            // Mit in den Bericht, damit es auch dort steht, wo nur der
+            // Bericht protokolliert wird.
+            $bericht['vorhaben'] = array_slice($vorhaben, 0, 20);
+        }
         return $bericht;
     }
 

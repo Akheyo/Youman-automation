@@ -36,7 +36,13 @@ class BestandLesen implements CronHandler
 
         try {
             $aufnahme = pluginApp(Bestandsaufnahme::class);
-            $aufnahme->lauf();
+            // Vierzig Sekunden je Etappe. Reicht das nicht fuer alle Seiten,
+            // macht der naechste Lauf dort weiter, wo dieser aufgehoert hat.
+            $bericht = $aufnahme->etappe(40);
+
+            // DIAGNOSE, voruebergehend als Fehler: das Ergebnis, sichtbar
+            // unabhaengig von der Log-Einstellung.
+            $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseErgebnis', $bericht);
         } catch (\Throwable $e) {
             $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.laufAbgebrochen', array(
                 'meldung' => $e->getMessage(),
