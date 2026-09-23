@@ -25,10 +25,14 @@ class MaschinensucherServiceProvider extends ServiceProvider
      */
     public function boot(CronContainer $cron)
     {
-        // Stündlich: Der Lauf liest den ganzen Artikelstamm, und
-        // Maschinensucher holt die Datei ohnehin nur einmal je Nacht ab. Wer
-        // schneller vom Markt nehmen will, stellt hier auf
-        // CronContainer::EVERY_FIFTEEN_MINUTES.
-        $cron->add(CronContainer::HOURLY, DateiBauen::class);
+        // Alle 15 Minuten. Der Lauf liest den ganzen Artikelstamm, ist also
+        // nicht billig — aber die Datei muss in dem Moment stimmen, in dem
+        // Maschinensucher sie abholt, und wann das ist, bestimmen nicht wir.
+        // Eine Stunde alte Bestandszahlen hiessen: bis zu eine Stunde lang
+        // steht etwas zum Verkauf, das es nicht mehr gibt.
+        //
+        // Schneller geht mit EVERY_FIVE_MINUTES, belastet Plenty aber
+        // entsprechend. Langsamer und schonender mit HOURLY.
+        $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, DateiBauen::class);
     }
 }
