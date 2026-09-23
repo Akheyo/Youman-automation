@@ -18,6 +18,7 @@ foreach (glob(__DIR__ . '/../src/Logik/*.php') as $datei) {
 
 use MaschinensucherMarkt\Logik\Antwort;
 use MaschinensucherMarkt\Logik\Bestandsabgleich;
+use MaschinensucherMarkt\Logik\Entscheidung;
 use MaschinensucherMarkt\Logik\Inseratdaten;
 use MaschinensucherMarkt\Logik\Artikelabbildung;
 use MaschinensucherMarkt\Logik\Csv;
@@ -594,5 +595,77 @@ $p->gleich(false, Inseratdaten::hatSichGeaendert($a, Inseratdaten::fingerabdruck
     'unveraendert heisst: nicht senden');
 $p->gleich(true, Inseratdaten::hatSichGeaendert($a, ''),
     'ohne bekannten Stand wird immer gesendet');
+
+// --- Was mit einem Artikel geschehen soll -------------------------------
+// Jede Zelle der Tabelle einzeln. Die Luecken in so einer Entscheidung
+// faellt sonst erst auf, wenn ein Inserat verschwunden ist.
+$p->gruppe('Entscheidung');
+
+$lage = function (array $abweichung) {
+    return array_merge(array(
+        'markiert' => true, 'bestand' => 1, 'maengel' => array(),
+        'inseratId' => 0, 'zustand' => 'unbekannt',
+        'fingerabdruck' => '', 'neuerFingerabdruck' => 'abc',
+    ), $abweichung);
+};
+
+$p->gleich(Entscheidung::ANLEGEN, Entscheidung::treffen($lage(array()))['tat'],
+    'markiert, Bestand da, drueben unbekannt: anlegen');
+
+$p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'aktiv', 'fingerabdruck' => 'abc')))['tat'],
+    'unveraendert: nichts tun - jede Aenderung loest drueben eine Pruefung aus');
+
+$p->gleich(Entscheidung::AENDERN, Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'aktiv', 'fingerabdruck' => 'alt')))['tat'],
+    'geaenderte Daten: aendern');
+
+$p->gleich(Entscheidung::AENDERN, Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'aktiv', 'fingerabdruck' => '')))['tat'],
+    'ein Inserat aus der Zeit vor dem Plugin wird einmal gesendet');
+
+// Der Fall, um den es dem Auftraggeber geht.
+$p->gruppe('Bestand faellt weg');
+$ohne = Entscheidung::treffen($lage(array('bestand' => 0, 'inseratId' => 500, 'zustand' => 'aktiv')));
+$p->gleich(Entscheidung::PAUSIEREN, $ohne['tat'], 'kein Bestand mehr: pausieren');
+$p->enthaelt('Kein Bestand', $ohne['grund'], 'und der Grund steht dabei');
+
+$p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
+    'bestand' => 0, 'inseratId' => 500, 'zustand' => 'pausiert')))['tat'],
+    'steht es schon still, bleibt es still');
+
+$p->gleich(Entscheidung::ZURUECK, Entscheidung::treffen($lage(array('bestand' => 0)))['tat'],
+    'ohne Bestand wird gar nichts erst angelegt');
+
+$p->gleich(Entscheidung::AKTIVIEREN, Entscheidung::treffen($lage(array(
+    'bestand' => 3, 'inseratId' => 500, 'zustand' => 'pausiert')))['tat'],
+    'kommt Ware nach, wird wieder aktiviert - das Inserat behaelt Laufzeit und Anfragen');
+
+$p->gruppe('Markierung');
+$weg = Entscheidung::treffen($lage(array('markiert' => false, 'inseratId' => 500, 'zustand' => 'aktiv')));
+$p->gleich(Entscheidung::PAUSIEREN, $weg['tat'], 'Markierung entfernt: pausieren, nicht loeschen');
+$p->enthaelt('Markierung', $weg['grund'], 'der Grund benennt die Markierung');
+$p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array('markiert' => false)))['tat'],
+    'nicht markiert und drueben unbekannt: nichts');
+$p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
+    'markiert' => false, 'inseratId' => 500, 'zustand' => 'pausiert')))['tat'],
+    'nicht markiert und schon still: nichts');
+
+$p->gruppe('Unvollstaendige Artikel');
+$kaputt = Entscheidung::treffen($lage(array(
+    'maengel' => array('Kein Preis.'), 'inseratId' => 500, 'zustand' => 'aktiv')));
+$p->gleich(Entscheidung::PAUSIEREN, $kaputt['tat'],
+    'fehlen Angaben, wird pausiert statt mit halben Daten ueberschrieben');
+$p->enthaelt('Kein Preis.', $kaputt['grund'], 'der Mangel steht im Grund');
+
+$p->gleich(Entscheidung::ZURUECK, Entscheidung::treffen($lage(array(
+    'maengel' => array('Kein Preis.'))))['tat'],
+    'unvollstaendig und unbekannt: zurueckhalten, nicht anlegen');
+
+$p->gruppe('Schreibende Taten');
+$p->gleich(true, Entscheidung::schreibt(Entscheidung::ANLEGEN), 'anlegen schreibt');
+$p->gleich(true, Entscheidung::schreibt(Entscheidung::PAUSIEREN), 'pausieren schreibt');
+$p->gleich(false, Entscheidung::schreibt(Entscheidung::NICHTS), 'nichts schreibt nicht');
+$p->gleich(false, Entscheidung::schreibt(Entscheidung::ZURUECK), 'zurueckhalten schreibt nicht');
 
 exit($p->bericht());
