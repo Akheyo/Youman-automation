@@ -237,7 +237,7 @@ class Abgleich
         if ($tat === Entscheidung::PAUSIEREN) {
             $antwort = $this->api->pausieren($inseratId);
             if (Antwort::istOk($antwort)) {
-                $this->merken($bekannt, array('zustand' => Verknuepfung::PAUSIERT, 'meldung' => $grund));
+                $this->merken($bekannt, Verknuepfung::PAUSIERT, null, null, $grund);
                 return array('ok' => true, 'meldung' => '');
             }
             return $this->fehlschlag($bekannt, $antwort, 'Pausieren');
@@ -246,7 +246,7 @@ class Abgleich
         if ($tat === Entscheidung::AKTIVIEREN) {
             $antwort = $this->api->aktivieren($inseratId);
             if (Antwort::istOk($antwort)) {
-                $this->merken($bekannt, array('zustand' => Verknuepfung::AKTIV, 'meldung' => ''));
+                $this->merken($bekannt, Verknuepfung::AKTIV, null, null, '');
                 return array('ok' => true, 'meldung' => '');
             }
             return $this->fehlschlag($bekannt, $antwort, 'Aktivieren');
@@ -281,11 +281,7 @@ class Abgleich
 
         $antwort = $this->api->aendern($inseratId, $koerper);
         if (Antwort::istOk($antwort)) {
-            $this->merken($bekannt, array(
-                'fingerabdruck' => $neuerAbdruck,
-                'gesendetAm'    => time(),
-                'meldung'       => '',
-            ));
+            $this->merken($bekannt, null, $neuerAbdruck, time(), '');
             return array('ok' => true, 'meldung' => '');
         }
         return $this->fehlschlag($bekannt, $antwort, 'Aendern');
@@ -308,17 +304,33 @@ class Abgleich
             return array('ok' => false, 'meldung' => $meldung . ' — die Zuordnung wurde entfernt.');
         }
 
-        $this->merken($bekannt, array('meldung' => $meldung));
+        $this->merken($bekannt, null, null, null, $meldung);
         return array('ok' => false, 'meldung' => $meldung);
     }
 
-    private function merken($verknuepfung, array $werte)
+    /**
+     * Die Zuordnung nachziehen.
+     *
+     * Jedes Feld einzeln statt ueber eine Schleife: Der Plugin-Build laesst
+     * keine dynamischen Eigenschaftsnamen zu. Null heisst "nicht anfassen",
+     * damit ein Aufruf nur das schreibt, was er wirklich weiss.
+     */
+    private function merken($verknuepfung, $zustand = null, $fingerabdruck = null, $gesendetAm = null, $meldung = null)
     {
         if ($verknuepfung === null) {
             return;
         }
-        foreach ($werte as $feld => $wert) {
-            $verknuepfung->$feld = $wert;
+        if ($zustand !== null) {
+            $verknuepfung->zustand = (string) $zustand;
+        }
+        if ($fingerabdruck !== null) {
+            $verknuepfung->fingerabdruck = (string) $fingerabdruck;
+        }
+        if ($gesendetAm !== null) {
+            $verknuepfung->gesendetAm = (int) $gesendetAm;
+        }
+        if ($meldung !== null) {
+            $verknuepfung->meldung = (string) $meldung;
         }
         $this->zuordnung->speichern($verknuepfung);
     }
