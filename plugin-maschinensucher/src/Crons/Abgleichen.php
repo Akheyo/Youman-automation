@@ -18,18 +18,20 @@ class Abgleichen implements CronHandler
 {
     use Loggable;
 
-    /** @var Abgleich */
-    private $abgleich;
-
-    public function __construct(Abgleich $abgleich)
-    {
-        $this->abgleich = $abgleich;
-    }
-
     public function handle()
     {
+        $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.zeitplanGestartet', array(
+            'zeitplan' => 'Abgleich',
+        ));
+
         try {
-            $this->abgleich->lauf();
+            $abgleich = pluginApp(Abgleich::class);
+            $bericht = $abgleich->lauf();
+            if (empty($bericht['ok'])) {
+                $this->getLogger(__METHOD__)->warning('MaschinensucherMarkt::log.nichtAbgeglichen', array(
+                    'meldung' => isset($bericht['meldung']) ? $bericht['meldung'] : '',
+                ));
+            }
         } catch (\Throwable $e) {
             $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.laufAbgebrochen', array(
                 'meldung' => $e->getMessage(),

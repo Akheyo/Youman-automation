@@ -8,6 +8,7 @@ use MaschinensucherMarkt\Procedures\SofortAbgleich;
 use Plenty\Modules\Cron\Services\CronContainer;
 use Plenty\Modules\EventProcedures\Services\Entries\ProcedureEntry;
 use Plenty\Modules\EventProcedures\Services\EventProceduresService;
+use Plenty\Plugin\Log\Loggable;
 use Plenty\Plugin\ServiceProvider;
 
 /**
@@ -22,27 +23,48 @@ use Plenty\Plugin\ServiceProvider;
  * Der schnelle Weg allein genuegt nicht: Nicht jede Bestandsaenderung
  * haengt an einem Auftrag. Der langsame allein genuegt auch nicht: Eine
  * verkaufte Maschine soll nicht noch eine Viertelstunde am Markt stehen.
+ *
+ * REIHENFOLGE IST ABSICHT: Erst die Zeitplaene, dann die Ereignisaktion,
+ * und die in einem eigenen Fangnetz. Beides in einer Methode bedeutet
+ * sonst: Scheitert die Ereignisaktion, wird auch kein Zeitplan angemeldet
+ * — und man sieht davon nichts, weil einfach nie wieder etwas laeuft.
  */
 class MaschinensucherServiceProvider extends ServiceProvider
 {
-    public function boot(CronContainer $cron, EventProceduresService $ereignisse)
+    use Loggable;
+
+    public function boot(CronContainer $cron)
     {
         $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, Abgleichen::class);
-
-        // Lesend und guenstig: sieben Aufrufe je Lauf. Haelt die Zuordnung
-        // aktuell, auch wenn jemand drueben ein Inserat von Hand anlegt
-        // oder loescht.
         $cron->add(CronContainer::EVERY_FIVE_MINUTES, BestandLesen::class);
 
-        // Der Echtzeitweg. Einzurichten unter Auftraege, Ereignisaktionen.
-        $ereignisse->registerProcedure(
-            'MaschinensucherMarkt',
-            ProcedureEntry::EVENT_TYPE_ORDER,
-            array(
-                'de' => 'Maschinensucher: Inserate dieses Auftrags abgleichen',
-                'en' => 'Machineseeker: sync the listings of this order',
-            ),
-            SofortAbgleich::class . '@run'
-        );
+        $this->ereignisaktionAnmelden();
+    }
+
+    /**
+     * Der Echtzeitweg, einzurichten unter Auftraege, Ereignisaktionen.
+     *
+     * Faellt sie aus, laeuft die Strecke weiter — nur eben im Takt der
+     * Zeitplaene statt sofort. Das ist ein Rueckschritt, kein Ausfall, und
+     * deshalb kein Grund, alles Uebrige mitzureissen.
+     */
+    private function ereignisaktionAnmelden()
+    {
+        try {
+            $dienst = pluginApp(EventProceduresService::class);
+            $dienst->registerProcedure(
+                'MaschinensucherMarkt',
+                ProcedureEntry::EVENT_TYPE_ORDER,
+                array(
+                    'de' => 'Maschinensucher: Inserate dieses Auftrags abgleichen',
+                    'en' => 'Machineseeker: sync the listings of this order',
+                ),
+                SofortAbgleich::class . '@run'
+            );
+        } catch (\Throwable $e) {
+            $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.ereignisaktionFehlt', array(
+                'meldung' => $e->getMessage(),
+            ));
+        }
     }
 }
