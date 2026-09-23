@@ -141,6 +141,8 @@ class Abgleich
             );
         }
 
+        $probelauf = $this->einstellungen->probelauf();
+        $vorhaben  = array();
         $umgebung  = $this->einstellungen->umgebung();
         $flagId    = $this->einstellungen->markierungId();
         $flagFeld  = $this->einstellungen->markierungFeld();
@@ -194,6 +196,10 @@ class Abgleich
                 'zustand'            => $bekannt !== null ? (string) $bekannt->zustand : 'unbekannt',
                 'fingerabdruck'      => $bekannt !== null ? (string) $bekannt->fingerabdruck : '',
                 'neuerFingerabdruck' => $neuerAbdruck,
+                // Verwaltet ist, was das Plugin selbst schon einmal
+                // geschrieben hat. Nur fuer solche Inserate ist eine
+                // fehlende Markierung eine Anweisung.
+                'verwaltet'          => $bekannt !== null && (int) $bekannt->gesendetAm > 0,
             ));
 
             $tat = $entscheidung['tat'];
@@ -215,6 +221,19 @@ class Abgleich
                 continue;
             }
 
+            if ($probelauf) {
+                // Nichts senden, nichts hochladen, nichts an der Zuordnung
+                // aendern. Nur festhalten, was passiert waere.
+                $vorhaben[] = array(
+                    'artikel' => $artikelId,
+                    'inserat' => $bekannt !== null ? (int) $bekannt->inseratId : 0,
+                    'tat'     => $tat,
+                    'grund'   => $entscheidung['grund'],
+                );
+                $geschrieben++;
+                continue;
+            }
+
             $ergebnis = $this->ausfuehren($tat, $artikel, $gebaut, $bekannt, $umgebung, $neuerAbdruck, $entscheidung['grund']);
             $geschrieben++;
 
@@ -225,6 +244,7 @@ class Abgleich
 
         $bericht = array(
             'ok'          => true,
+            'probelauf'   => $probelauf,
             'gelesen'     => $gelesen,
             'angelegt'    => $zaehler[Entscheidung::ANLEGEN],
             'geaendert'   => $zaehler[Entscheidung::AENDERN],
@@ -236,7 +256,16 @@ class Abgleich
             'dauer'       => round(microtime(true) - $beginn, 1),
         );
 
-        $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.abgeglichen', $bericht);
+        $this->getLogger(__METHOD__)->info(
+            $probelauf ? 'MaschinensucherMarkt::log.probelauf' : 'MaschinensucherMarkt::log.abgeglichen',
+            $bericht
+        );
+
+        if ($probelauf && count($vorhaben) > 0) {
+            // Genau diese Liste ist der Sinn des Probelaufs: Sie zeigt
+            // Artikel fuer Artikel, was beim Umschalten passieren wuerde.
+            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.vorhaben', array_slice($vorhaben, 0, 50));
+        }
 
         if (count($gescheitert) > 0) {
             $this->getLogger(__METHOD__)->warning('MaschinensucherMarkt::log.nichtUebertragen',
@@ -257,7 +286,7 @@ class Abgleich
         if ($tat === Entscheidung::PAUSIEREN) {
             $antwort = $this->api->pausieren($inseratId);
             if (Antwort::istOk($antwort)) {
-                $this->merken($bekannt, Verknuepfung::PAUSIERT, null, null, $grund);
+                $this->merken($bekannt, Verknuepfung::PAUSIERT, null, time(), $grund);
                 return array('ok' => true, 'meldung' => '');
             }
             return $this->fehlschlag($bekannt, $antwort, 'Pausieren');
@@ -266,7 +295,7 @@ class Abgleich
         if ($tat === Entscheidung::AKTIVIEREN) {
             $antwort = $this->api->aktivieren($inseratId);
             if (Antwort::istOk($antwort)) {
-                $this->merken($bekannt, Verknuepfung::AKTIV, null, null, '');
+                $this->merken($bekannt, Verknuepfung::AKTIV, null, time(), '');
                 return array('ok' => true, 'meldung' => '');
             }
             return $this->fehlschlag($bekannt, $antwort, 'Aktivieren');

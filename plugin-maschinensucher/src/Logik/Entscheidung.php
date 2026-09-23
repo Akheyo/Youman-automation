@@ -33,6 +33,9 @@ class Entscheidung
      *   zustand             string aktiv | pausiert | unbekannt
      *   fingerabdruck       string zuletzt gesendeter Stand
      *   neuerFingerabdruck  string jetziger Stand
+     *   verwaltet           bool   Hat das Plugin dieses Inserat schon einmal
+     *                              selbst geschrieben? Nur dann ist eine
+     *                              fehlende Markierung eine Anweisung.
      * @return array ['tat', 'grund']
      */
     public static function treffen(array $lage)
@@ -44,14 +47,26 @@ class Entscheidung
         $zustand   = isset($lage['zustand']) ? (string) $lage['zustand'] : 'unbekannt';
         $bekannt   = $inseratId > 0;
         $aktiv     = $bekannt && $zustand === 'aktiv';
+        $verwaltet = $bekannt && !empty($lage['verwaltet']);
 
-        // ---- Markierung weg ------------------------------------------------
-        // Das ist eine Ansage: Der Artikel soll nicht mehr am Markt sein.
-        // Pausieren, nicht loeschen — wer die Markierung versehentlich
+        // ---- Nicht markiert --------------------------------------------------
+        // Eine Ansage ist das NUR bei einem Inserat, das das Plugin selbst
+        // verwaltet: Dann wurde die Markierung entfernt, und der Artikel soll
+        // vom Markt. Pausieren, nicht loeschen — wer sie versehentlich
         // entfernt, soll sie zurueckdrehen koennen, ohne alles zu verlieren.
+        //
+        // Ein Inserat, das die Bestandsaufnahme bloss VORGEFUNDEN hat, ist
+        // etwas anderes. Dass sein Artikel nicht markiert ist, heisst nur:
+        // noch nicht uebernommen. Es wird nicht angefasst. Ohne diese
+        // Unterscheidung pausiert der erste Lauf auf einem frischen System
+        // saemtliche bestehenden Inserate — denn dort ist noch nichts
+        // markiert.
         if (!$markiert) {
-            if ($aktiv) {
+            if ($aktiv && $verwaltet) {
                 return self::tat(self::PAUSIEREN, 'Die Markierung wurde entfernt.');
+            }
+            if ($bekannt && !$verwaltet) {
+                return self::tat(self::NICHTS, 'Nicht markiert und nicht vom Plugin verwaltet — bleibt, wie es ist.');
             }
             return self::tat(self::NICHTS, $bekannt
                 ? 'Nicht markiert, steht drueben schon still.'
@@ -63,9 +78,12 @@ class Entscheidung
         // dann nicht mit halben Daten ueberschrieben werden.
         if (count($maengel) > 0) {
             $grund = implode(' ', $maengel);
-            if ($aktiv) {
+            if ($aktiv && $verwaltet) {
                 return self::tat(self::PAUSIEREN, 'Angaben fehlen: ' . $grund);
             }
+            // Ein vorgefundenes Inserat bleibt stehen, wie es ist: Es lief
+            // bisher mit SEINEN Daten, und dass Plenty unvollstaendig ist,
+            // ist kein Grund, es vom Markt zu nehmen. Gemeldet wird trotzdem.
             return self::tat(self::ZURUECK, $grund);
         }
 

@@ -61,6 +61,19 @@ class Einstellungen
         return trim((string) $this->wert('apiToken', ''));
     }
 
+    /**
+     * Probelauf: lesen und entscheiden, aber nichts schreiben.
+     *
+     * Im Zweifel JA. Nur ein ausdrueckliches "nein" schaltet das Schreiben
+     * frei — ein leerer oder unbekannter Wert, etwa nach einem Update, das
+     * die gespeicherten Einstellungen zuruecksetzt, darf nie dazu fuehren,
+     * dass ploetzlich geschrieben wird.
+     */
+    public function probelauf()
+    {
+        return strtolower(trim((string) $this->wert('probelauf', 'ja'))) !== 'nein';
+    }
+
     public function apiEingerichtet()
     {
         return strlen($this->apiToken()) >= 16;

@@ -412,7 +412,7 @@ $p->gleich(Entscheidung::AKTIVIEREN, Entscheidung::treffen($lage(array(
     'kommt Ware nach, wird wieder aktiviert - das Inserat behaelt Laufzeit und Anfragen');
 
 $p->gruppe('Markierung');
-$weg = Entscheidung::treffen($lage(array('markiert' => false, 'inseratId' => 500, 'zustand' => 'aktiv')));
+$weg = Entscheidung::treffen($lage(array('markiert' => false, 'inseratId' => 500, 'zustand' => 'aktiv', 'verwaltet' => true)));
 $p->gleich(Entscheidung::PAUSIEREN, $weg['tat'], 'Markierung entfernt: pausieren, nicht loeschen');
 $p->enthaelt('Markierung', $weg['grund'], 'der Grund benennt die Markierung');
 $p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array('markiert' => false)))['tat'],
@@ -423,7 +423,7 @@ $p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
 
 $p->gruppe('Unvollstaendige Artikel');
 $kaputt = Entscheidung::treffen($lage(array(
-    'maengel' => array('Kein Preis.'), 'inseratId' => 500, 'zustand' => 'aktiv')));
+    'maengel' => array('Kein Preis.'), 'inseratId' => 500, 'zustand' => 'aktiv', 'verwaltet' => true)));
 $p->gleich(Entscheidung::PAUSIEREN, $kaputt['tat'],
     'fehlen Angaben, wird pausiert statt mit halben Daten ueberschrieben');
 $p->enthaelt('Kein Preis.', $kaputt['grund'], 'der Mangel steht im Grund');
@@ -431,6 +431,29 @@ $p->enthaelt('Kein Preis.', $kaputt['grund'], 'der Mangel steht im Grund');
 $p->gleich(Entscheidung::ZURUECK, Entscheidung::treffen($lage(array(
     'maengel' => array('Kein Preis.'))))['tat'],
     'unvollstaendig und unbekannt: zurueckhalten, nicht anlegen');
+
+// Der Fall, der ein Live-Konto leergeraeumt haette: frisches System, noch
+// nichts markiert, die Bestandsaufnahme hat hunderte laufende Inserate
+// gefunden. Keines davon darf angefasst werden.
+$p->gruppe('Vorgefundene Inserate');
+$vorgefunden = Entscheidung::treffen($lage(array(
+    'markiert' => false, 'inseratId' => 500, 'zustand' => 'aktiv', 'verwaltet' => false)));
+$p->gleich(Entscheidung::NICHTS, $vorgefunden['tat'],
+    'ein vorgefundenes, nicht markiertes Inserat wird NICHT pausiert');
+$p->enthaelt('nicht vom Plugin verwaltet', $vorgefunden['grund'], 'und der Grund sagt das');
+
+$p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
+    'markiert' => false, 'inseratId' => 500, 'zustand' => 'aktiv')))['tat'],
+    'ohne Angabe gilt ein Inserat als nicht verwaltet - im Zweifel nichts tun');
+
+$vorgefundenOhnePreis = Entscheidung::treffen($lage(array(
+    'maengel' => array('Kein Preis.'), 'inseratId' => 500, 'zustand' => 'aktiv', 'verwaltet' => false)));
+$p->gleich(Entscheidung::ZURUECK, $vorgefundenOhnePreis['tat'],
+    'fehlt in Plenty der Preis, bleibt ein vorgefundenes Inserat mit seinen alten Daten stehen');
+
+$p->gleich(Entscheidung::PAUSIEREN, Entscheidung::treffen($lage(array(
+    'bestand' => 0, 'inseratId' => 500, 'zustand' => 'aktiv', 'verwaltet' => false)))['tat'],
+    'ist der Artikel aber MARKIERT und ausverkauft, geht es offline - verwaltet oder nicht');
 
 $p->gruppe('Schreibende Taten');
 $p->gleich(true, Entscheidung::schreibt(Entscheidung::ANLEGEN), 'anlegen schreibt');
