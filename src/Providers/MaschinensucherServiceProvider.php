@@ -17,12 +17,12 @@ use Plenty\Plugin\ServiceProvider;
  * Drei Ausloeser, absichtlich unterschiedlich schnell:
  *
  *   Ereignisaktion   sofort, wenn ein Auftrag den Bestand senkt
- *   Abgleich         alle 15 Minuten ueber den ganzen Stamm
+ *   Abgleich         alle 5 Minuten ueber den ganzen Stamm
  *   Bestandsaufnahme alle 5 Minuten lesend, haelt die Zuordnung aktuell
  *
  * Der schnelle Weg allein genuegt nicht: Nicht jede Bestandsaenderung
  * haengt an einem Auftrag. Der langsame allein genuegt auch nicht: Eine
- * verkaufte Maschine soll nicht noch eine Viertelstunde am Markt stehen.
+ * verkaufte Maschine soll nicht noch fuenf Minuten am Markt stehen.
  *
  * REIHENFOLGE IST ABSICHT: Erst die Zeitplaene, dann die Ereignisaktion,
  * und die in einem eigenen Fangnetz. Beides in einer Methode bedeutet
@@ -52,7 +52,10 @@ class MaschinensucherServiceProvider extends ServiceProvider
 
     public function boot(CronContainer $cron)
     {
-        $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, Abgleichen::class);
+        // Fuenf Minuten ist das kuerzeste Intervall, das Plenty fuer Plugins
+        // anbietet. Schneller geht nur die Ereignisaktion, und die haengt an
+        // Auftraegen.
+        $cron->add(CronContainer::EVERY_FIVE_MINUTES, Abgleichen::class);
         $cron->add(CronContainer::EVERY_FIVE_MINUTES, BestandLesen::class);
 
         $this->ereignisaktionAnmelden();
