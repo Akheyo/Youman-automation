@@ -26,7 +26,11 @@ class BestandLesen implements CronHandler
 
     public function handle()
     {
-        $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.zeitplanGestartet', array(
+        // DIAGNOSE, voruebergehend als Fehler: Fehler erscheinen immer im
+        // Protokoll, unabhaengig von der Log-Einstellung. So ist eindeutig
+        // zu sehen, ob der Zeitplan ueberhaupt startet. Wieder auf info()
+        // zuruecksetzen, sobald das geklaert ist.
+        $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseZeitplan', array(
             'zeitplan' => 'Bestandsaufnahme',
         ));
 
