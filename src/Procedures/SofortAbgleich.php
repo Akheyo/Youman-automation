@@ -29,25 +29,20 @@ class SofortAbgleich
 {
     use Loggable;
 
-    /** @var Abgleich */
-    private $abgleich;
-
-    /** @var Bestandsaufnahme */
-    private $aufnahme;
-
-    /** @var Zuordnung */
-    private $zuordnung;
-
-    public function __construct(Abgleich $abgleich, Bestandsaufnahme $aufnahme, Zuordnung $zuordnung)
-    {
-        $this->abgleich = $abgleich;
-        $this->aufnahme = $aufnahme;
-        $this->zuordnung = $zuordnung;
-    }
+    // Kein Konstruktor mit Abhaengigkeiten: Scheitert einer davon, wird
+    // run() nie erreicht, und nichts davon landet im Protokoll. Die Dienste
+    // werden deshalb erst in run() geholt, innerhalb des Fangnetzes.
 
     public function run(EventProceduresTriggered $ereignis)
     {
+        // DIAGNOSE, voruebergehend als Fehler — siehe Crons\BestandLesen.
+        $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseFlow', array());
+
         try {
+            $abgleich = pluginApp(Abgleich::class);
+            $aufnahme = pluginApp(Bestandsaufnahme::class);
+            $zuordnung = pluginApp(Zuordnung::class);
+
             $auftrag = $ereignis->getOrder();
             $varianten = $this->variantenAus($auftrag);
 
@@ -59,11 +54,11 @@ class SofortAbgleich
             // auf den Zeitplan zu warten, wird die Bestandsaufnahme hier
             // gleich mit erledigt — so ist ein einziger Klick ein
             // vollstaendiger Test.
-            if ($this->zuordnung->anzahl() === 0) {
-                $this->aufnahme->lauf();
+            if ($zuordnung->anzahl() === 0) {
+                $aufnahme->lauf();
             }
 
-            $bericht = $this->abgleich->fuerVarianten($varianten);
+            $bericht = $abgleich->fuerVarianten($varianten);
 
             $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.sofortAbgeglichen', array(
                 'auftrag'   => isset($auftrag->id) ? (int) $auftrag->id : 0,
