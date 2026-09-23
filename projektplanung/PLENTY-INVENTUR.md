@@ -1466,25 +1466,76 @@ gehört also zur Maschinensucher-Einrichtung. Sein einziger Filter lautet
 14.09.2018). Das ist ein Testrest von 2018, der nie aufgeräumt wurde.
 Wenn Maschinensucher Bilder braucht, liefert dieser Export sie nicht.
 
-### L6 — Was zu tun ist, in dieser Reihenfolge
+### L6 — Den Export reparieren
 
-1. **Export 4, Filter `flag1`:** von `16` auf `27` ändern — oder den Filter
-   entfernen, wenn alle 3 070 verkaufsfähigen Varianten des Marktes gemeint
-   sind. Ein Wert, und der Feed füllt sich.
-2. **Prüfen, ob die Markierung 16 heute noch „Import" heißen soll** oder ob
-   umgekehrt die Umbenennung der Fehler war. Das entscheidet, ob Punkt 1 die
-   Ursache behebt oder nur das Symptom.
-3. **Machinio (Herkunft 16) mit einem Export versorgen.** Der Kanal verdient
-   Geld mit 9 verkaufsfähigen Varianten. Die Freigabe von 136 auf das
-   Maschinensortiment auszuweiten und einen Feed anzulegen, ist der naheliegende
-   Hebel im ganzen Bereich.
-4. **Exapro und Resale anschließen** — 1 831 verkaufsfähige Varianten liegen
-   freigegeben bereit, es fehlt nur der Export.
-5. **gebraucht.de klären:** entweder Bestand und Freigaben aufbauen oder den
-   Export stilllegen. Der falsche `plentyId` gehört in beiden Fällen korrigiert.
-6. **Export 6 aufräumen** — entweder den Artikelfilter entfernen oder den Export
-   löschen.
-7. **Tag 11 „Maschienensucher" umbenennen.** Der Tippfehler macht jede Suche
+**Klickweg:** `Daten » Elastischer Export` → Export **„Maschinensucher"** (id 4)
+öffnen → Bereich **Filter** → Filter **„Markierung 1"** → Wert ändern →
+**Speichern**. Die Änderung wirkt sofort; ein Neuaufbau ist nicht nötig, weil
+`Cache-Datei generieren` bei diesem Export auf 0 steht.
+
+**Welcher Wert?** Beide Varianten sind gerechnet — Zeilen heißt hier: Varianten,
+die nach *allen fünf* Filtern übrig bleiben (aktiv, mit Kategorie, Bestand > 0,
+für Markt 14 freigegeben, Markierung).
+
+| Variante | Filter „Markierung 1" | Zeilen im Feed | Artikel |
+| --- | --- | ---: | ---: |
+| **Ist-Zustand** | 16 („Import") | **0** | 0 |
+| **A — Markierung korrigieren** | **27 („Maschinensucher")** | **541** | 541 |
+| **B — Filter ganz entfernen** | *(kein Markierungsfilter)* | **2 986** | 2 975 |
+
+Zur Einordnung, alles für Markt 14 freigegeben: 5 856 Varianten, davon
+5 131 aktiv, 5 692 mit Kategorie, 3 145 mit Bestand > 0.
+Von den 659 freigegebenen Varianten mit Markierung 27 sind 630 aktiv,
+655 haben eine Kategorie und 549 haben Bestand — zusammen bleiben 541.
+
+**Empfehlung: erst A, dann über B entscheiden.**
+A ist die wörtliche Reparatur: der Export tut wieder das, wonach er benannt ist,
+und liefert genau die Artikel, die jemand bewusst mit „Maschinensucher" markiert
+hat. Das Risiko ist null, weil heute ohnehin nichts rausgeht.
+B versechsfacht den Feed, verschiebt aber die Entscheidung darüber, was zu
+Maschinensucher gehört, von der Markierung auf die Marktfreigabe. Das ist eine
+inhaltliche Entscheidung, keine Fehlerbehebung — und 5 856 Freigaben sehen eher
+nach „historisch gewachsen" aus als nach einer gepflegten Auswahl. Das Limit von
+10 000 reicht für beide Varianten.
+
+**Vorher prüfen:** heißt Markierung 16 heute absichtlich „Import"? Wenn ja, ist A
+richtig. Wenn die Umbenennung selbst der Fehler war, gehört stattdessen die
+Markierung zurückbenannt — dann betrifft das aber auch die 1 695 Artikel, die
+heute die 16 tragen, und den Rest des Hauses. Die Markierungstexte stehen unter
+`Einstellungen » Artikel » Markierungen` und sind über
+`GET /rest/markings` abrufbar.
+
+**Danach kontrollieren**, in dieser Reihenfolge:
+
+1. Im Export unter **Bereitstellung** die Datei abrufen und die Zeilen zählen —
+   erwartet werden 541 (Variante A) bzw. 2 986 (Variante B), plus Kopfzeile.
+   Weicht das stark ab, greift ein weiterer Filter, den wir nicht kennen.
+2. Nach ein bis zwei Wochen prüfen, ob Herkunft 14 Aufträge bringt:
+   `GET /rest/orders?itemsPerPage=1&createdAtFrom=<Datum>` und die `referrerId`
+   auszählen. Bisher steht sie bei 0 in 12 Monaten.
+3. Gegenprobe über die API, ohne etwas zu ändern:
+   `GET /rest/items?itemsPerPage=1&flagOne=27` muss 670 liefern.
+
+### L7 — Die übrigen Baustellen, nach Ertrag sortiert
+
+1. **Machinio (Herkunft 16) mit einem Export versorgen.** Der Kanal bringt
+   60 916 € aus 22 Aufträgen mit **9** verkaufsfähigen Varianten. Erst die
+   Marktfreigabe 16 auf das Maschinensortiment ausweiten, dann einen Export
+   anlegen — als Vorlage taugt Export 4 nach der Reparatur, mit `markets = 16`
+   statt 14. Das ist der größte Hebel im ganzen Bereich.
+2. **Exapro (17) und Resale (18) anschließen.** 802 bzw. 1 029 verkaufsfähige
+   Varianten liegen freigegeben bereit, es fehlt nur der Export. Null Aufträge
+   bisher.
+3. **trade_maschines (Export 3)** läuft, ist aber seit 14.09.2018 unverändert
+   und hat keinen Markierungsfilter — er liefert, was für Markt 13 freigegeben
+   ist (120 verkaufsfähige Varianten). Prüfen, ob das noch gewollt ist.
+4. **gebraucht.de (Export 9) klären:** 5 freigegebene Varianten, davon keine mit
+   Bestand, Filter `stock=positive` → null Zeilen. Zusätzlich steht dort
+   `plentyId = 14443`, während die Ware am Mandanten 14616 hängt. Entweder
+   aufbauen oder stilllegen.
+5. **Export 6 „BilderExport"** filtert auf `itemId = 19264`, also einen einzigen
+   Artikel. Testrest von 2018 — Filter entfernen oder Export löschen.
+6. **Tag 11 „Maschienensucher"** umbenennen; der Tippfehler macht jede Suche
    unzuverlässig.
 
 Ereignisaktionen, die automatisch die Markierung 27 setzen oder die
