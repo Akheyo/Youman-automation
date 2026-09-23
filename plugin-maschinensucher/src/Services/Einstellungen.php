@@ -96,6 +96,19 @@ class Einstellungen
         return $id > 0 ? $id : null;
     }
 
+    /**
+     * Die Liste, die einspringt, wenn die erste am Artikel leer ist.
+     *
+     * Ohne sie ginge am Anfang fast nichts raus: Die eigene Marktplatz-Liste
+     * ist frisch angelegt meist leer, während im Webshop längst ein Preis
+     * steht.
+     */
+    public function preislisteErsatzId()
+    {
+        $id = (int) $this->zahl('preislisteErsatzId', 0);
+        return $id > 0 ? $id : null;
+    }
+
     public function trenner()
     {
         $roh = (string) $this->wert('trenner', ';');
@@ -126,6 +139,8 @@ class Einstellungen
         return array(
             'nummernPraefix' => (string) $this->wert('nummernPraefix', 'KK-'),
             'preisIst' => $this->wert('preisIst', 'brutto') === 'netto' ? 'netto' : 'brutto',
+            'preisIstErsatz' => $this->wert('preisIstErsatz', 'brutto') === 'netto' ? 'netto' : 'brutto',
+            'nummernQuelle' => $this->nummernQuelle(),
             'mwst' => $this->zahl('mwst', 19),
             'waehrung' => (string) $this->wert('waehrung', 'EUR'),
             'land' => (string) $this->wert('land', 'DE'),
@@ -138,6 +153,13 @@ class Einstellungen
             'kategorieZuordnung' => $this->zuordnung(),
             'shopBasisUrl' => (string) $this->wert('shopBasisUrl', ''),
         );
+    }
+
+    /** Woraus die Inseratsnummer gebildet wird — siehe Logik/Inserat.php. */
+    public function nummernQuelle()
+    {
+        $quelle = (string) $this->wert('nummernQuelle', 'itemId');
+        return in_array($quelle, array('itemId', 'variantennummer', 'variationId'), true) ? $quelle : 'itemId';
     }
 
     /** Zuordnung "wort=kategorie,wort=kategorie" aus einem Textfeld. */

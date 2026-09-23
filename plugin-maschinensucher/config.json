@@ -156,6 +156,34 @@
             "tooltip": "Config.preislisteTooltip"
           }
         },
+        "preislisteErsatzId": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.preislisteErsatzLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.preislisteErsatzTooltip"
+          }
+        },
+        "preisIstErsatz": {
+          "type": "select",
+          "required": false,
+          "label": "Config.preisIstErsatzLabel",
+          "options": {
+            "defaultValue": "brutto",
+            "tooltip": "Config.preisIstErsatzTooltip",
+            "listBoxValues": [
+              {
+                "caption": "Config.preisBrutto",
+                "value": "brutto"
+              },
+              {
+                "caption": "Config.preisNetto",
+                "value": "netto"
+              }
+            ]
+          }
+        },
         "waehrung": {
           "type": "inputText",
           "required": false,
@@ -187,12 +215,35 @@
             "tooltip": "Config.kategorieZuordnungTooltip"
           }
         },
+        "nummernQuelle": {
+          "type": "select",
+          "required": true,
+          "label": "Config.nummernQuelleLabel",
+          "options": {
+            "defaultValue": "itemId",
+            "tooltip": "Config.nummernQuelleTooltip",
+            "listBoxValues": [
+              {
+                "caption": "Config.quelleItemId",
+                "value": "itemId"
+              },
+              {
+                "caption": "Config.quelleVariantennummer",
+                "value": "variantennummer"
+              },
+              {
+                "caption": "Config.quelleVariationId",
+                "value": "variationId"
+              }
+            ]
+          }
+        },
         "nummernPraefix": {
           "type": "inputText",
           "required": false,
           "label": "Config.praefixLabel",
           "options": {
-            "defaultValue": "KK-",
+            "defaultValue": "",
             "tooltip": "Config.praefixTooltip"
           }
         },

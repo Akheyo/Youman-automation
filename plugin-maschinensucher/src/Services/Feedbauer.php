@@ -93,6 +93,7 @@ class Feedbauer
         $flagId = $this->einstellungen->markierungId();
         $flagFeld = $this->einstellungen->markierungFeld();
         $preisliste = $this->einstellungen->preislisteId();
+        $ersatzliste = $this->einstellungen->preislisteErsatzId();
         $hersteller = $this->herstellerKarte();
 
         $bereit = array();
@@ -120,7 +121,7 @@ class Feedbauer
                 }
                 $markiert++;
 
-                $artikel = Artikelabbildung::ausVariante($roh, $hersteller, array(), $preisliste);
+                $artikel = Artikelabbildung::ausVariante($roh, $hersteller, array(), $preisliste, $ersatzliste);
                 // Bilder nur für markierte Artikel nachladen — ein Aufruf je
                 // Artikel, und der Stamm hat zehntausende, von denen die
                 // allermeisten nichts mit dem Marktplatz zu tun haben.
