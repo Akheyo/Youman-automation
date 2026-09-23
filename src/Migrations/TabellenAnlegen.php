@@ -4,10 +4,11 @@ namespace MaschinensucherMarkt\Migrations;
 
 use MaschinensucherMarkt\Models\Abholung;
 use MaschinensucherMarkt\Models\Stand;
+use MaschinensucherMarkt\Models\Verknuepfung;
 use Plenty\Modules\Plugin\DataBase\Contracts\Migrate;
 
 /**
- * Legt die beiden Plugin-Tabellen an. Läuft beim Bauen des Plugin-Sets
+ * Legt die Plugin-Tabellen an. Läuft beim Bauen des Plugin-Sets
  * (siehe "runOnBuild" in der plugin.json) und ist wiederholbar.
  */
 class TabellenAnlegen
@@ -16,5 +17,6 @@ class TabellenAnlegen
     {
         $migrate->createTable(Stand::class);
         $migrate->createTable(Abholung::class);
+        $migrate->createTable(Verknuepfung::class);
     }
 }

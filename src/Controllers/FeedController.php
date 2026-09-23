@@ -2,6 +2,7 @@
 
 namespace MaschinensucherMarkt\Controllers;
 
+use MaschinensucherMarkt\Services\Bestandsaufnahme;
 use MaschinensucherMarkt\Services\Einstellungen;
 use MaschinensucherMarkt\Services\Feedbauer;
 use MaschinensucherMarkt\Services\Standspeicher;
@@ -149,6 +150,70 @@ class FeedController extends Controller
         $zeilen[] = '';
 
         return $response->make(implode("\n", $zeilen), 200, array(
+            'Content-Type' => 'text/plain; charset=utf-8',
+            'Cache-Control' => 'no-store, max-age=0',
+        ));
+    }
+
+    /**
+     * Liest, was bei Maschinensucher online steht, und legt die Zuordnung an.
+     *
+     * Der erste Aufruf ist der wichtigste des ganzen Plugins: Danach weiss
+     * es zu jedem bestehenden Inserat, zu welchem Plenty-Artikel es gehoert
+     * — und kann deshalb aendern statt neu anzulegen.
+     *
+     * Der Aufruf aendert bei Maschinensucher NICHTS. Er liest nur.
+     */
+    public function bestand(
+        Request $request,
+        Response $response,
+        Einstellungen $einstellungen,
+        Bestandsaufnahme $aufnahme
+    ) {
+        if (!$this->tokenStimmt($request, $einstellungen->token())) {
+            return $response->make('Zugang verweigert.', 401);
+        }
+
+        $bericht = $aufnahme->lauf();
+
+        if (empty($bericht['ok'])) {
+            return $response->make(
+                "NICHT GELESEN\n\n" . $bericht['meldung'] . "\n\nEs wurde nichts veraendert.\n",
+                200,
+                array('Content-Type' => 'text/plain; charset=utf-8')
+            );
+        }
+
+        $z = array();
+        $z[] = 'BESTAND GELESEN';
+        $z[] = '';
+        $z[] = 'Inserate bei Maschinensucher: ' . $bericht['gelesen'];
+        $z[] = '  davon online:               ' . $bericht['aktiv'];
+        $z[] = '  davon pausiert:             ' . $bericht['pausiert'];
+        $z[] = '';
+        $z[] = 'Einem Plenty-Artikel zugeordnet: ' . $bericht['zugeordnet'];
+        $z[] = 'Ohne Zuordnung:                  ' . $bericht['ohneZuordnung'];
+        $z[] = '';
+        $z[] = 'Neue Zuordnungen angelegt:  ' . $bericht['neu'];
+        $z[] = 'Bestehende fortgeschrieben: ' . $bericht['aktualisiert'];
+        $z[] = 'Dauer: ' . $bericht['dauer'] . ' s';
+
+        if (count($bericht['doppelteArtikel']) > 0) {
+            $z[] = '';
+            $z[] = 'ACHTUNG - diese Artikel haengen an mehr als einem Inserat:';
+            $z[] = '  ' . implode(', ', array_slice($bericht['doppelteArtikel'], 0, 50));
+            $z[] = '  Solange das so ist, ueberschreiben die sich gegenseitig.';
+        }
+
+        if ($bericht['ohneZuordnung'] > 0) {
+            $z[] = '';
+            $z[] = 'Die Inserate ohne Zuordnung tragen keine Plenty-Artikel-ID als';
+            $z[] = 'Referenz. Sie werden vom Plugin weder angefasst noch geloescht.';
+        }
+
+        $z[] = '';
+
+        return $response->make(implode("\n", $z), 200, array(
             'Content-Type' => 'text/plain; charset=utf-8',
             'Cache-Control' => 'no-store, max-age=0',
         ));
