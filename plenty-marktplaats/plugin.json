@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "name": "Marktplaats",
+  "description": "Schnittstelle zu Marktplaats.nl: Artikel aus plentymarkets als Anzeigen einstellen, aktualisieren und wieder entfernen.",
+  "namespace": "Marktplaats",
+  "author": "Komplett Konzept Verwertungs GmbH",
+  "shortDescription": {
+    "de": "Artikel als Anzeigen auf Marktplaats.nl einstellen, aktualisieren und entfernen.",
+    "en": "List items as advertisements on Marktplaats.nl, keep them updated and remove them."
+  },
+  "keywords": ["Marktplaats", "marketplace", "Niederlande", "Anzeigen"],
+  "type": "integration",
+  "license": "proprietary",
+  "price": 0.00,
+  "isClosedSource": true,
+  "serviceProvider": "Marktplaats\\Providers\\MarktplaatsServiceProvider",
+  "dependencies": {
+    "guzzlehttp/guzzle": "7.*"
+  },
+  "runOnBuild": [
+    "Marktplaats\\Migrations\\CreateTables",
+    "Marktplaats\\Migrations\\CreateReferrer"
+  ],
+  "platform": {
+    "php": ">=7.3 <8.1"
+  }
+}

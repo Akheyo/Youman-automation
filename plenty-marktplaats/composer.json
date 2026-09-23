@@ -1,0 +1,18 @@
+{
+  "name": "komplett-konzept/plenty-marktplaats",
+  "description": "plentymarkets-Plugin fuer Marktplaats.nl (nur fuer lokale Tests; Plenty liest plugin.json)",
+  "type": "project",
+  "license": "proprietary",
+  "require-dev": {
+    "phpunit/phpunit": "^9.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "Marktplaats\\": "src/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit",
+    "lint": "find src resources/lib tests -name '*.php' -print0 | xargs -0 -n1 php -l"
+  }
+}

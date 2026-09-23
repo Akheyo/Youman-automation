@@ -1,0 +1,303 @@
+{
+  "formatVersion": 1,
+  "menu": {
+    "access": {
+      "label": "Config.tabAccess",
+      "formFields": {
+        "environment": {
+          "type": "selectBox",
+          "required": false,
+          "label": "Config.environment",
+          "options": {
+            "defaultValue": "production",
+            "selectBoxValues": [
+              {
+                "value": "production",
+                "caption": "Config.environmentProduction"
+              },
+              {
+                "value": "sandbox",
+                "caption": "Config.environmentSandbox"
+              }
+            ]
+          }
+        },
+        "clientId": {
+          "type": "inputText",
+          "required": true,
+          "label": "Config.clientId",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.clientIdTooltip"
+          }
+        },
+        "clientSecret": {
+          "type": "inputText",
+          "required": true,
+          "label": "Config.clientSecret",
+          "options": {
+            "defaultValue": ""
+          }
+        },
+        "apiUrl": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.apiUrl",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.apiUrlTooltip"
+          }
+        },
+        "redirectUri": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.redirectUri",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.redirectUriTooltip"
+          }
+        }
+      }
+    },
+    "ads": {
+      "label": "Config.tabAds",
+      "formFields": {
+        "postcode": {
+          "type": "inputText",
+          "required": true,
+          "label": "Config.postcode",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.postcodeTooltip"
+          }
+        },
+        "salesPriceId": {
+          "type": "inputNumber",
+          "required": false,
+          "label": "Config.salesPriceId",
+          "options": {
+            "defaultValue": 1,
+            "tooltip": "Config.salesPriceIdTooltip"
+          }
+        },
+        "priceModel": {
+          "type": "selectBox",
+          "required": false,
+          "label": "Config.priceModel",
+          "options": {
+            "defaultValue": "fixed",
+            "selectBoxValues": [
+              {
+                "value": "fixed",
+                "caption": "Config.priceModelFixed"
+              },
+              {
+                "value": "bidding",
+                "caption": "Config.priceModelBidding"
+              },
+              {
+                "value": "see description",
+                "caption": "Config.priceModelSeeDescription"
+              }
+            ]
+          }
+        },
+        "languages": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.languages",
+          "options": {
+            "defaultValue": "nl, de",
+            "tooltip": "Config.languagesTooltip"
+          }
+        },
+        "titleField": {
+          "type": "selectBox",
+          "required": false,
+          "label": "Config.titleField",
+          "options": {
+            "defaultValue": "name1",
+            "selectBoxValues": [
+              {
+                "value": "name1",
+                "caption": "Config.titleName1"
+              },
+              {
+                "value": "name2",
+                "caption": "Config.titleName2"
+              },
+              {
+                "value": "name3",
+                "caption": "Config.titleName3"
+              }
+            ]
+          }
+        },
+        "descriptionFooter": {
+          "type": "inputTextArea",
+          "required": false,
+          "label": "Config.descriptionFooter",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.descriptionFooterTooltip"
+          }
+        },
+        "maxImages": {
+          "type": "inputNumber",
+          "required": false,
+          "label": "Config.maxImages",
+          "options": {
+            "defaultValue": 24,
+            "tooltip": "Config.maxImagesTooltip"
+          }
+        },
+        "sellerName": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.sellerName",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.sellerNameTooltip"
+          }
+        },
+        "phoneNumber": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.phoneNumber",
+          "options": {
+            "defaultValue": ""
+          }
+        }
+      }
+    },
+    "categories": {
+      "label": "Config.tabCategories",
+      "formFields": {
+        "categoryMap": {
+          "type": "inputTextArea",
+          "required": false,
+          "label": "Config.categoryMap",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.categoryMapTooltip"
+          }
+        },
+        "defaultCategoryId": {
+          "type": "inputNumber",
+          "required": false,
+          "label": "Config.defaultCategoryId",
+          "options": {
+            "defaultValue": 0,
+            "tooltip": "Config.defaultCategoryIdTooltip"
+          }
+        },
+        "attributes": {
+          "type": "inputTextArea",
+          "required": false,
+          "label": "Config.attributes",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.attributesTooltip"
+          }
+        },
+        "conditionAttribute": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.conditionAttribute",
+          "options": {
+            "defaultValue": "condition",
+            "tooltip": "Config.conditionAttributeTooltip"
+          }
+        },
+        "conditionMap": {
+          "type": "inputTextArea",
+          "required": false,
+          "label": "Config.conditionMap",
+          "options": {
+            "defaultValue": "{\"0\": \"Nieuw\", \"1\": \"Gebruikt\", \"2\": \"Nieuw\", \"3\": \"Nieuw\", \"4\": \"Zo goed als nieuw\"}",
+            "tooltip": "Config.conditionMapTooltip"
+          }
+        }
+      }
+    },
+    "gpsr": {
+      "label": "Config.tabGpsr",
+      "formFields": {
+        "sendGpsr": {
+          "type": "checkBox",
+          "required": false,
+          "label": "Config.sendGpsr",
+          "options": {
+            "defaultValue": "true",
+            "tooltip": "Config.sendGpsrTooltip"
+          }
+        },
+        "gpsrTradename": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.gpsrTradename",
+          "options": {
+            "defaultValue": ""
+          }
+        },
+        "gpsrAddress": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.gpsrAddress",
+          "options": {
+            "defaultValue": ""
+          }
+        },
+        "gpsrEmail": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.gpsrEmail",
+          "options": {
+            "defaultValue": ""
+          }
+        }
+      }
+    },
+    "sync": {
+      "label": "Config.tabSync",
+      "formFields": {
+        "autoSync": {
+          "type": "checkBox",
+          "required": false,
+          "label": "Config.autoSync",
+          "options": {
+            "defaultValue": "true",
+            "tooltip": "Config.autoSyncTooltip"
+          }
+        },
+        "requireStock": {
+          "type": "checkBox",
+          "required": false,
+          "label": "Config.requireStock",
+          "options": {
+            "defaultValue": "true",
+            "tooltip": "Config.requireStockTooltip"
+          }
+        },
+        "deleteWhenGone": {
+          "type": "checkBox",
+          "required": false,
+          "label": "Config.deleteWhenGone",
+          "options": {
+            "defaultValue": "true",
+            "tooltip": "Config.deleteWhenGoneTooltip"
+          }
+        },
+        "maxPerRun": {
+          "type": "inputNumber",
+          "required": false,
+          "label": "Config.maxPerRun",
+          "options": {
+            "defaultValue": 100,
+            "tooltip": "Config.maxPerRunTooltip"
+          }
+        }
+      }
+    }
+  }
+}

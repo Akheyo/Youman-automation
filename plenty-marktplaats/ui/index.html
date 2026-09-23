@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marktplaats</title>
+<style>
+  :root { --blau:#0d73fc; --rot:#b42318; --gruen:#1a7f37; --gelb:#9a6700; --grau:#667085; --linie:#e4e7ec; --hell:#f8f9fb; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:20px; font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif; color:#1d2939; background:#fff; }
+  h1 { font-size:20px; margin:0 0 16px; }
+  h2 { font-size:15px; margin:0 0 12px; }
+  section { border:1px solid var(--linie); border-radius:8px; padding:16px; margin-bottom:16px; }
+  .reihe { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  button { font:inherit; padding:7px 14px; border-radius:6px; border:1px solid var(--linie); background:#fff; cursor:pointer; }
+  button.primaer { background:var(--blau); border-color:var(--blau); color:#fff; }
+  button.gefahr { color:var(--rot); }
+  button:disabled { opacity:.5; cursor:default; }
+  input, select { font:inherit; padding:6px 8px; border:1px solid var(--linie); border-radius:6px; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--linie); vertical-align:top; }
+  th { color:var(--grau); font-weight:600; font-size:12px; }
+  .ok { color:var(--gruen); } .fehler { color:var(--rot); } .hinweis { color:var(--gelb); } .grau { color:var(--grau); }
+  .kachel { display:inline-block; min-width:90px; padding:8px 12px; background:var(--hell); border-radius:6px; margin:0 8px 8px 0; }
+  .kachel b { display:block; font-size:18px; }
+  pre { background:var(--hell); padding:10px; border-radius:6px; overflow:auto; max-height:360px; font-size:12px; }
+  code { background:var(--hell); padding:1px 5px; border-radius:4px; }
+  ul.liste { margin:6px 0; padding-left:18px; }
+  .klein { font-size:12px; }
+  #meldung { position:sticky; top:0; z-index:2; }
+  #meldung div { padding:10px 14px; border-radius:6px; margin-bottom:12px; }
+  #meldung .ok { background:#ecfdf3; } #meldung .fehler { background:#fef3f2; }
+</style>
+</head>
+<body>
+<h1>Marktplaats.nl</h1>
+<div id="meldung"></div>
+
+<section>
+  <h2>Verbindung</h2>
+  <div id="status" class="grau">Lade …</div>
+</section>
+
+<section>
+  <h2>Abgleich</h2>
+  <p class="grau klein">Übertragen werden aktive Varianten, die unter <b>Verfügbarkeit » Märkte</b> für <b>Marktplaats</b> freigegeben sind.</p>
+  <div class="reihe"><button class="primaer" id="abgleichen">Jetzt abgleichen</button><span id="abgleichStatus" class="grau"></span></div>
+  <div id="letzterLauf" style="margin-top:12px"></div>
+</section>
+
+<section>
+  <h2>Anzeigen</h2>
+  <div class="reihe" style="margin-bottom:10px">
+    <select id="filter">
+      <option value="">Alle</option><option value="online">Online</option><option value="error">Mit Fehler</option><option value="removed">Entfernt</option>
+    </select>
+    <button id="neuLaden">Aktualisieren</button>
+    <span id="seiteInfo" class="grau"></span>
+    <button id="zurueck">‹</button><button id="weiter">›</button>
+  </div>
+  <table>
+    <thead><tr><th>Variante</th><th>Titel</th><th>Preis</th><th>Marktplaats</th><th>Status</th><th>Stand</th><th></th></tr></thead>
+    <tbody id="anzeigen"></tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Vorschau &amp; Einzelabgleich</h2>
+  <div class="reihe">
+    <input id="variante" type="number" min="1" placeholder="Varianten-ID">
+    <button id="vorschau">Vorschau</button>
+    <button id="einzeln">Jetzt abgleichen</button>
+    <button id="entfernen" class="gefahr">Anzeige entfernen</button>
+  </div>
+  <div id="vorschauErgebnis" style="margin-top:12px"></div>
+</section>
+
+<section>
+  <h2>Marktplaats-Kategorien nachschlagen</h2>
+  <p class="grau klein">Für die Kategoriezuordnung in der Konfiguration: <code>PlentyKategorieID = MarktplaatsID</code>. Anzeigen gehen nur in L2-Kategorien.</p>
+  <div class="reihe"><button id="kategorienLaden">Kategorien laden</button><input id="kategorieSuche" placeholder="Suchen, z. B. gereedschap" disabled></div>
+  <div id="kategorien" style="margin-top:12px"></div>
+</section>
+
+<script>
+(function () {
+  'use strict';
+  var BASE = '/rest/markets/marktplaats/';
+  var seite = 1, proSeite = 50, kategorien = [];
+
+  function token() {
+    try { return localStorage.getItem('accessToken') || ''; } catch (e) { return ''; }
+  }
+
+  function api(methode, pfad) {
+    return fetch(BASE + pfad, {
+      method: methode,
+      headers: { 'Authorization': 'Bearer ' + token(), 'Accept': 'application/json' }
+    }).then(function (res) {
+      return res.text().then(function (text) {
+        var body; try { body = text ? JSON.parse(text) : null; } catch (e) { body = text; }
+        if (!res.ok) {
+          var msg = body && body.error ? body.error : ('HTTP ' + res.status);
+          if (res.status === 401) msg = 'Plenty-Anmeldung abgelaufen – Seite neu laden.';
+          var err = new Error(msg); err.body = body; throw err;
+        }
+        return body;
+      });
+    });
+  }
+
+  function esc(v) {
+    return String(v === null || v === undefined ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function $(id) { return document.getElementById(id); }
+  function zeit(ts) { return ts ? new Date(ts * 1000).toLocaleString('de-DE') : '–'; }
+  function euro(cent) { return cent ? (cent / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }) : '–'; }
+  function melde(text, ok) {
+    $('meldung').innerHTML = '<div class="' + (ok ? 'ok' : 'fehler') + '">' + esc(text) + '</div>';
+    if (ok) setTimeout(function () { $('meldung').innerHTML = ''; }, 5000);
+  }
+  function liste(eintraege, klasse) {
+    if (!eintraege || !eintraege.length) return '';
+    return '<ul class="liste ' + (klasse || '') + '">' + eintraege.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') + '</ul>';
+  }
+  function knopf(el, an) { el.disabled = !an; }
+
+  // --- Verbindung ---------------------------------------------------------
+  function ladeStatus() {
+    return api('GET', 'status').then(function (s) {
+      var h = '';
+      if (s.connected && !s.environmentMismatch) {
+        h += '<p class="ok"><b>Verbunden</b> (' + esc(s.connectedEnvironment === 'sandbox' ? 'Sandbox' : 'Live') + ', seit ' + zeit(s.connectedAt) + ')</p>';
+      } else if (s.environmentMismatch) {
+        h += '<p class="hinweis"><b>Neu verbinden:</b> Die Verbindung gilt für „' + esc(s.connectedEnvironment) + '“, eingestellt ist „' + esc(s.environment) + '“.</p>';
+      } else {
+        h += '<p class="fehler"><b>Nicht verbunden</b></p>';
+      }
+      if (!s.credentialsSet) h += '<p class="fehler">Client-ID und Client-Secret fehlen (Plugins » Plugin-Set » Marktplaats » Konfiguration).</p>';
+      h += '<p class="klein">Rückruf-Adresse für Marktplaats: <code>' + esc(s.redirectUri) + '</code></p>';
+      h += '<p class="klein grau">Herkunft-ID: ' + esc(s.referrerId || 'fehlt') + ' · Automatischer Abgleich: ' + (s.autoSync ? 'stündlich' : 'aus') + '</p>';
+      if (s.configErrors && s.configErrors.length) h += '<p class="fehler klein">Konfiguration:</p>' + liste(s.configErrors, 'fehler klein');
+      h += '<div class="reihe">';
+      h += '<button class="primaer" id="verbinden"' + (s.credentialsSet ? '' : ' disabled') + '>' + (s.connected ? 'Neu verbinden' : 'Mit Marktplaats verbinden') + '</button>';
+      if (s.connected) h += '<button class="gefahr" id="trennen">Trennen</button>';
+      h += '</div>';
+      h += '<div style="margin-top:12px">'
+        + '<span class="kachel"><b>' + (s.counts.online || 0) + '</b>online</span>'
+        + '<span class="kachel"><b class="' + (s.counts.error ? 'fehler' : '') + '">' + (s.counts.error || 0) + '</b>mit Fehler</span>'
+        + '<span class="kachel"><b>' + (s.counts.removed || 0) + '</b>entfernt</span></div>';
+      $('status').innerHTML = h;
+      zeigeLauf(s.lastSync);
+
+      $('verbinden').onclick = verbinden;
+      if ($('trennen')) $('trennen').onclick = function () {
+        if (!confirm('Verbindung zu Marktplaats trennen? Anzeigen bleiben online, werden aber nicht mehr abgeglichen.')) return;
+        api('DELETE', 'auth').then(ladeStatus).catch(function (e) { melde(e.message); });
+      };
+    }).catch(function (e) {
+      $('status').innerHTML = '<p class="fehler">' + esc(e.message) + '</p>';
+    });
+  }
+
+  function verbinden() {
+    // Fenster sofort oeffnen, sonst blockt der Browser das Popup
+    var fenster = window.open('', 'marktplaats_login', 'width=560,height=720');
+    api('GET', 'auth/login-url').then(function (r) {
+      if (fenster) fenster.location = r.url; else window.location = r.url;
+    }).catch(function (e) {
+      if (fenster) fenster.close();
+      melde(e.message);
+    });
+  }
+
+  window.addEventListener('message', function (ev) {
+    if (ev.data && ev.data.marktplaatsAuth) {
+      melde(ev.data.marktplaatsAuth === 'ok' ? 'Mit Marktplaats verbunden.' : 'Verbindung fehlgeschlagen – Details im Anmeldefenster.', ev.data.marktplaatsAuth === 'ok');
+      ladeStatus();
+    }
+  });
+
+  // --- Abgleich -------------------------------------------------------------
+  function zeigeLauf(l) {
+    if (!l || !l.startedAt) { $('letzterLauf').innerHTML = '<p class="grau">Noch kein Abgleich gelaufen.</p>'; return; }
+    var h = '<p class="klein grau">Letzter Lauf: ' + zeit(l.startedAt) + (l.complete ? '' : ' <span class="hinweis">(unvollständig)</span>') + '</p>';
+    h += '<div>'
+      + '<span class="kachel"><b>' + l.seen + '</b>geprüft</span>'
+      + '<span class="kachel"><b>' + l.created + '</b>neu</span>'
+      + '<span class="kachel"><b>' + l.updated + '</b>geändert</span>'
+      + '<span class="kachel"><b>' + l.images + '</b>nur Bilder</span>'
+      + '<span class="kachel"><b>' + l.deleted + '</b>entfernt</span>'
+      + '<span class="kachel"><b class="' + (l.invalid ? 'hinweis' : '') + '">' + l.invalid + '</b>unvollständig</span>'
+      + '<span class="kachel"><b class="' + (l.failed ? 'fehler' : '') + '">' + l.failed + '</b>fehlgeschlagen</span>'
+      + '</div>';
+    if (l.message) h += '<p class="hinweis">' + esc(l.message) + '</p>';
+    h += liste(l.errors, 'fehler klein');
+    $('letzterLauf').innerHTML = h;
+  }
+
+  $('abgleichen').onclick = function () {
+    var b = this; knopf(b, false);
+    $('abgleichStatus').textContent = 'Läuft … das kann einige Minuten dauern.';
+    api('POST', 'sync').then(function (l) {
+      zeigeLauf(l);
+      melde(l.complete ? 'Abgleich fertig.' : (l.message || 'Abgleich unvollständig.'), l.complete);
+      ladeStatus(); ladeAnzeigen();
+    }).catch(function (e) { melde(e.message); }).then(function () {
+      knopf(b, true); $('abgleichStatus').textContent = '';
+    });
+  };
+
+  // --- Anzeigenliste --------------------------------------------------------
+  var STATUS = { online: '<span class="ok">online</span>', error: '<span class="fehler">Fehler</span>', removed: '<span class="grau">entfernt</span>' };
+
+  function ladeAnzeigen() {
+    var filter = $('filter').value;
+    return api('GET', 'listings?page=' + seite + '&perPage=' + proSeite + '&status=' + encodeURIComponent(filter)).then(function (r) {
+      var seiten = Math.max(1, Math.ceil(r.total / r.perPage));
+      $('seiteInfo').textContent = r.total + ' Einträge · Seite ' + r.page + ' / ' + seiten;
+      knopf($('zurueck'), r.page > 1); knopf($('weiter'), r.page < seiten);
+      if (!r.entries.length) { $('anzeigen').innerHTML = '<tr><td colspan="7" class="grau">Keine Einträge.</td></tr>'; return; }
+      $('anzeigen').innerHTML = r.entries.map(function (a) {
+        var mp = a.mpItemId && a.status !== 'removed'
+          ? '<a href="https://link.marktplaats.nl/' + esc(a.mpItemId) + '" target="_blank" rel="noopener">' + esc(a.mpItemId) + '</a>'
+          : esc(a.mpItemId || '–');
+        var info = '';
+        if (a.lastError) info += '<div class="fehler klein">' + esc(a.lastError).replace(/\n/g, '<br>') + '</div>';
+        if (a.warnings) info += '<div class="hinweis klein">' + esc(a.warnings).replace(/\n/g, '<br>') + '</div>';
+        return '<tr><td>' + a.variationId + '</td><td>' + esc(a.title) + info + '</td><td>' + euro(a.price) + '</td><td>' + mp
+          + '</td><td>' + (STATUS[a.status] || esc(a.status)) + '</td><td class="klein grau">' + zeit(a.syncedAt)
+          + '</td><td><button class="klein" data-vorschau="' + a.variationId + '">Details</button></td></tr>';
+      }).join('');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-vorschau]'), function (b) {
+        b.onclick = function () { $('variante').value = b.getAttribute('data-vorschau'); zeigeVorschau(); $('variante').scrollIntoView({ behavior: 'smooth' }); };
+      });
+    }).catch(function (e) { $('anzeigen').innerHTML = '<tr><td colspan="7" class="fehler">' + esc(e.message) + '</td></tr>'; });
+  }
+  $('filter').onchange = function () { seite = 1; ladeAnzeigen(); };
+  $('neuLaden').onclick = ladeAnzeigen;
+  $('zurueck').onclick = function () { seite = Math.max(1, seite - 1); ladeAnzeigen(); };
+  $('weiter').onclick = function () { seite++; ladeAnzeigen(); };
+
+  // --- Vorschau / Einzelabgleich -------------------------------------------
+  var AKTION = { create: 'wird neu angelegt', update: 'wird aktualisiert', images: 'nur Bilder werden erneuert', 'delete': 'Anzeige wird entfernt', invalid: 'kann so nicht hochgeladen werden', none: 'keine Änderung nötig' };
+
+  function varianteId() {
+    var id = parseInt($('variante').value, 10);
+    if (!id) { melde('Bitte eine Varianten-ID eingeben.'); return 0; }
+    return id;
+  }
+
+  function zeigeVorschau() {
+    var id = varianteId(); if (!id) return;
+    $('vorschauErgebnis').innerHTML = '<p class="grau">Lade …</p>';
+    api('GET', 'preview/' + id).then(function (p) {
+      if (!p.found) { $('vorschauErgebnis').innerHTML = '<p class="fehler">Variante ' + id + ' nicht gefunden.</p>'; return; }
+      var h = '<p><b>Beim nächsten Abgleich:</b> ' + esc(AKTION[p.action] || p.action) + '</p>';
+      if (!p.wanted) h += '<p class="hinweis">Soll nicht auf Marktplaats stehen:</p>' + liste(p.notWantedBecause, 'hinweis');
+      if (p.problems.length) h += '<p class="fehler">Fehlt noch:</p>' + liste(p.problems, 'fehler');
+      if (p.warnings.length) h += '<p class="hinweis">Hinweise:</p>' + liste(p.warnings, 'hinweis');
+      if (p.configErrors.length) h += liste(p.configErrors, 'fehler');
+      if (p.listing && p.listing.lastError) h += '<p class="fehler">Letzter Fehler: ' + esc(p.listing.lastError) + '</p>';
+      h += '<p class="klein grau">Bestand: ' + (p.stockNet === null ? 'nicht geprüft' : esc(p.stockNet)) + '</p>';
+      if (p.imageUrls.length) h += '<div class="reihe">' + p.imageUrls.map(function (u) {
+        return '<img src="' + esc(u) + '" alt="" style="height:64px;border-radius:4px;border:1px solid #e4e7ec">';
+      }).join('') + '</div>';
+      h += '<p class="klein grau">Anzeige, wie sie an Marktplaats geht:</p><pre>' + esc(JSON.stringify(p.ad, null, 2)) + '</pre>';
+      $('vorschauErgebnis').innerHTML = h;
+    }).catch(function (e) { $('vorschauErgebnis').innerHTML = '<p class="fehler">' + esc(e.message) + '</p>'; });
+  }
+  $('vorschau').onclick = zeigeVorschau;
+
+  function einzelAktion(methode, pfad, knopfEl) {
+    knopf(knopfEl, false);
+    api(methode, pfad).then(function (r) {
+      var ok = r.complete && !(r.failed > 0);
+      var text = r.message || (r.errors && r.errors[0]) || (ok ? 'Erledigt.' : 'Nicht erledigt.');
+      if (r.listing && r.listing.lastError) { ok = false; text = r.listing.lastError; }
+      melde(text, ok);
+      zeigeVorschau(); ladeAnzeigen(); ladeStatus();
+    }).catch(function (e) { melde(e.message); }).then(function () { knopf(knopfEl, true); });
+  }
+  $('einzeln').onclick = function () { var id = varianteId(); if (id) einzelAktion('POST', 'listings/' + id + '/sync', this); };
+  $('entfernen').onclick = function () {
+    var id = varianteId(); if (!id) return;
+    if (!confirm('Anzeige der Variante ' + id + ' auf Marktplaats entfernen? Bleibt die Variante freigegeben, wird sie beim nächsten Abgleich wieder eingestellt.')) return;
+    einzelAktion('DELETE', 'listings/' + id, this);
+  };
+
+  // --- Kategorien -----------------------------------------------------------
+  function sammleKategorien(knoten, eltern, ziel) {
+    if (!knoten) return;
+    (Array.isArray(knoten) ? knoten : [knoten]).forEach(function (k) {
+      if (!k || typeof k !== 'object') return;
+      var name = (k.labels && (k.labels['nl-NL'] || k.labels[Object.keys(k.labels)[0]])) || k.name || '';
+      var kinder = (k._embedded && (k._embedded['mp:category'] || k._embedded['mp:categories'])) || k.children || null;
+      if (k.categoryId !== undefined) ziel.push({ id: k.categoryId, name: name, eltern: eltern, l1: !eltern, status: k.status || '' });
+      if (kinder) sammleKategorien(kinder, eltern || (k.categoryId !== undefined ? { id: k.categoryId, name: name } : null), ziel);
+    });
+  }
+  function zeigeKategorien() {
+    var q = $('kategorieSuche').value.trim().toLowerCase();
+    var treffer = kategorien.filter(function (k) {
+      return !k.l1 && (!q || (k.name + ' ' + (k.eltern ? k.eltern.name : '') + ' ' + k.id).toLowerCase().indexOf(q) >= 0);
+    }).slice(0, 200);
+    $('kategorien').innerHTML = treffer.length
+      ? '<table><thead><tr><th>ID (L2)</th><th>Kategorie</th><th>Oberkategorie (L1)</th><th></th></tr></thead><tbody>' + treffer.map(function (k) {
+          return '<tr><td><b>' + esc(k.id) + '</b></td><td>' + esc(k.name) + (k.status === 'closed' ? ' <span class="grau">(geschlossen)</span>' : '')
+            + '</td><td>' + (k.eltern ? esc(k.eltern.name) + ' <span class="grau">(' + esc(k.eltern.id) + ')</span>' : '')
+            + '</td><td>' + (k.eltern ? '<button class="klein" data-attr="' + k.eltern.id + '/' + k.id + '">Attribute</button>' : '') + '</td></tr>';
+        }).join('') + '</tbody></table><div id="attribute"></div>'
+      : '<p class="grau">Keine Treffer.</p>';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-attr]'), function (b) {
+      b.onclick = function () { zeigeAttribute(b.getAttribute('data-attr')); };
+    });
+  }
+  function zeigeAttribute(pfad) {
+    var ziel = $('attribute');
+    ziel.innerHTML = '<p class="grau">Lade Attribute …</p>';
+    api('GET', 'categories/' + pfad + '/attributes').then(function (r) {
+      var felder = (r && r.fields) || [];
+      if (!felder.length) { ziel.innerHTML = '<pre>' + esc(JSON.stringify(r, null, 2)) + '</pre>'; return; }
+      ziel.innerHTML = '<h2 style="margin-top:16px">Attribute ' + esc(pfad) + '</h2><table><thead><tr><th>Schlüssel</th><th>Bezeichnung</th><th>Typ</th><th>Pflicht</th><th>Erlaubte Werte</th></tr></thead><tbody>'
+        + felder.filter(function (f) { return f.writable !== false; }).map(function (f) {
+          var werte = (f.values || []).map(function (v) { return typeof v === 'object' ? (v.key || v.label || JSON.stringify(v)) : v; });
+          return '<tr><td><code>' + esc(f.key) + '</code></td><td>' + esc(f.label || '') + '</td><td>' + esc(f.type || '') + '</td><td>'
+            + (f.mandatory ? '<b class="fehler">ja</b>' : 'nein') + '</td><td class="klein">' + esc(werte.join(', ')) + '</td></tr>';
+        }).join('') + '</tbody></table>';
+    }).catch(function (e) { ziel.innerHTML = '<p class="fehler">' + esc(e.message) + '</p>'; });
+  }
+  $('kategorienLaden').onclick = function () {
+    var b = this; knopf(b, false);
+    api('GET', 'categories').then(function (r) {
+      kategorien = [];
+      var wurzel = (r && r._embedded && (r._embedded['mp:category'] || r._embedded['mp:categories'])) || r.categories || r;
+      sammleKategorien(wurzel, null, kategorien);
+      $('kategorieSuche').disabled = false;
+      zeigeKategorien();
+    }).catch(function (e) { melde(e.message); }).then(function () { knopf(b, true); });
+  };
+  $('kategorieSuche').oninput = zeigeKategorien;
+
+  if (!token()) {
+    $('status').innerHTML = '<p class="fehler">Kein Plenty-Anmeldetoken gefunden. Bitte die Seite im Plenty-Backend öffnen.</p>';
+  } else {
+    ladeStatus(); ladeAnzeigen();
+  }
+})();
+</script>
+</body>
+</html>

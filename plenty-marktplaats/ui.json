@@ -1,0 +1,12 @@
+{
+  "defaultEntryPoint": "index.html",
+  "namespace": "Marktplaats",
+  "menuEntries": [
+    {
+      "label": "Marktplaats",
+      "menu": "settings/markets/marktplaats",
+      "urlKey": "marktplaats",
+      "entryPoint": "index.html"
+    }
+  ]
+}
