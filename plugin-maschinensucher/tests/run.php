@@ -18,6 +18,7 @@ foreach (glob(__DIR__ . '/../src/Logik/*.php') as $datei) {
 
 use MaschinensucherMarkt\Logik\Antwort;
 use MaschinensucherMarkt\Logik\Bestandsabgleich;
+use MaschinensucherMarkt\Logik\Inseratdaten;
 use MaschinensucherMarkt\Logik\Artikelabbildung;
 use MaschinensucherMarkt\Logik\Csv;
 use MaschinensucherMarkt\Logik\Inserat;
@@ -472,5 +473,126 @@ $p->gleich(array(500), $doppelt['doppelteArtikel'],
 $p->gleich(true, Bestandsabgleich::weitereSeite($seite, 1), 'nach Seite 1 von 3 kommt noch etwas');
 $p->gleich(false, Bestandsabgleich::weitereSeite($seite, 3), 'nach der letzten nicht mehr');
 $p->gleich(array(), Bestandsabgleich::seiteLesen(array()), 'eine leere Antwort ergibt eine leere Liste');
+
+// --- Der Koerper des API-Aufrufs ---------------------------------------
+$p->gruppe('Inseratdaten');
+
+$umgebungApi = array(
+    'sprache' => 'de', 'waehrung' => 'EUR', 'mwst' => 19,
+    'preisIst' => 'netto', 'preisIstErsatz' => 'brutto',
+    'nummernQuelle' => 'itemId', 'nummernPraefix' => '',
+    'land' => 'DE', 'ort' => 'Essen', 'kategorieId' => 1659,
+);
+$artikelApi = array(
+    'itemId' => 62923, 'variationId' => 991, 'nummer' => 'KK-2024-0815',
+    'titel' => 'Weiler Drehmaschine',
+    'beschreibung' => 'Gut erhaltene Drehmaschine aus zweiter Hand, sofort verfuegbar.',
+    'hersteller' => 'Weiler', 'modell' => 'Praktikant',
+    'preis' => 1900.00, 'bestand' => 1, 'aktiv' => true,
+    'bildnamen' => array('tmp-1627456205-44589.jpg'),
+);
+
+$gebaut = Inseratdaten::bauen($artikelApi, $umgebungApi);
+$p->gleich(array(), $gebaut['maengel'], 'ein vollstaendiger Artikel ergibt keinen Mangel');
+$k = $gebaut['koerper'];
+$p->gleich(1659, $k['categoryId'], 'die Rubrik steht im Koerper');
+$p->gleich(array('de' => 'Weiler Drehmaschine'), $k['title'], 'der Titel ist nach Sprache abgelegt');
+$p->gleich('62923', $k['internalId'], 'die Referenz ist die Plenty-Artikel-ID');
+$p->gleich(1900, $k['price'], 'der Preis ist ganzzahlig');
+$p->gleich(0.19, $k['priceVat'], 'der Steuersatz kommt als Bruch');
+$p->gleich(true, $k['priceNegotiable'], 'Verhandlungsbasis ist der Standard');
+$p->gleich(false, $k['priceVATNotIncluded'], 'und der Preis wird mit "zzgl. MwSt." ausgezeichnet');
+$p->gleich(array('tmp-1627456205-44589.jpg'), $k['images'], 'die hochgeladenen Bilder werden referenziert');
+$p->gleich('Essen', $k['city'], 'der Standort kommt aus der Konfiguration');
+
+// Der Preis ist der Punkt, an dem ein Fehler unmittelbar Geld kostet.
+$p->gruppe('Preis');
+$p->gleich(1900, Inseratdaten::nettoGanz(array('preis' => 1900.00), array('preisIst' => 'netto')),
+    'ein Nettopreis bleibt, wie er ist');
+$p->gleich(1596, Inseratdaten::nettoGanz(array('preis' => 1900.00), array('preisIst' => 'brutto', 'mwst' => 19)),
+    'ein Bruttopreis wird heruntergerechnet');
+$p->gleich(1899, Inseratdaten::nettoGanz(array('preis' => 1899.99), array('preisIst' => 'netto')),
+    'Cent werden abgeschnitten, nicht gerundet - sonst stuende der Artikel teurer am Markt als kalkuliert');
+$p->gleich(1596, Inseratdaten::nettoGanz(
+    array('preis' => 1900.00, 'preisErsatz' => true),
+    array('preisIst' => 'netto', 'preisIstErsatz' => 'brutto', 'mwst' => 19)),
+    'ein Preis aus der Ersatzliste wird nach DEREN Einstellung gerechnet');
+$p->gleich(null, Inseratdaten::nettoGanz(array('preis' => null), array()), 'kein Preis bleibt kein Preis');
+
+// Maengel: alles, was die API ablehnen wuerde, faellt vorher auf.
+$p->gruppe('Maengel');
+$ohneText = Inseratdaten::bauen(array_merge($artikelApi, array('beschreibung' => 'zu kurz')), $umgebungApi);
+$p->enthaelt('mindestens 10 Zeichen', implode(' ', $ohneText['maengel']),
+    'eine zu kurze Beschreibung wird vorher erkannt, statt drueben abgelehnt zu werden');
+$p->gleich(array(), $ohneText['koerper'], 'und es wird gar kein Koerper gebaut');
+
+$ohnePreis = Inseratdaten::bauen(array_merge($artikelApi, array('preis' => null)), $umgebungApi);
+$p->enthaelt('Kein Preis', implode(' ', $ohnePreis['maengel']), 'ein fehlender Preis ist ein Mangel');
+
+$nullPreis = Inseratdaten::bauen(array_merge($artikelApi, array('preis' => 0)), $umgebungApi);
+$p->enthaelt('Preis ist 0', implode(' ', $nullPreis['maengel']), 'ein Preis von 0 auch');
+
+$inaktiv = Inseratdaten::bauen(array_merge($artikelApi, array('aktiv' => false)), $umgebungApi);
+$p->enthaelt('nicht aktiv', implode(' ', $inaktiv['maengel']), 'ein in Plenty inaktiver Artikel geht nicht raus');
+
+$ohneBestand = Inseratdaten::bauen(array_merge($artikelApi, array('bestand' => 0)), $umgebungApi);
+$p->gleich(array(), $ohneBestand['maengel'],
+    'fehlender Bestand ist KEIN Mangel - daraus wird pausiert, nicht verworfen');
+
+$ohneRubrik = Inseratdaten::bauen($artikelApi, array_merge($umgebungApi, array('kategorieId' => 0)));
+$p->enthaelt('Rubrik', implode(' ', $ohneRubrik['maengel']), 'ohne Rubrik geht nichts raus');
+
+$eigeneRubrik = Inseratdaten::bauen(array_merge($artikelApi, array('kategorieId' => 4711)), $umgebungApi);
+$p->gleich(4711, $eigeneRubrik['koerper']['categoryId'], 'die Rubrik des Artikels schlaegt die Auffangrubrik');
+$p->gleich(array(), $eigeneRubrik['hinweise'], 'und dann gibt es auch keinen Hinweis darauf');
+$p->enthaelt('Auffangrubrik', implode(' ', $gebaut['hinweise']),
+    'wird die Auffangrubrik benutzt, steht das als Hinweis im Bericht');
+
+// Laengen: die API schneidet nicht ab, sie lehnt ab.
+$p->gruppe('Laengen');
+$langerTitel = Inseratdaten::bauen(
+    array_merge($artikelApi, array('titel' => str_repeat('Drehmaschine ', 20))), $umgebungApi);
+$p->gleich(100, strlen($langerTitel['koerper']['title']['de']), 'ein zu langer Titel wird auf 100 Zeichen gekuerzt');
+$p->enthaelt('gekuerzt', implode(' ', $langerTitel['hinweise']), 'und das wird vermerkt');
+
+$mitUmlaut = Inseratdaten::bauen(
+    array_merge($artikelApi, array('titel' => str_repeat('Größe ', 30))), $umgebungApi);
+$p->gleich(true, strlen($mitUmlaut['koerper']['title']['de']) >= 100,
+    'beim Kuerzen wird nach Zeichen gezaehlt, nicht nach Bytes');
+$p->gleich(true, mb_check_encoding($mitUmlaut['koerper']['title']['de'], 'UTF-8'),
+    'und kein mehrteiliges Zeichen wird zerschnitten - der Text bleibt gueltiges UTF-8');
+
+$mitHtml = Inseratdaten::bauen(
+    array_merge($artikelApi, array('beschreibung' => '<p>Erste Zeile</p><p>Zweite &amp; dritte Zeile</p>')),
+    $umgebungApi);
+$p->enthaelt('Zweite & dritte', $mitHtml['koerper']['description']['de'],
+    'HTML aus der Plenty-Beschreibung wird zu lesbarem Text');
+
+// Referenz
+$p->gruppe('Referenz');
+$p->gleich('62923', Inseratdaten::referenz(array('itemId' => 62923), array('nummernQuelle' => 'itemId')),
+    'die Artikel-ID als Referenz');
+$p->gleich('027', Inseratdaten::referenz(array('itemId' => 27), array('nummernQuelle' => 'itemId')),
+    'zu kurze IDs werden vorn aufgefuellt - die API verlangt drei Zeichen');
+$p->gleich('KK-62923', Inseratdaten::referenz(array('itemId' => 62923),
+    array('nummernQuelle' => 'itemId', 'nummernPraefix' => 'KK-')), 'ein Vorsatz wird vorangestellt');
+$p->gleich('KK-62923', Inseratdaten::referenz(array('itemId' => 62923, 'nummer' => 'KK-62923'),
+    array('nummernQuelle' => 'nummer', 'nummernPraefix' => 'KK-')), 'aber nicht doppelt');
+$p->gleich('', Inseratdaten::referenz(array('itemId' => 0), array('nummernQuelle' => 'itemId')),
+    'ohne Artikel-ID keine Referenz');
+
+// Fingerabdruck: verhindert Aufrufe, die nichts aendern.
+$p->gruppe('Fingerabdruck');
+$a = Inseratdaten::bauen($artikelApi, $umgebungApi)['koerper'];
+$b = Inseratdaten::bauen($artikelApi, $umgebungApi)['koerper'];
+$p->gleich(Inseratdaten::fingerabdruck($a), Inseratdaten::fingerabdruck($b),
+    'derselbe Artikel ergibt denselben Fingerabdruck');
+$c = Inseratdaten::bauen(array_merge($artikelApi, array('preis' => 1800.00)), $umgebungApi)['koerper'];
+$p->gleich(true, Inseratdaten::fingerabdruck($a) !== Inseratdaten::fingerabdruck($c),
+    'ein anderer Preis ergibt einen anderen');
+$p->gleich(false, Inseratdaten::hatSichGeaendert($a, Inseratdaten::fingerabdruck($a)),
+    'unveraendert heisst: nicht senden');
+$p->gleich(true, Inseratdaten::hatSichGeaendert($a, ''),
+    'ohne bekannten Stand wird immer gesendet');
 
 exit($p->bericht());
