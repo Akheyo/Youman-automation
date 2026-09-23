@@ -53,6 +53,19 @@ class Einstellungen
     }
 
     /** Das Token in der Abholadresse. Ohne gültiges Token ist die Strecke aus. */
+    /**
+     * Der Token fuer die Maschinensucher-API. Vollzugriff auf alle Inserate.
+     */
+    public function apiToken()
+    {
+        return trim((string) $this->wert('apiToken', ''));
+    }
+
+    public function apiEingerichtet()
+    {
+        return strlen($this->apiToken()) >= 16;
+    }
+
     public function token()
     {
         return (string) $this->wert('token', '');

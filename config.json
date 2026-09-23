@@ -4,6 +4,15 @@
     "Config.zugangTab": {
       "label": "Config.zugangTab",
       "formFields": {
+        "apiToken": {
+          "type": "inputText",
+          "required": true,
+          "label": "Config.apiTokenLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.apiTokenTooltip"
+          }
+        },
         "token": {
           "type": "inputText",
           "required": true,
