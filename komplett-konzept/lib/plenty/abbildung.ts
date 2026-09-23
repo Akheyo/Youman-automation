@@ -27,11 +27,21 @@ export interface PlentyVariante {
   variationBarcodes?: Array<{ code?: string | null }> | null
   variationSalesPrices?: Array<{ salesPriceId?: number | null; price?: number | null }> | null
   stock?: Array<{ netStock?: number | null; physicalStock?: number | null }> | null
+  /**
+   * Markierungen. In Plenty hängen sie am ARTIKEL (Einrichtung → Artikel →
+   * Markierungen); je Artikel gibt es zwei Felder mit je eigener Liste. Wir
+   * lesen sie trotzdem auch an der Variante, weil einzelne Ausbaustufen sie
+   * dort mitliefern — und eine fehlende Markierung hieße hier: kein Inserat.
+   */
+  flagOne?: number | null
+  flagTwo?: number | null
   item?: {
     id?: number | null
     manufacturerId?: number | null
     texts?: PlentyText[] | null
     condition?: number | { id?: number | null } | null
+    flagOne?: number | null
+    flagTwo?: number | null
   } | null
   variationDescription?: PlentyText[] | null
 }
@@ -64,6 +74,9 @@ export interface ArtikelDaten {
   breite_cm: number | null
   hoehe_cm: number | null
   aktiv: boolean
+  /** Markierung 1 und 2 aus Plenty, so wie sie dort stehen. */
+  flag_one: number | null
+  flag_two: number | null
 }
 
 /**
@@ -175,7 +188,47 @@ export function ausPlenty(variante: PlentyVariante, optionen: Abbildungsoptionen
     breite_cm: teile(zahl(variante.widthMM), 10),
     hoehe_cm: teile(zahl(variante.heightMM), 10),
     aktiv: variante.isActive !== false,
+    flag_one: zahl(variante.item?.flagOne) ?? zahl(variante.flagOne),
+    flag_two: zahl(variante.item?.flagTwo) ?? zahl(variante.flagTwo),
   }
+}
+
+// ---------------------------------------------------------------------------
+// Die Markierung
+// ---------------------------------------------------------------------------
+
+/** Welches Markierungsfeld in Plenty über den Marktplatz entscheidet. */
+export type Flagfeld = 'flagOne' | 'flagTwo' | 'beide'
+
+export interface Markierungsregel {
+  /** ID der Markierung, z. B. 27 für „Maschinensucher". */
+  id: number
+  feld: Flagfeld
+}
+
+/**
+ * Steht die Maschinensucher-Markierung an diesem Artikel?
+ *
+ * DAS IST DER SCHALTER DER GANZEN STRECKE, und er steht in Plenty: Wer dort
+ * die Markierung setzt, stellt das Gerät auf den Marktplatz; wer sie
+ * wegnimmt, holt es zurück. Deshalb steht die Regel hier einzeln und geprüft
+ * und nicht irgendwo in einer SQL-Zeile.
+ *
+ * Die beiden Markierungsfelder in Plenty sind getrennte Listen: Die 27 in
+ * Feld 1 ist nicht dieselbe Markierung wie die 27 in Feld 2. Deshalb wird
+ * standardmäßig nur das eine konfigurierte Feld gelesen — sonst ginge ein
+ * Artikel online, weil in der anderen Liste zufällig dieselbe Nummer steht.
+ */
+export function istMarkiert(
+  daten: Pick<ArtikelDaten, 'flag_one' | 'flag_two'>,
+  regel: Markierungsregel,
+): boolean {
+  if (!Number.isFinite(regel.id) || regel.id <= 0) return false
+  const eins = daten.flag_one === regel.id
+  const zwei = daten.flag_two === regel.id
+  if (regel.feld === 'flagOne') return eins
+  if (regel.feld === 'flagTwo') return zwei
+  return eins || zwei
 }
 
 function teile(wert: number | null, durch: number): number | null {

@@ -7,25 +7,34 @@ import { baueInserat, type Inserat } from '@/lib/maschinensucher/inserat'
 import { freigabeStand, letzteAbholungMenge, letzteLaeufe } from '@/lib/maschinensucher/lauf'
 import { spaltenPlan } from '@/lib/maschinensucher/felder'
 import { pruefeRueckgang } from '@/lib/maschinensucher/rueckgang'
-import { basisAdresse, dateiformat, eingerichtet, feedAdresse, umgebung } from '@/lib/maschinensucher/zugang'
+import {
+  basisAdresse,
+  dateiformat,
+  eingerichtet,
+  feedAdresse,
+  markierungsregel,
+  umgebung,
+} from '@/lib/maschinensucher/zugang'
 import { plentyEingerichtet } from '@/lib/plenty/client'
-import { AbgleichKnopf, AdressFeld, FreigabeKnopf, KategorieFeld, MarkierKnopf } from './Knoepfe'
+import { AbgleichKnopf, AdressFeld, FreigabeKnopf, KategorieFeld } from './Knoepfe'
 
 export const metadata = { title: 'Maschinensucher' }
 export const dynamic = 'force-dynamic'
 
 /**
- * Die Maschinensucher-Seite: markieren, prüfen, nachsehen.
+ * Die Maschinensucher-Seite: prüfen, nachsehen, notfalls eingreifen.
  *
  * Drei Fragen beantwortet sie, in dieser Reihenfolge, weil sie so gestellt
  * werden:
  *
  *   1. Läuft die Strecke? (Adresse, letzte Abholung, letzter Abgleich)
  *   2. Was steht draußen — und was hängt woran?
- *   3. Was könnte noch hoch?
+ *   3. Warum ist ein bestimmtes Gerät nicht dabei?
  *
- * Sie ist die einzige Kontrolle über eine Datei, die sonst nur eine Maschine
- * liest. Deshalb zeigt sie nicht bloß die Liste, sondern auch, was fehlt.
+ * MARKIERT WIRD HIER NICHT. Das passiert in Plenty, an der Markierung
+ * „Maschinensucher" am Artikel. Diese Seite zeigt, was daraus geworden ist —
+ * sie ist die einzige Kontrolle über eine Datei, die sonst nur eine Maschine
+ * liest, und deshalb zeigt sie nicht bloß die Liste, sondern auch, was fehlt.
  */
 export default async function MaschinensucherSeite({
   searchParams,
@@ -36,6 +45,7 @@ export default async function MaschinensucherSeite({
   const steuern = darfSteuern(nutzer)
 
   const umg = umgebung()
+  const regel = markierungsregel()
   const format = dateiformat()
   const plan = spaltenPlan(format.kopfzeile, format.trenner)
 
@@ -82,7 +92,7 @@ export default async function MaschinensucherSeite({
       <div className="abschnitt-kopf">
         <h1>Maschinensucher</h1>
         <span className="schwach klein">
-          Markierte Artikel aus der Artikeldatenbank — abgeholt, nicht hochgeladen
+          Markierung „Maschinensucher&ldquo; in Plenty gesetzt = Artikel steht in der Datei, die Maschinensucher nachts abholt
         </span>
       </div>
 
@@ -127,6 +137,14 @@ export default async function MaschinensucherSeite({
           <span className="kpi__wert">{zahl(zaehler.gesamt)}</span>
           <span className="kpi__zusatz">
             {letzterSync ? `Abgleich ${relativeZeit(letzterSync.started_at)}` : 'noch nie abgeglichen'}
+          </span>
+        </div>
+        <div className="kpi">
+          <span className="kpi__label">Markierung</span>
+          <span className="kpi__wert">{regel.id}</span>
+          <span className="kpi__zusatz">
+            {regel.feld === 'beide' ? 'Markierung 1 oder 2' : regel.feld === 'flagTwo' ? 'Markierung 2' : 'Markierung 1'} in
+            Plenty
           </span>
         </div>
         <div className="kpi">
@@ -195,12 +213,15 @@ export default async function MaschinensucherSeite({
       {/* ---- 2. Was steht draußen? ---- */}
       <section className="karte">
         <div className="karte__kopf">
-          <h2>Markiert für Maschinensucher</h2>
+          <h2>Markiert in Plenty</h2>
           <span className="schwach klein">{zahl(markierteZeilen.length)} Artikel</span>
         </div>
         <div className="karte__koerper">
           {markierteZeilen.length === 0 ? (
-            <Leer titel="Noch nichts markiert" text="Unten einen Artikel suchen und auf den Marktplatz stellen." />
+            <Leer
+              titel="Noch nichts markiert"
+              text={`In Plenty am Artikel die Markierung „Maschinensucher" setzen (Markierung ${regel.feld === 'flagTwo' ? 2 : 1}, ID ${regel.id}) — der nächste Abgleich holt sie her.`}
+            />
           ) : (
             <Liste eintraege={[...zurueck, ...bereit]} darfSteuern={steuern} />
           )}
@@ -210,7 +231,7 @@ export default async function MaschinensucherSeite({
       {/* ---- 3. Was könnte noch hoch? ---- */}
       <section className="karte">
         <div className="karte__kopf">
-          <h2>Aus der Artikeldatenbank</h2>
+          <h2>Ohne Markierung</h2>
           <form method="get" className="rechts">
             <input
               type="search"
@@ -262,7 +283,7 @@ function Liste({
             <th>Preis netto</th>
             <th>Rubrik</th>
             <th>Stand</th>
-            <th />
+            <th style={{ textAlign: 'right' }}>Markierung</th>
           </tr>
         </thead>
         <tbody>
@@ -310,17 +331,18 @@ function Liste({
                     <span className="status__punkt" />
                     {marke.text}
                   </span>
-                  {zeile.ms_markiert_von ? (
-                    <div className="klein schwach">von {zeile.ms_markiert_von}</div>
+                  {zeile.ms_markiert_am ? (
+                    <div className="klein schwach">seit {datumZeit(zeile.ms_markiert_am)}</div>
                   ) : null}
                 </td>
-                <td style={{ textAlign: 'right' }}>
-                  <MarkierKnopf
-                    id={zeile.id}
-                    markiert={zeile.ms_markiert}
-                    draussen={Boolean(zeile.ms_abgeholt_am)}
-                    darfSteuern={darfSteuern}
-                  />
+                <td className="klein schwach" style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                  {/* Beide Felder, nicht nur das eingestellte: Wer sucht,
+                      warum ein Gerät fehlt, sieht so auch die Markierung, die
+                      im falschen Feld steht. */}
+                  {zeile.ms_markiert ? (zeile.ms_markiert_von ?? 'markiert in Plenty') : 'nicht markiert'}
+                  <div>
+                    M1 {zeile.plenty_flag_one ?? '—'} · M2 {zeile.plenty_flag_two ?? '—'}
+                  </div>
                 </td>
               </tr>
             )

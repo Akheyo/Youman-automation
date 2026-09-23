@@ -17,7 +17,8 @@ import 'server-only'
 
 import { sql } from '@/lib/db'
 import { plentyEingerichtet, plentyGet, type PlentyListe } from './client'
-import { ausPlenty, type ArtikelDaten, type PlentyVariante } from './abbildung'
+import { ausPlenty, istMarkiert, type ArtikelDaten, type PlentyVariante } from './abbildung'
+import { markierungsregel } from '@/lib/maschinensucher/zugang'
 
 /** Wie viele Seiten ein Aufruf höchstens liest. */
 export const SEITEN_JE_LAUF = Number(process.env.PLENTY_SYNC_SEITEN ?? 5)
@@ -35,6 +36,10 @@ export interface Syncbericht {
   fertig: boolean
   gelesen: number
   gespeichert: number
+  /** Wie viele der gelesenen Artikel die Maschinensucher-Markierung tragen. */
+  markiert: number
+  /** Ob Plenty die Markierungen überhaupt mitgeliefert hat. */
+  markierungLesbar: boolean
   bilderGeholt: number
   gesamtLautPlenty: number | null
   diagnose: string[]
@@ -147,47 +152,79 @@ async function bilderZu(itemId: number): Promise<string[]> {
 // ---------------------------------------------------------------------------
 
 /**
- * Legt an oder aktualisiert — und lässt die Markierung in Ruhe.
+ * Legt an oder aktualisiert.
  *
- * "kategorie" wird ebenfalls nicht angefasst: Wer sie von Hand gesetzt hat,
+ * DIE MARKIERUNG KOMMT AUS PLENTY: Steht am Artikel die Markierung
+ * „Maschinensucher", geht er auf den Marktplatz; fehlt sie, kommt er herunter.
+ * Der Zeitstempel wird dabei nur gesetzt, wenn die Markierung WECHSELT —
+ * sonst stünde nach jedem nächtlichen Lauf „gerade eben markiert" an jedem
+ * Artikel, und man könnte nicht mehr sehen, was neu dazugekommen ist.
+ *
+ * `markiert === null` heißt „nicht bekannt": Dann rührt der Abgleich die
+ * Markierung NICHT an. Dieser Fall ist wichtiger, als er aussieht — er tritt
+ * ein, wenn Plenty die Artikeldaten nicht mitliefert, und ohne ihn würde ein
+ * Lauf ohne Markierungen den ganzen Marktplatz leerräumen.
+ *
+ * „kategorie" wird ebenfalls nicht angefasst: Wer sie von Hand gesetzt hat,
  * wusste mehr als jede Zuordnung über Suchworte.
  */
-async function speichern(daten: ArtikelDaten, bilder: string[] | null): Promise<void> {
+async function speichern(daten: ArtikelDaten, bilder: string[] | null, markiert: boolean | null): Promise<void> {
+  const bekannt = markiert !== null
+  const wert = markiert === true
+  const herkunft = wert ? `Plenty-Markierung ${daten.flag_one ?? daten.flag_two ?? ''}`.trim() : null
+
   await sql`
     insert into artikel (
       plenty_variation_id, plenty_item_id, nummer, ean, titel, beschreibung,
       hersteller, modell, zustand, preis_brutto, bestand,
       gewicht_kg, laenge_cm, breite_cm, hoehe_cm, aktiv,
+      plenty_flag_one, plenty_flag_two,
+      ms_markiert, ms_markiert_am, ms_markiert_von,
       bilder, gesehen_am, updated_at
     ) values (
       ${daten.plenty_variation_id}, ${daten.plenty_item_id}, ${daten.nummer}, ${daten.ean},
       ${daten.titel}, ${daten.beschreibung}, ${daten.hersteller}, ${daten.modell}, ${daten.zustand},
       ${daten.preis_brutto}, ${daten.bestand},
       ${daten.gewicht_kg}, ${daten.laenge_cm}, ${daten.breite_cm}, ${daten.hoehe_cm}, ${daten.aktiv},
+      ${daten.flag_one}, ${daten.flag_two},
+      ${bekannt && wert}, ${bekannt && wert ? new Date() : null}, ${herkunft},
       ${sql.json((bilder ?? []) as never)}, now(), now()
     )
     on conflict (plenty_variation_id) do update set
-      plenty_item_id = excluded.plenty_item_id,
-      nummer         = excluded.nummer,
-      ean            = excluded.ean,
-      titel          = excluded.titel,
-      beschreibung   = excluded.beschreibung,
-      hersteller     = excluded.hersteller,
-      modell         = excluded.modell,
-      zustand        = excluded.zustand,
-      preis_brutto   = excluded.preis_brutto,
-      bestand        = excluded.bestand,
-      gewicht_kg     = excluded.gewicht_kg,
-      laenge_cm      = excluded.laenge_cm,
-      breite_cm      = excluded.breite_cm,
-      hoehe_cm       = excluded.hoehe_cm,
-      aktiv          = excluded.aktiv,
+      plenty_item_id  = excluded.plenty_item_id,
+      nummer          = excluded.nummer,
+      ean             = excluded.ean,
+      titel           = excluded.titel,
+      beschreibung    = excluded.beschreibung,
+      hersteller      = excluded.hersteller,
+      modell          = excluded.modell,
+      zustand         = excluded.zustand,
+      preis_brutto    = excluded.preis_brutto,
+      bestand         = excluded.bestand,
+      gewicht_kg      = excluded.gewicht_kg,
+      laenge_cm       = excluded.laenge_cm,
+      breite_cm       = excluded.breite_cm,
+      hoehe_cm        = excluded.hoehe_cm,
+      aktiv           = excluded.aktiv,
+      plenty_flag_one = case when ${bekannt} then excluded.plenty_flag_one else artikel.plenty_flag_one end,
+      plenty_flag_two = case when ${bekannt} then excluded.plenty_flag_two else artikel.plenty_flag_two end,
+      ms_markiert     = case when ${bekannt} then ${wert} else artikel.ms_markiert end,
+      -- Nur beim Wechsel: sonst wäre jeder Artikel jede Nacht "gerade eben markiert".
+      ms_markiert_am  = case
+                          when not ${bekannt} then artikel.ms_markiert_am
+                          when ${wert} and not artikel.ms_markiert then now()
+                          when not ${wert} then null
+                          else artikel.ms_markiert_am
+                        end,
+      ms_markiert_von = case when ${bekannt} then ${herkunft} else artikel.ms_markiert_von end,
+      -- Der alte Grund gilt nicht mehr, sobald die Markierung weg ist.
+      ms_fehler       = case when ${bekannt} and not ${wert} then null else artikel.ms_fehler end,
       -- Bilder nur überschreiben, wenn der Lauf welche geholt hat. Sonst
       -- stünde ein markierter Artikel plötzlich ohne Foto da, bloß weil das
       -- Bildbudget dieses Abschnitts aufgebraucht war.
-      bilder         = case when jsonb_array_length(excluded.bilder) > 0 then excluded.bilder else artikel.bilder end,
-      gesehen_am     = now(),
-      updated_at     = now()
+      bilder          = case when jsonb_array_length(excluded.bilder) > 0 then excluded.bilder else artikel.bilder end,
+      gesehen_am      = now(),
+      updated_at      = now()
   `
 }
 
@@ -224,10 +261,22 @@ export async function abgleichLaufen(optionen: { vonVorn?: boolean } = {}): Prom
     preislisteId ? `Preise aus Preisliste ${preislisteId}.` : 'Preise aus der kleinsten vorhandenen Preisliste.',
   )
 
+  // Ohne Artikeldaten aus Plenty kennen wir die Markierungen nicht — und
+  // dann wird KEINE angefasst. Ein Lauf, der sie alle auf "nicht markiert"
+  // setzt, weil ein Parameter fehlte, räumt sonst den ganzen Marktplatz leer.
+  const regel = markierungsregel()
+  const markierungLesbar = withParam.includes('item')
+  diagnose.push(
+    markierungLesbar
+      ? `Markierung: ${regel.feld} = ${regel.id}.`
+      : 'Plenty liefert keine Artikeldaten mit — die Markierungen bleiben unverändert.',
+  )
+
   const start = optionen.vonVorn ? 1 : await naechsteSeite()
   let seite = start
   let gelesen = 0
   let gespeichert = 0
+  let markiert = 0
   let bilderGeholt = 0
   let gesamt: number | null = null
   let fertig = false
@@ -240,6 +289,8 @@ export async function abgleichLaufen(optionen: { vonVorn?: boolean } = {}): Prom
     for (const variante of eintraege) {
       gelesen++
       const daten = ausPlenty(variante, { hersteller, preislisteId })
+      const fuerMarktplatz = markierungLesbar ? istMarkiert(daten, regel) : null
+      if (fuerMarktplatz) markiert++
 
       // Bilder kosten je Artikel einen eigenen Aufruf. Deshalb nur, wenn wir
       // noch keine haben oder der Artikel markiert ist — für alles andere
@@ -250,13 +301,15 @@ export async function abgleichLaufen(optionen: { vonVorn?: boolean } = {}): Prom
           select jsonb_array_length(bilder) as anzahl, ms_markiert as markiert
             from artikel where plenty_variation_id = ${daten.plenty_variation_id}
         `
-        if (!vorhanden || vorhanden.anzahl === 0 || vorhanden.markiert) {
+        // Für markierte Artikel immer: Sie gehen auf den Marktplatz, und ein
+        // Inserat ohne Bild wird nicht angesehen.
+        if (!vorhanden || vorhanden.anzahl === 0 || vorhanden.markiert || fuerMarktplatz) {
           bilder = await bilderZu(daten.plenty_item_id)
           bilderGeholt++
         }
       }
 
-      await speichern(daten, bilder)
+      await speichern(daten, bilder, fuerMarktplatz)
       gespeichert++
     }
 
@@ -280,6 +333,8 @@ export async function abgleichLaufen(optionen: { vonVorn?: boolean } = {}): Prom
     fertig,
     gelesen,
     gespeichert,
+    markiert,
+    markierungLesbar,
     bilderGeholt,
     gesamtLautPlenty: gesamt,
     diagnose,

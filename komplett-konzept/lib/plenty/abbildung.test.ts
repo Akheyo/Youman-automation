@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { ausPlenty, bestandSumme, deutscherText, verkaufspreis, zustandText, type PlentyVariante } from './abbildung'
+import {
+  ausPlenty,
+  bestandSumme,
+  deutscherText,
+  istMarkiert,
+  verkaufspreis,
+  zustandText,
+  type PlentyVariante,
+} from './abbildung'
 
 const OPTIONEN = { hersteller: new Map([[7, 'Weiler']]), preislisteId: null }
 
@@ -139,5 +147,53 @@ describe('ausPlenty', () => {
     expect(daten.preis_brutto).toBeNull()
     expect(daten.gewicht_kg).toBeNull()
     expect(daten.bestand).toBeNull()
+  })
+})
+
+describe('istMarkiert', () => {
+  const regel = { id: 27, feld: 'flagOne' as const }
+
+  it('erkennt die Markierung im ersten Feld', () => {
+    expect(istMarkiert({ flag_one: 27, flag_two: null }, regel)).toBe(true)
+  })
+
+  it('laesst die gleiche Nummer im ZWEITEN Feld nicht gelten', () => {
+    // Die beiden Markierungsfelder in Plenty sind getrennte Listen: Die 27 in
+    // Feld 2 ist eine andere Markierung. Sonst ginge ein Geraet online, weil
+    // dort zufaellig dieselbe Nummer steht.
+    expect(istMarkiert({ flag_one: null, flag_two: 27 }, regel)).toBe(false)
+  })
+
+  it('liest auf Wunsch das zweite Feld oder beide', () => {
+    expect(istMarkiert({ flag_one: null, flag_two: 27 }, { id: 27, feld: 'flagTwo' })).toBe(true)
+    expect(istMarkiert({ flag_one: 27, flag_two: null }, { id: 27, feld: 'beide' })).toBe(true)
+    expect(istMarkiert({ flag_one: null, flag_two: 27 }, { id: 27, feld: 'beide' })).toBe(true)
+  })
+
+  it('ist ohne Markierung falsch — auch bei anderer ID und bei null', () => {
+    expect(istMarkiert({ flag_one: 3, flag_two: null }, regel)).toBe(false)
+    expect(istMarkiert({ flag_one: null, flag_two: null }, regel)).toBe(false)
+    expect(istMarkiert({ flag_one: 0, flag_two: 0 }, regel)).toBe(false)
+  })
+
+  it('markiert nichts, wenn gar keine ID eingestellt ist', () => {
+    expect(istMarkiert({ flag_one: 0, flag_two: 0 }, { id: 0, feld: 'beide' })).toBe(false)
+  })
+})
+
+describe('ausPlenty mit Markierungen', () => {
+  it('liest die Markierungen vom Artikel', () => {
+    const daten = ausPlenty({ id: 1, item: { flagOne: 27, flagTwo: 3, texts: [] } }, OPTIONEN)
+    expect(daten.flag_one).toBe(27)
+    expect(daten.flag_two).toBe(3)
+  })
+
+  it('nimmt sie notfalls von der Variante', () => {
+    const daten = ausPlenty({ id: 1, flagOne: 27 }, OPTIONEN)
+    expect(daten.flag_one).toBe(27)
+  })
+
+  it('laesst sie leer, wenn Plenty keine mitliefert', () => {
+    expect(ausPlenty({ id: 1 }, OPTIONEN).flag_one).toBeNull()
   })
 })

@@ -14,6 +14,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto'
 import type { Umgebung } from './inserat'
 import type { Umbruchbehandlung } from './csv'
+import type { Markierungsregel } from '@/lib/plenty/abbildung'
 
 function text(name: string, standard = ''): string {
   const wert = process.env[name]
@@ -106,6 +107,21 @@ export function umgebung(): Umgebung {
     kategorieZuordnung: leseZuordnung(text('MASCHINENSUCHER_KATEGORIEN')),
     shopBasisUrl: text('SHOP_BASIS_URL'),
     veraltetNachTagen: zahlAus('MASCHINENSUCHER_VERALTET_TAGE', 3),
+  }
+}
+
+/**
+ * Welche Plenty-Markierung einen Artikel auf den Marktplatz stellt.
+ *
+ * Voreingestellt ist Markierung 1 mit der ID 27 („Maschinensucher"). Wer die
+ * Markierung in Plenty umbenennt, ändert nichts; wer sie neu anlegt, bekommt
+ * eine neue ID — dann gehört sie hier eingetragen.
+ */
+export function markierungsregel(): Markierungsregel {
+  const feld = text('PLENTY_MS_FLAG_FELD', 'flagOne')
+  return {
+    id: zahlAus('PLENTY_MS_FLAG_ID', 27),
+    feld: feld === 'flagTwo' ? 'flagTwo' : feld === 'beide' ? 'beide' : 'flagOne',
   }
 }
 

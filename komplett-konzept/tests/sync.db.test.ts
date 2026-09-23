@@ -12,13 +12,21 @@
 
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { sql } from '@/lib/db'
 
 const MIT_DB = Boolean(process.env.DATABASE_URL)
 
 const VARIANTE_A = 999_100_001
 const VARIANTE_B = 999_100_002
+
+/** Was das nachgebaute Plenty gerade antwortet. */
+const zustand = {
+  /** Markierung 1 am ersten Artikel — 27 heißt „Maschinensucher". */
+  flagOne: 27 as number | null,
+  /** Wie eine ältere Ausbaustufe: gar keine Artikeldaten mitliefern. */
+  ohneItem: false,
+}
 
 /** Ein Plenty, das nur das kann, was wir lesen. */
 function nachbau(): Promise<{ server: Server; basis: string; aufrufe: string[] }> {
@@ -52,6 +60,12 @@ function nachbau(): Promise<{ server: Server; basis: string; aufrufe: string[] }
         res.writeHead(400, { 'Content-Type': 'application/json' })
         return res.end('{"error":"unknown with"}')
       }
+      // Eine Ausbaustufe, die Artikeldaten gar nicht kennt: Dann sind auch
+      // die Markierungen nicht lesbar.
+      if (zustand.ohneItem && pfad.includes('with=')) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        return res.end('{"error":"unknown with"}')
+      }
       const seite = Number(new URL(pfad, 'http://x').searchParams.get('page') ?? 1)
       if (seite > 1) return antworte({ entries: [], page: seite, isLastPage: true })
       return antworte({
@@ -69,7 +83,13 @@ function nachbau(): Promise<{ server: Server; basis: string; aufrufe: string[] }
             lengthMM: 1800,
             variationBarcodes: [{ code: '2000000047119' }],
             variationSalesPrices: [{ salesPriceId: 1, price: 2261 }],
-            item: { id: 4711, manufacturerId: 7, condition: 1, texts: [{ lang: 'de', name1: 'Weiler Drehmaschine', description: '<p>Gut.</p>' }] },
+            item: {
+              id: 4711,
+              manufacturerId: 7,
+              condition: 1,
+              flagOne: zustand.flagOne,
+              texts: [{ lang: 'de', name1: 'Weiler Drehmaschine', description: '<p>Gut.</p>' }],
+            },
           },
           {
             id: VARIANTE_B,
@@ -151,25 +171,83 @@ describe.skipIf(!MIT_DB)('Plenty-Abgleich', () => {
     expect(b.preis_brutto).toBeNull()
   })
 
-  it('laesst die Markierung beim zweiten Lauf unberuehrt', async () => {
-    await sql`
-      update artikel set ms_markiert = true, ms_markiert_von = 'Test', kategorie = '1234'
-       where plenty_variation_id = ${VARIANTE_A}
+  it('markiert, was in Plenty die Markierung 27 traegt — und nur das', async () => {
+    const [a] = await sql<{ ms_markiert: boolean; ms_markiert_von: string; plenty_flag_one: number; ms_markiert_am: Date }[]>`
+      select ms_markiert, ms_markiert_von, plenty_flag_one, ms_markiert_am
+        from artikel where plenty_variation_id = ${VARIANTE_A}
     `
-    const vorher = aufrufe.length
+    expect(a.ms_markiert).toBe(true)
+    expect(a.plenty_flag_one).toBe(27)
+    expect(a.ms_markiert_von).toContain('27')
 
+    const [b] = await sql<{ ms_markiert: boolean }[]>`
+      select ms_markiert from artikel where plenty_variation_id = ${VARIANTE_B}
+    `
+    expect(b.ms_markiert).toBe(false)
+  })
+
+  it('setzt den Zeitstempel nur beim Wechsel, nicht bei jedem Lauf', async () => {
+    const [vorher] = await sql<{ ms_markiert_am: Date }[]>`
+      select ms_markiert_am from artikel where plenty_variation_id = ${VARIANTE_A}
+    `
     const { abgleichLaufen } = await import('@/lib/plenty/sync')
     await abgleichLaufen({ vonVorn: true })
 
-    const [a] = await sql<{ ms_markiert: boolean; ms_markiert_von: string; kategorie: string; bilder: string[] }[]>`
-      select ms_markiert, ms_markiert_von, kategorie, bilder
-        from artikel where plenty_variation_id = ${VARIANTE_A}
+    const [nachher] = await sql<{ ms_markiert_am: Date }[]>`
+      select ms_markiert_am from artikel where plenty_variation_id = ${VARIANTE_A}
     `
-    // Der Abgleich liest. Was das Büro entschieden hat, gehört ihm nicht.
-    expect(a.ms_markiert).toBe(true)
-    expect(a.ms_markiert_von).toBe('Test')
-    expect(a.kategorie).toBe('1234')
-    expect(a.bilder).toHaveLength(2)
-    expect(aufrufe.length).toBeGreaterThan(vorher)
+    // Sonst stuende nach jeder Nacht "gerade eben markiert" an jedem Artikel.
+    expect(nachher.ms_markiert_am.getTime()).toBe(vorher.ms_markiert_am.getTime())
+  })
+
+  it('nimmt den Artikel herunter, wenn die Markierung in Plenty verschwindet', async () => {
+    await sql`update artikel set kategorie = '1234' where plenty_variation_id = ${VARIANTE_A}`
+    zustand.flagOne = null
+    try {
+      const { abgleichLaufen } = await import('@/lib/plenty/sync')
+      await abgleichLaufen({ vonVorn: true })
+
+      const [a] = await sql<{ ms_markiert: boolean; ms_markiert_am: Date | null; kategorie: string }[]>`
+        select ms_markiert, ms_markiert_am, kategorie
+          from artikel where plenty_variation_id = ${VARIANTE_A}
+      `
+      expect(a.ms_markiert).toBe(false)
+      expect(a.ms_markiert_am).toBeNull()
+      // Die Rubrik ist unsere Angabe — die faellt dabei nicht mit weg.
+      expect(a.kategorie).toBe('1234')
+    } finally {
+      zustand.flagOne = 27
+    }
+  })
+
+  it('laesst die Markierungen in Ruhe, wenn Plenty keine Artikeldaten liefert', async () => {
+    // Der gefaehrlichste Fall der ganzen Strecke: Ein Lauf, der die
+    // Markierungen nicht lesen kann, duerfte sie nicht alle loeschen — sonst
+    // raeumt eine Nacht den ganzen Marktplatz leer.
+    const { abgleichLaufen: mitItem } = await import('@/lib/plenty/sync')
+    await mitItem({ vonVorn: true })
+    const [vorher] = await sql<{ ms_markiert: boolean }[]>`
+      select ms_markiert from artikel where plenty_variation_id = ${VARIANTE_A}
+    `
+    expect(vorher.ms_markiert).toBe(true)
+
+    zustand.ohneItem = true
+    vi.resetModules() // damit das ausgehandelte "with" neu bestimmt wird
+    try {
+      const { abgleichLaufen } = await import('@/lib/plenty/sync')
+      const bericht = await abgleichLaufen({ vonVorn: true })
+
+      expect(bericht.markierungLesbar).toBe(false)
+      expect(bericht.diagnose.join(' ')).toContain('Markierungen bleiben unverändert')
+
+      const [a] = await sql<{ ms_markiert: boolean; plenty_flag_one: number | null }[]>`
+        select ms_markiert, plenty_flag_one from artikel where plenty_variation_id = ${VARIANTE_A}
+      `
+      expect(a.ms_markiert).toBe(true)
+      expect(a.plenty_flag_one).toBe(27)
+    } finally {
+      zustand.ohneItem = false
+      vi.resetModules()
+    }
   })
 })

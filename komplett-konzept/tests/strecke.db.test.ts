@@ -10,8 +10,11 @@
  * läuft. Mit Datenbank (lokal genügt ein leeres Postgres, Migrationen über
  * `npm run db:migrate`) geht er die ganze Strecke durch:
  *
- *   Artikel anlegen → markieren → Datei bauen → Stand nachführen →
- *   Lauf melden → Rückgang prüfen → Markierung zurücknehmen
+ *   Artikel anlegen → Markierung aus Plenty → Datei bauen → Stand nachführen →
+ *   Lauf melden → Rückgang prüfen
+ *
+ * Die Markierung setzt hier die SQL-Zeile so, wie der Abgleich sie schreibt
+ * (siehe sync.db.test.ts, wo sie aus einem nachgebauten Plenty kommt).
  */
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -20,7 +23,6 @@ import {
   artikelZaehlen,
   kandidaten,
   kategorieSetzen,
-  markieren,
   markierteArtikel,
   standNachAbholung,
   teileAuf,
@@ -86,14 +88,18 @@ describe.skipIf(!MIT_DB)('Maschinensucher-Strecke gegen Postgres', () => {
     expect((await artikelZaehlen()).gesamt).toBeGreaterThanOrEqual(2)
   })
 
-  it('markiert, und der Markierte taucht in der Liste auf', async () => {
-    const geaendert = await markieren([await idVon(VOLLSTAENDIG), await idVon(OHNE_PREIS)], true, 'Test')
-    expect(geaendert).toBe(2)
+  it('nimmt die Markierung, die der Abgleich aus Plenty geschrieben hat', async () => {
+    await sql`
+      update artikel
+         set ms_markiert = true, ms_markiert_am = now(), ms_markiert_von = 'Plenty-Markierung 27',
+             plenty_flag_one = 27
+       where plenty_variation_id in (${VOLLSTAENDIG}, ${OHNE_PREIS})
+    `
 
     const markierte = await markierteArtikel()
     const unsere = markierte.filter((m) => [VOLLSTAENDIG, OHNE_PREIS].includes(Number(m.plenty_variation_id)))
     expect(unsere).toHaveLength(2)
-    expect(unsere.every((m) => m.ms_markiert_von === 'Test')).toBe(true)
+    expect(unsere.every((m) => m.plenty_flag_one === 27)).toBe(true)
   })
 
   it('trennt vollstaendig von unvollstaendig und baut daraus die Datei', async () => {
@@ -162,18 +168,15 @@ describe.skipIf(!MIT_DB)('Maschinensucher-Strecke gegen Postgres', () => {
     await sql`delete from settings where key = 'maschinensucher.rueckgang_frei_bis'`
   })
 
-  it('setzt die Kategorie von Hand und nimmt die Markierung zurueck', async () => {
+  it('setzt die Rubrik von Hand — das ist unsere Angabe, nicht Plentys', async () => {
     const id = await idVon(VOLLSTAENDIG)
     await kategorieSetzen(id, '1234')
 
     const [mit] = await sql<{ kategorie: string | null }[]>`select kategorie from artikel where id = ${id}::uuid`
     expect(mit.kategorie).toBe('1234')
 
-    await markieren([id], false, 'Test')
-    const [zeile] = await sql<{ ms_markiert: boolean; ms_markiert_am: Date | null }[]>`
-      select ms_markiert, ms_markiert_am from artikel where id = ${id}::uuid
-    `
-    expect(zeile.ms_markiert).toBe(false)
-    expect(zeile.ms_markiert_am).toBeNull()
+    await kategorieSetzen(id, '  ')
+    const [ohne] = await sql<{ kategorie: string | null }[]>`select kategorie from artikel where id = ${id}::uuid`
+    expect(ohne.kategorie).toBeNull()
   })
 })

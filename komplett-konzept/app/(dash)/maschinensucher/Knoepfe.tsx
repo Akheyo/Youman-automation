@@ -4,13 +4,15 @@
  * Die Knöpfe der Maschinensucher-Seite.
  *
  * Dasselbe Muster wie in components/Steuerung.tsx: Server Action in einer
- * Transition, Fehler an Ort und Stelle statt in der Konsole. Neu ist nur die
- * Rückfrage vor dem Herunternehmen — sie ist keine Höflichkeit: Ein Klick
- * nimmt ein Inserat vom Markt, und das merkt man erst am nächsten Morgen.
+ * Transition, Fehler an Ort und Stelle statt in der Konsole.
+ *
+ * Es gibt hier bewusst keinen Knopf zum Markieren: Das passiert in Plenty,
+ * an der Markierung „Maschinensucher". Ein Haken hier hätte nur so ausgesehen,
+ * als entscheide er etwas.
  */
 
 import { useState, useTransition } from 'react'
-import { abgleichJetzt, artikelKategorie, artikelMarkieren, rueckgangFreigeben } from './aktionen'
+import { abgleichJetzt, artikelKategorie, rueckgangFreigeben } from './aktionen'
 
 function useAktion() {
   const [laeuft, start] = useTransition()
@@ -36,45 +38,6 @@ function Fehlerzeile({ text }: { text: string | null }) {
     <p className="meldung meldung--fehler klein" role="alert" style={{ width: '100%' }}>
       {text}
     </p>
-  )
-}
-
-export function MarkierKnopf({
-  id,
-  markiert,
-  draussen,
-  darfSteuern,
-}: {
-  id: string
-  markiert: boolean
-  draussen: boolean
-  darfSteuern: boolean
-}) {
-  const { laeuft, fehler, ausfuehren } = useAktion()
-
-  const klick = () => {
-    if (markiert) {
-      const frage = draussen
-        ? 'Vom Marktplatz nehmen? Beim nächsten Abgleich verschwindet das Inserat auf Maschinensucher.'
-        : 'Markierung zurücknehmen?'
-      if (!window.confirm(frage)) return
-    }
-    ausfuehren(() => artikelMarkieren(id, !markiert))
-  }
-
-  return (
-    <>
-      <button
-        type="button"
-        className={`btn btn--klein ${markiert ? 'btn--gefahr' : 'btn--primaer'}`}
-        onClick={klick}
-        disabled={!darfSteuern || laeuft}
-        title={darfSteuern ? undefined : 'Dafür fehlen dir die Rechte.'}
-      >
-        {laeuft ? '…' : markiert ? 'Herunternehmen' : 'Auf Maschinensucher'}
-      </button>
-      <Fehlerzeile text={fehler} />
-    </>
   )
 }
 

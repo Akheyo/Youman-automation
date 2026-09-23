@@ -243,15 +243,31 @@ PlentyONE nicht angefasst. Das ist der Grund für den Zuschnitt: Ist Plenty
 nachts langsam oder in Wartung, geht trotzdem heraus, was zuletzt bekannt war
 — statt einer leeren Datei, die den Bestand vom Markt nimmt.
 
-### Die Markierung ist der ganze Schalter
+### Markiert wird in Plenty
 
-Was markiert ist, steht in der Datei und damit auf Maschinensucher. Was nicht
-mehr darin steht, verschwindet dort wieder — eine zurückgenommene Markierung
-ist deshalb kein Aufräumen, sondern eine Rücknahme vom Markt. Die Oberfläche
-fragt vorher, und im Protokoll steht, wer es war.
+Der Schalter ist die **Markierung „Maschinensucher"** am Artikel in PlentyONE
+(Einrichtung → Artikel → Markierungen; Markierung 1, ID **27**). Steht sie,
+geht das Gerät auf den Marktplatz. Wird sie entfernt, verschwindet das Inserat
+beim nächsten Abgleich wieder — eine entfernte Markierung ist also keine
+Aufräumarbeit, sondern eine Rücknahme vom Markt.
 
-Markiert wird unter **Maschinensucher** in der Seitenleiste; dafür reicht die
-Rolle *Bediener*.
+Es gibt bewusst **keinen zweiten Haken im Dashboard**. Zwei Schalter für
+dieselbe Sache hätten sich gegenseitig überschrieben: Der nächste Abgleich
+hätte den Haken hier wieder gerade gebogen, und niemand hätte verstanden,
+warum ein Gerät zurück auf den Markt geht. Die Seite **Maschinensucher** zeigt,
+was aus der Markierung geworden ist — sie setzt sie nicht.
+
+Andere ID oder anderes Markierungsfeld: `PLENTY_MS_FLAG_ID` und
+`PLENTY_MS_FLAG_FELD` (`flagOne`, `flagTwo` oder `beide`). Die beiden
+Markierungsfelder in Plenty sind **getrennte Listen** — die 27 in Feld 1 ist
+nicht dieselbe Markierung wie die 27 in Feld 2. Deshalb wird standardmäßig nur
+Feld 1 gelesen.
+
+**Was passiert, wenn Plenty die Markierungen nicht mitliefert?** Dann rührt
+der Abgleich sie nicht an. Das ist der gefährlichste Fall der Strecke: Ein Lauf,
+der sie mangels Artikeldaten alle auf „nicht markiert" setzt, räumt in einer
+Nacht den ganzen Marktplatz leer. Er steht in der Diagnose des Laufs und wird
+getestet.
 
 ### Was nicht rausgeht
 
@@ -350,10 +366,12 @@ heißt „ist draußen" — markiert allein heißt nur „ist gewollt".
         -H "Authorization: Bearer $INGEST_TOKEN"
    ```
 
-5. Erste Artikel markieren, die Abholadresse kopieren und im
-   Maschinensucher-Konto unter *Datenimport → Automatischer Import*
-   hinterlegen.
-6. Die Adresse einmal selbst im Browser aufrufen und die Datei ansehen —
+5. In Plenty an ein paar Artikeln die Markierung **„Maschinensucher"**
+   setzen, abgleichen lassen und auf der Seite prüfen, dass sie dort unter
+   *Markiert in Plenty* erscheinen.
+6. Die Abholadresse kopieren und im Maschinensucher-Konto unter
+   *Datenimport → Automatischer Import* hinterlegen.
+7. Die Adresse einmal selbst im Browser aufrufen und die Datei ansehen —
    **vor** dem ersten nächtlichen Lauf.
 
 ### Was bewusst fehlt
@@ -365,8 +383,9 @@ Der nächtliche Abgleich hat diesen Zustand nicht: Die Datei ist jedes Mal die
 ganze Wahrheit. Wird die Nacht zu langsam, ist das die nächste Ausbaustufe —
 `lib/maschinensucher/inserat.ts` liefert dann dieselben Daten.
 
-Ebenso fehlt das Zurückschreiben nach Plenty. Der Abgleich liest; die
-Markierung gehört uns und hat in Plenty nichts zu suchen.
+Ebenso fehlt das Zurückschreiben nach Plenty: Der Abgleich **liest nur**. Was
+im Dashboard gesetzt wird, ist allein die Maschinensucher-Rubrik — die kennt
+Plenty nicht, und sie gehört zu keinem Plenty-Feld.
 
 ---
 

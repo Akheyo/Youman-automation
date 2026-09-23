@@ -1,7 +1,7 @@
 import 'server-only'
 
 /**
- * Die Artikeldatenbank — lesen, markieren, Stand nachführen.
+ * Die Artikeldatenbank — lesen und Stand nachführen.
  *
  * Alle Abfragen der Maschinensucher-Strecke an einer Stelle, damit Oberfläche
  * und Importdatei dieselbe Antwort bekommen. Lägen sie getrennt, zeigte die
@@ -17,7 +17,10 @@ import { baueInserat, type Artikel, type Inserat, type Umgebung } from './insera
 export interface ArtikelZeile extends Artikel {
   ms_markiert: boolean
   ms_markiert_am: Date | null
+  /** Woher die Markierung kommt — seit dem Umstieg: die Markierung in Plenty. */
   ms_markiert_von: string | null
+  plenty_flag_one: number | null
+  plenty_flag_two: number | null
   ms_abgeholt_am: Date | null
   ms_fehler: string | null
   ms_inserat: Record<string, string> | null
@@ -36,6 +39,7 @@ function felder() {
     id::text, plenty_variation_id, plenty_item_id, nummer, ean, titel, beschreibung,
     hersteller, modell, baujahr, zustand, preis_brutto, waehrung, bestand,
     gewicht_kg, laenge_cm, breite_cm, hoehe_cm, bilder, kategorie, aktiv, gesehen_am,
+    plenty_flag_one, plenty_flag_two,
     ms_markiert, ms_markiert_am, ms_markiert_von, ms_abgeholt_am, ms_fehler, ms_inserat
   `
 }
@@ -51,10 +55,11 @@ export async function markierteArtikel(limit = 1000): Promise<ArtikelZeile[]> {
 }
 
 /**
- * Artikel, die noch nicht markiert sind.
+ * Artikel ohne die Maschinensucher-Markierung.
  *
- * Mit Suchbegriff, weil der Stamm aus Plenty groß ist: Wer ein Gerät auf den
- * Marktplatz stellen will, weiß, welches — er will es finden, nicht blättern.
+ * Mit Suchbegriff, weil der Stamm aus Plenty groß ist: Wer wissen will, warum
+ * ein bestimmtes Gerät nicht draußen steht, sucht es — und sieht an der Zeile,
+ * ob die Markierung fehlt oder etwas anderes.
  */
 export async function kandidaten(suche = '', limit = 50): Promise<ArtikelZeile[]> {
   const begriff = suche.trim()
@@ -89,30 +94,6 @@ export async function artikelZaehlen(): Promise<{ gesamt: number; markiert: numb
     markiert: Number(zeile?.markiert ?? 0),
     draussen: Number(zeile?.draussen ?? 0),
   }
-}
-
-/**
- * Markieren oder Markierung zurücknehmen.
- *
- * Zurücknehmen heißt: Beim nächsten Abgleich fehlt der Artikel in der Datei,
- * und Maschinensucher versteht das als „gibt es nicht mehr". Deshalb wird
- * festgehalten, wer es war.
- */
-export async function markieren(ids: string[], markiert: boolean, nutzerName: string): Promise<number> {
-  if (ids.length === 0) return 0
-  const zeilen = await sql<{ id: string }[]>`
-    update artikel
-       set ms_markiert    = ${markiert},
-           ms_markiert_am = ${markiert ? sql`now()` : sql`null`},
-           ms_markiert_von = ${nutzerName},
-           -- Der alte Grund gilt nicht mehr: Was fehlt, entscheidet der
-           -- nächste Lauf neu.
-           ms_fehler      = null,
-           updated_at     = now()
-     where id = any(${ids}::uuid[])
-     returning id::text
-  `
-  return zeilen.length
 }
 
 /** Die Kategorie eines Artikels von Hand setzen (oder wieder leeren). */

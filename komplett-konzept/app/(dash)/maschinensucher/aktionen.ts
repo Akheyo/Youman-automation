@@ -3,18 +3,21 @@
 /**
  * Die Steueraktionen der Maschinensucher-Seite.
  *
- * Alle vier ändern etwas, das nach außen sichtbar wird — deshalb braucht jede
- * mindestens die Rolle „Bediener", und jede schreibt ins Protokoll. Wer ein
- * Gerät auf den Marktplatz stellt oder wieder herunternimmt, trifft eine
- * Entscheidung über ein öffentliches Angebot; dass hinterher niemand mehr
- * weiß, wer es war, wäre die schlechtere Variante.
+ * Alle drei ändern etwas, das nach außen sichtbar wird — deshalb braucht jede
+ * mindestens die Rolle „Bediener", und jede schreibt ins Protokoll.
+ *
+ * Was hier NICHT steht: markieren. Ob ein Gerät auf den Marktplatz geht,
+ * entscheidet die Markierung „Maschinensucher" am Artikel in PlentyONE. Ein
+ * zweiter Schalter hier hätte sich mit ihr überworfen — der nächste Abgleich
+ * hätte ihn wieder gerade gebogen, und niemand hätte verstanden, warum ein
+ * Gerät zurück auf den Markt geht.
  */
 
 import { revalidatePath } from 'next/cache'
 import { rolleErzwingen } from '@/lib/auth'
 import { protokollSchreiben } from '@/lib/queries'
 import { aktuellerNutzer } from '@/lib/session'
-import { kategorieSetzen, markieren } from '@/lib/maschinensucher/artikel'
+import { kategorieSetzen } from '@/lib/maschinensucher/artikel'
 import { freigabeSetzen, laufMelden } from '@/lib/maschinensucher/lauf'
 import { freigabeBis } from '@/lib/maschinensucher/rueckgang'
 import { abgleichLaufen } from '@/lib/plenty/sync'
@@ -23,22 +26,6 @@ async function bediener() {
   const nutzer = await aktuellerNutzer()
   rolleErzwingen(nutzer, 'operator')
   return nutzer
-}
-
-export async function artikelMarkieren(id: string, markiertSetzen: boolean) {
-  const nutzer = await bediener()
-  const anzahl = await markieren([id], markiertSetzen, nutzer.name)
-  if (anzahl === 0) throw new Error('Artikel nicht gefunden.')
-
-  await protokollSchreiben({
-    userId: nutzer.id,
-    userName: nutzer.name,
-    action: markiertSetzen ? 'maschinensucher.markiert' : 'maschinensucher.zurueckgenommen',
-    targetType: 'artikel',
-    targetId: id,
-  })
-
-  revalidatePath('/maschinensucher')
 }
 
 export async function artikelKategorie(id: string, kategorie: string) {
