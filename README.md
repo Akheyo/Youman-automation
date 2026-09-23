@@ -137,8 +137,10 @@ es dafür nicht.
 git push -f origin plugin/maschinensucher
 ```
 
-Nach jeder Änderung am Plugin: erneut ausführen, pushen, und in Plenty im
-Git-Bereich des Plugins neu bereitstellen.
+Nach jeder Änderung am Plugin: erneut ausführen, pushen, in Plenty
+**bereitstellen** — fertig. Ein Deploy des Plugin-Sets zieht die neueste
+Fassung des eingestellten Zweigs von selbst nach (Plugin Build 2), es muss
+also nichts von Hand aktualisiert werden.
 
 ### Schritt für Schritt
 
@@ -165,7 +167,9 @@ Git-Bereich des Plugins neu bereitstellen.
 8. Einen Artikel markieren und den Cron abwarten (stündlich).
 9. Die Adresse **einmal selbst im Browser aufrufen** und die Datei ansehen,
    **bevor** sie im Maschinensucher-Konto unter *Datenimport → Automatischer
-   Import* hinterlegt wird.
+   Import* hinterlegt wird. Die Adresse liegt unter der Shop-Domain des
+   Mandanten, genau wie im Tutorial das `/hello-world` — bei uns
+   `/maschinensucher/feed?token=…`.
 
 > **Wenn Plenty das Repository nicht annimmt:** Für Plugins, die nicht auf der
 > Freigabeliste stehen, kann der Git-Import abgelehnt werden — dann führt der
