@@ -398,22 +398,37 @@ class Abgleich
     /**
      * Die Varianten, ueber die gearbeitet wird — entweder alle oder die
      * genannten.
+     *
+     * Die genannten werden einzeln ueber den Filter "id" geholt. Ein
+     * Auftrag hat eine Handvoll Positionen, das sind eine Handvoll Aufrufe
+     * — und der Filter "id" ist der, den Plenty dokumentiert.
      */
     private function varianten(array $nurDiese)
     {
-        $heraus = array();
         $mit = 'item,variationSalesPrices,variationBarcodes,stock';
 
+        if (count($nurDiese) > 0) {
+            $heraus = array();
+            foreach ($nurDiese as $id) {
+                $this->varianten->clearFilters();
+                $this->varianten->setFilters(array('id' => (int) $id));
+                $this->varianten->setSearchParams(array('with' => $mit, 'itemsPerPage' => 10, 'page' => 1));
+                $zeilen = $this->varianten->search()->getResult();
+                foreach ((is_array($zeilen) ? $zeilen : array()) as $zeile) {
+                    $heraus[] = $this->alsArray($zeile);
+                }
+            }
+            return $heraus;
+        }
+
+        $heraus = array();
+        $this->varianten->clearFilters();
         for ($seite = 1; $seite <= self::MAX_SEITEN; $seite++) {
-            $suche = array(
+            $this->varianten->setSearchParams(array(
                 'with' => $mit,
                 'itemsPerPage' => self::PRO_SEITE,
                 'page' => $seite,
-            );
-            if (count($nurDiese) > 0) {
-                $suche['variationIds'] = implode(',', $nurDiese);
-            }
-            $this->varianten->setSearchParams($suche);
+            ));
             $ergebnis = $this->varianten->search();
             $zeilen = $ergebnis->getResult();
             $zeilen = is_array($zeilen) ? $zeilen : array();
