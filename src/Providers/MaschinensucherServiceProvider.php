@@ -36,10 +36,15 @@ class MaschinensucherServiceProvider extends ServiceProvider
         // entsprechend. Langsamer und schonender mit HOURLY.
         $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, DateiBauen::class);
 
-        // Stuendlich nachsehen, was drueben steht. Das haelt die Zuordnung
-        // aktuell, auch wenn jemand ein Inserat von Hand anlegt oder
-        // loescht, und es ist zugleich der einzige Ausloeser, der ohne
-        // erreichbare PHP-Route auskommt.
-        $cron->add(CronContainer::HOURLY, BestandLesen::class);
+        // Alle fuenf Minuten nachsehen, was drueben steht. Das haelt die
+        // Zuordnung aktuell, auch wenn jemand ein Inserat von Hand anlegt
+        // oder loescht, und es ist zugleich der einzige Ausloeser, der ohne
+        // erreichbare PHP-Route auskommt: Dieser Mandant faehrt den neuen
+        // PlentyONE Shop, der bedient keine Plugin-Routen.
+        //
+        // Fuenf Minuten sind fuer ein paar hundert Inserate guenstig - es
+        // sind sieben Aufrufe je Lauf - und machen die Strecke ueberhaupt
+        // erst beobachtbar. Wer sparen will, stellt auf HOURLY.
+        $cron->add(CronContainer::EVERY_FIVE_MINUTES, BestandLesen::class);
     }
 }

@@ -173,6 +173,7 @@ class Einstellungen
             'telefon' => (string) $this->wert('telefon', ''),
             'email' => (string) $this->wert('email', ''),
             'kategorieStandard' => (string) $this->wert('kategorie', ''),
+            'kategorieId' => (int) $this->wert('kategorie', 0),
             'kategorieZuordnung' => $this->zuordnung(),
             'shopBasisUrl' => (string) $this->wert('shopBasisUrl', ''),
         );
@@ -208,10 +209,12 @@ class Einstellungen
         if ($this->markierungId() <= 0) {
             $maengel[] = 'Keine Markierungs-ID eingestellt — ohne sie geht kein Artikel raus.';
         }
+        // Die Auffangrubrik steht hier bewusst NICHT mehr: Die bestehenden
+        // Inserate bringen ihre Rubrik aus der Bestandsaufnahme mit.
+        // Gebraucht wird sie nur fuer Artikel, die drueben noch nicht
+        // stehen — und dort faellt ihr Fehlen beim einzelnen Artikel auf,
+        // nicht beim ganzen Lauf.
         $umgebung = $this->umgebung();
-        if ($umgebung['kategorieStandard'] === '') {
-            $maengel[] = 'Keine Auffangkategorie eingestellt.';
-        }
         if ($umgebung['plz'] === '' || $umgebung['ort'] === '') {
             $maengel[] = 'Kein Standort eingestellt (PLZ / Ort).';
         }
