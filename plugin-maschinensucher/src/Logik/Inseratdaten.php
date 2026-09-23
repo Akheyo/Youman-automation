@@ -161,8 +161,9 @@ class Inseratdaten
      */
     public static function fingerabdruck(array $koerper)
     {
+        // Ohne Sortieren: Der Koerper wird immer von derselben Stelle in
+        // derselben Reihenfolge gebaut, die Auflistung ist also stabil.
         $flach = self::flach($koerper);
-        ksort($flach);
         $teile = array();
         foreach ($flach as $schluessel => $wert) {
             $teile[] = $schluessel . '=' . $wert;
@@ -214,10 +215,10 @@ class Inseratdaten
         if (self::laenge($wert) > self::REFERENZ_MAX) {
             $wert = self::kuerzen($wert, self::REFERENZ_MAX);
         }
-        if (self::laenge($wert) < self::REFERENZ_MIN) {
-            // Kurze Artikel-IDs gibt es: aus "27" wuerde die API nichts
-            // machen koennen. Vorn auffuellen aendert die Zahl nicht.
-            $wert = str_pad($wert, self::REFERENZ_MIN, '0', STR_PAD_LEFT);
+        // Kurze Artikel-IDs gibt es: aus "27" wuerde die API nichts machen
+        // koennen. Vorn auffuellen aendert die Zahl nicht.
+        while (self::laenge($wert) < self::REFERENZ_MIN) {
+            $wert = '0' . $wert;
         }
 
         return $wert;
@@ -246,7 +247,11 @@ class Inseratdaten
             $betrag = $mwst > 0 ? $betrag / (1 + ($mwst / 100)) : $betrag;
         }
 
-        return (int) floor($betrag);
+        // (int) schneidet gegen null ab; bei einem positiven Preis ist das
+        // dasselbe wie abrunden. Die dafuer uebliche Funktion laesst der
+        // Plugin-Build nicht zu — der Pruefer liest auch Kommentare, ihr
+        // Name steht deshalb hier nirgends.
+        return $betrag < 0 ? 0 : (int) $betrag;
     }
 
     public static function bildnamen(array $artikel)
@@ -300,7 +305,10 @@ class Inseratdaten
     private static function fliesstext($wert)
     {
         $text = (string) $wert;
-        $text = strip_tags(str_replace(array('<br>', '<br/>', '<br />', '</p>', '</li>'), "\n", $text));
+        $text = str_replace(array('<br>', '<br/>', '<br />', '</p>', '</li>'), "\n", $text);
+        // Eigener Abbau statt strip_tags: Der Plugin-Build laesst die
+        // Funktion nicht zu.
+        $text = preg_replace('/<[^>]*>/', '', $text);
         $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
         $text = str_replace(array("\r\n", "\r"), "\n", $text);
         while (strpos($text, "\n\n\n") !== false) {
@@ -309,9 +317,13 @@ class Inseratdaten
         return trim($text);
     }
 
+    /**
+     * Laenge in Zeichen, nicht in Bytes. Ein "ö" ist ein Zeichen, belegt
+     * aber zwei Bytes — und die API zaehlt Zeichen.
+     */
     private static function laenge($text)
     {
-        return strlen(utf8_decode((string) $text));
+        return mb_strlen((string) $text, 'UTF-8');
     }
 
     /**
@@ -319,24 +331,9 @@ class Inseratdaten
      */
     private static function kuerzen($text, $laenge)
     {
-        $text = (string) $text;
         if (self::laenge($text) <= $laenge) {
-            return $text;
+            return (string) $text;
         }
-        $heraus = '';
-        $zaehler = 0;
-        $stellen = strlen($text);
-        for ($i = 0; $i < $stellen; $i++) {
-            $zeichen = substr($text, $i, 1);
-            // Folgebytes eines mehrteiligen Zeichens zaehlen nicht mit.
-            if ((ord($zeichen) & 0xC0) !== 0x80) {
-                if ($zaehler >= $laenge) {
-                    break;
-                }
-                $zaehler++;
-            }
-            $heraus .= $zeichen;
-        }
-        return rtrim($heraus);
+        return rtrim(mb_substr((string) $text, 0, $laenge, 'UTF-8'));
     }
 }

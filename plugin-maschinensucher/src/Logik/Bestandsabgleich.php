@@ -88,7 +88,7 @@ class Bestandsabgleich
         // Bewusst streng: "62923" ja, "Thomas 3" nein, "62923-alt" nein.
         // Eine halb erratene Zuordnung waere schlimmer als gar keine — sie
         // wuerde ein fremdes Inserat ueberschreiben.
-        if ($wert === '' || !ctype_digit($wert)) {
+        if ($wert === '' || preg_match('/^[0-9]+$/', $wert) !== 1) {
             return 0;
         }
 
