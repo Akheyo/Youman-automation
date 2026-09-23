@@ -31,6 +31,10 @@ fi
 # ein Livesystem; das ist die letzte Stelle, an der es auffaellt.
 php "$ORDNER/tests/run.php"
 
+# Und jede eingebundene Plenty-Klasse muss es geben. Ein falscher
+# Namensraum faellt sonst erst zur Laufzeit in Plenty auf.
+"$ORDNER/tests/schnittstelle.sh"
+
 git branch -D "$ZWEIG" >/dev/null 2>&1 || true
 git subtree split --prefix "$ORDNER" -b "$ZWEIG" >/dev/null
 

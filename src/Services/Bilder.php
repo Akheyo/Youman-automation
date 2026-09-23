@@ -4,7 +4,7 @@ namespace MaschinensucherMarkt\Services;
 
 use MaschinensucherMarkt\Api\Zugang;
 use MaschinensucherMarkt\Logik\Antwort;
-use Plenty\Modules\Item\Images\Contracts\ItemImageRepositoryContract;
+use Plenty\Modules\Item\ItemImage\Contracts\ItemImageRepositoryContract;
 use Plenty\Modules\Plugin\Libs\Contracts\LibraryCallContract;
 use Plenty\Plugin\Log\Loggable;
 
