@@ -2,6 +2,7 @@
 
 namespace MaschinensucherMarkt\Providers;
 
+use MaschinensucherMarkt\Crons\BestandLesen;
 use MaschinensucherMarkt\Crons\DateiBauen;
 use Plenty\Modules\Cron\Services\CronContainer;
 use Plenty\Plugin\ServiceProvider;
@@ -34,5 +35,11 @@ class MaschinensucherServiceProvider extends ServiceProvider
         // Schneller geht mit EVERY_FIVE_MINUTES, belastet Plenty aber
         // entsprechend. Langsamer und schonender mit HOURLY.
         $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, DateiBauen::class);
+
+        // Stuendlich nachsehen, was drueben steht. Das haelt die Zuordnung
+        // aktuell, auch wenn jemand ein Inserat von Hand anlegt oder
+        // loescht, und es ist zugleich der einzige Ausloeser, der ohne
+        // erreichbare PHP-Route auskommt.
+        $cron->add(CronContainer::HOURLY, BestandLesen::class);
     }
 }
