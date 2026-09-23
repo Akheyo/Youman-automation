@@ -12,13 +12,13 @@ namespace MaschinensucherMarkt\Logik;
  * 1.998 € online steht.
  *
  * Die verbindliche Reihenfolge steht in der BEISPIELDATEI aus dem
- * Händlerkonto (Datenimport). Statt Spaltennamen zu erfinden, nimmt diese
- * Klasse deren Kopfzeile entgegen und ordnet unsere Felder darauf zu. Ist
- * keine hinterlegt, wird die Standardreihenfolge ausgeliefert — und die
- * Plugin-Konfiguration sagt, dass sie ungeprüft ist.
+ * Händlerkonto. Statt Spaltennamen zu erfinden, nimmt `bauen()` deren
+ * Kopfzeile entgegen und ordnet unsere Felder darauf zu.
  *
- * Diese Klasse hängt an KEINER Plenty-Klasse. Das ist Absicht: So lässt sie
- * sich mit einfachem PHP prüfen (siehe tests/), ohne ein Plenty daneben.
+ * NUR STATISCHE METHODEN, KEIN ZUSTAND: Im Plugin-Code von PlentyONE ist
+ * `new` nicht erlaubt (der Build lehnt es ab). Objekte entstehen dort über
+ * pluginApp() — für reine Rechenlogik ist das unnötiger Umweg, also sind es
+ * Funktionen. Dieselbe Datei läuft dadurch auch mit einfachem PHP im Test.
  */
 class Spaltenplan
 {
@@ -97,18 +97,6 @@ class Spaltenplan
         return preg_replace('/[^a-z0-9]/', '', $text);
     }
 
-    /** @var array Liste aus ['kopf' => string, 'feld' => string|null] */
-    public $spalten = array();
-
-    /** @var string 'beispieldatei' oder 'standard' */
-    public $herkunft = 'standard';
-
-    /** @var array Pflichtfelder, für die keine Spalte gefunden wurde. */
-    public $fehlendePflicht = array();
-
-    /** @var array Spalten der fremden Kopfzeile, die wir nicht befüllen. */
-    public $unbelegt = array();
-
     /**
      * Baut den Plan.
      *
@@ -119,21 +107,28 @@ class Spaltenplan
      *
      * @param string $kopfzeile Kopfzeile der offiziellen Beispieldatei, oder ''
      * @param string $trenner
+     * @return array ['spalten' => [['kopf','feld']], 'herkunft', 'fehlendePflicht', 'unbelegt']
      */
-    public function __construct($kopfzeile = '', $trenner = ';')
+    public static function bauen($kopfzeile = '', $trenner = ';')
     {
         $kopfzeile = trim((string) $kopfzeile);
         $felder = self::felder();
 
         if ($kopfzeile === '' || strpos($kopfzeile, $trenner) === false) {
+            $spalten = array();
             foreach ($felder as $key => $feld) {
-                $this->spalten[] = array('kopf' => $feld[0], 'feld' => $key);
+                $spalten[] = array('kopf' => $feld[0], 'feld' => $key);
             }
-            $this->herkunft = 'standard';
-            return;
+            return array(
+                'spalten' => $spalten,
+                'herkunft' => 'standard',
+                'fehlendePflicht' => array(),
+                'unbelegt' => array(),
+            );
         }
 
-        $this->herkunft = 'beispieldatei';
+        $spalten = array();
+        $unbelegt = array();
         $vergeben = array();
 
         foreach (explode($trenner, $kopfzeile) as $kopf) {
@@ -172,16 +167,24 @@ class Spaltenplan
             if ($treffer !== null) {
                 $vergeben[$treffer] = true;
             } else {
-                $this->unbelegt[] = $kopf;
+                $unbelegt[] = $kopf;
             }
-            $this->spalten[] = array('kopf' => $kopf, 'feld' => $treffer);
+            $spalten[] = array('kopf' => $kopf, 'feld' => $treffer);
         }
 
+        $fehlendePflicht = array();
         foreach (self::pflichtfelder() as $key) {
             if (!isset($vergeben[$key])) {
-                $this->fehlendePflicht[] = $key;
+                $fehlendePflicht[] = $key;
             }
         }
+
+        return array(
+            'spalten' => $spalten,
+            'herkunft' => 'beispieldatei',
+            'fehlendePflicht' => $fehlendePflicht,
+            'unbelegt' => $unbelegt,
+        );
     }
 
     /**

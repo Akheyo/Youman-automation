@@ -24,6 +24,9 @@ namespace MaschinensucherMarkt\Logik;
  * 3. KEIN RATEN. Was fehlt, bleibt leer. Ein erfundenes Baujahr steht im
  *    Inserat wie eine Angabe vom Typenschild — und ein Käufer richtet seinen
  *    Transport danach ein.
+ *
+ * Nur statische Methoden und keine Closures: Der Plugin-Build von PlentyONE
+ * lässt weder `new` noch den Aufruf einer Funktion aus einer Variablen zu.
  */
 class Inserat
 {
@@ -33,155 +36,168 @@ class Inserat
     /** Höchstlänge des Beschreibungstextes. */
     const MAX_BESCHREIBUNG = 4000;
 
-    /** @var array Spaltenschlüssel => Wert */
-    public $werte = array();
-
-    /** @var array Was das Inserat unmöglich macht. Leer = darf raus. */
-    public $maengel = array();
-
-    /** @var array Was auffällt, aber nicht aufhält. */
-    public $hinweise = array();
-
     /**
-     * @param array $artikel Siehe Feldliste unten — flaches Array, keine Modelle.
-     * @param array $umgebung Betriebsangaben aus der Plugin-Konfiguration.
+     * Baut das Inserat und sagt gleichzeitig, was ihm fehlt.
+     *
+     * Beides in einem Durchgang, damit sich zeigen lässt, was rausginge UND
+     * warum es (noch) nicht rausgeht. Zwei getrennte Wege wären zwei
+     * Wahrheiten, die auseinanderlaufen können.
+     *
+     * @param array $artikel  flaches Array, siehe Artikelabbildung
+     * @param array $umgebung Betriebsangaben aus der Plugin-Konfiguration
+     * @return array ['werte' => array, 'maengel' => array, 'hinweise' => array]
      */
-    public function __construct(array $artikel, array $umgebung)
+    public static function bauen(array $artikel, array $umgebung)
     {
-        $hole = function ($schluessel, $standard = null) use ($artikel) {
-            return isset($artikel[$schluessel]) ? $artikel[$schluessel] : $standard;
-        };
-        $einst = function ($schluessel, $standard = '') use ($umgebung) {
-            return isset($umgebung[$schluessel]) && $umgebung[$schluessel] !== null ? $umgebung[$schluessel] : $standard;
-        };
+        $maengel = array();
+        $hinweise = array();
 
         // ---- Überschrift und Text ----------------------------------------
-        $titel = self::kuerze((string) $hole('titel', ''), self::MAX_TITEL);
+        $titel = self::kuerze((string) self::wert($artikel, 'titel', ''), self::MAX_TITEL);
         if ($titel === '') {
-            $this->maengel[] = 'Kein Titel — die Variante hat in Plenty keinen Namen.';
+            $maengel[] = 'Kein Titel — die Variante hat in Plenty keinen Namen.';
         }
 
-        $beschreibung = self::kuerze(self::alsFliesstext((string) $hole('beschreibung', '')), self::MAX_BESCHREIBUNG);
+        $beschreibung = self::kuerze(
+            self::alsFliesstext((string) self::wert($artikel, 'beschreibung', '')),
+            self::MAX_BESCHREIBUNG
+        );
         if ($beschreibung === '') {
-            $this->maengel[] = 'Keine Beschreibung — am Artikel steht kein Text.';
+            $maengel[] = 'Keine Beschreibung — am Artikel steht kein Text.';
         }
 
         // ---- Verfügbarkeit ------------------------------------------------
         // Was nicht da ist, wird nicht angeboten. Eine Anfrage zu einem
         // verkauften Gerät kostet Vertrauen, und zwar bei dem, der sich
         // gemeldet hat.
-        if ($hole('aktiv', true) === false) {
-            $this->maengel[] = 'In Plenty inaktiv — inaktive Artikel gehen nicht auf den Marktplatz.';
+        if (self::wert($artikel, 'aktiv', true) === false) {
+            $maengel[] = 'In Plenty inaktiv — inaktive Artikel gehen nicht auf den Marktplatz.';
         }
-        $bestand = $hole('bestand', null);
+        $bestand = self::wert($artikel, 'bestand', null);
         if ($bestand !== null && $bestand <= 0) {
-            $this->maengel[] = 'Kein Bestand.';
+            $maengel[] = 'Kein Bestand.';
         }
         if ($bestand === null) {
-            $this->hinweise[] = 'Bestand unbekannt — Plenty hat keine Bestandszeile geliefert.';
+            $hinweise[] = 'Bestand unbekannt — Plenty hat keine Bestandszeile geliefert.';
         }
 
         // ---- Preis ---------------------------------------------------------
-        $brutto = self::zahlOderNull($hole('preis', null));
+        $brutto = self::zahlOderNull(self::wert($artikel, 'preis', null));
         $preisFeld = '';
         if ($brutto === null || $brutto <= 0) {
-            $this->maengel[] = 'Kein Preis — ohne Preis kein Inserat.';
+            $maengel[] = 'Kein Preis — ohne Preis kein Inserat.';
         } else {
-            $mwst = (float) $einst('mwst', 19);
-            $preisFeld = self::zahl($einst('preisIst', 'brutto') === 'netto' ? $brutto : self::netto($brutto, $mwst), 2);
+            $mwst = (float) self::wert($umgebung, 'mwst', 19);
+            $istNetto = self::wert($umgebung, 'preisIst', 'brutto') === 'netto';
+            $preisFeld = self::zahl($istNetto ? $brutto : self::netto($brutto, $mwst), 2);
         }
 
         // ---- Bilder ---------------------------------------------------------
         $alle = array();
-        foreach ((array) $hole('bilder', array()) as $url) {
+        foreach ((array) self::wert($artikel, 'bilder', array()) as $url) {
             if (is_string($url) && trim($url) !== '') {
                 $alle[] = trim($url);
             }
         }
         $bilder = array_slice($alle, 0, Spaltenplan::MAX_BILDER);
         if (count($bilder) === 0) {
-            $this->maengel[] = 'Keine Fotos — ein Inserat ohne Bild wird nicht angesehen.';
+            $maengel[] = 'Keine Fotos — ein Inserat ohne Bild wird nicht angesehen.';
         }
         if (count($alle) > Spaltenplan::MAX_BILDER) {
-            $this->hinweise[] = count($alle) . ' Fotos vorhanden, übertragen werden die ersten ' . Spaltenplan::MAX_BILDER . '.';
+            $hinweise[] = count($alle) . ' Fotos vorhanden, übertragen werden die ersten ' . Spaltenplan::MAX_BILDER . '.';
         }
 
         // ---- Kategorie und Standort -----------------------------------------
         $kategorie = self::findeKategorie($artikel, $umgebung);
         if ($kategorie['kategorie'] === '') {
-            $this->maengel[] = 'Keine Maschinensucher-Kategorie hinterlegt (Plugin-Konfiguration).';
+            $maengel[] = 'Keine Maschinensucher-Kategorie hinterlegt (Plugin-Konfiguration).';
         } elseif ($kategorie['herkunft'] === 'standard') {
-            $this->hinweise[] = 'Auffangkategorie „' . $kategorie['kategorie'] . '" — keine Zuordnung hat gegriffen.';
+            $hinweise[] = 'Auffangkategorie „' . $kategorie['kategorie'] . '" — keine Zuordnung hat gegriffen.';
         }
 
-        if ($einst('plz') === '' || $einst('ort') === '' || $einst('land') === '') {
-            $this->maengel[] = 'Kein Standort hinterlegt (PLZ / Ort / Land in der Plugin-Konfiguration).';
+        $plz = (string) self::wert($umgebung, 'plz', '');
+        $ort = (string) self::wert($umgebung, 'ort', '');
+        $land = (string) self::wert($umgebung, 'land', 'DE');
+        if ($plz === '' || $ort === '' || $land === '') {
+            $maengel[] = 'Kein Standort hinterlegt (PLZ / Ort / Land in der Plugin-Konfiguration).';
         }
 
         // ---- Was auffällt, aber nicht aufhält --------------------------------
-        if ((string) $hole('hersteller', '') === '') {
-            $this->hinweise[] = 'Kein Hersteller hinterlegt.';
+        if ((string) self::wert($artikel, 'hersteller', '') === '') {
+            $hinweise[] = 'Kein Hersteller hinterlegt.';
         }
-        if ((string) $hole('baujahr', '') === '') {
-            $this->hinweise[] = 'Kein Baujahr — auf Maschinenmarktplätzen die erste Rückfrage.';
+        if ((string) self::wert($artikel, 'baujahr', '') === '') {
+            $hinweise[] = 'Kein Baujahr — auf Maschinenmarktplätzen die erste Rückfrage.';
         }
-        if (self::zahlOderNull($hole('gewichtG', null)) === null) {
-            $this->hinweise[] = 'Kein Gewicht — Transportfrage bleibt offen.';
+        $gewichtG = self::zahlOderNull(self::wert($artikel, 'gewichtG', null));
+        if ($gewichtG === null) {
+            $hinweise[] = 'Kein Gewicht — Transportfrage bleibt offen.';
         }
 
         // ---- Zusammensetzen ---------------------------------------------------
-        $gewichtG = self::zahlOderNull($hole('gewichtG', null));
-        $shopBasis = rtrim((string) $einst('shopBasisUrl'), '/');
-        $nummer = trim((string) $hole('nummer', ''));
+        $shopBasis = rtrim((string) self::wert($umgebung, 'shopBasisUrl', ''), '/');
+        $itemId = self::wert($artikel, 'itemId', 0);
+        $nummer = trim((string) self::wert($artikel, 'nummer', ''));
         if ($nummer === '') {
-            $nummer = (string) $hole('variationId', '');
+            $nummer = (string) self::wert($artikel, 'variationId', '');
         }
 
-        $this->werte = array(
-            'inseratsnummer'  => self::inseratsnummer($nummer, (string) $einst('nummernPraefix', 'KK-')),
+        $werte = array(
+            'inseratsnummer'  => self::inseratsnummer($nummer, (string) self::wert($umgebung, 'nummernPraefix', 'KK-')),
             'kategorie'       => $kategorie['kategorie'],
             'titel'           => $titel,
-            'hersteller'      => (string) $hole('hersteller', ''),
-            'typ'             => (string) $hole('modell', ''),
-            'baujahr'         => (string) $hole('baujahr', ''),
-            'zustand'         => (string) $hole('zustand', ''),
+            'hersteller'      => (string) self::wert($artikel, 'hersteller', ''),
+            'typ'             => (string) self::wert($artikel, 'modell', ''),
+            'baujahr'         => (string) self::wert($artikel, 'baujahr', ''),
+            'zustand'         => (string) self::wert($artikel, 'zustand', ''),
             'beschreibung'    => $beschreibung,
             'preis'           => $preisFeld,
-            'waehrung'        => (string) $einst('waehrung', 'EUR'),
+            'waehrung'        => (string) self::wert($umgebung, 'waehrung', 'EUR'),
             'preisart'        => 'netto',
-            'mwst'            => self::zahl((float) $einst('mwst', 19), 0),
+            'mwst'            => self::zahl((float) self::wert($umgebung, 'mwst', 19), 0),
             'menge'           => (string) max(1, (int) ($bestand === null ? 1 : $bestand)),
             'seriennummer'    => '',
-            'interne_nummer'  => $nummer !== '' ? $nummer : (string) $hole('ean', ''),
-            'land'            => (string) $einst('land', 'DE'),
-            'plz'             => (string) $einst('plz'),
-            'ort'             => (string) $einst('ort'),
+            'interne_nummer'  => $nummer !== '' ? $nummer : (string) self::wert($artikel, 'ean', ''),
+            'land'            => $land,
+            'plz'             => $plz,
+            'ort'             => $ort,
             'gewicht'         => $gewichtG !== null && $gewichtG > 0 ? self::zahl($gewichtG / 1000, 1) : '',
-            'laenge'          => self::mmInCm($hole('laengeMM', null)),
-            'breite'          => self::mmInCm($hole('breiteMM', null)),
-            'hoehe'           => self::mmInCm($hole('hoeheMM', null)),
-            'ansprechpartner' => (string) $einst('ansprechpartner'),
-            'telefon'         => (string) $einst('telefon'),
-            'email'           => (string) $einst('email'),
-            'url'             => $shopBasis !== '' && $hole('itemId') ? $shopBasis . '/a-' . $hole('itemId') : '',
+            'laenge'          => self::mmInCm(self::wert($artikel, 'laengeMM', null)),
+            'breite'          => self::mmInCm(self::wert($artikel, 'breiteMM', null)),
+            'hoehe'           => self::mmInCm(self::wert($artikel, 'hoeheMM', null)),
+            'ansprechpartner' => (string) self::wert($umgebung, 'ansprechpartner', ''),
+            'telefon'         => (string) self::wert($umgebung, 'telefon', ''),
+            'email'           => (string) self::wert($umgebung, 'email', ''),
+            'url'             => $shopBasis !== '' && $itemId ? $shopBasis . '/a-' . $itemId : '',
         );
 
         $nr = 1;
         foreach ($bilder as $url) {
-            $this->werte['bild' . $nr] = $url;
+            $werte['bild' . $nr] = $url;
             $nr++;
         }
+
+        return array('werte' => $werte, 'maengel' => $maengel, 'hinweise' => $hinweise);
     }
 
     /** Darf dieses Inserat in die Datei? */
-    public function vollstaendig()
+    public static function vollstaendig(array $inserat)
     {
-        return count($this->maengel) === 0;
+        return isset($inserat['maengel']) && count($inserat['maengel']) === 0;
     }
 
     // -----------------------------------------------------------------------
     // Kleinteile
     // -----------------------------------------------------------------------
+
+    /** Ein Wert aus einem Array, mit Vorgabe. Ersetzt die frühere Closure. */
+    public static function wert(array $daten, $schluessel, $standard = null)
+    {
+        if (!array_key_exists($schluessel, $daten) || $daten[$schluessel] === null) {
+            return $standard;
+        }
+        return $daten[$schluessel];
+    }
 
     /**
      * Die feste Nummer des Inserats — aus der Variantennummer.
@@ -203,35 +219,34 @@ class Inserat
     /**
      * Welche Kategorie passt?
      *
-     * Erst die von Hand am Artikel gesetzte (Eigenschaft/Konfiguration), dann
-     * die Zuordnung über Suchworte, dann die Auffangkategorie. Dass die
-     * Auffangkategorie gegriffen hat, wird gesagt: Ein Inserat in der falschen
-     * Rubrik ist so gut wie keines.
+     * Erst die von Hand am Artikel gesetzte, dann die Zuordnung über
+     * Suchworte, dann die Auffangkategorie. Dass die Auffangkategorie
+     * gegriffen hat, wird gesagt: Ein Inserat in der falschen Rubrik ist so
+     * gut wie keines.
      */
     public static function findeKategorie(array $artikel, array $umgebung)
     {
-        $eigene = isset($artikel['kategorie']) ? trim((string) $artikel['kategorie']) : '';
+        $eigene = trim((string) self::wert($artikel, 'kategorie', ''));
         if ($eigene !== '') {
             return array('kategorie' => $eigene, 'herkunft' => 'artikel');
         }
 
         $heuhaufen = mb_strtolower(
-            (isset($artikel['titel']) ? $artikel['titel'] : '') . ' ' .
-            (isset($artikel['hersteller']) ? $artikel['hersteller'] : '') . ' ' .
-            (isset($artikel['modell']) ? $artikel['modell'] : ''),
+            (string) self::wert($artikel, 'titel', '') . ' ' .
+            (string) self::wert($artikel, 'hersteller', '') . ' ' .
+            (string) self::wert($artikel, 'modell', ''),
             'UTF-8'
         );
 
-        $zuordnung = isset($umgebung['kategorieZuordnung']) ? (array) $umgebung['kategorieZuordnung'] : array();
-        foreach ($zuordnung as $wort => $kategorie) {
+        foreach ((array) self::wert($umgebung, 'kategorieZuordnung', array()) as $wort => $kategorie) {
             $wort = mb_strtolower(trim((string) $wort), 'UTF-8');
-            if ($wort !== '' && mb_strpos($heuhaufen, $wort) !== false) {
+            if ($wort !== '' && strpos($heuhaufen, $wort) !== false) {
                 return array('kategorie' => (string) $kategorie, 'herkunft' => 'zuordnung');
             }
         }
 
         return array(
-            'kategorie' => isset($umgebung['kategorieStandard']) ? (string) $umgebung['kategorieStandard'] : '',
+            'kategorie' => (string) self::wert($umgebung, 'kategorieStandard', ''),
             'herkunft' => 'standard',
         );
     }
@@ -278,9 +293,9 @@ class Inserat
             return $text;
         }
         $schnitt = mb_substr($text, 0, $max, 'UTF-8');
-        $luecke = mb_strrpos($schnitt, ' ', 0, 'UTF-8');
+        $luecke = strrpos($schnitt, ' ');
         if ($luecke !== false && $luecke > $max * 0.6) {
-            $schnitt = mb_substr($schnitt, 0, $luecke, 'UTF-8');
+            $schnitt = substr($schnitt, 0, $luecke);
         }
         return rtrim($schnitt, " \t\n\r,;·-");
     }

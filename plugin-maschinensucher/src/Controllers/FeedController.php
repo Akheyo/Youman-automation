@@ -49,11 +49,19 @@ class FeedController extends Controller
 
         try {
             $objekt = $storage->getObject(Einstellungen::PLUGIN, Feedbauer::DATEI);
-            $inhalt = $objekt->body;
-            if (is_resource($inhalt)) {
-                $inhalt = stream_get_contents($inhalt);
+            // Nur der Cast: die beiden naheliegenden Datenstrom-Funktionen
+            // lässt der Plugin-Build nicht zu. Plenty liefert den Inhalt als
+            // Zeichenkette bzw. als Objekt, das sich in eine verwandeln lässt.
+            $inhalt = (string) $objekt->body;
+            // Sicherung gegen den Fall, dass Plenty doch einen Datenstrom
+            // statt einer Zeichenkette liefert: Dann steht hier "Resource id
+            // #5" — und genau DAS wäre die teuerste Auslieferung überhaupt,
+            // weil Maschinensucher eine gültige, aber leere Datei sähe und
+            // sämtliche Inserate vom Markt nähme.
+            if (strpos($inhalt, 'Resource id') === 0) {
+                $speicher->abholungMerken(false, 0, 0, $absender, $kennung, 'Datei nicht lesbar (Datenstrom).');
+                return $response->make('Datei konnte nicht gelesen werden.', 503);
             }
-            $inhalt = (string) $inhalt;
         } catch (\Throwable $e) {
             $speicher->abholungMerken(false, 0, 0, $absender, $kennung, 'Noch keine Datei gebaut.');
             // 503 und nicht 404: "kommt später wieder" ist die richtige
@@ -82,7 +90,7 @@ class FeedController extends Controller
 
     /**
      * Vergleicht die Token, ohne über die Laufzeit zu verraten, wie weit sie
-     * übereinstimmen (hash_equals).
+     * übereinstimmen.
      */
     private function tokenStimmt(Request $request, $echt)
     {
@@ -104,6 +112,29 @@ class FeedController extends Controller
             }
         }
 
-        return $angeboten !== '' && hash_equals($echt, $angeboten);
+        return $angeboten !== '' && self::sicherGleich($echt, $angeboten);
+    }
+
+    /**
+     * Vergleicht zwei Zeichenketten in gleichbleibender Zeit.
+     *
+     * Die dafür übliche PHP-Funktion ist im Plugin nicht erlaubt. Deshalb von
+     * Hand: Erst die Länge, dann Zeichen für Zeichen, und die Schleife bricht
+     * bewusst NICHT früher ab. Sonst verriete die Antwortzeit, wie viele Zeichen des Tokens schon
+     * stimmen, und das Token ließe sich Stück für Stück erraten.
+     */
+    private static function sicherGleich($echt, $angeboten)
+    {
+        if (strlen($echt) !== strlen($angeboten)) {
+            return false;
+        }
+        $unterschiede = 0;
+        $laenge = strlen($echt);
+        for ($i = 0; $i < $laenge; $i++) {
+            if (substr($echt, $i, 1) !== substr($angeboten, $i, 1)) {
+                $unterschiede++;
+            }
+        }
+        return $unterschiede === 0;
     }
 }
