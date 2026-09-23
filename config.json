@@ -13,15 +13,6 @@
             "tooltip": "Config.apiTokenTooltip"
           }
         },
-        "token": {
-          "type": "inputText",
-          "required": true,
-          "label": "Config.tokenLabel",
-          "options": {
-            "defaultValue": "",
-            "tooltip": "Config.tokenTooltip"
-          }
-        },
         "flagId": {
           "type": "inputText",
           "required": true,
@@ -50,75 +41,6 @@
               {
                 "caption": "Config.flagBeide",
                 "value": "beide"
-              }
-            ]
-          }
-        },
-        "rueckgangFreigeben": {
-          "type": "checkbox",
-          "required": false,
-          "label": "Config.freigabeLabel",
-          "options": {
-            "defaultValue": false,
-            "tooltip": "Config.freigabeTooltip"
-          }
-        }
-      }
-    },
-    "Config.dateiTab": {
-      "label": "Config.dateiTab",
-      "formFields": {
-        "kopfzeile": {
-          "type": "textarea",
-          "required": false,
-          "label": "Config.kopfzeileLabel",
-          "options": {
-            "defaultValue": "",
-            "tooltip": "Config.kopfzeileTooltip"
-          }
-        },
-        "trenner": {
-          "type": "inputText",
-          "required": false,
-          "label": "Config.trennerLabel",
-          "options": {
-            "defaultValue": ";",
-            "tooltip": "Config.trennerTooltip"
-          }
-        },
-        "kodierung": {
-          "type": "select",
-          "required": false,
-          "label": "Config.kodierungLabel",
-          "options": {
-            "defaultValue": "utf-8",
-            "listBoxValues": [
-              {
-                "caption": "UTF-8",
-                "value": "utf-8"
-              },
-              {
-                "caption": "ISO-8859-1 (latin1)",
-                "value": "latin1"
-              }
-            ]
-          }
-        },
-        "umbrueche": {
-          "type": "select",
-          "required": false,
-          "label": "Config.umbruecheLabel",
-          "options": {
-            "defaultValue": "entfernen",
-            "tooltip": "Config.umbruecheTooltip",
-            "listBoxValues": [
-              {
-                "caption": "Config.umbruecheEntfernen",
-                "value": "entfernen"
-              },
-              {
-                "caption": "Config.umbruecheBehalten",
-                "value": "behalten"
               }
             ]
           }

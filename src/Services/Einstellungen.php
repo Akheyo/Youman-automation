@@ -76,15 +76,7 @@ class Einstellungen
         return trim((string) $this->wert('nummernPraefix', ''));
     }
 
-    public function token()
-    {
-        return (string) $this->wert('token', '');
-    }
 
-    public function eingerichtet()
-    {
-        return strlen($this->token()) >= 16;
-    }
 
     /** ID der Plenty-Markierung, die einen Artikel auf den Marktplatz stellt. */
     public function markierungId()
@@ -99,19 +91,6 @@ class Einstellungen
         return in_array($feld, array('flagOne', 'flagTwo', 'beide'), true) ? $feld : 'flagOne';
     }
 
-    /**
-     * Hat jemand einen zurueckgehaltenen Rueckgang freigegeben?
-     *
-     * Ein Haken in der Konfiguration statt eines Datums: Der naechste Lauf
-     * setzt daraus eine Freigabe fuer zwoelf Stunden, die von selbst
-     * ablaeuft. Eine dauerhafte Abschaltung waere keine Sicherung mehr,
-     * sondern ein Schalter, den irgendwann niemand mehr umlegt.
-     */
-    public function rueckgangFreigeben()
-    {
-        $wert = $this->wert('rueckgangFreigeben', false);
-        return $wert === true || $wert === 'true' || $wert === '1' || $wert === 1;
-    }
 
     public function preislisteId()
     {
@@ -132,29 +111,9 @@ class Einstellungen
         return $id > 0 ? $id : null;
     }
 
-    public function trenner()
-    {
-        $roh = (string) $this->wert('trenner', ';');
-        if (strtolower($roh) === 'tab') {
-            return "\t";
-        }
-        return $roh === '' ? ';' : substr($roh, 0, 1);
-    }
 
-    public function kodierung()
-    {
-        return $this->wert('kodierung', 'utf-8') === 'latin1' ? 'latin1' : 'utf-8';
-    }
 
-    public function umbrueche()
-    {
-        return $this->wert('umbrueche', 'entfernen') === 'behalten' ? 'behalten' : 'entfernen';
-    }
 
-    public function kopfzeile()
-    {
-        return (string) $this->wert('kopfzeile', '');
-    }
 
     /** Alles, was an einem Inserat hängt, aber nicht am Artikel. */
     public function umgebung()
@@ -203,8 +162,8 @@ class Einstellungen
     public function maengel()
     {
         $maengel = array();
-        if (!$this->eingerichtet()) {
-            $maengel[] = 'Token fehlt oder ist zu kurz (mindestens 16 Zeichen).';
+        if (!$this->apiEingerichtet()) {
+            $maengel[] = 'Der API-Token fehlt oder ist zu kurz (mindestens 16 Zeichen).';
         }
         if ($this->markierungId() <= 0) {
             $maengel[] = 'Keine Markierungs-ID eingestellt — ohne sie geht kein Artikel raus.';

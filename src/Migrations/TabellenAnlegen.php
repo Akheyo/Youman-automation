@@ -2,8 +2,6 @@
 
 namespace MaschinensucherMarkt\Migrations;
 
-use MaschinensucherMarkt\Models\Abholung;
-use MaschinensucherMarkt\Models\Stand;
 use MaschinensucherMarkt\Models\Verknuepfung;
 use Plenty\Modules\Plugin\DataBase\Contracts\Migrate;
 
@@ -15,8 +13,6 @@ class TabellenAnlegen
 {
     public function run(Migrate $migrate)
     {
-        $migrate->createTable(Stand::class);
-        $migrate->createTable(Abholung::class);
         $migrate->createTable(Verknuepfung::class);
     }
 }
