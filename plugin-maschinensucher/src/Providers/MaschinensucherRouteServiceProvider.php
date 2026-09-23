@@ -25,5 +25,9 @@ class MaschinensucherRouteServiceProvider extends RouteServiceProvider
         // wird bei Maschinensucher NICHT hinterlegt: Sie baut die Datei neu
         // und braucht dafuer so lange, wie der Bestand gross ist.
         $router->get('maschinensucher/bauen', 'MaschinensucherMarkt\Controllers\FeedController@bauen');
+
+        // Liest den Bestand bei Maschinensucher und legt die Zuordnung an.
+        // Aendert drueben nichts und darf beliebig oft laufen.
+        $router->get('maschinensucher/bestand', 'MaschinensucherMarkt\Controllers\FeedController@bestand');
     }
 }

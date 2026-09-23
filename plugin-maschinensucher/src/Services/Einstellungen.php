@@ -66,6 +66,16 @@ class Einstellungen
         return strlen($this->apiToken()) >= 16;
     }
 
+    /**
+     * Vorsatz vor der Inseratsnummer. Leer, wenn die nackte Artikel-ID
+     * verwendet wird — so steht es bei diesem Konto auf den bestehenden
+     * Inseraten.
+     */
+    public function nummernPraefix()
+    {
+        return trim((string) $this->wert('nummernPraefix', ''));
+    }
+
     public function token()
     {
         return (string) $this->wert('token', '');

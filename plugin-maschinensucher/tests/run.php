@@ -17,6 +17,7 @@ foreach (glob(__DIR__ . '/../src/Logik/*.php') as $datei) {
 }
 
 use MaschinensucherMarkt\Logik\Antwort;
+use MaschinensucherMarkt\Logik\Bestandsabgleich;
 use MaschinensucherMarkt\Logik\Artikelabbildung;
 use MaschinensucherMarkt\Logik\Csv;
 use MaschinensucherMarkt\Logik\Inserat;
@@ -379,5 +380,97 @@ $p->gleich(array('images' => array('Image 9 was ignored.')), $mitHinweis['hinwei
 
 $leer = Antwort::lesen(array());
 $p->gleich(Antwort::STOERUNG, $leer['art'], 'eine voellig leere Antwort gilt als Stoerung, nicht als Erfolg');
+
+// --- Was drueben schon online steht ------------------------------------
+// Die Daten sind dem echten Konto nachgebildet: 591 Inserate, von denen
+// die meisten die Plenty-Artikel-ID als Referenz tragen, einige aber einen
+// Namen und eines gar nichts.
+$p->gruppe('Bestandsabgleich');
+
+$p->gleich(62923, Bestandsabgleich::artikelIdAus('62923'), 'eine reine Zahl ist die Artikel-ID');
+$p->gleich(62923, Bestandsabgleich::artikelIdAus('  62923  '), 'Leerzeichen stoeren nicht');
+$p->gleich(0, Bestandsabgleich::artikelIdAus('Thomas 3'),
+    'ein Name ist keine Artikel-ID - lieber keine Zuordnung als eine falsche');
+$p->gleich(0, Bestandsabgleich::artikelIdAus(''), 'eine leere Referenz ebenso');
+$p->gleich(0, Bestandsabgleich::artikelIdAus('62923-alt'),
+    'und auch nichts, was nur so aussieht wie eine - das wuerde ein fremdes Inserat ueberschreiben');
+$p->gleich(62923, Bestandsabgleich::artikelIdAus('KK-62923', 'KK-'), 'ein gepflegter Vorsatz wird abgezogen');
+
+$p->gleich(Bestandsabgleich::AKTIV, Bestandsabgleich::zustandAus(array('ACTIVE')), 'ACTIVE ist aktiv');
+$p->gleich(Bestandsabgleich::PAUSIERT, Bestandsabgleich::zustandAus(array('PAUSED')), 'PAUSED ist pausiert');
+$p->gleich(Bestandsabgleich::PAUSIERT, Bestandsabgleich::zustandAus(array('EXPIRED')),
+    'abgelaufen zaehlt wie pausiert - es ist nicht mehr sichtbar');
+$p->gleich(Bestandsabgleich::GESPERRT, Bestandsabgleich::zustandAus(array('ACTIVE', 'BLOCKED')),
+    'gesperrt schlaegt aktiv, wenn beides gesetzt ist');
+$p->gleich(Bestandsabgleich::AKTIV, Bestandsabgleich::zustandAus(array('ACTIVE', 'PENDING_UPDATE')),
+    'waehrend einer Pruefung bleibt die alte Fassung online, also aktiv');
+$p->gleich(Bestandsabgleich::UNBEKANNT, Bestandsabgleich::zustandAus(array()), 'ohne Angabe: unbekannt');
+
+$seite = array(
+    'pageNumber' => 1,
+    'totalPageNumber' => 3,
+    'listingCount' => 4,
+    'totalListingCount' => 591,
+    'listings' => array(
+        '21876298' => array(
+            'status' => array('ACTIVE'),
+            'listing' => array(
+                'id' => 21876298,
+                'internalId' => '62923',
+                'categoryId' => 1659,
+                'title' => array('de' => 'Volumenwaage 3D Silence 600'),
+                'expirationDate' => 1790000000,
+            ),
+        ),
+        '22412862' => array(
+            'status' => array('ACTIVE'),
+            'listing' => array(
+                'id' => 22412862,
+                'internalId' => 'Thomas',
+                'categoryId' => 77,
+                'title' => array('de' => 'Jungheinrich 4-Rad-Gabelstapler'),
+            ),
+        ),
+        '22734917' => array(
+            'status' => array('ACTIVE'),
+            'listing' => array('id' => 22734917, 'internalId' => '', 'title' => 'Teppichpaternoster'),
+        ),
+        '6819970' => array(
+            'status' => array('PAUSED'),
+            'listing' => array('id' => 6819970, 'internalId' => '24040', 'categoryId' => 500),
+        ),
+    ),
+);
+
+$gelesen = Bestandsabgleich::seiteLesen($seite);
+$p->gleich(4, count($gelesen), 'alle vier Inserate der Seite werden gelesen');
+$p->gleich(21876298, $gelesen[0]['inseratId'], 'die Inserats-ID kommt aus dem Schluessel');
+$p->gleich(62923, $gelesen[0]['artikelId'], 'und die Artikel-ID aus der internalId');
+$p->gleich(1659, $gelesen[0]['kategorieId'],
+    'die Rubrik wird mitgenommen - damit muss sie in Plenty nicht gepflegt werden');
+$p->gleich('Volumenwaage 3D Silence 600', $gelesen[0]['titel'], 'der Titel kommt aus der deutschen Fassung');
+$p->gleich(0, $gelesen[1]['artikelId'], 'das Inserat mit dem Namen bleibt ohne Zuordnung');
+$p->gleich(0, $gelesen[2]['artikelId'], 'das ohne Referenz ebenfalls');
+$p->gleich('Teppichpaternoster', $gelesen[2]['titel'], 'ein Titel als schlichter Text wird auch gelesen');
+$p->gleich(Bestandsabgleich::PAUSIERT, $gelesen[3]['zustand'], 'der Zustand kommt aus den Statusmerkmalen');
+
+$bilanz = Bestandsabgleich::bilanz($gelesen);
+$p->gleich(4, $bilanz['gesamt'], 'die Bilanz zaehlt alle');
+$p->gleich(2, $bilanz['zugeordnet'], 'zwei liessen sich einem Artikel zuordnen');
+$p->gleich(2, $bilanz['ohneZuordnung'], 'zwei nicht - die bleiben unangetastet stehen');
+$p->gleich(3, $bilanz['aktiv'], 'drei sind online');
+$p->gleich(1, $bilanz['pausiert'], 'eines pausiert');
+$p->gleich(array(), $bilanz['doppelteArtikel'], 'kein Artikel haengt an zwei Inseraten');
+
+$doppelt = Bestandsabgleich::bilanz(array(
+    array('inseratId' => 1, 'artikelId' => 500, 'zustand' => Bestandsabgleich::AKTIV),
+    array('inseratId' => 2, 'artikelId' => 500, 'zustand' => Bestandsabgleich::AKTIV),
+));
+$p->gleich(array(500), $doppelt['doppelteArtikel'],
+    'zwei Inserate auf denselben Artikel muessen auffallen - sonst ueberschreiben sie sich gegenseitig');
+
+$p->gleich(true, Bestandsabgleich::weitereSeite($seite, 1), 'nach Seite 1 von 3 kommt noch etwas');
+$p->gleich(false, Bestandsabgleich::weitereSeite($seite, 3), 'nach der letzten nicht mehr');
+$p->gleich(array(), Bestandsabgleich::seiteLesen(array()), 'eine leere Antwort ergibt eine leere Liste');
 
 exit($p->bericht());
