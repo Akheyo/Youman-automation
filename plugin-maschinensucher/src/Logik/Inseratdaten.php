@@ -306,7 +306,7 @@ class Inseratdaten
     {
         $text = (string) $wert;
         $text = str_replace(array('<br>', '<br/>', '<br />', '</p>', '</li>'), "\n", $text);
-        // Eigener Abbau der HTML-Tags: Der Plugin-Build laesst die dafuer
+        // Eigener Abbau der HTML-Tags: Der Plugin-Build laesst die dafuer uebliche
         // Funktion nicht zu.
         $text = preg_replace('/<[^>]*>/', '', $text);
         $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
