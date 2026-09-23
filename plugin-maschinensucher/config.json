@@ -208,7 +208,7 @@
       "formFields": {
         "kategorie": {
           "type": "inputText",
-          "required": true,
+          "required": false,
           "label": "Config.kategorieLabel",
           "options": {
             "defaultValue": "",
