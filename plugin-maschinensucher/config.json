@@ -1,0 +1,260 @@
+{
+  "formatVersion": 1,
+  "menu": {
+    "Config.zugangTab": {
+      "label": "Config.zugangTab",
+      "formFields": {
+        "token": {
+          "type": "inputText",
+          "required": true,
+          "label": "Config.tokenLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.tokenTooltip"
+          }
+        },
+        "flagId": {
+          "type": "inputText",
+          "required": true,
+          "label": "Config.flagIdLabel",
+          "options": {
+            "defaultValue": "27",
+            "tooltip": "Config.flagIdTooltip"
+          }
+        },
+        "flagFeld": {
+          "type": "select",
+          "required": true,
+          "label": "Config.flagFeldLabel",
+          "options": {
+            "defaultValue": "flagOne",
+            "tooltip": "Config.flagFeldTooltip",
+            "listBoxValues": [
+              {
+                "caption": "Config.flagEins",
+                "value": "flagOne"
+              },
+              {
+                "caption": "Config.flagZwei",
+                "value": "flagTwo"
+              },
+              {
+                "caption": "Config.flagBeide",
+                "value": "beide"
+              }
+            ]
+          }
+        },
+        "rueckgangFreigeben": {
+          "type": "checkbox",
+          "required": false,
+          "label": "Config.freigabeLabel",
+          "options": {
+            "defaultValue": false,
+            "tooltip": "Config.freigabeTooltip"
+          }
+        }
+      }
+    },
+    "Config.dateiTab": {
+      "label": "Config.dateiTab",
+      "formFields": {
+        "kopfzeile": {
+          "type": "textarea",
+          "required": false,
+          "label": "Config.kopfzeileLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.kopfzeileTooltip"
+          }
+        },
+        "trenner": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.trennerLabel",
+          "options": {
+            "defaultValue": ";",
+            "tooltip": "Config.trennerTooltip"
+          }
+        },
+        "kodierung": {
+          "type": "select",
+          "required": false,
+          "label": "Config.kodierungLabel",
+          "options": {
+            "defaultValue": "utf-8",
+            "listBoxValues": [
+              {
+                "caption": "UTF-8",
+                "value": "utf-8"
+              },
+              {
+                "caption": "ISO-8859-1 (latin1)",
+                "value": "latin1"
+              }
+            ]
+          }
+        },
+        "umbrueche": {
+          "type": "select",
+          "required": false,
+          "label": "Config.umbruecheLabel",
+          "options": {
+            "defaultValue": "entfernen",
+            "tooltip": "Config.umbruecheTooltip",
+            "listBoxValues": [
+              {
+                "caption": "Config.umbruecheEntfernen",
+                "value": "entfernen"
+              },
+              {
+                "caption": "Config.umbruecheBehalten",
+                "value": "behalten"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "Config.preisTab": {
+      "label": "Config.preisTab",
+      "formFields": {
+        "preisIst": {
+          "type": "select",
+          "required": true,
+          "label": "Config.preisIstLabel",
+          "options": {
+            "defaultValue": "brutto",
+            "tooltip": "Config.preisIstTooltip",
+            "listBoxValues": [
+              {
+                "caption": "Config.preisBrutto",
+                "value": "brutto"
+              },
+              {
+                "caption": "Config.preisNetto",
+                "value": "netto"
+              }
+            ]
+          }
+        },
+        "mwst": {
+          "type": "inputText",
+          "required": true,
+          "label": "Config.mwstLabel",
+          "options": {
+            "defaultValue": "19",
+            "tooltip": "Config.mwstTooltip"
+          }
+        },
+        "preislisteId": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.preislisteLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.preislisteTooltip"
+          }
+        },
+        "waehrung": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.waehrungLabel",
+          "options": {
+            "defaultValue": "EUR"
+          }
+        }
+      }
+    },
+    "Config.inseratTab": {
+      "label": "Config.inseratTab",
+      "formFields": {
+        "kategorie": {
+          "type": "inputText",
+          "required": true,
+          "label": "Config.kategorieLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.kategorieTooltip"
+          }
+        },
+        "kategorieZuordnung": {
+          "type": "textarea",
+          "required": false,
+          "label": "Config.kategorieZuordnungLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.kategorieZuordnungTooltip"
+          }
+        },
+        "nummernPraefix": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.praefixLabel",
+          "options": {
+            "defaultValue": "KK-",
+            "tooltip": "Config.praefixTooltip"
+          }
+        },
+        "land": {
+          "type": "inputText",
+          "required": true,
+          "label": "Config.landLabel",
+          "options": {
+            "defaultValue": "DE"
+          }
+        },
+        "plz": {
+          "type": "inputText",
+          "required": true,
+          "label": "Config.plzLabel",
+          "options": {
+            "defaultValue": ""
+          }
+        },
+        "ort": {
+          "type": "inputText",
+          "required": true,
+          "label": "Config.ortLabel",
+          "options": {
+            "defaultValue": ""
+          }
+        },
+        "ansprechpartner": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.ansprechpartnerLabel",
+          "options": {
+            "defaultValue": ""
+          }
+        },
+        "telefon": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.telefonLabel",
+          "options": {
+            "defaultValue": ""
+          }
+        },
+        "email": {
+          "type": "inputText",
+          "required": true,
+          "label": "Config.emailLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.emailTooltip"
+          }
+        },
+        "shopBasisUrl": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.shopLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.shopTooltip"
+          }
+        }
+      }
+    }
+  }
+}

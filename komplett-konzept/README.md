@@ -416,6 +416,20 @@ heißt „ist draußen" — markiert allein heißt nur „ist gewollt".
 7. Die Adresse einmal selbst im Browser aufrufen und die Datei ansehen —
    **vor** dem ersten nächtlichen Lauf.
 
+### Dieselbe Strecke gibt es auch als Plenty-Plugin
+
+Im Ordner [`plugin-maschinensucher`](../plugin-maschinensucher) liegt dieselbe
+Strecke als **PlentyONE-Plugin**: Es läuft in Plenty, braucht keinen Server und
+keinen REST-Benutzer und liest Markierung, Preis und Bestand direkt dort. Dafür
+hat es keine Oberfläche wie hier — was fehlt, steht im Plugin-Log statt an der
+Zeile.
+
+**Beide zugleich zu betreiben, geht nicht:** Das wären zwei Dateien für
+denselben Marktplatz, und die zweite überschriebe die erste bei jeder
+Abholung. Läuft das Plugin, wird hier die Automation *„Maschinensucher holt
+die Inserate ab"* pausiert (Automationen → pausieren) und im
+Maschinensucher-Konto die Adresse des Plugins hinterlegt.
+
 ### Was bewusst fehlt
 
 Die Echtzeit-API von Maschinensucher ist nicht angebunden. Sie wäre schneller,
