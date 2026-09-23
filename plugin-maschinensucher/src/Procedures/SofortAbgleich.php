@@ -3,6 +3,8 @@
 namespace MaschinensucherMarkt\Procedures;
 
 use MaschinensucherMarkt\Services\Abgleich;
+use MaschinensucherMarkt\Services\Bestandsaufnahme;
+use MaschinensucherMarkt\Services\Zuordnung;
 use Plenty\Modules\EventProcedures\Events\EventProceduresTriggered;
 use Plenty\Plugin\Log\Loggable;
 
@@ -30,9 +32,17 @@ class SofortAbgleich
     /** @var Abgleich */
     private $abgleich;
 
-    public function __construct(Abgleich $abgleich)
+    /** @var Bestandsaufnahme */
+    private $aufnahme;
+
+    /** @var Zuordnung */
+    private $zuordnung;
+
+    public function __construct(Abgleich $abgleich, Bestandsaufnahme $aufnahme, Zuordnung $zuordnung)
     {
         $this->abgleich = $abgleich;
+        $this->aufnahme = $aufnahme;
+        $this->zuordnung = $zuordnung;
     }
 
     public function run(EventProceduresTriggered $ereignis)
@@ -43,6 +53,14 @@ class SofortAbgleich
 
             if (count($varianten) === 0) {
                 return;
+            }
+
+            // Beim allerersten Ausloesen gibt es noch keine Zuordnung. Statt
+            // auf den Zeitplan zu warten, wird die Bestandsaufnahme hier
+            // gleich mit erledigt — so ist ein einziger Klick ein
+            // vollstaendiger Test.
+            if ($this->zuordnung->anzahl() === 0) {
+                $this->aufnahme->lauf();
             }
 
             $bericht = $this->abgleich->fuerVarianten($varianten);
