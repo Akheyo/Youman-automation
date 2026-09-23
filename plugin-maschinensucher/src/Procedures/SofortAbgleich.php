@@ -47,6 +47,11 @@ class SofortAbgleich
             $varianten = $this->variantenAus($auftrag);
 
             if (count($varianten) === 0) {
+                // Nicht mehr still: Ein Auftrag ohne erkennbare Positionen ist
+                // genau der Fall, der vorher unsichtbar ins Leere lief.
+                $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseOhnePositionen', array(
+                    'auftrag' => isset($auftrag->id) ? (int) $auftrag->id : 0,
+                ));
                 return;
             }
 
@@ -60,7 +65,9 @@ class SofortAbgleich
 
             $bericht = $abgleich->fuerVarianten($varianten);
 
-            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.sofortAbgeglichen', array(
+            // DIAGNOSE, voruebergehend als Fehler: das Ergebnis, sichtbar
+            // unabhaengig von der Log-Einstellung.
+            $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseErgebnis', array(
                 'auftrag'   => isset($auftrag->id) ? (int) $auftrag->id : 0,
                 'varianten' => count($varianten),
                 'bericht'   => $bericht,
@@ -77,20 +84,31 @@ class SofortAbgleich
 
     /**
      * Die Varianten-IDs der Auftragspositionen.
+     *
+     * Plenty liefert die Positionen als Sammlung von Objekten, nicht als
+     * Liste von Arrays. Ein (array)-Cast darauf ergibt nur die internen
+     * Eigenschaften der Sammlung — die Positionen selbst verschwinden, und
+     * der Lauf hielt den Auftrag fuer leer. Deshalb wird hier ueber die
+     * Sammlung iteriert und jede Position einzeln gelesen, als Objekt oder
+     * als Array.
      */
     private function variantenAus($auftrag)
     {
         $ids = array();
         $positionen = isset($auftrag->orderItems) ? $auftrag->orderItems : array();
+        if ($positionen === null) {
+            return $ids;
+        }
 
-        foreach ((array) $positionen as $position) {
-            $position = (array) $position;
+        foreach ($positionen as $position) {
             $id = 0;
-            if (isset($position['itemVariationId'])) {
-                $id = (int) $position['itemVariationId'];
-            } elseif (isset($position['variationId'])) {
-                $id = (int) $position['variationId'];
+            if (is_array($position)) {
+                $id = isset($position['itemVariationId']) ? (int) $position['itemVariationId'] : 0;
+            } elseif (isset($position->itemVariationId)) {
+                $id = (int) $position->itemVariationId;
             }
+            // Versandkosten, Gutscheine und Rabatte sind auch Positionen,
+            // tragen aber keine Variante.
             if ($id > 0 && !in_array($id, $ids, true)) {
                 $ids[] = $id;
             }
