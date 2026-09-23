@@ -1222,6 +1222,116 @@ leer ist.
 
 ---
 
+## Teil K — Markierungen (Flags): Name ↔ ID
+
+Gefunden ueber `GET /rest/markings?itemsPerPage=250` → HTTP 200, Array mit **76**
+Eintraegen. Der Endpunkt taucht in keiner der bisherigen Proben auf und heisst
+weder `/rest/items/flags` noch `/rest/flags` (beide 404).
+
+Aufbau eines Eintrags: `id, markId, name, icon, text, type`.
+
+- **`markId`** ist der Wert, der am Artikel in `flagOne` bzw. `flagTwo` steht.
+- **`text`** ist die im Backend selbst vergebene Beschriftung.
+- `name`/`icon` sind das Symbol (z. B. `flag_black.png`).
+- `type` trennt die drei Kataloge: `item_one` (Markierung 1 am Artikel, 31 + „ohne"),
+  `item_two` (Markierung 2 am Artikel, 11 + „ohne"), `order` (Markierung am Auftrag, 31 + „ohne").
+
+**Achtung beim Verwechseln:** `id` und `markId` sind **nicht** dasselbe. Fuer
+`item_one` laufen sie zufaellig gleich (id 27 ↔ markId 27), fuer `item_two`
+und `order` nicht (id 33 ↔ markId 1, id 45 ↔ markId 1). Wer die Markierung
+setzen oder filtern will, braucht **`markId`**, nicht `id`.
+
+### K1 — Markierung 1 (`flagOne`, `type = item_one`)
+
+Belegung aus dem Artikel-Vollabzug (58 667 Artikel) und gegengeprueft ueber den
+Serverfilter `GET /rest/items?flagOne=<markId>`:
+
+| markId | Beschriftung (`text`) | Symbol | Artikel |
+| ---: | --- | --- | ---: |
+| 18 | Import fertig | ledgrey | 16 116 |
+| 0 | *(ohne Markierung)* | — | 13 790 |
+| 24 | Offline Klempner | weather_rain | 8 475 |
+| 2 | Preisrecherche IND | star | 6 439 |
+| 26 | Inventur | weather_sun | 6 395 |
+| 20 | Artikel vorhanden | ledblack | 3 575 |
+| 16 | Import | ledgreen | 1 636 |
+| **27** | **Maschinensucher** | **flag_black** | **670** |
+| 6 | „Inv." + *(Vorname)* | bombred | 519 |
+| 15 | *(Vorname)* + „Artikel vorhanden" | leddarkblue | 320 |
+| 9 | SEG | ledyellow | 204 |
+| 1 | Artikel kontrollieren | alarm | 120 |
+| 12 | Im Zulauf | ledred | 101 |
+| 25 | *(unbenannt, `text` = „25")* | weather_snow | 84 |
+| 4 | „Check" + *(Vorname)* | help | 41 |
+| 14 | *(Vorname)* | ledblue | 39 |
+| 19 | Export | leddarkred | 35 |
+| 22 | *(unbenannt, `text` = „22")* | weather_cloudy | 34 |
+| 17 | MRT | leddarkgreen | 33 |
+| 3 | *(unbenannt, `text` = „3")* | lock | 9 |
+| 11 | M/S | ledpink | 9 |
+| 13 | Ebay Kleinanzeigen | ledpurple | 8 |
+| 31 | Abholschein gedruckt | flag_yellow | 7 |
+| 7 | Demontage | bombgreen | 4 |
+| 8 | Angebot Nachgefragt | bombblack | 4 |
+| 5 | Selbstabholung | warning | 0 |
+| 10 | BVA Ware | ledorange | 0 |
+| 21 | Paketschein test | weather_clouds | 0 |
+| 23 | Spedition | weather_lightning | 0 |
+| 28 | Packliste gedruckt | flag_blue | 0 |
+| 29 | Rechnung Gedruckt | flag_green | 0 |
+| 30 | Lieferschein Gedruckt | flag_red | 0 |
+
+> **Zu den Beschriftungen:** wo eine Markierung auf einen Mitarbeiternamen
+> beschriftet ist, steht hier *(Vorname)* statt des Namens — dieselbe Regel wie
+> bei Markierung 2 in K2. Alle sachlichen Beschriftungen stehen im Klartext.
+> Die vollstaendigen Texte liefert `GET /rest/markings`.
+
+### K2 — Markierung 2 (`flagTwo`, `type = item_two`)
+
+11 Markierungen plus „ohne". **Jede einzelne ist auf einen Mitarbeiternamen
+beschriftet** (Symbole `user_*`). Markierung 2 wird in diesem Mandanten also als
+Zustaendigkeits-Kennzeichen benutzt, nicht als Sachmerkmal.
+
+Die Namen selbst stehen hier bewusst **nicht** — es sind personenbezogene Daten.
+Die Zuordnung markId → Person steht im Backend unter Einstellungen ▸ Artikel ▸
+Markierungen und ist ueber `GET /rest/markings` mit `type = item_two` abrufbar.
+
+Belegung aus dem Vollabzug: `flagTwo` 0 = 37 181, 6 = 5 040, 2 = 4 036,
+3 = 3 053, 4 = 2 951, 1 = 2 434, 7 = 2 229, 11 = 705, dazu vier weitere < 700.
+Also **21 486 Artikel (36,6 %) sind einer Person zugeordnet**, 37 181 nicht.
+
+### K3 — Markierung am Auftrag (`type = order`)
+
+31 Markierungen plus „ohne" — **alle unbenannt**: das Feld `text` enthaelt
+lediglich die Zahl als Zeichenkette („1", „2", … „31"). Der Auftrags-Markierungs-
+Katalog ist also unbenutzt, waehrend der Artikel-Katalog durchgepflegt ist.
+
+### K4 — Was daran fuer die Automatisierung zaehlt
+
+1. **`GET /rest/items?flagOne=<markId>` funktioniert als Serverfilter.**
+   Gegenprobe: `flagOne=27` → `totalsCount` = 670, `flagOne=26` → 6 395,
+   `flagOne=99` → 0. Man muss also nicht alle 58 667 Artikel ziehen, um eine
+   Markierung auszuwerten.
+2. **Die Beschriftungen sind Prozessmarker, keine Sachmerkmale.** „Import fertig"
+   (16 116), „Inventur" (6 395), „Preisrecherche IND" (6 439), „Offline Klempner"
+   (8 475), „Maschinensucher" (670) — das ist ein Workflow-Status, der im
+   Artikelstamm abgelegt wird. Dasselbe Muster wie bei den Kategorien aus Teil H
+   („trademaschines", „Machinio", „Neu eingetroffen") und bei den Tags aus Teil I5
+   („1x/2x/3x nachgefasst", „in Arbeit"). **Drei getrennte Mechanismen tragen
+   denselben Zweck**, und keiner davon ist dafuer gedacht.
+3. **Vier Markierungen sind vergeben, aber unbenannt** (markId 3, 22, 25 und der
+   Sonderfall 0): ihr `text` ist nur die eigene Nummer. Zusammen betreffen sie
+   127 Artikel, deren Markierung niemand mehr deuten kann.
+4. **Acht benannte Markierungen sind auf keinem einzigen Artikel gesetzt**
+   (markId 5, 10, 21, 23, 28, 29, 30 — dazu 31 mit nur 7). Auffaellig darunter:
+   „Packliste gedruckt", „Rechnung Gedruckt", „Lieferschein Gedruckt" — drei
+   Druckstatus, die offenbar eingerichtet, aber nie benutzt wurden.
+5. **`id` ≠ `markId`.** Fuer `item_two` und `order` weichen sie um 32 bzw. 44 ab.
+   Wer `id` aus `/rest/markings` in `flagOne`/`flagTwo` schreibt, setzt die
+   falsche Markierung.
+
+---
+
 ## Zusammenfassung
 
 - **Erreichbar:** 25 von 36 Bereichen in Teil A (HTTP 200). Mit den Nachtraegen
@@ -1439,6 +1549,32 @@ leer ist.
     2 Rakuten, je 1 Hood, Otto und Shopify. Das deckt sich mit Teil D2, wo eBay
     Germany 571 der 877 Auftraege der letzten 30 Tage bringt — aber nicht mit
     den 340 konfigurierten Herkuenften, von denen nur 6 Auftraege liefern.
+
+38. **Markierungen, Kategorien und Tags tun dasselbe.** „Import fertig" (16 116
+    Artikel), „Inventur" (6 395), „Maschinensucher" (670) stehen als Markierung 1
+    im Artikelstamm; „trademaschines", „Machinio", „Neu eingetroffen" stehen als
+    Kategorie im Warenbaum; „1x/2x/3x nachgefasst" und „in Arbeit" stehen als Tag.
+    Drei Mechanismen fuer denselben Zweck — Workflow-Status — und keiner davon ist
+    dafuer vorgesehen. Wer automatisiert, muss alle drei lesen.
+
+39. **Markierung 2 ist eine Mitarbeiterliste.** Alle 11 Beschriftungen sind
+    Personennamen; 21 486 Artikel (36,6 %) tragen eine. Das ist eine
+    Zustaendigkeitszuordnung im Artikelstamm — und personenbezogen.
+
+40. **Der Auftrags-Markierungskatalog ist unbenutzt.** Alle 31 Eintraege mit
+    `type = order` tragen als Beschriftung nur ihre eigene Nummer, waehrend der
+    Artikel-Katalog durchgepflegt ist.
+
+41. **In `/rest/markings` ist `id` nicht `markId`.** Bei `item_one` stimmen sie
+    zufaellig ueberein, bei `item_two` und `order` nicht (id 33 ↔ markId 1).
+    In `flagOne`/`flagTwo` gehoert `markId`. Die zufaellige Uebereinstimmung bei
+    `item_one` ist die gefaehrlichste Art von Falle: sie laesst falschen Code
+    beim Testen funktionieren.
+
+42. **Vier gesetzte Markierungen sind unbenannt** (markId 3, 22, 25 mit zusammen
+    127 Artikeln) und **sieben benannte sind auf keinem Artikel gesetzt**,
+    darunter „Packliste gedruckt", „Rechnung Gedruckt" und „Lieferschein
+    Gedruckt".
 
 ---
 
