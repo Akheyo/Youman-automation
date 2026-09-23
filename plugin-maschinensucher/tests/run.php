@@ -16,6 +16,7 @@ foreach (glob(__DIR__ . '/../src/Logik/*.php') as $datei) {
     require_once $datei;
 }
 
+use MaschinensucherMarkt\Logik\Antwort;
 use MaschinensucherMarkt\Logik\Artikelabbildung;
 use MaschinensucherMarkt\Logik\Csv;
 use MaschinensucherMarkt\Logik\Inserat;
@@ -318,5 +319,65 @@ $p->gleich(array(), $inserat['maengel'], 'aus einer echten Variante entsteht ein
 $zeile = Csv::zeile($inserat['werte'], Spaltenplan::bauen('')['spalten']);
 $p->enthaelt('1900,00', $zeile, 'und in der Zeile steht der Nettopreis');
 $p->enthaelt('Weiler Drehmaschine', $zeile, 'und der Titel');
+
+// --- Auswertung der API-Antworten ---------------------------------------
+// Die teuerste Verwechslung dieses Plugins: Ablehnung (endgueltig, der
+// Artikel braucht eine Korrektur) gegen Stoerung (voruebergehend, spaeter
+// nochmal). Deshalb steht jeder Zweig hier einzeln.
+$p->gruppe('API-Antworten');
+
+$ok = Antwort::lesen(array('status' => 200, 'daten' => array('success' => true, 'id' => 5954193)));
+$p->gleich(Antwort::OK, $ok['art'], '200 mit success=true ist ein Erfolg');
+$p->gleich(false, Antwort::nochmal($ok), 'und wird nicht wiederholt');
+
+$abgelehnt = Antwort::lesen(array('status' => 200, 'daten' => array(
+    'success' => false,
+    'errors' => array('title' => array('Machine type cannot be blank.')),
+)));
+$p->gleich(Antwort::ABGELEHNT, $abgelehnt['art'],
+    '200 mit success=false ist KEIN Erfolg, auch wenn der Status es nahelegt');
+$p->gleich(false, Antwort::nochmal($abgelehnt), 'eine Ablehnung wird nicht wiederholt');
+$p->enthaelt('title: Machine type cannot be blank.', $abgelehnt['meldung'],
+    'der Grund steht samt Feldname in der Meldung');
+
+$keineVerbindung = Antwort::lesen(array('status' => 0, 'fehler' => 'Verbindung fehlgeschlagen: timeout'));
+$p->gleich(Antwort::STOERUNG, $keineVerbindung['art'], 'ohne Verbindung ist es eine Stoerung');
+$p->gleich(true, Antwort::nochmal($keineVerbindung), 'und die wird spaeter erneut versucht');
+
+$serverfehler = Antwort::lesen(array('status' => 503, 'daten' => array()));
+$p->gleich(Antwort::STOERUNG, $serverfehler['art'], '5xx ist eine Stoerung der Gegenstelle');
+$p->gleich(true, Antwort::nochmal($serverfehler), 'und wird wiederholt');
+
+$falscherToken = Antwort::lesen(array('status' => 401, 'daten' => array('message' => 'Your request was made with invalid credentials.')));
+$p->gleich(Antwort::ZUGANG, $falscherToken['art'], '401 ist ein Zugangsproblem');
+$p->gleich(false, Antwort::nochmal($falscherToken),
+    'ein falscher Token wird NICHT wiederholt - das sperrt nur den Zugang');
+
+$zuSchnell = Antwort::lesen(array('status' => 403, 'daten' => array('message' => 'Listing creation rate exceeded.')));
+$p->gleich(Antwort::ZUGANG, $zuSchnell['art'], 'die Mengenbegrenzung kommt als 403');
+$p->gleich(true, Antwort::nochmal($zuSchnell),
+    'sie ist aber voruebergehend und wird deshalb spaeter erneut versucht');
+
+$weg = Antwort::lesen(array('status' => 404, 'daten' => array('message' => 'Listing not found')));
+$p->gleich(Antwort::FEHLT, $weg['art'], '404 heisst: dieses Inserat gibt es nicht mehr');
+$p->gleich(false, Antwort::nochmal($weg), 'und das aendert sich durch Wiederholen nicht');
+
+$einzelmeldung = Antwort::lesen(array('status' => 400, 'daten' => array(
+    'errors' => array('price' => 'must be an integer'),
+)));
+$p->gleich(Antwort::ABGELEHNT, $einzelmeldung['art'], '4xx ohne success-Feld ist eine Ablehnung');
+$p->enthaelt('price: must be an integer', $einzelmeldung['meldung'],
+    'auch ein einzelner Text statt einer Liste wird gelesen');
+
+$mitHinweis = Antwort::lesen(array('status' => 200, 'daten' => array(
+    'success' => true,
+    'warnings' => array('images' => array('Image 9 was ignored.')),
+)));
+$p->gleich(Antwort::OK, $mitHinweis['art'], 'Hinweise machen aus einem Erfolg keine Ablehnung');
+$p->gleich(array('images' => array('Image 9 was ignored.')), $mitHinweis['hinweise'],
+    'sie bleiben aber erhalten');
+
+$leer = Antwort::lesen(array());
+$p->gleich(Antwort::STOERUNG, $leer['art'], 'eine voellig leere Antwort gilt als Stoerung, nicht als Erfolg');
 
 exit($p->bericht());
