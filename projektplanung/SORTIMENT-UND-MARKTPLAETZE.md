@@ -256,8 +256,13 @@ das ist ein nicht bespielter Kanal.
    auch für interne Korrekturen benutzt. **Eine Netto-Umsatzzahl gebe ich
    deshalb nicht aus** — dafür braucht es die Buchhaltung, nicht die API.
 3. Es sind Bruttobeträge inklusive Versand.
-4. Zwei Kanäle mit zusammen 93 410 € Umsatz (Herkunft 15 und 16) haben in
-   Plenty **keinen Namen**. Was das ist, muss jemand im Backend nachsehen.
+4. **Korrektur:** hier stand zuerst, zwei Kanäle mit zusammen 93 410 € Umsatz
+   hätten keinen Namen. Sie haben einen — nur nicht im Feld `backendName`,
+   sondern in `name`. **Herkunft 15 ist „Ebay_Kleinanzeigen" (46 Aufträge,
+   32 494 €), Herkunft 16 ist „Maschinio", also Machinio (22 Aufträge,
+   60 916 €).** Machinio ist damit der ertragreichste Gebrauchtmaschinen-Kanal
+   — und hat als einziger keinen Export. Die vollständige Durchsicht steht in
+   `PLENTY-INVENTUR.md`, Teil L.
 
 ### Was angebunden, aber still ist
 
@@ -364,16 +369,26 @@ Durchschnitt von 4 155 €. Das sind Angebote, Projekte und Maschinenverkäufe �
 kein Marktplatzgeschäft. Die Kanäle, die dieses Geschäft bringen, sind schon da
 und laufen **nicht** über Plugins, sondern über Elastic Export:
 
-- **Maschinensucher** (Export id 4, zuletzt 22.09.2025 geändert)
-- **trade_maschines** (Export id 3, zuletzt **14.09.2018** geändert)
-- **Machinio** (Kategorie 473 Varianten)
-- **Restposten.de** (Exporte id 1 und 2, zuletzt **2018**)
+- **Maschinensucher** (Export id 4) — **liefert null Zeilen**: der Export
+  filtert auf Markierung 1 = 16 („Import"), die Maschinensucher-Markierung ist
+  aber die 27. Keine der 5 856 für diesen Markt freigegebenen Varianten trägt
+  die 16. Dazu passen 0 Aufträge in 12 Monaten. Ein Wert im Filter.
+- **trade_maschines** (Export id 3, seit **14.09.2018** unverändert) — 120
+  verkaufsfähige Varianten freigegeben, 0 Aufträge.
+- **Machinio** (Herkunft 16) — **60 916 € Umsatz aus 22 Aufträgen, ohne jeden
+  Export**, bei nur 136 freigegebenen und 9 verkaufsfähigen Varianten.
+- **Exapro** und **Resale** — zusammen 1 831 verkaufsfähige Varianten
+  freigegeben, kein Export, 0 Aufträge.
+- **gebraucht.de** (Export id 9) — 5 freigegebene Varianten, davon keine mit
+  Bestand; der Export filtert auf Bestand > 0 und liefert damit ebenfalls nichts.
+- **Restposten.de** (Exporte id 1 und 2, zuletzt **2018**) — 3 verkaufsfähige
+  Varianten.
 
-**Drei dieser vier Exportformate sind seit sieben Jahren nicht angefasst
-worden.** Wenn 79 % des Umsatzes aus diesem Kanaltyp kommen, ist die Pflege
-dieser vier Feeds mit Abstand die höchste Rendite pro Stunde — höher als jeder
-neue Marktplatz. Ein eigenes Plugin gibt es dafür im Katalog nicht und braucht
-es auch nicht.
+**Von sieben angelegten Portal-Herkünften haben drei einen Export, und von
+diesen dreien liefern zwei nachweislich null Zeilen.** Wenn 79 % des Umsatzes
+aus diesem Kanaltyp kommen, ist das Instandsetzen dieser Feeds mit Abstand die
+höchste Rendite pro Stunde — höher als jeder neue Marktplatz. Ein eigenes Plugin
+gibt es dafür im Katalog nicht und braucht es auch nicht.
 
 ---
 

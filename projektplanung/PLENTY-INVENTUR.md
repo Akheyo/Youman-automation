@@ -441,12 +441,18 @@ Bauhaus (2), Shop-Apotheke/Farmaline/Redcare (5), Neckermann.at/Topagers.de (3).
 | 0.00 | Manuelle Eingabe | 192 |
 | 1.00 | Mandant (Shop) | 84 |
 | 4.01 | Amazon Germany | 24 |
-| 15.00 | *(Name leer in der API)* | 5 |
-| 16.00 | *(Name leer in der API)* | 1 |
+| 15.00 | Ebay_Kleinanzeigen | 5 |
+| 16.00 | Maschinio *(= Machinio)* | 1 |
 
-**6 von 340 Herkuenften sind in Gebrauch.** Zwei davon (15, 16) haben in
-`/rest/orders/referrers` einen **leeren** `backendName` — aus der API allein ist
-nicht zu sagen, welcher Kanal das ist.
+**6 von 340 Herkuenften sind in Gebrauch.**
+
+> **Korrektur (Nachtrag).** Hier stand zuerst, die Herkuenfte 15 und 16 haetten
+> keinen Namen. Das war falsch: ihr `backendName` ist leer, das Feld **`name`**
+> ist gefuellt. 15 ist „Ebay_Kleinanzeigen", 16 ist „Maschinio" (Machinio).
+> Wer Herkuenfte aufloest, muss `name` lesen und darf sich nicht auf
+> `backendName` verlassen — bei 308 der 340 Herkuenfte sind beide gefuellt, bei
+> den selbst angelegten nur `name`. Die vollstaendige Aufstellung der
+> Maschinen-Herkuenfte steht in Teil L4.
 
 ### D3 — Auftragstypen
 
@@ -1329,6 +1335,162 @@ Katalog ist also unbenutzt, waehrend der Artikel-Katalog durchgepflegt ist.
 5. **`id` ≠ `markId`.** Fuer `item_two` und `order` weichen sie um 32 bzw. 44 ab.
    Wer `id` aus `/rest/markings` in `flagOne`/`flagTwo` schreibt, setzt die
    falsche Markierung.
+
+---
+
+## Teil L — Alles, was zu „Maschinensucher" eingerichtet ist
+
+Vollständige Durchsicht aller Stellen im Mandanten, die Maschinensucher und die
+benachbarten Gebrauchtmaschinen-Portale betreffen. Nur lesend erhoben.
+
+### L1 — Die fünf Fundstellen
+
+| Wo | Was | Wert |
+| --- | --- | --- |
+| **Markierung 1** | `flagOne = 27`, Symbol `flag_black`, Text „Maschinensucher" | **670 Artikel** |
+| **Herkunft (Referrer)** | `id 14.00`, `name` = „Maschinensucher", `backendName` leer | **0 Aufträge in 12 Monaten** |
+| **Marktfreigabe** | `marketId 14` an der Variante | **5 856 Varianten** |
+| **Elastic Export** | id 4, „Maschinensucher", Datei `maschinensucher.csv` | angelegt 18.09.2018, zuletzt geändert **22.09.2025** |
+| **Bild-Export** | id 6, „BilderExport", Format `FormatDesigner Maschinensucher2` | Filter auf **einen einzigen Artikel** |
+| **Tag** | id 11, „Maschienensucher" *(Tippfehler)* | angelegt 07.03.2025 |
+
+### L2 — Der Export im Detail
+
+`GET /rest/exports/4` → HTTP 200. Der Endpunkt liefert Filter, Formateinstellungen
+und Ausgabeparameter vollständig mit.
+
+**Filter:**
+
+| Schlüssel | Wert | Bedeutung | gesetzt am |
+| --- | --- | --- | --- |
+| `isActive` | `active` | nur aktive Varianten | 18.09.2018 |
+| `itemWithCategory` | `1` | nur Artikel mit Kategorie | 18.09.2018 |
+| `stock` | `positive` | nur mit Bestand > 0 | 18.09.2018 |
+| `markets` | `14` | nur für Markt 14 freigegeben | 18.09.2018 |
+| **`flag1`** | **`16`** | **nur Markierung 1 = 16** | 19.09.2018 |
+
+**Formateinstellungen (Auszug):** `plentyId = 14616` (Komplett Konzept),
+`referrerId = -1`, `lang = de`, `retailPrice = netPrice`, `barcode = FirstBarcode`,
+`descriptionType = itemDescription`, `descriptionRemoveHtmlTags = 1`,
+`transferOfferPrice = 0`, `transferItemAvailability = 0`, `imagePosition = position0`.
+
+**Ausgabe:** Dateiname `maschinensucher.csv`, Abruf über einen Token.
+Der Token steht in `outputParams` und wird hier bewusst **nicht** wiedergegeben —
+wer die Datei abrufen will, holt ihn direkt aus Plenty.
+
+Bemerkenswert: Export 4 ist der **einzige** der Maschinen-/Restposten-Exporte
+mit `retailPrice = netPrice`. Exporte 1, 2, 3 und 9 übertragen `grossPrice`.
+Für ein B2B-Maschinenportal sind Nettopreise richtig — es ist kein Fehler,
+aber es erklärt, warum der Feed sich von den anderen unterscheidet.
+
+### L3 — Der Befund: der Filter greift ins Leere
+
+Der Export filtert auf **Markierung 1 = 16**. Markierung 16 heißt heute laut
+`GET /rest/markings` **„Import"** (Symbol `ledgreen`) und ist auf **1 695
+Artikeln** gesetzt. Die Markierung mit dem Text **„Maschinensucher" ist
+markId 27** und sitzt auf **670 Artikeln**.
+
+Gemessen über einen Vollabzug aller 60 677 Varianten mit
+`with=variationMarkets,stock`:
+
+| Für Markt 14 (Maschinensucher) freigegeben | Anzahl |
+| --- | ---: |
+| Varianten insgesamt | 5 856 |
+| davon aktiv | 5 131 |
+| davon mit Bestand > 0 | 3 145 |
+| **aktiv UND Bestand > 0** | **3 070** |
+| davon mit Markierung 27 („Maschinensucher") | 659 |
+| **davon mit Markierung 16 („Import")** | **0** |
+
+**Keine einzige der 5 856 für Maschinensucher freigegebenen Varianten trägt
+Markierung 16.** Alle fünf Filter müssen gleichzeitig zutreffen, also liefert
+Export 4 **null Zeilen**. Dazu passt, dass Herkunft 14 in 12 Monaten **keinen
+einzigen Auftrag** gebracht hat.
+
+Die Markierung und die Marktfreigabe passen sauber zusammen: 659 der 670
+mit „Maschinensucher" markierten Artikel sind auch für Markt 14 freigegeben.
+Allein der Filter im Export zeigt auf die falsche Zahl.
+
+Wie es dazu kam, lässt sich aus den Daten nicht belegen — die Markierungstexte
+tragen kein Änderungsdatum. Plausibel ist, dass markId 16 im September 2018
+„Maschinensucher" hieß und später in „Import" umbenannt wurde, ohne den Export
+anzupassen. Das ist eine Vermutung und wird hier als solche gekennzeichnet.
+
+**Die Korrektur ist ein Wert:** `flag1` von `16` auf `27` ändern. Dann greift
+der Export auf die 659 markierten, freigegebenen Varianten, von denen nach
+Abzug von Inaktiven und Nullbeständen der verkaufsfähige Teil übrig bleibt.
+Wer den Flag-Filter ganz entfernt, bekommt alle **3 070** verkaufsfähigen
+Varianten des Marktes — bei einem Limit von 10 000 passt das.
+
+### L4 — Die Nachbarportale: sieben angelegt, drei mit Feed
+
+Im Mandanten sind sieben Herkünfte für Gebraucht- und Maschinenhandel angelegt.
+**Alle sieben haben einen leeren `backendName` und tragen den Namen nur im Feld
+`name`** — darum tauchten zwei von ihnen in früheren Auswertungen als „ohne
+Namen" auf.
+
+| id | Name | Varianten freigegeben | aktiv + Bestand | Export vorhanden | Aufträge 12 Mon. | Umsatz 12 Mon. |
+| --- | --- | ---: | ---: | --- | ---: | ---: |
+| 13 | trade_maschine | 500 | 120 | **ja** (id 3, seit **2018** unverändert) | 0 | — |
+| **14** | **Maschinensucher** | **5 856** | **3 070** | **ja** (id 4, Filter defekt) | **0** | — |
+| 15 | Ebay_Kleinanzeigen | 2 664 | *(nicht erhoben)* | nein | 46 | 32 494 € |
+| **16** | **Maschinio** *(= Machinio)* | **136** | **9** | **nein** | **22** | **60 916 €** |
+| 17 | Exapro | 2 185 | 802 | **nein** | 0 | — |
+| 18 | Resale | 2 817 | 1 029 | **nein** | 0 | — |
+| 19 | gebraucht.de | 5 | **0** | **ja** (id 9) | 0 | — |
+| 115 | Restposten | 22 | 3 | **ja** (id 1 und 2, seit **2018**) | 0 | — |
+
+Daraus folgen vier Dinge, die alle gemessen sind:
+
+1. **Machinio ist der ertragreichste dieser Kanäle — und der am schlechtesten
+   versorgte.** 60 916 € Umsatz aus 22 Aufträgen, bei gerade **136**
+   freigegebenen Varianten, von denen **9** verkaufsfähig sind, und **ohne
+   jeden Export**. Die Aufträge kommen also zustande, ohne dass das System
+   nennenswert etwas dorthin liefert.
+2. **Exapro und Resale sind vorbereitet, aber nicht angeschlossen.** Zusammen
+   **1 831 verkaufsfähige Varianten** sind für diese Märkte freigegeben, es gibt
+   aber keinen Export, der sie dorthin bringt, und keinen einzigen Auftrag.
+3. **gebraucht.de läuft ins Leere.** Fünf freigegebene Varianten, davon **keine
+   mit Bestand** — Export 9 filtert auf `stock=positive` und liefert damit
+   ebenfalls null Zeilen. Zusätzlich steht dort `plentyId = 14443` (besttra.de),
+   während die Ware am Mandanten 14616 hängt.
+4. **Die Restposten-Exporte (id 1 und 2) sind seit 2018 unverändert** und
+   betreffen 22 freigegebene Varianten, davon 3 verkaufsfähig.
+
+### L5 — Der Bild-Export
+
+Export 6 „BilderExport" benutzt das Format `FormatDesigner Maschinensucher2`,
+gehört also zur Maschinensucher-Einrichtung. Sein einziger Filter lautet
+`itemId = {"comparator":"=", "itemId":19264}` — er exportiert die Bilder
+**eines einzigen Artikels**. Artikel 19264 existiert noch (angelegt am
+14.09.2018). Das ist ein Testrest von 2018, der nie aufgeräumt wurde.
+Wenn Maschinensucher Bilder braucht, liefert dieser Export sie nicht.
+
+### L6 — Was zu tun ist, in dieser Reihenfolge
+
+1. **Export 4, Filter `flag1`:** von `16` auf `27` ändern — oder den Filter
+   entfernen, wenn alle 3 070 verkaufsfähigen Varianten des Marktes gemeint
+   sind. Ein Wert, und der Feed füllt sich.
+2. **Prüfen, ob die Markierung 16 heute noch „Import" heißen soll** oder ob
+   umgekehrt die Umbenennung der Fehler war. Das entscheidet, ob Punkt 1 die
+   Ursache behebt oder nur das Symptom.
+3. **Machinio (Herkunft 16) mit einem Export versorgen.** Der Kanal verdient
+   Geld mit 9 verkaufsfähigen Varianten. Die Freigabe von 136 auf das
+   Maschinensortiment auszuweiten und einen Feed anzulegen, ist der naheliegende
+   Hebel im ganzen Bereich.
+4. **Exapro und Resale anschließen** — 1 831 verkaufsfähige Varianten liegen
+   freigegeben bereit, es fehlt nur der Export.
+5. **gebraucht.de klären:** entweder Bestand und Freigaben aufbauen oder den
+   Export stilllegen. Der falsche `plentyId` gehört in beiden Fällen korrigiert.
+6. **Export 6 aufräumen** — entweder den Artikelfilter entfernen oder den Export
+   löschen.
+7. **Tag 11 „Maschienensucher" umbenennen.** Der Tippfehler macht jede Suche
+   unzuverlässig.
+
+Ereignisaktionen, die automatisch die Markierung 27 setzen oder die
+Marktfreigabe 14 vergeben, lassen sich über die REST-API nicht prüfen —
+siehe Teil J, dort existiert kein Endpunkt dafür. Ob so etwas eingerichtet ist,
+kann nur im Backend nachgesehen werden.
 
 ---
 
