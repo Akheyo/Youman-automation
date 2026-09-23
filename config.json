@@ -4,6 +4,25 @@
     "Config.zugangTab": {
       "label": "Config.zugangTab",
       "formFields": {
+        "probelauf": {
+          "type": "select",
+          "required": true,
+          "label": "Config.probelaufLabel",
+          "options": {
+            "defaultValue": "ja",
+            "tooltip": "Config.probelaufTooltip",
+            "listBoxValues": [
+              {
+                "caption": "Config.probelaufJa",
+                "value": "ja"
+              },
+              {
+                "caption": "Config.probelaufNein",
+                "value": "nein"
+              }
+            ]
+          }
+        },
         "apiToken": {
           "type": "inputText",
           "required": true,
