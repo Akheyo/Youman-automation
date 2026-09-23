@@ -71,6 +71,27 @@ class Zugang
         return $this->anfragen('GET', 'json/listing/all', null, array('page' => max(1, (int) $seite)));
     }
 
+    /**
+     * Steht drueben ueberhaupt schon etwas?
+     *
+     * Ein Aufruf, eine Zahl. Er entscheidet, ob ein Konto leer ist — und
+     * damit, ob ohne Zuordnung geschrieben werden darf. Im Zweifel, also
+     * wenn die Frage nicht beantwortet werden kann, lautet die Antwort JA:
+     * Dann wird lieber nicht geschrieben.
+     */
+    public function hatInserate()
+    {
+        $antwort = $this->alleInserate(1);
+        if (!Antwort::istOk($antwort)) {
+            return true;
+        }
+        $daten = $antwort['daten'];
+        if (isset($daten['totalListingCount'])) {
+            return (int) $daten['totalListingCount'] > 0;
+        }
+        return isset($daten['listings']) && count((array) $daten['listings']) > 0;
+    }
+
     public function inserat($id)
     {
         return $this->anfragen('GET', 'json/listing', null, array('id' => (int) $id));

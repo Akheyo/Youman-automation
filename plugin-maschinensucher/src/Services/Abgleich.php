@@ -121,6 +121,26 @@ class Abgleich
             return array('ok' => false, 'meldung' => 'Nicht eingerichtet: ' . implode(' ', $maengel));
         }
 
+        // DIE SPERRE VOR DEM ERSTEN SCHREIBEN.
+        //
+        // Ohne Zuordnung haelt dieser Lauf jedes bestehende Inserat fuer
+        // unbekannt und legt es neu an — bei diesem Konto waeren das
+        // hunderte Dubletten, jede mit eigener Laufzeit und eigenen Kosten.
+        //
+        // Die Bestandsaufnahme laeuft alle fuenf Minuten und fuellt die
+        // Tabelle. Bis sie das getan hat, wird hier nichts geschrieben. Wer
+        // wirklich bei null anfaengt, hat drueben auch keine Inserate zu
+        // verlieren — und sobald das erste angelegt ist, greift die Sperre
+        // nicht mehr.
+        if ($this->zuordnung->anzahl() === 0 && $this->api->hatInserate()) {
+            return array(
+                'ok' => false,
+                'meldung' => 'Die Bestandsaufnahme ist noch nicht gelaufen. '
+                    . 'Es wird nichts geschrieben, solange nicht bekannt ist, '
+                    . 'welches Inserat zu welchem Artikel gehoert.',
+            );
+        }
+
         $umgebung  = $this->einstellungen->umgebung();
         $flagId    = $this->einstellungen->markierungId();
         $flagFeld  = $this->einstellungen->markierungFeld();
