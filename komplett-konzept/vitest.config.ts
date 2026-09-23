@@ -15,5 +15,10 @@ export default defineConfig({
     include: ['**/*.test.ts'],
     exclude: ['node_modules/**'],
     environment: 'node',
+    // Die Datenbank-Tests teilen sich EINE Datenbank, und der
+    // Bestandsabgleich fasst darin alles an, was er nicht in Plenty findet —
+    // auch die Testdaten einer anderen Datei. Nebenläufig gelesen ergäbe das
+    // Fehlschläge, die von der Reihenfolge abhängen.
+    fileParallelism: false,
   },
 })

@@ -16,7 +16,7 @@ import {
   umgebung,
 } from '@/lib/maschinensucher/zugang'
 import { plentyEingerichtet } from '@/lib/plenty/client'
-import { AbgleichKnopf, AdressFeld, FreigabeKnopf, KategorieFeld } from './Knoepfe'
+import { AbgleichKnopf, AdressFeld, BestandKnopf, FreigabeKnopf, KategorieFeld } from './Knoepfe'
 
 export const metadata = { title: 'Maschinensucher' }
 export const dynamic = 'force-dynamic'
@@ -49,15 +49,17 @@ export default async function MaschinensucherSeite({
   const format = dateiformat()
   const plan = spaltenPlan(format.kopfzeile, format.trenner)
 
-  const [markierteZeilen, offeneZeilen, zaehler, abholungen, syncLaeufe, zuletztMenge, freiBis] = await Promise.all([
+  const [markierteZeilen, offeneZeilen, zaehler, abholungen, syncLaeufe, bestandLaeufe, zuletztMenge, freiBis] =
+    await Promise.all([
     markierteArtikel(),
     kandidaten(searchParams.q ?? '', 40),
     artikelZaehlen(),
     letzteLaeufe('maschinensucher-abholung', 5),
     letzteLaeufe('maschinensucher-sync', 1),
+    letzteLaeufe('maschinensucher-bestand', 1),
     letzteAbholungMenge(),
     freigabeStand(),
-  ])
+    ])
 
   const { bereit, zurueck } = teileAuf(markierteZeilen, umg)
   const rueckgang = pruefeRueckgang({
@@ -86,6 +88,7 @@ export default async function MaschinensucherSeite({
 
   const adresse = eingerichtet() ? feedAdresse(basisAdresse()) : ''
   const letzterSync = syncLaeufe[0]
+  const letzterBestand = bestandLaeufe[0]
 
   return (
     <main className="seite">
@@ -139,6 +142,17 @@ export default async function MaschinensucherSeite({
             {letzterSync ? `Abgleich ${relativeZeit(letzterSync.started_at)}` : 'noch nie abgeglichen'}
           </span>
         </div>
+        <div className={`kpi ${letzterBestand?.status === 'success' ? '' : 'kpi--warn'}`}>
+          <span className="kpi__label">Bestände</span>
+          <span className="kpi__wert">
+            {letzterBestand ? relativeZeit(letzterBestand.started_at) : '—'}
+          </span>
+          <span className="kpi__zusatz">
+            {letzterBestand
+              ? `${Number(letzterBestand.output?.aufNull ?? 0)} zuletzt auf 0 gefallen`
+              : 'noch nie geprüft — ohne diesen Lauf geht nichts offline'}
+          </span>
+        </div>
         <div className="kpi">
           <span className="kpi__label">Markierung</span>
           <span className="kpi__wert">{regel.id}</span>
@@ -163,6 +177,7 @@ export default async function MaschinensucherSeite({
             Im Maschinensucher-Konto unter „Datenimport → Automatischer Import&ldquo; eintragen
           </span>
           <div className="rechts">
+            <BestandKnopf darfSteuern={steuern} />
             <AbgleichKnopf darfSteuern={steuern} />
             <AbgleichKnopf darfSteuern={steuern} vonVorn />
           </div>
@@ -305,7 +320,8 @@ function Liste({
                     {zeile.nummer ?? zeile.plenty_variation_id}
                     {zeile.hersteller ? ` · ${zeile.hersteller}` : ''}
                     {` · ${(zeile.bilder ?? []).length} Fotos`}
-                    {zeile.bestand != null ? ` · Bestand ${zeile.bestand}` : ''}
+                    {zeile.bestand != null ? ` · Bestand ${zeile.bestand}` : ' · Bestand unbekannt'}
+                    {zeile.bestand_am ? ` (${relativeZeit(zeile.bestand_am)})` : ''}
                   </div>
                   {fehlt ? (
                     <ul className="klein" style={{ color: 'var(--warn)', margin: '4px 0 0 1rem' }}>

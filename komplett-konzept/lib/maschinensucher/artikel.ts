@@ -37,7 +37,7 @@ export interface ArtikelZeile extends Artikel {
 function felder() {
   return sql`
     id::text, plenty_variation_id, plenty_item_id, nummer, ean, titel, beschreibung,
-    hersteller, modell, baujahr, zustand, preis_brutto, waehrung, bestand,
+    hersteller, modell, baujahr, zustand, preis_brutto, waehrung, bestand, bestand_am,
     gewicht_kg, laenge_cm, breite_cm, hoehe_cm, bilder, kategorie, aktiv, gesehen_am,
     plenty_flag_one, plenty_flag_two,
     ms_markiert, ms_markiert_am, ms_markiert_von, ms_abgeholt_am, ms_fehler, ms_inserat

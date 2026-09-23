@@ -49,6 +49,7 @@ const UMGEBUNG: Umgebung = {
   kategorieZuordnung: [],
   shopBasisUrl: 'https://shop.example.de',
   veraltetNachTagen: 3,
+  bestandAltNachStunden: 24,
 }
 
 // Varianten-IDs, die es in keinem echten Stamm gibt — damit der Test auch an

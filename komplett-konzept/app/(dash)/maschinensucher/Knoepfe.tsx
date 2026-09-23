@@ -12,7 +12,7 @@
  */
 
 import { useState, useTransition } from 'react'
-import { abgleichJetzt, artikelKategorie, rueckgangFreigeben } from './aktionen'
+import { abgleichJetzt, artikelKategorie, bestandJetzt, rueckgangFreigeben } from './aktionen'
 
 function useAktion() {
   const [laeuft, start] = useTransition()
@@ -114,6 +114,33 @@ export function AbgleichKnopf({ darfSteuern, vonVorn = false }: { darfSteuern: b
         title={darfSteuern ? undefined : 'Dafür fehlen dir die Rechte.'}
       >
         {laeuft ? 'läuft …' : vonVorn ? 'Von vorn beginnen' : 'Jetzt abgleichen'}
+      </button>
+      <Fehlerzeile text={fehler} />
+    </>
+  )
+}
+
+/**
+ * Bestände jetzt abgleichen.
+ *
+ * Eigener Knopf neben dem Artikelabgleich, weil es zwei verschiedene Dinge
+ * sind: Der eine holt Texte, Preise und Bilder und braucht Stunden für den
+ * ganzen Stamm, der andere nur die Bestände — und der entscheidet, was vom
+ * Marktplatz verschwindet.
+ */
+export function BestandKnopf({ darfSteuern }: { darfSteuern: boolean }) {
+  const { laeuft, fehler, ausfuehren } = useAktion()
+
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn--klein"
+        disabled={!darfSteuern || laeuft}
+        onClick={() => ausfuehren(() => bestandJetzt())}
+        title={darfSteuern ? undefined : 'Dafür fehlen dir die Rechte.'}
+      >
+        {laeuft ? 'läuft …' : 'Bestände abgleichen'}
       </button>
       <Fehlerzeile text={fehler} />
     </>

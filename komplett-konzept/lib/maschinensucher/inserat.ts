@@ -43,6 +43,8 @@ export interface Artikel {
   preis_brutto: number | string | null
   waehrung: string | null
   bestand: number | null
+  /** Wann der Bestand zuletzt aus Plenty geprüft wurde. */
+  bestand_am?: Date | string | null
   gewicht_kg: number | string | null
   laenge_cm: number | string | null
   breite_cm: number | string | null
@@ -75,6 +77,8 @@ export interface Umgebung {
   shopBasisUrl: string
   /** Ab wann Artikeldaten als veraltet gelten (Tage ohne Abgleich). */
   veraltetNachTagen: number
+  /** Ab wann ein Bestand als ungeprüft gilt (Stunden). */
+  bestandAltNachStunden: number
 }
 
 export interface Inserat {
@@ -204,6 +208,14 @@ export function inseratsnummer(artikel: Pick<Artikel, 'nummer' | 'plenty_variati
   return `${praefix}${kern}`
 }
 
+/** Wie viele Stunden die letzte Bestandsprüfung her ist. */
+export function alterInStunden(wann: Date | string | null | undefined, jetzt: Date): number | null {
+  if (!wann) return null
+  const zeit = wann instanceof Date ? wann.getTime() : Date.parse(String(wann))
+  if (!Number.isFinite(zeit)) return null
+  return Math.floor((jetzt.getTime() - zeit) / 3_600_000)
+}
+
 /** Wie viele Tage der letzte Abgleich dieses Artikels her ist. */
 export function alterInTagen(gesehen: Date | string | null | undefined, jetzt: Date): number | null {
   if (!gesehen) return null
@@ -275,6 +287,14 @@ export function baueInserat(artikel: Artikel, umgebung: Umgebung, jetzt = new Da
     hinweise.push('Noch nie abgeglichen — die Daten stammen nicht aus Plenty.')
   } else if (alter > umgebung.veraltetNachTagen) {
     hinweise.push(`Seit ${alter} Tagen nicht mehr im Abgleich gesehen — Preis und Bestand könnten veraltet sein.`)
+  }
+  const bestandAlter = alterInStunden(artikel.bestand_am, jetzt)
+  if (bestandAlter == null) {
+    hinweise.push('Bestand noch nie geprüft — der Bestandsabgleich lief für diesen Artikel noch nicht.')
+  } else if (bestandAlter > umgebung.bestandAltNachStunden) {
+    // Der teuerste Fehler dieser Strecke ist ein Inserat für ein Gerät, das
+    // schon verkauft ist. Ein alter Bestand ist der Weg dorthin.
+    hinweise.push(`Bestand seit ${bestandAlter} Stunden nicht geprüft.`)
   }
   if (!artikel.hersteller) hinweise.push('Kein Hersteller hinterlegt.')
   if (!artikel.baujahr) hinweise.push('Kein Baujahr — auf Maschinenmarktplätzen die erste Rückfrage.')

@@ -230,12 +230,13 @@ Der Zustand liegt vollständig bei Supabase — `docker compose down` löscht ni
 ## Maschinensucher — die erste echte Automation
 
 Markierte Artikel stehen auf **Maschinensucher**, ohne dass jemand sie dort
-einzeln einträgt. Die Strecke besteht aus zwei Hälften, die sich nicht
+einzeln einträgt. Die Strecke besteht aus drei Läufen, die sich nicht
 gegenseitig aufhalten:
 
 ```
-1. Abgleich (nach Zeitplan)     PlentyONE  ──►  Tabelle "artikel"
-2. Abholung (nachts durch MS)   Tabelle "artikel"  ──►  Importdatei
+1. Artikelabgleich (seitenweise)  PlentyONE  ──►  Tabelle "artikel"
+2. Bestandsabgleich (in einem)    PlentyONE  ──►  Tabelle "artikel"
+3. Abholung (nachts durch MS)     Tabelle "artikel"  ──►  Importdatei
 ```
 
 **Die Datei entsteht ausschließlich aus der Datenbank.** Beim Abholen wird
@@ -269,6 +270,42 @@ der sie mangels Artikeldaten alle auf „nicht markiert" setzt, räumt in einer
 Nacht den ganzen Marktplatz leer. Er steht in der Diagnose des Laufs und wird
 getestet.
 
+### Bestand: was weg ist, geht offline
+
+Der **Bestandsabgleich** ist die schnelle Spur. Der Artikelabgleich liest
+Texte, Preise und Bilder und braucht für den ganzen Stamm Stunden — Bestände
+sind dagegen billig zu lesen, eine Zeile je Lager und Variante. Also laufen
+sie getrennt und öfter, am besten stündlich:
+
+```bash
+curl -fsS -XPOST https://dashboard.beispiel.de/api/maschinensucher/bestand \
+     -H "Authorization: Bearer $INGEST_TOKEN"
+```
+
+Fällt ein Artikel auf **0**, fehlt er in der nächsten Importdatei — und
+Maschinensucher nimmt das Inserat beim nächsten nächtlichen Abgleich vom
+Markt. Schneller geht es nicht: Wann abgeholt wird, entscheidet
+Maschinensucher.
+
+Gezählt wird der **Netto**-Bestand. Was reserviert ist, gehört schon jemandem,
+und ein Inserat für ein bereits verkauftes Gerät ist der teuerste Fehler
+dieser Strecke — es kommen Anfragen, und am Ende steht eine Absage.
+
+**Die heikle Stelle ist nicht das Lesen, sondern das Fehlen.** Wer keine
+Bestandszeile hat, hat nichts auf Lager — das stimmt nur, wenn der Lauf
+wirklich alles gelesen hat. Bricht er ab oder fehlt dem API-Benutzer das Recht
+auf ein Lager, sieht ein halber Bestand aus wie ein leeres Lager. Auf 0 gesetzt
+wird deshalb nur, wenn
+
+- der Durchlauf **vollständig** war, und
+- nicht auf einen Schlag mehr als **30 %** der markierten Artikel betroffen
+  wären (ab 5 Artikeln). Sonst bleiben die Bestände stehen, und der Lauf meldet
+  es als Warnung unter **Fehler**.
+
+An jeder Zeile steht, wie alt der Bestand ist. Ohne diesen Zeitstempel ließe
+sich einer 1 nicht ansehen, ob sie von vor zehn Minuten oder von vorletzter
+Woche stammt — und genau das entscheidet, ob man dem Inserat trauen kann.
+
 ### Was nicht rausgeht
 
 Ein markierter Artikel, dem etwas Wesentliches fehlt, wird **übersprungen und
@@ -281,7 +318,8 @@ nicht halb hochgeladen**. Der Grund steht an seiner Zeile:
 | Titel / Beschreibung | in Plenty steht nichts am Artikel |
 | Kategorie | Maschinensucher nimmt kein Inserat ohne Rubrik |
 | Standort | Pflichtangabe, steht in der `.env` |
-| inaktiv / kein Bestand | eine Anfrage zu verkaufter Ware kostet Vertrauen |
+| kein Bestand | eine Anfrage zu verkaufter Ware kostet Vertrauen |
+| in Plenty inaktiv | was dort abgeschaltet ist, gehört nicht auf den Markt |
 
 Alles andere ist ein **Hinweis** und hält nicht auf: fehlendes Baujahr,
 fehlendes Gewicht, Auffangkategorie, veraltete Daten.
@@ -361,8 +399,12 @@ heißt „ist draußen" — markiert allein heißt nur „ist gewollt".
    einrichten:
 
    ```bash
-   # stündlich, z. B. als Cronjob auf dem Server
+   # Artikeldaten: Texte, Preise, Bilder, Markierungen (seitenweise)
    curl -fsS -XPOST https://dashboard.beispiel.de/api/maschinensucher/sync \
+        -H "Authorization: Bearer $INGEST_TOKEN"
+
+   # Bestände: entscheidet, was vom Marktplatz verschwindet (in einem Rutsch)
+   curl -fsS -XPOST https://dashboard.beispiel.de/api/maschinensucher/bestand \
         -H "Authorization: Bearer $INGEST_TOKEN"
    ```
 

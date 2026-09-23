@@ -27,6 +27,7 @@ const UMGEBUNG: Umgebung = {
   kategorieZuordnung: [{ wort: 'drehmaschine', kategorie: '1234' }],
   shopBasisUrl: 'https://shop.example.de',
   veraltetNachTagen: 3,
+  bestandAltNachStunden: 24,
 }
 
 function artikel(teil: Partial<Artikel> = {}): Artikel {
@@ -45,6 +46,7 @@ function artikel(teil: Partial<Artikel> = {}): Artikel {
     preis_brutto: '2261.00',
     waehrung: 'EUR',
     bestand: 1,
+    bestand_am: '2026-09-22T08:30:00Z',
     gewicht_kg: '850.000',
     laenge_cm: '180.0',
     breite_cm: '80.0',
@@ -159,9 +161,22 @@ describe('baueInserat', () => {
   })
 
   it('haelt zurueck, was keinen Bestand mehr hat', () => {
-    // Eine Anfrage zu einem verkauften Geraet kostet Vertrauen.
+    // Eine Anfrage zu einem verkauften Geraet kostet Vertrauen — deshalb ist
+    // "Bestand 0" ein Grund, das Inserat nicht mehr mitzuliefern.
     const { maengel } = baueInserat(artikel({ bestand: 0 }), UMGEBUNG, JETZT)
     expect(maengel.join(' ')).toContain('Kein Bestand')
+  })
+
+  it('warnt, wenn der Bestand lange nicht geprueft wurde', () => {
+    const alt = artikel({ bestand_am: '2026-09-20T09:00:00Z' })
+    const { maengel, hinweise } = baueInserat(alt, UMGEBUNG, JETZT)
+    expect(maengel).toEqual([])
+    expect(hinweise.join(' ')).toContain('48 Stunden nicht geprüft')
+  })
+
+  it('sagt es, wenn der Bestand noch nie geprueft wurde', () => {
+    const { hinweise } = baueInserat(artikel({ bestand_am: null }), UMGEBUNG, JETZT)
+    expect(hinweise.join(' ')).toContain('noch nie geprüft')
   })
 
   it('meldet einen fehlenden Standort als Mangel der Einrichtung', () => {

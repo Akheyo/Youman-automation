@@ -21,6 +21,7 @@ import { kategorieSetzen } from '@/lib/maschinensucher/artikel'
 import { freigabeSetzen, laufMelden } from '@/lib/maschinensucher/lauf'
 import { freigabeBis } from '@/lib/maschinensucher/rueckgang'
 import { abgleichLaufen } from '@/lib/plenty/sync'
+import { bestandAbgleichen } from '@/lib/plenty/bestand'
 
 async function bediener() {
   const nutzer = await aktuellerNutzer()
@@ -123,6 +124,74 @@ export async function abgleichJetzt(vonVorn = false) {
     revalidatePath('/maschinensucher')
     // Weiterwerfen, damit die Oberfläche es am Knopf sagt und nicht nur im
     // Fehlerbereich steht.
+    throw new Error(meldung)
+  }
+}
+
+/**
+ * Bestände jetzt abgleichen.
+ *
+ * Der Lauf, der Artikel vom Marktplatz nimmt: Was keinen Bestand mehr hat,
+ * fällt aus der nächsten Importdatei. Deshalb steht der Knopf auf der Seite
+ * und nicht nur im Zeitplan — wenn gerade etwas verkauft wurde, will man
+ * nicht bis zur nächsten vollen Stunde warten.
+ */
+export async function bestandJetzt() {
+  const nutzer = await bediener()
+  const beginn = new Date()
+
+  try {
+    const bericht = await bestandAbgleichen()
+    await laufMelden({
+      key: 'maschinensucher-bestand',
+      status: 'success',
+      trigger: 'manual',
+      startedAt: beginn,
+      itemsProcessed: bericht.aktualisiert,
+      input: { durch: nutzer.name },
+      output: {
+        gelesen: bericht.gelesen,
+        varianten: bericht.varianten,
+        aufNull: bericht.aufNull,
+        vollstaendig: bericht.vollstaendig,
+      },
+      logs: [
+        {
+          level: 'info',
+          message:
+            `${bericht.varianten} Varianten mit Bestand gelesen, ${bericht.aktualisiert} Artikel aktualisiert.` +
+            (bericht.aufNull > 0 ? ` ${bericht.aufNull} markierte stehen jetzt auf 0.` : '') +
+            ` Angestoßen von ${nutzer.name}.`,
+        },
+        ...bericht.hinweise.map((h) => ({ level: 'warn' as const, message: h })),
+      ],
+      fehler:
+        bericht.hinweise.length > 0
+          ? { message: bericht.hinweise.join(' '), code: 'BESTAND', severity: 'warning' as const }
+          : undefined,
+    })
+
+    await protokollSchreiben({
+      userId: nutzer.id,
+      userName: nutzer.name,
+      action: 'maschinensucher.bestand_gestartet',
+      targetType: 'automation',
+      targetName: 'Bestandsabgleich',
+      meta: { aktualisiert: bericht.aktualisiert, aufNull: bericht.aufNull },
+    })
+
+    revalidatePath('/maschinensucher')
+  } catch (e) {
+    const meldung = e instanceof Error ? e.message : String(e)
+    await laufMelden({
+      key: 'maschinensucher-bestand',
+      status: 'failed',
+      trigger: 'manual',
+      startedAt: beginn,
+      input: { durch: nutzer.name },
+      fehler: { message: meldung, code: 'PLENTY' },
+    })
+    revalidatePath('/maschinensucher')
     throw new Error(meldung)
   }
 }

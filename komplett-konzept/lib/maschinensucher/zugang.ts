@@ -107,6 +107,7 @@ export function umgebung(): Umgebung {
     kategorieZuordnung: leseZuordnung(text('MASCHINENSUCHER_KATEGORIEN')),
     shopBasisUrl: text('SHOP_BASIS_URL'),
     veraltetNachTagen: zahlAus('MASCHINENSUCHER_VERALTET_TAGE', 3),
+    bestandAltNachStunden: zahlAus('MASCHINENSUCHER_BESTAND_ALT_STUNDEN', 24),
   }
 }
 
