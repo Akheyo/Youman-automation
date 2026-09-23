@@ -55,15 +55,20 @@ class SofortAbgleich
                 return;
             }
 
-            // Beim allerersten Ausloesen gibt es noch keine Zuordnung. Statt
-            // auf den Zeitplan zu warten, wird die Bestandsaufnahme hier
-            // gleich mit erledigt — so ist ein einziger Klick ein
-            // vollstaendiger Test.
+            // Solange die Bestandsaufnahme nicht vollstaendig ist, treibt jede
+            // Ausloesung sie ein Stueck voran — aber nur ein kurzes: Der Flow
+            // laeuft als gewoehnliche Anfrage, und eine lange Aufnahme darin
+            // wurde am 23.09. ohne jede Spur abgebrochen. Den Rest erledigen
+            // weitere Ausloesungen oder der Zeitplan.
+            $etappe = null;
             if (!$zuordnung->bestandGelesen()) {
-                $aufnahme->lauf();
+                $etappe = $aufnahme->etappe(8);
             }
 
             $bericht = $abgleich->fuerVarianten($varianten);
+            if ($etappe !== null) {
+                $bericht['bestandsaufnahme'] = $etappe;
+            }
 
             // DIAGNOSE, voruebergehend als Fehler: das Ergebnis, sichtbar
             // unabhaengig von der Log-Einstellung.

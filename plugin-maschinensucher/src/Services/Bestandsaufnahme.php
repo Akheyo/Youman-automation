@@ -44,9 +44,26 @@ class Bestandsaufnahme
     }
 
     /**
+     * Eine Etappe der Bestandsaufnahme.
+     *
+     * WARUM IN ETAPPEN: Die Aufnahme liest alle Inserate bei Maschinensucher,
+     * seitenweise, und schreibt je Inserat eine Zuordnung. Beim ersten Mal
+     * sind das bei diesem Konto sieben Aufrufe mit vollen Inseratsdaten und
+     * sechshundert Schreibvorgaenge. Im Flow laeuft das als gewoehnliche
+     * Anfrage — und die wurde am 23.09. mittendrin abgebrochen, ohne jede
+     * Spur im Protokoll: Einen harten Abbruch an einer Zeitgrenze kann kein
+     * Fangnetz auffangen.
+     *
+     * Deshalb arbeitet jede Etappe nur so viele Seiten ab, wie in das
+     * Zeitbudget passen, und merkt sich nach JEDER Seite, wo es weitergeht.
+     * Wird sie trotzdem abgebrochen, ist hoechstens eine Seite verloren und
+     * wird beim naechsten Mal wiederholt. Erst wenn die letzte Seite
+     * geschrieben ist, gilt die Aufnahme als vollstaendig.
+     *
+     * @param float $budget Sekunden, nach denen keine neue Seite mehr begonnen wird
      * @return array Bericht
      */
-    public function lauf()
+    public function etappe($budget)
     {
         $beginn = microtime(true);
 
@@ -55,58 +72,86 @@ class Bestandsaufnahme
         }
 
         $praefix = $this->einstellungen->nummernPraefix();
+        $seite = $this->zuordnung->naechsteSeite();
+        $ersteSeite = $seite;
+        $gesamtSeiten = 0;
+        $gelesen = 0;
+        $neu = 0;
+        $aktualisiert = 0;
+        $fertig = false;
 
-        $gelesen = array();
-        for ($seite = 1; $seite <= self::MAX_SEITEN; $seite++) {
+        while (true) {
             $antwort = $this->api->alleInserate($seite);
 
             if (!Antwort::istOk($antwort)) {
-                // Mitten im Lesen abzubrechen ist richtig: Eine halbe Liste
-                // saehe aus wie "diese Inserate gibt es nicht mehr", und
-                // genau daraus duerfen nie Schluesse gezogen werden.
+                // Der Merker bleibt auf dieser Seite stehen; die naechste
+                // Etappe versucht es erneut. Aus einer halb gelesenen Liste
+                // wird nie geschlossen, ein Inserat gebe es nicht mehr.
                 return $this->abbruch(
                     'Seite ' . $seite . ' konnte nicht gelesen werden: ' . $antwort['meldung'],
-                    count($gelesen)
+                    $gelesen
                 );
             }
 
-            $seiteninhalt = Bestandsabgleich::seiteLesen($antwort['daten'], $praefix);
-            foreach ($seiteninhalt as $eintrag) {
-                $gelesen[] = $eintrag;
+            $daten = $antwort['daten'];
+            $gesamtSeiten = isset($daten['totalPageNumber']) ? (int) $daten['totalPageNumber'] : $gesamtSeiten;
+
+            $inhalt = Bestandsabgleich::seiteLesen($daten, $praefix);
+            $geschrieben = $this->fortschreiben($inhalt);
+            $gelesen += count($inhalt);
+            $neu += $geschrieben['neu'];
+            $aktualisiert += $geschrieben['aktualisiert'];
+
+            if (!Bestandsabgleich::weitereSeite($daten, $seite) || count($inhalt) === 0 || $seite >= self::MAX_SEITEN) {
+                $fertig = true;
+                break;
             }
 
-            if (!Bestandsabgleich::weitereSeite($antwort['daten'], $seite) || count($seiteninhalt) === 0) {
+            $seite++;
+            // Nach jeder Seite festhalten. Stirbt die Etappe jetzt, geht es
+            // genau hier weiter.
+            $this->zuordnung->naechsteSeiteMerken($seite);
+
+            if (microtime(true) - $beginn >= (float) $budget) {
                 break;
             }
         }
 
-        $bilanz = Bestandsabgleich::bilanz($gelesen);
-        $geschrieben = $this->fortschreiben($gelesen);
-
-        // Erst jetzt, mit allen Zuordnungen in der Tabelle, darf der Abgleich
-        // schreiben. Bricht der Lauf vorher ab, fehlt dieser Merker, und der
-        // naechste Lauf faengt die Aufnahme von vorn an.
-        $this->zuordnung->bestandGelesenMerken();
+        if ($fertig) {
+            // Erst jetzt, mit allen Zuordnungen in der Tabelle, darf der
+            // Abgleich schreiben. Die naechste Runde beginnt wieder vorn und
+            // haelt die Zuordnung aktuell.
+            $this->zuordnung->bestandGelesenMerken();
+            $this->zuordnung->naechsteSeiteMerken(1);
+        }
 
         $bericht = array(
-            'ok'              => true,
-            'gelesen'         => $bilanz['gesamt'],
-            'zugeordnet'      => $bilanz['zugeordnet'],
-            'ohneZuordnung'   => $bilanz['ohneZuordnung'],
-            'aktiv'           => $bilanz['aktiv'],
-            'pausiert'        => $bilanz['pausiert'],
-            'neu'             => $geschrieben['neu'],
-            'aktualisiert'    => $geschrieben['aktualisiert'],
-            'doppelteArtikel' => $bilanz['doppelteArtikel'],
-            'dauer'           => round(microtime(true) - $beginn, 1),
+            'ok'           => true,
+            'vollstaendig' => $fertig,
+            'seiten'       => $ersteSeite . ' bis ' . $seite . ($gesamtSeiten > 0 ? ' von ' . $gesamtSeiten : ''),
+            'gelesen'      => $gelesen,
+            'neu'          => $neu,
+            'aktualisiert' => $aktualisiert,
+            'dauer'        => round(microtime(true) - $beginn, 1),
         );
 
-        $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.bestandGelesen', $bericht);
+        if ($fertig) {
+            $bilanz = $this->zuordnung->bilanz();
+            $bericht['inserateGesamt'] = $bilanz['gesamt'];
+            $bericht['zugeordnet'] = $bilanz['zugeordnet'];
+            $bericht['ohneZuordnung'] = $bilanz['ohneZuordnung'];
+            $bericht['aktiv'] = $bilanz['aktiv'];
+            $bericht['pausiert'] = $bilanz['pausiert'];
 
-        if (count($bilanz['doppelteArtikel']) > 0) {
-            $this->getLogger(__METHOD__)->warning('MaschinensucherMarkt::log.doppelteInserate', array(
-                'artikel' => array_slice($bilanz['doppelteArtikel'], 0, 50),
-            ));
+            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.bestandGelesen', $bericht);
+
+            if (count($bilanz['doppelteArtikel']) > 0) {
+                $this->getLogger(__METHOD__)->warning('MaschinensucherMarkt::log.doppelteInserate', array(
+                    'artikel' => array_slice($bilanz['doppelteArtikel'], 0, 50),
+                ));
+            }
+        } else {
+            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.bestandEtappe', $bericht);
         }
 
         return $bericht;
