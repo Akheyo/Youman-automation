@@ -1,0 +1,584 @@
+artikel_id;maschinensucher_id;restlaufzeit_tage;titel
+4969;A17568653;295;PC Monitor mit Edelstahltastatur
+6592;A17555673;336;Steuerung Bedienrechner Bedienterminal
+8051;A22688417;345;Celerra AntiVirus Agent CAVA Software
+8761;A21366512;160;Adsorptionstrockner Luftentfeuchter
+9213;A17565383;295;Verdichter Kompressor Kolbenverdichter
+11364;A17555463;56;Steuerung
+11457;A20248745;237;Frequenzumrichter
+11476;A17555723;162;Frequenzumrichter Inverter
+12823;A17569148;162;Gastrotheke Verkaufstheke Essensausgabe
+12878;A17565433;162;KAPILLARZONENELEKTROPHORESE
+13263;A19859085;336;Verschiedene Fanuc Steuerungen
+15003;A17569338;295;AC Servomotor a22/3000 4.4 KW
+15697;A17569393;162;M1M Analyzer
+15699;A17569428;308;Höhenmikrometer Messsystem
+16012;A7900373;308;Bodenluft Probenahmesystem Bodenanalyse
+16053;A4088995;233;Steuerung
+17746;A17682973;295;Dampftisch 4 Whirlpoolhauben
+17762;A17682953;111;Naehmaschine, Foot Lifter
+17782;A17628868;104;Kuehltheke mit Arbeitsflaeche
+18322;A17683298;162;Begasung Begasungsanlage Desinfektion
+18323;A3710603;162;Begasung / Begasungsanlage Desinfektion
+18324;A3710611;308;Begasung Begasungsanlage Desinfektion
+18377;A3894412;55;Zusatzperipherie Simatic
+18615;A4718988;162;Vakuumpumpe
+18687;A7900904;162;Doppelpumpe + Frequenzumrichter
+18695;A7897043;162;Vakuumpumpe
+18715;A7897187;162;Elektromotor
+18732;A17565403;296;Dampfbefeuchter mit Heizelementen
+18800;A3791465;142;In-Ovo-Impfung Druckinjektionssystem
+18866;A4109589;162;Vakuumpumpe
+19336;A3894372;56;Frequenzumrichter
+19337;A3894381;0;Frequenzumrichter
+19731;A20248545;237;Pegelwandler Levelshifter
+19751;A7896851;162;Unterwasserpumpe
+20169;A4032742;295;Waschbox Teilereiniger
+20174;A4010093;296;Prismenauflage Spannblock Prisma
+20176;A4010152;162;Kältemaschine
+20181;A4010756;69;Klima Kühlsystem Präzisionsklimagerät
+20207;A4015097;103;Servo Drives 13,2kVA Herst. überholt
+20208;A4015090;103;Servo Drives 53,4kVA Herst. überholt
+20209;A4015081;103;Servo Drives 46kW überholt
+20370;A4023829;145;Simatic 6AV7872-0BC12-1AC0 Touch Panel
+20420;A4029118;145;Turbinenradgaszähler Mengengaszähler
+20474;A4034207;162;Schaltanlage & -komponente
+20550;A4040321;142;Waschbox Waschstraße
+20560;A4050120;126;Transformator
+20852;A7900880;55;Steuerung
+21007;A17569468;142;Pulsgenerator für Isolationstest
+21334;A4100154;162;Wägeterminal Bodenwaage Palettenwaage
+21397;A9345542;296;Absaugwand aus Stahlblech Absaugung
+21557;A4108919;145;Kammerofen Brennofen Härteofen Ofen
+21558;A4108913;145;Brennofen Härteofen Ofen
+21578;A4110700;308;Hornhautanalysesystem Topographie-System
+21691;A4129115;162;Direktwirkende Druckluftpresse
+21801;A4146999;142;HF Schweißgerät Wasserkühlung
+22165;A4377023;162;Gurtförderband Förderband
+22281;A7399010;55;Siemens Simodrive
+22572;A4492138;142;Ultraschallanlage Ultraschallbecken
+22782;A4589585;145;Kabelrollenwagen Kabeltrommelwagen
+22975;A4858371;162;Rollenbahn
+23084;A4987503;162;Rollenbahn
+23121;A5026764;145;
+23342;A5454144;295;Keramische Mantelstrahlrohre
+23380;A5492424;142;Inkrementales Winkelmessgerät
+23410;A5551092;145;Roboter inkl. Förderband Steuerung
+23436;A9344546;142;Vakuumpumpe Pumpe Vacuum pump
+23497;A5722203;142;Presse Stanzautomat Stanze Stanzpresse
+23517;A5741667;145;Garderobenformer und Hosentopper
+23518;A5741670;142;Garderobenformer mit Steuerung
+23561;A5759622;162;Transportband 75 cm Gurtförderer 5 m
+23602;A21109117;145;Roboter mit Steuerung
+23638;A7900859;162;Trockenläufer Pumpe
+23762;A5917630;142;Werkzeugfräsmaschine u. Bohrmaschine
+23922;A5992387;308;Schwenkarmroboter Roboter 3842291811
+23923;A5992393;308;Schwenkarmroboter Roboter 3842999836
+23929;A5992402;308;Schwenkarmroboter Roboter 841551021
+23966;A6027802;308;Schwenkarmroboter 3842999836 Roboter
+24004;A7896863;162;Elektrolifter
+24005;A6107542;142;Durchlaufreinigungsanlage Teilereinigung
+24006;A7896932;162;Elektrolifter
+24008;A7168317;162;Rollbahn mit Antrieb und Übergabeelement
+24014;A7900895;296;Industriesauger Druckluftsauger
+24025;A6885147;266;Hallenkran 80 kg Kranhimmel 2x3m
+24031;A6885054;162;Linearvibrationsantrieb 669mm
+24044;A6859111;162;Rollbahn Förderbahn Rollenförderer
+24046;A7406216;162;Rollbahn mit Antrieb
+24047;A6819928;142;Feindrehmaschine Drehbank Drehmaschine
+24048;A6859063;296;Hydraulikaggregat Hydraulik Pumpen
+24049;A6859057;64;Gurtförderer Bandförderer Förderband
+24050;A6819913;142;Linear Zylinder Maschine
+24056;A6859048;162;Gurtförderer Bandförderer Förderband
+24061;A6859045;162;Rollenbahn
+24086;A6096952;142;Feindrehbank Drehmaschine Drehautomat
+24089;A6096889;162;Aluminium Flachförderband 7,30m x 0,30m
+24090;A6089077;142;Kommutatorschlitzsäge Sägeautomat
+24093;A6096748;296;Fasspumpe Fettpumpe Schmiermittelpumpe
+24127;A6096526;295;Winkelkopfschränkwerkzeug Ankerproduktio
+24133;A6118597;295;Lackierkabine mit Absaugvorrichtung
+24142;A7165494;296;Doppelschleifbock Bitschleifer 220 V 3Ph
+24145;A6097036;142;Diffusionsschweißmaschine Schweißgerät
+24164;A6859015;106;Aluminium Messtisch Anreißplatte
+24173;A6859006;162;Rollbahn Förderbahn Rollenförderer
+24187;A7165146;142;Temperaturprüfschrank 500L -40°C - 180°C
+24188;A6819874;296;Metallsauger Metallabsauger mit Tisch
+24190;A6089587;145;Mobiler Plastifizierer Thermoplaste
+24194;A6092434;142;UV Aushärtung Maschine Härtemaschine
+24201;A6803971;142;Seitenflächenschleifmaschine
+24222;A6110428;142;Anlasser Lebensdauerprüfung
+24228;A6106792;142;Stanzbiegeautomat Biegemaschine Stanze
+24244;A7900928;55;Programmierwagen Programmiereinheit
+24253;A6197278;145;Beladeeinrichtung Waage Füllmaschine
+24259;A6212932;142;Materialprüfstand Endkontrolle
+24296;A6256576;142;Draht und Band-Biegeautomat Stanze
+24297;A6256579;142;Draht und Band-Biegeautomat Stanzautomat
+24298;A6256591;142;Draht und Band-Biegeautomat Stanze Nr.15
+24299;A6256600;142;Draht und Band-Biegeautomat Stanze Nr.16
+24301;A7171533;142;Draht und Band-Biegeautomat Stanze Nr.17
+24307;A6804073;162;Hochdruckzylinder Presseinheit + Control
+24310;A6258529;145;Hochgeschwindigkeits Handling Roboter
+24313;A7901069;308;Schwenkarm-Roboter Industrieroboter
+24314;A6804103;308;Schwenkarmroboter 3842999835 Roboter
+24316;A6804139;308;Schwenkarmroboter Roboter 384291811
+24345;A6335050;308;Industrieroboter + Steuerung
+24351;A6335020;145;Roboter + Steuerung + Handbediengerät
+24355;A7886255;308;Schwenkarm-Roboter Roboter + Steuerung
+24371;A6331024;308;Industrieroboter Roboter + Steuerung
+24380;A6804220;162;Kühlzentrifuge inkl. Rotor 3360
+24381;A6358309;308;Industrieroboter Roboter + Steuerung
+24511;A6800212;145;Durchflusszytometer
+24568;A6779482;145;Analysesystem Acridiniumester
+24572;A6799933;70;Kühlzentrifuge RPM 18.000 -20°C bis 40°C
+24573;A6799945;112;Kühlzentrifuge RPM 15.000 -20°C bis 40°C
+24575;A6797410;308;Schwenkarmroboter + Steuereinheit
+24594;A7396706;126;Mehrkamera Bildverarbeitungssystem
+24627;A6906189;142;Drehbank für Laminationpaket, Kommutator
+24675;A7058067;145;Hämatologie Analysator Analysesystemen
+24680;A17555323;308;Immundiagnostischer Analysator
+24685;A17555228;142;Amplifikationsdetektor Analysator PCR
+24686;A7058022;142;Nukleinsäure Präparationsstation
+24693;A7890512;296;Auffangbecken für Lackieranlagen
+24696;A7058016;296;Lüfter Radialgebläse 37.000 Nm³/h 55 kW
+24744;A7396532;145;Bildverarbeitungs-Controller
+24756;A9700751;308;Tenäre Niedrigdruck Gradientenpumpe
+24864;A7896752;106;Aluminiumplatte für Werkbank
+24889;A7901024;155;Steuerung
+24928;A7399031;162;Ein/Ausgangsmodul
+24929;A7399175;145;Steuereinheit R911306516-102
+24932;A7900871;162;Visitenkartenschneider Schneidmaschine
+24945;A7205916;145;Etikettieranlage Etikettendrucksystem
+24958;A7216848;307;Granit Mess/Anreiß/Kontrollplatte
+24963;A7226589;142;Solarzellen Photovoltaikmodul Prüfkammer
+25069;A7380038;145;Stationäre Schraubeinheit Schraubstation
+25070;A7393211;145;Roboter Montagestation Dosierstation
+25075;A7379912;155;Etiketten-Druckspendesystem
+25105;A7399415;295;Einpressvorrichtung für Keramikstifte
+25144;A7406135;69;Radialventilator Ofenventilator
+25176;A7458791;142;Kondensataufbereitung Filtrationsanlage
+25185;A7465193;145;Steuerung
+25186;A7465214;234;Servodyn-D 670V-705V, 140A
+25188;A7900580;145;SPS-Prozessor
+25189;A7900604;142;Kraftspannfutter mit Durchgang
+25190;A7900619;145;SPS- Prozessor
+25191;A9700340;145;Schlitzzylinder
+25193;A7406096;296;Integrierender Schallpegelmesser
+25226;A7900958;296;Münzabrechnungsterminal SB-Terminal
+25240;A7900538;162;Elektromotor
+25251;A7901072;162;Elektrischer Kistenheber
+25259;A20248700;15;Schaltschrank
+25317;A9362453;162;Schaltschrank
+25374;A9345251;111;Industrieflügeltor Einfahrtstor ca. 8x2m
+25722;A9700793;162;Schlitten
+25724;A9700676;162;Schlitten Zylinder, Schlittzylinder
+25755;A7725170;142;Professionelle Bronchoskopewaschmaschine
+25784;A7483574;142;Magnetelektrisches Rissprüfgerät
+26118;A7541324;296;Staubabsauganlage Entstaubungsanlage
+26125;A7541204;142;Kurbelwellen Schleifmaschine Polierbank
+26137;A7541114;296;Kurbelwellen Reinigungsanlage
+26141;A7544105;142;Rauheits u. Konturenmessplatz Messplatte
+26145;A7544039;145;Kurbelwellen Schraubstation Montageplatz
+26152;A7541072;307;Oberflächenmessgerät Rauheitsmessgerät
+26164;A7900664;296;Industriesauger Staubsauger Sauger
+26171;A7549478;296;Indikatorkalibrator Indikator
+26174;A7900400;145;Steuerung
+26175;A21107132;156;Steuerung Bediengerät
+26177;A9361055;145;Servomodul, Verstärker
+26178;A9700355;145;Elektrozylinder, Zylinder
+26180;A9421022;308;TDK-Lambda Labornetzgerät Netzteil
+26183;A7901021;0;Schaltanlage & -komponente
+26394;A7897001;155;Kühlaufsatzvitrine
+26403;A7694456;162;Gasgrill
+26404;A7901030;162;Servomotor
+26620;A7694621;142;Schubladenofen Mehrkammerofen
+26623;A9345104;296;Granitplatte Messplatte Kontrollplatte
+26773;A7886561;308;Labor-Spülmaschine Reinigungsautomat
+26778;A7886090;145;Labor-Spülmaschine
+26781;A7886129;145;Labor-Spülmaschine
+26782;A7896512;296;Laborspülmaschine Reinigungsautomat
+26784;A7897484;295;Punktschweissmaschine Schweißanlage
+26792;A7884263;142;Elektromechanisches NC-Fügemodul
+26936;A9420959;162;Steuerung
+27144;A14552944;145;Drucker Druckmaschine Großformat
+27145;A14552962;145;Transferdrucker Großformatdrucker
+27240;A7814753;162;Sicherheitswerkbank
+27269;A7900478;145;Impulsmagnetisiergerät
+27272;A7896770;141;Biochemischer Analysator
+27274;A9700766;64;Drehmodul
+27283;A9700385;162;Drehmodul
+27286;A9700709;162;Kompaktschlitten Minischlitten
+27290;A9701054;162;Servomotor
+27302;A7884131;162;Sicherheitswägekabine
+27364;A9345593;162;Ölschrank Ölkabinett Umweltschrank
+27412;A9421124;162;Steuergerät Roboter Controller modul
+27633;A9421112;162;Piezoelektrischer Kraftsensor
+27756;A9361067;162;Elektromotor
+27987;A8147930;155;Konvektionsofen
+28498;A8340902;162;Speisenausgabe mit Glasaufbau
+28724;A9344495;155;Espressomaschine Siebträgermaschine
+28728;A9345374;70;Verkaufswaage Waage Ladenwaage
+28766;A9230048;145;Rollenbahn
+28771;A9700418;162;Belegstation Kühltheke
+28776;A9700346;162;Zylinder, Schlitzzylinder
+29009;A10397510;296;Datensicherungsschrank Tresor
+29116;A10398077;142;Punktschweissmaschine Schweißstation
+29120;A10397861;145;Mikrobiologische Sicherheitswerkbank
+29124;A10398497;142;TIG-Gleich-Wechselstrom Schweißanlage
+29144;A10631186;162;Buffetausgabe Kühltheke Kühlvitrine
+29151;A10650239;145;Durchlaufwaage Volumenmesssystem
+29159;A10647824;162;Zuführband 1,2 m Gurtförderer Förderband
+29210;A11215907;308;Zentrifuge Kleinzentrifuge Centrifuge
+29365;A11682548;145;Schaltanlage Trafostation Trafo
+29367;A11682695;142;Universalfräse Fräsmaschine Fräse
+29580;A11721359;162;Kühltheke Kühltvitrine 150x89,8x124,3cm
+30072;A12827909;295;Textilschneidemaschine Stoffschneider
+30324;A12060848;174;Industrieofen Härteofen Kammerofen
+30727;A12761102;145;Axiallüfterverflüssiger Wärmetauscher
+30731;A12760808;162;Vakuumpumpe
+31713;A12765251;145;Frequenzumrichter
+31726;A12765398;145;Slushmaschine
+31745;A12811955;145;Kältemaschine
+31747;A20729167;142;Temperaturschock-Prüfschrank -70-220°C
+31752;A12811988;142;Klimaprüfschrank Klimakammer Feuchte
+31754;A12812006;142;Korrosions-Klima-Wechseltestkammer
+31760;A13110803;142;Reinigungs- und Entfettungsanlage
+32161;A13110785;142;Reinigungs- und Entfettungsanlage
+32717;A13630084;162;Kaffeevollautomat
+32722;A13037399;142;Reinigungs und Entfettungsanlage
+32738;A13110761;145;Sicherheitslaserscanner Laserscanner
+32739;A13110707;145;Sicherheitslaserscanner Laserscanner
+32744;A13113044;56;Touch Panel
+32746;A13112597;162;Frequenzumrichter
+32752;A13112408;145;Frequenzumrichter
+32758;A13111718;162;Steuerung
+32762;A13126721;145;Teleskopbühne Arbeitsbühne
+32765;A14453896;308;Wärmeschrank Umlufttrockenschrank
+32769;A18920996;145;Automatisierungsroboter + Steuerung
+32771;A13243981;142;Halbautomatische Palettenwickelmaschine
+32779;A13243780;145;Kammerofen Muffelofen Veraschungsofen
+32787;A13244074;162;
+33746;A13630276;142;Strafbanderoliermaschine Banderolierer
+33750;A13433680;271;Schrumpfanlage Schrumpftunnel
+33771;A21116922;142;Inkubator Doppelinkubator Trockenschrank
+33772;A13653469;142;Inkubator Doppelinkubator Wärmeschrank
+33778;A13653061;142;Sortier-, Zuführ- und Aufsetzmaschine
+33788;A13652995;145;Gelenkteleskopbühne
+33791;A13630297;145;Doppelmembranpumpe
+33793;A13678360;155;Arbeitsplatz Werkbank Schreibtisch
+33806;A18920911;145;Trockenläufer Doppelpumpe
+33809;A14282440;145;Planetenrührwerk
+34306;A14383627;145;Axialverflüssiger
+35056;A14231014;142;FIGARO NEU Friseur Einrichtung Spiegel
+35070;A14353198;162;Steigförderband
+35072;A14353183;145;Steigförderband
+35080;A14353246;295;Schubladenschrank mit Zerspanwerkzeug
+35358;A14453899;308;Wärmeschrank Umlufttrockenschrank
+35366;A14454367;145;Laserkühlung Kühlung Kühlaggregat
+35377;A14473651;142;Punktschweissmaschine
+35391;A14628181;127;Elektromotor
+35402;A14627779;308;Zellkulturanalysator Multifunktionsanaly
+35403;A14627758;100;Drucker Tintenstrahldrucker
+35407;A14627494;162;Sockelschalldämpfer aus verzinktem Stahl
+35413;A14628205;103;Hochdruck-Inlinepumpe Kreiselpumpe 11kW
+35716;A22113673;261;Kolbendosierer Dosiereinheit
+36875;A14856073;145;Flüssigkeitskühler Kälteanlage Klima
+36876;A14856061;145;Servopresse Neu kalibriert DMS Verstärke
+36877;A14856043;145;Servopresse Neu mit DMS Verstärker Press
+36901;A14951605;162;Servomotor 13,3 kW Permanent Magnet Moto
+36903;A14951587;295;Getriebemotor 5,5 kW Motor
+36908;A14951572;162;Schraubenspindelpumpe 6,3 kW Pumpen
+36916;A14951449;162;Schlürf Tauchpumpe Pumpe
+36936;A15203704;126;Pneumatische Abfüllmaschine 8 - 80 ml
+37318;A22445697;308;Industrie-Wägeterminal
+37319;A15203995;145;Druckluftbetriebene Kolbenpumpe
+37342;A15317245;142;Körperstraffung Körperformungssystem
+37366;A15509734;142;Gas-Hochdruck-Werkstattprüfsystem
+37389;A16241827;145;Peristaltikpumpe
+38024;A16091647;145;Vakuumpumpe
+38248;A16244323;162;Peristaltikpumpe
+38250;A16140959;145;Kücheninsel
+38254;A16091231;271;Umreifungsautomat Umreifungsmaschine
+38267;A16092299;145;Transportbühne
+38270;A16092286;145;Transportbühne
+38271;A16092184;145;Transportbühne
+38272;A16091810;145;Transportbühne
+38275;A16140497;296;Frequenzumrichter Wechselrichter
+38284;A16140794;100;Inkjet Drucker
+38314;A18911461;145;Vertikale Kreiselpumpe
+38326;A16192405;234;2250m² Verblender Riemchen Naturstein
+38335;A16236613;145;Schraubenkompressor
+38384;A16238401;145;Schraubenkompressor
+38394;A20870227;104;Schneidemaschine Hebelschneider
+38395;A16249780;145;Mikrotiterplattenphotometer
+38396;A16418551;142;Mikrotiterplatten Waschgerät
+38434;A16417386;145;Leittechnikschrank Baugruppenträger
+38435;A16417896;145;Automatisierungsschrank Schaltschrank
+38476;A16417986;271;Umreifungsmaschine Verpackungsmaschine
+38477;A16418056;112;Schrumpfanlage Schrumpfpackmaschine
+38479;A16418366;162;Rollenkurvenförderer mit Antrieb
+38481;A16418371;162;Rollenbahn mit 24 V Antrieb
+38483;A16418421;308;Schaltschrank Kühlgerät
+39889;A16553256;145;GIF Küchenlüftungsdecke
+40589;A16693006;293;EX Geschützte Staplerbatterie 24V
+40590;A16693031;296;Drehschieber-Vakuumpumpe 20 mbar
+40628;A16693861;142;Automatische Umreifungsmaschine
+40636;A16860696;162;Hydrolysesystem
+40637;A16860566;308;Fettextraktor zur Rohfettbestimmung
+44240;A17541793;341;140 Stück Kartonage Karton Faltkarton
+44254;A18920611;145;Unterwassermotorpumpe
+44264;A17077467;162;Durchlauferhitzer
+46183;A17309317;142;Klimaprüfschrank Temperaturprüfschrank
+46195;A17309307;142;Klimaprüfschrank Temperaturprüfschrank
+46205;A18920106;145;Temperaturprüfschrank
+46206;A17309242;142;Temperaturprüfschrank Klimaprüfschrank
+46207;A17309052;142;Temperaturprüfschrank Klimaprüfschrank
+46208;A17308977;142;Klimaprüfschrank Temperaturprüfschrank
+46210;A17308932;142;Klimaprüfschrank Temperaturprüfschrank
+46211;A17308852;142;Begehbare Klimaprüfkammer Klimakammer
+46212;A18910781;145;Temperaturschock-Prüfschrank
+46216;A17470968;145;Temperaturschockkammer
+46217;A17308712;142;Klimaprüfschrank Temperaturprüfschrank
+46218;A17308827;142;Klimaprüfschrank Temperaturprüfschrank
+46239;A17471138;145;Mattendruckanlage
+46241;A17471568;145;Rückkühlanlage
+46260;A17471823;162;Stanze Schneidemaschine Presse
+46269;A17471918;142;Labor Färbemaschine Färbeautomat
+46271;A17472003;142;Labor Glasfärbemaschine Färbemaschine
+46283;A17472108;296;Stromschienensystem
+46295;A17566163;142;Korrosionsprüfkammer Salzsprühtest
+46446;A17556183;145;Laborschaumdosierstation
+46478;A17553863;142;Labor Thermosalanlage Foulard-Trockner
+46782;A18080471;296;Laserabsaugung Laser Rauch Absaugung
+46984;A17925686;145;Korpuspresse Rahmenpresse Fügepresse
+46988;A17925971;155;Korpuskippstation
+46989;A17926081;145;Rückwandsäge
+47008;A17926481;145;Hebe und Ausrichtvorrichtung
+47009;A17927026;162;Gurtförderer
+47011;A17927131;296;Strahlerbohrmaschine Bohrvorrichtung
+47024;A17937001;145;Pneumatische Hebebühne
+47032;A18081031;162;Vibrationswendelförderer
+47051;A18922361;145;Schraubenzuführautomat
+47055;A18081546;145;Lagerbühne 654m²
+47073;A18081791;162;Medikamentenkühlschrank
+47109;A18327966;142;Volumenwaage 3D Silence 600
+47164;A18327511;145;Kühlaggregat Verflüssigungssatz
+47236;A18327361;296;Plattformwaage Schwerlastwaage
+47372;A18327236;162;Kühlvitrine Eisvitrine
+47457;A18667441;145;Vakuumfiltrationssystem Frittierölfilter
+47534;A19143661;162;Kühlvitrine
+47588;A21374377;160;Labornetzteil
+47699;A18666976;145;Heißluftdämpfer mit direktem Dampf
+47807;A18658521;142;Aufsitz-Scheuersaugmaschine
+47820;A18919196;142;3-Achs Planenanhänger mit 2x Rampen
+47868;A18657976;162;Palettenregal
+47869;A18658061;155;Paletten-Einfahrregal
+47877;A18658256;63;Paletten-Einfahrregal
+47983;A18657781;0;KFZ Ladecomputer
+48258;A18718811;145;Systembaubühne 374 m²
+48395;A19969870;336;Fassgreifer verzinkt Fassheber
+48551;A19961285;142;Klimaprüfschrank mit Sitzpulsierer
+48917;A18930556;142;Vollautomatische Palettenwickelmaschine
+48999;A18930471;145;Warmlufterzeuger
+49153;A20248625;15;Transformator 10000 VA Trafo 500 V
+49694;A19088466;142;Industrie Mikrowellenofen Trockenofen
+49747;A19120196;142;Präzisions Fräs und Bohrmaschine
+49748;A19120006;142;Universalfräsmaschine Fräsmaschine Fräse
+49783;A19460546;271;Längstraverse
+49810;A19460651;271;Längstraverse
+50391;A19460171;280;Gestell für Kräne Krangestell Kranbahn
+50404;A19460116;296;Bildgebungssystem
+50461;A19514251;271;Hochleistungs-Radial-Ventilator
+50465;A19515176;145;Schraubersteuerung mit Winkelschrauber
+50467;A21708028;202;Umrichter
+50484;A19515416;142;Hochtemperaturofen 1600 °C Laborofen
+50486;A19516316;271;Druckluftgetriebene Kolbenpumpe Pumpe
+50489;A19516406;271;Druckluftgetriebene Kolbenpumpe Pumpe
+50493;A19516576;280;Vakuumofen Laborofen Ofen
+50570;A19532726;296;2,87 Meter Palettenregal mit 2 Ebenen
+50626;A20246910;145;Packplatzsystem Packplatz Rollenbahn
+50627;A19696666;142;Koordinatenmessmaschine Messmaschine
+50721;A19696426;295;Pharmazeutische Prozesspumpe Edelstahl
+50778;A20246800;15;Messtisch Messplatte Hartgestein
+50990;A19786795;320;Palettenregal Traverse 2700 x 140 x 50mm
+51576;A19921130;142;Laserbeschriftungssystem
+51577;A19921665;142;Beschriftungslaser Faserlaser
+51579;A19920990;142;Palettenetikettierer
+51580;A19932960;142;Bewitterungsprüfgerät Prüfkammer
+51615;A19931625;142;Laserquelle 6 kW Kurzpulslaser-Quelle
+51627;A19933830;142;Vollautomatischer Bogendispenser
+51656;A22389562;356;Nooblesse Posten
+51664;A19933315;336;Vollautomatische Umreifungsmaschine
+51665;A19960075;145;Kältemaschine Kühlaggregat
+51666;A19958040;142;Laser-Markiermaschine Beschriftungslaser
+51712;A19960795;142;Trockenofen Wärmeschrank Trockenschrank
+51716;A19934100;142;Lasergerät 1500 W Laser 1064 nm
+51858;A20242245;14;Steuerung
+51928;A20242115;14;Druckluft Kältetrockner Airdryer 12 bar
+51967;A20241345;14;Laborofen Wärmeschrank Ofen 300ºC
+52013;A20241250;145;Spindle Drive Antriebsregler
+52030;A20241185;14;Drehstrommotor 11kW
+52043;A20241155;14;Probenstation Temperierkammer Kammer
+52062;A20240965;14;Kühl Brutschrank Klimaschrank
+52080;A20240940;14;Schleifringkörper
+52086;A19934865;168;2 geschossige Fachbodenanlage 440 m²
+52106;A20240865;14;Bolzenschweißgerät
+52111;A20240560;14;Bolzenschweißgerät
+52117;A20240370;145;Vibrationsprüfsystem Schwingerreger
+52274;A20233560;145;Röntgenfluoreszenzgerät
+52279;A20233480;142;Servoventil-Einheit
+52312;A20232755;13;Genetic Analysis System DNA
+53056;A20100425;145;6 Achs-Roboter Schweißroboter Industrie
+53058;A20112715;145;Kälteanlage 11kW Kältemaschine Kühlgerät
+53323;A20112770;142;YAG-Festkörperlaser Laser Lasersystem
+53512;A20369285;30;Speiseausgabe Brainmarie Wasserbad
+53585;A20232290;13;Trockenlufttrockner Granulattrockner
+53603;A20370035;145;Korbtransportspülmaschine Spülmaschine
+53848;A20232040;13;Brutschrank Inkubator Wärmeschrank Labor
+53850;A20231955;142;Lasersteuerung Markiersystem
+53854;A20231855;145;Granulattrockner Kunststoff Trockner
+54060;A20370895;30;Röhrenstapler beheizt Geschirrspender
+54091;A20370970;142;Laser Scannerbox + Längenmessgerät
+54099;A20369555;145;Herd Backofen Wasserbad
+54124;A20372210;35;Palettenregal 19 Meter Höhe 3m 3 Ebenen
+54310;A20460910;145;Griddleplatte Tischgerät 8kW Grillplatte
+54451;A20461010;42;HF-Ladegerät Stapler Batterieladegerät
+54688;A20461195;42;Kühltisch 0 °C bis 10 °C Kühltheke
+54721;A20461970;142;Laborofen für Biegeversuche Brennofen
+54762;A20501300;126;Griddleplatte 120-280 °C Bratplatte
+54874;A20521560;145;Mobiler Warmlufterzeuger 135kW Heizgerät
+55043;A20615200;63;Bandbunker Bunkerförderband Förderband
+55191;A20616280;63;Roboter-Podest Robotersockel Höhe 700 mm
+55267;A20616375;63;Förderstrecke 6600 mm Transfersystem
+55846;A20718722;76;Zuführgerät Wendelförderer Bandbunker
+55850;A20718852;76;Zuführgerät Wendelförderer Bandbunker
+56183;A20719192;142;CNC-Drehmaschine Drehbank Drehautomat
+56380;A20729717;142;Industrielle Sprühwaschanlage Drehtisch
+56450;A20730322;162;Showroom Küche Kochinsel Hochschränke
+56482;A20719157;76;Kaltwassersatz luftgekühlt 3,25 kW
+56875;A20781242;84;Warmlufterzeuger Hallenheizung 25,53 kW
+56876;A20781287;84;Warmlufterzeuger Hallenheizung 14,59 kW
+56993;A20781352;84;Warmlufterzeuger Hallenheizung 24,63 kW
+57011;A20781872;84;Palettenaufsatzrahmen 3-fach stapelbar
+57033;A20781912;112;Palettenaufsatzrahmen 4-fach stapelbar
+57105;A21708173;202;Industrieroboter
+57176;A20853537;100;Palettenregal 5,6 m Hoch 4 Ebenen
+57372;A20853087;147;Automatisches Vertikales Lagersystem 06
+58561;A20993922;146;Medicalcontainer Laborcontainer Klinik
+58578;A20995097;142;Elektro 3Rad Stapler Gegengewichtstapler
+58624;A20995492;145;36 m Palettenregal 6 m hoch 6 Ebenen
+58633;A20995577;145;25 m Palettenregal 6 m hoch 7 Ebenen
+58638;A20995782;145;25 m Palettenregal 6 m hoch 6 Ebenen
+58641;A20996117;119;25 m Palettenregal 6 m hoch 5 Ebenen
+58643;A20996367;145;21,6 m Palettenregal 6 m hoch 7 Ebenen
+58645;A20996422;119;21,6 m Palettenregal 6 m hoch 6 Ebenen
+58646;A20996472;119;21,6 m Palettenregal 6 m hoch 4 Ebenen
+58685;A21034042;145;36 m Palettenregal 6 m hoch 4 Ebenen
+58692;A21080957;145;32,4 m Palettenregal 6 m hoch 4 Ebenen
+58699;A21078477;125;28,8 m Palettenregal 6 m hoch 4 Ebenen
+58701;A21081227;125;25,2 m Palettenregal 6 m hoch 4 Ebenen
+58713;A21081407;125;21,6 m Palettenregal 6 m hoch 4 Ebenen
+58714;A21081457;125;18 m Palettenregal 6 m hoch 4 Ebenen
+58718;A21081532;125;14,4 m Palettenregal 6 m hoch 4 Ebenen
+58785;A21081617;125;7,2 m Palettenregal 6 m hoch 4 Ebenen
+58803;A21081692;125;3,6 m Palettenregal 6 m hoch 4 Ebenen
+59318;A22113923;261;Beistellmühle Schneidmühle Zerkleinerer
+59634;A21180972;271;6-Spindel Drehautomat
+59942;A21249867;145;Dampfdesinfektionssystem
+59954;A21249907;145;Tischautoklav Zahnautoklav Autoklav
+59996;A21256202;146;Tischautoklav Zahnautoklav Bj 2021
+60015;A7167696;141;
+60066;A21257072;146;Tischautoklav Autoklav 27 Liter
+60075;A21257257;146;Inverses Lichtmikroskop Mikroskop
+60146;A21257482;146;Seitenkanalgebläse mit Frequenzumrichter
+60154;A21257657;146;Filterabzug Laborabzug 200 m³/h
+60172;A21265497;147;Doppeltwirkende Hochdruckpumpe
+60188;A21258657;146;Dental Autoklav 4 in 1 Lösung
+60189;A21259097;146;Autoklav 1038 Chargen Sterilisator 22,6L
+60190;A21258757;146;Reinigungs- und Desinfektionsgerät
+60191;A21259007;146;Laborgefrierschrank Generalüberholt
+60192;A21258407;146;Tischautoklav Zahnautoklav 23 Liter
+60193;A21257987;146;Tischautoklav Autoklav 27 Liter
+60194;A21265802;147;DNA-Extraktionsgerät
+60195;A21265947;147;Nukleinsäure-Extraktionssystem
+60196;A21266027;147;Tischroboter-Workstation
+60197;A21266077;147;DNA-Extraktionsgerät
+60198;A21266162;147;Reagenzien-Produktionseinheit
+60199;A21258592;146;Flash-Chromatographiesystem
+60274;A21268102;184;Automatischer vertikaler Lagerlift 49 T
+60275;A21276747;184;Automatischer vertikaler Lagerlift T 44
+60276;A21276207;184;Automatischer vertikaler Lagerlift 47 T
+60277;A21276277;184;Automatischer vertikaler Lagerlift 43 T
+60278;A21276752;168;Automatischer vertikaler Lagerlift 46 T
+60279;A21276767;184;Automatischer vertikaler Lagerlift 44 T
+60580;A21340527;156;Raucherunterstand Raucherkabine
+60821;A21340202;251;BAC S15E 1018-10 LE offener Kühlturm
+60985;A21543443;176;11m Palettenregal Höhe 10,3 M 7 Ebenen
+60993;A21543478;176;18,50m Palettenregal Höhe 10,3M 7 Ebenen
+60996;A21543528;176;25,80m Palettenregal Höhe 10,3M 7 Ebenen
+61511;A21875928;225;Biaxialmischer Farbenmischer
+61900;A21543563;176;Palettenregal 3,6m Grundfeld Höhe 10,3m
+61912;A21543623;176;7,4m Palettenregal Höhe 10,3m 7 Ebenen
+61914;A21543653;176;Palettenregal 3,6 m Anbaufeld Höhe 10,3m
+62922;A21876233;225;Batterieladestation 3-fach
+62923;A21876298;225;Batterieladestation 2-fach
+62924;A21876508;225;Batterieladestation Stapler Ladestation
+62925;A21876523;225;Batterieladestation 4-fach
+63749;A21877088;225;Temperaturprüfkammer -40 bis +100°C
+64445;A21877468;225;Mobiler Medikamentenwagen
+64551;A22098508;259;Temperierkammer -40°C/+160°C
+65932;A22098293;259;NC-Fügemodul mit Doppelstation/Spindel
+66236;A22099158;259;6-Achs-Industrieroboter + KR C4
+66263;A22104688;260;6-Achs-Roboter + KR C2 + Teachpanel
+66267;A22104803;260;Universalfräsmaschine Werkzeugfräse
+66488;A22099013;259;Universal-Fräsmaschine CNC Fräsmaschine
+66510;A22099098;259;CNC Universal-Fräs und Bohrmaschine
+67797;A22291727;287;Fahrerloses Transportfahrzeug FTF / AGV
+68476;A22283172;301;Beschichtungsanlage + Roboter
+68493;A22291512;287;Entgratmaschine Rohrwaschanlage Filter
+68575;A22295667;288;Fahrerloses Transportfahrzeug FTF / AGV
+69212;A22488337;314;Schulte Palettenregal Grundfeld
+69667;A22387732;301;Kleinlast- und Mikrohärteprüfgerät
+69678;A22387762;301;Industrie-Absauganlage Spänesauger
+69684;A22387807;301;Turret Doppelkopf-Reihenbohrmaschine
+69702;A22388082;301;Radialbohrmaschine
+69726;A22388167;301;Präzisions-Flachschleifmaschine
+69738;A22388472;301;Tisch-Härteprüfgerät Härteprüfmaschine
+69754;A22388627;301;Montagetisch Fügestation
+69788;A22389292;301;Pneumohydraulische Presse 40 kN
+69790;A22388862;301;Schnellradialbohrmaschine Bohrmaschine
+69797;A22388907;301;Schnellradialbohrmaschine Bohrmaschine
+69825;A22396707;302;Präzisions-Flachschleifmaschine
+70164;A22519962;318;6-Flammen-Erdgasherd
+70193;A22488397;314;Paternoster Umlaufregal 42 Tablare Lager
+70317;A22488477;314;22m Palettenregal Höhe 6,20m 4 Ebene
+70365;A22488682;314;25m SLP Palettenregal 7,15m Hoch 6 Ebene
+70375;A22488757;314;Kälteanlage 180 kW Kühlanlage
+70386;A22488802;324;Paternoster 42 Tablare Höhe 4,9m
+70400;A22488897;314;Abluftreinigungsanlage Nachverbrennung
+70409;A22489167;314;Lüftungs- und Klimaanlage 31.000 m³/h
+70445;A22498002;319;Hallenkran 500kg 4x125kg Deckenkran
+70464;A22498067;319;Hallenkran 500 kg Werkstattkran
+70476;A22512197;317;System-Lochrastertisch
+70480;A22519867;318;2-Stationen Schweißroboterzelle
+70703;A22619282;336;Multifunktionstester Bj. 2025
+70735;A22619497;336;Edelstahlschrank 3-türig
+71063;A22619957;336;Drucklufttrockner Adsorptionstrockner
+71076;A22620232;336;Lasttraverse Krantraverse 9.000 kg
+71157;A22620287;336;Ölfrei verdichtender Scrollkompressor
+71233;A22620037;336;Drucklufttrockner Adsorptionstrockner
+71236;A22620162;336;Drucklufttrockner Adsorptionstrockner
+71581;A22641922;339;Rohrtrennanlage Rohrtrennzelle Automatik
+71582;A22734157;352;Dornbiegemaschine +Montagestation
+71583;A22734202;355;Rohrbiegemaschine
+71584;A22734417;355;Kontur- und Wellenmesssystem
+71585;A22734482;355;Koordinatenmessmaschine
+71587;A22734537;355;Koordinatenmessarm
+71588;A22734612;355;Punktschweissmaschine
+71604;A22734672;355;3-Kammer-Spritzreinigungsanlage
+71975;A22734692;355;Lagerbühne
+72001;A22734877;355;Lagerlift
+72048;A22747722;355;Teppichpaternoster Umlaufregal 4000mm
+72055;A22747782;355;Teppichpaternoster Umlaufregal 5000mm
+72553;A22789235;362;Vertikal Standbeutel Vakuummaschine
+72607;A22789270;362;Winkelschweißmaschine mit Schrumpftunnel
+72635;A22789305;362;Pökelinjektor Meat Master 26
