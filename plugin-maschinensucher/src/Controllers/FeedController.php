@@ -89,6 +89,72 @@ class FeedController extends Controller
     }
 
     /**
+     * Baut die Datei sofort, auf Zuruf.
+     *
+     * Sonst baut sie nur der Stundenzyklus. Zum Einrichten ist das zu traege:
+     * Man aendert eine Preisliste und wartet eine Stunde, um zu sehen, ob es
+     * gegriffen hat. Diese Adresse macht denselben Lauf und schreibt das
+     * Ergebnis als Klartext hin — samt der Gruende, warum ein Artikel
+     * zurueckblieb.
+     *
+     * Sie ist mit demselben Token geschuetzt wie die Abholadresse und gehoert
+     * NICHT ins Maschinensucher-Konto. Maschinensucher holt weiterhin nur
+     * /maschinensucher/feed ab.
+     */
+    public function bauen(
+        Request $request,
+        Response $response,
+        Einstellungen $einstellungen,
+        Feedbauer $bauer
+    ) {
+        if (!$einstellungen->eingerichtet()) {
+            return $response->make('Maschinensucher ist nicht eingerichtet (Token fehlt).', 503);
+        }
+
+        if (!$this->tokenStimmt($request, $einstellungen->token())) {
+            return $response->make('Zugang verweigert.', 401);
+        }
+
+        $bericht = $bauer->bauen();
+
+        if (empty($bericht['ok'])) {
+            $text = "NICHT GEBAUT\n\n"
+                . (isset($bericht['meldung']) ? $bericht['meldung'] : 'Unbekannter Grund')
+                . "\n\nDie zuletzt gute Datei liegt unveraendert weiter bereit.\n";
+            return $response->make($text, 200, array('Content-Type' => 'text/plain; charset=utf-8'));
+        }
+
+        $zeilen = array();
+        $zeilen[] = 'GEBAUT';
+        $zeilen[] = '';
+        $zeilen[] = 'Varianten gelesen:   ' . $bericht['gelesen'];
+        $zeilen[] = 'davon markiert:      ' . $bericht['markiert'];
+        $zeilen[] = 'Inserate in Datei:   ' . $bericht['inserate'];
+        $zeilen[] = 'zurueckgehalten:     ' . $bericht['uebersprungen'];
+        $zeilen[] = 'Spalten:             ' . $bericht['spalten'] . ' (' . $bericht['kopfzeile'] . ')';
+        $zeilen[] = 'Groesse:             ' . $bericht['bytes'] . ' Bytes';
+        $zeilen[] = 'Dauer:               ' . $bericht['dauer'] . ' s';
+
+        $gruende = isset($bericht['gruende']) ? $bericht['gruende'] : array();
+        if (count($gruende) > 0) {
+            $zeilen[] = '';
+            $zeilen[] = 'Zurueckgehalten (die ersten ' . count($gruende) . '):';
+            foreach ($gruende as $eintrag) {
+                $zeilen[] = '  ' . $eintrag['nummer'] . ' — ' . $eintrag['grund'];
+            }
+        }
+
+        $zeilen[] = '';
+        $zeilen[] = 'Die Datei liegt jetzt unter /maschinensucher/feed bereit.';
+        $zeilen[] = '';
+
+        return $response->make(implode("\n", $zeilen), 200, array(
+            'Content-Type' => 'text/plain; charset=utf-8',
+            'Cache-Control' => 'no-store, max-age=0',
+        ));
+    }
+
+    /**
      * Vergleicht die Token, ohne über die Laufzeit zu verraten, wie weit sie
      * übereinstimmen.
      */

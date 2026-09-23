@@ -192,6 +192,11 @@ class Feedbauer
             $this->getLogger(__METHOD__)->warning('MaschinensucherMarkt::log.uebersprungen', array_slice($zurueck, 0, 50));
         }
 
+        // Fuer den Testaufruf von Hand: die Gruende mitgeben, nicht nur die
+        // Zahl. Wer die Datei prueft, will wissen, welcher Artikel warum
+        // fehlt — im Log nachschlagen zu muessen kostet jedes Mal Zeit.
+        $bericht['gruende'] = array_slice($zurueck, 0, 50);
+
         return $bericht;
     }
 
