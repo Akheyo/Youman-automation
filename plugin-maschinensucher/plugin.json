@@ -2,12 +2,12 @@
   "name": "MaschinensucherMarkt",
   "namespace": "MaschinensucherMarkt",
   "type": "plugin",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "license": "proprietary",
-  "price": 0.00,
+  "price": 0.0,
   "author": "Komplett Konzept Verwertungs GmbH",
   "email": "maschinensucher@komplett-konzept.de",
-  "description": "Stellt Artikel mit der Markierung \"Maschinensucher\" automatisch auf den Marktplatz Maschinensucher.de. Ein Zeitplan baut die Importdatei aus Artikeldaten, Markierung und Bestand; Maschinensucher holt sie unter einer Adresse mit Token ab.",
+  "description": "Haelt die Inserate auf Maschinensucher.de mit dem Plenty-Artikelstamm in Deckung. Artikel mit der Markierung \"Maschinensucher\" werden ueber die Echtzeit-API angelegt und aktuell gehalten; faellt der Bestand weg, wird das Inserat pausiert statt geloescht, sodass Laufzeit, Aufrufe und Anfragen erhalten bleiben. Ein Auftrag loest den Abgleich sofort aus, ein Zeitplan faengt alles Uebrige auf.",
   "shortDescription": {
     "de": "Markierte Artikel automatisch auf Maschinensucher.de.",
     "en": "Puts flagged items on the Machineseeker marketplace."
@@ -16,8 +16,16 @@
     "de": "Maschinensucher-Marktplatz",
     "en": "Machineseeker marketplace"
   },
-  "categories": ["3880"],
-  "keywords": ["maschinensucher", "machineseeker", "marktplatz", "export", "inserate"],
+  "categories": [
+    "3880"
+  ],
+  "keywords": [
+    "maschinensucher",
+    "machineseeker",
+    "marktplatz",
+    "export",
+    "inserate"
+  ],
   "serviceProvider": "MaschinensucherMarkt\\Providers\\MaschinensucherServiceProvider",
   "runOnBuild": [
     "MaschinensucherMarkt\\Migrations\\TabellenAnlegen"

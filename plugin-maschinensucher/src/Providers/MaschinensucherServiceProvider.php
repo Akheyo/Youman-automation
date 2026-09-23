@@ -2,49 +2,47 @@
 
 namespace MaschinensucherMarkt\Providers;
 
+use MaschinensucherMarkt\Crons\Abgleichen;
 use MaschinensucherMarkt\Crons\BestandLesen;
-use MaschinensucherMarkt\Crons\DateiBauen;
+use MaschinensucherMarkt\Procedures\SofortAbgleich;
 use Plenty\Modules\Cron\Services\CronContainer;
+use Plenty\Modules\EventProcedures\Services\Entries\ProcedureEntry;
+use Plenty\Modules\EventProcedures\Services\EventProceduresService;
 use Plenty\Plugin\ServiceProvider;
 
 /**
  * Der Einstiegspunkt des Plugins.
  *
- * Zwei Dinge werden angemeldet: der Zeitplan, der die Importdatei baut, und
- * die Route, über die Maschinensucher sie abholt. Mehr braucht die Strecke
- * nicht — die Markierung am Artikel entscheidet, was drinsteht.
+ * Drei Ausloeser, absichtlich unterschiedlich schnell:
+ *
+ *   Ereignisaktion   sofort, wenn ein Auftrag den Bestand senkt
+ *   Abgleich         alle 15 Minuten ueber den ganzen Stamm
+ *   Bestandsaufnahme alle 5 Minuten lesend, haelt die Zuordnung aktuell
+ *
+ * Der schnelle Weg allein genuegt nicht: Nicht jede Bestandsaenderung
+ * haengt an einem Auftrag. Der langsame allein genuegt auch nicht: Eine
+ * verkaufte Maschine soll nicht noch eine Viertelstunde am Markt stehen.
  */
 class MaschinensucherServiceProvider extends ServiceProvider
 {
-    public function register()
+    public function boot(CronContainer $cron, EventProceduresService $ereignisse)
     {
-        $this->getApplication()->register(MaschinensucherRouteServiceProvider::class);
-    }
+        $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, Abgleichen::class);
 
-    /**
-     * @param CronContainer $cron
-     */
-    public function boot(CronContainer $cron)
-    {
-        // Alle 15 Minuten. Der Lauf liest den ganzen Artikelstamm, ist also
-        // nicht billig — aber die Datei muss in dem Moment stimmen, in dem
-        // Maschinensucher sie abholt, und wann das ist, bestimmen nicht wir.
-        // Eine Stunde alte Bestandszahlen hiessen: bis zu eine Stunde lang
-        // steht etwas zum Verkauf, das es nicht mehr gibt.
-        //
-        // Schneller geht mit EVERY_FIVE_MINUTES, belastet Plenty aber
-        // entsprechend. Langsamer und schonender mit HOURLY.
-        $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, DateiBauen::class);
-
-        // Alle fuenf Minuten nachsehen, was drueben steht. Das haelt die
-        // Zuordnung aktuell, auch wenn jemand ein Inserat von Hand anlegt
-        // oder loescht, und es ist zugleich der einzige Ausloeser, der ohne
-        // erreichbare PHP-Route auskommt: Dieser Mandant faehrt den neuen
-        // PlentyONE Shop, der bedient keine Plugin-Routen.
-        //
-        // Fuenf Minuten sind fuer ein paar hundert Inserate guenstig - es
-        // sind sieben Aufrufe je Lauf - und machen die Strecke ueberhaupt
-        // erst beobachtbar. Wer sparen will, stellt auf HOURLY.
+        // Lesend und guenstig: sieben Aufrufe je Lauf. Haelt die Zuordnung
+        // aktuell, auch wenn jemand drueben ein Inserat von Hand anlegt
+        // oder loescht.
         $cron->add(CronContainer::EVERY_FIVE_MINUTES, BestandLesen::class);
+
+        // Der Echtzeitweg. Einzurichten unter Auftraege, Ereignisaktionen.
+        $ereignisse->registerProcedure(
+            'MaschinensucherMarkt',
+            ProcedureEntry::EVENT_TYPE_ORDER,
+            array(
+                'de' => 'Maschinensucher: Inserate dieses Auftrags abgleichen',
+                'en' => 'Machineseeker: sync the listings of this order',
+            ),
+            SofortAbgleich::class . '@run'
+        );
     }
 }
