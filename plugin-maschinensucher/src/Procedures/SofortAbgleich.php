@@ -59,7 +59,7 @@ class SofortAbgleich
             // auf den Zeitplan zu warten, wird die Bestandsaufnahme hier
             // gleich mit erledigt — so ist ein einziger Klick ein
             // vollstaendiger Test.
-            if ($zuordnung->anzahl() === 0) {
+            if (!$zuordnung->bestandGelesen()) {
                 $aufnahme->lauf();
             }
 

@@ -2,6 +2,7 @@
 
 namespace MaschinensucherMarkt\Services;
 
+use MaschinensucherMarkt\Models\Merker;
 use MaschinensucherMarkt\Models\Verknuepfung;
 use Plenty\Modules\Plugin\DataBase\Contracts\DataBase;
 
@@ -99,5 +100,42 @@ class Zuordnung
     public function anzahl()
     {
         return count($this->alle());
+    }
+
+    /**
+     * Ist die Bestandsaufnahme schon einmal vollstaendig durchgelaufen?
+     *
+     * Das ist die Frage, an der das erste Schreiben haengt — nicht, ob die
+     * Tabelle Zeilen hat. Bricht ein Lauf beim Schreiben der Zuordnungen ab,
+     * etwa weil eine Zeitgrenze greift, bleibt eine halbe Tabelle zurueck.
+     * Wer sie fuer vollstaendig haelt, sieht in der fehlenden Haelfte lauter
+     * unbekannte Inserate und legt sie ein zweites Mal an.
+     */
+    public function bestandGelesen()
+    {
+        return $this->zeitpunkt('bestandGelesen') > 0;
+    }
+
+    /**
+     * Erst aufrufen, NACHDEM alle Zuordnungen geschrieben sind.
+     */
+    public function bestandGelesenMerken()
+    {
+        $this->zeitpunktMerken('bestandGelesen', time());
+    }
+
+    private function zeitpunkt($name)
+    {
+        $zeilen = $this->db->query(Merker::class)->where('name', '=', (string) $name)->get();
+        return is_array($zeilen) && count($zeilen) > 0 ? (int) $zeilen[0]->zeit : 0;
+    }
+
+    private function zeitpunktMerken($name, $zeit)
+    {
+        $zeilen = $this->db->query(Merker::class)->where('name', '=', (string) $name)->get();
+        $merker = is_array($zeilen) && count($zeilen) > 0 ? $zeilen[0] : pluginApp(Merker::class);
+        $merker->name = (string) $name;
+        $merker->zeit = (int) $zeit;
+        $this->db->save($merker);
     }
 }

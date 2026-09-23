@@ -83,6 +83,11 @@ class Bestandsaufnahme
         $bilanz = Bestandsabgleich::bilanz($gelesen);
         $geschrieben = $this->fortschreiben($gelesen);
 
+        // Erst jetzt, mit allen Zuordnungen in der Tabelle, darf der Abgleich
+        // schreiben. Bricht der Lauf vorher ab, fehlt dieser Merker, und der
+        // naechste Lauf faengt die Aufnahme von vorn an.
+        $this->zuordnung->bestandGelesenMerken();
+
         $bericht = array(
             'ok'              => true,
             'gelesen'         => $bilanz['gesamt'],
@@ -127,9 +132,22 @@ class Bestandsaufnahme
 
         foreach ($inserate as $inserat) {
             $inseratId = (int) $inserat['inseratId'];
+            $artikelId = (int) $inserat['artikelId'];
+            $zustand = $this->zustand($inserat['zustand']);
 
             if (isset($bekannt[$inseratId])) {
                 $zeile = $bekannt[$inseratId];
+
+                // Nur schreiben, was sich geaendert hat. Sonst speichert jeder
+                // Lauf alle Zeilen neu — bei sechshundert Inseraten der
+                // teuerste Teil des ganzen Laufs, fuer nichts.
+                $unveraendert = (string) $zeile->internalId === (string) $inserat['internalId']
+                    && (int) $zeile->kategorieId === (int) $inserat['kategorieId']
+                    && (string) $zeile->zustand === $zustand
+                    && ($artikelId <= 0 || (int) $zeile->artikelId === $artikelId);
+                if ($unveraendert) {
+                    continue;
+                }
                 $aktualisiert++;
             } else {
                 $zeile = $this->zuordnung->neu();
@@ -139,13 +157,12 @@ class Bestandsaufnahme
 
             $zeile->internalId = (string) $inserat['internalId'];
             $zeile->kategorieId = (int) $inserat['kategorieId'];
-            $zeile->zustand = $this->zustand($inserat['zustand']);
+            $zeile->zustand = $zustand;
             $zeile->gesehenAm = $jetzt;
 
             // Die Artikel-ID nur setzen, wenn sie ableitbar war. Eine einmal
             // gefundene Zuordnung durch eine 0 zu ersetzen waere ein
             // Rueckschritt — etwa wenn jemand drueben die Referenz loescht.
-            $artikelId = (int) $inserat['artikelId'];
             if ($artikelId > 0) {
                 $zeile->artikelId = $artikelId;
             }
