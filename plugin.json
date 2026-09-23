@@ -1,0 +1,28 @@
+{
+  "name": "MaschinensucherMarkt",
+  "namespace": "MaschinensucherMarkt",
+  "type": "plugin",
+  "version": "1.0.0",
+  "license": "proprietary",
+  "price": 0.00,
+  "author": "Komplett Konzept Verwertungs GmbH",
+  "email": "maschinensucher@komplett-konzept.de",
+  "description": "Stellt Artikel mit der Markierung \"Maschinensucher\" automatisch auf den Marktplatz Maschinensucher.de. Ein Zeitplan baut die Importdatei aus Artikeldaten, Markierung und Bestand; Maschinensucher holt sie unter einer Adresse mit Token ab.",
+  "shortDescription": {
+    "de": "Markierte Artikel automatisch auf Maschinensucher.de.",
+    "en": "Puts flagged items on the Machineseeker marketplace."
+  },
+  "marketplaceName": {
+    "de": "Maschinensucher-Marktplatz",
+    "en": "Machineseeker marketplace"
+  },
+  "categories": ["3880"],
+  "keywords": ["maschinensucher", "machineseeker", "marktplatz", "export", "inserate"],
+  "serviceProvider": "MaschinensucherMarkt\\Providers\\MaschinensucherServiceProvider",
+  "runOnBuild": [
+    "MaschinensucherMarkt\\Migrations\\TabellenAnlegen"
+  ],
+  "platform": {
+    "php": ">=7.3"
+  }
+}
