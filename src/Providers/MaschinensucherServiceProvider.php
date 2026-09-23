@@ -33,6 +33,23 @@ class MaschinensucherServiceProvider extends ServiceProvider
 {
     use Loggable;
 
+    /**
+     * Leer, aber NICHT entbehrlich.
+     *
+     * Plentys ServiceProvider baut auf Laravel auf, und dort verlangt die
+     * Basisklasse diese Methode. Fehlt sie, laesst sich der Provider zur
+     * Laufzeit nicht erzeugen — boot() wird nie aufgerufen, kein Zeitplan
+     * angemeldet, und das Protokoll bleibt vollkommen still. Der Build
+     * merkt davon nichts: Er prueft Syntax und erlaubte Aufrufe, nicht, ob
+     * sich eine Klasse erzeugen laesst.
+     *
+     * Genau so ist es am 23.09. passiert, als mit den Routen auch diese
+     * Methode verschwand.
+     */
+    public function register()
+    {
+    }
+
     public function boot(CronContainer $cron)
     {
         $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, Abgleichen::class);
