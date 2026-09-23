@@ -118,19 +118,61 @@ nicht offen.
 Die Fotos brauchen keinen eigenen Weg: Plenty liefert öffentliche
 Bild-Adressen, die unverändert ins Inserat gehen.
 
-## Einrichten
+## In PlentyONE einspielen
 
-1. Plugin in ein Plugin-Set laden (plentyDevTool oder ZIP-Upload), Plugin-Set
-   bauen und bereitstellen. Der Build legt die beiden Plugin-Tabellen an.
-2. **Konfiguration** ausfüllen: Token (`openssl rand -hex 24`), Markierungs-ID,
+### Warum es einen eigenen Zweig gibt
+
+Plenty bekommt beim Einrichten eine **Repository-Adresse** und einen
+**Zweignamen** — und verlangt, dass in der Wurzel dieses Zweigs eine gültige
+`plugin.json` liegt („The branch must contain a valid plugin JSON"). In diesem
+Repo liegt das Plugin aber in einem Unterordner neben den anderen Projekten.
+
+Deshalb gibt es [`deploy-zweig.sh`](deploy-zweig.sh): Es schneidet diesen
+Ordner als eigenen Zweig heraus — Historie erhalten, `plugin.json` an der
+Wurzel — und lässt vorher die Prüfungen laufen. Ein zweites Repository braucht
+es dafür nicht.
+
+```bash
+./plugin-maschinensucher/deploy-zweig.sh
+git push -f origin plugin/maschinensucher
+```
+
+Nach jeder Änderung am Plugin: erneut ausführen, pushen, und in Plenty im
+Git-Bereich des Plugins neu bereitstellen.
+
+### Schritt für Schritt
+
+1. **Zweig bauen und hochladen** (siehe oben).
+2. In PlentyONE **Plugins » Plugin-Set** öffnen, ein Plugin-Set anlegen oder
+   auswählen, dann **Add plugin → Git → +**.
+3. Im Dialog *Add new repository*:
+   - **Repository**: die HTTPS-Adresse dieses Repositorys.
+   - **Branch**: `plugin/maschinensucher` (nicht `master` stehen lassen — dort
+     liegt keine `plugin.json` an der Wurzel).
+   - Ist das Repository privat, bleibt der Schalter *The repository is public*
+     **aus**, und es braucht GitHub-**Benutzernamen** und ein **Token**
+     (Personal Access Token mit Leserecht auf den Code). Das Token muss
+     während des Bauens gültig sein — ein abgelaufenes ist der häufigste Grund
+     für einen fehlgeschlagenen Build.
+4. Plugin in der linken Leiste auswählen, **installieren**, danach über den
+   Schalter **aktivieren** (nach der Installation ist es zunächst deaktiviert).
+5. **Bereitstellen** (Deploy-Symbol oben). Der Build legt dabei die beiden
+   Plugin-Tabellen an.
+6. **Konfiguration** ausfüllen: Token (`openssl rand -hex 24`), Markierungs-ID,
    Auffangrubrik, Standort und Kontakt, Steuersatz.
-3. Beispieldatei im Maschinensucher-Konto herunterladen, deren **Kopfzeile**
-   in die Konfiguration eintragen.
-4. Einen Artikel markieren und den Cron abwarten (stündlich) — oder das
-   Plugin-Set neu bereitstellen, damit er sofort läuft.
-5. Die Adresse **einmal selbst im Browser aufrufen** und die Datei ansehen,
+7. Beispieldatei im Maschinensucher-Konto herunterladen, deren **Kopfzeile**
+   in die Konfiguration eintragen. Danach erneut bereitstellen.
+8. Einen Artikel markieren und den Cron abwarten (stündlich).
+9. Die Adresse **einmal selbst im Browser aufrufen** und die Datei ansehen,
    **bevor** sie im Maschinensucher-Konto unter *Datenimport → Automatischer
    Import* hinterlegt wird.
+
+> **Wenn Plenty das Repository nicht annimmt:** Für Plugins, die nicht auf der
+> Freigabeliste stehen, kann der Git-Import abgelehnt werden — dann führt der
+> Weg über das Freigabeverfahren oder über das **plentyDevTool**, das den
+> Ordner direkt in den Plugin-Set-Arbeitsbereich lädt
+> (`workspace/<plentyId>/<plugin-set>/MaschinensucherMarkt/`). Der Ordneraufbau
+> hier passt zu beidem.
 
 ## Was geprüft ist — und was nicht
 
