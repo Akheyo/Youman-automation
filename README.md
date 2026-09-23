@@ -178,6 +178,29 @@ also nichts von Hand aktualisiert werden.
 > (`workspace/<plentyId>/<plugin-set>/MaschinensucherMarkt/`). Der Ordneraufbau
 > hier passt zu beidem.
 
+## Der Plugin-Build hat eine Whitelist
+
+PlentyONE prüft beim Bereitstellen jede Datei und lehnt Code ab, der außerhalb
+einer erlaubten Liste liegt. Das ist kein Schönheitsfehler, sondern die
+Sandbox, in der Plugins laufen — und sie erklärt, warum dieser Code an ein
+paar Stellen umständlicher aussieht, als er müsste:
+
+| Nicht erlaubt | Was hier stattdessen steht |
+| --- | --- |
+| `new` und `clone` | die Logik-Klassen haben nur statische Methoden; Objekte entstehen sonst über `pluginApp()` |
+| eine Funktion aus einer Variablen aufrufen (`$hole(...)`) | statische Hilfsmethoden statt Closures |
+| Datenstrom-Funktionen | der Storage-Inhalt wird direkt in eine Zeichenkette gewandelt |
+| der übliche zeitkonstante Stringvergleich | von Hand nachgebaut, ohne vorzeitigen Abbruch |
+| `method_exists` | Aufruf im `try`, Rückfall im `catch` |
+| `mb_strpos`, `mb_strrpos` | `strpos`, `strrpos` (für unsere Zwecke gleichwertig) |
+
+Der Prüfer erkennt Aufrufe am Muster `name(` — **auch in Kommentaren**. Wer
+hier eine verbotene Funktion erwähnen will, lässt die Klammern weg.
+
+Die Fehlermeldung beim Bereitstellen nennt Datei, Zeile und Grund. Sie ist die
+schnellste Rückmeldung, die diese Strecke hat — lieber einmal mehr
+bereitstellen und lesen, als raten.
+
 ## Was geprüft ist — und was nicht
 
 ```bash

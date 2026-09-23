@@ -79,12 +79,12 @@ class Feedbauer
             return $this->abbrechen($stand, 'Nicht eingerichtet: ' . implode(' ', $maengel));
         }
 
-        $plan = new Spaltenplan($this->einstellungen->kopfzeile(), $this->einstellungen->trenner());
-        if (count($plan->fehlendePflicht) > 0) {
+        $plan = Spaltenplan::bauen($this->einstellungen->kopfzeile(), $this->einstellungen->trenner());
+        if (count($plan['fehlendePflicht']) > 0) {
             // Lieber die alte Datei stehen lassen als eine ohne Preisspalte.
             return $this->abbrechen(
                 $stand,
-                'Die hinterlegte Kopfzeile hat keine Spalte für: ' . implode(', ', $plan->fehlendePflicht) . '.'
+                'Die hinterlegte Kopfzeile hat keine Spalte für: ' . implode(', ', $plan['fehlendePflicht']) . '.'
             );
         }
 
@@ -126,13 +126,13 @@ class Feedbauer
                 // allermeisten nichts mit dem Marktplatz zu tun haben.
                 $artikel['bilder'] = $this->bilderZu((int) $artikel['itemId']);
 
-                $inserat = new Inserat($artikel, $umgebung);
-                if ($inserat->vollstaendig()) {
-                    $bereit[] = $inserat->werte;
+                $inserat = Inserat::bauen($artikel, $umgebung);
+                if (Inserat::vollstaendig($inserat)) {
+                    $bereit[] = $inserat['werte'];
                 } else {
                     $zurueck[] = array(
                         'nummer' => $artikel['nummer'] !== '' ? $artikel['nummer'] : $artikel['variationId'],
-                        'grund' => implode(' ', $inserat->maengel),
+                        'grund' => implode(' ', $inserat['maengel']),
                     );
                 }
             }
@@ -150,26 +150,26 @@ class Feedbauer
             $this->speicher->standSpeichern($stand);
         }
 
-        $rueckgang = new Rueckgang(
+        $rueckgang = Rueckgang::pruefe(
             count($bereit),
             $this->speicher->letzteMenge(),
             $this->speicher->freiBis()
         );
-        if ($rueckgang->blockiert) {
+        if ($rueckgang['blockiert']) {
             // Die alte Datei bleibt liegen: Ein fehlgeschlagener Import lässt
             // die Inserate stehen, ein erfolgreicher leerer nimmt sie vom Markt.
-            return $this->abbrechen($stand, $rueckgang->meldung);
+            return $this->abbrechen($stand, $rueckgang['meldung']);
         }
 
         // ---- Schreiben ---------------------------------------------------------
-        $csv = new Csv($this->einstellungen->trenner(), $this->einstellungen->umbrueche());
-        $inhalt = Csv::kodiere($csv->datei($bereit, $plan), $this->einstellungen->kodierung());
+        $text = Csv::datei($bereit, $plan, $this->einstellungen->trenner(), $this->einstellungen->umbrueche());
+        $inhalt = Csv::kodiere($text, $this->einstellungen->kodierung());
         $this->storage->uploadObject(Einstellungen::PLUGIN, self::DATEI, $inhalt);
 
         $stand->gebautAm = time();
         $stand->inserate = count($bereit);
         $stand->uebersprungen = count($zurueck);
-        $stand->meldung = $rueckgang->meldung === null ? '' : 'Freigegebener Rückgang: ' . $rueckgang->meldung;
+        $stand->meldung = $rueckgang['meldung'] === null ? '' : 'Freigegebener Rückgang: ' . $rueckgang['meldung'];
         $this->speicher->standSpeichern($stand);
 
         $bericht = array(
@@ -179,8 +179,8 @@ class Feedbauer
             'inserate' => count($bereit),
             'uebersprungen' => count($zurueck),
             'bytes' => strlen($inhalt),
-            'spalten' => count($plan->spalten),
-            'kopfzeile' => $plan->herkunft,
+            'spalten' => count($plan['spalten']),
+            'kopfzeile' => $plan['herkunft'],
             'dauer' => round(microtime(true) - $beginn, 1),
         );
 
@@ -272,15 +272,22 @@ class Feedbauer
         }
     }
 
-    /** Modelle, Objekte und Arrays kommen je nach Plenty-Version gemischt. */
+    /**
+     * Modelle, Objekte und Arrays kommen je nach Plenty-Version gemischt.
+     *
+     * Ohne method_exists — das lässt der Plugin-Build nicht zu. Stattdessen
+     * wird toArray() versucht; gibt es die Methode nicht, fängt der catch den
+     * Fehler und es bleibt beim einfachen Cast.
+     */
     private function alsArray($wert)
     {
         if (is_array($wert)) {
             return $wert;
         }
-        if (is_object($wert) && method_exists($wert, 'toArray')) {
+        try {
             return (array) $wert->toArray();
+        } catch (\Throwable $e) {
+            return (array) $wert;
         }
-        return (array) $wert;
     }
 }

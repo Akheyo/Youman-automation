@@ -30,37 +30,27 @@ class Rueckgang
     /** Wie lange eine Freigabe gilt — lang genug für eine Nacht, nicht länger. */
     const FREIGABE_STUNDEN = 12;
 
-    /** @var bool */
-    public $blockiert = false;
-
-    /** @var string|null Erklärt in einem Satz, was los ist. */
-    public $meldung = null;
-
-    /** @var bool */
-    public $freigegeben = false;
-
     /**
-     * @param int      $jetzt    Inserate, die jetzt ausgeliefert würden.
-     * @param int|null $zuletzt  Inserate des letzten erfolgreichen Laufs.
-     * @param int|null $freiBis  Unix-Zeit, bis zu der ein Mensch freigegeben hat.
-     * @param int|null $zeit     Jetztzeit — als Parameter, damit prüfbar.
+     * @param int      $jetzt   Inserate, die jetzt ausgeliefert würden.
+     * @param int|null $zuletzt Inserate des letzten erfolgreichen Laufs.
+     * @param int|null $freiBis Unix-Zeit, bis zu der ein Mensch freigegeben hat.
+     * @param int|null $zeit    Jetztzeit — als Parameter, damit prüfbar.
+     * @return array ['blockiert' => bool, 'meldung' => string|null, 'freigegeben' => bool]
      */
-    public function __construct($jetzt, $zuletzt, $freiBis = null, $zeit = null)
+    public static function pruefe($jetzt, $zuletzt, $freiBis = null, $zeit = null)
     {
         $zeit = $zeit === null ? time() : $zeit;
-        $this->freigegeben = $freiBis !== null && (int) $freiBis > $zeit;
+        $freigegeben = $freiBis !== null && (int) $freiBis > $zeit;
 
-        if ($zuletzt === null || $zuletzt < self::SCHWELLE) {
-            return;
-        }
-        if ($jetzt >= $zuletzt * self::ANTEIL) {
-            return;
+        if ($zuletzt === null || $zuletzt < self::SCHWELLE || $jetzt >= $zuletzt * self::ANTEIL) {
+            return array('blockiert' => false, 'meldung' => null, 'freigegeben' => $freigegeben);
         }
 
-        $this->meldung = 'Rückgang: ' . (int) $jetzt . ' statt zuletzt ' . (int) $zuletzt . ' Inserate. '
+        $meldung = 'Rückgang: ' . (int) $jetzt . ' statt zuletzt ' . (int) $zuletzt . ' Inserate. '
             . 'Die neue Datei wird zurückgehalten, damit der Abgleich nicht den Bestand vom Markt nimmt. '
             . 'In der Plugin-Konfiguration freigeben, wenn der Rückgang gewollt ist.';
-        $this->blockiert = !$this->freigegeben;
+
+        return array('blockiert' => !$freigegeben, 'meldung' => $meldung, 'freigegeben' => $freigegeben);
     }
 
     /** Ende einer jetzt erteilten Freigabe. */

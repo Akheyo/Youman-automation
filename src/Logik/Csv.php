@@ -15,42 +15,27 @@ namespace MaschinensucherMarkt\Logik;
  * 2. EIN ZEILENUMBRUCH IM TEXT. Formal erlaubt, solange das Feld in
  *    Anführungszeichen steht — aber ein Importer, der die Datei zuerst in
  *    Zeilen schneidet und erst dann in Spalten, zerlegt daran den halben
- *    Katalog. Wir wissen nicht, wie ihrer arbeitet, und ein zerschossener
- *    Import kostet mehr als ein verlorener Absatz. Umbrüche werden deshalb
- *    standardmäßig zu Leerzeichen.
+ *    Katalog. Umbrüche werden deshalb standardmäßig zu Leerzeichen.
+ *
+ * Nur statische Methoden: siehe Spaltenplan.php — im Plugin-Code ist `new`
+ * nicht erlaubt.
  */
 class Csv
 {
     const ZEILENENDE = "\r\n";
 
-    /** @var string */
-    private $trenner;
-
-    /** @var bool */
-    private $umbrueche;
-
-    /**
-     * @param string $trenner
-     * @param string $umbrueche 'entfernen' (Vorgabe) oder 'behalten'
-     */
-    public function __construct($trenner = ';', $umbrueche = 'entfernen')
-    {
-        $this->trenner = $trenner === '' ? ';' : $trenner;
-        $this->umbrueche = $umbrueche === 'behalten';
-    }
-
     /** Ein einzelnes Feld, nach RFC 4180 gesichert. */
-    public function feld($wert)
+    public static function feld($wert, $trenner = ';', $umbrueche = 'entfernen')
     {
         $text = (string) $wert;
 
-        if (!$this->umbrueche) {
+        if ($umbrueche !== 'behalten') {
             $text = preg_replace('/\s*\r?\n\s*/', ' ', $text);
             $text = preg_replace('/ {2,}/', ' ', $text);
             $text = trim($text);
         }
 
-        $mussQuoten = strpos($text, $this->trenner) !== false
+        $mussQuoten = strpos($text, $trenner) !== false
             || strpos($text, '"') !== false
             || strpos($text, "\n") !== false
             || strpos($text, "\r") !== false;
@@ -59,24 +44,25 @@ class Csv
     }
 
     /** Eine Zeile aus den Werten eines Inserats, in der Reihenfolge des Plans. */
-    public function zeile(array $werte, Spaltenplan $plan)
+    public static function zeile(array $werte, array $spalten, $trenner = ';', $umbrueche = 'entfernen')
     {
         $teile = array();
-        foreach ($plan->spalten as $spalte) {
+        foreach ($spalten as $spalte) {
             $feld = $spalte['feld'];
-            $teile[] = $this->feld($feld !== null && isset($werte[$feld]) ? $werte[$feld] : '');
+            $wert = $feld !== null && isset($werte[$feld]) ? $werte[$feld] : '';
+            $teile[] = self::feld($wert, $trenner, $umbrueche);
         }
-        return implode($this->trenner, $teile);
+        return implode($trenner, $teile);
     }
 
     /** Die Kopfzeile. */
-    public function kopfzeile(Spaltenplan $plan)
+    public static function kopfzeile(array $spalten, $trenner = ';', $umbrueche = 'entfernen')
     {
         $teile = array();
-        foreach ($plan->spalten as $spalte) {
-            $teile[] = $this->feld($spalte['kopf']);
+        foreach ($spalten as $spalte) {
+            $teile[] = self::feld($spalte['kopf'], $trenner, $umbrueche);
         }
-        return implode($this->trenner, $teile);
+        return implode($trenner, $teile);
     }
 
     /**
@@ -84,16 +70,22 @@ class Csv
      *
      * Mit abschließendem Zeilenende: Manche Importer verschlucken sonst den
      * letzten Datensatz, weil sie auf den Umbruch warten.
+     *
+     * @param array $inserate Liste von Wert-Arrays
+     * @param array $plan     Ergebnis von Spaltenplan::bauen()
      */
-    public function datei(array $inserate, Spaltenplan $plan, $mitKopfzeile = true)
+    public static function datei(array $inserate, array $plan, $trenner = ';', $umbrueche = 'entfernen', $mitKopfzeile = true)
     {
+        $spalten = isset($plan['spalten']) ? $plan['spalten'] : array();
         $zeilen = array();
+
         if ($mitKopfzeile) {
-            $zeilen[] = $this->kopfzeile($plan);
+            $zeilen[] = self::kopfzeile($spalten, $trenner, $umbrueche);
         }
         foreach ($inserate as $werte) {
-            $zeilen[] = $this->zeile($werte, $plan);
+            $zeilen[] = self::zeile($werte, $spalten, $trenner, $umbrueche);
         }
+
         return implode(self::ZEILENENDE, $zeilen) . self::ZEILENENDE;
     }
 
