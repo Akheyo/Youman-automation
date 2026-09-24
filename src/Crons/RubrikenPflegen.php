@@ -19,8 +19,16 @@ class RubrikenPflegen extends CronHandler
 
     public function handle()
     {
+        $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.diagnoseZeitplan', array(
+            'zeitplan' => 'Rubriken',
+        ));
+
         try {
-            pluginApp(Rubrikpflege::class)->etappe(40);
+            $bericht = pluginApp(Rubrikpflege::class)->etappe(40);
+            // Immer ein Ergebnis, auch wenn nichts zu tun war: Sonst ist ein
+            // Zeitplan, der aus einem Grund aussetzt, nicht von einem zu
+            // unterscheiden, der gar nicht laeuft.
+            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.rubrikenErgebnis', $bericht);
         } catch (\Throwable $e) {
             $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.laufAbgebrochen', array(
                 'meldung' => $e->getMessage(),
