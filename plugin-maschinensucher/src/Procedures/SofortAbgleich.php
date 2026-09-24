@@ -35,8 +35,8 @@ class SofortAbgleich
 
     public function run(EventProceduresTriggered $ereignis)
     {
-        // DIAGNOSE, voruebergehend als Fehler — siehe Crons\BestandLesen.
-        $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseFlow', array());
+        // Verlaufsmeldung (waehrend der Inbetriebnahme als Fehler geschrieben) — siehe Crons\BestandLesen.
+        $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.diagnoseFlow', array());
 
         try {
             $abgleich = pluginApp(Abgleich::class);
@@ -49,7 +49,7 @@ class SofortAbgleich
             if (count($varianten) === 0) {
                 // Nicht mehr still: Ein Auftrag ohne erkennbare Positionen ist
                 // genau der Fall, der vorher unsichtbar ins Leere lief.
-                $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseOhnePositionen', array(
+                $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.diagnoseOhnePositionen', array(
                     'auftrag' => isset($auftrag->id) ? (int) $auftrag->id : 0,
                 ));
                 return;
@@ -60,7 +60,7 @@ class SofortAbgleich
             // laeuft als gewoehnliche Anfrage, und eine lange Aufnahme darin
             // wurde am 23.09. ohne jede Spur abgebrochen. Den Rest erledigen
             // weitere Ausloesungen oder der Zeitplan.
-            // DIAGNOSE, voruebergehend als Fehler: jeder Schritt einzeln, damit
+            // Verlaufsmeldung (waehrend der Inbetriebnahme als Fehler geschrieben): jeder Schritt einzeln, damit
             // ein Abbruch mittendrin zu verorten ist.
             $this->schritt('Positionen gefunden', array('varianten' => $varianten));
 
@@ -77,9 +77,9 @@ class SofortAbgleich
                 $bericht['bestandsaufnahme'] = $etappe;
             }
 
-            // DIAGNOSE, voruebergehend als Fehler: das Ergebnis, sichtbar
+            // Verlaufsmeldung (waehrend der Inbetriebnahme als Fehler geschrieben): das Ergebnis, sichtbar
             // unabhaengig von der Log-Einstellung.
-            $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseErgebnis', array(
+            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.diagnoseErgebnis', array(
                 'auftrag'   => isset($auftrag->id) ? (int) $auftrag->id : 0,
                 'varianten' => count($varianten),
                 'bericht'   => $bericht,
@@ -97,7 +97,7 @@ class SofortAbgleich
     private function schritt($was, array $daten)
     {
         $daten['schritt'] = (string) $was;
-        $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseSchritt', $daten);
+        $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.diagnoseSchritt', $daten);
     }
 
     /**
