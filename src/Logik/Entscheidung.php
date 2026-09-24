@@ -36,6 +36,8 @@ class Entscheidung
      *   verwaltet           bool   Hat das Plugin dieses Inserat schon einmal
      *                              selbst geschrieben? Nur dann ist eine
      *                              fehlende Markierung eine Anweisung.
+     *   perApi              bool   Hat das Plugin es ueber die API angelegt? Nur
+     *                              dann laesst es sich aendern.
      * @return array ['tat', 'grund']
      */
     public static function treffen(array $lage)
@@ -48,6 +50,7 @@ class Entscheidung
         $bekannt   = $inseratId > 0;
         $aktiv     = $bekannt && $zustand === 'aktiv';
         $verwaltet = $bekannt && !empty($lage['verwaltet']);
+        $perApi    = $bekannt && !empty($lage['perApi']);
 
         // ---- Nicht markiert --------------------------------------------------
         // Eine Ansage ist das NUR bei einem Inserat, das das Plugin selbst
@@ -115,6 +118,15 @@ class Entscheidung
         }
 
         if ($geaendert) {
+            if (!$perApi) {
+                // Die API aendert nur Inserate, die ueber die API angelegt
+                // wurden. Ein Versuch bei einem vorgefundenen Inserat
+                // scheitert — also gar nicht erst versuchen. Pausieren und
+                // Aktivieren gehen weiterhin.
+                return self::tat(self::NICHTS,
+                    'Inhalt nicht aenderbar: Das Inserat wurde nicht ueber die API angelegt. '
+                    . 'Pausieren und Aktivieren gehen weiterhin.');
+            }
             return self::tat(self::AENDERN, 'Die Daten haben sich geaendert.');
         }
 

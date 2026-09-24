@@ -388,12 +388,30 @@ $p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
     'unveraendert: nichts tun - jede Aenderung loest drueben eine Pruefung aus');
 
 $p->gleich(Entscheidung::AENDERN, Entscheidung::treffen($lage(array(
-    'inseratId' => 500, 'zustand' => 'aktiv', 'fingerabdruck' => 'alt')))['tat'],
-    'geaenderte Daten: aendern');
+    'inseratId' => 500, 'zustand' => 'aktiv', 'fingerabdruck' => 'alt', 'perApi' => true)))['tat'],
+    'geaenderte Daten bei einem selbst angelegten Inserat: aendern');
 
+// Die API aendert nur Inserate, die ueber die API angelegt wurden. Alle
+// 594 bestehenden Inserate dieses Kontos sind es nicht.
+$p->gruppe('Vorgefundene Inserate aendern');
+$vorhanden = Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'aktiv', 'fingerabdruck' => '', 'perApi' => false)));
+$p->gleich(Entscheidung::NICHTS, $vorhanden['tat'],
+    'ein vorgefundenes Inserat wird NICHT geaendert - die API wuerde es ablehnen');
+$p->enthaelt('nicht ueber die API angelegt', $vorhanden['grund'], 'und der Grund sagt warum');
+$p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'aktiv', 'fingerabdruck' => 'alt')))['tat'],
+    'ohne Angabe gilt ein Inserat als nicht per API angelegt - im Zweifel nicht aendern');
+$p->gleich(Entscheidung::PAUSIEREN, Entscheidung::treffen($lage(array(
+    'bestand' => 0, 'inseratId' => 500, 'zustand' => 'aktiv', 'perApi' => false)))['tat'],
+    'pausieren geht aber auch bei vorgefundenen - das ist die Hauptsache');
+$p->gleich(Entscheidung::AKTIVIEREN, Entscheidung::treffen($lage(array(
+    'bestand' => 2, 'inseratId' => 500, 'zustand' => 'pausiert', 'perApi' => false)))['tat'],
+    'und wieder aktivieren ebenso');
 $p->gleich(Entscheidung::AENDERN, Entscheidung::treffen($lage(array(
-    'inseratId' => 500, 'zustand' => 'aktiv', 'fingerabdruck' => '')))['tat'],
-    'ein Inserat aus der Zeit vor dem Plugin wird einmal gesendet');
+    'inseratId' => 500, 'zustand' => 'aktiv', 'fingerabdruck' => '', 'perApi' => true)))['tat'],
+    'ein selbst angelegtes ohne bekannten Stand wird einmal gesendet');
+$p->gruppe('Entscheidung, Fortsetzung');
 
 // Der Fall, um den es dem Auftraggeber geht.
 $p->gruppe('Bestand faellt weg');

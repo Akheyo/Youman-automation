@@ -29,7 +29,8 @@
   "serviceProvider": "MaschinensucherMarkt\\Providers\\MaschinensucherServiceProvider",
   "runOnBuild": [
     "MaschinensucherMarkt\\Migrations\\TabellenAnlegen",
-    "MaschinensucherMarkt\\Migrations\\ZuordnungAnlegen"
+    "MaschinensucherMarkt\\Migrations\\ZuordnungAnlegen",
+    "MaschinensucherMarkt\\Migrations\\ZuordnungErweitern"
   ],
   "platform": {
     "php": ">=7.3"

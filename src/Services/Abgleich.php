@@ -220,6 +220,7 @@ class Abgleich
                 // geschrieben hat. Nur fuer solche Inserate ist eine
                 // fehlende Markierung eine Anweisung.
                 'verwaltet'          => $bekannt !== null && (int) $bekannt->gesendetAm > 0,
+                'perApi'             => $bekannt !== null && (int) $bekannt->perApi === 1,
             ));
 
             $tat = $entscheidung['tat'];
@@ -361,6 +362,7 @@ class Abgleich
                 $neu->zustand = Verknuepfung::AKTIV;
                 $neu->fingerabdruck = $neuerAbdruck;
                 $neu->gesendetAm = time();
+                $neu->perApi = 1;
                 $neu->meldung = '';
                 $this->zuordnung->speichern($neu);
                 return array('ok' => true, 'meldung' => '');
