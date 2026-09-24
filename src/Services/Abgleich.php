@@ -7,6 +7,7 @@ use MaschinensucherMarkt\Logik\Antwort;
 use MaschinensucherMarkt\Logik\Artikelabbildung;
 use MaschinensucherMarkt\Logik\Entscheidung;
 use MaschinensucherMarkt\Logik\Inseratdaten;
+use MaschinensucherMarkt\Logik\Rubrik;
 use MaschinensucherMarkt\Logik\Suchdokument;
 use MaschinensucherMarkt\Models\Verknuepfung;
 use Plenty\Plugin\Log\Loggable;
@@ -59,18 +60,23 @@ class Abgleich
     /** @var Bilder */
     private $bilder;
 
+    /** @var Rubrikauswahl */
+    private $rubriken;
+
     public function __construct(
         Artikelsuche $suche,
         Zugang $api,
         Zuordnung $zuordnung,
         Einstellungen $einstellungen,
-        Bilder $bilder
+        Bilder $bilder,
+        Rubrikauswahl $rubriken
     ) {
         $this->suche = $suche;
         $this->api = $api;
         $this->zuordnung = $zuordnung;
         $this->einstellungen = $einstellungen;
         $this->bilder = $bilder;
+        $this->rubriken = $rubriken;
     }
 
     /**
@@ -150,6 +156,8 @@ class Abgleich
         $gefunden = $this->varianten($nurDiese, $flagId, $flagFeld);
         $hersteller = $this->herstellerKarte($gefunden);
         $karte = $this->zuordnung->alleNachArtikel();
+        $rubrikEigenschaft = $this->einstellungen->rubrikEigenschaft();
+        $rubrikMeldungen = array();
 
         $zaehler = array(
             Entscheidung::ANLEGEN => 0, Entscheidung::AENDERN => 0,
@@ -183,6 +191,21 @@ class Abgleich
             // das Suchdokument die Markierung als Feld mitliefert.
             $markiert = $eintrag['markiert'];
 
+            // Die Rubrik aus der Eigenschaft am Artikel. Sie geht dem
+            // bestehenden Inserat vor: Wer sie in Plenty umstellt, will das
+            // Inserat umziehen. Fehlt sie, bleibt es bei der Rubrik des
+            // bestehenden Inserats bzw. bei der Auffangrubrik.
+            $rubrik = array('id' => 0, 'grund' => '');
+            if ($markiert && $rubrikEigenschaft > 0) {
+                $werte = Suchdokument::eigenschaft($eintrag['dokument'], $rubrikEigenschaft);
+                $rubrik = Rubrik::aus($werte, count($werte) > 0 ? $this->rubriken->karte($rubrikEigenschaft) : array());
+                if ($rubrik['id'] > 0) {
+                    $artikel['kategorieId'] = $rubrik['id'];
+                } elseif (count($rubrikMeldungen) < 20) {
+                    $rubrikMeldungen[] = array('artikel' => $artikelId, 'grund' => $rubrik['grund']);
+                }
+            }
+
             if ($erstesDokument === null) {
                 // Fuer die Fehlersuche: wie Plenty das erste Dokument gegliedert
                 // hat, und was daraus geworden ist.
@@ -193,6 +216,7 @@ class Abgleich
                     'preis'    => $artikel['preis'],
                     'bestand'  => $artikel['bestand'],
                     'markiert' => $markiert,
+                    'rubrik'   => $rubrik,
                 );
             }
 
@@ -294,6 +318,11 @@ class Abgleich
             'gebremst'    => $gebremst,
             'dauer'       => round(microtime(true) - $beginn, 1),
         );
+        if (count($rubrikMeldungen) > 0) {
+            // Artikel ohne lesbare Rubrik-Eigenschaft: Sie gehen mit der
+            // Rubrik des bestehenden Inserats bzw. der Auffangrubrik raus.
+            $bericht['ohneRubrik'] = $rubrikMeldungen;
+        }
 
         $this->getLogger(__METHOD__)->info(
             $probelauf ? 'MaschinensucherMarkt::log.probelauf' : 'MaschinensucherMarkt::log.abgeglichen',
