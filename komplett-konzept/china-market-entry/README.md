@@ -33,4 +33,6 @@ Kernsatz: *You provide the products. We provide your route into Germany and Euro
 
 ## Kontakt auf dem Flyer
 
-Mario Parlitz · +49 177 2711126 · parlitz@komplett-konzept.de · www.komplett-konzept.de
+Mario Parlitz · +49 177 2711126 · parlitz@mapatec.de · www.mapatec.de
+
+Canva-Design: https://canva.link/x0e6lq5eriroiw0 (Format A5, 148 × 210 mm)
