@@ -5,10 +5,12 @@ namespace MaschinensucherMarkt\Logik;
 /**
  * Welche Maschinensucher-Rubrik ein Artikel bekommt.
  *
- * Gepflegt wird sie in Plenty als Auswahl-Eigenschaft: Jeder Auswahlwert
- * traegt als DEUTSCHEN Namen den Rubriknamen, den die Mitarbeiter lesen,
- * und als ENGLISCHEN Namen die Rubrik-ID bei Maschinensucher. Massgeblich
- * ist also immer der englische Wert.
+ * Gepflegt wird sie in Plenty als Auswahl-Eigenschaft. Zwei Schreibweisen
+ * fuer einen Auswahlwert sind moeglich:
+ *
+ *   - Name "Steuerungen (102)": die Rubrik-ID in Klammern am Namen.
+ *     Das einfachste — nur ein Feld, und die Mitarbeiter lesen den Namen.
+ *   - Deutscher Name "Steuerungen", englischer Name "102".
  *
  * Das Suchdokument nennt am Artikel mal den Namen, mal die ID des gewaehlten
  * Werts. Deshalb wird in dieser Reihenfolge gedeutet:
@@ -43,12 +45,12 @@ class Rubrik
 
         foreach ($werte as $wert) {
             if (self::istZahl($wert['value']) && isset($auswahl[(int) $wert['value']])) {
-                $namen = $auswahl[(int) $wert['value']];
-                if (isset($namen['en']) && self::istZahl($namen['en'])) {
-                    return self::rubrik((int) $namen['en'], 'Auswahlwert ' . (int) $wert['value']);
+                $id = self::ausNamen($auswahl[(int) $wert['value']]);
+                if ($id > 0) {
+                    return self::rubrik($id, 'Auswahlwert ' . (int) $wert['value']);
                 }
                 return self::keine('Beim Auswahlwert ' . (int) $wert['value']
-                    . ' steht als englischer Name keine Rubriknummer.');
+                    . ' steht keine Rubriknummer - weder in Klammern am Namen noch als englischer Name.');
             }
         }
 
@@ -60,20 +62,21 @@ class Rubrik
             foreach ($auswahl as $auswahlId => $namen) {
                 foreach ($namen as $name) {
                     if (mb_strtolower(trim((string) $name), 'UTF-8') === $gesucht) {
-                        if (isset($namen['en']) && self::istZahl($namen['en'])) {
-                            return self::rubrik((int) $namen['en'], 'Auswahlwert "' . $wert['value'] . '"');
+                        $id = self::ausNamen($namen);
+                        if ($id > 0) {
+                            return self::rubrik($id, 'Auswahlwert "' . $wert['value'] . '"');
                         }
                         return self::keine('Beim Auswahlwert "' . $wert['value']
-                            . '" steht als englischer Name keine Rubriknummer.');
+                            . '" steht keine Rubriknummer - weder in Klammern am Namen noch als englischer Name.');
                     }
                 }
             }
         }
 
         foreach ($werte as $wert) {
-            $treffer = array();
-            if (preg_match('/[\(\[]\s*([0-9]+)\s*[\)\]]\s*$/', $wert['value'], $treffer)) {
-                return self::rubrik((int) $treffer[1], 'Nummer im Namen "' . $wert['value'] . '"');
+            $id = self::inKlammern($wert['value']);
+            if ($id > 0) {
+                return self::rubrik($id, 'Nummer im Namen "' . $wert['value'] . '"');
             }
         }
 
@@ -82,6 +85,34 @@ class Rubrik
             $gesehen[] = ($wert['lang'] !== '' ? $wert['lang'] . ':' : '') . $wert['value'];
         }
         return self::keine('Rubrik-Eigenschaft nicht lesbar (' . implode(', ', $gesehen) . ').');
+    }
+
+    /**
+     * Die Rubrik-ID aus den Namen eines Auswahlwerts: englischer Name als
+     * Zahl, sonst eine Zahl in Klammern am Ende irgendeines Namens.
+     */
+    private static function ausNamen(array $namen)
+    {
+        if (isset($namen['en']) && self::istZahl($namen['en'])) {
+            return (int) $namen['en'];
+        }
+        foreach ($namen as $name) {
+            $id = self::inKlammern($name);
+            if ($id > 0) {
+                return $id;
+            }
+        }
+        return 0;
+    }
+
+    /** "Steuerungen (102)" -> 102, sonst 0. */
+    private static function inKlammern($text)
+    {
+        $treffer = array();
+        if (preg_match('/[\(\[]\s*([0-9]+)\s*[\)\]]\s*$/', trim((string) $text), $treffer)) {
+            return (int) $treffer[1];
+        }
+        return 0;
     }
 
     private static function istZahl($wert)
