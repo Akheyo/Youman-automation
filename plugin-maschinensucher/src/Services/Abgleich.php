@@ -7,9 +7,8 @@ use MaschinensucherMarkt\Logik\Antwort;
 use MaschinensucherMarkt\Logik\Artikelabbildung;
 use MaschinensucherMarkt\Logik\Entscheidung;
 use MaschinensucherMarkt\Logik\Inseratdaten;
+use MaschinensucherMarkt\Logik\Suchdokument;
 use MaschinensucherMarkt\Models\Verknuepfung;
-use Plenty\Modules\Item\Manufacturer\Contracts\ManufacturerRepositoryContract;
-use Plenty\Modules\Item\Variation\Contracts\VariationSearchRepositoryContract;
 use Plenty\Plugin\Log\Loggable;
 
 /**
@@ -45,11 +44,8 @@ class Abgleich
      */
     const SCHREIBGRENZE = 60;
 
-    /** @var VariationSearchRepositoryContract */
-    private $varianten;
-
-    /** @var ManufacturerRepositoryContract */
-    private $hersteller;
+    /** @var Artikelsuche */
+    private $suche;
 
     /** @var Zugang */
     private $api;
@@ -64,15 +60,13 @@ class Abgleich
     private $bilder;
 
     public function __construct(
-        VariationSearchRepositoryContract $varianten,
-        ManufacturerRepositoryContract $hersteller,
+        Artikelsuche $suche,
         Zugang $api,
         Zuordnung $zuordnung,
         Einstellungen $einstellungen,
         Bilder $bilder
     ) {
-        $this->varianten = $varianten;
-        $this->hersteller = $hersteller;
+        $this->suche = $suche;
         $this->api = $api;
         $this->zuordnung = $zuordnung;
         $this->einstellungen = $einstellungen;
@@ -153,7 +147,8 @@ class Abgleich
         $flagFeld  = $this->einstellungen->markierungFeld();
         $preisliste = $this->einstellungen->preislisteId();
         $ersatzliste = $this->einstellungen->preislisteErsatzId();
-        $hersteller = $this->herstellerKarte();
+        $gefunden = $this->varianten($nurDiese, $flagId, $flagFeld);
+        $hersteller = $this->herstellerKarte($gefunden);
         $karte = $this->zuordnung->alleNachArtikel();
 
         $zaehler = array(
@@ -166,7 +161,11 @@ class Abgleich
         $gescheitert = array();
         $gebremst = false;
 
-        foreach ($this->varianten($nurDiese) as $roh) {
+        $erstesDokument = null;
+        $ersterArtikel = null;
+
+        foreach ($gefunden as $eintrag) {
+            $roh = $eintrag['variante'];
             $gelesen++;
 
             $artikel = Artikelabbildung::ausVariante($roh, $hersteller, array(), $preisliste, $ersatzliste);
@@ -179,7 +178,23 @@ class Abgleich
                 $artikel['kategorieId'] = (int) $bekannt->kategorieId;
             }
 
-            $markiert = Artikelabbildung::istMarkiert($roh, $flagId, $flagFeld);
+            // Ob markiert, sagt die Suche selbst: Markierte Artikel kommen aus
+            // einer Suche mit Markierungsfilter. Das haengt nicht davon ab, ob
+            // das Suchdokument die Markierung als Feld mitliefert.
+            $markiert = $eintrag['markiert'];
+
+            if ($erstesDokument === null) {
+                // Fuer die Fehlersuche: wie Plenty das erste Dokument gegliedert
+                // hat, und was daraus geworden ist.
+                $erstesDokument = Suchdokument::gliederung($eintrag['dokument']);
+                $ersterArtikel = array(
+                    'itemId'   => $artikel['itemId'],
+                    'titel'    => $artikel['titel'],
+                    'preis'    => $artikel['preis'],
+                    'bestand'  => $artikel['bestand'],
+                    'markiert' => $markiert,
+                );
+            }
 
             // Bilder nur fuer das, was auch wirklich rausgeht. Ein Aufruf je
             // Bild ist teuer, und der Stamm hat zehntausende Artikel, die
@@ -279,6 +294,8 @@ class Abgleich
         }
 
         $bericht['gruende'] = array_slice($gescheitert, 0, 50);
+        $bericht['ersterArtikel'] = $ersterArtikel;
+        $bericht['erstesDokument'] = $erstesDokument;
         if ($probelauf) {
             // Mit in den Bericht, damit es auch dort steht, wo nur der
             // Bericht protokolliert wird.
@@ -407,68 +424,76 @@ class Abgleich
     }
 
     /**
-     * Die Varianten, ueber die gearbeitet wird — entweder alle oder die
-     * genannten.
+     * Die Varianten, ueber die gearbeitet wird, jeweils mit der Angabe, ob ihr
+     * Artikel markiert ist.
      *
-     * Die genannten werden einzeln ueber den Filter "id" geholt. Ein
-     * Auftrag hat eine Handvoll Positionen, das sind eine Handvoll Aufrufe
-     * — und der Filter "id" ist der, den Plenty dokumentiert.
+     * Bestimmte Varianten (Flow): alle genannten, und eine zweite Suche mit
+     * Markierungsfilter sagt, welche davon markiert sind.
+     *
+     * Ganzer Durchlauf (Zeitplan): nur die markierten — plus die Artikel, die
+     * das Plugin selbst verwaltet, deren Markierung aber inzwischen fehlt.
+     * Die muessen dabei sein, sonst wuerde ihr Inserat nie pausiert.
+     *
+     * @return array Eintraege mit 'variante', 'markiert', 'dokument'
      */
-    private function varianten(array $nurDiese)
+    private function varianten(array $nurDiese, $flagId, $flagFeld)
     {
-        $mit = 'item,variationSalesPrices,variationBarcodes,stock';
+        $eintraege = array();
 
         if (count($nurDiese) > 0) {
-            $heraus = array();
-            foreach ($nurDiese as $id) {
-                $this->varianten->clearFilters();
-                $this->varianten->setFilters(array('id' => (int) $id));
-                $this->varianten->setSearchParams(array('with' => $mit, 'itemsPerPage' => 10, 'page' => 1));
-                $zeilen = $this->varianten->search()->getResult();
-                foreach ((is_array($zeilen) ? $zeilen : array()) as $zeile) {
-                    $heraus[] = $this->alsArray($zeile);
-                }
+            $markiert = array();
+            foreach ($this->suche->markierteUnter($nurDiese, $flagId, $flagFeld) as $dokument) {
+                $markiert[(int) Suchdokument::alsVariante((array) $dokument)['id']] = true;
             }
-            return $heraus;
+            foreach ($this->suche->nachVariantenIds($nurDiese) as $dokument) {
+                $variante = Suchdokument::alsVariante((array) $dokument);
+                $eintraege[] = array(
+                    'variante' => $variante,
+                    'markiert' => isset($markiert[(int) $variante['id']]),
+                    'dokument' => (array) $dokument,
+                );
+            }
+            return $eintraege;
         }
 
-        $heraus = array();
-        $this->varianten->clearFilters();
-        for ($seite = 1; $seite <= self::MAX_SEITEN; $seite++) {
-            $this->varianten->setSearchParams(array(
-                'with' => $mit,
-                'itemsPerPage' => self::PRO_SEITE,
-                'page' => $seite,
-            ));
-            $ergebnis = $this->varianten->search();
-            $zeilen = $ergebnis->getResult();
-            $zeilen = is_array($zeilen) ? $zeilen : array();
-
-            foreach ($zeilen as $zeile) {
-                $heraus[] = $this->alsArray($zeile);
-            }
-
-            if ($ergebnis->isLastPage() || count($zeilen) === 0) {
-                break;
-            }
+        $gesehen = array();
+        foreach ($this->suche->alleMarkierten($flagId, $flagFeld) as $dokument) {
+            $variante = Suchdokument::alsVariante((array) $dokument);
+            $gesehen[(int) $variante['itemId']] = true;
+            $eintraege[] = array('variante' => $variante, 'markiert' => true, 'dokument' => (array) $dokument);
         }
 
-        return $heraus;
+        $verwaltetOhneMarkierung = array();
+        foreach ($this->zuordnung->alle() as $zeile) {
+            $artikelId = (int) $zeile->artikelId;
+            if ($artikelId > 0 && (int) $zeile->gesendetAm > 0 && !isset($gesehen[$artikelId])) {
+                $verwaltetOhneMarkierung[] = $artikelId;
+            }
+        }
+        foreach ($this->suche->nachArtikelIds($verwaltetOhneMarkierung) as $dokument) {
+            $eintraege[] = array(
+                'variante' => Suchdokument::alsVariante((array) $dokument),
+                'markiert' => false,
+                'dokument' => (array) $dokument,
+            );
+        }
+
+        return $eintraege;
     }
 
-    private function herstellerKarte()
+    /**
+     * Herstellernamen aus den gefundenen Dokumenten — sie bringen sie mit,
+     * ein eigener Aufruf fuer die Herstellerliste ist nicht noetig.
+     */
+    private function herstellerKarte(array $eintraege)
     {
         $karte = array();
-        try {
-            foreach ((array) $this->hersteller->all(array('id', 'name')) as $eintrag) {
-                $eintrag = (array) $eintrag;
-                if (isset($eintrag['id'])) {
-                    $karte[(int) $eintrag['id']] = isset($eintrag['name']) ? (string) $eintrag['name'] : '';
-                }
+        foreach ($eintraege as $eintrag) {
+            $id = (int) $eintrag['variante']['item']['manufacturerId'];
+            $name = Suchdokument::herstellername($eintrag['dokument']);
+            if ($id > 0 && $name !== '') {
+                $karte[$id] = $name;
             }
-        } catch (\Throwable $e) {
-            // Ohne Herstellernamen kann ein Inserat entstehen, nur eben
-            // ohne Marke. Das ist kein Grund, den Lauf abzubrechen.
         }
         return $karte;
     }

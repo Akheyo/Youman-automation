@@ -21,6 +21,7 @@ use MaschinensucherMarkt\Logik\Antwort;
 use MaschinensucherMarkt\Logik\Bestandsabgleich;
 use MaschinensucherMarkt\Logik\Entscheidung;
 use MaschinensucherMarkt\Logik\Inseratdaten;
+use MaschinensucherMarkt\Logik\Suchdokument;
 use MaschinensucherMarkt\Logik\Artikelabbildung;
 
 $p = new Pruefer();
@@ -460,5 +461,79 @@ $p->gleich(true, Entscheidung::schreibt(Entscheidung::ANLEGEN), 'anlegen schreib
 $p->gleich(true, Entscheidung::schreibt(Entscheidung::PAUSIEREN), 'pausieren schreibt');
 $p->gleich(false, Entscheidung::schreibt(Entscheidung::NICHTS), 'nichts schreibt nicht');
 $p->gleich(false, Entscheidung::schreibt(Entscheidung::ZURUECK), 'zurueckhalten schreibt nicht');
+
+// --- Uebersetzung aus dem Suchindex ------------------------------------
+// Die Form, in der Plentys Suchindex Varianten liefert (so liest sie auch
+// Plentys eigenes Shop-Plugin IO), und was der Rest des Plugins daraus
+// braucht.
+$p->gruppe('Suchdokument');
+
+$dokument = array(
+    'id' => '19',
+    'data' => array(
+        'variation' => array(
+            'id' => 19, 'itemId' => 19, 'number' => 'SIE-V2', 'model' => 'V20',
+            'isActive' => true, 'weightG' => 12000, 'lengthMM' => 600,
+        ),
+        'item' => array(
+            'id' => 19, 'flagOne' => 27,
+            'manufacturer' => array('id' => 4, 'name' => 'siemens', 'externalName' => 'Siemens'),
+        ),
+        'texts' => array(
+            array('lang' => 'en', 'name1' => 'Frequency inverter', 'description' => 'english'),
+            array('lang' => 'de', 'name1' => 'Siemens V20 Frequenzumrichter', 'description' => 'Neuwertig, originalverpackt.'),
+        ),
+        'salesPrices' => array(
+            array('id' => 1, 'price' => 5.99),
+            array('id' => 25, 'price' => 480.00),
+        ),
+        'stock' => array('net' => 3, 'physical' => 4),
+        'barcodes' => array(array('code' => '4011234567890')),
+    ),
+);
+
+$v = Suchdokument::alsVariante($dokument);
+$p->gleich(19, $v['id'], 'die Varianten-ID kommt aus variation.id');
+$p->gleich(19, $v['itemId'], 'die Artikel-ID aus item.id');
+$p->gleich('SIE-V2', $v['number'], 'die Variantennummer');
+$p->gleich(4, $v['item']['manufacturerId'], 'der Hersteller als ID');
+$p->gleich('Siemens', Suchdokument::herstellername($dokument), 'und als Name, der externe bevorzugt');
+$p->gleich(27, $v['item']['flagOne'], 'die Markierung, falls das Dokument sie mitbringt');
+$p->gleich(array(array('salesPriceId' => 1, 'price' => 5.99), array('salesPriceId' => 25, 'price' => 480.0)),
+    $v['variationSalesPrices'], 'die Preise in der Form, die die Preisauswahl kennt');
+$p->gleich(array(array('netStock' => 3.0)), $v['stock'],
+    'der Bestand: "net" aus dem Index wird zum netStock der alten Form');
+
+// Die ganze Kette bis zum Artikel, den der Abgleich verarbeitet.
+$a = Artikelabbildung::ausVariante($v, array(4 => 'Siemens'), array(), 25, 1);
+$p->gleich('Siemens V20 Frequenzumrichter', $a['titel'], 'der deutsche Titel wird genommen, nicht der erste');
+$p->gleich('Neuwertig, originalverpackt.', $a['beschreibung'], 'ebenso die deutsche Beschreibung');
+$p->gleich(480.0, $a['preis'], 'der Preis aus der eingestellten Liste 25');
+$p->gleich(3.0, $a['bestand'], 'der Bestand');
+$p->gleich('Siemens', $a['hersteller'], 'der Hersteller');
+
+$ohneHuelle = Suchdokument::alsVariante($dokument['data']);
+$p->gleich(19, $ohneHuelle['id'], 'auch ohne die Huelle "data" wird gelesen');
+
+$bestandAlsListe = Suchdokument::alsVariante(array('data' => array(
+    'variation' => array('id' => 5), 'item' => array('id' => 5),
+    'stock' => array(array('netStock' => 2), array('netStock' => 1)),
+)));
+$p->gleich(array(array('netStock' => 2.0), array('netStock' => 1.0)), $bestandAlsListe['stock'],
+    'ein Bestand als Liste je Lager wird ebenfalls gelesen');
+
+$preisVerschachtelt = Suchdokument::alsVariante(array('data' => array(
+    'variation' => array('id' => 6), 'item' => array('id' => 6),
+    'salesPrices' => array(array('salesPriceId' => 25, 'price' => array('value' => 99.5))),
+)));
+$p->gleich(array(array('salesPriceId' => 25, 'price' => 99.5)), $preisVerschachtelt['variationSalesPrices'],
+    'ein verschachtelter Preis wird ausgepackt');
+
+$leer = Suchdokument::alsVariante(array());
+$p->gleich(0, $leer['id'], 'ein leeres Dokument fuehrt nicht zum Absturz');
+$p->gleich(array(), $leer['variationSalesPrices'], 'sondern zu leeren Werten - und damit zu einem Mangel');
+
+$gliederung = Suchdokument::gliederung($dokument);
+$p->gleich('net,physical', $gliederung['stock'], 'die Gliederung nennt die Unterschluessel, fuer die Fehlersuche');
 
 exit($p->bericht());
