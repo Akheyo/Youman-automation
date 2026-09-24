@@ -95,6 +95,12 @@ class Antwort
         // 2xx heisst noch nicht, dass es geklappt hat: Die API antwortet auch
         // auf abgelehnte Inserate mit 200 und success=false.
         if (array_key_exists('success', $daten) && $daten['success'] === false) {
+            if (self::istGeloescht($felder)) {
+                // "id: The listing has been deleted." — das Inserat gibt es
+                // drueben nicht mehr. Das ist kein Fehler am Artikel, sondern
+                // dasselbe wie ein 404: Die Zuordnung zeigt ins Leere.
+                return self::bauen(self::FEHLT, self::zusammenfassen($felder, 'Das Inserat wurde geloescht.'), $daten, $felder, $hinweise, false);
+            }
             return self::bauen(self::ABGELEHNT, self::zusammenfassen($felder, 'Abgelehnt, ohne Angabe eines Grundes.'), $daten, $felder, $hinweise, false);
         }
 
@@ -163,6 +169,24 @@ class Antwort
      * gelesen, weil ein einzelner Text statt einer Liste sonst zum Absturz
      * fuehrt.
      */
+    /**
+     * Meldet Maschinensucher zur Inserats-ID, dass es das Inserat nicht mehr
+     * gibt? So beantwortet die API am 24.09. ein PUT auf ein geloeschtes
+     * Inserat: 200, success=false, errors.id = ["The listing has been deleted."].
+     */
+    private static function istGeloescht(array $felder)
+    {
+        if (!isset($felder['id'])) {
+            return false;
+        }
+        foreach ($felder['id'] as $meldung) {
+            if (preg_match('/deleted|not exist|not found|unknown/i', $meldung) === 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static function meldungenJeFeld(array $daten, $schluessel)
     {
         if (!isset($daten[$schluessel]) || !is_array($daten[$schluessel])) {
