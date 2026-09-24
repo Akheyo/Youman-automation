@@ -660,4 +660,14 @@ if (is_file($echt)) {
     $p->gleich(2019, count(file($echt)) - 1, 'die Liste vom 24.09. hat 2019 waehlbare Rubriken');
 }
 
+$p->gruppe('Drueben geloeschtes Inserat');
+$geloescht = Antwort::lesen(array('status' => 200, 'daten' => array(
+    'success' => false, 'errors' => array('id' => array('The listing has been deleted.')))));
+$p->gleich(Antwort::FEHLT, $geloescht['art'],
+    'PUT auf ein geloeschtes Inserat gilt als "fehlt" - die Zuordnung wird entfernt statt jeden Lauf neu zu scheitern');
+$p->gleich(false, Antwort::nochmal($geloescht), 'und wird nicht wiederholt');
+$andereId = Antwort::lesen(array('status' => 200, 'daten' => array(
+    'success' => false, 'errors' => array('title' => array('The listing has been deleted.')))));
+$p->gleich(Antwort::ABGELEHNT, $andereId['art'], 'nur eine Meldung zur ID zaehlt, nicht irgendein Feld');
+
 exit($p->bericht());
