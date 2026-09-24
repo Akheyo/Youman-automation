@@ -20,7 +20,7 @@ use Plenty\Plugin\Log\Loggable;
  * Konstruktor, faellt der ganze Zeitplan aus, bevor eine einzige Zeile
  * geschrieben wurde. So landet wenigstens der Grund im Protokoll.
  */
-class BestandLesen implements CronHandler
+class BestandLesen extends CronHandler
 {
     use Loggable;
 
