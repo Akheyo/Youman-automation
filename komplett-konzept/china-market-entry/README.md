@@ -35,4 +35,4 @@ Kernsatz: *You provide the products. We provide your route into Germany and Euro
 
 Mario Parlitz · +49 177 2711126 · parlitz@mapatec.de · www.mapatec.de
 
-Canva-Design: https://canva.link/livy33ru0texhqf (A4, nur MapaTec) – PDF: `MapaTec_Canton_Fair_Flyer_A4.pdf`
+Canva-Design: https://canva.link/livy33ru0texhqf (Canva-Format A3, gleiches Seitenverhältnis – auf A4 skaliert druckbar; nur MapaTec) – PDF: `MapaTec_Canton_Fair_Flyer_A4.pdf`
