@@ -147,6 +147,15 @@
     "Config.inseratTab": {
       "label": "Config.inseratTab",
       "formFields": {
+        "rubrikEigenschaft": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.rubrikEigenschaftLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.rubrikEigenschaftTooltip"
+          }
+        },
         "kategorie": {
           "type": "inputText",
           "required": false,

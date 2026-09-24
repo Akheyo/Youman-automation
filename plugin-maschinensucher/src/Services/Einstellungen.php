@@ -157,6 +157,17 @@ class Einstellungen
         );
     }
 
+    /**
+     * Die Plenty-Eigenschaft, in der die Maschinensucher-Rubrik steht
+     * (Auswahl: deutscher Name = Rubrikname, englischer Name = Rubrik-ID).
+     * 0 = nicht eingerichtet.
+     */
+    public function rubrikEigenschaft()
+    {
+        $wert = trim((string) $this->wert('rubrikEigenschaft', ''));
+        return preg_match('/^[0-9]+$/', $wert) === 1 ? (int) $wert : 0;
+    }
+
     /** Woraus die Inseratsnummer gebildet wird — siehe Logik/Inserat.php. */
     public function nummernQuelle()
     {

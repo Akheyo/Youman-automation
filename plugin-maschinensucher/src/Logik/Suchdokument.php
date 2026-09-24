@@ -184,6 +184,60 @@ class Suchdokument
         return $heraus;
     }
 
+    /**
+     * Die Werte einer Eigenschaft am Artikel, so wie das Suchdokument sie nennt.
+     *
+     * Die neuen Plenty-Eigenschaften stehen unter "variationProperties", je
+     * Eintrag {property: {id, cast}, values: [{lang, value}]}. Bei einer
+     * Auswahl-Eigenschaft ist "value" je nach Stand der Name des gewaehlten
+     * Werts oder seine ID — deshalb wird hier nur gesammelt, gedeutet wird
+     * in Rubrik::aus.
+     *
+     * @return array Liste von ['lang' => string, 'value' => string]
+     */
+    public static function eigenschaft(array $dokument, $eigenschaftId)
+    {
+        $eigenschaftId = (int) $eigenschaftId;
+        $daten = isset($dokument['data']) && is_array($dokument['data']) ? $dokument['data'] : $dokument;
+        $werte = array();
+        if ($eigenschaftId <= 0) {
+            return $werte;
+        }
+
+        foreach (array('variationProperties', 'properties') as $liste) {
+            foreach (self::feld($daten, $liste, array()) as $eintrag) {
+                if (!is_array($eintrag)) {
+                    continue;
+                }
+                $eigenschaft = self::feld($eintrag, 'property', array());
+                $id = (int) self::erstes($eintrag, array('propertyId'), self::erstes($eigenschaft, array('id'), 0));
+                if ($id !== $eigenschaftId) {
+                    continue;
+                }
+                $roh = self::erstes($eintrag, array('values', 'value', 'selectionValues'), array());
+                if (!is_array($roh)) {
+                    $roh = array(array('value' => $roh));
+                } elseif (isset($roh['value']) || isset($roh['lang'])) {
+                    // Ein einzelner Wert statt einer Liste.
+                    $roh = array($roh);
+                }
+                foreach ($roh as $wert) {
+                    if (is_array($wert)) {
+                        $inhalt = self::erstes($wert, array('value', 'name', 'selectionId', 'id'), '');
+                        $werte[] = array(
+                            'lang'  => strtolower((string) self::erstes($wert, array('lang'), '')),
+                            'value' => is_array($inhalt) ? '' : trim((string) $inhalt),
+                        );
+                    } elseif ($wert !== null && !is_bool($wert)) {
+                        $werte[] = array('lang' => '', 'value' => trim((string) $wert));
+                    }
+                }
+            }
+        }
+
+        return $werte;
+    }
+
     private static function feld(array $daten, $schluessel, $ersatz)
     {
         return isset($daten[$schluessel]) && is_array($daten[$schluessel]) ? $daten[$schluessel] : $ersatz;

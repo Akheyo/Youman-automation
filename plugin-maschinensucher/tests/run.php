@@ -23,6 +23,7 @@ use MaschinensucherMarkt\Logik\Entscheidung;
 use MaschinensucherMarkt\Logik\Inseratdaten;
 use MaschinensucherMarkt\Logik\Suchdokument;
 use MaschinensucherMarkt\Logik\Artikelabbildung;
+use MaschinensucherMarkt\Logik\Rubrik;
 
 $p = new Pruefer();
 
@@ -587,5 +588,40 @@ $p->gleich(Entscheidung::AKTIVIEREN, Entscheidung::treffen($lage(array(
 $p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
     'inseratId' => 500, 'zustand' => 'unbekannt', 'bestand' => 1, 'fingerabdruck' => 'abc')))['tat'],
     'ein unbekanntes mit Bestand wird nicht blind aktiviert');
+
+// --- Rubrik aus der Plenty-Eigenschaft ----------------------------------
+// Auswahl-Eigenschaft: deutscher Name = Rubrikname, englischer = Rubrik-ID.
+$p->gruppe('Rubrik-Eigenschaft');
+$dokRubrik = array('data' => array('variationProperties' => array(
+    array('property' => array('id' => 99, 'cast' => 'shortText'), 'values' => array(array('lang' => 'de', 'value' => 'egal'))),
+    array('property' => array('id' => 7, 'cast' => 'selection'), 'values' => array(
+        array('lang' => 'de', 'value' => 'Schaltanlagen & Schaltkomponenten'),
+    )),
+)));
+$werte = Suchdokument::eigenschaft($dokRubrik, 7);
+$p->gleich(array(array('lang' => 'de', 'value' => 'Schaltanlagen & Schaltkomponenten')), $werte,
+    'nur die Werte der gesuchten Eigenschaft werden gelesen');
+$p->gleich(array(), Suchdokument::eigenschaft($dokRubrik, 8), 'eine andere Eigenschaft: keine Werte');
+$p->gleich(array(), Suchdokument::eigenschaft(array(), 7), 'leeres Dokument: kein Absturz');
+
+$auswahl = array(
+    1506 => array('de' => 'Schaltanlagen & Schaltkomponenten', 'en' => '68'),
+    1507 => array('de' => 'Steuerungen', 'en' => '102'),
+    1508 => array('de' => 'Ohne Nummer', 'en' => 'Switchgear'),
+);
+$p->gleich(68, Rubrik::aus($werte, $auswahl)['id'], 'der deutsche Name wird ueber die Auswahl zur Rubrik-ID');
+$p->gleich(102, Rubrik::aus(array(array('lang' => 'de', 'value' => '1507')), $auswahl)['id'],
+    'eine Auswahl-ID wird ueber die Auswahl zur Rubrik-ID');
+$p->gleich(24, Rubrik::aus(array(array('lang' => 'de', 'value' => 'Maschine'), array('lang' => 'en', 'value' => '24')), array())['id'],
+    'ein englischer Zahlenwert ist direkt die Rubrik - auch ohne Auswahltabelle');
+$p->gleich(0, Rubrik::aus(array(array('lang' => 'de', 'value' => '4711')), $auswahl)['id'],
+    'eine unbekannte Zahl wird NICHT als Rubrik genommen - sie koennte eine Auswahl-ID sein');
+$p->gleich(0, Rubrik::aus(array(array('lang' => 'de', 'value' => 'Ohne Nummer')), $auswahl)['id'],
+    'steht englisch keine Nummer, gibt es keine Rubrik');
+$p->gleich(true, mb_strpos(Rubrik::aus(array(array('lang' => 'de', 'value' => 'Ohne Nummer')), $auswahl)['grund'], 'englischer Name') !== false,
+    'und der Grund sagt, was am Auswahlwert fehlt');
+$p->gleich(661, Rubrik::aus(array(array('lang' => 'de', 'value' => 'Sonstige (661)')), array())['id'],
+    'eine Nummer in Klammern am Namen reicht auch');
+$p->gleich(0, Rubrik::aus(array(), $auswahl)['id'], 'nicht gesetzt: keine Rubrik');
 
 exit($p->bericht());
