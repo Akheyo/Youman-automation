@@ -68,10 +68,16 @@ class Einstellungen
      * frei — ein leerer oder unbekannter Wert, etwa nach einem Update, das
      * die gespeicherten Einstellungen zuruecksetzt, darf nie dazu fuehren,
      * dass ploetzlich geschrieben wird.
+     *
+     * Plenty zeigt das Feld teils als Textfeld; dann steht dort auch mal
+     * "Nein, wirklich schreiben" statt "nein". Deshalb zaehlt jeder Wert,
+     * der mit "nein" oder "no" beginnt.
      */
     public function probelauf()
     {
-        return strtolower(trim((string) $this->wert('probelauf', 'ja'))) !== 'nein';
+        $wert = strtolower(trim((string) $this->wert('probelauf', 'ja')));
+
+        return substr($wert, 0, 4) !== 'nein' && substr($wert, 0, 2) !== 'no';
     }
 
     public function apiEingerichtet()
