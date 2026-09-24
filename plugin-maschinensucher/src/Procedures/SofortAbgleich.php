@@ -60,11 +60,18 @@ class SofortAbgleich
             // laeuft als gewoehnliche Anfrage, und eine lange Aufnahme darin
             // wurde am 23.09. ohne jede Spur abgebrochen. Den Rest erledigen
             // weitere Ausloesungen oder der Zeitplan.
+            // DIAGNOSE, voruebergehend als Fehler: jeder Schritt einzeln, damit
+            // ein Abbruch mittendrin zu verorten ist.
+            $this->schritt('Positionen gefunden', array('varianten' => $varianten));
+
             $etappe = null;
             if (!$zuordnung->bestandGelesen()) {
+                $this->schritt('Bestandsaufnahme beginnt', array());
                 $etappe = $aufnahme->etappe(8);
+                $this->schritt('Bestandsaufnahme-Etappe fertig', $etappe);
             }
 
+            $this->schritt('Abgleich beginnt', array());
             $bericht = $abgleich->fuerVarianten($varianten);
             if ($etappe !== null) {
                 $bericht['bestandsaufnahme'] = $etappe;
@@ -85,6 +92,12 @@ class SofortAbgleich
                 'datei'   => $e->getFile() . ':' . $e->getLine(),
             ));
         }
+    }
+
+    private function schritt($was, array $daten)
+    {
+        $daten['schritt'] = (string) $was;
+        $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseSchritt', $daten);
     }
 
     /**

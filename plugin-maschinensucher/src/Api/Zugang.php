@@ -173,6 +173,7 @@ class Zugang
             $daten['koerper'] = $koerper;
         }
 
+        $beginn = microtime(true);
         try {
             $roh = $this->ruf->call('MaschinensucherMarkt::ruf', $daten);
         } catch (\Throwable $e) {
@@ -182,6 +183,18 @@ class Zugang
         }
 
         $gelesen = Antwort::lesen(is_array($roh) ? $roh : array());
+
+        // DIAGNOSE, voruebergehend als Fehler: jeder Aufruf mit Dauer und
+        // Antwortcode. Zeigt, ob der Weg nach draussen ueberhaupt geht und
+        // wie lange er braucht.
+        $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseAufruf', array(
+            'methode' => $methode,
+            'pfad'    => $pfad,
+            'status'  => is_array($roh) && isset($roh['status']) ? (int) $roh['status'] : 0,
+            'art'     => $gelesen['art'],
+            'meldung' => $gelesen['meldung'],
+            'dauer'   => round(microtime(true) - $beginn, 2),
+        ));
 
         if ($gelesen['art'] !== Antwort::OK) {
             $this->getLogger(__METHOD__)->warning('MaschinensucherMarkt::log.apiFehler', array(
