@@ -4,6 +4,7 @@ namespace MaschinensucherMarkt\Providers;
 
 use MaschinensucherMarkt\Crons\Abgleichen;
 use MaschinensucherMarkt\Crons\BestandLesen;
+use MaschinensucherMarkt\Crons\RubrikenPflegen;
 use MaschinensucherMarkt\Procedures\SofortAbgleich;
 use Plenty\Modules\Cron\Services\CronContainer;
 use Plenty\Modules\EventProcedures\Services\Entries\ProcedureEntry;
@@ -64,6 +65,7 @@ class MaschinensucherServiceProvider extends ServiceProvider
         // ankommt.
         $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, Abgleichen::class);
         $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, BestandLesen::class);
+        $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, RubrikenPflegen::class);
 
         $this->ereignisaktionAnmelden();
     }

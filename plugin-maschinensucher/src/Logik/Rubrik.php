@@ -88,6 +88,66 @@ class Rubrik
     }
 
     /**
+     * Die Rubriknummer eines Auswahlwerts aus seinen Namen, 0 wenn keine.
+     */
+    public static function nummer(array $namen)
+    {
+        return self::ausNamen($namen);
+    }
+
+    /**
+     * Der Name, unter dem das Plugin eine Rubrik als Auswahlwert anlegt:
+     * zuerst die Rubrik, nach der man sucht, dann zur Einordnung die
+     * Hauptrubrik, am Ende die Nummer in Klammern — die liest das Plugin.
+     */
+    public static function auswahlname($name, $hauptrubrik, $id)
+    {
+        $name = trim((string) $name);
+        $hauptrubrik = trim((string) $hauptrubrik);
+        $vorne = ($hauptrubrik !== '' && $hauptrubrik !== $name) ? $name . ' – ' . $hauptrubrik : $name;
+        return $vorne . ' (' . (int) $id . ')';
+    }
+
+    /**
+     * Alle waehlbaren Rubriken aus GET /json/category/tree: nur die unterste
+     * Ebene, denn nur die nimmt Maschinensucher an ("Subcategory cannot be
+     * blank"). Nach Name sortiert.
+     *
+     * @return array Liste von ['id' => int, 'name' => string]
+     */
+    public static function blaetter(array $baum)
+    {
+        $heraus = self::sammeln($baum, '');
+        usort($heraus, function ($a, $b) {
+            $x = mb_strtolower($a['name'], 'UTF-8');
+            $y = mb_strtolower($b['name'], 'UTF-8');
+            return $x < $y ? -1 : ($x > $y ? 1 : 0);
+        });
+        return $heraus;
+    }
+
+    private static function sammeln(array $knoten, $hauptrubrik)
+    {
+        $heraus = array();
+        foreach ($knoten as $eintrag) {
+            if (!is_array($eintrag) || !isset($eintrag['id'])) {
+                continue;
+            }
+            $name = isset($eintrag['name']) ? (string) $eintrag['name'] : '';
+            $kinder = isset($eintrag['children']) && is_array($eintrag['children']) ? $eintrag['children'] : array();
+            $oben = $hauptrubrik !== '' ? $hauptrubrik : $name;
+            if (count($kinder) > 0) {
+                foreach (self::sammeln($kinder, $oben) as $blatt) {
+                    $heraus[] = $blatt;
+                }
+            } elseif ((int) $eintrag['id'] > 0) {
+                $heraus[] = array('id' => (int) $eintrag['id'], 'name' => self::auswahlname($name, $oben, $eintrag['id']));
+            }
+        }
+        return $heraus;
+    }
+
+    /**
      * Die Rubrik-ID aus den Namen eines Auswahlwerts: englischer Name als
      * Zahl, sonst eine Zahl in Klammern am Ende irgendeines Namens.
      */

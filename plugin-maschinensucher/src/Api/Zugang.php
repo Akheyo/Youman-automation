@@ -37,9 +37,9 @@ class Zugang
     /**
      * Der Rubrikbaum. Gibt die gueltigen categoryId zurueck.
      */
-    public function kategoriebaum()
+    public function kategoriebaum($sprache = 'de-de')
     {
-        return $this->anfragen('GET', 'json/category/tree');
+        return $this->anfragen('GET', 'json/category/tree', null, array(), 60, $sprache);
     }
 
     public function produktarten($kategorieId = null)
@@ -159,7 +159,7 @@ class Zugang
 
     // ---- Unterbau -------------------------------------------------------------
 
-    private function anfragen($methode, $pfad, $koerper = null, array $abfrage = array(), $zeitlimit = 60)
+    private function anfragen($methode, $pfad, $koerper = null, array $abfrage = array(), $zeitlimit = 60, $sprache = '')
     {
         $daten = array(
             'basis'     => self::BASIS,
@@ -168,6 +168,7 @@ class Zugang
             'token'     => $this->einstellungen->apiToken(),
             'abfrage'   => $abfrage,
             'zeitlimit' => $zeitlimit,
+            'sprache'   => (string) $sprache,
         );
         if ($koerper !== null) {
             $daten['koerper'] = $koerper;

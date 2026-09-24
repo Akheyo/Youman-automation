@@ -25,6 +25,7 @@ $token    = (string) SdkRestApi::getParam('token', '');
 $koerper  = SdkRestApi::getParam('koerper', null);
 $abfrage  = SdkRestApi::getParam('abfrage', array());
 $zeitlimit = (int) SdkRestApi::getParam('zeitlimit', 60);
+$sprache  = (string) SdkRestApi::getParam('sprache', '');
 
 $antwort = array('status' => 0, 'daten' => array(), 'roh' => '', 'fehler' => '');
 
@@ -42,6 +43,10 @@ $kopfzeilen = array(
     'Authorization: Bearer ' . $token,
     'Accept: application/json',
 );
+if ($sprache !== '') {
+    // Ohne Angabe liefert die API englische Namen (z. B. den Rubrikbaum).
+    $kopfzeilen[] = 'Accept-Language: ' . $sprache;
+}
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);

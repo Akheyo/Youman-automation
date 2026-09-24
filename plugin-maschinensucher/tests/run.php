@@ -629,4 +629,35 @@ $p->gleich(102, Rubrik::aus(array(array('lang' => 'de', 'value' => '1600')), $nu
 $p->gleich(102, Rubrik::aus(array(array('lang' => 'de', 'value' => 'Steuerungen (102)')), $nurDeutsch)['id'],
     'und ueber den Namen');
 
+// --- Rubriken als Auswahlwerte ----------------------------------------------
+$p->gruppe('Rubrikbaum');
+$baum = array(
+    '5' => array('id' => 5, 'name' => 'Automatisierungstechnik', 'children' => array(
+        '102' => array('id' => 102, 'name' => 'Steuerungen'),
+        '100' => array('id' => 100, 'name' => 'Schaltanlagen', 'children' => array()),
+    )),
+    '2' => array('id' => 2, 'name' => 'Metallbearbeitung', 'children' => array(
+        '43' => array('id' => 43, 'name' => 'Drehmaschinen', 'children' => array(
+            '1026' => array('id' => 1026, 'name' => 'CNC Drehmaschinen'),
+        )),
+    )),
+);
+$blaetter = Rubrik::blaetter($baum);
+$p->gleich(array(1026, 100, 102), array_map(function ($b) { return $b['id']; }, $blaetter),
+    'nur die unterste Ebene, nach Name sortiert - Haupt- und Zwischenrubriken nimmt Maschinensucher nicht an');
+$p->gleich('Steuerungen – Automatisierungstechnik (102)', $blaetter[2]['name'],
+    'der Name nennt Rubrik, Hauptrubrik und am Ende die Nummer');
+$p->gleich('CNC Drehmaschinen – Metallbearbeitung (1026)', $blaetter[0]['name'],
+    'auch bei drei Ebenen steht die Hauptrubrik dabei');
+$p->gleich(102, Rubrik::aus(array(array('lang' => 'de', 'value' => $blaetter[2]['name'])), array())['id'],
+    'und genau diesen Namen liest der Abgleich wieder als Rubrik');
+$p->gleich(102, Rubrik::nummer(array('de' => 'Steuerungen – Automatisierungstechnik (102)')),
+    'die Nummer eines vorhandenen Auswahlwerts wird erkannt - nichts wird doppelt angelegt');
+$p->gleich(68, Rubrik::nummer(array('de' => 'Schaltanlagen', 'en' => '68')),
+    'auch bei von Hand angelegten Werten mit englischer Nummer');
+$echt = __DIR__ . '/../../maschinensucher-bestand/rubriken.csv';
+if (is_file($echt)) {
+    $p->gleich(2019, count(file($echt)) - 1, 'die Liste vom 24.09. hat 2019 waehlbare Rubriken');
+}
+
 exit($p->bericht());
