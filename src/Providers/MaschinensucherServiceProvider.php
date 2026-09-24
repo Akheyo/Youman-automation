@@ -3,6 +3,7 @@
 namespace MaschinensucherMarkt\Providers;
 
 use MaschinensucherMarkt\Crons\Abgleichen;
+use MaschinensucherMarkt\Crons\AbgleichenSchnell;
 use MaschinensucherMarkt\Crons\BestandLesen;
 use MaschinensucherMarkt\Crons\RubrikenPflegen;
 use MaschinensucherMarkt\Procedures\SofortAbgleich;
@@ -53,16 +54,15 @@ class MaschinensucherServiceProvider extends ServiceProvider
 
     public function boot(CronContainer $cron)
     {
-        // Fuenfzehn Minuten, weil das nachweislich laeuft.
-        //
-        // Die Konstante fuer fuenf Minuten gibt es zwar, aber auf diesem
-        // System hat ein so angemeldeter Zeitplan nie ausgeloest — nicht
-        // einmal einen Fehler, obwohl der Lauf mit ungueltigem Token genau
-        // das haette tun muessen. Ein Zeitplan mit fuenfzehn Minuten lief
-        // dagegen am selben Tag zuverlaessig. Schneller als diese
-        // Viertelstunde ist nur die Ereignisaktion, und die haengt an
-        // Auftraegen — also genau an dem Fall, in dem es auf Sekunden
-        // ankommt.
+        // Der Abgleich laeuft im Fuenf-Minuten-Takt, mit dem 15-Minuten-Plan
+        // als Netz. Der Test vom 23.09., nach dem fuenf Minuten "nie
+        // ausloesen", war nicht aussagekraeftig: Die Zeitplaene schrieben
+        // damals "implements CronHandler" und konnten in keinem Takt laden
+        // (behoben am 24.09.). Ob fuenf Minuten laufen, zeigt das Protokoll:
+        // "Zeitplan gestartet" mit zeitplan "Abgleich (5 Minuten)".
+        // Beide treffen sich jede Viertelstunde; die Sperre in Abgleichen
+        // laesst dann nur einen arbeiten.
+        $cron->add(CronContainer::EVERY_FIVE_MINUTES, AbgleichenSchnell::class);
         $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, Abgleichen::class);
         $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, BestandLesen::class);
         $cron->add(CronContainer::EVERY_FIFTEEN_MINUTES, RubrikenPflegen::class);

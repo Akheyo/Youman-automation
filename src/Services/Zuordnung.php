@@ -15,6 +15,9 @@ use Plenty\Modules\Plugin\DataBase\Contracts\DataBase;
  */
 class Zuordnung
 {
+    /** Sekunden, nach denen eine Abgleich-Sperre als liegengeblieben gilt. */
+    const SPERRE_VERFALL = 600;
+
     /** @var DataBase */
     private $db;
 
@@ -203,6 +206,29 @@ class Zuordnung
     public function rubrikenGeprueftMerken($eigenschaftId)
     {
         $this->zeitpunktMerken('rubriken' . (int) $eigenschaftId, time());
+    }
+
+    /**
+     * Sperre gegen zwei gleichzeitige Abgleiche (5- und 15-Minuten-Plan
+     * treffen sich jede Viertelstunde). Eine Sperre, die aelter als
+     * SPERRE_VERFALL ist, gilt als liegengeblieben — etwa weil ein Lauf
+     * hart abgebrochen wurde — und wird uebernommen.
+     *
+     * @return bool true, wenn dieser Lauf die Sperre hat
+     */
+    public function abgleichSperren()
+    {
+        $gesetzt = $this->zeitpunkt('abgleichSperre');
+        if ($gesetzt > 0 && time() - $gesetzt < self::SPERRE_VERFALL) {
+            return false;
+        }
+        $this->zeitpunktMerken('abgleichSperre', time());
+        return true;
+    }
+
+    public function abgleichFreigeben()
+    {
+        $this->zeitpunktMerken('abgleichSperre', 0);
     }
 
     private function zeitpunkt($name)
