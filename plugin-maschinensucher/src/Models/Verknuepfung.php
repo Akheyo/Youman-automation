@@ -28,6 +28,7 @@ use Plenty\Modules\Plugin\DataBase\Contracts\Model;
  * @property int    $gesendetAm    Unix-Zeit der letzten erfolgreichen Uebertragung
  * @property int    $gesehenAm     Unix-Zeit, zu der es drueben zuletzt auftauchte
  * @property string $meldung       Letzter Grund, warum es nicht durchging
+ * @property int    $perApi        1 = vom Plugin ueber die API angelegt, 0 = vorgefunden
  */
 class Verknuepfung extends Model
 {
@@ -47,6 +48,18 @@ class Verknuepfung extends Model
     public $gesendetAm = 0;
     public $gesehenAm = 0;
     public $meldung = '';
+
+    /**
+     * Wurde das Inserat von diesem Plugin ueber die API angelegt?
+     *
+     * Davon haengt ab, was das Plugin damit tun darf. Laut API-Beschreibung
+     * lassen sich nur ueber die API angelegte Inserate AENDERN ("only
+     * listings which were created via the API can be updated"). Vorgefundene
+     * Inserate — bei diesem Konto alle 594 von vor dem Plugin — kann es nur
+     * pausieren und aktivieren. Ihr Inhalt bleibt, wie er drueben gepflegt
+     * wurde.
+     */
+    public $perApi = 0;
 
     public function getTableName(): string
     {
