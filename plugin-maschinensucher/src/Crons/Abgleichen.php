@@ -14,7 +14,7 @@ use Plenty\Plugin\Log\Loggable;
  * von Hand geaenderter Preis, ein neu gesetztes Haekchen — faellt nur hier
  * auf.
  */
-class Abgleichen implements CronHandler
+class Abgleichen extends CronHandler
 {
     use Loggable;
 
