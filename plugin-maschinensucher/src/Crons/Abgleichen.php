@@ -3,6 +3,7 @@
 namespace MaschinensucherMarkt\Crons;
 
 use MaschinensucherMarkt\Services\Abgleich;
+use MaschinensucherMarkt\Services\Zuordnung;
 use Plenty\Modules\Cron\Contracts\CronHandler;
 use Plenty\Plugin\Log\Loggable;
 
@@ -25,10 +26,21 @@ class Abgleichen extends CronHandler
         // zu sehen, ob der Zeitplan ueberhaupt startet. Wieder auf info()
         // zuruecksetzen, sobald das geklaert ist.
         $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.diagnoseZeitplan', array(
-            'zeitplan' => 'Abgleich',
+            'zeitplan' => $this->name(),
         ));
 
+        $zuordnung = null;
         try {
+            // Nie zwei Abgleiche gleichzeitig: Beide hielten denselben neuen
+            // Artikel fuer unbekannt und legten ihn an.
+            $zuordnung = pluginApp(Zuordnung::class);
+            if (!$zuordnung->abgleichSperren()) {
+                $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.abgleichLaeuftSchon', array(
+                    'zeitplan' => $this->name(),
+                ));
+                return;
+            }
+
             $abgleich = pluginApp(Abgleich::class);
             $bericht = $abgleich->lauf();
             if (empty($bericht['ok'])) {
@@ -42,5 +54,19 @@ class Abgleichen extends CronHandler
                 'datei'   => $e->getFile() . ':' . $e->getLine(),
             ));
         }
+
+        if ($zuordnung !== null) {
+            try {
+                $zuordnung->abgleichFreigeben();
+            } catch (\Throwable $e) {
+                // Bleibt die Sperre stehen, verfaellt sie nach zehn Minuten.
+            }
+        }
+    }
+
+    /** Wie der Zeitplan im Protokoll heisst. */
+    protected function name()
+    {
+        return 'Abgleich (15 Minuten)';
     }
 }
