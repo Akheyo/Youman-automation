@@ -34,7 +34,8 @@ done < <(grep -rhoE '^use Plenty\\[A-Za-z0-9\\]+;' "$hier/src" | sed 's/^use //;
 while IFS=: read -r datei _ zeile; do
     art=$(echo "$zeile" | grep -oE '(implements|extends) [A-Za-z]+' | head -1 | cut -d' ' -f1)
     kurz=$(echo "$zeile" | grep -oE '(implements|extends) [A-Za-z]+' | head -1 | cut -d' ' -f2)
-    voll=$(grep -hoE "^use Plenty\\\\[A-Za-z0-9\\\\]+( as $kurz)?;" "$datei" | grep -E "\\\\$kurz;|as $kurz;" | head -1 | sed 's/^use //; s/ as .*//; s/;$//')
+    voll=$(grep -hoE "^use Plenty\\\\[A-Za-z0-9\\\\]+( as $kurz)?;" "$datei" | grep -E "\\\\$kurz;|as $kurz;" | head -1 | sed 's/^use //; s/ as .*//; s/;$//' || true)
+    # Keine Plenty-Klasse (z. B. eine eigene Oberklasse im Plugin): nichts zu pruefen.
     [ -z "$voll" ] && continue
     pfad="$ziel/$(echo "$voll" | sed 's/^Plenty\\//; s/\\/\//g').php"
     [ -f "$pfad" ] || continue
