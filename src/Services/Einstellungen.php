@@ -168,6 +168,17 @@ class Einstellungen
         return preg_match('/^[0-9]+$/', $wert) === 1 ? (int) $wert : 0;
     }
 
+    /**
+     * Sollen die Maschinensucher-Rubriken als Auswahlwerte der
+     * Rubrik-Eigenschaft angelegt werden? Im Zweifel ja — ohne eingetragene
+     * Eigenschaft passiert ohnehin nichts.
+     */
+    public function rubrikenAnlegen()
+    {
+        $wert = strtolower(trim((string) $this->wert('rubrikenAnlegen', 'ja')));
+        return substr($wert, 0, 4) !== 'nein' && substr($wert, 0, 2) !== 'no';
+    }
+
     /** Woraus die Inseratsnummer gebildet wird — siehe Logik/Inserat.php. */
     public function nummernQuelle()
     {

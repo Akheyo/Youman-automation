@@ -156,6 +156,25 @@
             "tooltip": "Config.rubrikEigenschaftTooltip"
           }
         },
+        "rubrikenAnlegen": {
+          "type": "select",
+          "required": false,
+          "label": "Config.rubrikenAnlegenLabel",
+          "options": {
+            "defaultValue": "ja",
+            "tooltip": "Config.rubrikenAnlegenTooltip",
+            "listBoxValues": [
+              {
+                "caption": "Config.rubrikenAnlegenJa",
+                "value": "ja"
+              },
+              {
+                "caption": "Config.rubrikenAnlegenNein",
+                "value": "nein"
+              }
+            ]
+          }
+        },
         "kategorie": {
           "type": "inputText",
           "required": false,

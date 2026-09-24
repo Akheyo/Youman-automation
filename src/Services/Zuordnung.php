@@ -190,6 +190,21 @@ class Zuordnung
         return $merker;
     }
 
+    /**
+     * Wann die Auswahlwerte der Rubrik-Eigenschaft zuletzt vollstaendig
+     * waren (0 = noch nie). Je Eigenschaft, damit ein Wechsel der
+     * Eigenschaft sofort wieder anlegt.
+     */
+    public function rubrikenGeprueft($eigenschaftId)
+    {
+        return $this->zeitpunkt('rubriken' . (int) $eigenschaftId);
+    }
+
+    public function rubrikenGeprueftMerken($eigenschaftId)
+    {
+        $this->zeitpunktMerken('rubriken' . (int) $eigenschaftId, time());
+    }
+
     private function zeitpunkt($name)
     {
         return (int) $this->merker($name)->zeit;
