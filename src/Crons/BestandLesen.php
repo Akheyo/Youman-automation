@@ -26,11 +26,11 @@ class BestandLesen extends CronHandler
 
     public function handle()
     {
-        // DIAGNOSE, voruebergehend als Fehler: Fehler erscheinen immer im
+        // Verlaufsmeldung (waehrend der Inbetriebnahme als Fehler geschrieben): Fehler erscheinen immer im
         // Protokoll, unabhaengig von der Log-Einstellung. So ist eindeutig
         // zu sehen, ob der Zeitplan ueberhaupt startet. Wieder auf info()
         // zuruecksetzen, sobald das geklaert ist.
-        $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseZeitplan', array(
+        $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.diagnoseZeitplan', array(
             'zeitplan' => 'Bestandsaufnahme',
         ));
 
@@ -40,9 +40,9 @@ class BestandLesen extends CronHandler
             // macht der naechste Lauf dort weiter, wo dieser aufgehoert hat.
             $bericht = $aufnahme->etappe(40);
 
-            // DIAGNOSE, voruebergehend als Fehler: das Ergebnis, sichtbar
+            // Verlaufsmeldung (waehrend der Inbetriebnahme als Fehler geschrieben): das Ergebnis, sichtbar
             // unabhaengig von der Log-Einstellung.
-            $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseErgebnis', $bericht);
+            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.diagnoseErgebnis', $bericht);
         } catch (\Throwable $e) {
             $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.laufAbgebrochen', array(
                 'meldung' => $e->getMessage(),

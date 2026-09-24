@@ -20,11 +20,11 @@ class Abgleichen extends CronHandler
 
     public function handle()
     {
-        // DIAGNOSE, voruebergehend als Fehler: Fehler erscheinen immer im
+        // Verlaufsmeldung (waehrend der Inbetriebnahme als Fehler geschrieben): Fehler erscheinen immer im
         // Protokoll, unabhaengig von der Log-Einstellung. So ist eindeutig
         // zu sehen, ob der Zeitplan ueberhaupt startet. Wieder auf info()
         // zuruecksetzen, sobald das geklaert ist.
-        $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.diagnoseZeitplan', array(
+        $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.diagnoseZeitplan', array(
             'zeitplan' => 'Abgleich',
         ));
 

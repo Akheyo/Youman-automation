@@ -244,12 +244,24 @@ class Abgleich
             if ($probelauf) {
                 // Nichts senden, nichts hochladen, nichts an der Zuordnung
                 // aendern. Nur festhalten, was passiert waere.
-                $vorhaben[] = array(
+                $geplant = array(
                     'artikel' => $artikelId,
                     'inserat' => $bekannt !== null ? (int) $bekannt->inseratId : 0,
                     'tat'     => $tat,
                     'grund'   => $entscheidung['grund'],
                 );
+                if (count($gebaut['koerper']) > 0 && ($tat === Entscheidung::ANLEGEN || $tat === Entscheidung::AENDERN)) {
+                    // Genau das Inserat, das rausginge — bevor irgendetwas
+                    // wirklich geschrieben wird, soll man es sehen koennen.
+                    // Die Beschreibung gekuerzt, damit das Protokoll lesbar bleibt.
+                    $vorschau = $gebaut['koerper'];
+                    foreach ((array) $vorschau['description'] as $sprache => $text) {
+                        $vorschau['description'][$sprache] = mb_substr((string) $text, 0, 300, 'UTF-8');
+                    }
+                    $geplant['inserat_vorschau'] = $vorschau;
+                    $geplant['hinweise'] = $gebaut['hinweise'];
+                }
+                $vorhaben[] = $geplant;
                 $geschrieben++;
                 continue;
             }
