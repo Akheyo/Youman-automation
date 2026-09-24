@@ -623,5 +623,10 @@ $p->gleich(true, mb_strpos(Rubrik::aus(array(array('lang' => 'de', 'value' => 'O
 $p->gleich(661, Rubrik::aus(array(array('lang' => 'de', 'value' => 'Sonstige (661)')), array())['id'],
     'eine Nummer in Klammern am Namen reicht auch');
 $p->gleich(0, Rubrik::aus(array(), $auswahl)['id'], 'nicht gesetzt: keine Rubrik');
+$nurDeutsch = array(1600 => array('de' => 'Steuerungen (102)'));
+$p->gleich(102, Rubrik::aus(array(array('lang' => 'de', 'value' => '1600')), $nurDeutsch)['id'],
+    'nur deutscher Name mit Nummer in Klammern: ueber die Auswahl-ID gefunden');
+$p->gleich(102, Rubrik::aus(array(array('lang' => 'de', 'value' => 'Steuerungen (102)')), $nurDeutsch)['id'],
+    'und ueber den Namen');
 
 exit($p->bericht());
