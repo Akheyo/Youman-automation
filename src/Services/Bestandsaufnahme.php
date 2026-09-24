@@ -171,26 +171,50 @@ class Bestandsaufnahme
         $aktualisiert = 0;
 
         $bekannt = array();
+        // Zeilen, die der Abgleich nach dem Anlegen ohne ID gespeichert hat.
+        // Das zugehoerige Inserat taucht hier ueber seine Referenz auf; es
+        // bekommt diese Zeile, statt dass eine zweite danebengestellt wird.
+        $ohneId = array();
         foreach ($this->zuordnung->alle() as $zeile) {
-            $bekannt[(int) $zeile->inseratId] = $zeile;
+            if ((int) $zeile->inseratId > 0) {
+                $bekannt[(int) $zeile->inseratId] = $zeile;
+            } elseif ((int) $zeile->artikelId > 0) {
+                $ohneId[(int) $zeile->artikelId] = $zeile;
+            }
         }
 
         foreach ($inserate as $inserat) {
             $inseratId = (int) $inserat['inseratId'];
             $artikelId = (int) $inserat['artikelId'];
             $zustand = $this->zustand($inserat['zustand']);
+            $waise = ($artikelId > 0 && isset($ohneId[$artikelId])) ? $ohneId[$artikelId] : null;
 
-            if (isset($bekannt[$inseratId])) {
+            if ($waise !== null && !isset($bekannt[$inseratId])) {
+                // Die ID nachtragen. Alles, was der Abgleich beim Anlegen
+                // festgehalten hat — perApi, gesendetAm, Fingerabdruck —
+                // bleibt so erhalten.
+                $zeile = $waise;
+                $zeile->inseratId = $inseratId;
+                unset($ohneId[$artikelId]);
+                $bekannt[$inseratId] = $zeile;
+                $aktualisiert++;
+            } elseif (isset($bekannt[$inseratId])) {
                 $zeile = $bekannt[$inseratId];
 
-                // Nur schreiben, was sich geaendert hat. Sonst speichert jeder
-                // Lauf alle Zeilen neu — bei sechshundert Inseraten der
-                // teuerste Teil des ganzen Laufs, fuer nichts.
-                $unveraendert = (string) $zeile->internalId === (string) $inserat['internalId']
+                if ($waise !== null) {
+                    // Beide gibt es schon (so am 24.09. passiert): Was die
+                    // Zeile ohne ID weiss, geht auf die richtige ueber, dann
+                    // verschwindet sie.
+                    $this->uebernehmen($zeile, $waise);
+                    $this->zuordnung->entfernen($waise);
+                    unset($ohneId[$artikelId]);
+                } elseif ((string) $zeile->internalId === (string) $inserat['internalId']
                     && (int) $zeile->kategorieId === (int) $inserat['kategorieId']
                     && (string) $zeile->zustand === $zustand
-                    && ($artikelId <= 0 || (int) $zeile->artikelId === $artikelId);
-                if ($unveraendert) {
+                    && ($artikelId <= 0 || (int) $zeile->artikelId === $artikelId)) {
+                    // Nur schreiben, was sich geaendert hat. Sonst speichert
+                    // jeder Lauf alle Zeilen neu — bei sechshundert Inseraten
+                    // der teuerste Teil des ganzen Laufs, fuer nichts.
                     continue;
                 }
                 $aktualisiert++;
@@ -216,6 +240,23 @@ class Bestandsaufnahme
         }
 
         return array('neu' => $neu, 'aktualisiert' => $aktualisiert);
+    }
+
+    /**
+     * Was der Abgleich beim Anlegen wusste, auf die gefundene Zeile uebertragen.
+     */
+    private function uebernehmen(Verknuepfung $ziel, Verknuepfung $quelle)
+    {
+        if ((int) $quelle->perApi === 1) {
+            $ziel->perApi = 1;
+        }
+        if ((int) $quelle->gesendetAm > (int) $ziel->gesendetAm) {
+            $ziel->gesendetAm = (int) $quelle->gesendetAm;
+            $ziel->fingerabdruck = (string) $quelle->fingerabdruck;
+        }
+        if ((int) $ziel->variantenId <= 0 && (int) $quelle->variantenId > 0) {
+            $ziel->variantenId = (int) $quelle->variantenId;
+        }
     }
 
     private function zustand($gelesen)

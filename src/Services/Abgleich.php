@@ -221,6 +221,11 @@ class Abgleich
                 // fehlende Markierung eine Anweisung.
                 'verwaltet'          => $bekannt !== null && (int) $bekannt->gesendetAm > 0,
                 'perApi'             => $bekannt !== null && (int) $bekannt->perApi === 1,
+                // Angelegt, aber die ID kam nicht an. Nicht noch einmal
+                // anlegen — die Bestandsaufnahme findet das Inserat ueber
+                // seine Referenz und traegt die ID nach.
+                'angelegtOhneId'     => $bekannt !== null && (int) $bekannt->inseratId <= 0
+                    && (int) $bekannt->gesendetAm > 0,
             ));
 
             $tat = $entscheidung['tat'];
@@ -428,13 +433,7 @@ class Abgleich
 
     private function inseratIdAus(array $antwort)
     {
-        $daten = $antwort['daten'];
-        foreach (array('id', 'listingId', 'adId') as $schluessel) {
-            if (isset($daten[$schluessel]) && (int) $daten[$schluessel] > 0) {
-                return (int) $daten[$schluessel];
-            }
-        }
-        return 0;
+        return Antwort::inseratId(is_array($antwort['daten']) ? $antwort['daten'] : array());
     }
 
     /**

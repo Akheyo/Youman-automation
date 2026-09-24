@@ -38,6 +38,8 @@ class Entscheidung
      *                              fehlende Markierung eine Anweisung.
      *   perApi              bool   Hat das Plugin es ueber die API angelegt? Nur
      *                              dann laesst es sich aendern.
+     *   angelegtOhneId      bool   Das Plugin hat es angelegt, kennt die ID
+     *                              aber (noch) nicht.
      * @return array ['tat', 'grund']
      */
     public static function treffen(array $lage)
@@ -48,7 +50,12 @@ class Entscheidung
         $inseratId = isset($lage['inseratId']) ? (int) $lage['inseratId'] : 0;
         $zustand   = isset($lage['zustand']) ? (string) $lage['zustand'] : 'unbekannt';
         $bekannt   = $inseratId > 0;
-        $aktiv     = $bekannt && $zustand === 'aktiv';
+        // Alles, was nicht ausdruecklich pausiert ist, gilt als sichtbar —
+        // auch "unbekannt". Darunter faellt ein frisch angelegtes Inserat in
+        // der Pruefung: Es geht gleich online und muss bei Bestand 0 genauso
+        // pausiert werden. Einmal zu viel pausieren schadet nicht, ein
+        // verkauftes Stueck, das online bleibt, schon.
+        $aktiv     = $bekannt && $zustand !== 'pausiert';
         $verwaltet = $bekannt && !empty($lage['verwaltet']);
         $perApi    = $bekannt && !empty($lage['perApi']);
 
@@ -74,6 +81,15 @@ class Entscheidung
             return self::tat(self::NICHTS, $bekannt
                 ? 'Nicht markiert, steht drueben schon still.'
                 : 'Nicht markiert.');
+        }
+
+        // ---- Angelegt, ID noch unbekannt ----------------------------------------
+        // Ohne ID laesst sich drueben nichts tun, und ein zweites Anlegen
+        // waere eine Dublette. Die Bestandsaufnahme holt die ID nach.
+        if (!$bekannt && !empty($lage['angelegtOhneId'])) {
+            return self::tat(self::ZURUECK,
+                'Schon angelegt, die Inserats-ID ist aber noch unbekannt. '
+                . 'Die naechste Bestandsaufnahme ordnet es zu.');
         }
 
         // ---- Maengel --------------------------------------------------------

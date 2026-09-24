@@ -554,4 +554,38 @@ $p->gleich(array(), $leer['variationSalesPrices'], 'sondern zu leeren Werten - u
 $gliederung = Suchdokument::gliederung($dokument);
 $p->gleich('net,physical', $gliederung['stock'], 'die Gliederung nennt die Unterschluessel, fuer die Fehlersuche');
 
+// --- Die ID aus der Anlege-Antwort ------------------------------------------
+// Am 24.09. im Testsystem: angelegt, aber die ID nicht gefunden - die
+// Zuordnung bekam 0, und der naechste Lauf wollte ein zweites Mal anlegen.
+$p->gruppe('Inserats-ID nach dem Anlegen');
+$p->gleich(22811645, Antwort::inseratId(array('success' => true, 'listing' => array('id' => 22811645))),
+    'die ID steht im mitgeschickten Inserat');
+$p->gleich(77, Antwort::inseratId(array('success' => true, 'ad' => array('id' => 77))),
+    'auch unter dem alten Namen "ad"');
+$p->gleich(5954193, Antwort::inseratId(array('success' => true, 'id' => 5954193)),
+    'oder oben in der Antwort');
+$p->gleich(0, Antwort::inseratId(array('success' => true)), 'keine ID: 0, kein Absturz');
+
+$p->gruppe('Angelegt, ID unbekannt');
+$ohneId = Entscheidung::treffen($lage(array('inseratId' => 0, 'angelegtOhneId' => true)));
+$p->gleich(Entscheidung::ZURUECK, $ohneId['tat'],
+    'schon angelegt ohne bekannte ID: NICHT noch einmal anlegen');
+$p->gleich(Entscheidung::ZURUECK, Entscheidung::treffen($lage(array(
+    'inseratId' => 0, 'angelegtOhneId' => true, 'bestand' => 0)))['tat'],
+    'auch bei Bestand 0 nicht - ohne ID gibt es nichts zu pausieren');
+
+$p->gruppe('Zustand unbekannt oder in Pruefung');
+$p->gleich(Entscheidung::PAUSIEREN, Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'unbekannt', 'bestand' => 0)))['tat'],
+    'ein frisches Inserat in der Pruefung wird bei Bestand 0 pausiert');
+$p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'pausiert', 'bestand' => 0)))['tat'],
+    'ein pausiertes bleibt bei Bestand 0, wie es ist');
+$p->gleich(Entscheidung::AKTIVIEREN, Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'pausiert', 'bestand' => 1)))['tat'],
+    'ein pausiertes wird bei Bestand wieder aktiviert');
+$p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'unbekannt', 'bestand' => 1, 'fingerabdruck' => 'abc')))['tat'],
+    'ein unbekanntes mit Bestand wird nicht blind aktiviert');
+
 exit($p->bericht());

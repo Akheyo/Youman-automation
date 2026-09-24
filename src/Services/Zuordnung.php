@@ -65,9 +65,21 @@ class Zuordnung
         $karte = array();
         $zeilen = $this->db->query(Verknuepfung::class)->get();
         foreach ((array) $zeilen as $zeile) {
-            $karte[(int) $zeile->artikelId] = $zeile;
+            $artikelId = (int) $zeile->artikelId;
+            // Gibt es zu einem Artikel mehrere Zeilen, gewinnt die mit
+            // Inserats-ID, dann die vom Plugin angelegte. Sonst entschiede
+            // die zufaellige Reihenfolge der Tabelle, welches Inserat der
+            // Lauf anfasst.
+            if (!isset($karte[$artikelId]) || $this->vorrang($zeile) > $this->vorrang($karte[$artikelId])) {
+                $karte[$artikelId] = $zeile;
+            }
         }
         return $karte;
+    }
+
+    private function vorrang($zeile)
+    {
+        return ((int) $zeile->inseratId > 0 ? 2 : 0) + ((int) $zeile->perApi === 1 ? 1 : 0);
     }
 
     public function alle()
@@ -151,6 +163,11 @@ class Zuordnung
     {
         $zeilen = array();
         foreach ($this->alle() as $zeile) {
+            if ((int) $zeile->inseratId <= 0) {
+                // Noch ohne ID: Das ist (noch) kein Inserat, das drueben
+                // gezaehlt werden kann.
+                continue;
+            }
             $zeilen[] = array(
                 'inseratId' => (int) $zeile->inseratId,
                 'artikelId' => (int) $zeile->artikelId,
