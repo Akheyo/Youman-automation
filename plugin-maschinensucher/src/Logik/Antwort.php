@@ -28,6 +28,33 @@ class Antwort
      * @param array $roh Rueckgabe von resources/lib/ruf.php
      * @return array ['art', 'meldung', 'daten', 'felder', 'hinweise', 'nochmal']
      */
+    /**
+     * Die Inserats-ID aus der Antwort auf POST /json/listing.
+     *
+     * Sie steht NICHT oben in der Antwort, sondern im mitgeschickten
+     * Inserat: {"success": true, "listing": {"id": 22811645, ...}}. Aeltere
+     * Antworten nennen dasselbe "ad". Am 24.09. wurde nur oben gesucht — die
+     * Zuordnung bekam die ID 0, und der naechste Lauf wollte den Artikel
+     * ein zweites Mal anlegen.
+     *
+     * @return int 0, wenn keine zu finden ist
+     */
+    public static function inseratId(array $daten)
+    {
+        foreach (array('listing', 'ad') as $huelle) {
+            if (isset($daten[$huelle]) && is_array($daten[$huelle])
+                && isset($daten[$huelle]['id']) && (int) $daten[$huelle]['id'] > 0) {
+                return (int) $daten[$huelle]['id'];
+            }
+        }
+        foreach (array('id', 'listingId', 'adId') as $schluessel) {
+            if (isset($daten[$schluessel]) && (int) $daten[$schluessel] > 0) {
+                return (int) $daten[$schluessel];
+            }
+        }
+        return 0;
+    }
+
     public static function lesen(array $roh)
     {
         $status = isset($roh['status']) ? (int) $roh['status'] : 0;
