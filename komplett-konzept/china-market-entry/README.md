@@ -33,6 +33,6 @@ Kernsatz: *You provide the products. We provide your route into Germany and Euro
 
 ## Kontakt auf dem Flyer
 
-Mario Parlitz · WeChat +49 177 2711123 · parlitz@mapatec.de · www.mapatec.de
+Mario Parlitz · WeChat +49 177 2711123 · parlitz@komplett-konzept.de · www.komplett-konzept.de
 
-Canva-Design: https://canva.link/livy33ru0texhqf (Canva-Format A3, gleiches Seitenverhältnis – auf A4 skaliert druckbar; nur MapaTec) – PDF: `MapaTec_Canton_Fair_Flyer_A4.pdf`
+Canva-Design: https://canva.link/livy33ru0texhqf – zweiseitig (Vorderseite + Rückseite mit den 3 Modellen), Absender Komplett Konzept, 19.000 m² Lagerfläche bundesweit, B2B Deutschland/Europa + B2C. PDF: `KomplettKonzept_Canton_Fair_Flyer.pdf` (Canva-Format A3, auf A4 skaliert druckbar)
