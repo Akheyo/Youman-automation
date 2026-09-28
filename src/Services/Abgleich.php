@@ -63,13 +63,17 @@ class Abgleich
     /** @var Rubrikauswahl */
     private $rubriken;
 
+    /** @var Lagerbestand */
+    private $lager;
+
     public function __construct(
         Artikelsuche $suche,
         Zugang $api,
         Zuordnung $zuordnung,
         Einstellungen $einstellungen,
         Bilder $bilder,
-        Rubrikauswahl $rubriken
+        Rubrikauswahl $rubriken,
+        Lagerbestand $lager
     ) {
         $this->suche = $suche;
         $this->api = $api;
@@ -77,6 +81,7 @@ class Abgleich
         $this->einstellungen = $einstellungen;
         $this->bilder = $bilder;
         $this->rubriken = $rubriken;
+        $this->lager = $lager;
     }
 
     /**
@@ -255,6 +260,14 @@ class Abgleich
             $gebaut = array('koerper' => array(), 'maengel' => array(), 'hinweise' => array());
             if ($markiert) {
                 $gebaut = Inseratdaten::bauen($artikel, $umgebung);
+            }
+
+            // Verschickt oder nur verkauft? Den Warenbestand kennt der
+            // Suchindex nicht - fuer die Kandidaten direkt aus dem Lager.
+            if ($versandLoeschen && $markiert && $artikel['warenbestand'] === null
+                && $bekannt !== null && (int) $bekannt->inseratId > 0
+                && (float) $artikel['bestand'] <= 0) {
+                $artikel['warenbestand'] = $this->lager->warenbestand((int) $artikel['variationId']);
             }
 
             $neuerAbdruck = count($gebaut['koerper']) > 0
