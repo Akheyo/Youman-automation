@@ -21,6 +21,7 @@ class Entscheidung
     const AENDERN      = 'aendern';
     const PAUSIEREN    = 'pausieren';
     const AKTIVIEREN   = 'aktivieren';
+    const LOESCHEN     = 'loeschen';
     const NICHTS       = 'nichts';
     const ZURUECK      = 'zurueckhalten';
 
@@ -45,6 +46,13 @@ class Entscheidung
      *   uebernommen         bool   Der Artikel war schon einmal markiert. Dann
      *                              heisst eine fehlende Markierung "offline",
      *                              auch bei einem vorgefundenen Inserat.
+     *   warenbestand        float|null Physischer Bestand. 0 = verschickt.
+     *                              null = unbekannt, dann wird nie geloescht.
+     *   loeschen            bool   Verschickte Artikel loeschen (Einstellung,
+     *                              und Maschinensucher hat es nicht schon
+     *                              einmal abgelehnt).
+     *   geloescht           bool   Das Plugin hat das Inserat nach dem Versand
+     *                              geloescht; die Zeile steht ohne ID da.
      * @return array ['tat', 'grund']
      */
     public static function treffen(array $lage)
@@ -96,6 +104,22 @@ class Entscheidung
             return self::tat(self::ZURUECK,
                 'Schon angelegt, die Inserats-ID ist aber noch unbekannt. '
                 . 'Die naechste Bestandsaufnahme ordnet es zu.');
+        }
+
+        // ---- Verschickt ---------------------------------------------------------
+        // Verkauft ist: Warenbestand 1, reserviert 1, netto 0 - das pausiert
+        // weiter unten. Verschickt ist: auch der Warenbestand ist 0. Dann ist
+        // die Maschine weg, und das Inserat wird geloescht. Vor den Maengeln,
+        // weil zum Loeschen keine vollstaendigen Daten noetig sind.
+        $warenbestand = isset($lage['warenbestand']) && $lage['warenbestand'] !== null
+            ? (float) $lage['warenbestand'] : null;
+        $verschickt = $warenbestand !== null && $warenbestand <= 0 && $bestand <= 0;
+        if ($bekannt && $verschickt && !empty($lage['loeschen'])) {
+            return self::tat(self::LOESCHEN, 'Verschickt - kein Warenbestand mehr. Das Inserat wird geloescht.');
+        }
+        if (!$bekannt && !empty($lage['geloescht']) && $bestand <= 0) {
+            // Kein Mangel, gehoert nicht in "nicht uebertragen".
+            return self::tat(self::NICHTS, 'Verschickt, das Inserat wurde geloescht.');
         }
 
         // ---- Maengel --------------------------------------------------------
@@ -194,7 +218,8 @@ class Entscheidung
         return $tat === self::ANLEGEN
             || $tat === self::AENDERN
             || $tat === self::PAUSIEREN
-            || $tat === self::AKTIVIEREN;
+            || $tat === self::AKTIVIEREN
+            || $tat === self::LOESCHEN;
     }
 
     private static function tat($tat, $grund)

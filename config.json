@@ -193,6 +193,25 @@
             "tooltip": "Config.kategorieZuordnungTooltip"
           }
         },
+        "versandLoeschen": {
+          "type": "select",
+          "required": true,
+          "label": "Config.versandLoeschenLabel",
+          "options": {
+            "defaultValue": "ja",
+            "tooltip": "Config.versandLoeschenTooltip",
+            "listBoxValues": [
+              {
+                "caption": "Config.versandLoeschenJa",
+                "value": "ja"
+              },
+              {
+                "caption": "Config.versandLoeschenNein",
+                "value": "nein"
+              }
+            ]
+          }
+        },
         "altInserateAendern": {
           "type": "inputText",
           "required": false,

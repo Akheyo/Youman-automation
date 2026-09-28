@@ -31,7 +31,8 @@
     "MaschinensucherMarkt\\Migrations\\TabellenAnlegen",
     "MaschinensucherMarkt\\Migrations\\ZuordnungAnlegen",
     "MaschinensucherMarkt\\Migrations\\ZuordnungErweitern",
-    "MaschinensucherMarkt\\Migrations\\ZuordnungMarkierung"
+    "MaschinensucherMarkt\\Migrations\\ZuordnungMarkierung",
+    "MaschinensucherMarkt\\Migrations\\ZuordnungLoeschen"
   ],
   "platform": {
     "php": ">=7.3"

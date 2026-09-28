@@ -520,8 +520,8 @@ $p->gleich('Siemens', Suchdokument::herstellername($dokument), 'und als Name, de
 $p->gleich(27, $v['item']['flagOne'], 'die Markierung, falls das Dokument sie mitbringt');
 $p->gleich(array(array('salesPriceId' => 1, 'price' => 5.99), array('salesPriceId' => 25, 'price' => 480.0)),
     $v['variationSalesPrices'], 'die Preise in der Form, die die Preisauswahl kennt');
-$p->gleich(array(array('netStock' => 3.0)), $v['stock'],
-    'der Bestand: "net" aus dem Index wird zum netStock der alten Form');
+$p->gleich(array(array('netStock' => 3.0, 'physicalStock' => 4.0)), $v['stock'],
+    'der Bestand: "net" und "physical" aus dem Index werden zur alten Form');
 
 // Die ganze Kette bis zum Artikel, den der Abgleich verarbeitet.
 $a = Artikelabbildung::ausVariante($v, array(4 => 'Siemens'), array(), 25, 1);
@@ -529,6 +529,7 @@ $p->gleich('Siemens V20 Frequenzumrichter', $a['titel'], 'der deutsche Titel wir
 $p->gleich('Neuwertig, originalverpackt.', $a['beschreibung'], 'ebenso die deutsche Beschreibung');
 $p->gleich(480.0, $a['preis'], 'der Preis aus der eingestellten Liste 25');
 $p->gleich(3.0, $a['bestand'], 'der Bestand');
+$p->gleich(4.0, $a['warenbestand'], 'der Warenbestand (physisch)');
 $p->gleich('Siemens', $a['hersteller'], 'der Hersteller');
 
 $ohneHuelle = Suchdokument::alsVariante($dokument['data']);
@@ -540,6 +541,14 @@ $bestandAlsListe = Suchdokument::alsVariante(array('data' => array(
 )));
 $p->gleich(array(array('netStock' => 2.0), array('netStock' => 1.0)), $bestandAlsListe['stock'],
     'ein Bestand als Liste je Lager wird ebenfalls gelesen');
+$p->gleich(null, Artikelabbildung::warenbestand($bestandAlsListe),
+    'ohne physische Angabe ist der Warenbestand unbekannt (null) - dann wird nie geloescht');
+$verkauftDok = Suchdokument::alsVariante(array('data' => array(
+    'variation' => array('id' => 7), 'item' => array('id' => 7),
+    'stock' => array('net' => 0, 'physical' => 1),
+)));
+$p->gleich(0.0, Artikelabbildung::bestand($verkauftDok), 'verkauft: netto 0');
+$p->gleich(1.0, Artikelabbildung::warenbestand($verkauftDok), 'verkauft: Warenbestand noch 1');
 
 $preisVerschachtelt = Suchdokument::alsVariante(array('data' => array(
     'variation' => array('id' => 6), 'item' => array('id' => 6),
@@ -691,5 +700,52 @@ $p->gleich(Entscheidung::AENDERN, Entscheidung::treffen($lage(array(
 $p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
     'inseratId' => 500, 'zustand' => 'aktiv', 'fingerabdruck' => 'abc', 'perApi' => false, 'aenderungVersuchen' => true)))['tat'],
     'auch freigegeben: ohne Aenderung wird nichts gesendet');
+
+// --- Verkauft und verschickt ----------------------------------------------
+// Verkauft: Warenbestand 1, reserviert 1, netto 0 -> pausieren.
+// Verschickt: Warenbestand 0 -> loeschen.
+$p->gruppe('Verkauft und verschickt');
+$verkauft = Entscheidung::treffen($lage(array(
+    'bestand' => 0, 'warenbestand' => 1, 'inseratId' => 500, 'zustand' => 'aktiv', 'loeschen' => true)));
+$p->gleich(Entscheidung::PAUSIEREN, $verkauft['tat'], 'verkauft (netto 0, Warenbestand 1): pausieren');
+$verschickt = Entscheidung::treffen($lage(array(
+    'bestand' => 0, 'warenbestand' => 0, 'inseratId' => 500, 'zustand' => 'pausiert', 'loeschen' => true)));
+$p->gleich(Entscheidung::LOESCHEN, $verschickt['tat'], 'verschickt (Warenbestand 0): loeschen');
+$p->enthaelt('Verschickt', $verschickt['grund'], 'und der Grund sagt warum');
+$p->gleich(Entscheidung::LOESCHEN, Entscheidung::treffen($lage(array(
+    'bestand' => 0, 'warenbestand' => 0, 'inseratId' => 500, 'zustand' => 'aktiv', 'loeschen' => true)))['tat'],
+    'auch direkt aus aktiv heraus');
+$p->gleich(Entscheidung::LOESCHEN, Entscheidung::treffen($lage(array(
+    'bestand' => 0, 'warenbestand' => 0, 'inseratId' => 500, 'zustand' => 'aktiv', 'loeschen' => true,
+    'maengel' => array('Keine Beschreibung.'))))['tat'],
+    'auch wenn Angaben fehlen - zum Loeschen braucht es keine');
+$p->gleich(Entscheidung::PAUSIEREN, Entscheidung::treffen($lage(array(
+    'bestand' => 0, 'warenbestand' => 0, 'inseratId' => 500, 'zustand' => 'aktiv', 'loeschen' => false)))['tat'],
+    'Loeschen abgeschaltet oder abgelehnt: nur pausieren');
+$p->gleich(Entscheidung::PAUSIEREN, Entscheidung::treffen($lage(array(
+    'bestand' => 0, 'warenbestand' => null, 'inseratId' => 500, 'zustand' => 'aktiv', 'loeschen' => true)))['tat'],
+    'Warenbestand unbekannt: nie loeschen, nur pausieren');
+$p->gleich(Entscheidung::PAUSIEREN, Entscheidung::treffen($lage(array(
+    'bestand' => 0, 'inseratId' => 500, 'zustand' => 'aktiv', 'loeschen' => true)))['tat'],
+    'ohne Angabe zum Warenbestand ebenso');
+$p->gleich(Entscheidung::PAUSIEREN, Entscheidung::treffen($lage(array(
+    'markiert' => false, 'bestand' => 0, 'warenbestand' => 0, 'inseratId' => 500, 'zustand' => 'aktiv',
+    'verwaltet' => true, 'loeschen' => true)))['tat'],
+    'Markierung entfernt: pausieren, auch wenn verschickt - geloescht wird nur Markiertes');
+$p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
+    'markiert' => false, 'bestand' => 0, 'warenbestand' => 0, 'inseratId' => 500, 'zustand' => 'aktiv',
+    'loeschen' => true)))['tat'],
+    'nie markiertes, vorgefundenes Inserat: nicht angefasst, auch nicht geloescht');
+$p->gleich(Entscheidung::AKTIVIEREN, Entscheidung::treffen($lage(array(
+    'bestand' => 1, 'warenbestand' => 1, 'inseratId' => 500, 'zustand' => 'pausiert', 'loeschen' => true)))['tat'],
+    'Auftrag storniert (wieder netto 1): aktivieren');
+$danach = Entscheidung::treffen($lage(array(
+    'bestand' => 0, 'warenbestand' => 0, 'inseratId' => 0, 'geloescht' => true, 'loeschen' => true)));
+$p->gleich(Entscheidung::NICHTS, $danach['tat'],
+    'nach dem Loeschen: nichts - und nicht unter "nicht uebertragen"');
+$p->gleich(Entscheidung::ANLEGEN, Entscheidung::treffen($lage(array(
+    'bestand' => 1, 'warenbestand' => 1, 'inseratId' => 0, 'geloescht' => true)))['tat'],
+    'Retoure (wieder Bestand): neu anlegen');
+$p->gleich(true, Entscheidung::schreibt(Entscheidung::LOESCHEN), 'Loeschen zaehlt gegen die Schreibgrenze');
 
 exit($p->bericht());

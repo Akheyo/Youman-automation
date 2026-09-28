@@ -163,7 +163,10 @@ class Abgleich
             Entscheidung::ANLEGEN => 0, Entscheidung::AENDERN => 0,
             Entscheidung::PAUSIEREN => 0, Entscheidung::AKTIVIEREN => 0,
             Entscheidung::NICHTS => 0, Entscheidung::ZURUECK => 0,
+            Entscheidung::LOESCHEN => 0,
         );
+        $versandLoeschen = $this->einstellungen->versandLoeschen();
+        $geloeschtListe = array();
         $gelesen = 0;
         $geschrieben = 0;
         $gescheitert = array();
@@ -253,6 +256,13 @@ class Abgleich
                 // seine Referenz und traegt die ID nach.
                 'angelegtOhneId'     => $bekannt !== null && (int) $bekannt->inseratId <= 0
                     && (int) $bekannt->gesendetAm > 0,
+                // Verschickt (Warenbestand 0): loeschen - ausser es ist
+                // abgeschaltet oder Maschinensucher hat es schon abgelehnt.
+                'warenbestand'       => $artikel['warenbestand'],
+                'loeschen'           => $versandLoeschen
+                    && ($bekannt === null || (int) $bekannt->loeschenAbgelehnt <= 0),
+                'geloescht'          => $bekannt !== null && (int) $bekannt->inseratId <= 0
+                    && (string) $bekannt->zustand === Verknuepfung::GELOESCHT,
             ));
 
             $tat = $entscheidung['tat'];
@@ -313,6 +323,11 @@ class Abgleich
 
             if (!$ergebnis['ok']) {
                 $gescheitert[] = array('artikel' => $artikelId, 'grund' => $ergebnis['meldung']);
+            } elseif ($tat === Entscheidung::LOESCHEN) {
+                $geloeschtListe[] = array(
+                    'artikel' => $artikelId,
+                    'inserat' => $bekannt !== null ? (int) $ergebnis['inserat'] : 0,
+                );
             }
         }
 
@@ -325,6 +340,7 @@ class Abgleich
             'geaendert'   => $zaehler[Entscheidung::AENDERN],
             'pausiert'    => $zaehler[Entscheidung::PAUSIEREN],
             'aktiviert'   => $zaehler[Entscheidung::AKTIVIEREN],
+            'geloescht'   => $zaehler[Entscheidung::LOESCHEN],
             'unveraendert' => $zaehler[Entscheidung::NICHTS],
             'zurueck'     => $zaehler[Entscheidung::ZURUECK],
             'gebremst'    => $gebremst,
@@ -345,6 +361,10 @@ class Abgleich
             // Genau diese Liste ist der Sinn des Probelaufs: Sie zeigt
             // Artikel fuer Artikel, was beim Umschalten passieren wuerde.
             $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.vorhaben', array_slice($vorhaben, 0, 50));
+        }
+
+        if (count($geloeschtListe) > 0) {
+            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.geloescht', array_slice($geloeschtListe, 0, 50));
         }
 
         if (count($gescheitert) > 0) {
@@ -377,6 +397,10 @@ class Abgleich
                 return array('ok' => true, 'meldung' => '');
             }
             return $this->fehlschlag($bekannt, $antwort, 'Pausieren');
+        }
+
+        if ($tat === Entscheidung::LOESCHEN) {
+            return $this->loeschen($bekannt, $inseratId, $grund);
         }
 
         if ($tat === Entscheidung::AKTIVIEREN) {
@@ -445,6 +469,55 @@ class Abgleich
             return array('ok' => false, 'meldung' => $meldung);
         }
         return $this->fehlschlag($bekannt, $antwort, 'Aendern');
+    }
+
+    /**
+     * Verschickt: das Inserat loeschen.
+     *
+     * Die Zeile bleibt stehen, ohne Inserats-ID und als "geloescht". So
+     * weiss der naechste Lauf, warum der (noch markierte) Artikel kein
+     * Inserat hat, und fuehrt ihn nicht unter "nicht uebertragen". Kommt
+     * wieder Ware, wird neu angelegt.
+     *
+     * Lehnt Maschinensucher das Loeschen ab (etwa bei Inseraten von vor dem
+     * Plugin), wird stattdessen pausiert und nicht jeden Lauf neu versucht.
+     */
+    private function loeschen($bekannt, $inseratId, $grund)
+    {
+        $antwort = $this->api->loeschen($inseratId);
+        if (Antwort::istOk($antwort) || $antwort['art'] === Antwort::FEHLT) {
+            $bekannt->inseratId = 0;
+            $bekannt->zustand = Verknuepfung::GELOESCHT;
+            // Sonst hielte der Abgleich die Zeile fuer "angelegt, ID unbekannt".
+            $bekannt->gesendetAm = 0;
+            $bekannt->fingerabdruck = '';
+            $bekannt->perApi = 0;
+            $bekannt->meldung = 'Inserat ' . (int) $inseratId . ' geloescht: ' . $grund;
+            $this->zuordnung->speichern($bekannt);
+            return array('ok' => true, 'meldung' => '', 'inserat' => (int) $inseratId);
+        }
+
+        if ($antwort['art'] !== Antwort::ABGELEHNT) {
+            // Netz, Zeitlimit, Serverfehler: naechster Lauf versucht es wieder.
+            return $this->fehlschlag($bekannt, $antwort, 'Loeschen');
+        }
+
+        $bekannt->loeschenAbgelehnt = time();
+        $meldung = 'Loeschen abgelehnt: ' . $antwort['meldung'];
+        $this->getLogger(__METHOD__)->warning('MaschinensucherMarkt::log.loeschenAbgelehnt', array(
+            'artikel' => (int) $bekannt->artikelId,
+            'inserat' => (int) $inseratId,
+            'meldung' => $antwort['meldung'],
+        ));
+        if ((string) $bekannt->zustand !== Verknuepfung::PAUSIERT) {
+            $pause = $this->api->pausieren($inseratId);
+            if (Antwort::istOk($pause)) {
+                $bekannt->zustand = Verknuepfung::PAUSIERT;
+                $meldung .= ' - stattdessen pausiert.';
+            }
+        }
+        $this->merken($bekannt, null, null, null, $meldung);
+        return array('ok' => false, 'meldung' => $meldung);
     }
 
     /**

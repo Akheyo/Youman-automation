@@ -159,8 +159,12 @@ class Suchdokument
     }
 
     /**
-     * Der Bestand. Im Suchindex steht er als ein Objekt mit "net", in der
-     * alten Suche als Liste je Lager mit "netStock". Beides wird gelesen.
+     * Der Bestand. Im Suchindex steht er als ein Objekt mit "net" und
+     * "physical", in der alten Suche als Liste je Lager mit "netStock" und
+     * "physicalStock". Beides wird gelesen.
+     *
+     * Der Netto-Bestand entscheidet ueber Pausieren (verkauft = reserviert),
+     * der Warenbestand ueber Loeschen (verschickt = physisch weg).
      */
     private static function bestand(array $daten)
     {
@@ -170,14 +174,24 @@ class Suchdokument
         }
         $einzeln = self::erstes($bestand, array('net', 'netStock', 'stockNet'), null);
         if ($einzeln !== null && !is_array($einzeln)) {
-            return array(array('netStock' => (float) $einzeln));
+            $zeile = array('netStock' => (float) $einzeln);
+            $physisch = self::erstes($bestand, array('physical', 'physicalStock'), null);
+            if ($physisch !== null && !is_array($physisch)) {
+                $zeile['physicalStock'] = (float) $physisch;
+            }
+            return array($zeile);
         }
         $heraus = array();
         foreach ($bestand as $zeile) {
             if (is_array($zeile)) {
                 $netto = self::erstes($zeile, array('netStock', 'net'), null);
                 if ($netto !== null) {
-                    $heraus[] = array('netStock' => (float) $netto);
+                    $gelesen = array('netStock' => (float) $netto);
+                    $physisch = self::erstes($zeile, array('physicalStock', 'physical'), null);
+                    if ($physisch !== null && !is_array($physisch)) {
+                        $gelesen['physicalStock'] = (float) $physisch;
+                    }
+                    $heraus[] = $gelesen;
                 }
             }
         }

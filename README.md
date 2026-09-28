@@ -27,11 +27,19 @@ nur Feld 1 gelesen.
 
 ## Bestand: was weg ist, geht offline
 
-Der Bestand wird bei jedem Lauf frisch gelesen. Fällt ein Artikel auf **0**
-oder wird er in Plenty **inaktiv** geschaltet, fehlt er in der nächsten
-Importdatei, und Maschinensucher nimmt das Inserat beim nächsten Abgleich
-herunter. Gezählt wird der **Netto**-Bestand: Was reserviert ist, gehört schon
-jemandem.
+Der Bestand wird bei jedem Lauf frisch gelesen, in zwei Stufen:
+
+| Plenty                                  | Bedeutung  | Inserat              |
+|-----------------------------------------|------------|----------------------|
+| Warenbestand 1, reserviert 1, netto 0   | verkauft   | **pausiert**         |
+| Warenbestand 0                          | verschickt | **gelöscht**         |
+| wieder netto > 0 (Storno)               |            | wieder aktiviert     |
+| nach dem Löschen wieder Bestand (Retoure)|           | neu angelegt         |
+
+Gelöscht wird nur bei markierten Artikeln und nur, wenn der Warenbestand
+bekannt ist. Die Einstellung *„Verschickte Artikel löschen“* schaltet das ab
+(dann bleibt es beim Pausieren). Lehnt Maschinensucher das Löschen ab, wird
+pausiert und nicht jeden Lauf neu versucht (Protokoll: „Löschen abgelehnt“).
 
 ## Was nicht rausgeht
 
