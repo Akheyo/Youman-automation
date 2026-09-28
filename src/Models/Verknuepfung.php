@@ -29,6 +29,7 @@ use Plenty\Modules\Plugin\DataBase\Contracts\Model;
  * @property int    $gesehenAm     Unix-Zeit, zu der es drueben zuletzt auftauchte
  * @property string $meldung       Letzter Grund, warum es nicht durchging
  * @property int    $perApi        1 = vom Plugin ueber die API angelegt, 0 = vorgefunden
+ * @property int    $markiertGesehen Unix-Zeit, zu der das Plugin den Artikel erstmals markiert sah (0 = nie)
  */
 class Verknuepfung extends Model
 {
@@ -60,6 +61,17 @@ class Verknuepfung extends Model
      * wurde.
      */
     public $perApi = 0;
+
+    /**
+     * Wann das Plugin den Artikel zum ersten Mal MIT Markierung gesehen hat.
+     *
+     * Ab da gilt das Inserat als uebernommen, auch wenn es vorgefunden und
+     * nie vom Plugin geschrieben wurde: Wird die Markierung danach entfernt,
+     * geht es offline. Ein Artikel, der nie markiert war, bleibt dagegen
+     * unberuehrt — sonst pausierte der erste Lauf auf einem frischen System
+     * alle bestehenden Inserate.
+     */
+    public $markiertGesehen = 0;
 
     public function getTableName(): string
     {

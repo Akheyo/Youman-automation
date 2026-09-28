@@ -30,7 +30,8 @@
   "runOnBuild": [
     "MaschinensucherMarkt\\Migrations\\TabellenAnlegen",
     "MaschinensucherMarkt\\Migrations\\ZuordnungAnlegen",
-    "MaschinensucherMarkt\\Migrations\\ZuordnungErweitern"
+    "MaschinensucherMarkt\\Migrations\\ZuordnungErweitern",
+    "MaschinensucherMarkt\\Migrations\\ZuordnungMarkierung"
   ],
   "platform": {
     "php": ">=7.3"
