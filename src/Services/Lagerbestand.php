@@ -50,6 +50,10 @@ class Lagerbestand
 
         // Kein (array)-Cast: Auf einer Sammlung ergibt der nur deren
         // interne Eigenschaften (so schon bei den Auftragspositionen).
+        // Manche Plenty-Listen kommen als Seite: {page, totalsCount, entries}.
+        if (is_array($zeilen) && isset($zeilen['entries']) && is_array($zeilen['entries'])) {
+            $zeilen = $zeilen['entries'];
+        }
         $gelesen = array();
         if ($zeilen !== null) {
             foreach ($zeilen as $zeile) {
@@ -65,6 +69,7 @@ class Lagerbestand
             $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.lagerGelesen', array(
                 'variante'   => $variantenId,
                 'zeilen'     => count($gelesen),
+                'art'        => is_object($zeilen) ? get_class($zeilen) : gettype($zeilen),
                 'ersteZeile' => count($gelesen) > 0 ? $gelesen[0] : null,
             ));
         }
