@@ -36,7 +36,14 @@ class Lagerbestand
         }
         try {
             $lager = pluginApp(VariationStockRepositoryContract::class);
-            $zeilen = $lager->listStockByWarehouse($variantenId, array(), 1, 200);
+            // Spalten ausdruecklich nennen: Mit leerer Liste kam live eine Zeile
+            // ohne jedes Feld zurueck (28.09., ersteZeile: []).
+            $zeilen = $lager->listStockByWarehouse(
+                $variantenId,
+                array('warehouseId', 'physicalStock', 'reservedStock', 'netStock'),
+                1,
+                200
+            );
         } catch (\Throwable $e) {
             if (!$this->gewarnt) {
                 $this->gewarnt = true;
