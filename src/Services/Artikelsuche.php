@@ -2,8 +2,10 @@
 
 namespace MaschinensucherMarkt\Services;
 
+use Plenty\Modules\Cloud\ElasticSearch\Lib\ElasticSearch;
 use Plenty\Modules\Cloud\ElasticSearch\Lib\Processor\DocumentProcessor;
 use Plenty\Modules\Cloud\ElasticSearch\Lib\Search\Document\DocumentSearch;
+use Plenty\Modules\Cloud\ElasticSearch\Lib\Sorting\SingleSorting;
 use Plenty\Modules\Item\Search\Contracts\VariationElasticSearchSearchRepositoryContract;
 use Plenty\Modules\Item\Search\Filter\ItemFilter;
 use Plenty\Modules\Item\Search\Filter\VariationBaseFilter;
@@ -126,6 +128,15 @@ class Artikelsuche
                 $suche->addFilter($flagge);
             }
 
+            // Feste Reihenfolge. Ohne Sortierung liefert der Suchindex die
+            // Treffer je Seite in wechselnder Reihenfolge: Beim Blaettern
+            // kamen manche doppelt und andere gar nicht (28.09.: 592, 494,
+            // 561 markierte Artikel in drei Laeufen hintereinander).
+            try {
+                $suche->setSorting(pluginApp(SingleSorting::class, array('variation.id', ElasticSearch::SORTING_ORDER_ASC)));
+            } catch (\Throwable $e) {
+                // Ohne Sortierung weiter - lieber unsicher gezaehlt als gar nicht.
+            }
             $suche->setPage($seite, self::PRO_SEITE);
 
             $index = pluginApp(VariationElasticSearchSearchRepositoryContract::class);
