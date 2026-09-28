@@ -161,6 +161,7 @@ class Abgleich
         // Rueckgang echt (viele Markierungen auf einmal entfernt), zieht der
         // naechste Lauf nach - er vergleicht dann schon mit der neuen Zahl.
         $markierungUnsicher = false;
+        $markiertJetzt = -1;
         if (count($nurDiese) === 0) {
             $markiertJetzt = 0;
             foreach ($gefunden as $eintrag) {
@@ -376,6 +377,8 @@ class Abgleich
             'unveraendert' => $zaehler[Entscheidung::NICHTS],
             'zurueck'     => $zaehler[Entscheidung::ZURUECK],
             'gebremst'    => $gebremst,
+            'markiert'    => $markiertJetzt,
+            'markierungUnsicher' => $markierungUnsicher,
             'dauer'       => round(microtime(true) - $beginn, 1),
         );
         if (count($rubrikMeldungen) > 0) {
