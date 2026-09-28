@@ -246,6 +246,8 @@ class Abgleich
                 'verwaltet'          => $bekannt !== null && (int) $bekannt->gesendetAm > 0,
                 'perApi'             => $bekannt !== null && (int) $bekannt->perApi === 1,
                 'uebernommen'        => $bekannt !== null && (int) $bekannt->markiertGesehen > 0,
+                'aenderungVersuchen' => $bekannt !== null && (int) $bekannt->perApi !== 1
+                    && $this->einstellungen->altInserateAendern($artikelId),
                 // Angelegt, aber die ID kam nicht an. Nicht noch einmal
                 // anlegen — die Bestandsaufnahme findet das Inserat ueber
                 // seine Referenz und traegt die ID nach.
@@ -414,10 +416,33 @@ class Abgleich
             return $this->fehlschlag($bekannt, $antwort, 'Anlegen');
         }
 
+        $vorgefunden = $bekannt !== null && (int) $bekannt->perApi !== 1;
         $antwort = $this->api->aendern($inseratId, $koerper);
         if (Antwort::istOk($antwort)) {
+            if ($vorgefunden) {
+                // Maschinensucher hat die Aenderung eines vorgefundenen
+                // Inserats angenommen. Ab jetzt gilt es als aenderbar.
+                $bekannt->perApi = 1;
+                $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.altInseratGeaendert', array(
+                    'artikel' => (int) $artikel['itemId'],
+                    'inserat' => (int) $inseratId,
+                ));
+            }
             $this->merken($bekannt, null, $neuerAbdruck, time(), '');
             return array('ok' => true, 'meldung' => '');
+        }
+        if ($vorgefunden && $antwort['art'] === Antwort::ABGELEHNT) {
+            // Abgelehnt: den neuen Stand trotzdem als "gesehen" merken, sonst
+            // versucht es jeder Lauf erneut. Erst eine weitere Aenderung am
+            // Artikel loest den naechsten Versuch aus.
+            $meldung = 'Aendern eines vorgefundenen Inserats abgelehnt: ' . $antwort['meldung'];
+            $this->merken($bekannt, null, $neuerAbdruck, null, $meldung);
+            $this->getLogger(__METHOD__)->warning('MaschinensucherMarkt::log.altInseratAbgelehnt', array(
+                'artikel' => (int) $artikel['itemId'],
+                'inserat' => (int) $inseratId,
+                'meldung' => $antwort['meldung'],
+            ));
+            return array('ok' => false, 'meldung' => $meldung);
         }
         return $this->fehlschlag($bekannt, $antwort, 'Aendern');
     }
