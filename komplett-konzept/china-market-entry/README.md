@@ -33,4 +33,4 @@ Kernsatz: *You provide the products. We provide your route into Germany and Euro
 
 Mario Parlitz · WeChat +49 177 2711123 · info@komplett-konzept.de · www.komplett-konzept.de
 
-Canva-Design: https://canva.link/livy33ru0texhqf – zweiseitig (Vorderseite + Rückseite mit den 3 Modellen), Absender Komplett Konzept, 19.000 m² Lagerfläche bundesweit, B2B Deutschland/Europa + B2C. PDF: `KomplettKonzept_Canton_Fair_Flyer.pdf` (Canva-Format A3, auf A4 skaliert druckbar)
+Canva-Design: https://canva.link/livy33ru0texhqf – zweiseitig (Vorderseite + Rückseite mit den 3 Modellen), Absender Komplett Konzept, 19.000 m² Lagerfläche bundesweit, B2B & B2C Deutschland/Europaweit, QR-Codes als „Beispiele" (+ weitere Standorte bundesweit). PDF: `KomplettKonzept_Canton_Fair_Flyer.pdf` (Canva-Format A3, auf A4 skaliert druckbar)
