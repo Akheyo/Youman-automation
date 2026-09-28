@@ -86,6 +86,31 @@ class Artikelabbildung
     }
 
     /**
+     * Der Warenbestand (physisch) ueber alle Lager.
+     *
+     * Verkauft heisst in Plenty: Warenbestand 1, davon 1 reserviert, netto 0.
+     * Erst mit dem Warenausgang (verschickt) faellt auch der Warenbestand
+     * auf 0. Null, wenn keine Zeile ihn nennt — dann wird nie geloescht.
+     */
+    public static function warenbestand(array $variante)
+    {
+        $zeilen = self::wert($variante, 'stock', null);
+        if (!is_array($zeilen) || count($zeilen) === 0) {
+            return null;
+        }
+        $summe = 0.0;
+        $bekannt = false;
+        foreach ($zeilen as $zeile) {
+            $physisch = self::wert((array) $zeile, 'physicalStock', null);
+            if ($physisch !== null) {
+                $summe += (float) $physisch;
+                $bekannt = true;
+            }
+        }
+        return $bekannt ? $summe : null;
+    }
+
+    /**
      * Der Verkaufspreis.
      *
      * Reihenfolge: die konfigurierte Preisliste, sonst die Ersatzliste, sonst
@@ -218,6 +243,7 @@ class Artikelabbildung
             // Aus welcher Liste er stammt, entscheidet über netto/brutto.
             'preisErsatz' => $preis['ersatz'],
             'bestand'     => self::bestand($variante),
+            'warenbestand' => self::warenbestand($variante),
             'gewichtG'    => self::wert($variante, 'weightG', self::wert($variante, 'weightNetG', null)),
             'laengeMM'    => self::wert($variante, 'lengthMM', null),
             'breiteMM'    => self::wert($variante, 'widthMM', null),

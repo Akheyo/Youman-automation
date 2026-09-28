@@ -33,9 +33,11 @@ Datei auf.
 
 ## Ein Gerät vom Marktplatz nehmen
 
-Markierung entfernen, Artikel inaktiv schalten oder Bestand auf 0: Alle drei
-Wege führen dazu, dass der Artikel aus der Datei fällt. Beim nächsten Abgleich
-verschwindet das Inserat.
+- **Verkauft** (Warenbestand 1, reserviert 1, netto 0): Das Inserat wird pausiert.
+- **Verschickt** (Warenbestand 0): Das Inserat wird bei Maschinensucher gelöscht.
+  Abschaltbar über die Einstellung *„Verschickte Artikel löschen“*.
+- **Markierung entfernt**: Das Inserat wird pausiert.
+- **Storno** (wieder netto > 0): Das Inserat wird wieder aktiviert.
 
 ## Warum ein Artikel nicht erscheint
 

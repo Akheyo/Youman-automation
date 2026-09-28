@@ -180,6 +180,16 @@ class Einstellungen
     }
 
     /**
+     * Verschickte Artikel (Warenbestand 0) bei Maschinensucher loeschen?
+     * Ja ist gewollt; "nein" laesst sie nur pausiert stehen.
+     */
+    public function versandLoeschen()
+    {
+        $wert = strtolower(trim((string) $this->wert('versandLoeschen', 'ja')));
+        return substr($wert, 0, 4) !== 'nein' && substr($wert, 0, 2) !== 'no';
+    }
+
+    /**
      * Soll das Plugin versuchen, ein vorgefundenes (nicht per API angelegtes)
      * Inserat dieses Artikels zu aendern? Leer = nein, "alle" = alle,
      * sonst eine kommagetrennte Liste von Artikel-IDs zum Ausprobieren.

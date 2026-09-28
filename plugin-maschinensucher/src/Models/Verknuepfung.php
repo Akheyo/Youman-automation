@@ -30,6 +30,7 @@ use Plenty\Modules\Plugin\DataBase\Contracts\Model;
  * @property string $meldung       Letzter Grund, warum es nicht durchging
  * @property int    $perApi        1 = vom Plugin ueber die API angelegt, 0 = vorgefunden
  * @property int    $markiertGesehen Unix-Zeit, zu der das Plugin den Artikel erstmals markiert sah (0 = nie)
+ * @property int    $loeschenAbgelehnt Unix-Zeit, zu der Maschinensucher das Loeschen abgelehnt hat (0 = nie)
  */
 class Verknuepfung extends Model
 {
@@ -72,6 +73,17 @@ class Verknuepfung extends Model
      * alle bestehenden Inserate.
      */
     public $markiertGesehen = 0;
+
+    /**
+     * Wann Maschinensucher das Loeschen nach dem Versand abgelehnt hat.
+     *
+     * Gesetzt, versucht das Plugin es nicht jeden Lauf erneut, sondern
+     * laesst das Inserat pausiert. Nach dem Loeschen bleibt die Zeile mit
+     * inseratId 0 und Zustand "geloescht" stehen: So erscheint der noch
+     * markierte Artikel nicht unter "nicht uebertragen", und kommt wieder
+     * Ware (Retoure), wird er neu angelegt.
+     */
+    public $loeschenAbgelehnt = 0;
 
     public function getTableName(): string
     {
