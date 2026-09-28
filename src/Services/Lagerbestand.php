@@ -22,6 +22,9 @@ class Lagerbestand
     /** @var bool nur einmal je Lauf warnen */
     private $gewarnt = false;
 
+    /** @var bool die erste Antwort einmal je Lauf ins Protokoll */
+    private $gezeigt = false;
+
     /**
      * @return float|null null, wenn nicht lesbar - dann wird nie geloescht
      */
@@ -45,17 +48,54 @@ class Lagerbestand
             return null;
         }
 
+        // Kein (array)-Cast: Auf einer Sammlung ergibt der nur deren
+        // interne Eigenschaften (so schon bei den Auftragspositionen).
         $gelesen = array();
-        foreach ((array) $zeilen as $zeile) {
-            if (is_array($zeile)) {
-                $gelesen[] = $zeile;
-            } elseif (is_object($zeile)) {
-                $gelesen[] = array(
-                    'physicalStock' => isset($zeile->physicalStock) ? $zeile->physicalStock : null,
-                    'netStock'      => isset($zeile->netStock) ? $zeile->netStock : null,
-                );
+        if ($zeilen !== null) {
+            foreach ($zeilen as $zeile) {
+                $gelesen[] = $this->alsArray($zeile);
             }
         }
+
+        if (!$this->gezeigt) {
+            // Einmal je Lauf zeigen, was das Lager wirklich liefert - der
+            // Suchindex hatte den Warenbestand nicht, und ob die Felder hier
+            // so heissen wie erwartet, zeigt nur das Protokoll.
+            $this->gezeigt = true;
+            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.lagerGelesen', array(
+                'variante'   => $variantenId,
+                'zeilen'     => count($gelesen),
+                'ersteZeile' => count($gelesen) > 0 ? $gelesen[0] : null,
+            ));
+        }
+
         return Artikelabbildung::warenbestand(array('stock' => $gelesen));
+    }
+
+    /**
+     * Eine Lagerzeile als Array. Plenty liefert Modelle; isset() auf ihre
+     * Felder ist dort immer false (magische Eigenschaften) - deshalb
+     * toArray(), und nur wenn das scheitert, die Felder direkt.
+     */
+    private function alsArray($zeile)
+    {
+        if (is_array($zeile)) {
+            return $zeile;
+        }
+        try {
+            $arr = $zeile->toArray();
+            if (is_array($arr)) {
+                return $arr;
+            }
+        } catch (\Throwable $e) {
+        }
+        try {
+            return array(
+                'physicalStock' => $zeile->physicalStock,
+                'netStock'      => $zeile->netStock,
+            );
+        } catch (\Throwable $e) {
+            return array();
+        }
     }
 }
