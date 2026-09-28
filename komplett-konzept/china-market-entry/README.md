@@ -3,13 +3,11 @@
 Akquise chinesischer Hersteller für Komplett Konzept / MapaTec
 (Distribution + Konsignationslager, Market Test, Fulfillment).
 
-## Prioritäten der Kooperationsmodelle
+## Kooperationsmodelle (Flyer-Reihenfolge)
 
-1. Exklusiver Distributor Deutschland + Konsignationsbestand (Zielmodell)
-2. Vertriebspartner + Konsignationsbestand
-3. German Market Test (3–6 Monate Pilot, Konsignation)
-4. Vertriebskooperation + Fulfillment
-5. Reine Lagerung / Fulfillment (Rückfalloption)
+1. Konsignationsmodell (Consignment)
+2. Fulfillment + Vertrieb
+3. Fulfillment
 
 Kernsatz: *You provide the products. We provide your route into Germany and Europe.*
 （您提供产品，我们为您打开通往德国和欧洲的市场之路。）
@@ -33,6 +31,6 @@ Kernsatz: *You provide the products. We provide your route into Germany and Euro
 
 ## Kontakt auf dem Flyer
 
-Mario Parlitz · WeChat +49 177 2711123 · parlitz@komplett-konzept.de · www.komplett-konzept.de
+Mario Parlitz · WeChat +49 177 2711123 · info@komplett-konzept.de · www.komplett-konzept.de
 
 Canva-Design: https://canva.link/livy33ru0texhqf – zweiseitig (Vorderseite + Rückseite mit den 3 Modellen), Absender Komplett Konzept, 19.000 m² Lagerfläche bundesweit, B2B Deutschland/Europa + B2C. PDF: `KomplettKonzept_Canton_Fair_Flyer.pdf` (Canva-Format A3, auf A4 skaliert druckbar)
