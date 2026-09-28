@@ -40,6 +40,8 @@ class Entscheidung
      *                              dann laesst es sich aendern.
      *   angelegtOhneId      bool   Das Plugin hat es angelegt, kennt die ID
      *                              aber (noch) nicht.
+     *   aenderungVersuchen  bool   Ein vorgefundenes Inserat trotzdem aendern
+     *                              (Einstellung "Alte Inserate aendern").
      *   uebernommen         bool   Der Artikel war schon einmal markiert. Dann
      *                              heisst eine fehlende Markierung "offline",
      *                              auch bei einem vorgefundenen Inserat.
@@ -138,6 +140,12 @@ class Entscheidung
         }
 
         if ($geaendert) {
+            if (!$perApi && !empty($lage['aenderungVersuchen'])) {
+                // Laut API-Beschreibung scheitert das. Ob Maschinensucher es
+                // wirklich ablehnt, zeigt nur ein Versuch - freigegeben ueber
+                // die Einstellung, erst fuer einzelne Artikel.
+                return self::tat(self::AENDERN, 'Die Daten haben sich geaendert (Versuch bei vorgefundenem Inserat).');
+            }
             if (!$perApi) {
                 // Die API aendert nur Inserate, die ueber die API angelegt
                 // wurden. Ein Versuch bei einem vorgefundenen Inserat

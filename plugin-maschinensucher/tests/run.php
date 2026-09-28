@@ -684,4 +684,12 @@ $p->gleich(Entscheidung::AKTIVIEREN, Entscheidung::treffen($lage(array(
     'inseratId' => 500, 'zustand' => 'pausiert', 'uebernommen' => true, 'bestand' => 1)))['tat'],
     'Markierung wieder gesetzt, Bestand da: wieder online');
 
+$p->gruppe('Alte Inserate aendern (Test)');
+$p->gleich(Entscheidung::AENDERN, Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'aktiv', 'fingerabdruck' => 'alt', 'perApi' => false, 'aenderungVersuchen' => true)))['tat'],
+    'freigegeben: ein vorgefundenes Inserat mit geaenderten Daten wird geaendert');
+$p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'aktiv', 'fingerabdruck' => 'abc', 'perApi' => false, 'aenderungVersuchen' => true)))['tat'],
+    'auch freigegeben: ohne Aenderung wird nichts gesendet');
+
 exit($p->bericht());

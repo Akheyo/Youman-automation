@@ -179,6 +179,28 @@ class Einstellungen
         return substr($wert, 0, 4) !== 'nein' && substr($wert, 0, 2) !== 'no';
     }
 
+    /**
+     * Soll das Plugin versuchen, ein vorgefundenes (nicht per API angelegtes)
+     * Inserat dieses Artikels zu aendern? Leer = nein, "alle" = alle,
+     * sonst eine kommagetrennte Liste von Artikel-IDs zum Ausprobieren.
+     */
+    public function altInserateAendern($artikelId)
+    {
+        $wert = strtolower(trim((string) $this->wert('altInserateAendern', '')));
+        if ($wert === '') {
+            return false;
+        }
+        if ($wert === 'alle') {
+            return true;
+        }
+        foreach (explode(',', $wert) as $teil) {
+            if (trim($teil) !== '' && (int) trim($teil) === (int) $artikelId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Woraus die Inseratsnummer gebildet wird — siehe Logik/Inserat.php. */
     public function nummernQuelle()
     {

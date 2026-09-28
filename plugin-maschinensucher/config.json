@@ -193,6 +193,15 @@
             "tooltip": "Config.kategorieZuordnungTooltip"
           }
         },
+        "altInserateAendern": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.altInserateAendernLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.altInserateAendernTooltip"
+          }
+        },
         "nummernQuelle": {
           "type": "select",
           "required": true,
