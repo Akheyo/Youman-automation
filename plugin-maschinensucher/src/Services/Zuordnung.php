@@ -231,6 +231,22 @@ class Zuordnung
         $this->zeitpunktMerken('abgleichSperre', 0);
     }
 
+    /**
+     * Wie viele markierte Artikel der letzte ganze Abgleich gefunden hat.
+     */
+    public function markiertZahl()
+    {
+        return (int) $this->merker('markiertZahl')->wert;
+    }
+
+    public function markiertZahlMerken($anzahl)
+    {
+        $merker = $this->merker('markiertZahl');
+        $merker->wert = max(0, (int) $anzahl);
+        $merker->zeit = time();
+        $this->db->save($merker);
+    }
+
     private function zeitpunkt($name)
     {
         return (int) $this->merker($name)->zeit;
