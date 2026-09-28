@@ -154,6 +154,30 @@ class Abgleich
         $preisliste = $this->einstellungen->preislisteId();
         $ersatzliste = $this->einstellungen->preislisteErsatzId();
         $gefunden = $this->varianten($nurDiese, $flagId, $flagFeld);
+
+        // Bremse gegen einen unvollstaendigen Suchindex: Findet die
+        // Markierungssuche deutlich weniger Artikel als im letzten Lauf,
+        // pausiert dieser Lauf nichts wegen "Markierung entfernt". Ist der
+        // Rueckgang echt (viele Markierungen auf einmal entfernt), zieht der
+        // naechste Lauf nach - er vergleicht dann schon mit der neuen Zahl.
+        $markierungUnsicher = false;
+        if (count($nurDiese) === 0) {
+            $markiertJetzt = 0;
+            foreach ($gefunden as $eintrag) {
+                if ($eintrag['markiert']) {
+                    $markiertJetzt++;
+                }
+            }
+            $markiertVorher = $this->zuordnung->markiertZahl();
+            if ($markiertVorher > 0 && $markiertJetzt < $markiertVorher * 0.9) {
+                $markierungUnsicher = true;
+                $this->getLogger(__METHOD__)->warning('MaschinensucherMarkt::log.markierteEingebrochen', array(
+                    'vorher' => $markiertVorher,
+                    'jetzt'  => $markiertJetzt,
+                ));
+            }
+            $this->zuordnung->markiertZahlMerken($markiertJetzt);
+        }
         $hersteller = $this->herstellerKarte($gefunden);
         $karte = $this->zuordnung->alleNachArtikel();
         $rubrikEigenschaft = $this->einstellungen->rubrikEigenschaft();
@@ -218,6 +242,7 @@ class Abgleich
                     'titel'    => $artikel['titel'],
                     'preis'    => $artikel['preis'],
                     'bestand'  => $artikel['bestand'],
+                    'warenbestand' => $artikel['warenbestand'],
                     'markiert' => $markiert,
                     'rubrik'   => $rubrik,
                 );
@@ -266,6 +291,9 @@ class Abgleich
             ));
 
             $tat = $entscheidung['tat'];
+            if ($markierungUnsicher && !$markiert && $tat === Entscheidung::PAUSIEREN) {
+                $tat = Entscheidung::NICHTS;
+            }
 
             // Einmal markiert gesehen: Ab jetzt nimmt eine entfernte
             // Markierung das Inserat vom Markt. Nicht im Probelauf - der
@@ -301,6 +329,10 @@ class Abgleich
                     'inserat' => $bekannt !== null ? (int) $bekannt->inseratId : 0,
                     'tat'     => $tat,
                     'grund'   => $entscheidung['grund'],
+                    // netto (verkauft = 0) und Warenbestand (verschickt = 0);
+                    // null heisst: nicht lesbar, dann wird nie geloescht.
+                    'bestand' => $artikel['bestand'],
+                    'warenbestand' => $artikel['warenbestand'],
                 );
                 if (count($gebaut['koerper']) > 0 && ($tat === Entscheidung::ANLEGEN || $tat === Entscheidung::AENDERN)) {
                     // Genau das Inserat, das rausginge — bevor irgendetwas
@@ -623,9 +655,14 @@ class Abgleich
             }
         }
         foreach ($this->suche->nachArtikelIds($verwaltetOhneMarkierung) as $dokument) {
+            $variante = Suchdokument::alsVariante((array) $dokument);
             $eintraege[] = array(
-                'variante' => Suchdokument::alsVariante((array) $dokument),
-                'markiert' => false,
+                'variante' => $variante,
+                // Zweite Meinung: Traegt das Dokument die Markierung doch,
+                // hat die Markierungssuche den Artikel nur verpasst (etwa
+                // waehrend Plenty den Suchindex neu aufbaut). Dann gilt er
+                // als markiert und wird NICHT pausiert.
+                'markiert' => Artikelabbildung::istMarkiert($variante, $flagId, $flagFeld),
                 'dokument' => (array) $dokument,
             );
         }
