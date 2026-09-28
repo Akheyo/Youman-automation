@@ -40,6 +40,9 @@ class Entscheidung
      *                              dann laesst es sich aendern.
      *   angelegtOhneId      bool   Das Plugin hat es angelegt, kennt die ID
      *                              aber (noch) nicht.
+     *   uebernommen         bool   Der Artikel war schon einmal markiert. Dann
+     *                              heisst eine fehlende Markierung "offline",
+     *                              auch bei einem vorgefundenen Inserat.
      * @return array ['tat', 'grund']
      */
     public static function treffen(array $lage)
@@ -58,6 +61,7 @@ class Entscheidung
         $aktiv     = $bekannt && $zustand !== 'pausiert';
         $verwaltet = $bekannt && !empty($lage['verwaltet']);
         $perApi    = $bekannt && !empty($lage['perApi']);
+        $abmeldbar = $verwaltet || ($bekannt && !empty($lage['uebernommen']));
 
         // ---- Nicht markiert --------------------------------------------------
         // Eine Ansage ist das NUR bei einem Inserat, das das Plugin selbst
@@ -72,10 +76,10 @@ class Entscheidung
         // saemtliche bestehenden Inserate — denn dort ist noch nichts
         // markiert.
         if (!$markiert) {
-            if ($aktiv && $verwaltet) {
+            if ($aktiv && $abmeldbar) {
                 return self::tat(self::PAUSIEREN, 'Die Markierung wurde entfernt.');
             }
-            if ($bekannt && !$verwaltet) {
+            if ($bekannt && !$abmeldbar) {
                 return self::tat(self::NICHTS, 'Nicht markiert und nicht vom Plugin verwaltet — bleibt, wie es ist.');
             }
             return self::tat(self::NICHTS, $bekannt

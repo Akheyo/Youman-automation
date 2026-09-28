@@ -254,6 +254,9 @@ class Bestandsaufnahme
             $ziel->gesendetAm = (int) $quelle->gesendetAm;
             $ziel->fingerabdruck = (string) $quelle->fingerabdruck;
         }
+        if ((int) $ziel->markiertGesehen <= 0 && (int) $quelle->markiertGesehen > 0) {
+            $ziel->markiertGesehen = (int) $quelle->markiertGesehen;
+        }
         if ((int) $ziel->variantenId <= 0 && (int) $quelle->variantenId > 0) {
             $ziel->variantenId = (int) $quelle->variantenId;
         }

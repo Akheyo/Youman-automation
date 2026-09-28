@@ -245,6 +245,7 @@ class Abgleich
                 // fehlende Markierung eine Anweisung.
                 'verwaltet'          => $bekannt !== null && (int) $bekannt->gesendetAm > 0,
                 'perApi'             => $bekannt !== null && (int) $bekannt->perApi === 1,
+                'uebernommen'        => $bekannt !== null && (int) $bekannt->markiertGesehen > 0,
                 // Angelegt, aber die ID kam nicht an. Nicht noch einmal
                 // anlegen — die Bestandsaufnahme findet das Inserat ueber
                 // seine Referenz und traegt die ID nach.
@@ -253,6 +254,15 @@ class Abgleich
             ));
 
             $tat = $entscheidung['tat'];
+
+            // Einmal markiert gesehen: Ab jetzt nimmt eine entfernte
+            // Markierung das Inserat vom Markt. Nicht im Probelauf - der
+            // aendert an der Zuordnung nichts.
+            if (!$probelauf && $markiert && $bekannt !== null && (int) $bekannt->inseratId > 0
+                && (int) $bekannt->markiertGesehen <= 0) {
+                $bekannt->markiertGesehen = time();
+                $this->zuordnung->speichern($bekannt);
+            }
 
             if (Entscheidung::schreibt($tat) && $geschrieben >= self::SCHREIBGRENZE) {
                 // Nicht weiterzaehlen: Was hier liegen bleibt, ist beim
@@ -473,7 +483,8 @@ class Abgleich
      * Markierungsfilter sagt, welche davon markiert sind.
      *
      * Ganzer Durchlauf (Zeitplan): nur die markierten — plus die Artikel, die
-     * das Plugin selbst verwaltet, deren Markierung aber inzwischen fehlt.
+     * das Plugin verwaltet oder schon einmal markiert gesehen hat, deren
+     * Markierung aber inzwischen fehlt.
      * Die muessen dabei sein, sonst wuerde ihr Inserat nie pausiert.
      *
      * @return array Eintraege mit 'variante', 'markiert', 'dokument'
@@ -508,7 +519,8 @@ class Abgleich
         $verwaltetOhneMarkierung = array();
         foreach ($this->zuordnung->alle() as $zeile) {
             $artikelId = (int) $zeile->artikelId;
-            if ($artikelId > 0 && (int) $zeile->gesendetAm > 0 && !isset($gesehen[$artikelId])) {
+            $uebernommen = (int) $zeile->gesendetAm > 0 || (int) $zeile->markiertGesehen > 0;
+            if ($artikelId > 0 && $uebernommen && !isset($gesehen[$artikelId])) {
                 $verwaltetOhneMarkierung[] = $artikelId;
             }
         }

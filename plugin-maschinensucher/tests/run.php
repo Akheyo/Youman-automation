@@ -670,4 +670,18 @@ $andereId = Antwort::lesen(array('status' => 200, 'daten' => array(
     'success' => false, 'errors' => array('title' => array('The listing has been deleted.')))));
 $p->gleich(Antwort::ABGELEHNT, $andereId['art'], 'nur eine Meldung zur ID zaehlt, nicht irgendein Feld');
 
+$p->gruppe('Markierung entfernt');
+$p->gleich(Entscheidung::PAUSIEREN, Entscheidung::treffen($lage(array(
+    'markiert' => false, 'inseratId' => 500, 'zustand' => 'aktiv', 'uebernommen' => true)))['tat'],
+    'ein vorgefundenes Inserat, das schon einmal markiert war, geht ohne Markierung offline');
+$p->gleich(Entscheidung::NICHTS, Entscheidung::treffen($lage(array(
+    'markiert' => false, 'inseratId' => 500, 'zustand' => 'aktiv')))['tat'],
+    'ein vorgefundenes Inserat, das nie markiert war, bleibt stehen - sonst pausiert der erste Lauf alles');
+$p->gleich(Entscheidung::ZURUECK, Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'aktiv', 'uebernommen' => true, 'maengel' => array('Kein Preis.'))))['tat'],
+    'Maengel am Artikel nehmen ein vorgefundenes Inserat nicht vom Markt - es lief mit seinen eigenen Daten');
+$p->gleich(Entscheidung::AKTIVIEREN, Entscheidung::treffen($lage(array(
+    'inseratId' => 500, 'zustand' => 'pausiert', 'uebernommen' => true, 'bestand' => 1)))['tat'],
+    'Markierung wieder gesetzt, Bestand da: wieder online');
+
 exit($p->bericht());
