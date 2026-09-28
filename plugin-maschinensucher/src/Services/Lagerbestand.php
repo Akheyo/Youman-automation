@@ -69,7 +69,7 @@ class Lagerbestand
             $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.lagerGelesen', array(
                 'variante'   => $variantenId,
                 'zeilen'     => count($gelesen),
-                'art'        => is_object($zeilen) ? get_class($zeilen) : gettype($zeilen),
+                'art'        => is_array($zeilen) ? 'array' : (is_object($zeilen) ? 'objekt' : 'anderes'),
                 'ersteZeile' => count($gelesen) > 0 ? $gelesen[0] : null,
             ));
         }
