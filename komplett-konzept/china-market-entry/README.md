@@ -3,11 +3,14 @@
 Akquise chinesischer Hersteller für Komplett Konzept / MapaTec
 (Distribution + Konsignationslager, Market Test, Fulfillment).
 
-## Kooperationsmodelle (Flyer-Reihenfolge)
+## Kooperationsmodelle (bevorzugte Reihenfolge)
 
-1. Konsignationsmodell (Consignment)
-2. Fulfillment + Vertrieb
-3. Fulfillment
+1. **Konsignationsmodell**: Ihre Ware – unser Vertrieb – Abrechnung nach Verkauf.
+2. **Fulfillment + Vertrieb**: Ihre Ware – gemeinsamer Vertrieb – unsere deutsche Logistik.
+3. **Fulfillment**: Ihr Vertrieb – unsere deutsche Logistik.
+4. **Reine Lagerfläche**: Ihre Ware – unsere Lagerfläche.
+
+Bei fehlender Import-/Export-Erfahrung unterstützt die eigene Importfirma **MapaTec GmbH** (Komplett Konzept × MapaTec).
 
 Kernsatz: *You provide the products. We provide your route into Germany and Europe.*
 （您提供产品，我们为您打开通往德国和欧洲的市场之路。）
@@ -31,6 +34,10 @@ Kernsatz: *You provide the products. We provide your route into Germany and Euro
 
 ## Kontakt auf dem Flyer
 
+WeChat-QR-Code Mario Parlitz: `qr/QR_WeChat_Mario_Parlitz.png` (→ https://u.wechat.com/kHvOv2mb0MN5doa_uYM5djQ?s=2), auf dem Flyer im Header und in der MapaTec-Box.
+
 Mario Parlitz · WeChat +49 177 2711123 · info@komplett-konzept.de · www.komplett-konzept.de
 
 Canva-Design: https://canva.link/livy33ru0texhqf – zweiseitig (Vorderseite + Rückseite mit den 3 Modellen), Absender Komplett Konzept, 19.000 m² Lagerfläche bundesweit, B2B & B2C Deutschland/Europaweit, QR-Codes als „Beispiele" (+ weitere Standorte bundesweit). PDF: `KomplettKonzept_Canton_Fair_Flyer.pdf` (Canva-Format A3, auf A4 skaliert druckbar)
+
+Deutsche Lesefassung (v2, gleiches Layout): https://www.canva.com/d/Jl1jm9RrTqsDB-O – PDF: `KomplettKonzept_Flyer_DEUTSCH_Lesefassung.pdf`
