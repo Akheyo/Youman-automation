@@ -5,10 +5,14 @@ Akquise chinesischer Hersteller für Komplett Konzept / MapaTec
 
 ## Kooperationsmodelle (bevorzugte Reihenfolge)
 
-1. **Konsignationsmodell**: Ihre Ware – unser Vertrieb – Abrechnung nach Verkauf.
+1. **Konsignationsmodell**: Ihre Ware – unser Vertrieb – langfristige Partnerschaft.
 2. **Fulfillment + Vertrieb**: Ihre Ware – gemeinsamer Vertrieb – unsere deutsche Logistik.
 3. **Fulfillment**: Ihr Vertrieb – unsere deutsche Logistik.
 4. **Reine Lagerfläche**: Ihre Ware – unsere Lagerfläche.
+
+Auf dem Flyer mit ①–④ und „★ 1. Wahl“ / „首选“ markiert (1 = am liebsten). Beim Konsignationsmodell wird keine Abrechnung erwähnt; kein Gebietsschutz.
+
+Vorteile auf dem Flyer: keine eigene Firma in Deutschland nötig · 19.000 m² Lagerfläche bundesweit · B2B & B2C Deutschland/Europaweit · Retouren, technischer Support & Ersatzteillieferung.
 
 Bei fehlender Import-/Export-Erfahrung unterstützt die eigene Importfirma **MapaTec GmbH** (Komplett Konzept × MapaTec).
 
