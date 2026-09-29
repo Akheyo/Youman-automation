@@ -299,6 +299,24 @@ $p->enthaelt('mindestens 10 Zeichen', implode(' ', $ohneText['maengel']),
     'eine zu kurze Beschreibung wird vorher erkannt, statt drueben abgelehnt zu werden');
 $p->gleich(array(), $ohneText['koerper'], 'und es wird gar kein Koerper gebaut');
 
+// Unsichtbares aus dem Editor darf drueben nicht als Text erscheinen.
+$p->gruppe('Beschreibung: Unsichtbares');
+$versteckt = Inseratdaten::bauen(array_merge($artikelApi, array('beschreibung' =>
+    '<h1>Anlage SGJ 450&nbsp;</h1>'
+    . '<!--[if gte mso 9]><xml><w:WordDocument>Normal 0 21 false</w:WordDocument></xml><![endif]-->'
+    . '<style>.x{color:red}</style>'
+    . '<span style="display: none">Pgebkltk Dsz</span>'
+    . '<div hidden>E Rt He Est</div>'
+    . '<p class="hidden-xs">Sichtbar bleibt das hier.</p>'
+    . '<p><br />Zufuehr- und Sortieranlage komplett.</p>')), $umgebungApi);
+$vText = $versteckt['koerper']['description']['de'];
+$p->gleich(false, strpos($vText, 'Pgebkltk') !== false || strpos($vText, 'Est') !== false,
+    'ausgeblendete Elemente fallen weg');
+$p->gleich(false, strpos($vText, 'Normal 0') !== false || strpos($vText, 'color') !== false,
+    'Word-Kommentare und Stilbloecke fallen weg');
+$p->enthaelt('Sichtbar bleibt das hier.', $vText, 'eine Klasse mit "hidden" im Namen blendet nichts aus');
+$p->enthaelt('Zufuehr- und Sortieranlage komplett.', $vText, 'der sichtbare Text bleibt');
+
 $ohnePreis = Inseratdaten::bauen(array_merge($artikelApi, array('preis' => null)), $umgebungApi);
 $p->enthaelt('Kein Preis', implode(' ', $ohnePreis['maengel']), 'ein fehlender Preis ist ein Mangel');
 

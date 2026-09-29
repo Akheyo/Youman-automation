@@ -305,6 +305,16 @@ class Inseratdaten
     private static function fliesstext($wert)
     {
         $text = (string) $wert;
+        // Was im Editor nicht zu sehen ist, darf auch drueben nicht als Text
+        // erscheinen (28.09., Artikel 73452: eine Zeile Zeichensalat unter der
+        // Ueberschrift). Kommentare - darunter die Word-Reste
+        // "<!--[if gte mso 9]><xml>...</xml><![endif]-->", deren Inhalt der
+        // einfache Tag-Abbau als Text stehen liess -, Stil- und Skriptbloecke
+        // und ausgeblendete Elemente fallen deshalb vorher ganz weg.
+        $text = preg_replace('/<!--.*?-->/s', '', $text);
+        $text = preg_replace('/<(style|script|xml|head|title)\b[^>]*>.*?<\/\1\s*>/is', '', $text);
+        $text = preg_replace('/<(\w+)\b[^>]*style\s*=\s*"[^"]*(display\s*:\s*none|visibility\s*:\s*hidden|font-size\s*:\s*0(px|pt)?\s*[;"])[^"]*"[^>]*>.*?<\/\1\s*>/is', '', $text);
+        $text = preg_replace('/<(\w+)\b[^>]*\shidden(?=[\s>=\/])[^>]*>.*?<\/\1\s*>/is', '', $text);
         $text = str_replace(array('<br>', '<br/>', '<br />', '</p>', '</li>'), "\n", $text);
         // Eigener Abbau der HTML-Tags: Der Plugin-Build laesst die dafuer uebliche
         // Funktion nicht zu.
