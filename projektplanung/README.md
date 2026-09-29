@@ -670,3 +670,163 @@ Stellen sind in [`lib/plenty/client.ts`](lib/plenty/client.ts) klar gekapselt
 und leicht anzupassen. Fehler beim Sync sind **nicht blockierend** – das Projekt
 inkl. EAN wird immer im Verlauf gespeichert, der Plenty-Status wird pro Eintrag
 angezeigt (`Plenty ✓`, `nur EAN`, `Fehler`).
+
+## Marktplaats.nl (`/marktplaats`)
+
+Jeder Artikel mit Bestand wird zu einer Anzeige bei Marktplaats — niederländisch,
+mit Preis, Bildern und Kategorie. Fällt der Bestand auf null, kommt die Anzeige
+offline.
+
+### Warum die API und nicht ein Feed
+
+Marktplaats nimmt Ware auf drei Wegen an: über einen täglich abgeholten
+Admarkt-Feed, über einen zertifizierten Partner (Channable, EffectConnect,
+EasyAds, ProductFlow) oder über die **Marktplaats API 2.0** direkt. Einen
+fertigen PlentyONE-Connector gibt es im plentyMarketplace nicht — ein eigener
+Weg war so oder so nötig. Die API ist der direkte davon: kein Dienstleister
+dazwischen, kein Tagesversatz, und Bestand null heißt Anzeige weg, nicht
+„morgen weg".
+
+Die Zugangsdaten vergibt Marktplaats an API-Partner. **Einen Selbstbedienungsweg
+dafür gibt es nicht** — ohne Client-ID und Secret läuft hier nichts, und zwar
+unabhängig vom Code.
+
+### Was aus der Dokumentation stammt und nicht aus Annahmen
+
+Quelle ist durchgehend <https://api.marktplaats.nl/docs/v2/>. Vier Punkte daraus
+bestimmen den Aufbau:
+
+| Punkt | Folge im Code |
+| --- | --- |
+| Beträge sind **Euro-Cent**, ganzzahlig | `inCent()` in [`lib/marktplaats/anzeige.ts`](lib/marktplaats/anzeige.ts) — rundet, statt abzuschneiden. `12.1 * 100` ist in Gleitkomma 1209.9999… |
+| `categoryId` muss eine **L2-Kategorie** sein | Die Zuordnungstabelle kennt nur L2; L1 gruppiert bloß |
+| POST antwortet **201 + `Location`-Header** | Die Anzeigen-ID steht nur dort. Wer den Körper liest, legt Anzeigen an, deren ID er nicht kennt — und legt sie beim nächsten Lauf erneut an |
+| Der Accept-Header muss `application/json` enthalten | Fehlt er, kommt `406`, auch wenn in Wahrheit das Token abgelaufen ist. Die Doku warnt ausdrücklich davor |
+
+**Die Titellänge steht nirgends in der Dokumentation.** Deshalb wird sie nicht
+geraten: Der Client startet mit 60 Zeichen und liest die echte Grenze aus dem
+Fehler `input-too-long`, der sie als „error value" mitliefert — und wiederholt
+den Aufruf einmal mit gekürztem Titel (`lerneTitelgrenze` in
+[`lib/marktplaats/client.ts`](lib/marktplaats/client.ts)).
+
+### Die Markenregeln gelten hier genauso
+
+Vor jeder Veröffentlichung läuft [`lib/listing/markenregeln.ts`](lib/listing/markenregeln.ts)
+— dieselbe Sperre wie vor jedem eBay-Listing. Sie hier zu überspringen hieße,
+über einen zweiten Kanal genau das zu veröffentlichen, wogegen sie gebaut wurde.
+
+Zweimal geprüft wird bewusst: einmal am deutschen Quelltext, einmal am
+übersetzten. Eine Übersetzung soll Eigennamen unverändert lassen — genau deshalb
+kann sie einen LAPP-Namen durchreichen, den die erste Prüfung an seiner Stelle
+im Quelltext nicht als Herstellerangabe gelesen hat.
+
+Der **Pflichtsatz für SKF/FAG** wird nach der Übersetzung im deutschen Wortlaut
+wieder eingesetzt. Er ist vom Hersteller wörtlich vorgeschrieben; eine
+niederländische Fassung wäre eine andere Zusage, und ein Modell, das ihn
+„diesmal" stehen lässt, ist keine Sicherung bei bis zu 10.000 € Bußgeld.
+
+### Übersetzung — einmal, nicht jede Nacht
+
+Titel und Beschreibung gehen zusammen in **einen** Aufruf: getrennt übersetzt
+driften die Begriffe auseinander, und die Anzeige widerspricht sich selbst
+(„boorhamer" im Text, „klopboormachine" im Titel).
+
+Das Ergebnis steht in `marktplaats_anzeigen`, zusammen mit dem Fingerabdruck des
+deutschen Quelltextes. Neu übersetzt wird erst, wenn sich der deutsche Text
+ändert — **nicht**, wenn sich der Preis ändert. Bei zehntausenden Artikeln ist
+das der Unterschied zwischen einmaligen und nächtlichen Übersetzungskosten.
+
+### Kategorien: zugeordnet, nicht geraten
+
+Zwischen einem deutschen Sortiment und niederländischen Rubriken liegt keine
+Regel, sondern eine Entscheidung. Ein Ähnlichkeitsmaß, das „Schleifmaschine" auf
+„Slijpmachines" schiebt, schiebt „Kabelbinder" genauso zuversichtlich auf
+„Kabelhaspels" — und niemand sieht es, weil die Anzeige ja erscheint.
+
+Deshalb: Die Seite **schlägt vor**, entschieden wird in `marktplaats_zuordnung`.
+Was dort nicht steht, bleibt liegen und wird gezählt. Eine fehlende Zeile sieht
+man; eine Anzeige in der falschen Rubrik nicht.
+
+### Was der Abgleich entscheidet
+
+Treiber ist der **Bestand**, nicht der Artikelstamm — wie beim Lagerplatz-Scan.
+Die ganze Entscheidung steht als reine Funktion in
+[`lib/marktplaats/entscheidung.ts`](lib/marktplaats/entscheidung.ts):
+
+| Lage | Maßnahme |
+| --- | --- |
+| Markenregel greift | offline (bzw. gar nicht erst hoch) — **schlägt alles andere** |
+| Bestand 0 | offline |
+| Angaben unvollständig, Anzeige läuft | **unverändert stehen lassen** |
+| Angaben unvollständig, nichts online | wartet |
+| Bestand da, nichts online | anlegen |
+| Inhalt geändert | ändern |
+| sonst | nichts |
+
+Die dritte Zeile ist der Grund, warum die Rangfolge so herum steht: Stellt jemand
+in Plenty eine Preisliste um, fehlt für eine Stunde der Preis. Würde daraus
+„offline" folgen, räumte ein einziger Lauf das ganze Sortiment ab.
+
+### Die Sicherungen
+
+- **Probelauf ist die Voreinstellung.** Geschrieben wird nur bei
+  ausdrücklichem `probelauf: false`.
+- Die API-Route verlangt zusätzlich `bestaetigung: "VEROEFFENTLICHEN"` im Körper
+  — nicht nur die Oberfläche. Ein versehentlich abgeschickter Aufruf stellt
+  nicht das halbe Lager online.
+- Eine **Obergrenze je Häppchen** begrenzt den Schaden eines Irrtums.
+- Ein Fehler stoppt nicht den Lauf, sondern wird je Zeile protokolliert.
+- Der Lauf läuft in Häppchen unter dem Vercel-Zeitlimit (`maxDuration = 60`);
+  die Oberfläche hängt selbstständig an und lässt sich anhalten.
+
+### Einrichtung
+
+1. `supabase/schema.sql` erneut im SQL-Editor laufen lassen (idempotent) — das
+   legt `marktplaats_anzeigen`, `marktplaats_zuordnung`, `marktplaats_kategorien`
+   und die Zugangsspalten an.
+2. Unter **Einstellungen** Client-ID, Client-Secret, Umgebung, API-Adresse und
+   die **niederländische Postleitzahl** des Lagers eintragen (Form `1234AB`).
+   Eine deutsche PLZ wird abgewiesen; ohne gültige PLZ landet die Anzeige unter
+   „Buitenland" und wird regional nicht gefunden.
+3. Auf `/marktplaats` **Kategoriebaum laden**, dann die Stichwörter des eigenen
+   Sortiments zuordnen.
+4. **Probelauf**. Erst danach zwanzig Artikel veröffentlichen, bei Marktplaats
+   nachsehen, dann größere Blöcke.
+
+| Variable | Nötig wofür |
+| --- | --- |
+| `MARKTPLAATS_CLIENT_ID`, `MARKTPLAATS_CLIENT_SECRET` | **Pflicht** — ohne sie keine Anmeldung |
+| `MARKTPLAATS_PLZ` | **Pflicht** — ohne sie nimmt Marktplaats keine Anzeige an |
+| `MARKTPLAATS_UMGEBUNG`, `MARKTPLAATS_API_URL` | Sandbox vs. Produktion |
+| `MARKTPLAATS_VERSAND_EUR` | optional, Versandkosten in der Anzeige |
+| `ANTHROPIC_API_KEY` | **Pflicht für die Übersetzung** — ohne ihn laufen nur Artikel, deren Übersetzung schon vorliegt |
+
+### Was offen ist — ehrlich vorweg
+
+- **Gegen die echte API ist nichts gelaufen.** Die Zugangsdaten liegen bei
+  Marktplaats, und ohne sie lässt sich weder anmelden noch eine Anzeige
+  anlegen. Geprüft ist die gesamte Logik ohne Netz (111 Tests): Preisumrechnung,
+  Titelkürzung, Fehlerauswertung, Entscheidung, Bestandszusammenfassung,
+  Markenregeln. Ungeprüft ist alles, was erst eine Antwort von Marktplaats
+  zeigt — allen voran die Form der Fehlerantwort, die deshalb bewusst
+  nachsichtig gelesen wird.
+- **Der Hersteller wird noch nicht aus Plenty gelesen** (`hersteller: null` in
+  `quelle.ts`). Das schwächt genau die Markenprüfung, auf die es ankommt:
+  LAPP und SKF/FAG werden derzeit nur erkannt, wenn der Name im Titel oder Text
+  steht. Vor dem ersten echten Lauf gehört `manufacturerId` über
+  `/rest/items/manufacturers` aufgelöst.
+- **Die Plenty-Kategorie wird noch nicht gelesen** (`kategorie: null`), die
+  Zuordnung greift deshalb bislang nur über den Artikeltitel.
+- **Der Zustand ist pauschal „gebraucht".** Das ist die sichere Annahme — sie
+  löst keine der Pflichten aus, die an „neu" hängen —, aber bei neuwertiger
+  SKF-Ware ist sie falsch herum sicher: Der Pflichtsatz wird dann nicht
+  verlangt. Solange der Zustand nicht aus Plenty kommt, gehört neuwertige
+  Lagerware von Hand geprüft.
+- **GPSR:** Marktplaats verlangt für Händler, die auf der Plattform Geschäfte
+  abwickeln, die Felder `manufacturerTradename`, `manufacturerAddress` und
+  `manufacturerEmail`. Sie werden noch nicht gesetzt; ob sie für dieses Konto
+  Pflicht sind, zeigt der erste echte Anlauf (`invalid-field-value` bzw.
+  `missing-required-field`).
+- **Bilder müssen öffentlich erreichbar sein.** Marktplaats lädt sie selbst
+  von der übergebenen Adresse, und zwar asynchron — ein signierter Link mit
+  kurzer Laufzeit reicht nicht zuverlässig.

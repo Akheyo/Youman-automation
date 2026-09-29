@@ -316,3 +316,94 @@ alter table public.erfassung_artikel
 
 create unique index if not exists erfassung_artikel_ean_idx
   on public.erfassung_artikel (ean) where ean is not null;
+
+-- ---------------------------------------------------------------------------
+-- Marktplaats.nl
+--
+-- Der Zugang zur Marktplaats API 2.0 steht in derselben Zeile wie der
+-- PlentyONE-Zugang: eine Einstellungsseite, eine Rangfolge (Datenbank schlaegt
+-- Umgebungsvariable). Das Client-Secret wird verschluesselt abgelegt
+-- (lib/einstellungen/tresor.ts) und nie an den Browser ausgeliefert.
+--
+-- Die Versandkosten stehen in CENT. Marktplaats rechnet in Euro-Cent, und eine
+-- Kommazahl in der Datenbank kaeme irgendwann als 6.949999999999999 zurueck.
+-- ---------------------------------------------------------------------------
+alter table public.einstellungen
+  add column if not exists marktplaats_client_id   text,
+  add column if not exists marktplaats_secret_enc  text,
+  add column if not exists marktplaats_umgebung    text,   -- produktion | sandbox
+  add column if not exists marktplaats_api_url     text,
+  add column if not exists marktplaats_plz         text,   -- Form 1234AB
+  add column if not exists marktplaats_versand_cent integer;
+
+-- ---------------------------------------------------------------------------
+-- Was bei Marktplaats steht
+--
+-- Eine eigene Tabelle und kein Feld in Plenty: Die Anzeigen-ID gehoert
+-- Marktplaats, nicht der Warenwirtschaft. Sie in ein Plenty-Freitextfeld zu
+-- schreiben, erzeugte genau die Zustaende, die die Lagerplatz-Auswertung in
+-- diesem Projekt muehsam wieder auseinandersortiert.
+--
+-- Die Zeile traegt auch die Uebersetzung. Ein Text wird einmal uebersetzt und
+-- dann behalten; neu uebersetzt wird erst, wenn sich der deutsche Quelltext
+-- aendert — dafuer steht sein Fingerabdruck daneben. Bei zehntausenden
+-- Artikeln ist das der Unterschied zwischen einmaligen und naechtlichen
+-- Uebersetzungskosten.
+-- ---------------------------------------------------------------------------
+create table if not exists public.marktplaats_anzeigen (
+  variation_id        bigint primary key,
+  item_id             bigint,
+  -- Die Anzeigen-ID bei Marktplaats, z. B. "m1372". Null = nichts online.
+  mp_item_id          text,
+  -- Fingerabdruck der zuletzt uebertragenen Anzeige.
+  fingerabdruck       text,
+  -- Fingerabdruck des deutschen Quelltextes, zu dem die Uebersetzung gehoert.
+  quell_fingerabdruck text,
+  titel_nl            text,
+  beschreibung_nl     text,
+  status              text not null default 'wartet',  -- online|offline|wartet|gesperrt|fehler
+  fehler              text,
+  geaendert_am        timestamptz not null default now()
+);
+
+create index if not exists marktplaats_anzeigen_status_idx
+  on public.marktplaats_anzeigen (status);
+create index if not exists marktplaats_anzeigen_mp_idx
+  on public.marktplaats_anzeigen (mp_item_id) where mp_item_id is not null;
+
+-- ---------------------------------------------------------------------------
+-- Zuordnung Plenty-Sortiment → Marktplaats-Kategorie
+--
+-- Anzeigen brauchen eine L2-Kategorie, und zwischen einem deutschen
+-- Sortiment und niederlaendischen Rubriken liegt keine Regel, sondern eine
+-- Entscheidung. Was hier nicht steht, wird NICHT geraten — der Artikel
+-- bleibt liegen und wird gezaehlt. Eine Anzeige in der falschen Rubrik faellt
+-- niemandem auf; eine fehlende Zeile in dieser Tabelle schon.
+--
+-- `stichwort` ist normalisiert (klein, ohne Umlaute und Sonderzeichen), damit
+-- "Bohrmaschinen" und "bohrmaschine " nicht zwei Zeilen sind.
+-- ---------------------------------------------------------------------------
+create table if not exists public.marktplaats_zuordnung (
+  stichwort      text primary key,
+  kategorie_id   integer not null,
+  kategorie_name text,
+  geaendert_von  text,
+  geaendert_am   timestamptz not null default now()
+);
+
+-- Der Kategoriebaum, wie Marktplaats ihn fuehrt — damit die Zuordnung ohne
+-- API-Aufruf durchsuchbar ist.
+create table if not exists public.marktplaats_kategorien (
+  kategorie_id integer primary key,
+  name         text not null,
+  l1_id        integer,
+  l1_name      text,
+  offen        boolean not null default true,
+  geladen_am   timestamptz not null default now()
+);
+
+-- RLS an, absichtlich ohne Policy: Der Zugriff laeuft ausschliesslich
+-- serverseitig ueber den Service-Role-Key — wie bei `einstellungen`.
+alter table public.marktplaats_anzeigen   enable row level security;
+alter table public.marktplaats_zuordnung  enable row level security;
+alter table public.marktplaats_kategorien enable row level security;
