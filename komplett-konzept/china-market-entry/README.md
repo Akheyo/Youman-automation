@@ -40,7 +40,7 @@ Kernsatz: *You provide the products. We provide your route into Germany and Euro
 
 WeChat-QR-Code Mario Parlitz: `qr/QR_WeChat_Mario_Parlitz.png` (→ https://u.wechat.com/kHvOv2mb0MN5doa_uYM5djQ?s=2), auf dem Flyer im Header und in der MapaTec-Box.
 
-Mario Parlitz · WeChat +49 177 2711123 · info@komplett-konzept.de · www.komplett-konzept.de
+Mario Parlitz · WeChat +49 177 2711123 · info@mapatec.de · www.komplett-konzept.de
 
 Canva-Design: https://canva.link/livy33ru0texhqf – zweiseitig (Vorderseite + Rückseite mit den 3 Modellen), Absender Komplett Konzept, 19.000 m² Lagerfläche bundesweit, B2B & B2C Deutschland/Europaweit, QR-Codes als „Beispiele" (+ weitere Standorte bundesweit). PDF: `KomplettKonzept_Canton_Fair_Flyer.pdf` (Canva-Format A3, auf A4 skaliert druckbar)
 
