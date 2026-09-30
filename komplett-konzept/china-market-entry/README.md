@@ -14,7 +14,7 @@ Auf dem Flyer mit ①–④ und „★ 1. Wahl“ / „首选“ markiert (1 = a
 
 Vorteile auf dem Flyer: keine eigene Firma in Deutschland nötig · 19.000 m² Lagerfläche bundesweit · B2B & B2C Deutschland/Europaweit · Retouren, technischer Support & Ersatzteillieferung.
 
-Bei fehlender Import-/Export-Erfahrung unterstützt die eigene Importfirma **MapaTec GmbH** (Komplett Konzept × MapaTec).
+Bei fehlender Import-/Export-Erfahrung unterstützt die eigene Importfirma **MapaTec GmbH** (Komplett Konzept & MapaTec).
 
 Kernsatz: *You provide the products. We provide your route into Germany and Europe.*
 （您提供产品，我们为您打开通往德国和欧洲的市场之路。）
