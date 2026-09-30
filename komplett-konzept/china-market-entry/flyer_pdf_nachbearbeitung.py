@@ -36,7 +36,7 @@ for fn,cn in [('KomplettKonzept_Canton_Fair_Flyer.pdf',True),('KomplettKonzept_F
         # header contact line: WeChat number instead of "scannen"
         if cn:
             a=[s for s in ss if s['text']=='联' and s['bbox'][1]<80][0]; wx=[s for s in ss if s['text']=='信' and s['bbox'][1]<80][0]
-            keep=pymupdf.Rect(a['bbox'][0]-0.5,60,wx['bbox'][2]+0.3,80)
+            keep=pymupdf.Rect(a['bbox'][0]-0.5,60,wx['bbox'][2]-0.4,80)
             tail=' WeChat '+PHONE
             start=738.6-keep.width-F.text_length(tail,fontsize=13.5)
             redact(p,(370,60,745,80))
@@ -75,6 +75,15 @@ for fn,cn in [('KomplettKonzept_Canton_Fair_Flyer.pdf',True),('KomplettKonzept_F
     y=446
     for (a,b),g in zip([(580,718),(718,856),(856,948),(948,1125),(1125,1188)],[26,26,30,30,0]):
         p.show_pdf_page(pymupdf.Rect(0,y,W,y+b-a),src,0,clip=pymupdf.Rect(0,a,W,b)); y+=b-a+g
+    # badge on the banner: 30+ years of online retail experience
+    NOTO=S+'/NotoSC_badge.ttf'; NF=pymupdf.Font(fontfile=NOTO)
+    l1,l2,s1,s2=(('30多年电商经验','30+ years of e-commerce experience',22,11.5) if cn else ('Über 30 Jahre','Erfahrung im Onlinehandel',24,13))
+    bw=max(NF.text_length(l1,fontsize=s1),NF.text_length(l2,fontsize=s2))+28
+    r=pymupdf.Rect(22,120,22+bw,120+s1+s2+26)
+    p.draw_rect(r+(2,2,2,2),color=None,fill=(0,0,0),fill_opacity=0.35,radius=0.18)
+    p.draw_rect(r,color=(1,1,1),width=1.5,fill=RED,radius=0.18)
+    for t,sz,yy in [(l1,s1,r.y0+9+s1),(l2,s2,r.y0+15+s1+s2)]:
+        tw=pymupdf.TextWriter(p.rect); tw.append((r.x0+(r.width-NF.text_length(t,fontsize=sz))/2,yy-2),t,font=NF,fontsize=sz); tw.write_text(p,color=(1,1,1))
     pm=p.get_pixmap(dpi=144)
     for a,b in [(916,1042),(1072.5,1094.5)]:   # stray divider line from the Canva layout
         c=pm.pixel(1222,int(a+b)); p.draw_rect(pymupdf.Rect(614.5,a,617.5,b),color=None,fill=tuple(x/255 for x in c))
