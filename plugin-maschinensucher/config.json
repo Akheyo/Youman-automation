@@ -230,6 +230,29 @@
             "tooltip": "Config.verlaengernMonateTooltip"
           }
         },
+        "markierungsbericht": {
+          "type": "select",
+          "required": false,
+          "label": "Config.markierungsberichtLabel",
+          "options": {
+            "defaultValue": "stuendlich",
+            "tooltip": "Config.markierungsberichtTooltip",
+            "listBoxValues": [
+              {
+                "caption": "Config.markierungsberichtStuendlich",
+                "value": "stuendlich"
+              },
+              {
+                "caption": "Config.markierungsberichtJedesmal",
+                "value": "jedesmal"
+              },
+              {
+                "caption": "Config.markierungsberichtAus",
+                "value": "aus"
+              }
+            ]
+          }
+        },
         "altInserateAendern": {
           "type": "inputText",
           "required": false,

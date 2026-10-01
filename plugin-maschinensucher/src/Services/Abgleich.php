@@ -403,8 +403,9 @@ class Abgleich
         }
 
         // ---- Bericht: auf Maschinensucher, aber in Plenty nicht markiert -------
-        if (count($nurDiese) === 0 && $bestandVollstaendig && !$markierungUnsicher
-            && $this->zuordnung->markierungsberichtFaellig()) {
+        $berichtTakt = $this->einstellungen->markierungsbericht();
+        if (count($nurDiese) === 0 && $bestandVollstaendig && !$markierungUnsicher && $berichtTakt !== 'aus'
+            && ($berichtTakt === 'jedesmal' || $this->zuordnung->markierungsberichtFaellig())) {
             $this->markierungsbericht($gefunden);
             $this->zuordnung->markierungsberichtMerken();
         }
