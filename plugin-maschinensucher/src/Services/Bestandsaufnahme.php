@@ -211,6 +211,7 @@ class Bestandsaufnahme
                 } elseif ((string) $zeile->internalId === (string) $inserat['internalId']
                     && (int) $zeile->kategorieId === (int) $inserat['kategorieId']
                     && (string) $zeile->zustand === $zustand
+                    && (int) $zeile->laeuftBis === (int) $inserat['laeuftBis']
                     && ($artikelId <= 0 || (int) $zeile->artikelId === $artikelId)) {
                     // Nur schreiben, was sich geaendert hat. Sonst speichert
                     // jeder Lauf alle Zeilen neu — bei sechshundert Inseraten
@@ -228,6 +229,7 @@ class Bestandsaufnahme
             $zeile->kategorieId = (int) $inserat['kategorieId'];
             $zeile->zustand = $zustand;
             $zeile->gesehenAm = $jetzt;
+            $zeile->laeuftBis = (int) $inserat['laeuftBis'];
 
             // Die Artikel-ID nur setzen, wenn sie ableitbar war. Eine einmal
             // gefundene Zuordnung durch eine 0 zu ersetzen waere ein

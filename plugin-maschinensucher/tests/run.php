@@ -24,6 +24,7 @@ use MaschinensucherMarkt\Logik\Inseratdaten;
 use MaschinensucherMarkt\Logik\Suchdokument;
 use MaschinensucherMarkt\Logik\Artikelabbildung;
 use MaschinensucherMarkt\Logik\Rubrik;
+use MaschinensucherMarkt\Logik\Laufzeit;
 
 $p = new Pruefer();
 
@@ -765,5 +766,23 @@ $p->gleich(Entscheidung::ANLEGEN, Entscheidung::treffen($lage(array(
     'bestand' => 1, 'warenbestand' => 1, 'inseratId' => 0, 'geloescht' => true)))['tat'],
     'Retoure (wieder Bestand): neu anlegen');
 $p->gleich(true, Entscheidung::schreibt(Entscheidung::LOESCHEN), 'Loeschen zaehlt gegen die Schreibgrenze');
+
+// --- Laufzeit: rechtzeitig verlaengern ---------------------------------------
+$p->gruppe('Laufzeit verlaengern');
+$jetzt = 1790000000;
+$tag = 86400;
+$p->gleich(true, Laufzeit::verlaengern($jetzt + 6 * $tag, $jetzt, 7, true, 1), 'noch 6 Tage: verlaengern');
+$p->gleich(true, Laufzeit::verlaengern($jetzt + 7 * $tag, $jetzt, 7, true, 1), 'genau 7 Tage: verlaengern');
+$p->gleich(false, Laufzeit::verlaengern($jetzt + 8 * $tag, $jetzt, 7, true, 1), 'noch 8 Tage: noch nicht');
+$p->gleich(true, Laufzeit::verlaengern($jetzt - 2 * $tag, $jetzt, 7, true, 1), 'schon abgelaufen, aber Bestand: verlaengern');
+$p->gleich(false, Laufzeit::verlaengern($jetzt + 3 * $tag, $jetzt, 7, true, 0), 'kein Bestand (verkauft): auslaufen lassen');
+$p->gleich(false, Laufzeit::verlaengern($jetzt + 3 * $tag, $jetzt, 7, false, 1), 'nicht markiert: auslaufen lassen');
+$p->gleich(false, Laufzeit::verlaengern(0, $jetzt, 7, true, 1), 'Ablaufdatum unbekannt: nichts tun');
+$p->gleich(false, Laufzeit::verlaengern($jetzt + 3 * $tag, $jetzt, 0, true, 1), 'Grenze 0: Verlaengern aus');
+$p->gleich(-2, Laufzeit::restTage($jetzt - 2 * $tag, $jetzt), 'Resttage negativ, wenn abgelaufen');
+$seite = Bestandsabgleich::seiteLesen(array('listings' => array(
+    '777' => array('listing' => array('id' => 777, 'internalId' => '4711', 'expirationDate' => $jetzt + 5 * $tag), 'status' => array('ACTIVE')),
+)));
+$p->gleich($jetzt + 5 * $tag, $seite[0]['laeuftBis'], 'das Ablaufdatum kommt aus listing/all');
 
 exit($p->bericht());
