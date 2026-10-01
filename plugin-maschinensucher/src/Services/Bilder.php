@@ -36,6 +36,12 @@ class Bilder
     /** @var LibraryCallContract */
     private $ruf;
 
+    /** @var array Original-Adresse => kleinere Fassung als Ersatz */
+    private $ersatz = array();
+
+    /** @var string warum das letzte Bild nicht ladbar war */
+    private $letzterFehler = '';
+
     public function __construct(
         ItemImageRepositoryContract $bilder,
         Zugang $api,
@@ -56,9 +62,11 @@ class Bilder
      *
      * @return array
      */
-    public function hochladen($itemId, $bekannt = null)
+    public function hochladen($itemId, $bekannt = null, $adressen = null)
     {
-        $adressen = $this->adressen((int) $itemId);
+        if (!is_array($adressen)) {
+            $adressen = $this->adressen((int) $itemId);
+        }
         if (count($adressen) === 0) {
             return array();
         }
@@ -66,7 +74,15 @@ class Bilder
         $namen = array();
         foreach ($adressen as $stelle => $adresse) {
             $inhalt = $this->laden($adresse);
+            if ($inhalt === null && isset($this->ersatz[$adresse])) {
+                $inhalt = $this->laden($this->ersatz[$adresse]);
+            }
             if ($inhalt === null) {
+                $this->getLogger(__METHOD__)->warning('MaschinensucherMarkt::log.bildNichtLadbar', array(
+                    'artikel' => (int) $itemId,
+                    'adresse' => $adresse,
+                    'meldung' => $this->letzterFehler,
+                ));
                 continue;
             }
 
@@ -103,10 +119,24 @@ class Bilder
             return array();
         }
 
+        // Plenty liefert Modelle. Ein (array)-Cast darauf ergibt nur interne
+        // Felder - keine Bildadresse, und der Artikel ging ohne Bilder raus
+        // (01.10., Inserat A22859605). Deshalb toArray().
+        $liste = array();
         foreach ((array) $roh as $bild) {
-            $bild = (array) $bild;
+            $liste[] = $this->alsArray($bild);
+        }
+        usort($liste, function ($a, $b) {
+            $pa = isset($a['position']) ? (int) $a['position'] : 0;
+            $pb = isset($b['position']) ? (int) $b['position'] : 0;
+            return $pa - $pb;
+        });
+
+        foreach ($liste as $bild) {
             $adresse = '';
-            foreach (array('urlMiddle', 'urlPreview', 'url', 'path') as $schluessel) {
+            // Das Original fuer die beste Qualitaet; die mittlere Groesse als
+            // Ersatz, falls das Original nicht ladbar oder zu gross ist.
+            foreach (array('url', 'urlMiddle', 'urlPreview', 'path') as $schluessel) {
                 if (isset($bild[$schluessel]) && trim((string) $bild[$schluessel]) !== '') {
                     $adresse = trim((string) $bild[$schluessel]);
                     break;
@@ -114,6 +144,9 @@ class Bilder
             }
             if ($adresse === '') {
                 continue;
+            }
+            if (isset($bild['urlMiddle']) && trim((string) $bild['urlMiddle']) !== '' && trim((string) $bild['urlMiddle']) !== $adresse) {
+                $this->ersatz[$adresse] = trim((string) $bild['urlMiddle']);
             }
             $adressen[] = $adresse;
             if (count($adressen) >= self::HOECHSTENS) {
@@ -126,13 +159,16 @@ class Bilder
 
     private function laden($adresse)
     {
+        $this->letzterFehler = '';
         try {
             $roh = $this->ruf->call('MaschinensucherMarkt::holen', array('url' => $adresse));
         } catch (\Throwable $e) {
+            $this->letzterFehler = $e->getMessage();
             return null;
         }
 
         if (!is_array($roh) || !isset($roh['base64']) || $roh['base64'] === '') {
+            $this->letzterFehler = is_array($roh) && isset($roh['fehler']) ? (string) $roh['fehler'] : 'leere Antwort';
             return null;
         }
 
@@ -155,5 +191,29 @@ class Bilder
             $endung = strtolower($treffer[1]);
         }
         return 'bild-' . ((int) $stelle + 1) . '.' . $endung;
+    }
+
+    private function alsArray($bild)
+    {
+        if (is_array($bild)) {
+            return $bild;
+        }
+        try {
+            $arr = $bild->toArray();
+            if (is_array($arr)) {
+                return $arr;
+            }
+        } catch (\Throwable $e) {
+        }
+        try {
+            return array(
+                'urlMiddle'  => $bild->urlMiddle,
+                'urlPreview' => $bild->urlPreview,
+                'url'        => $bild->url,
+                'position'   => $bild->position,
+            );
+        } catch (\Throwable $e) {
+            return array();
+        }
     }
 }
