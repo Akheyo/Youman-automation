@@ -180,6 +180,22 @@ class Einstellungen
     }
 
     /**
+     * Ab welcher Restlaufzeit (Tage) ein Inserat verlaengert wird. 0 = aus.
+     */
+    public function verlaengernTage()
+    {
+        return max(0, (int) $this->zahl('verlaengernTage', 7));
+    }
+
+    /**
+     * Um wie viele Monate (ab heute) verlaengert wird, 1 bis 12.
+     */
+    public function verlaengernMonate()
+    {
+        return max(1, min(12, (int) $this->zahl('verlaengernMonate', 12)));
+    }
+
+    /**
      * Verschickte Artikel (Warenbestand 0) bei Maschinensucher loeschen?
      * Ja ist gewollt; "nein" laesst sie nur pausiert stehen.
      */

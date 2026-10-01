@@ -7,6 +7,7 @@ use MaschinensucherMarkt\Logik\Antwort;
 use MaschinensucherMarkt\Logik\Artikelabbildung;
 use MaschinensucherMarkt\Logik\Entscheidung;
 use MaschinensucherMarkt\Logik\Inseratdaten;
+use MaschinensucherMarkt\Logik\Laufzeit;
 use MaschinensucherMarkt\Logik\Rubrik;
 use MaschinensucherMarkt\Logik\Suchdokument;
 use MaschinensucherMarkt\Models\Verknuepfung;
@@ -197,6 +198,10 @@ class Abgleich
         );
         $versandLoeschen = $this->einstellungen->versandLoeschen();
         $geloeschtListe = array();
+        // Verlaengert wird nur im ganzen Durchlauf, nicht in der Flow-Aktion.
+        $verlaengernTage = count($nurDiese) === 0 ? $this->einstellungen->verlaengernTage() : 0;
+        $jetzt = time();
+        $faellig = array();
         $gelesen = 0;
         $geschrieben = 0;
         $gescheitert = array();
@@ -318,6 +323,14 @@ class Abgleich
                 $this->zuordnung->speichern($bekannt);
             }
 
+            // Laeuft bald ab? Vormerken - verlaengert wird nach der Schleife,
+            // wenn Pausieren und Loeschen schon durch sind.
+            if ($bekannt !== null && (int) $bekannt->inseratId > 0
+                && $tat !== Entscheidung::PAUSIEREN && $tat !== Entscheidung::LOESCHEN
+                && Laufzeit::verlaengern((int) $bekannt->laeuftBis, $jetzt, $verlaengernTage, $markiert, (float) $artikel['bestand'])) {
+                $faellig[(int) $bekannt->inseratId] = array('artikel' => $artikelId, 'zeile' => $bekannt);
+            }
+
             if (Entscheidung::schreibt($tat) && $geschrieben >= self::SCHREIBGRENZE) {
                 // Nicht weiterzaehlen: Was hier liegen bleibt, ist beim
                 // naechsten Lauf immer noch faellig.
@@ -377,6 +390,43 @@ class Abgleich
             }
         }
 
+        // ---- Verlaengern -----------------------------------------------------
+        $verlaengert = array();
+        if (count($faellig) > 0) {
+            $monate = $this->einstellungen->verlaengernMonate();
+            foreach ($faellig as $inseratId => $f) {
+                if ($geschrieben >= self::SCHREIBGRENZE) {
+                    $gebremst = true;
+                    break;
+                }
+                $eintragV = array(
+                    'artikel'  => $f['artikel'],
+                    'inserat'  => $inseratId,
+                    'restTage' => Laufzeit::restTage((int) $f['zeile']->laeuftBis, $jetzt),
+                    'monate'   => $monate,
+                );
+                $geschrieben++;
+                if ($probelauf) {
+                    $eintragV['tat'] = 'verlaengern';
+                    $vorhaben[] = $eintragV;
+                    continue;
+                }
+                $antwort = $this->api->verlaengern($inseratId, $monate);
+                if (Antwort::istOk($antwort)) {
+                    // Vorlaeufig; die naechste Bestandsaufnahme traegt das
+                    // genaue Datum von drueben ein.
+                    $f['zeile']->laeuftBis = $jetzt + $monate * 30 * Laufzeit::TAG;
+                    $this->zuordnung->speichern($f['zeile']);
+                    $verlaengert[] = $eintragV;
+                } else {
+                    $gescheitert[] = array('artikel' => $f['artikel'], 'grund' => 'Verlaengern fehlgeschlagen: ' . $antwort['meldung']);
+                }
+            }
+        }
+        if (count($verlaengert) > 0) {
+            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.verlaengert', array_slice($verlaengert, 0, 50));
+        }
+
         $bericht = array(
             'ok'          => true,
             'probelauf'   => $probelauf,
@@ -387,6 +437,7 @@ class Abgleich
             'pausiert'    => $zaehler[Entscheidung::PAUSIEREN],
             'aktiviert'   => $zaehler[Entscheidung::AKTIVIEREN],
             'geloescht'   => $zaehler[Entscheidung::LOESCHEN],
+            'verlaengert' => $probelauf ? count($faellig) : count($verlaengert),
             'unveraendert' => $zaehler[Entscheidung::NICHTS],
             'zurueck'     => $zaehler[Entscheidung::ZURUECK],
             'gebremst'    => $gebremst,

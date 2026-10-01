@@ -212,6 +212,24 @@
             ]
           }
         },
+        "verlaengernTage": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.verlaengernTageLabel",
+          "options": {
+            "defaultValue": "7",
+            "tooltip": "Config.verlaengernTageTooltip"
+          }
+        },
+        "verlaengernMonate": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.verlaengernMonateLabel",
+          "options": {
+            "defaultValue": "12",
+            "tooltip": "Config.verlaengernMonateTooltip"
+          }
+        },
         "altInserateAendern": {
           "type": "inputText",
           "required": false,

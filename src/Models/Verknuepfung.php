@@ -30,6 +30,7 @@ use Plenty\Modules\Plugin\DataBase\Contracts\Model;
  * @property string $meldung       Letzter Grund, warum es nicht durchging
  * @property int    $perApi        1 = vom Plugin ueber die API angelegt, 0 = vorgefunden
  * @property int    $markiertGesehen Unix-Zeit, zu der das Plugin den Artikel erstmals markiert sah (0 = nie)
+ * @property int    $laeuftBis     Unix-Zeit, zu der das Inserat drueben ablaeuft (0 = unbekannt)
  * @property int    $loeschenAbgelehnt Unix-Zeit, zu der Maschinensucher das Loeschen abgelehnt hat (0 = nie)
  */
 class Verknuepfung extends Model
@@ -84,6 +85,13 @@ class Verknuepfung extends Model
      * Ware (Retoure), wird er neu angelegt.
      */
     public $loeschenAbgelehnt = 0;
+
+    /**
+     * Wann das Inserat drueben ablaeuft (expirationDate aus listing/all).
+     * Faellt die Restlaufzeit unter die eingestellte Grenze, verlaengert der
+     * Abgleich - aber nur, was markiert ist und Bestand hat.
+     */
+    public $laeuftBis = 0;
 
     public function getTableName(): string
     {
