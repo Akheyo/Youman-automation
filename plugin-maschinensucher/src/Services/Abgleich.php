@@ -402,6 +402,13 @@ class Abgleich
             }
         }
 
+        // ---- Bericht: auf Maschinensucher, aber in Plenty nicht markiert -------
+        if (count($nurDiese) === 0 && $bestandVollstaendig && !$markierungUnsicher
+            && $this->zuordnung->markierungsberichtFaellig()) {
+            $this->markierungsbericht($gefunden);
+            $this->zuordnung->markierungsberichtMerken();
+        }
+
         // ---- Verlaengern -----------------------------------------------------
         $verlaengert = array();
         if (count($faellig) > 0) {
@@ -747,6 +754,78 @@ class Abgleich
         }
 
         return $eintraege;
+    }
+
+    /**
+     * Welche Inserate bei Maschinensucher gehoeren zu Artikeln, die in Plenty
+     * (noch) nicht markiert sind?
+     *
+     * Grundlage ist die vollstaendige Bestandsaufnahme ueber die API - nicht
+     * die Inseratverwaltung im Browser, deren Seiten sich beim Blaettern
+     * verschieben. Die Artikel-IDs kommen in Bloecken zu 100, kommagetrennt,
+     * zum Einfuegen in die Plenty-Artikelsuche.
+     */
+    private function markierungsbericht(array $gefunden)
+    {
+        $markiert = array();
+        foreach ($gefunden as $eintrag) {
+            if ($eintrag['markiert']) {
+                $markiert[(int) $eintrag['variante']['itemId']] = true;
+            }
+        }
+
+        $inserate = 0;
+        $fehlend = array();
+        $ohneArtikelId = array();
+        foreach ($this->zuordnung->alle() as $zeile) {
+            if ((int) $zeile->inseratId <= 0) {
+                continue;
+            }
+            $inserate++;
+            $artikelId = (int) $zeile->artikelId;
+            if ($artikelId <= 0) {
+                if (count($ohneArtikelId) < 50) {
+                    $ohneArtikelId[] = array('inserat' => (int) $zeile->inseratId, 'referenz' => (string) $zeile->internalId);
+                }
+                continue;
+            }
+            if (!isset($markiert[$artikelId])) {
+                $fehlend[$artikelId] = true;
+            }
+        }
+
+        // Gibt es diese Artikel in Plenty ueberhaupt noch?
+        $fehlendIds = array_keys($fehlend);
+        sort($fehlendIds);
+        $vorhanden = array();
+        if (count($fehlendIds) > 0) {
+            foreach ($this->suche->nachArtikelIds($fehlendIds) as $dokument) {
+                $vorhanden[(int) Suchdokument::alsVariante((array) $dokument)['itemId']] = true;
+            }
+        }
+        $markieren = array();
+        $nichtInPlenty = array();
+        foreach ($fehlendIds as $id) {
+            if (isset($vorhanden[$id])) {
+                $markieren[] = $id;
+            } else {
+                $nichtInPlenty[] = $id;
+            }
+        }
+
+        $bloecke = array();
+        foreach (array_chunk($markieren, 100) as $block) {
+            $bloecke[] = implode(',', $block);
+        }
+
+        $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.markierungFehlt', array(
+            'inserateBeiMaschinensucher' => $inserate,
+            'markierteArtikelInPlenty'   => count($markiert),
+            'zuMarkieren'                => count($markieren),
+            'artikelIdsZumMarkieren'     => $bloecke,
+            'nichtInPlenty'              => implode(',', $nichtInPlenty),
+            'ohneArtikelId'              => $ohneArtikelId,
+        ));
     }
 
     /**

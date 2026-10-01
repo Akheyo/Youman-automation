@@ -247,6 +247,20 @@ class Zuordnung
         $this->db->save($merker);
     }
 
+    /**
+     * Ist der Bericht "auf Maschinensucher, aber nicht markiert" wieder
+     * faellig? Hoechstens einmal je Stunde, sonst fuellt er das Protokoll.
+     */
+    public function markierungsberichtFaellig()
+    {
+        return time() - $this->zeitpunkt('markierungsbericht') >= 3600;
+    }
+
+    public function markierungsberichtMerken()
+    {
+        $this->zeitpunktMerken('markierungsbericht', time());
+    }
+
     private function zeitpunkt($name)
     {
         return (int) $this->merker($name)->zeit;
