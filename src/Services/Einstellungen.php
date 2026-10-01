@@ -196,6 +196,22 @@ class Einstellungen
     }
 
     /**
+     * Wie oft der Bericht "auf Maschinensucher, aber nicht markiert" kommt:
+     * stuendlich (Standard), jedesmal (jeder Lauf) oder aus.
+     */
+    public function markierungsbericht()
+    {
+        $wert = strtolower(trim((string) $this->wert('markierungsbericht', 'stuendlich')));
+        if (substr($wert, 0, 3) === 'aus') {
+            return 'aus';
+        }
+        if (substr($wert, 0, 5) === 'jedes') {
+            return 'jedesmal';
+        }
+        return 'stuendlich';
+    }
+
+    /**
      * Verschickte Artikel (Warenbestand 0) bei Maschinensucher loeschen?
      * Ja ist gewollt; "nein" laesst sie nur pausiert stehen.
      */
