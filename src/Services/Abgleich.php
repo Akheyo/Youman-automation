@@ -275,8 +275,20 @@ class Abgleich
                 $artikel['warenbestand'] = $this->lager->warenbestand((int) $artikel['variationId']);
             }
 
+            // Die Bilder gehoeren zum Stand des Inserats: Kommt eins dazu oder
+            // fehlte es beim Anlegen, geht das Inserat neu raus. Nur gelesen,
+            // wo drueben auch geschrieben werden darf.
+            $bildAdressen = null;
+            $bilderZaehlen = $markiert && count($gebaut['koerper']) > 0 && (float) $artikel['bestand'] > 0
+                && ($bekannt === null || (int) $bekannt->perApi === 1
+                    || $this->einstellungen->altInserateAendern($artikelId));
+            if ($bilderZaehlen) {
+                $bildAdressen = $this->bilder->adressen($artikelId);
+            }
             $neuerAbdruck = count($gebaut['koerper']) > 0
-                ? Inseratdaten::fingerabdruck($gebaut['koerper'])
+                ? Inseratdaten::fingerabdruck($bildAdressen === null
+                    ? $gebaut['koerper']
+                    : array_merge($gebaut['koerper'], array('bildquellen' => implode(',', $bildAdressen))))
                 : '';
 
             $entscheidung = Entscheidung::treffen(array(
@@ -377,7 +389,7 @@ class Abgleich
                 continue;
             }
 
-            $ergebnis = $this->ausfuehren($tat, $artikel, $gebaut, $bekannt, $umgebung, $neuerAbdruck, $entscheidung['grund']);
+            $ergebnis = $this->ausfuehren($tat, $artikel, $gebaut, $bekannt, $umgebung, $neuerAbdruck, $entscheidung['grund'], $bildAdressen);
             $geschrieben++;
 
             if (!$ergebnis['ok']) {
@@ -485,7 +497,7 @@ class Abgleich
     /**
      * Eine Entscheidung ausfuehren und die Zuordnung nachziehen.
      */
-    private function ausfuehren($tat, array $artikel, array $gebaut, $bekannt, array $umgebung, $neuerAbdruck, $grund)
+    private function ausfuehren($tat, array $artikel, array $gebaut, $bekannt, array $umgebung, $neuerAbdruck, $grund, $bildAdressen = null)
     {
         $inseratId = $bekannt !== null ? (int) $bekannt->inseratId : 0;
 
@@ -514,7 +526,7 @@ class Abgleich
         // Anlegen und Aendern brauchen die Bilder. Sie werden einzeln
         // hochgeladen und erst danach im Inserat genannt.
         $koerper = $gebaut['koerper'];
-        $namen = $this->bilder->hochladen((int) $artikel['itemId'], $bekannt);
+        $namen = $this->bilder->hochladen((int) $artikel['itemId'], $bekannt, $bildAdressen);
         if (count($namen) > 0) {
             $koerper['images'] = $namen;
         }
