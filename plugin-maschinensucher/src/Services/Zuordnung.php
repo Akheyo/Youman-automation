@@ -261,6 +261,34 @@ class Zuordnung
         $this->zeitpunktMerken('markierungsbericht', time());
     }
 
+    /**
+     * Bericht "ohne sichtbaren Preis": hoechstens einmal je Stunde.
+     */
+    public function preisberichtFaellig()
+    {
+        return time() - $this->zeitpunkt('preisbericht') >= 3600;
+    }
+
+    public function preisberichtMerken()
+    {
+        $this->zeitpunktMerken('preisbericht', time());
+    }
+
+    /**
+     * Seit wann eine Bestandsaufnahme von Seite 1 an den Preis mitliest.
+     * Erst wenn eine solche Runde ganz durch ist, stimmt das Feld ohnePreis
+     * in allen Zeilen - vorher gaebe der Bericht ein halbes Bild.
+     */
+    public function preisrundeBegonnen()
+    {
+        return $this->zeitpunkt('preisrunde');
+    }
+
+    public function preisrundeBeginnMerken()
+    {
+        $this->zeitpunktMerken('preisrunde', time());
+    }
+
     private function zeitpunkt($name)
     {
         return (int) $this->merker($name)->zeit;

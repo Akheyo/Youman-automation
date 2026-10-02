@@ -59,6 +59,7 @@ class Bestandsabgleich
                 'zustand'     => self::zustandAus(isset($eintrag['status']) ? $eintrag['status'] : array()),
                 'titel'       => self::titelAus($inserat),
                 'laeuftBis'   => isset($inserat['expirationDate']) ? (int) $inserat['expirationDate'] : 0,
+                'ohnePreis'   => !self::preisSichtbar($inserat),
             );
         }
 
@@ -146,6 +147,85 @@ class Bestandsabgleich
         // Ohne Seitenangabe: Solange etwas kam, koennte noch mehr kommen.
         $anzahl = isset($daten['listingCount']) ? (int) $daten['listingCount'] : 0;
         return $anzahl > 0;
+    }
+
+    /**
+     * Zeigt Maschinensucher bei diesem Inserat oeffentlich einen Preis?
+     *
+     * Sichtbar ist nur "price". Haendlerpreis (tradePrice) und versteckter
+     * Preis (hiddenPrice) sieht ein normaler Besucher nicht - ein Inserat,
+     * das nur diese hat, zeigt "Preis auf Anfrage".
+     */
+    public static function preisSichtbar(array $inserat)
+    {
+        if (!isset($inserat['price']) || $inserat['price'] === null || $inserat['price'] === '') {
+            return false;
+        }
+        return is_numeric($inserat['price']) && (float) $inserat['price'] > 0;
+    }
+
+    /**
+     * Bericht: Welche Inserate zeigen bei Maschinensucher keinen Preis?
+     *
+     * Die Artikel-IDs in Bloecken zu 100, kommagetrennt, zum Einfuegen in
+     * die Plenty-Artikelsuche. Aktive und pausierte getrennt - ein pausiertes
+     * Inserat sieht drueben ohnehin niemand.
+     *
+     * @param array $zeilen je Inserat: inseratId, artikelId, internalId, zustand, ohnePreis
+     * @return array
+     */
+    public static function ohnePreisBericht(array $zeilen)
+    {
+        $aktiv = array();
+        $pausiert = array();
+        $ohneArtikelId = array();
+        $inserate = 0;
+        foreach ($zeilen as $zeile) {
+            if ((int) $zeile['inseratId'] <= 0) {
+                continue;
+            }
+            $inserate++;
+            if (empty($zeile['ohnePreis'])) {
+                continue;
+            }
+            $artikelId = (int) $zeile['artikelId'];
+            if ($artikelId <= 0) {
+                if (count($ohneArtikelId) < 50) {
+                    $ohneArtikelId[] = array(
+                        'inserat'  => (int) $zeile['inseratId'],
+                        'referenz' => (string) $zeile['internalId'],
+                    );
+                }
+                continue;
+            }
+            if ((string) $zeile['zustand'] === 'pausiert') {
+                $pausiert[$artikelId] = true;
+            } else {
+                $aktiv[$artikelId] = true;
+            }
+        }
+        $aktiv = array_keys($aktiv);
+        $pausiert = array_keys(array_diff_key($pausiert, array_flip($aktiv)));
+        sort($aktiv);
+        sort($pausiert);
+
+        return array(
+            'inserateBeiMaschinensucher' => $inserate,
+            'ohnePreisAktiv'             => count($aktiv),
+            'artikelIdsAktiv'            => self::bloecke($aktiv),
+            'ohnePreisPausiert'          => count($pausiert),
+            'artikelIdsPausiert'         => self::bloecke($pausiert),
+            'ohneArtikelId'              => $ohneArtikelId,
+        );
+    }
+
+    private static function bloecke(array $ids)
+    {
+        $heraus = array();
+        foreach (array_chunk($ids, 100) as $block) {
+            $heraus[] = implode(',', $block);
+        }
+        return $heraus;
     }
 
     /**

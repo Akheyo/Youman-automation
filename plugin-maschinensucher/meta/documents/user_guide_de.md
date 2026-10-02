@@ -45,6 +45,15 @@ Im Log (Plugin-Log, Eintrag „Markierte Artikel, die nicht rausgehen") steht je
 Artikel der Grund. Die häufigsten: kein Preis, kein Foto, keine Rubrik, kein
 Bestand.
 
+## Artikel ohne sichtbaren Preis
+
+Artikel mit dem Tag „Preis auf Anfrage“ (Tag-ID in der Konfiguration) gehen
+ohne Preis raus. Welche Artikel bei Maschinensucher tatsächlich keinen Preis
+zeigen, steht im Log unter „Bericht: Artikel ohne sichtbaren Preis bei
+Maschinensucher“ (stündlich, nach dem Lesen des Bestands). Die Liste umfasst
+auch alte Inserate, und die Artikel-IDs stehen in Blöcken zu 100 zum Kopieren
+in die Artikelsuche.
+
 ## Sicherungen
 
 - Fällt die Zahl der Inserate plötzlich auf unter die Hälfte, wird die neue
