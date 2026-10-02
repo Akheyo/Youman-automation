@@ -785,4 +785,17 @@ $seite = Bestandsabgleich::seiteLesen(array('listings' => array(
 )));
 $p->gleich($jetzt + 5 * $tag, $seite[0]['laeuftBis'], 'das Ablaufdatum kommt aus listing/all');
 
+// --- Preis auf Anfrage --------------------------------------------------------
+$p->gruppe('Preis auf Anfrage');
+$anfrage = Inseratdaten::bauen(array_merge($artikelApi, array('preisAufAnfrage' => true)), $umgebungApi);
+$p->gleich(array(), $anfrage['maengel'], 'mit Tag: kein Mangel');
+$p->gleich(false, array_key_exists('price', $anfrage['koerper']), 'mit Tag: kein Preis im Inserat');
+$p->gleich(false, array_key_exists('priceVat', $anfrage['koerper']), 'und keine Preis-Nebenfelder');
+$ohneUndAnfrage = Inseratdaten::bauen(array_merge($artikelApi, array('preisAufAnfrage' => true, 'preis' => null)), $umgebungApi);
+$p->gleich(array(), $ohneUndAnfrage['maengel'], 'mit Tag darf der Preis in Plenty auch fehlen');
+$normal = Inseratdaten::bauen($artikelApi, $umgebungApi);
+$p->gleich(true, isset($normal['koerper']['price']), 'ohne Tag bleibt der Preis drin');
+$p->gleich(true, Inseratdaten::fingerabdruck($normal['koerper']) !== Inseratdaten::fingerabdruck($anfrage['koerper']),
+    'Tag setzen aendert den Fingerabdruck - das Inserat wird aktualisiert');
+
 exit($p->bericht());

@@ -160,6 +160,7 @@ class Abgleich
         $preisliste = $this->einstellungen->preislisteId();
         $ersatzliste = $this->einstellungen->preislisteErsatzId();
         $gefunden = $this->varianten($nurDiese, $flagId, $flagFeld);
+        $aufAnfrage = $this->preisAufAnfrage($nurDiese);
 
         // Bremse gegen einen unvollstaendigen Suchindex: Findet die
         // Markierungssuche deutlich weniger Artikel als im letzten Lauf,
@@ -216,6 +217,7 @@ class Abgleich
 
             $artikel = Artikelabbildung::ausVariante($roh, $hersteller, array(), $preisliste, $ersatzliste);
             $artikelId = (int) $artikel['itemId'];
+            $artikel['preisAufAnfrage'] = isset($aufAnfrage[$artikelId]);
             $bekannt = isset($karte[$artikelId]) ? $karte[$artikelId] : null;
 
             // Die Rubrik kommt vom bestehenden Inserat. Fuer alles, was
@@ -755,6 +757,32 @@ class Abgleich
         }
 
         return $eintraege;
+    }
+
+    /**
+     * Artikel-IDs, deren Varianten den Tag "Preis auf Anfrage" tragen. Eine
+     * Suche je Lauf; scheitert sie, gehen die Preise wie bisher raus.
+     *
+     * @return array artikelId => true
+     */
+    private function preisAufAnfrage(array $nurDiese)
+    {
+        $tagId = $this->einstellungen->preisAufAnfrageTag();
+        $heraus = array();
+        if ($tagId <= 0) {
+            return $heraus;
+        }
+        try {
+            foreach ($this->suche->mitTag($tagId, $nurDiese) as $dokument) {
+                $heraus[(int) Suchdokument::alsVariante((array) $dokument)['itemId']] = true;
+            }
+        } catch (\Throwable $e) {
+            $this->getLogger(__METHOD__)->warning('MaschinensucherMarkt::log.tagNichtLesbar', array(
+                'tag'     => $tagId,
+                'meldung' => $e->getMessage(),
+            ));
+        }
+        return $heraus;
     }
 
     /**

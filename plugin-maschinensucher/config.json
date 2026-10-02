@@ -230,6 +230,15 @@
             "tooltip": "Config.verlaengernMonateTooltip"
           }
         },
+        "preisAufAnfrageTag": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.preisAufAnfrageTagLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.preisAufAnfrageTagTooltip"
+          }
+        },
         "markierungsbericht": {
           "type": "select",
           "required": false,

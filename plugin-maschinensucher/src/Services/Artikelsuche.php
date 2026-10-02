@@ -8,6 +8,7 @@ use Plenty\Modules\Cloud\ElasticSearch\Lib\Search\Document\DocumentSearch;
 use Plenty\Modules\Cloud\ElasticSearch\Lib\Sorting\SingleSorting;
 use Plenty\Modules\Item\Search\Contracts\VariationElasticSearchSearchRepositoryContract;
 use Plenty\Modules\Item\Search\Filter\ItemFilter;
+use Plenty\Modules\Item\Search\Filter\TagFilter;
 use Plenty\Modules\Item\Search\Filter\VariationBaseFilter;
 
 /**
@@ -78,6 +79,23 @@ class Artikelsuche
     }
 
     /**
+     * Varianten mit einem bestimmten Tag, optional nur unter bestimmten
+     * Varianten-IDs.
+     */
+    public function mitTag($tagId, array $nurDiese = array())
+    {
+        if ((int) $tagId <= 0) {
+            return array();
+        }
+        $was = array('tag' => (int) $tagId);
+        $ids = self::zahlen($nurDiese);
+        if (count($ids) > 0) {
+            $was['variantenIds'] = $ids;
+        }
+        return $this->suchen($was);
+    }
+
+    /**
      * Alle Varianten bestimmter Artikel, egal ob markiert.
      */
     public function nachArtikelIds(array $ids)
@@ -117,6 +135,11 @@ class Artikelsuche
                 $artikel = pluginApp(VariationBaseFilter::class);
                 $artikel->hasItemIds($was['artikelIds']);
                 $suche->addFilter($artikel);
+            }
+            if (isset($was['tag'])) {
+                $tag = pluginApp(TagFilter::class);
+                $tag->hasTag((int) $was['tag']);
+                $suche->addFilter($tag);
             }
             if (isset($was['flagge'])) {
                 $flagge = pluginApp(ItemFilter::class);
