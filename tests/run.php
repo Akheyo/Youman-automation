@@ -798,4 +798,37 @@ $p->gleich(true, isset($normal['koerper']['price']), 'ohne Tag bleibt der Preis 
 $p->gleich(true, Inseratdaten::fingerabdruck($normal['koerper']) !== Inseratdaten::fingerabdruck($anfrage['koerper']),
     'Tag setzen aendert den Fingerabdruck - das Inserat wird aktualisiert');
 
+// --- Bericht ohne sichtbaren Preis ----------------------------------------------
+$p->gruppe('Bericht ohne Preis');
+$p->gleich(false, Bestandsabgleich::preisSichtbar(array()), 'kein price: nicht sichtbar');
+$p->gleich(false, Bestandsabgleich::preisSichtbar(array('price' => 0)), 'price 0: nicht sichtbar');
+$p->gleich(false, Bestandsabgleich::preisSichtbar(array('price' => null, 'tradePrice' => 500)), 'nur Haendlerpreis: nicht sichtbar');
+$p->gleich(false, Bestandsabgleich::preisSichtbar(array('hiddenPrice' => 500)), 'nur versteckter Preis: nicht sichtbar');
+$p->gleich(true, Bestandsabgleich::preisSichtbar(array('price' => 1200)), 'price 1200: sichtbar');
+$p->gleich(true, Bestandsabgleich::preisSichtbar(array('price' => '1200')), 'price als Text: sichtbar');
+$seite = Bestandsabgleich::seiteLesen(array('listings' => array(
+    '801' => array('listing' => array('id' => 801, 'internalId' => '501', 'price' => 900), 'status' => array('ACTIVE')),
+    '802' => array('listing' => array('id' => 802, 'internalId' => '502'), 'status' => array('ACTIVE')),
+)));
+$p->gleich(false, $seite[0]['ohnePreis'], 'listing/all mit Preis: ohnePreis nein');
+$p->gleich(true, $seite[1]['ohnePreis'], 'listing/all ohne Preis: ohnePreis ja');
+$bericht = Bestandsabgleich::ohnePreisBericht(array(
+    array('inseratId' => 1, 'artikelId' => 30, 'internalId' => '30', 'zustand' => 'aktiv', 'ohnePreis' => true),
+    array('inseratId' => 2, 'artikelId' => 10, 'internalId' => '10', 'zustand' => 'aktiv', 'ohnePreis' => true),
+    array('inseratId' => 3, 'artikelId' => 20, 'internalId' => '20', 'zustand' => 'aktiv', 'ohnePreis' => false),
+    array('inseratId' => 4, 'artikelId' => 40, 'internalId' => '40', 'zustand' => 'pausiert', 'ohnePreis' => true),
+    array('inseratId' => 5, 'artikelId' => 0, 'internalId' => 'Thomas 3', 'zustand' => 'aktiv', 'ohnePreis' => true),
+    array('inseratId' => 0, 'artikelId' => 50, 'internalId' => '50', 'zustand' => 'geloescht', 'ohnePreis' => true),
+));
+$p->gleich(5, $bericht['inserateBeiMaschinensucher'], 'geloeschte Zeilen zaehlen nicht als Inserat');
+$p->gleich(2, $bericht['ohnePreisAktiv'], 'zwei aktive ohne Preis');
+$p->gleich(array('10,30'), $bericht['artikelIdsAktiv'], 'aktive Artikel-IDs sortiert, kommagetrennt');
+$p->gleich(array('40'), $bericht['artikelIdsPausiert'], 'pausierte getrennt');
+$p->gleich(array(array('inserat' => 5, 'referenz' => 'Thomas 3')), $bericht['ohneArtikelId'], 'ohne Artikel-ID mit Inseratsnummer');
+$viele = array();
+for ($i = 1; $i <= 150; $i++) {
+    $viele[] = array('inseratId' => $i, 'artikelId' => 1000 + $i, 'internalId' => '', 'zustand' => 'aktiv', 'ohnePreis' => true);
+}
+$p->gleich(2, count(Bestandsabgleich::ohnePreisBericht($viele)['artikelIdsAktiv']), '150 IDs: zwei Bloecke zu hoechstens 100');
+
 exit($p->bericht());

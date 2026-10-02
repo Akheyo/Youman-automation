@@ -33,7 +33,8 @@
     "MaschinensucherMarkt\\Migrations\\ZuordnungErweitern",
     "MaschinensucherMarkt\\Migrations\\ZuordnungMarkierung",
     "MaschinensucherMarkt\\Migrations\\ZuordnungLoeschen",
-    "MaschinensucherMarkt\\Migrations\\ZuordnungLaufzeit"
+    "MaschinensucherMarkt\\Migrations\\ZuordnungLaufzeit",
+    "MaschinensucherMarkt\\Migrations\\ZuordnungPreis"
   ],
   "platform": {
     "php": ">=7.3"

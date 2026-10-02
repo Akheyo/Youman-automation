@@ -80,6 +80,12 @@ class Bestandsaufnahme
         $aktualisiert = 0;
         $fertig = false;
 
+        // Die Runde, die hier auf Seite 1 beginnt, liest den Preis bei
+        // allen Inseraten mit. Ab ihrem Ende ist der Preisbericht vollstaendig.
+        if ($seite <= 1 && $this->zuordnung->preisrundeBegonnen() <= 0) {
+            $this->zuordnung->preisrundeBeginnMerken();
+        }
+
         while (true) {
             $antwort = $this->api->alleInserate($seite);
 
@@ -150,6 +156,8 @@ class Bestandsaufnahme
                     'artikel' => array_slice($bilanz['doppelteArtikel'], 0, 50),
                 ));
             }
+
+            $this->preisbericht();
         } else {
             $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.bestandEtappe', $bericht);
         }
@@ -212,6 +220,7 @@ class Bestandsaufnahme
                     && (int) $zeile->kategorieId === (int) $inserat['kategorieId']
                     && (string) $zeile->zustand === $zustand
                     && (int) $zeile->laeuftBis === (int) $inserat['laeuftBis']
+                    && (int) $zeile->ohnePreis === ($inserat['ohnePreis'] ? 1 : 0)
                     && ($artikelId <= 0 || (int) $zeile->artikelId === $artikelId)) {
                     // Nur schreiben, was sich geaendert hat. Sonst speichert
                     // jeder Lauf alle Zeilen neu — bei sechshundert Inseraten
@@ -230,6 +239,7 @@ class Bestandsaufnahme
             $zeile->zustand = $zustand;
             $zeile->gesehenAm = $jetzt;
             $zeile->laeuftBis = (int) $inserat['laeuftBis'];
+            $zeile->ohnePreis = $inserat['ohnePreis'] ? 1 : 0;
 
             // Die Artikel-ID nur setzen, wenn sie ableitbar war. Eine einmal
             // gefundene Zuordnung durch eine 0 zu ersetzen waere ein
@@ -242,6 +252,46 @@ class Bestandsaufnahme
         }
 
         return array('neu' => $neu, 'aktualisiert' => $aktualisiert);
+    }
+
+    /**
+     * Bericht im Protokoll: Welche Artikel zeigen bei Maschinensucher keinen
+     * Preis? Grundlage ist, was Maschinensucher selbst in listing/all
+     * liefert - also auch alte, nicht per API angelegte Inserate.
+     *
+     * Kommt mit derselben Einstellung wie der Bericht "nicht markiert".
+     */
+    private function preisbericht()
+    {
+        $takt = $this->einstellungen->markierungsbericht();
+        if ($takt === 'aus') {
+            return;
+        }
+        // Erst wenn eine ganze Runde den Preis mitgelesen hat: Der Merker
+        // wird nur zu Beginn einer Runde auf Seite 1 gesetzt. Die Runde, die
+        // beim Einspielen schon halb durch war, zaehlt nicht.
+        if ($this->zuordnung->preisrundeBegonnen() <= 0) {
+            return;
+        }
+        if ($takt !== 'jedesmal' && !$this->zuordnung->preisberichtFaellig()) {
+            return;
+        }
+
+        $zeilen = array();
+        foreach ($this->zuordnung->alle() as $zeile) {
+            $zeilen[] = array(
+                'inseratId'  => (int) $zeile->inseratId,
+                'artikelId'  => (int) $zeile->artikelId,
+                'internalId' => (string) $zeile->internalId,
+                'zustand'    => (string) $zeile->zustand,
+                'ohnePreis'  => (int) $zeile->ohnePreis === 1,
+            );
+        }
+        $this->getLogger(__METHOD__)->info(
+            'MaschinensucherMarkt::log.ohnePreis',
+            Bestandsabgleich::ohnePreisBericht($zeilen)
+        );
+        $this->zuordnung->preisberichtMerken();
     }
 
     /**

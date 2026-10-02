@@ -93,6 +93,12 @@ class Verknuepfung extends Model
      */
     public $laeuftBis = 0;
 
+    /**
+     * 1 = Maschinensucher zeigt bei diesem Inserat keinen oeffentlichen
+     * Preis (kein "price" in listing/all). Fuer den Bericht "ohne Preis".
+     */
+    public $ohnePreis = 0;
+
     public function getTableName(): string
     {
         return 'MaschinensucherMarkt::Verknuepfung';
