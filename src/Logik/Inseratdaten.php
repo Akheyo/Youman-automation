@@ -72,8 +72,13 @@ class Inseratdaten
         }
 
         // ---- Preis ----------------------------------------------------------
-        $preis = self::nettoGanz($artikel, $umgebung);
-        if ($preis === null) {
+        // "Preis auf Anfrage" (Tag am Artikel): kein Preis, und ein fehlender
+        // Preis in Plenty ist dann auch kein Mangel.
+        $aufAnfrage = self::wert($artikel, 'preisAufAnfrage', false) === true;
+        $preis = $aufAnfrage ? null : self::nettoGanz($artikel, $umgebung);
+        if ($aufAnfrage) {
+            $hinweise[] = 'Preis auf Anfrage (Tag) - es wird kein Preis gesendet.';
+        } elseif ($preis === null) {
             $maengel[] = 'Kein Preis in der eingestellten Preisliste.';
         } elseif ($preis <= 0) {
             $maengel[] = 'Der Preis ist 0.';
@@ -110,15 +115,17 @@ class Inseratdaten
             $koerper['model'] = $modell;
         }
 
-        $koerper['price'] = $preis;
-        $koerper['priceCurrency'] = self::wert($umgebung, 'waehrung', 'EUR');
-        $koerper['priceNegotiable'] = self::wert($umgebung, 'preisVerhandelbar', true) !== false;
-        // false heisst "zzgl. MwSt.", true heisst "keine MwSt. ausweisbar".
-        // Beides muss mitgeschickt werden, sobald ein Preis gesetzt ist.
-        $koerper['priceVATNotIncluded'] = self::wert($umgebung, 'ohneUmsatzsteuer', false) === true;
-        $mwst = (float) self::wert($umgebung, 'mwst', 19);
-        if ($mwst > 0) {
-            $koerper['priceVat'] = round($mwst / 100, 4);
+        if (!$aufAnfrage) {
+            $koerper['price'] = $preis;
+            $koerper['priceCurrency'] = self::wert($umgebung, 'waehrung', 'EUR');
+            $koerper['priceNegotiable'] = self::wert($umgebung, 'preisVerhandelbar', true) !== false;
+            // false heisst "zzgl. MwSt.", true heisst "keine MwSt. ausweisbar".
+            // Beides muss mitgeschickt werden, sobald ein Preis gesetzt ist.
+            $koerper['priceVATNotIncluded'] = self::wert($umgebung, 'ohneUmsatzsteuer', false) === true;
+            $mwst = (float) self::wert($umgebung, 'mwst', 19);
+            if ($mwst > 0) {
+                $koerper['priceVat'] = round($mwst / 100, 4);
+            }
         }
 
         $ort = self::saubereZeile(self::wert($umgebung, 'ort', ''));

@@ -196,6 +196,15 @@ class Einstellungen
     }
 
     /**
+     * Tag-ID: Artikel mit diesem Tag gehen ohne Preis raus ("Preis auf
+     * Anfrage"). 0 = aus.
+     */
+    public function preisAufAnfrageTag()
+    {
+        return max(0, (int) $this->zahl('preisAufAnfrageTag', 0));
+    }
+
+    /**
      * Wie oft der Bericht "auf Maschinensucher, aber nicht markiert" kommt:
      * stuendlich (Standard), jedesmal (jeder Lauf) oder aus.
      */
