@@ -289,6 +289,33 @@ class Zuordnung
         $this->zeitpunktMerken('preisrunde', time());
     }
 
+    /**
+     * Inseratliste: hoechstens einmal je Stunde (bei "stuendlich").
+     */
+    public function inseratlisteFaellig()
+    {
+        return time() - $this->zeitpunkt('inseratliste') >= 3600;
+    }
+
+    public function inseratlisteMerken()
+    {
+        $this->zeitpunktMerken('inseratliste', time());
+    }
+
+    /**
+     * Wie preisrundeBegonnen, fuer die Titel: Erst nach einer ganzen Runde
+     * ab Seite 1 stehen sie in allen Zeilen.
+     */
+    public function titelrundeBegonnen()
+    {
+        return $this->zeitpunkt('titelrunde');
+    }
+
+    public function titelrundeBeginnMerken()
+    {
+        $this->zeitpunktMerken('titelrunde', time());
+    }
+
     private function zeitpunkt($name)
     {
         return (int) $this->merker($name)->zeit;

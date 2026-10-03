@@ -831,4 +831,25 @@ for ($i = 1; $i <= 150; $i++) {
 }
 $p->gleich(2, count(Bestandsabgleich::ohnePreisBericht($viele)['artikelIdsAktiv']), '150 IDs: zwei Bloecke zu hoechstens 100');
 
+// --- Inseratliste -----------------------------------------------------------------
+$p->gruppe('Inseratliste');
+$seite = Bestandsabgleich::seiteLesen(array('listings' => array(
+    '901' => array('listing' => array('id' => 901, 'internalId' => '601', 'title' => array('de' => 'Drehbank X'), 'price' => 900), 'status' => array('ACTIVE')),
+)));
+$p->gleich('Drehbank X', $seite[0]['titel'], 'der Titel kommt aus listing/all');
+$liste = Bestandsabgleich::inseratListe(array(
+    array('inseratId' => 12, 'artikelId' => 300, 'internalId' => '300', 'zustand' => 'aktiv', 'ohnePreis' => false, 'laeuftBis' => mktime(12, 0, 0, 3, 15, 2027), 'titel' => 'Fraese; gross'),
+    array('inseratId' => 11, 'artikelId' => 0, 'internalId' => 'Thomas 3', 'zustand' => 'pausiert', 'ohnePreis' => true, 'laeuftBis' => 0, 'titel' => 'Alt'),
+    array('inseratId' => 10, 'artikelId' => 100, 'internalId' => '100', 'zustand' => 'pausiert', 'ohnePreis' => true, 'laeuftBis' => 0, 'titel' => "Zwei\nZeilen"),
+    array('inseratId' => 0, 'artikelId' => 50, 'internalId' => '50', 'zustand' => 'geloescht', 'ohnePreis' => false, 'laeuftBis' => 0, 'titel' => 'weg'),
+), 2);
+$p->gleich(3, $liste['zusammenfassung']['inserateBeiMaschinensucher'], 'geloeschte Zeilen stehen nicht in der Liste');
+$p->gleich(1, $liste['zusammenfassung']['aktiv'], 'aktiv gezaehlt');
+$p->gleich(2, $liste['zusammenfassung']['pausiert'], 'pausiert gezaehlt');
+$p->gleich(1, $liste['zusammenfassung']['ohneArtikelId'], 'ohne Artikel-ID gezaehlt');
+$p->gleich(2, count($liste['teile']), 'in Teile zerlegt');
+$p->gleich('100;10;100;pausiert;;nein;Zwei Zeilen', $liste['teile'][0][0], 'sortiert nach Artikel-ID, Zeilenumbruch im Titel entfernt');
+$p->gleich('300;12;300;aktiv;15.03.2027;ja;Fraese, gross', $liste['teile'][0][1], 'Datum, Preis sichtbar, Semikolon im Titel ersetzt');
+$p->gleich(';11;Thomas 3;pausiert;;nein;Alt', $liste['teile'][1][0], 'ohne Artikel-ID ans Ende');
+
 exit($p->bericht());
