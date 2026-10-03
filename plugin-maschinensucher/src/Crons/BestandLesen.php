@@ -42,7 +42,7 @@ class BestandLesen extends CronHandler
 
             // Verlaufsmeldung (waehrend der Inbetriebnahme als Fehler geschrieben): das Ergebnis, sichtbar
             // unabhaengig von der Log-Einstellung.
-            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.diagnoseErgebnis', $bericht);
+            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.bestandErgebnis', $bericht);
         } catch (\Throwable $e) {
             $this->getLogger(__METHOD__)->error('MaschinensucherMarkt::log.laufAbgebrochen', array(
                 'meldung' => $e->getMessage(),
