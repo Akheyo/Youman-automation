@@ -99,6 +99,12 @@ class Verknuepfung extends Model
      */
     public $ohnePreis = 0;
 
+    /**
+     * Titel des Inserats bei Maschinensucher, wie listing/all ihn liefert.
+     * Nur fuer die Inseratliste im Protokoll.
+     */
+    public $titel = '';
+
     public function getTableName(): string
     {
         return 'MaschinensucherMarkt::Verknuepfung';

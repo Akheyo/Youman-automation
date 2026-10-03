@@ -221,6 +221,22 @@ class Einstellungen
     }
 
     /**
+     * Liste aller Inserate bei Maschinensucher ins Protokoll: aus (Standard),
+     * stuendlich oder jedesmal (nach jedem vollstaendigen Lesen).
+     */
+    public function inseratliste()
+    {
+        $wert = strtolower(trim((string) $this->wert('inseratliste', 'aus')));
+        if (substr($wert, 0, 5) === 'jedes') {
+            return 'jedesmal';
+        }
+        if (substr($wert, 0, 6) === 'stuend') {
+            return 'stuendlich';
+        }
+        return 'aus';
+    }
+
+    /**
      * Verschickte Artikel (Warenbestand 0) bei Maschinensucher loeschen?
      * Ja ist gewollt; "nein" laesst sie nur pausiert stehen.
      */

@@ -54,6 +54,14 @@ Maschinensucher“ (stündlich, nach dem Lesen des Bestands). Die Liste umfasst
 auch alte Inserate, und die Artikel-IDs stehen in Blöcken zu 100 zum Kopieren
 in die Artikelsuche.
 
+## Liste aller Inserate
+
+Konfiguration „Liste aller Inserate ins Log“ auf „stündlich“ oder „nach jedem
+Lesen“ stellen. Nach dem nächsten vollständigen Lesen des Bestands steht im
+Log „Liste aller Inserate bei Maschinensucher“ (Zusammenfassung), danach die
+Teile zu je 50 Zeilen: Artikel-ID;Inserat-ID;Referenznummer;Status;läuft
+bis;Preis sichtbar;Titel. Nach Gebrauch wieder auf „aus“ stellen.
+
 ## Sicherungen
 
 - Fällt die Zahl der Inserate plötzlich auf unter die Hälfte, wird die neue

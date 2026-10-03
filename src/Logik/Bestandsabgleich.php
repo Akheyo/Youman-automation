@@ -219,6 +219,76 @@ class Bestandsabgleich
         );
     }
 
+    /**
+     * Die Liste aller Inserate bei Maschinensucher, fuer das Protokoll.
+     *
+     * Eine Zeile je Inserat, Felder mit Semikolon getrennt - so laesst sie
+     * sich in eine Tabelle einfuegen. In Teilen, weil ein einzelner
+     * Protokolleintrag nicht beliebig gross sein darf.
+     *
+     * @param array $zeilen je Inserat: inseratId, artikelId, internalId, zustand, ohnePreis, laeuftBis, titel
+     * @return array zusammenfassung, teile (Liste von Zeilenlisten)
+     */
+    public static function inseratListe(array $zeilen, $proTeil = 50)
+    {
+        $liste = array();
+        $zaehler = array('aktiv' => 0, 'pausiert' => 0, 'sonst' => 0, 'ohneArtikelId' => 0);
+        foreach ($zeilen as $zeile) {
+            if ((int) $zeile['inseratId'] <= 0) {
+                continue;
+            }
+            $zustand = (string) $zeile['zustand'];
+            if ($zustand === 'aktiv' || $zustand === 'pausiert') {
+                $zaehler[$zustand]++;
+            } else {
+                $zaehler['sonst']++;
+            }
+            if ((int) $zeile['artikelId'] <= 0) {
+                $zaehler['ohneArtikelId']++;
+            }
+            $liste[] = $zeile;
+        }
+        usort($liste, function ($a, $b) {
+            // Ohne Artikel-ID ans Ende, sonst nach Artikel-ID, dann Inserat.
+            $ka = (int) $a['artikelId'] > 0 ? (int) $a['artikelId'] : PHP_INT_MAX;
+            $kb = (int) $b['artikelId'] > 0 ? (int) $b['artikelId'] : PHP_INT_MAX;
+            if ($ka !== $kb) {
+                return $ka < $kb ? -1 : 1;
+            }
+            return (int) $a['inseratId'] - (int) $b['inseratId'];
+        });
+
+        $zeilenText = array();
+        foreach ($liste as $zeile) {
+            $laeuftBis = (int) $zeile['laeuftBis'];
+            $zeilenText[] = implode(';', array(
+                (int) $zeile['artikelId'] > 0 ? (string) (int) $zeile['artikelId'] : '',
+                (string) (int) $zeile['inseratId'],
+                trim(str_replace(';', ',', (string) $zeile['internalId'])),
+                (string) $zeile['zustand'],
+                $laeuftBis > 0 ? date('d.m.Y', $laeuftBis) : '',
+                empty($zeile['ohnePreis']) ? 'ja' : 'nein',
+                trim(str_replace(array(';', "\r", "\n"), array(',', ' ', ' '), (string) $zeile['titel'])),
+            ));
+        }
+
+        $teile = array_chunk($zeilenText, max(1, (int) $proTeil));
+        return array(
+            'zusammenfassung' => array(
+                'inserateBeiMaschinensucher' => count($liste),
+                'aktiv'                      => $zaehler['aktiv'],
+                'pausiert'                   => $zaehler['pausiert'],
+                'sonstigerStatus'            => $zaehler['sonst'],
+                'ohneArtikelId'              => $zaehler['ohneArtikelId'],
+                'teile'                      => count($teile),
+                'spalten'                    => self::LISTE_SPALTEN,
+            ),
+            'teile' => $teile,
+        );
+    }
+
+    const LISTE_SPALTEN = 'Artikel-ID;Inserat-ID;Referenznummer;Status;laeuft bis;Preis sichtbar;Titel';
+
     private static function bloecke(array $ids)
     {
         $heraus = array();

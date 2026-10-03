@@ -85,6 +85,9 @@ class Bestandsaufnahme
         if ($seite <= 1 && $this->zuordnung->preisrundeBegonnen() <= 0) {
             $this->zuordnung->preisrundeBeginnMerken();
         }
+        if ($seite <= 1 && $this->zuordnung->titelrundeBegonnen() <= 0) {
+            $this->zuordnung->titelrundeBeginnMerken();
+        }
 
         while (true) {
             $antwort = $this->api->alleInserate($seite);
@@ -158,6 +161,7 @@ class Bestandsaufnahme
             }
 
             $this->preisbericht();
+            $this->inseratliste();
         } else {
             $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.bestandEtappe', $bericht);
         }
@@ -221,6 +225,7 @@ class Bestandsaufnahme
                     && (string) $zeile->zustand === $zustand
                     && (int) $zeile->laeuftBis === (int) $inserat['laeuftBis']
                     && (int) $zeile->ohnePreis === ($inserat['ohnePreis'] ? 1 : 0)
+                    && (string) $zeile->titel === $this->titelKurz($inserat['titel'])
                     && ($artikelId <= 0 || (int) $zeile->artikelId === $artikelId)) {
                     // Nur schreiben, was sich geaendert hat. Sonst speichert
                     // jeder Lauf alle Zeilen neu — bei sechshundert Inseraten
@@ -240,6 +245,7 @@ class Bestandsaufnahme
             $zeile->gesehenAm = $jetzt;
             $zeile->laeuftBis = (int) $inserat['laeuftBis'];
             $zeile->ohnePreis = $inserat['ohnePreis'] ? 1 : 0;
+            $zeile->titel = $this->titelKurz($inserat['titel']);
 
             // Die Artikel-ID nur setzen, wenn sie ableitbar war. Eine einmal
             // gefundene Zuordnung durch eine 0 zu ersetzen waere ein
@@ -292,6 +298,52 @@ class Bestandsaufnahme
             Bestandsabgleich::ohnePreisBericht($zeilen)
         );
         $this->zuordnung->preisberichtMerken();
+    }
+
+    /**
+     * Liste aller Inserate bei Maschinensucher ins Protokoll: erst eine
+     * Zusammenfassung, dann die Zeilen in Teilen zu 50 - ein einzelner
+     * Protokolleintrag darf nicht beliebig gross werden.
+     */
+    private function inseratliste()
+    {
+        $takt = $this->einstellungen->inseratliste();
+        if ($takt === 'aus' || $this->zuordnung->titelrundeBegonnen() <= 0) {
+            return;
+        }
+        if ($takt !== 'jedesmal' && !$this->zuordnung->inseratlisteFaellig()) {
+            return;
+        }
+
+        $zeilen = array();
+        foreach ($this->zuordnung->alle() as $zeile) {
+            $zeilen[] = array(
+                'inseratId'  => (int) $zeile->inseratId,
+                'artikelId'  => (int) $zeile->artikelId,
+                'internalId' => (string) $zeile->internalId,
+                'zustand'    => (string) $zeile->zustand,
+                'ohnePreis'  => (int) $zeile->ohnePreis === 1,
+                'laeuftBis'  => (int) $zeile->laeuftBis,
+                'titel'      => (string) $zeile->titel,
+            );
+        }
+        $liste = Bestandsabgleich::inseratListe($zeilen, 50);
+        $logger = $this->getLogger(__METHOD__);
+        $logger->info('MaschinensucherMarkt::log.inseratliste', $liste['zusammenfassung']);
+        $anzahl = count($liste['teile']);
+        foreach ($liste['teile'] as $nummer => $teil) {
+            $logger->info('MaschinensucherMarkt::log.inseratlisteTeil', array(
+                'teil'    => ($nummer + 1) . ' von ' . $anzahl,
+                'spalten' => Bestandsabgleich::LISTE_SPALTEN,
+                'zeilen'  => $teil,
+            ));
+        }
+        $this->zuordnung->inseratlisteMerken();
+    }
+
+    private function titelKurz($titel)
+    {
+        return mb_substr(trim((string) $titel), 0, 190, 'UTF-8');
     }
 
     /**

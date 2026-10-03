@@ -262,6 +262,29 @@
             ]
           }
         },
+        "inseratliste": {
+          "type": "select",
+          "required": false,
+          "label": "Config.inseratlisteLabel",
+          "options": {
+            "defaultValue": "aus",
+            "tooltip": "Config.inseratlisteTooltip",
+            "listBoxValues": [
+              {
+                "caption": "Config.inseratlisteAus",
+                "value": "aus"
+              },
+              {
+                "caption": "Config.inseratlisteStuendlich",
+                "value": "stuendlich"
+              },
+              {
+                "caption": "Config.inseratlisteJedesmal",
+                "value": "jedesmal"
+              }
+            ]
+          }
+        },
         "altInserateAendern": {
           "type": "inputText",
           "required": false,
