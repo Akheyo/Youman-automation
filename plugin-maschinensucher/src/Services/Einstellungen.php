@@ -279,6 +279,9 @@ class Einstellungen
         if ($wert === '') {
             return false;
         }
+        if (strtolower($wert) === 'alle') {
+            return true;
+        }
         $wert = str_replace(array(';', ' ', "\n", "\r", "\t"), ',', $wert);
         foreach (explode(',', $wert) as $teil) {
             if (trim($teil) !== '' && (int) trim($teil) === (int) $artikelId) {
