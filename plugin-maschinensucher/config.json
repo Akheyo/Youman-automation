@@ -285,6 +285,15 @@
             ]
           }
         },
+        "freigeben": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.freigebenLabel",
+          "options": {
+            "defaultValue": "",
+            "tooltip": "Config.freigebenTooltip"
+          }
+        },
         "altInserateAendern": {
           "type": "inputText",
           "required": false,

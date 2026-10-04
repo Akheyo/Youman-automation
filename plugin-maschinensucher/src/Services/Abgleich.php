@@ -199,6 +199,7 @@ class Abgleich
         );
         $versandLoeschen = $this->einstellungen->versandLoeschen();
         $geloeschtListe = array();
+        $freigegebenListe = array();
         // Verlaengert wird nur im ganzen Durchlauf, nicht in der Flow-Aktion.
         $verlaengernTage = count($nurDiese) === 0 ? $this->einstellungen->verlaengernTage() : 0;
         $jetzt = time();
@@ -292,6 +293,56 @@ class Abgleich
                     ? $gebaut['koerper']
                     : array_merge($gebaut['koerper'], array('bildquellen' => implode(',', $bildAdressen))))
                 : '';
+
+            // Freigegeben: Das Plugin gibt das Inserat aus der Hand. Statt es
+            // wegen der fehlenden Markierung zu pausieren, aktiviert es es
+            // (bei Bestand) einmal wieder und vergisst, dass es es verwaltet
+            // hat. Danach gilt es als vorgefunden und bleibt unangetastet,
+            // bis der Artikel wieder markiert wird.
+            // Nicht, wenn die Markierungssuche gerade unsicher ist: Dann
+            // fehlt die Markierung womoeglich nur scheinbar.
+            if (!$markiert && !$markierungUnsicher && $bekannt !== null && (int) $bekannt->inseratId > 0
+                && ((int) $bekannt->gesendetAm > 0 || (int) $bekannt->markiertGesehen > 0)
+                && $this->einstellungen->freigeben($artikelId)) {
+                if ($geschrieben >= self::SCHREIBGRENZE) {
+                    $gebremst = true;
+                    continue;
+                }
+                $geschrieben++;
+                $wiederOnline = (string) $bekannt->zustand === Verknuepfung::PAUSIERT
+                    && (float) $artikel['bestand'] > 0;
+                if ($probelauf) {
+                    $vorhaben[] = array(
+                        'artikel' => $artikelId,
+                        'inserat' => (int) $bekannt->inseratId,
+                        'tat'     => 'freigeben',
+                        'grund'   => $wiederOnline
+                            ? 'Freigegeben: wird wieder aktiviert und danach nicht mehr angefasst.'
+                            : 'Freigegeben: wird danach nicht mehr angefasst.',
+                    );
+                    continue;
+                }
+                if ($wiederOnline) {
+                    $antwort = $this->api->aktivieren((int) $bekannt->inseratId);
+                    if (!Antwort::istOk($antwort)) {
+                        $gescheitert[] = array('artikel' => $artikelId, 'grund' => 'Freigeben/Aktivieren: ' . $antwort['meldung']);
+                        continue;
+                    }
+                    $bekannt->zustand = Verknuepfung::AKTIV;
+                }
+                $bekannt->gesendetAm = 0;
+                $bekannt->markiertGesehen = 0;
+                $bekannt->perApi = 0;
+                $bekannt->fingerabdruck = '';
+                $bekannt->meldung = 'Freigegeben - wird vom Plugin nicht mehr verwaltet.';
+                $this->zuordnung->speichern($bekannt);
+                $freigegebenListe[] = array(
+                    'artikel'    => $artikelId,
+                    'inserat'    => (int) $bekannt->inseratId,
+                    'aktiviert'  => $wiederOnline,
+                );
+                continue;
+            }
 
             $entscheidung = Entscheidung::treffen(array(
                 'markiert'           => $markiert,
@@ -459,6 +510,7 @@ class Abgleich
             'pausiert'    => $zaehler[Entscheidung::PAUSIEREN],
             'aktiviert'   => $zaehler[Entscheidung::AKTIVIEREN],
             'geloescht'   => $zaehler[Entscheidung::LOESCHEN],
+            'freigegeben' => count($freigegebenListe),
             'verlaengert' => $probelauf ? count($faellig) : count($verlaengert),
             'unveraendert' => $zaehler[Entscheidung::NICHTS],
             'zurueck'     => $zaehler[Entscheidung::ZURUECK],
@@ -484,6 +536,9 @@ class Abgleich
             $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.vorhaben', array_slice($vorhaben, 0, 50));
         }
 
+        if (count($freigegebenListe) > 0) {
+            $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.freigegeben', array_slice($freigegebenListe, 0, 100));
+        }
         if (count($geloeschtListe) > 0) {
             $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.geloescht', array_slice($geloeschtListe, 0, 50));
         }
