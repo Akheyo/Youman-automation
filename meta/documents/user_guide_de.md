@@ -54,6 +54,15 @@ Maschinensucher“ (stündlich, nach dem Lesen des Bestands). Die Liste umfasst
 auch alte Inserate, und die Artikel-IDs stehen in Blöcken zu 100 zum Kopieren
 in die Artikelsuche.
 
+## Inserate behalten, aber nicht mehr verwalten
+
+Soll ein Inserat bei Maschinensucher bleiben, wie es ist (etwa mit von Hand
+gekürzter Beschreibung), die Markierung entfernen und die Artikel-ID in
+„Freigeben: Artikel-IDs“ eintragen. Das Plugin pausiert es dann nicht, sondern
+aktiviert es bei Bestand einmal wieder und fasst es danach nicht mehr an —
+auch nicht zum Verlängern. Wird der Artikel wieder markiert, übernimmt das
+Plugin ihn wieder.
+
 ## Liste aller Inserate
 
 Konfiguration „Liste aller Inserate ins Log“ auf „stündlich“ oder „nach jedem

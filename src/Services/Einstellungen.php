@@ -268,6 +268,26 @@ class Einstellungen
         return false;
     }
 
+    /**
+     * Artikel, die das Plugin aus seiner Verwaltung entlaesst: Ohne
+     * Markierung wird ihr Inserat nicht pausiert, sondern (bei Bestand)
+     * einmal wieder aktiviert und danach nicht mehr angefasst.
+     */
+    public function freigeben($artikelId)
+    {
+        $wert = trim((string) $this->wert('freigeben', ''));
+        if ($wert === '') {
+            return false;
+        }
+        $wert = str_replace(array(';', ' ', "\n", "\r", "\t"), ',', $wert);
+        foreach (explode(',', $wert) as $teil) {
+            if (trim($teil) !== '' && (int) trim($teil) === (int) $artikelId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Woraus die Inseratsnummer gebildet wird — siehe Logik/Inserat.php. */
     public function nummernQuelle()
     {
