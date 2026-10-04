@@ -17,6 +17,9 @@ namespace MaschinensucherMarkt\Logik;
  */
 class Entscheidung
 {
+    /** Grund beim Pausieren wegen fehlender Markierung - der Abgleich erkennt daran ein von Hand wieder aktiviertes Inserat. */
+    const GRUND_MARKIERUNG_ENTFERNT = 'Die Markierung wurde entfernt.';
+
     const ANLEGEN      = 'anlegen';
     const AENDERN      = 'aendern';
     const PAUSIEREN    = 'pausieren';
@@ -87,7 +90,7 @@ class Entscheidung
         // markiert.
         if (!$markiert) {
             if ($aktiv && $abmeldbar) {
-                return self::tat(self::PAUSIEREN, 'Die Markierung wurde entfernt.');
+                return self::tat(self::PAUSIEREN, self::GRUND_MARKIERUNG_ENTFERNT);
             }
             if ($bekannt && !$abmeldbar) {
                 return self::tat(self::NICHTS, 'Nicht markiert und nicht vom Plugin verwaltet — bleibt, wie es ist.');

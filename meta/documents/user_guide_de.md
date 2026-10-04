@@ -63,6 +63,11 @@ aktiviert es bei Bestand einmal wieder und fasst es danach nicht mehr an —
 auch nicht zum Verlängern. Wird der Artikel wieder markiert, übernimmt das
 Plugin ihn wieder.
 
+Einfacher geht es ohne Einstellung: Ein Inserat, das das Plugin wegen der
+entfernten Markierung pausiert hat, bei Maschinensucher von Hand wieder
+aktivieren. Das Plugin pausiert es dann nicht erneut, sondern lässt es ab da
+in Ruhe.
+
 ## Liste aller Inserate
 
 Konfiguration „Liste aller Inserate ins Log“ auf „stündlich“ oder „nach jedem

@@ -299,11 +299,20 @@ class Abgleich
             // (bei Bestand) einmal wieder und vergisst, dass es es verwaltet
             // hat. Danach gilt es als vorgefunden und bleibt unangetastet,
             // bis der Artikel wieder markiert wird.
+            //
+            // Dasselbe ohne Einstellung, wenn jemand ein Inserat, das das
+            // Plugin wegen der fehlenden Markierung pausiert hat, bei
+            // Maschinensucher von Hand wieder aktiviert: Das ist eine Ansage,
+            // es soll online bleiben. Nicht wieder pausieren, sondern loslassen.
+            //
             // Nicht, wenn die Markierungssuche gerade unsicher ist: Dann
             // fehlt die Markierung womoeglich nur scheinbar.
+            $vonHandAktiviert = $bekannt !== null
+                && (string) $bekannt->zustand === Verknuepfung::AKTIV
+                && (string) $bekannt->meldung === Entscheidung::GRUND_MARKIERUNG_ENTFERNT;
             if (!$markiert && !$markierungUnsicher && $bekannt !== null && (int) $bekannt->inseratId > 0
                 && ((int) $bekannt->gesendetAm > 0 || (int) $bekannt->markiertGesehen > 0)
-                && $this->einstellungen->freigeben($artikelId)) {
+                && ($vonHandAktiviert || $this->einstellungen->freigeben($artikelId))) {
                 if ($geschrieben >= self::SCHREIBGRENZE) {
                     $gebremst = true;
                     continue;
@@ -316,9 +325,11 @@ class Abgleich
                         'artikel' => $artikelId,
                         'inserat' => (int) $bekannt->inseratId,
                         'tat'     => 'freigeben',
-                        'grund'   => $wiederOnline
-                            ? 'Freigegeben: wird wieder aktiviert und danach nicht mehr angefasst.'
-                            : 'Freigegeben: wird danach nicht mehr angefasst.',
+                        'grund'   => $vonHandAktiviert
+                            ? 'Von Hand wieder aktiviert: bleibt online und wird danach nicht mehr angefasst.'
+                            : ($wiederOnline
+                                ? 'Freigegeben: wird wieder aktiviert und danach nicht mehr angefasst.'
+                                : 'Freigegeben: wird danach nicht mehr angefasst.'),
                     );
                     continue;
                 }
@@ -334,12 +345,15 @@ class Abgleich
                 $bekannt->markiertGesehen = 0;
                 $bekannt->perApi = 0;
                 $bekannt->fingerabdruck = '';
-                $bekannt->meldung = 'Freigegeben - wird vom Plugin nicht mehr verwaltet.';
+                $bekannt->meldung = $vonHandAktiviert
+                    ? 'Von Hand wieder aktiviert - wird vom Plugin nicht mehr verwaltet.'
+                    : 'Freigegeben - wird vom Plugin nicht mehr verwaltet.';
                 $this->zuordnung->speichern($bekannt);
                 $freigegebenListe[] = array(
                     'artikel'    => $artikelId,
                     'inserat'    => (int) $bekannt->inseratId,
                     'aktiviert'  => $wiederOnline,
+                    'vonHand'    => $vonHandAktiviert,
                 );
                 continue;
             }
