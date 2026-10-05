@@ -2,13 +2,11 @@
 
 **Betreff:** Ihr Weg in den deutschen und europäischen Markt – ohne eigene Firma in Deutschland
 
-*(Alternativ: „Schön, Sie auf der Messe kennengelernt zu haben – Kooperation in Deutschland/Europa“)*
-
 ---
 
 Sehr geehrte/r {Kontaktperson},
 
-vielen Dank für das angenehme Gespräch an Ihrem Messestand. Wie besprochen, stellen wir Ihnen heute kurz vor, wie wir {Firma} beim Eintritt in den deutschen und europäischen Markt unterstützen können.
+wir sind auf {Firma} und Ihre Produkte aufmerksam geworden und sind überzeugt, dass sie auch in Deutschland und Europa großes Potenzial haben. Gerne möchten wir Ihnen kurz vorstellen, wie wir Sie beim Eintritt in diese Märkte unterstützen können.
 
 **Wer wir sind**
 
