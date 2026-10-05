@@ -50,7 +50,7 @@ Deutsche Lesefassung (v2, gleiches Layout): https://www.canva.com/d/Jl1jm9RrTqsD
 
 - Kopfzeile: Logo mit www.komplett-konzept.de darunter, „CEO Mario Parlitz · Mobil +49 177 2711126“, WeChat-QR
 - Fußzeile jeder Seite: CEO Mario Parlitz · Mobil +49 177 2711126 · info@mapatec.de + WeChat-QR
-- Lagerhallen: „Auswahl unserer eigenen Lagerhallen – alarmgesichert & videoüberwacht“: Mitten in Deutschland 8.000 m² (Geisleden), Raum Frankfurt 4.000 m² (Grävenwiesbach)
+- Lagerhallen: „Auswahl unserer eigenen Lagerhallen – alarmgesichert & videoüberwacht“: Mitten in Deutschland 8.000 m² (Geisleden), Frankfurt 4.000 m² (Grävenwiesbach)
 - Konsignation inkl. Retouren, Markenentwicklung und Markenanmeldung
 - Komplett Konzept & MapaTec: „Mit unseren beiden Unternehmen decken Sie alles ab.“, Ansprechpartner MapaTec: Frank Matysik
 - Build: `flyer_build/` (HTML → PDF mit Chromium)

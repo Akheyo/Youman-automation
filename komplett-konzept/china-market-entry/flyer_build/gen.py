@@ -14,7 +14,7 @@ FONT = {'YAFmnBd9xfA': "'SHS'", 'YACgEZ1cb1Q': "'Arimo', 'SHS'"}
 WEIGHT = {'normal': 400, 'medium': 500, 'bold': 700}
 
 # banner: only the strip the user marked (below the purple line, above the red line)
-strip = Image.open(f'{HERE}/KomplettKonzept_Banner_Luftbild.jpg').crop((0, 75, 1672, 703))
+strip = Image.open(f'{HERE}/KomplettKonzept_Banner_Luftbild.jpg').crop((0, 100, 1672, 703))
 strip.save(f'{HERE}/img/banner_strip.jpg', quality=93)
 BANNER_H = round(1123 * strip.height / strip.width)
 
@@ -107,7 +107,8 @@ def build(lang):
     header(p1, 'LBQdNMdgkMRrQt25', contact)
     ban = find(p1, 'LBB21yZr8ZNH5b3G'); ban.update(height=BANNER_H, src='img/banner_strip.jpg')
     # move everything below the banner up (sections keep their inner layout)
-    secs = [(772, 958, -186), (958, 1142, -136), (1142, 1264, -86), (1264, 1500, -36)]
+    o = 140 + BANNER_H + 24 - 772   # sections start 24px below the banner
+    secs = [(772, 958, o), (958, 1142, o + 50), (1142, 1264, o + 100), (1264, 1500, o + 150)]
     for e in p1['elements']:
         for a, b, d in secs:
             if a <= e['top'] < b: e['top'] += d; break
@@ -122,9 +123,10 @@ def build(lang):
     q1, q2 = find(p1, 'LBLCnD3kV3F0jcf5'), find(p1, 'LBDKkVVw7v4WgqYS')
     q1['fill'], q2['fill'] = q2['fill'], q1['fill']   # Geisleden (central Germany) left, Grävenwiesbach (Frankfurt area) right
     for qid, lid, t in [('LBLCnD3kV3F0jcf5', 'LBGr0ZzJqPxcSrDc', '德国中部 · 8,000 m²\nCentral Germany' if cn else 'Mitten in Deutschland\n8.000 m²'),
-                        ('LBDKkVVw7v4WgqYS', 'LBrqmL1sHH9MpPXF', '法兰克福地区 · 4,000 m²\nFrankfurt area' if cn else 'Raum Frankfurt\n4.000 m²')]:
+                        ('LBDKkVVw7v4WgqYS', 'LBrqmL1sHH9MpPXF', '法兰克福 · 4,000 m²\nFrankfurt' if cn else 'Frankfurt\n4.000 m²')]:
         q = find(p1, qid); lab = set_text(p1, lid, t, lineHeight=1.25)
-        lab.update(left=q['left'] + 75 - 150, width=300)
+        lab.update(left=q['left'] + 75 - 150, width=300, top=q['top'] + 160)
+    find(p1, 'LBzY5RNBxDRsYWy4')['top'] -= 12   # more air between heading and QR codes
     footer(p1, 'LBDfKDv7L0dyZJXN')
 
     # ---------------- page 2 ----------------
