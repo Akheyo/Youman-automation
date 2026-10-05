@@ -87,5 +87,9 @@ for fn,cn in [('KomplettKonzept_Canton_Fair_Flyer.pdf',True),('KomplettKonzept_F
     pm=p.get_pixmap(dpi=144)
     for a,b in [(916,1042),(1072.5,1094.5)]:   # stray divider line from the Canva layout
         c=pm.pixel(1222,int(a+b)); p.draw_rect(pymupdf.Rect(614.5,a,617.5,b),color=None,fill=tuple(x/255 for x in c))
-    out.insert_pdf(src,from_page=1,to_page=1)
-    out.save(fn,garbage=3,deflate=True); print('ok',fn)
+    # flatten page 1 (nested clipped forms render badly in Edge) -> 300 dpi image page
+    pix=out[0].get_pixmap(dpi=300)
+    flat=pymupdf.open(); fp=flat.new_page(width=W,height=H)
+    fp.insert_image(fp.rect,stream=pix.tobytes('jpg',jpg_quality=92))
+    flat.insert_pdf(src,from_page=1,to_page=1)
+    flat.save(fn,garbage=4,deflate=True); print('ok',fn)
