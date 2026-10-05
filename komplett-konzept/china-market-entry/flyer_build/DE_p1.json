@@ -1,0 +1,1325 @@
+{
+"type": "fixed",
+"id": "PB9BDwkNpMhlfj4D",
+"dimensions": {
+"width": 1123,
+"height": 1587
+},
+"background": {
+"media": {
+"type": "image",
+"mediaId": "MAHWGbZbbnY",
+"imageBox": {
+"top": 0,
+"left": 0,
+"width": 1122.51968503937,
+"height": 1587.4015748031495,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"elements": [
+{
+"id": "LBPS9lNTvqDMLbHH",
+"top": 966,
+"left": 43,
+"width": 1037,
+"height": 170,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 1037,
+"height": 185
+},
+"paths": [
+{
+"d": "M0 0 H1037 V185 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#16306b"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 14
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 1037,
+"height": 185
+},
+"resizeCenter": {
+"width": 1037,
+"height": 170
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBPS9lNTvqDMLbHH"
+},
+{
+"id": "LBNCc0sCkYxhWw4j",
+"top": 981,
+"left": 819.75,
+"width": 5,
+"height": 140,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 2,
+"height": 150
+},
+"paths": [
+{
+"d": "M0 0 H2 V150 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#2b4a8f"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 0
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 2,
+"height": 150
+},
+"resizeCenter": {
+"width": 5,
+"height": 140
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBNCc0sCkYxhWw4j"
+},
+{
+"id": "LBVX6HNhjzKpXb2D",
+"top": 981,
+"left": 560.5,
+"width": 5,
+"height": 140,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 2,
+"height": 150
+},
+"paths": [
+{
+"d": "M0 0 H2 V150 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#2b4a8f"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 0
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 2,
+"height": 150
+},
+"resizeCenter": {
+"width": 5,
+"height": 140
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBVX6HNhjzKpXb2D"
+},
+{
+"id": "LBrKmcf1knnGLw0x",
+"top": 981,
+"left": 301.25,
+"width": 5,
+"height": 140,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 2,
+"height": 150
+},
+"paths": [
+{
+"d": "M0 0 H2 V150 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#2b4a8f"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 0
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 2,
+"height": 150
+},
+"resizeCenter": {
+"width": 5,
+"height": 140
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBrKmcf1knnGLw0x"
+},
+{
+"id": "LBB21yZr8ZNH5b3G",
+"top": 140,
+"left": 0,
+"width": 1123,
+"height": 632,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWlnPeS9A",
+"altText": {
+"text": "Komplett Konzept Firmengelände, Luftbild",
+"isDecorative": false
+},
+"imageBox": {
+"top": -11.338582677165334,
+"left": -20.435258092738422,
+"width": 1163.8705161854768,
+"height": 654.6771653543307,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBB21yZr8ZNH5b3G"
+},
+{
+"id": "LB6xR67YQXMspCJk",
+"top": 788,
+"left": 42.56,
+"width": 22.340000000000007,
+"height": 99.99999999999997,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWGVjcSR0",
+"imageBox": {
+"top": -4.263256414560601e-14,
+"left": -1.7763568394002505e-15,
+"width": 22.34399373064149,
+"height": 140.5345458578241,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LB6xR67YQXMspCJk"
+},
+{
+"id": "LBXVchzT3LVt9JTH",
+"top": 782,
+"left": 84,
+"width": 900,
+"height": 98.20447598979705,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Eintritt in den deutschen\nund europäischen Markt",
+"formatting": {
+"fontSize": 40.0000047766541,
+"fontWeight": "medium",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.3,
+"letterSpacing": 0,
+"fontRef": "YAFmnBd9xfA,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBXVchzT3LVt9JTH"
+},
+{
+"id": "LBZdpxv2CLTj4bVw",
+"top": 898,
+"left": 83.99999999999994,
+"width": 996.0000000000001,
+"height": 49.10223799489852,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Sie liefern nur die Produkte – ohne eigene Firma in Deutschland.\nVertrieb, Logistik, Retouren und technischen Support übernehmen wir.",
+"formatting": {
+"fontSize": 20.00000238832705,
+"fontWeight": "medium",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.3,
+"letterSpacing": 0,
+"fontRef": "YAFmnBd9xfA,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBZdpxv2CLTj4bVw"
+},
+{
+"id": "LBL4BDrR5m4h481V",
+"top": 976,
+"left": 127.6,
+"width": 90,
+"height": 82.36782111739171,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWGfSQUeU",
+"altText": {
+"text": "Handshake icon",
+"isDecorative": false
+},
+"imageBox": {
+"top": 0,
+"left": 0,
+"width": 90,
+"height": 82.36782111739171,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBL4BDrR5m4h481V"
+},
+{
+"id": "LB66JnKP3VqDWZyV",
+"top": 1066,
+"left": 47.599999999999994,
+"width": 250,
+"height": 44.715537318398574,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "① Konsignations-\nmodell",
+"formatting": {
+"fontSize": 18.999949068925623,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "center",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.2,
+"letterSpacing": 0,
+"fontRef": "YAFmnBd9xfA,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LB66JnKP3VqDWZyV"
+},
+{
+"id": "LB3ktLpbQpc10WJQ",
+"top": 976,
+"left": 386.9,
+"width": 90,
+"height": 82.87314517332662,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWGcKGPag",
+"imageBox": {
+"top": 0,
+"left": 0,
+"width": 90,
+"height": 82.87314517332662,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LB3ktLpbQpc10WJQ"
+},
+{
+"id": "LBPNyq2KR0RLbwc4",
+"top": 1066,
+"left": 306.9,
+"width": 250,
+"height": 44.715537318398574,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "② Fulfillment\n+ Vertrieb",
+"formatting": {
+"fontSize": 18.999949068925623,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "center",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.2,
+"letterSpacing": 0,
+"fontRef": "YAFmnBd9xfA,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBPNyq2KR0RLbwc4"
+},
+{
+"id": "LBp2y20xLvDpjpQV",
+"top": 976,
+"left": 646.1,
+"width": 90,
+"height": 82.36782111739171,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWGZPSbPQ",
+"altText": {
+"text": "Warehouse icon",
+"isDecorative": false
+},
+"imageBox": {
+"top": 0,
+"left": 0,
+"width": 90,
+"height": 82.36782111739171,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBp2y20xLvDpjpQV"
+},
+{
+"id": "LBgsgP9vhHjGVlLf",
+"top": 1146,
+"left": 42.56000000000006,
+"width": 1037.3997089226405,
+"height": 21.293113008761225,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWGeoOH58",
+"imageBox": {
+"top": 0,
+"left": 0,
+"width": 1037.3997089226405,
+"height": 21.293113008761225,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBgsgP9vhHjGVlLf"
+},
+{
+"id": "LBYmqHQMMjLy0JNc",
+"top": 1146,
+"left": 100,
+"width": 122,
+"height": 96.46502783506624,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWGXrVo04",
+"imageBox": {
+"top": 0,
+"left": 0,
+"width": 122,
+"height": 96.46502783506624,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBYmqHQMMjLy0JNc"
+},
+{
+"id": "LBX9Dp5pF7XbCYpm",
+"top": 1162,
+"left": 245,
+"width": 820,
+"height": 35.51787068869912,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "19.000 m² Lagerfläche bundesweit",
+"formatting": {
+"fontSize": 30.000003582490574,
+"fontWeight": "medium",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YAFmnBd9xfA,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBX9Dp5pF7XbCYpm"
+},
+{
+"id": "LBm0ywGfCJXRgg3D",
+"top": 1203,
+"left": 245,
+"width": 820,
+"height": 21.74940312742597,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "B2B & B2C Deutschland/Europaweit",
+"formatting": {
+"fontSize": 18.999949068925623,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YAFmnBd9xfA,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBm0ywGfCJXRgg3D"
+},
+{
+"id": "LBd4YynVPb44ZHhK",
+"top": 1240,
+"left": 42.56000000000006,
+"width": 1037.3997089226405,
+"height": 21.293113008761225,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWGbubIw4",
+"imageBox": {
+"top": 0,
+"left": 0,
+"width": 1037.3997089226405,
+"height": 21.293113008761225,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBd4YynVPb44ZHhK"
+},
+{
+"id": "LBzY5RNBxDRsYWy4",
+"top": 1268,
+"left": 41.5,
+"width": 1040,
+"height": 28.201365420871685,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Zwei Beispiele aus unserem Lagernetz – QR-Code scannen",
+"formatting": {
+"fontSize": 24.00000286599246,
+"fontWeight": "medium",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "center",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YAFmnBd9xfA,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBzY5RNBxDRsYWy4"
+},
+{
+"id": "LBLCnD3kV3F0jcf5",
+"top": 1304,
+"left": 314.5,
+"width": 150,
+"height": 149.99999999999994,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWGRkaej0",
+"altText": {
+"text": "QR code site 1",
+"isDecorative": false
+},
+"imageBox": {
+"top": 0,
+"left": 0,
+"width": 150,
+"height": 150,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBLCnD3kV3F0jcf5"
+},
+{
+"id": "LBGr0ZzJqPxcSrDc",
+"top": 1458,
+"left": 269.5,
+"width": 239.99999999999997,
+"height": 23.678580459132746,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Beispiel 1",
+"formatting": {
+"fontSize": 20.00000238832705,
+"fontWeight": "medium",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "center",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YAFmnBd9xfA,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBGr0ZzJqPxcSrDc"
+},
+{
+"id": "LBDKkVVw7v4WgqYS",
+"top": 1304,
+"left": 658.5,
+"width": 150,
+"height": 149.9999999999999,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWGY8J69I",
+"altText": {
+"text": "QR code site 2",
+"isDecorative": false
+},
+"imageBox": {
+"top": 0,
+"left": 0,
+"width": 149.99999999999994,
+"height": 149.99999999999994,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBDKkVVw7v4WgqYS"
+},
+{
+"id": "LBrqmL1sHH9MpPXF",
+"top": 1458,
+"left": 613.5,
+"width": 239.99999999999997,
+"height": 23.678580459132746,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Beispiel 2",
+"formatting": {
+"fontSize": 20.00000238832705,
+"fontWeight": "medium",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "center",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YAFmnBd9xfA,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBrqmL1sHH9MpPXF"
+},
+{
+"id": "LBZH22Yfsx4cFJw4",
+"top": 1066,
+"left": 566.1,
+"width": 250,
+"height": 22.357768659199287,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "③ Fulfillment",
+"formatting": {
+"fontSize": 18.999949068925623,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "center",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.2,
+"letterSpacing": 0,
+"fontRef": "YAFmnBd9xfA,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBZH22Yfsx4cFJw4"
+},
+{
+"id": "LBDfKDv7L0dyZJXN",
+"top": 1522,
+"left": 52.75999999999999,
+"width": 1017.0028346456693,
+"height": 22.585913718531657,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Mario Parlitz · WeChat +49 177 2711123 · info@komplett-konzept.de · www.komplett-konzept.de",
+"formatting": {
+"fontSize": 18.999949068925623,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "center",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.3,
+"letterSpacing": 0,
+"fontRef": "YAFmnBd9xfA,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBDfKDv7L0dyZJXN"
+},
+{
+"id": "LBV3Zvxgf5TFWqfW",
+"top": 0,
+"left": 0,
+"width": 1123,
+"height": 140,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 1123,
+"height": 140
+},
+"paths": [
+{
+"d": "M0 0 H1123 V140 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#ffffff"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 0
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 1123,
+"height": 140
+},
+"resizeCenter": {
+"width": 1123,
+"height": 140
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBV3Zvxgf5TFWqfW"
+},
+{
+"id": "LBnrNltT97lBQvwH",
+"top": 24,
+"left": 295,
+"width": 690,
+"height": 45.62809626261506,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Deutschland / Europa",
+"formatting": {
+"fontSize": 38.0000045378214,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#0b1f4b",
+"textAlign": "end",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YAFmnBd9xfA,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBnrNltT97lBQvwH"
+},
+{
+"id": "LBBdGlrWHV9Y1nCJ",
+"top": 12,
+"left": 40,
+"width": 237,
+"height": 116,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWduUtRtY",
+"altText": {
+"text": "Komplett Konzept logo",
+"isDecorative": false
+},
+"imageBox": {
+"top": 0,
+"left": 0,
+"width": 237,
+"height": 116,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBBdGlrWHV9Y1nCJ"
+},
+{
+"id": "LBx3w53zzVjL00Dj",
+"top": 136,
+"left": 0,
+"width": 1123,
+"height": 4,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 1123,
+"height": 4
+},
+"paths": [
+{
+"d": "M0 0 H1123 V4 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#d62828"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 0
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 1123,
+"height": 4
+},
+"resizeCenter": {
+"width": 1123,
+"height": 4
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBx3w53zzVjL00Dj"
+},
+{
+"id": "LBL0rg4dCHc4nH6v",
+"top": 1335,
+"left": 491.5,
+"width": 140,
+"height": 67.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "+ weitere\nStandorte\nbundesweit",
+"formatting": {
+"fontSize": 18,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "center",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.3,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBL0rg4dCHc4nH6v"
+},
+{
+"id": "LBQdNMdgkMRrQt25",
+"top": 84,
+"left": 295,
+"width": 690,
+"height": 21.4,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Ansprechpartner: Mario Parlitz · WeChat scannen →",
+"formatting": {
+"fontSize": 18,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#0b1f4b",
+"textAlign": "end",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBQdNMdgkMRrQt25"
+},
+{
+"id": "LBCFckYqx65dp2NK",
+"top": 12,
+"left": 1000,
+"width": 116,
+"height": 116,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWlFIXZ8E",
+"altText": {
+"text": "WeChat QR code Mario Parlitz",
+"isDecorative": false
+},
+"imageBox": {
+"top": 7.105427357601002e-15,
+"left": 7.105427357601002e-15,
+"width": 115.99999999999999,
+"height": 115.99999999999999,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LBCFckYqx65dp2NK"
+},
+{
+"id": "LB77lgJRRClLSp8r",
+"top": 976,
+"left": 905.4000000000001,
+"width": 90,
+"height": 82.3909090909091,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWlDtj0e0",
+"altText": {
+"text": "Storage rack icon",
+"isDecorative": false
+},
+"imageBox": {
+"top": 7.105427357601002e-15,
+"left": -0.022354694485841264,
+"width": 90.04470938897168,
+"height": 82.39090909090909,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PB9BDwkNpMhlfj4D-LB77lgJRRClLSp8r"
+},
+{
+"id": "LBpfXZPcw7Y5JG39",
+"top": 1066,
+"left": 825.4,
+"width": 250,
+"height": 44,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "④ Reine\nLagerfläche",
+"formatting": {
+"fontSize": 19,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "center",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.2,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PB9BDwkNpMhlfj4D-LBpfXZPcw7Y5JG39"
+}
+],
+"isEditable": true,
+"locator_id": "PB9BDwkNpMhlfj4D"
+}

@@ -1,0 +1,2564 @@
+{
+"type": "fixed",
+"id": "PBbcXK29jb0mn7Hp",
+"title": "Back",
+"dimensions": {
+"width": 1123,
+"height": 1587
+},
+"background": {
+"color": {
+"type": "solid",
+"color": "#0b1f4b"
+},
+"isMediaReplaceable": true
+},
+"elements": [
+{
+"id": "LBVLVtR2h3jBRGBP",
+"top": 0,
+"left": 0,
+"width": 1123,
+"height": 140,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 1123,
+"height": 140
+},
+"paths": [
+{
+"d": "M0 0 H1123 V140 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#ffffff"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 0
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 1123,
+"height": 140
+},
+"resizeCenter": {
+"width": 1123,
+"height": 140
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LBVLVtR2h3jBRGBP"
+},
+{
+"id": "LBljrJQgjR8pBPb7",
+"top": 12,
+"left": 40,
+"width": 237,
+"height": 116,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWduUtRtY",
+"altText": {
+"text": "Komplett Konzept logo",
+"isDecorative": false
+},
+"imageBox": {
+"top": 0,
+"left": 0,
+"width": 237,
+"height": 116,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LBljrJQgjR8pBPb7"
+},
+{
+"id": "LB7dSBYTJYy2NVyt",
+"top": 24.000000000000004,
+"left": 295,
+"width": 690,
+"height": 45.4,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "合作模式 · Partnership Models",
+"formatting": {
+"fontSize": 38,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#0b1f4b",
+"textAlign": "end",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LB7dSBYTJYy2NVyt"
+},
+{
+"id": "LBvB5t7ghSD1WhSG",
+"top": 155,
+"left": 60,
+"width": 1000,
+"height": 48,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "四种合作模式 · 按优先顺序排列",
+"formatting": {
+"fontSize": 40,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBvB5t7ghSD1WhSG"
+},
+{
+"id": "LBDfr4MMBmBWqvbk",
+"top": 208,
+"left": 60,
+"width": 1000,
+"height": 25.6,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Four ways to work with us – listed in order of our preference (1 = our first choice).",
+"formatting": {
+"fontSize": 22,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBDfr4MMBmBWqvbk"
+},
+{
+"id": "LBGsF5mC3XQcJqtM",
+"top": 250,
+"left": 50,
+"width": 502,
+"height": 385,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 1023,
+"height": 320
+},
+"paths": [
+{
+"d": "M0 0 H1023 V320 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#16306b"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 18
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 1023,
+"height": 320
+},
+"resizeCenter": {
+"width": 502,
+"height": 385
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LBGsF5mC3XQcJqtM"
+},
+{
+"id": "LBZMWcCzQR0jJmb3",
+"top": 250,
+"left": 571,
+"width": 502,
+"height": 385,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 1023,
+"height": 320
+},
+"paths": [
+{
+"d": "M0 0 H1023 V320 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#16306b"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 18
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 1023,
+"height": 320
+},
+"resizeCenter": {
+"width": 502,
+"height": 385
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LBZMWcCzQR0jJmb3"
+},
+{
+"id": "LBWPmLkRzpcMNhKH",
+"top": 650,
+"left": 50,
+"width": 502,
+"height": 385,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 1023,
+"height": 320
+},
+"paths": [
+{
+"d": "M0 0 H1023 V320 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#16306b"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 18
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 1023,
+"height": 320
+},
+"resizeCenter": {
+"width": 502,
+"height": 385
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LBWPmLkRzpcMNhKH"
+},
+{
+"id": "LBqQFFhfhjXdsxDt",
+"top": 250,
+"left": 50,
+"width": 8,
+"height": 385,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 14,
+"height": 320
+},
+"paths": [
+{
+"d": "M0 0 H14 V320 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#d62828"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 0
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 14,
+"height": 320
+},
+"resizeCenter": {
+"width": 8,
+"height": 385
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LBqQFFhfhjXdsxDt"
+},
+{
+"id": "LBnT89jkRMDL0HX7",
+"top": 250,
+"left": 571,
+"width": 8,
+"height": 385,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 14,
+"height": 320
+},
+"paths": [
+{
+"d": "M0 0 H14 V320 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#d62828"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 0
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 14,
+"height": 320
+},
+"resizeCenter": {
+"width": 8,
+"height": 385
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LBnT89jkRMDL0HX7"
+},
+{
+"id": "LBLCG9twfTqWr3sH",
+"top": 650,
+"left": 50,
+"width": 8,
+"height": 385,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 14,
+"height": 320
+},
+"paths": [
+{
+"d": "M0 0 H14 V320 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#d62828"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 0
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 14,
+"height": 320
+},
+"resizeCenter": {
+"width": 8,
+"height": 385
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LBLCG9twfTqWr3sH"
+},
+{
+"id": "LB9vlLHfj3CYWyjv",
+"top": 262,
+"left": 72,
+"width": 70,
+"height": 76.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "1",
+"formatting": {
+"fontSize": 64,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ff5a5a",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LB9vlLHfj3CYWyjv"
+},
+{
+"id": "LBW8X1VQVWVgM5zb",
+"top": 262,
+"left": 593,
+"width": 70,
+"height": 76.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "2",
+"formatting": {
+"fontSize": 64,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ff5a5a",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBW8X1VQVWVgM5zb"
+},
+{
+"id": "LB07cvRSHt9Bc5hS",
+"top": 662,
+"left": 72,
+"width": 70,
+"height": 76.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "3",
+"formatting": {
+"fontSize": 64,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ff5a5a",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LB07cvRSHt9Bc5hS"
+},
+{
+"id": "LB5MSjHYjkWkzmnb",
+"top": 268,
+"left": 135,
+"width": 250,
+"height": 54,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "寄售模式\nConsignment",
+"formatting": {
+"fontSize": 23,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.2,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LB5MSjHYjkWkzmnb"
+},
+{
+"id": "LB8dBDLjYK0Tp8Cr",
+"top": 396,
+"left": 72,
+"width": 460,
+"height": 19.75,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "您在德国备货。我们负责仓储、主动销售和发货。",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.45,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LB8dBDLjYK0Tp8Cr"
+},
+{
+"id": "LBt0gHCXX9x0tzrS",
+"top": 448,
+"left": 72,
+"width": 460,
+"height": 39,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "You stock your products in Germany. We take care of storage, active sales and shipping.",
+"formatting": {
+"fontSize": 15,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#c9d6f2",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBt0gHCXX9x0tzrS"
+},
+{
+"id": "LBQL6sNtSVFzDt4R",
+"top": 268,
+"left": 656,
+"width": 250,
+"height": 54,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "代发货 + 销售\nFulfillment + Sales",
+"formatting": {
+"fontSize": 23,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.2,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBQL6sNtSVFzDt4R"
+},
+{
+"id": "LBygBbvcVwhjSwCX",
+"top": 396,
+"left": 593,
+"width": 460,
+"height": 43.75,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "您提供货物。我们负责仓储和发货，并通过现有销售渠道为您开发新客户。",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.45,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBygBbvcVwhjSwCX"
+},
+{
+"id": "LB1JbQdJrNy1Xmmh",
+"top": 448,
+"left": 593,
+"width": 460,
+"height": 39,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "You provide the goods. We store and ship your products and win new customers through our existing sales channels.",
+"formatting": {
+"fontSize": 15,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#c9d6f2",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LB1JbQdJrNy1Xmmh"
+},
+{
+"id": "LBJqm2gLbdg64ncD",
+"top": 668,
+"left": 135,
+"width": 250,
+"height": 54,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "代发货服务\nFulfillment",
+"formatting": {
+"fontSize": 23,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.2,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBJqm2gLbdg64ncD"
+},
+{
+"id": "LBtn49C8svB44k4l",
+"top": 796,
+"left": 72,
+"width": 460,
+"height": 19.75,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "您自行销售产品。我们在德国负责仓储、拣货、包装和发货。",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.45,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBtn49C8svB44k4l"
+},
+{
+"id": "LBDRC9PGmqs1s1Fb",
+"top": 848,
+"left": 72,
+"width": 460,
+"height": 39,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "You sell your products yourself. We handle storage, picking, packing and shipping in Germany.",
+"formatting": {
+"fontSize": 15,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#c9d6f2",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBDRC9PGmqs1s1Fb"
+},
+{
+"id": "LB6GVjvSBwvDwtck",
+"top": 1050,
+"left": 50,
+"width": 1023,
+"height": 4,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 1023,
+"height": 4
+},
+"paths": [
+{
+"d": "M0 0 H1023 V4 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#d62828"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 0
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 1023,
+"height": 4
+},
+"resizeCenter": {
+"width": 1023,
+"height": 4
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LB6GVjvSBwvDwtck"
+},
+{
+"id": "LB9LHPPnPGZssrFY",
+"top": 1532,
+"left": 53,
+"width": 1017,
+"height": 22.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Mario Parlitz · WeChat +49 177 2711123 · info@komplett-konzept.de · www.komplett-konzept.de",
+"formatting": {
+"fontSize": 19,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "center",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LB9LHPPnPGZssrFY"
+},
+{
+"id": "LBTNXL87FlTG7p62",
+"top": 136,
+"left": 0,
+"width": 1123,
+"height": 4,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 1123,
+"height": 4
+},
+"paths": [
+{
+"d": "M0 0 H1123 V4 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#d62828"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 0
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 1123,
+"height": 4
+},
+"resizeCenter": {
+"width": 1123,
+"height": 4
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LBTNXL87FlTG7p62"
+},
+{
+"id": "LBKr784xhDRh6YqX",
+"top": 1060,
+"left": 60,
+"width": 1000,
+"height": 30.8,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "您的优势 · Your advantages",
+"formatting": {
+"fontSize": 26,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffc857",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBKr784xhDRh6YqX"
+},
+{
+"id": "LBphCWjdvkwJXQ4y",
+"top": 1098,
+"left": 60,
+"width": 490,
+"height": 24,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "✓ 无需德国公司 · No German company needed",
+"formatting": {
+"fontSize": 20,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.2,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBphCWjdvkwJXQ4y"
+},
+{
+"id": "LBpTDrGRQG1bkGhv",
+"top": 1127,
+"left": 60,
+"width": 490,
+"height": 19.6,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "无需在德国注册公司、租仓库或招聘员工。",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBpTDrGRQG1bkGhv"
+},
+{
+"id": "LB3qZndvp19XSkKx",
+"top": 1155,
+"left": 60,
+"width": 490,
+"height": 18,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "No company, warehouse or staff of your own needed in Germany.",
+"formatting": {
+"fontSize": 15,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#c9d6f2",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LB3qZndvp19XSkKx"
+},
+{
+"id": "LB9R1Cn7g6Pm3Z31",
+"top": 1098,
+"left": 580,
+"width": 490,
+"height": 24,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "✓ 19,000 m² 仓储 · 19,000 m² storage",
+"formatting": {
+"fontSize": 20,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.2,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LB9R1Cn7g6Pm3Z31"
+},
+{
+"id": "LBrRksDJHncSqDk0",
+"top": 1127,
+"left": 580,
+"width": 490,
+"height": 19.6,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "德国多个基地，整托及单件，室内和室外。",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBrRksDJHncSqDk0"
+},
+{
+"id": "LBhbyCbwR1jbp86H",
+"top": 1155,
+"left": 580,
+"width": 490,
+"height": 18,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Several sites in Germany – pallets and single items, indoor and outdoor.",
+"formatting": {
+"fontSize": 15,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#c9d6f2",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBhbyCbwR1jbp86H"
+},
+{
+"id": "LBLzcRxMmVY65SM0",
+"top": 1212,
+"left": 60,
+"width": 490,
+"height": 24,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "✓ B2B & B2C · Germany/Europe-wide",
+"formatting": {
+"fontSize": 20,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.2,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBLzcRxMmVY65SM0"
+},
+{
+"id": "LBTZHJfHSB2fynNr",
+"top": 1241,
+"left": 60,
+"width": 490,
+"height": 19.6,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "面向经销商、企业客户、网店及电商平台，覆盖德国及全欧洲。",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBTZHJfHSB2fynNr"
+},
+{
+"id": "LBLcSrQQVymnG66R",
+"top": 1269,
+"left": 60,
+"width": 490,
+"height": 39,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Dealers, business customers, online shops and marketplaces – across Germany and Europe.",
+"formatting": {
+"fontSize": 15,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#c9d6f2",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBLcSrQQVymnG66R"
+},
+{
+"id": "LBG9LPxK5HqTtg6h",
+"top": 1212,
+"left": 580,
+"width": 490,
+"height": 24,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "✓ 退货·技术支持·备件 · Returns, support, parts",
+"formatting": {
+"fontSize": 20,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.2,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBG9LPxK5HqTtg6h"
+},
+{
+"id": "LB3BxKG6FZW2VVW3",
+"top": 1241,
+"left": 580,
+"width": 490,
+"height": 19.6,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "退货、技术支持和备件供应均在德国本地完成。",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LB3BxKG6FZW2VVW3"
+},
+{
+"id": "LBSS5jsG0qxdWmnW",
+"top": 1269,
+"left": 580,
+"width": 490,
+"height": 39,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Returns, technical support and spare-parts delivery – handled locally in Germany.",
+"formatting": {
+"fontSize": 15,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#c9d6f2",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBSS5jsG0qxdWmnW"
+},
+{
+"id": "LBqbCGBRLrgdkWKy",
+"top": 650,
+"left": 571,
+"width": 502,
+"height": 385,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 502,
+"height": 385
+},
+"paths": [
+{
+"d": "M0 0 H502 V385 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#16306b"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 18
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 502,
+"height": 385
+},
+"resizeCenter": {
+"width": 502,
+"height": 385
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LBqbCGBRLrgdkWKy"
+},
+{
+"id": "LB0bgf1kl39pLMjk",
+"top": 650,
+"left": 571,
+"width": 8,
+"height": 385,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 8,
+"height": 385
+},
+"paths": [
+{
+"d": "M0 0 H8 V385 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#d62828"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 0
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 8,
+"height": 385
+},
+"resizeCenter": {
+"width": 8,
+"height": 385
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LB0bgf1kl39pLMjk"
+},
+{
+"id": "LBlPrdKlFPkMQkjj",
+"top": 661.9999999999999,
+"left": 593,
+"width": 60,
+"height": 76.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "4",
+"formatting": {
+"fontSize": 64,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ff5a5a",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBlPrdKlFPkMQkjj"
+},
+{
+"id": "LBZqFN7M4jXcdZFB",
+"top": 668,
+"left": 656,
+"width": 250,
+"height": 54,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "纯仓储面积\nStorage Space",
+"formatting": {
+"fontSize": 23,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.2,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBZqFN7M4jXcdZFB"
+},
+{
+"id": "LBKpTnszzcP6BTcL",
+"top": 342,
+"left": 72,
+"width": 460,
+"height": 42.3,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "您的货物 · 我们的销售 · 长期合作\nYour goods · our sales · long-term partnership",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffc857",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.3,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBKpTnszzcP6BTcL"
+},
+{
+"id": "LBPPPlpllWVgw5bg",
+"top": 342,
+"left": 593,
+"width": 460,
+"height": 42.3,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "您的货物 · 共同销售 · 我们的德国物流\nYour goods · joint sales · our German logistics",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffc857",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.3,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBPPPlpllWVgw5bg"
+},
+{
+"id": "LBBGxpQ7p1YF80PR",
+"top": 742,
+"left": 72,
+"width": 460,
+"height": 42.3,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "您的销售 · 我们的德国物流\nYour sales · our German logistics",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffc857",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.3,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBBGxpQ7p1YF80PR"
+},
+{
+"id": "LBCjqtgq0hZtRppZ",
+"top": 742,
+"left": 593,
+"width": 460,
+"height": 42.3,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "您的货物 · 我们的仓储空间\nYour goods · our storage space",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffc857",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.3,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBCjqtgq0hZtRppZ"
+},
+{
+"id": "LBJ5sSl1lRCXwVX4",
+"top": 796,
+"left": 593,
+"width": 460,
+"height": 43.75,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "您在德国租用仓储面积——托盘位或整块区域，室内及室外均可。",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.45,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBJ5sSl1lRCXwVX4"
+},
+{
+"id": "LBlb8vrs1nQ3Wj75",
+"top": 848,
+"left": 593,
+"width": 460,
+"height": 39,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "You rent storage space in Germany – pallet spaces or whole areas, indoors and outdoors.",
+"formatting": {
+"fontSize": 15,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#c9d6f2",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBlb8vrs1nQ3Wj75"
+},
+{
+"id": "LBt8p3w2cX3zPmyZ",
+"top": 522,
+"left": 72,
+"width": 460,
+"height": 18.8,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "适合希望与本地伙伴长期共同开拓德国市场的制造商。",
+"formatting": {
+"fontSize": 16,
+"fontWeight": "normal",
+"fontStyle": "italic",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBt8p3w2cX3zPmyZ"
+},
+{
+"id": "LBB7DrNs8nJ756dy",
+"top": 522,
+"left": 593,
+"width": 460,
+"height": 40.8,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "适合已有销售、但希望额外利用我们德国或欧洲销售渠道的制造商。",
+"formatting": {
+"fontSize": 16,
+"fontWeight": "normal",
+"fontStyle": "italic",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBB7DrNs8nJ756dy"
+},
+{
+"id": "LBvvGYw53r8PkHjB",
+"top": 922,
+"left": 72,
+"width": 460,
+"height": 18.8,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "适合拥有自有销售渠道、需要德国专业物流基地的制造商。",
+"formatting": {
+"fontSize": 16,
+"fontWeight": "normal",
+"fontStyle": "italic",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBvvGYw53r8PkHjB"
+},
+{
+"id": "LByHRC2BfMQSJ2HZ",
+"top": 922,
+"left": 593,
+"width": 460,
+"height": 18.8,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "适合只需在德国存放货物的制造商。",
+"formatting": {
+"fontSize": 16,
+"fontWeight": "normal",
+"fontStyle": "italic",
+"color": "#ffffff",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LByHRC2BfMQSJ2HZ"
+},
+{
+"id": "LBpXmTT0JjBhzrLP",
+"top": 572,
+"left": 72,
+"width": 460,
+"height": 35.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Ideal for manufacturers who want to develop Germany long-term together with a local partner.",
+"formatting": {
+"fontSize": 14,
+"fontWeight": "normal",
+"fontStyle": "italic",
+"color": "#c9d6f2",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBpXmTT0JjBhzrLP"
+},
+{
+"id": "LB1mk8y8VfTZ1lyM",
+"top": 572,
+"left": 593,
+"width": 460,
+"height": 35.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Ideal for manufacturers who already sell but also want to use our German or European sales channels.",
+"formatting": {
+"fontSize": 14,
+"fontWeight": "normal",
+"fontStyle": "italic",
+"color": "#c9d6f2",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LB1mk8y8VfTZ1lyM"
+},
+{
+"id": "LBfl6ZKmY7D9KpgZ",
+"top": 972,
+"left": 72,
+"width": 460,
+"height": 35.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Ideal for manufacturers with their own sales who need a professional logistics base in Germany.",
+"formatting": {
+"fontSize": 14,
+"fontWeight": "normal",
+"fontStyle": "italic",
+"color": "#c9d6f2",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBfl6ZKmY7D9KpgZ"
+},
+{
+"id": "LBfDttCMyzf545VQ",
+"top": 972,
+"left": 593,
+"width": 460,
+"height": 35.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Ideal for manufacturers who simply need space for their goods in Germany.",
+"formatting": {
+"fontSize": 14,
+"fontWeight": "normal",
+"fontStyle": "italic",
+"color": "#c9d6f2",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBfDttCMyzf545VQ"
+},
+{
+"id": "LBJS3p3Rr0HS3tql",
+"top": 1335,
+"left": 50,
+"width": 1023,
+"height": 172,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "shape",
+"viewBox": {
+"top": 0,
+"left": 0,
+"width": 1023,
+"height": 172
+},
+"paths": [
+{
+"d": "M0 0 H1023 V172 H0 Z",
+"fill": {
+"color": {
+"type": "solid",
+"color": "#ffffff"
+},
+"isMediaReplaceable": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"cornerRounding": 14
+}
+],
+"textContents": [
+{
+"textRegions": []
+}
+],
+"nineSlice": {
+"sliceBox": {
+"top": 0,
+"left": 0,
+"width": 1023,
+"height": 172
+},
+"resizeCenter": {
+"width": 1023,
+"height": 172
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LBJS3p3Rr0HS3tql"
+},
+{
+"id": "LBVCrYYRs4p2CJms",
+"top": 1352,
+"left": 72,
+"width": 206,
+"height": 137,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWlA8t-z4",
+"altText": {
+"text": "MapaTec logo",
+"isDecorative": false
+},
+"imageBox": {
+"top": 1.4210854715202004e-14,
+"left": -0.20150659133709325,
+"width": 206.4030131826742,
+"height": 136.99999999999997,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LBVCrYYRs4p2CJms"
+},
+{
+"id": "LBFRLmybQ1QmD80X",
+"top": 1358,
+"left": 300,
+"width": 600,
+"height": 25.6,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "Komplett Konzept × MapaTec GmbH",
+"formatting": {
+"fontSize": 22,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#0b1f4b",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBFRLmybQ1QmD80X"
+},
+{
+"id": "LBPTC45kV7WqrKkX",
+"top": 1394,
+"left": 300,
+"width": 600,
+"height": 19.6,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "进出口经验不足？我们自己的进口公司 MapaTec GmbH 为您提供支持。",
+"formatting": {
+"fontSize": 17,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#0b1f4b",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBPTC45kV7WqrKkX"
+},
+{
+"id": "LBNY4w00HP8lltkh",
+"top": 1424,
+"left": 300,
+"width": 600,
+"height": 18,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "New to import/export? Our own import company MapaTec GmbH supports you.",
+"formatting": {
+"fontSize": 15,
+"fontWeight": "normal",
+"fontStyle": "normal",
+"color": "#4a5a7a",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBNY4w00HP8lltkh"
+},
+{
+"id": "LBGYN2KCP09GkLTN",
+"top": 1458,
+"left": 300,
+"width": 600,
+"height": 18,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "联系人 Contact: Mario Parlitz · 微信扫码 Scan WeChat →",
+"formatting": {
+"fontSize": 15,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#d62828",
+"textAlign": "start",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBGYN2KCP09GkLTN"
+},
+{
+"id": "LB6fZs1ZkrcDyfrC",
+"top": 1351,
+"left": 918,
+"width": 140,
+"height": 140,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWlFIXZ8E",
+"altText": {
+"text": "WeChat QR code Mario Parlitz",
+"isDecorative": false
+},
+"imageBox": {
+"top": 0,
+"left": 0,
+"width": 140,
+"height": 140,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LB6fZs1ZkrcDyfrC"
+},
+{
+"id": "LBc3wQNTsSrFf8ff",
+"top": 267.99999999999994,
+"left": 390,
+"width": 145,
+"height": 43.1,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "★ 首选\nOur 1st choice",
+"formatting": {
+"fontSize": 18,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffc857",
+"textAlign": "end",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.25,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBc3wQNTsSrFf8ff"
+},
+{
+"id": "LBc0FYTF8rMm458l",
+"top": 267.99999999999994,
+"left": 911,
+"width": 145,
+"height": 39.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "第二选择\n2nd choice",
+"formatting": {
+"fontSize": 16,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffc857",
+"textAlign": "end",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.25,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBc0FYTF8rMm458l"
+},
+{
+"id": "LBLWLCyk6TKQjBgd",
+"top": 668,
+"left": 390,
+"width": 145,
+"height": 39.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "第三选择\n3rd choice",
+"formatting": {
+"fontSize": 16,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffc857",
+"textAlign": "end",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.25,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBLWLCyk6TKQjBgd"
+},
+{
+"id": "LBGK8bnwjTmZQMFx",
+"top": 668,
+"left": 911,
+"width": 145,
+"height": 39.2,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "第四选择\n4th choice",
+"formatting": {
+"fontSize": 16,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#ffc857",
+"textAlign": "end",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.25,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBGK8bnwjTmZQMFx"
+},
+{
+"id": "LBfc3TvJJmJS1P3q",
+"top": 84,
+"left": 295,
+"width": 690,
+"height": 21.4,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "text",
+"textRegions": [
+{
+"characters": "联系人 Contact: Mario Parlitz · 微信扫码 Scan WeChat →",
+"formatting": {
+"fontSize": 18,
+"fontWeight": "bold",
+"fontStyle": "normal",
+"color": "#0b1f4b",
+"textAlign": "end",
+"decoration": "none",
+"strikethrough": "none",
+"link": "",
+"listMarker": "none",
+"listLevel": 0,
+"lineHeight": 1.4,
+"letterSpacing": 0,
+"fontRef": "YACgEZ1cb1Q,0"
+}
+}
+],
+"locator_id": "PBbcXK29jb0mn7Hp-LBfc3TvJJmJS1P3q"
+},
+{
+"id": "LB850GCXr5x0zMG3",
+"top": 12,
+"left": 1000,
+"width": 116,
+"height": 116,
+"rotation": 0,
+"opacity": 1,
+"isLocked": false,
+"type": "rect",
+"fill": {
+"media": {
+"type": "image",
+"mediaId": "MAHWlFIXZ8E",
+"altText": {
+"text": "WeChat QR code Mario Parlitz",
+"isDecorative": false
+},
+"imageBox": {
+"top": 7.105427357601002e-15,
+"left": 7.105427357601002e-15,
+"width": 115.99999999999999,
+"height": 115.99999999999999,
+"rotation": 0
+}
+},
+"isMediaReplaceable": true,
+"flipX": false,
+"flipY": false
+},
+"stroke": {
+"weight": 0,
+"color": {
+"type": "solid",
+"color": "#000000"
+}
+},
+"locator_id": "PBbcXK29jb0mn7Hp-LB850GCXr5x0zMG3"
+}
+],
+"isEditable": true,
+"locator_id": "PBbcXK29jb0mn7Hp"
+}

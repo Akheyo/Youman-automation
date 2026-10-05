@@ -40,8 +40,17 @@ Kernsatz: *You provide the products. We provide your route into Germany and Euro
 
 WeChat-QR-Code Mario Parlitz: `qr/QR_WeChat_Mario_Parlitz.png` (→ https://u.wechat.com/kHvOv2mb0MN5doa_uYM5djQ?s=2), auf dem Flyer im Header und in der MapaTec-Box.
 
-Mario Parlitz · WeChat +49 177 2711123 · info@mapatec.de · www.komplett-konzept.de
+CEO Mario Parlitz · Mobil +49 177 2711126 · info@mapatec.de (+ WeChat-QR-Code)
 
 Canva-Design: https://canva.link/livy33ru0texhqf – zweiseitig (Vorderseite + Rückseite mit den 3 Modellen), Absender Komplett Konzept, 19.000 m² Lagerfläche bundesweit, B2B & B2C Deutschland/Europaweit, QR-Codes als „Beispiele" (+ weitere Standorte bundesweit). PDF: `KomplettKonzept_Canton_Fair_Flyer.pdf` (Canva-Format A3, auf A4 skaliert druckbar)
 
 Deutsche Lesefassung (v2, gleiches Layout): https://www.canva.com/d/Jl1jm9RrTqsDB-O – PDF: `KomplettKonzept_Flyer_DEUTSCH_Lesefassung.pdf`
+
+## Stand Flyer (aktuell)
+
+- Kopfzeile: Logo mit www.komplett-konzept.de darunter, „CEO Mario Parlitz · Mobil +49 177 2711126“, WeChat-QR
+- Fußzeile jeder Seite: CEO Mario Parlitz · Mobil +49 177 2711126 · info@mapatec.de + WeChat-QR
+- Lagerhallen: „Auswahl unserer eigenen Lagerhallen – alarmgesichert & videoüberwacht“: Mitten in Deutschland 8.000 m² (Geisleden), Raum Frankfurt 4.000 m² (Grävenwiesbach)
+- Konsignation inkl. Retouren, Markenentwicklung und Markenanmeldung
+- Komplett Konzept & MapaTec: „Mit unseren beiden Unternehmen decken Sie alles ab.“, Ansprechpartner MapaTec: Frank Matysik
+- Build: `flyer_build/` (HTML → PDF mit Chromium)
