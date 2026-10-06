@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { baueItem, bildDateiname, leseKonfig, leseStand, MAKE_STANDARD, offeneBilder, pruefe } from './kern';
-import { ean13Balken, ean13Module } from './ean13-muster';
-import { etikettAnzahl, formatNachId, MAX_ETIKETTEN, STANDARD_FORMAT } from './etikett';
+import { etikettAnzahl, MAX_ETIKETTEN } from './etikett';
+import { etikettBase64, grenzen, gtinAn, leseNummernkreis, leseVorlagen, versatzVon } from './gtin';
+import { isValidEan13 } from '@/lib/plenty/ean';
 
 describe('leseKonfig', () => {
   it('nimmt ohne Umgebung die Werte aus dem Make-Szenario', () => {
@@ -132,31 +133,6 @@ describe('Stand und offene Bilder', () => {
   });
 });
 
-describe('EAN-13-Muster', () => {
-  it('erzeugt 95 Module mit Rand- und Mittelzeichen', () => {
-    const m = ean13Module('4006381333931');
-    expect(m).toHaveLength(95);
-    expect(m.startsWith('101')).toBe(true);
-    expect(m.endsWith('101')).toBe(true);
-    expect(m.slice(45, 50)).toBe('01010');
-  });
-
-  it('kodiert die erste Ziffer über die Parität (bekanntes Beispiel)', () => {
-    // 4006381333931: linke Hälfte LGLLGG → erste Ziffer 0 als L = 0001101
-    expect(ean13Module('4006381333931').slice(3, 10)).toBe('0001101');
-  });
-
-  it('weist ungültige Prüfziffern ab', () => {
-    expect(() => ean13Module('4006381333932')).toThrow();
-  });
-
-  it('fasst Striche zusammen, Gesamtbreite stimmt', () => {
-    const balken = ean13Balken('4006381333931');
-    const schwarz = balken.reduce((s, [, b]) => s + b, 0);
-    expect(schwarz).toBe(ean13Module('4006381333931').split('').filter((c) => c === '1').length);
-  });
-});
-
 describe('Etiketten', () => {
   it('druckt eins je Stück', () => {
     expect(etikettAnzahl(5)).toBe(5);
@@ -164,9 +140,68 @@ describe('Etiketten', () => {
     expect(etikettAnzahl(null)).toBe(1);
     expect(etikettAnzahl(5000)).toBe(MAX_ETIKETTEN);
   });
+});
 
-  it('fällt bei unbekanntem Format auf den Standard zurück', () => {
-    expect(formatNachId('quatsch')).toBe(STANDARD_FORMAT);
-    expect(formatNachId('62x29').breiteMm).toBe(62);
+describe('Nummernkreis', () => {
+  const kreis = leseNummernkreis({ FOTOSTUDIO_GTIN_START: '426012345000', FOTOSTUDIO_GTIN_ANZAHL: '1000' })!;
+
+  it('liest Start (12 Stellen) und Anzahl', () => {
+    expect(kreis).toEqual({ basis: 426012345000, anzahl: 1000 });
+  });
+
+  it('nimmt auch die 13-stellige Start-GTIN mit Prüfziffer', () => {
+    expect(leseNummernkreis({ FOTOSTUDIO_GTIN_START: '4260123450003', FOTOSTUDIO_GTIN_ANZAHL: '10' })?.basis).toBe(426012345000);
+  });
+
+  it('ist ohne Angaben aus', () => {
+    expect(leseNummernkreis({})).toBeNull();
+    expect(leseNummernkreis({ FOTOSTUDIO_GTIN_START: '123', FOTOSTUDIO_GTIN_ANZAHL: '5' })).toBeNull();
+    expect(leseNummernkreis({ FOTOSTUDIO_GTIN_START: '426012345000', FOTOSTUDIO_GTIN_ANZAHL: '0' })).toBeNull();
+  });
+
+  it('erzeugt gültige GTINs innerhalb des Kreises', () => {
+    const erste = gtinAn(kreis, 0)!;
+    expect(erste.slice(0, 12)).toBe('426012345000');
+    expect(isValidEan13(erste)).toBe(true);
+    expect(gtinAn(kreis, 999)!.slice(0, 12)).toBe('426012345999');
+    expect(gtinAn(kreis, 1000)).toBeNull();
+    expect(gtinAn(kreis, -1)).toBeNull();
+  });
+
+  it('findet die Position einer GTIN wieder', () => {
+    expect(versatzVon(kreis, gtinAn(kreis, 42))).toBe(42);
+    expect(versatzVon(kreis, '2000000104812')).toBeNull();
+    expect(versatzVon(kreis, null)).toBeNull();
+  });
+
+  it('liefert erste und letzte GTIN für die Datenbankabfrage', () => {
+    const g = grenzen(kreis);
+    expect(g.erste < g.letzte).toBe(true);
+    expect(versatzVon(kreis, g.letzte)).toBe(999);
+  });
+});
+
+describe('Plenty-Etikett', () => {
+  const pdf = 'JVBERi0xLjQKJ';
+
+  it('nimmt nacktes base64, JSON-String, Array und Objekt', () => {
+    expect(etikettBase64(pdf)).toBe(pdf);
+    expect(etikettBase64(JSON.stringify(pdf))).toBe(pdf);
+    expect(etikettBase64(JSON.stringify([pdf]))).toBe(pdf);
+    expect(etikettBase64(JSON.stringify({ content: pdf }))).toBe(pdf);
+    expect(etikettBase64(`data:application/pdf;base64,${pdf}`)).toBe(pdf);
+  });
+
+  it('lehnt alles ab, was kein PDF ist', () => {
+    expect(etikettBase64('{"error":"label not found"}')).toBeNull();
+    expect(etikettBase64('')).toBeNull();
+    expect(etikettBase64(null)).toBeNull();
+  });
+
+  it('liest Vorlagen in verschiedenen Hüllen', () => {
+    expect(leseVorlagen([{ id: 3, name: 'Regal 57x32' }])).toEqual([{ id: 3, name: 'Regal 57x32' }]);
+    expect(leseVorlagen({ entries: [{ labelId: 4, title: 'Klein' }] })).toEqual([{ id: 4, name: 'Klein' }]);
+    expect(leseVorlagen({ 5: 'Groß' })).toEqual([{ id: 5, name: 'Groß' }]);
+    expect(leseVorlagen('quatsch')).toEqual([]);
   });
 });

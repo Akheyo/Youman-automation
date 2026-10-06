@@ -269,13 +269,15 @@ Bestand ließen sich gar nicht angeben.
 3. **Zustand, Bestand, Gewicht** (Komma erlaubt), optional eine Notiz.
 4. **„In Plenty anlegen"**:
    - Artikel inaktiv anlegen mit den Stammwerten aus Make plus Zustand und
-     Gewicht, EAN-13 erzeugen und als Barcode (`PLENTY_EAN_BARCODE_ID`,
-     EAN13_2) an die Variante hängen,
+     Gewicht,
+   - EAN aus dem **Plenty-Nummernkreis** vergeben und als Barcode
+     (`PLENTY_EAN_BARCODE_ID`, EAN13_2) an die Variante hängen (siehe unten),
    - Bestand als Korrekturbuchung ins Lager,
    - Fotos **einzeln** übertragen (Plenty holt sie über eine signierte
      Adresse, `uploadUrl` — wie in Make, nur ohne Cloudinary) und mit der
      Variante verknüpfen,
-   - **je Stück ein Etikett** drucken (EAN-Strichcode, Artikel-ID, Zustand).
+   - **je Stück ein Etikett** drucken — das Etikett aus eurer
+     Plenty-Vorlage, mit der EAN aus Plenty.
 5. Ergebnis: Artikel-ID groß, offene Punkte darunter, „Nächster Artikel".
 
 Jeder Schritt ist wiederholbar: Ein zweiter Anlauf legt keinen zweiten Artikel
@@ -283,13 +285,36 @@ an und hängt kein Bild doppelt an. Fehlt am Ende ein Bild, steht der Artikel
 in „Zuletzt im Fotostudio" als Fehler mit **„Fortsetzen"**. Fertig
 (`in_plenty`) ist er erst, wenn alle Fotos in Plenty liegen.
 
-### Etiketten
+### EAN aus dem Plenty-Nummernkreis
 
-Gedruckt wird über das Druckfenster des Browsers, eine Seite je Etikett in
-der Größe der Rolle (57 × 32, 50 × 25, 62 × 29 Brother, 54 × 25 Dymo,
-100 × 50 mm). Größe und „automatisch drucken" merkt sich jedes Gerät. Wer
-das Druckfenster am Fotoplatz überspringen will, startet Chrome mit
-`--kiosk-printing` und stellt den Etikettendrucker als Standard ein.
+In Plenty nimmt der Knopf „Barcode generieren" an der Variante die nächste
+freie Nummer aus dem Kreis unter **Einrichtung » Artikel » GTIN**. Diesen Knopf
+gibt es in der offiziellen REST-API nicht, und der Kreis lässt sich darüber
+auch nicht auslesen. Deshalb steht derselbe Kreis in `FOTOSTUDIO_GTIN_START`
+und `FOTOSTUDIO_GTIN_ANZAHL`, und die App macht, was der Knopf macht:
+
+1. hinter der höchsten Nummer anfangen, die sie selbst schon vergeben hat,
+2. in Plenty prüfen, ob die Nummer schon an einer Variante hängt
+   (`GET /rest/items/variations?barcode=…`) — dann die nächste,
+3. die freie Nummer an die Variante hängen
+   (`POST …/variations/{id}/variation_barcodes`, Barcode EAN13_2).
+
+Lehnt Plenty die Nummer als doppelt ab (gleichzeitig per Knopf vergeben), geht
+es mit der nächsten weiter. Ist der Kreis aufgebraucht, sagt die App das, statt
+eine fremde Nummer zu nehmen. Ohne Kreis gibt es übergangsweise den internen
+Bereich `20…` — mit Hinweis am Artikel.
+
+### Etiketten aus Plenty
+
+Das Etikett kommt aus eurer **Plenty-Artikeletikett-Vorlage**
+(`POST /rest/items/{id}/variations/{variationId}/labels`) als PDF — Größe,
+Layout und Inhalt bestimmt also Plenty, die EAN ist die an der Variante. Die
+App setzt das PDF so oft hintereinander, wie Stück im Bestand sind, zeigt es
+als Vorschau und druckt es über das Druckfenster. Welche Vorlage, wählt jeder
+Platz unter „Notiz, Etikett und Stammwerte" (Liste aus `GET /rest/items/labels`,
+Vorauswahl `FOTOSTUDIO_ETIKETT_ID`). Wer das Druckfenster überspringen will,
+startet Chrome am Fotoplatz mit `--kiosk-printing` und stellt den
+Etikettendrucker als Standard ein. Am iPhone öffnet sich das PDF im neuen Tab.
 Nachdrucken geht aus der Liste.
 
 ### Stammwerte

@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './fotostudio.module.css';
 import Kamera from '../erfassung/Kamera';
 import { leseGewicht } from '../erfassung/ZustandBestand';
-import Etiketten, { Barcode, eanText, type Druckauftrag } from './Etiketten';
 import { ZUSTAND_TEXT, type Zustand } from '@/lib/preis/regelwerk';
 import { validiereBild, type Packklasse } from '@/lib/erfassung/logic';
 import { fehlerZeile } from '@/lib/erfassung/fehlertext';
-import { ETIKETTFORMATE, etikettAnzahl, formatNachId } from '@/lib/fotostudio/etikett';
+import { MAX_ETIKETTEN, etikettAnzahl } from '@/lib/fotostudio/etikett';
+import type { Vorlage } from '@/lib/fotostudio/gtin';
 import {
   arbeite,
   aussichtslos,
@@ -29,8 +29,8 @@ import {
  *
  * Ein Bildschirm, drei Schritte: Fotos machen (Kamera oder Dateien vom PC),
  * Zustand / Gewicht / Bestand angeben, anlegen. Danach steht der Artikel
- * inaktiv in Plenty, mit Bildern, EAN-Barcode und gebuchtem Bestand — und
- * aus dem Drucker kommt je Stück ein Etikett.
+ * inaktiv in Plenty, mit Bildern, EAN aus dem Plenty-Nummernkreis und
+ * gebuchtem Bestand — und aus dem Drucker kommt je Stück das Plenty-Etikett.
  */
 
 export interface Stammwerte {
@@ -42,6 +42,8 @@ export interface Stammwerte {
   flagTwo: number;
   warehouseId: number | null;
   eanBarcode: boolean;
+  /** Der Plenty-GTIN-Nummernkreis, lesbar — oder null (dann interner 20er-Bereich). */
+  nummernkreis: string | null;
   plentyBereit: boolean;
 }
 
@@ -89,6 +91,8 @@ interface Angaben {
 }
 
 interface Ergebnis {
+  /** Unsere Artikel-ID — für den Etikett-Abruf. */
+  id: string;
   itemId: number | null;
   ean: string | null;
   nummer: number;
@@ -116,7 +120,7 @@ const ZUSTAENDE: Array<{ wert: Zustand; titel: string; text: string; ton: 'gruen
   { wert: 'defekt', titel: 'Defekt', text: 'funktioniert nicht', ton: 'rot' },
 ];
 
-const SPEICHER_FORMAT = 'fotostudio.etikett';
+const SPEICHER_VORLAGE = 'fotostudio.vorlage';
 const SPEICHER_AUTODRUCK = 'fotostudio.autodruck';
 
 function lies(schluessel: string): string | null {
@@ -220,8 +224,12 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
   const [ziehen, setZiehen] = useState(false);
   const [fortschritt, setFortschritt] = useState<string | null>(null);
   const [ergebnis, setErgebnis] = useState<Ergebnis | null>(null);
-  const [druck, setDruck] = useState<Druckauftrag | null>(null);
-  const [formatId, setFormatId] = useState<string>('57x32');
+  const [vorlagen, setVorlagen] = useState<Vorlage[]>([]);
+  const [vorlageId, setVorlageId] = useState<number | null>(null);
+  const [vorlagenFehler, setVorlagenFehler] = useState<string | null>(null);
+  /** Das zuletzt aus Plenty geholte Etikett-PDF — Vorschau und Druck. */
+  const [etikettPdf, setEtikettPdf] = useState<{ url: string; artikelId: string; anzahl: number } | null>(null);
+  const [etikettLaedt, setEtikettLaedt] = useState(false);
   const [autodruck, setAutodruck] = useState(true);
   const [etikettAnzahlWahl, setEtikettAnzahlWahl] = useState(1);
   const [nachholen, setNachholen] = useState<string | null>(null);
@@ -234,8 +242,9 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
   const kameraDialogRef = useRef<HTMLInputElement>(null);
   const gestartetRef = useRef(false);
 
-  const format = formatNachId(formatId);
-  const druckFertig = useCallback(() => setDruck(null), []);
+  const druckRahmen = useRef<HTMLIFrameElement>(null);
+  /** Nach dem Laden des PDFs sofort drucken? (aus = nur Vorschau) */
+  const sofortDrucken = useRef(false);
   const beschaeftigt = fortschritt !== null;
 
   // -------------------------------------------------------------------------
@@ -243,8 +252,24 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
   // -------------------------------------------------------------------------
 
   useEffect(() => {
-    setFormatId(formatNachId(lies(SPEICHER_FORMAT)).id);
     setAutodruck(lies(SPEICHER_AUTODRUCK) !== '0');
+    // Die Plenty-Vorlagen: gemerkte Wahl des Geräts, sonst die voreingestellte,
+    // sonst die erste.
+    void (async () => {
+      try {
+        const res = await fetch('/api/fotostudio/etiketten', { cache: 'no-store' });
+        const daten = await alsJson(res);
+        const liste = (daten.vorlagen as Vorlage[]) ?? [];
+        setVorlagen(liste);
+        if (daten.error) setVorlagenFehler(String(daten.error));
+        const gemerkt = Number(lies(SPEICHER_VORLAGE)) || null;
+        const standard = (daten.standard as number | null) ?? null;
+        const wahl = [gemerkt, standard, liste[0]?.id ?? null].find((id) => id && (liste.length === 0 || liste.some((v) => v.id === id)));
+        setVorlageId(wahl ?? null);
+      } catch (e) {
+        setVorlagenFehler(e instanceof Error ? e.message : String(e));
+      }
+    })();
   }, []);
 
   // -------------------------------------------------------------------------
@@ -424,16 +449,49 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
   // Anlegen: Artikel → Bilder einzeln → Abschluss
   // -------------------------------------------------------------------------
 
+  /**
+   * Holt das Etikett aus Plenty (eine Seite je Stück) und druckt es.
+   *
+   * Gedruckt wird das PDF über einen Rahmen in der Seite — das öffnet das
+   * Druckfenster des Browsers (mit --kiosk-printing in Chrome ohne Dialog).
+   * Wo der Browser PDFs im Rahmen nicht drucken kann (iPhone), öffnet es sich
+   * im neuen Tab.
+   */
   const drucken = useCallback(
-    (e: { ean: string | null; itemId: number | null; nummer: number; zustand: Zustand }, anzahl: number) => {
-      if (!e.ean) {
-        setMeldung({ art: 'fehler', text: 'Keine EAN am Artikel — Etikett nicht druckbar.' });
+    async (artikelId: string, anzahl: number, drucke = true) => {
+      if (!vorlageId) {
+        setMeldung({ art: 'fehler', text: vorlagenFehler ?? 'Keine Plenty-Etikettvorlage gewählt (unter „Notiz, Etikett und Stammwerte").' });
         return;
       }
-      setDruck({ ean: e.ean, itemId: e.itemId, nummer: e.nummer, zustand: ZUSTAND_TEXT[e.zustand] ?? e.zustand, anzahl });
+      setEtikettLaedt(true);
+      try {
+        const res = await fetch(`/api/fotostudio/artikel/${artikelId}/etikett?vorlage=${vorlageId}&anzahl=${anzahl}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(String((await alsJson(res)).error ?? `HTTP ${res.status}`));
+        const url = URL.createObjectURL(await res.blob());
+        sofortDrucken.current = drucke;
+        setEtikettPdf((alt) => {
+          if (alt) URL.revokeObjectURL(alt.url);
+          return { url, artikelId, anzahl };
+        });
+      } catch (e) {
+        setMeldung({ art: 'fehler', text: `Etikett aus Plenty: ${e instanceof Error ? e.message : String(e)}` });
+      } finally {
+        setEtikettLaedt(false);
+      }
     },
-    [],
+    [vorlageId, vorlagenFehler],
   );
+
+  const pdfGeladen = () => {
+    if (!sofortDrucken.current || !etikettPdf) return;
+    sofortDrucken.current = false;
+    try {
+      druckRahmen.current?.contentWindow?.focus();
+      druckRahmen.current?.contentWindow?.print();
+    } catch {
+      window.open(etikettPdf.url, '_blank');
+    }
+  };
 
   /**
    * Der ganze Weg nach Plenty. Wiederholbar: Jede Route prüft selbst, was schon
@@ -466,6 +524,7 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
       setFortschritt('Abschluss …');
       const abschluss = await senden(`/api/fotostudio/artikel/${ziel.id}/abschluss`);
       return {
+        id: ziel.id,
         itemId: (abschluss.itemId as number) ?? null,
         ean,
         nummer: ziel.nummer,
@@ -497,11 +556,12 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
     try {
       const e = await nachPlenty(ziel, a);
       setErgebnis({ ...e, bild: fotos.find((f) => f.bild)?.bild });
+      setEtikettPdf(null);
       setEtikettAnzahlWahl(etikettAnzahl(a.bestand));
-      if (!e.fehler) {
-        await vergissArtikel(ziel.id);
-        if (autodruck) drucken(e, etikettAnzahl(a.bestand));
-      }
+      if (!e.fehler) await vergissArtikel(ziel.id);
+      // Auch bei fehlenden Bildern: Der Artikel steht in Plenty, die Ware
+      // braucht ihr Etikett. Ohne EAN gibt es nichts Sinnvolles zu drucken.
+      if (e.ean) void drucken(ziel.id, etikettAnzahl(a.bestand), autodruck);
     } catch (e) {
       // Der Artikel bleibt offen (oder steht mit Fehler in der Liste) —
       // nichts ist verloren, die Meldung sagt, was zu tun ist.
@@ -585,19 +645,22 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
         <span>Etikett</span>
         <select
           className={styles.auswahl}
-          value={format.id}
+          value={vorlageId ?? ''}
           onChange={(e) => {
-            setFormatId(e.target.value);
-            merke(SPEICHER_FORMAT, e.target.value);
+            const id = Number(e.target.value) || null;
+            setVorlageId(id);
+            if (id) merke(SPEICHER_VORLAGE, String(id));
           }}
         >
-          {ETIKETTFORMATE.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.name}
+          {vorlagen.length === 0 && <option value={vorlageId ?? ''}>{vorlageId ? `Plenty-Vorlage ${vorlageId}` : 'keine Vorlage'}</option>}
+          {vorlagen.map((v) => (
+            <option key={v.id} value={v.id}>
+              {v.name}
             </option>
           ))}
         </select>
       </label>
+      {vorlagenFehler && <p className={styles.einstellungFehler}>{vorlagenFehler}</p>}
       <label className={styles.schalterZeile}>
         <input
           type="checkbox"
@@ -840,6 +903,7 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
           <div><dt>Flag 1 / 2</dt><dd>{stammwerte.flagOne} / {stammwerte.flagTwo}</dd></div>
           <div><dt>Lager</dt><dd>{stammwerte.warehouseId ?? 'fehlt'}</dd></div>
           <div><dt>Barcode</dt><dd>{stammwerte.eanBarcode ? 'EAN13_2' : 'fehlt'}</dd></div>
+          <div><dt>EAN aus</dt><dd>{stammwerte.nummernkreis ?? 'intern (20…)'}</dd></div>
         </dl>
       </details>
 
@@ -870,15 +934,28 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
         {ZUSTAND_TEXT[ergebnis.zustand]} · {ergebnis.bestand} Stück
       </p>
 
-      {ergebnis.ean && (
-        <div className={styles.etikettVorschau} aria-label="Etikett-Vorschau">
-          <div className={styles.etikettKopf}>
-            <strong>Art. {ergebnis.itemId ?? `#${ergebnis.nummer}`}</strong>
-            <span>{ZUSTAND_TEXT[ergebnis.zustand]}</span>
-          </div>
-          <Barcode ean={ergebnis.ean} hoeheMm={14} />
-          <p className={styles.etikettEan}>{eanText(ergebnis.ean)}</p>
+      {ergebnis.ean ? (
+        <div className={styles.eanZeile}>
+          <span>EAN</span>
+          <strong>{ergebnis.ean}</strong>
         </div>
+      ) : (
+        <p className={`${styles.meldung} ${styles.meldungFehler}`}>Keine EAN vergeben — Etikett erst nach der EAN in Plenty drucken.</p>
+      )}
+
+      {etikettPdf && etikettPdf.artikelId === ergebnis.id ? (
+        <div className={styles.etikettVorschau}>
+          <iframe ref={druckRahmen} src={`${etikettPdf.url}#toolbar=0&navpanes=0&view=Fit&zoom=page-fit`} title="Etikett aus Plenty" onLoad={pdfGeladen} />
+          <a href={etikettPdf.url} target="_blank" rel="noreferrer" className={styles.pdfLink}>
+            PDF öffnen ({etikettPdf.anzahl} {etikettPdf.anzahl === 1 ? 'Etikett' : 'Etiketten'})
+          </a>
+        </div>
+      ) : (
+        ergebnis.ean && (
+          <div className={styles.etikettPlatz} aria-live="polite">
+            {etikettLaedt ? 'Etikett kommt aus Plenty …' : 'Etikett aus Plenty noch nicht geladen.'}
+          </div>
+        )
       )}
 
       {ergebnis.fehler && <p className={`${styles.meldung} ${styles.meldungFehler}`}>{ergebnis.fehler}</p>}
@@ -896,12 +973,12 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
             −
           </button>
           <output aria-live="polite">{etikettAnzahlWahl}</output>
-          <button type="button" onClick={() => setEtikettAnzahlWahl((n) => Math.min(200, n + 1))} aria-label="Ein Etikett mehr">
+          <button type="button" onClick={() => setEtikettAnzahlWahl((n) => Math.min(MAX_ETIKETTEN, n + 1))} aria-label="Ein Etikett mehr">
             +
           </button>
         </div>
-        <button type="button" className={styles.drucken} onClick={() => drucken(ergebnis, etikettAnzahlWahl)} disabled={!ergebnis.ean}>
-          <Symbol name="drucker" />
+        <button type="button" className={styles.drucken} onClick={() => void drucken(ergebnis.id, etikettAnzahlWahl)} disabled={!ergebnis.ean || etikettLaedt}>
+          {etikettLaedt ? <span className={styles.kreiselDunkel} aria-hidden /> : <Symbol name="drucker" />}
           Drucken
         </button>
       </div>
@@ -961,7 +1038,8 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
                       <button
                         type="button"
                         className={styles.klein}
-                        onClick={() => drucken({ ean: a.ean, itemId: a.plenty_item_id, nummer: a.nummer, zustand: a.zustand ?? 'gebraucht' }, etikettAnzahl(a.bestand))}
+                        onClick={() => void drucken(a.id, etikettAnzahl(a.bestand))}
+                        disabled={etikettLaedt || !a.plenty_item_id}
                         aria-label={`Etiketten für ${a.plenty_item_id ?? a.nummer} drucken`}
                       >
                         <Symbol name="drucker" />
@@ -985,7 +1063,10 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
           kameraDialogRef.current?.click();
         }}
       />
-      <Etiketten auftrag={druck} format={format} onFertig={druckFertig} />
+      {/* Nachdruck aus der Liste: dasselbe PDF, nur unsichtbar. */}
+      {etikettPdf && !(ergebnis && etikettPdf.artikelId === ergebnis.id) && (
+        <iframe ref={druckRahmen} src={etikettPdf.url} title="Etikett aus Plenty" className={styles.unsichtbar} onLoad={pdfGeladen} />
+      )}
     </div>
   );
 }

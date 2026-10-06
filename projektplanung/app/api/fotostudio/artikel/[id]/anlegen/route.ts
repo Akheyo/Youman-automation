@@ -10,6 +10,7 @@ import { NextResponse } from 'next/server';
 import { normalisiereAngaben } from '@/lib/erfassung/logic';
 import { leseKonfig, leseStand, offeneBilder, pruefe } from '@/lib/fotostudio/kern';
 import { artikelAnlegen, plentyBereit } from '@/lib/fotostudio/plenty';
+import { grenzen, leseNummernkreis, versatzVon } from '@/lib/fotostudio/gtin';
 import { ladeStudioArtikel } from '@/lib/fotostudio/zugriff';
 
 export const runtime = 'nodejs';
@@ -74,6 +75,24 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: plenty.fehler }, { status: 503 });
   }
 
+  // Ab welcher Position im Nummernkreis gesucht wird: hinter der höchsten,
+  // die diese App schon vergeben hat. Was Plenty selbst (per Knopf) vergeben
+  // hat, fällt bei der Prüfung je Nummer auf und wird übersprungen.
+  const kreis = leseNummernkreis();
+  let startVersatz = 0;
+  if (kreis) {
+    const { erste, letzte } = grenzen(kreis);
+    const { data: hoechste } = await supabase
+      .from('erfassung_artikel')
+      .select('ean')
+      .gte('ean', erste)
+      .lte('ean', letzte)
+      .order('ean', { ascending: false })
+      .limit(1);
+    const v = versatzVon(kreis, (hoechste?.[0] as { ean?: string } | undefined)?.ean);
+    startVersatz = v == null ? 0 : v + 1;
+  }
+
   const vorher = leseStand(artikel.plenty);
   const ergebnis = await artikelAnlegen(
     {
@@ -81,10 +100,11 @@ export async function POST(request: Request, { params }: { params: { id: string 
       zustand: angaben.zustand,
       bestand: angaben.bestand,
       gewichtKg: angaben.gewichtKg,
-      ean: artikel.ean,
+      startVersatz,
     },
     vorher,
     leseKonfig(),
+    kreis,
     plenty.cfg,
   );
   const stand = { ...ergebnis.stand, offen: [...pruefung.hinweise, ...ergebnis.stand.offen] };
@@ -97,7 +117,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     .from('erfassung_artikel')
     .update({
       ...angabenZeile,
-      ean: ergebnis.ean,
+      ean: stand.ean,
       plenty: stand,
       plenty_item_id: stand.itemId,
       plenty_variation_id: stand.variationId,
@@ -111,7 +131,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   return NextResponse.json({
     plenty: stand,
-    ean: ergebnis.ean,
+    ean: stand.ean,
     bilder: offeneBilder(bilder, stand).map((b) => b.id),
   });
 }

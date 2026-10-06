@@ -218,6 +218,10 @@ export interface PlentyStand {
   itemId: number | null;
   variationId: number | null;
   bestandGebucht: boolean;
+  /** Die EAN, die an der Variante hängt — erst gesetzt, wenn Plenty sie angenommen hat. */
+  ean: string | null;
+  /** Woher sie kommt: Plenty-Nummernkreis oder der interne 20er-Bereich. */
+  eanQuelle: 'nummernkreis' | 'intern' | null;
   /** Bild-ID in Plenty je erfasstem Bild (unsere Bild-ID → Plenty-ID). */
   bilder: Record<string, number>;
   offen: string[];
@@ -227,6 +231,8 @@ export const LEERER_STAND: PlentyStand = {
   itemId: null,
   variationId: null,
   bestandGebucht: false,
+  ean: null,
+  eanQuelle: null,
   bilder: {},
   offen: [],
 };
@@ -246,6 +252,8 @@ export function leseStand(roh: unknown): PlentyStand {
     itemId: zahl(r.itemId),
     variationId: zahl(r.variationId),
     bestandGebucht: r.bestandGebucht === true,
+    ean: typeof r.ean === 'string' && /^\d{13}$/.test(r.ean) ? r.ean : null,
+    eanQuelle: r.eanQuelle === 'nummernkreis' || r.eanQuelle === 'intern' ? r.eanQuelle : null,
     bilder,
     offen: Array.isArray(r.offen) ? r.offen.filter((x): x is string => typeof x === 'string') : [],
   };
