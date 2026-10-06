@@ -28,7 +28,7 @@ export interface Druckauftrag {
 
 const RUHEZONE = 9; // Module weißer Rand links und rechts, wie im Standard
 
-function Barcode({ ean, hoeheMm }: { ean: string; hoeheMm: number }) {
+export function Barcode({ ean, hoeheMm }: { ean: string; hoeheMm: number }) {
   const balken = useMemo(() => {
     try {
       return ean13Balken(ean);
@@ -65,7 +65,7 @@ function Barcode({ ean, hoeheMm }: { ean: string; hoeheMm: number }) {
 }
 
 /** „4006381333931" → „4 006381 333931", wie unter jedem Strichcode. */
-function eanText(ean: string): string {
+export function eanText(ean: string): string {
   return `${ean.slice(0, 1)} ${ean.slice(1, 7)} ${ean.slice(7)}`;
 }
 

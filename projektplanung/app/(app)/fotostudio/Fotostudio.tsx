@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './fotostudio.module.css';
 import Kamera from '../erfassung/Kamera';
-import ZustandBestand from '../erfassung/ZustandBestand';
-import Etiketten, { type Druckauftrag } from './Etiketten';
+import { leseGewicht } from '../erfassung/ZustandBestand';
+import Etiketten, { Barcode, eanText, type Druckauftrag } from './Etiketten';
 import { ZUSTAND_TEXT, type Zustand } from '@/lib/preis/regelwerk';
 import { validiereBild, type Packklasse } from '@/lib/erfassung/logic';
 import { fehlerZeile } from '@/lib/erfassung/fehlertext';
@@ -96,6 +96,7 @@ interface Ergebnis {
   bestand: number;
   offen: string[];
   fehler: string | null;
+  bild?: string;
 }
 
 const LEERE_ANGABEN: Angaben = {
@@ -106,6 +107,14 @@ const LEERE_ANGABEN: Angaben = {
   packklasse: 'normal',
   notiz: '',
 };
+
+/** Farbton je Zustand — dazu immer der Text, nie die Farbe allein. */
+const ZUSTAENDE: Array<{ wert: Zustand; titel: string; text: string; ton: 'gruen' | 'blau' | 'gold' | 'rot' }> = [
+  { wert: 'neu_versiegelt', titel: 'Neu', text: 'versiegelt', ton: 'gruen' },
+  { wert: 'neu', titel: 'Neu', text: 'offen, unbenutzt', ton: 'blau' },
+  { wert: 'gebraucht', titel: 'Gebraucht', text: 'funktioniert', ton: 'gold' },
+  { wert: 'defekt', titel: 'Defekt', text: 'funktioniert nicht', ton: 'rot' },
+];
 
 const SPEICHER_FORMAT = 'fotostudio.etikett';
 const SPEICHER_AUTODRUCK = 'fotostudio.autodruck';
@@ -216,6 +225,10 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
   const [autodruck, setAutodruck] = useState(true);
   const [etikettAnzahlWahl, setEtikettAnzahlWahl] = useState(1);
   const [nachholen, setNachholen] = useState<string | null>(null);
+  /** Welches Foto groß gezeigt wird; ohne Wahl das neueste. */
+  const [auswahl, setAuswahl] = useState<string | null>(null);
+  /** Der getippte Gewichtstext — getrennt von der Zahl, damit „2," stehen bleibt. */
+  const [gewichtText, setGewichtText] = useState('');
 
   const dateiRef = useRef<HTMLInputElement>(null);
   const kameraDialogRef = useRef<HTMLInputElement>(null);
@@ -483,7 +496,7 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
     const a = angaben;
     try {
       const e = await nachPlenty(ziel, a);
-      setErgebnis(e);
+      setErgebnis({ ...e, bild: fotos.find((f) => f.bild)?.bild });
       setEtikettAnzahlWahl(etikettAnzahl(a.bestand));
       if (!e.fehler) {
         await vergissArtikel(ziel.id);
@@ -538,250 +551,385 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
     }
   };
 
+
   // -------------------------------------------------------------------------
   // Darstellung
   // -------------------------------------------------------------------------
 
   const setze = <K extends keyof Angaben>(feld: K, wert: Angaben[K]) => setAngaben((alt) => ({ ...alt, [feld]: wert }));
 
-  const etikettZeile = (
-    <div className={styles.etikettEinstellung}>
-      <label className={styles.feldLabel} htmlFor="etikett-format">
-        Etikettengröße
+  // Gewicht von außen gesetzt (neuer Artikel, fortgesetzter Artikel): Text nachziehen.
+  useEffect(() => {
+    setGewichtText((bisher) =>
+      leseGewicht(bisher) === angaben.gewichtKg ? bisher : angaben.gewichtKg == null ? '' : String(angaben.gewichtKg).replace('.', ','),
+    );
+  }, [angaben.gewichtKg]);
+
+  const tippeGewicht = (roh: string) => {
+    const sauber = roh.replace(/[^0-9.,]/g, '').slice(0, 7);
+    setGewichtText(sauber);
+    setze('gewichtKg', leseGewicht(sauber));
+  };
+
+  const setzeBestand = (n: number) => {
+    if (!Number.isFinite(n)) return;
+    setze('bestand', Math.min(Math.max(Math.round(n), 1), 9999));
+  };
+
+  const gross = fotos.find((f) => f.schluessel === auswahl) ?? fotos[fotos.length - 1];
+  const grossIndex = gross ? fotos.indexOf(gross) : -1;
+
+  const etikettEinstellungen = (
+    <div className={styles.einstellungen}>
+      <label className={styles.einstellungZeile}>
+        <span>Etikett</span>
+        <select
+          className={styles.auswahl}
+          value={format.id}
+          onChange={(e) => {
+            setFormatId(e.target.value);
+            merke(SPEICHER_FORMAT, e.target.value);
+          }}
+        >
+          {ETIKETTFORMATE.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name}
+            </option>
+          ))}
+        </select>
       </label>
-      <select
-        id="etikett-format"
-        className={styles.auswahl}
-        value={format.id}
-        onChange={(e) => {
-          setFormatId(e.target.value);
-          merke(SPEICHER_FORMAT, e.target.value);
-        }}
-      >
-        {ETIKETTFORMATE.map((f) => (
-          <option key={f.id} value={f.id}>
-            {f.name}
-          </option>
-        ))}
-      </select>
-      <label className={styles.haekchen}>
+      <label className={styles.schalterZeile}>
         <input
           type="checkbox"
+          role="switch"
           checked={autodruck}
           onChange={(e) => {
             setAutodruck(e.target.checked);
             merke(SPEICHER_AUTODRUCK, e.target.checked ? '1' : '0');
           }}
         />
-        Nach dem Anlegen automatisch drucken
+        <span>Automatisch drucken</span>
       </label>
     </div>
   );
 
-  return (
-    <div className={styles.seite}>
-      <header className={styles.kopf}>
+  // ---- Bühne: links, dunkel — die Fotos stehen im Mittelpunkt -------------
+  const buehne = (
+    <section
+      className={`${styles.buehne} ${ziehen ? styles.buehneZiehen : ''}`}
+      aria-label="Fotos"
+      onDragOver={(e) => {
+        if (ergebnis) return;
+        e.preventDefault();
+        setZiehen(true);
+      }}
+      onDragLeave={() => setZiehen(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setZiehen(false);
+        if (!ergebnis) void dateienUebernehmen(e.dataTransfer.files);
+      }}
+    >
+      <header className={styles.buehneKopf}>
         <div>
-          <p className={styles.kopfLabel}>Fotostudio</p>
+          <p className={styles.marke}>Fotostudio</p>
           <h1 className={styles.nummer}>{artikel ? `#${artikel.nummer}` : '…'}</h1>
         </div>
-        <div className={styles.kopfRechts}>
-          {!online && <span className={`${styles.chip} ${styles.chipWarn}`}>Offline — Fotos warten</span>}
+        <div className={styles.buehneKopfRechts}>
+          <span className={`${styles.pille} ${online ? styles.pilleOnline : styles.pilleOffline}`}>
+            <span className={styles.pilleLicht} aria-hidden />
+            {online ? 'Online' : 'Offline'}
+          </span>
           {artikel && !ergebnis && (
-            <button type="button" className={styles.leise} onClick={artikelVerwerfen} disabled={beschaeftigt || startet}>
+            <button type="button" className={styles.geist} onClick={artikelVerwerfen} disabled={beschaeftigt || startet}>
               Verwerfen
             </button>
           )}
         </div>
       </header>
 
+      {ergebnis ? (
+        <div className={styles.fertigBild}>
+          {ergebnis.bild ? <img src={ergebnis.bild} alt="Titelbild des angelegten Artikels" /> : <div className={styles.leerFlaeche} />}
+          <span className={`${styles.fertigStempel} ${ergebnis.fehler ? styles.fertigStempelWarn : ''}`}>
+            <Symbol name={ergebnis.fehler ? 'x' : 'haken'} />
+            {ergebnis.fehler ? 'Unvollständig' : 'In Plenty'}
+          </span>
+        </div>
+      ) : fotos.length === 0 ? (
+        <button
+          type="button"
+          className={styles.leer}
+          onClick={() => setKameraOffen(true)}
+          disabled={!artikel || beschaeftigt}
+        >
+          <span className={styles.leerSymbol}>
+            <Symbol name="kamera" />
+          </span>
+          <span className={styles.leerTitel}>Erstes Foto aufnehmen</span>
+          <span className={styles.leerText}>oder Fotos vom PC hierher ziehen</span>
+        </button>
+      ) : (
+        <>
+          <div className={styles.gross}>
+            {gross?.bild ? <img src={gross.bild} alt={`Foto ${grossIndex + 1}`} /> : <div className={styles.leerFlaeche} />}
+            <span className={styles.grossZaehler}>
+              {grossIndex + 1} / {fotos.length}
+            </span>
+            {grossIndex === 0 && <span className={styles.grossTitel}>Titelbild</span>}
+          </div>
+          <ul className={styles.streifen} aria-label="Alle Fotos">
+            {fotos.map((f, i) => (
+              <li key={f.schluessel} className={`${styles.mini} ${f === gross ? styles.miniAktiv : ''}`}>
+                <button type="button" className={styles.miniKnopf} onClick={() => setAuswahl(f.schluessel)} aria-label={`Foto ${i + 1} groß zeigen`} aria-pressed={f === gross}>
+                  {f.bild ? <img src={f.bild} alt="" /> : <span className={styles.leerFlaeche} />}
+                </button>
+                <span
+                  className={`${styles.miniStatus} ${f.status === 'oben' ? styles.miniOk : f.status === 'fehler' ? styles.miniFehler : styles.miniLaeuft}`}
+                  title={f.status === 'oben' ? 'hochgeladen' : f.status === 'fehler' ? f.meldung : 'lädt hoch'}
+                  aria-label={f.status === 'oben' ? 'hochgeladen' : f.status === 'fehler' ? 'Upload hängt' : 'lädt hoch'}
+                >
+                  {f.status === 'oben' ? <Symbol name="haken" /> : f.status === 'fehler' ? '!' : ''}
+                </span>
+                <button type="button" className={styles.miniWeg} onClick={() => void fotoEntfernen(f)} aria-label={`Foto ${i + 1} entfernen`} disabled={beschaeftigt}>
+                  <Symbol name="x" />
+                </button>
+                {f.status === 'fehler' && f.queueId && !aussichtslos(f.meldung) && (
+                  <button type="button" className={styles.miniNochmal} onClick={() => void nochmal(f.queueId!)} aria-label={`Foto ${i + 1} erneut senden`}>
+                    <Symbol name="nochmal" />
+                  </button>
+                )}
+              </li>
+            ))}
+            <li>
+              <button type="button" className={styles.miniPlus} onClick={() => setKameraOffen(true)} disabled={!artikel || beschaeftigt} aria-label="Weiteres Foto aufnehmen">
+                +
+              </button>
+            </li>
+          </ul>
+        </>
+      )}
+
+      {!ergebnis && (
+        <div className={styles.buehneFuss}>
+          <button type="button" className={styles.kameraKnopf} onClick={() => setKameraOffen(true)} disabled={!artikel || beschaeftigt}>
+            <Symbol name="kamera" />
+            Kamera
+          </button>
+          <button type="button" className={styles.dateiKnopf} onClick={() => dateiRef.current?.click()} disabled={!artikel || beschaeftigt}>
+            <Symbol name="ordner" />
+            Dateien
+          </button>
+          <span className={styles.buehneInfo} aria-live="polite">
+            {oben} oben{unterwegs > 0 ? ` · ${unterwegs} lädt` : ''}
+            {haengend > 0 ? ` · ${haengend} hängt` : ''}
+          </span>
+        </div>
+      )}
+
+      <input ref={dateiRef} type="file" accept="image/*" multiple hidden onChange={(e) => { void dateienUebernehmen(e.target.files); e.target.value = ''; }} />
+      <input ref={kameraDialogRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { void dateienUebernehmen(e.target.files); e.target.value = ''; }} />
+    </section>
+  );
+
+  // ---- Bedienfeld: rechts — Zustand, Bestand, Gewicht, Anlegen ------------
+  const bedienfeld = (
+    <section className={styles.feld} aria-label="Angaben zum Artikel">
+      <div className={styles.block}>
+        <h2 className={styles.blockTitel}>
+          <span className={styles.schritt}>1</span>Zustand
+        </h2>
+        <div className={styles.zustaende} role="group" aria-label="Zustand">
+          {ZUSTAENDE.map((z) => (
+            <button
+              key={z.wert}
+              type="button"
+              className={`${styles.zustand} ${styles[`ton_${z.ton}`]} ${angaben.zustand === z.wert ? styles.zustandAktiv : ''}`}
+              onClick={() => setze('zustand', z.wert)}
+              aria-pressed={angaben.zustand === z.wert}
+              disabled={beschaeftigt}
+            >
+              <span className={styles.zustandPunkt} aria-hidden />
+              <span className={styles.zustandName}>{z.titel}</span>
+              <span className={styles.zustandText}>{z.text}</span>
+            </button>
+          ))}
+        </div>
+        {angaben.zustand === 'gebraucht' && (
+          <button
+            type="button"
+            className={`${styles.chipSchalter} ${angaben.gravierendeSchaeden ? styles.chipSchalterAn : ''}`}
+            onClick={() => setze('gravierendeSchaeden', !angaben.gravierendeSchaeden)}
+            aria-pressed={angaben.gravierendeSchaeden}
+            disabled={beschaeftigt}
+          >
+            <span className={styles.chipHaken} aria-hidden>
+              {angaben.gravierendeSchaeden && <Symbol name="haken" />}
+            </span>
+            Gravierende Schäden
+          </button>
+        )}
+      </div>
+
+      <div className={styles.zweier}>
+        <div className={styles.block}>
+          <h2 className={styles.blockTitel}>
+            <span className={styles.schritt}>2</span>Bestand
+          </h2>
+          <div className={styles.stepper}>
+            <button type="button" onClick={() => setzeBestand(angaben.bestand - 1)} disabled={beschaeftigt || angaben.bestand <= 1} aria-label="Ein Stück weniger">
+              −
+            </button>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={angaben.bestand}
+              onChange={(e) => setzeBestand(Number(e.target.value.replace(/\D/g, '') || '1'))}
+              disabled={beschaeftigt}
+              aria-label="Bestand in Stück"
+            />
+            <button type="button" onClick={() => setzeBestand(angaben.bestand + 1)} disabled={beschaeftigt} aria-label="Ein Stück mehr">
+              +
+            </button>
+          </div>
+          <div className={styles.schnell}>
+            {[1, 2, 5, 10].map((n) => (
+              <button key={n} type="button" className={angaben.bestand === n ? styles.schnellAktiv : ''} onClick={() => setzeBestand(n)} disabled={beschaeftigt} aria-pressed={angaben.bestand === n}>
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.block}>
+          <h2 className={styles.blockTitel}>
+            <label htmlFor="gewicht" className={styles.blockTitelLabel}>
+              <span className={styles.schritt}>3</span>Gewicht
+            </label>
+          </h2>
+          <div className={`${styles.gewicht} ${angaben.gewichtKg == null ? styles.gewichtLeer : ''}`}>
+            <input
+              id="gewicht"
+              type="text"
+              inputMode="decimal"
+              placeholder="0,0"
+              value={gewichtText}
+              onChange={(e) => tippeGewicht(e.target.value)}
+              disabled={beschaeftigt}
+            />
+            <span>kg</span>
+          </div>
+          <p className={styles.blockHinweis}>
+            {angaben.gewichtKg != null && angaben.gewichtKg > 30 ? 'Über 30 kg: nur Spedition.' : 'Ein Stück, verpackt.'}
+          </p>
+        </div>
+      </div>
+
+      <details className={styles.mehr}>
+        <summary>Notiz, Etikett und Stammwerte</summary>
+        <label className={styles.notizLabel} htmlFor="notiz">
+          Notiz (intern)
+        </label>
+        <textarea id="notiz" className={styles.notiz} rows={2} value={angaben.notiz} onChange={(e) => setze('notiz', e.target.value)} disabled={beschaeftigt} placeholder="z. B. Netzteil fehlt" />
+        {etikettEinstellungen}
+        <dl className={styles.stammwerte}>
+          <div><dt>Kategorie</dt><dd>{stammwerte.kategorieId}</dd></div>
+          <div><dt>Besitzer</dt><dd>{stammwerte.ownerId}</dd></div>
+          <div><dt>eBay-Vorlage</dt><dd>{stammwerte.ebayPresetId ?? '—'}</dd></div>
+          <div><dt>Einheit</dt><dd>{stammwerte.unitId}</dd></div>
+          <div><dt>Flag 1 / 2</dt><dd>{stammwerte.flagOne} / {stammwerte.flagTwo}</dd></div>
+          <div><dt>Lager</dt><dd>{stammwerte.warehouseId ?? 'fehlt'}</dd></div>
+          <div><dt>Barcode</dt><dd>{stammwerte.eanBarcode ? 'EAN13_2' : 'fehlt'}</dd></div>
+        </dl>
+      </details>
+
+      <div className={styles.aktion}>
+        <dl className={styles.bilanz}>
+          <div><dt>Fotos</dt><dd>{oben}</dd></div>
+          <div><dt>Stück</dt><dd>{angaben.bestand}</dd></div>
+          <div><dt>Gewicht</dt><dd>{angaben.gewichtKg == null ? '—' : `${String(angaben.gewichtKg).replace('.', ',')} kg`}</dd></div>
+          <div><dt>Etiketten</dt><dd>{autodruck ? etikettAnzahl(angaben.bestand) : 'aus'}</dd></div>
+        </dl>
+        <button type="button" className={styles.anlegen} onClick={anlegen} disabled={!kannAnlegen} aria-busy={beschaeftigt}>
+          {beschaeftigt ? <span className={styles.kreisel} aria-hidden /> : <Symbol name="haken" />}
+          {beschaeftigt ? 'Wird angelegt …' : 'In Plenty anlegen'}
+        </button>
+        <p className={`${styles.aktionText} ${pruefHinweis && !beschaeftigt ? styles.aktionTextWarn : ''}`} aria-live="polite">
+          {fortschritt ?? pruefHinweis ?? (autodruck ? 'Danach druckt je Stück ein Etikett.' : 'Bereit.')}
+        </p>
+      </div>
+    </section>
+  );
+
+  // ---- Ergebnis: Artikel-ID, Etikett-Vorschau, Druck ----------------------
+  const ergebnisfeld = ergebnis && (
+    <section className={styles.feld} aria-live="polite">
+      <p className={styles.ergebnisMarke}>{ergebnis.fehler ? 'Angelegt, aber unvollständig' : 'Angelegt · inaktiv'}</p>
+      <p className={styles.ergebnisId}>{ergebnis.itemId ?? '—'}</p>
+      <p className={styles.ergebnisZeile}>
+        {ZUSTAND_TEXT[ergebnis.zustand]} · {ergebnis.bestand} Stück
+      </p>
+
+      {ergebnis.ean && (
+        <div className={styles.etikettVorschau} aria-label="Etikett-Vorschau">
+          <div className={styles.etikettKopf}>
+            <strong>Art. {ergebnis.itemId ?? `#${ergebnis.nummer}`}</strong>
+            <span>{ZUSTAND_TEXT[ergebnis.zustand]}</span>
+          </div>
+          <Barcode ean={ergebnis.ean} hoeheMm={14} />
+          <p className={styles.etikettEan}>{eanText(ergebnis.ean)}</p>
+        </div>
+      )}
+
+      {ergebnis.fehler && <p className={`${styles.meldung} ${styles.meldungFehler}`}>{ergebnis.fehler}</p>}
+      {ergebnis.offen.length > 0 && (
+        <ul className={styles.offen}>
+          {ergebnis.offen.map((o) => (
+            <li key={o}>{o}</li>
+          ))}
+        </ul>
+      )}
+
+      <div className={styles.druckZeile}>
+        <div className={styles.stepper}>
+          <button type="button" onClick={() => setEtikettAnzahlWahl((n) => Math.max(1, n - 1))} aria-label="Ein Etikett weniger">
+            −
+          </button>
+          <output aria-live="polite">{etikettAnzahlWahl}</output>
+          <button type="button" onClick={() => setEtikettAnzahlWahl((n) => Math.min(200, n + 1))} aria-label="Ein Etikett mehr">
+            +
+          </button>
+        </div>
+        <button type="button" className={styles.drucken} onClick={() => drucken(ergebnis, etikettAnzahlWahl)} disabled={!ergebnis.ean}>
+          <Symbol name="drucker" />
+          Drucken
+        </button>
+      </div>
+      {etikettEinstellungen}
+
+      <button type="button" className={styles.anlegen} onClick={naechster}>
+        Nächster Artikel
+        <Symbol name="pfeil" />
+      </button>
+    </section>
+  );
+
+  return (
+    <div className={styles.seite}>
       {meldung && (
-        <p className={`${styles.leiste} ${meldung.art === 'fehler' ? styles.leisteFehler : styles.leisteHinweis}`} role={meldung.art === 'fehler' ? 'alert' : 'status'}>
+        <p className={`${styles.meldung} ${meldung.art === 'fehler' ? styles.meldungFehler : styles.meldungHinweis}`} role={meldung.art === 'fehler' ? 'alert' : 'status'}>
           {meldung.text}
         </p>
       )}
 
-      {ergebnis ? (
-        // ------------------------------------------------------------ Ergebnis
-        <section className={`${styles.karte} ${styles.ergebnis}`} aria-live="polite">
-          <div className={`${styles.ergebnisSymbol} ${ergebnis.fehler ? styles.ergebnisSymbolWarn : ''}`}>
-            <Symbol name={ergebnis.fehler ? 'x' : 'haken'} />
-          </div>
-          <p className={styles.kopfLabel}>{ergebnis.fehler ? 'Angelegt, aber unvollständig' : 'In Plenty angelegt (inaktiv)'}</p>
-          <p className={styles.artikelId}>Artikel {ergebnis.itemId ?? '—'}</p>
-          {ergebnis.ean && <p className={styles.ean}>EAN {ergebnis.ean}</p>}
-          <p className={styles.zusammenfassung}>
-            {ZUSTAND_TEXT[ergebnis.zustand]} · {ergebnis.bestand} Stück
-          </p>
+      <div className={styles.arbeitsplatz}>
+        {buehne}
+        {ergebnis ? ergebnisfeld : bedienfeld}
+      </div>
 
-          {ergebnis.fehler && <p className={`${styles.leiste} ${styles.leisteFehler}`}>{ergebnis.fehler}</p>}
-          {ergebnis.offen.length > 0 && (
-            <ul className={styles.offen}>
-              {ergebnis.offen.map((o) => (
-                <li key={o}>{o}</li>
-              ))}
-            </ul>
-          )}
-
-          <div className={styles.druckZeile}>
-            <div className={styles.zaehler}>
-              <button type="button" className={styles.stufe} aria-label="Ein Etikett weniger" onClick={() => setEtikettAnzahlWahl((n) => Math.max(1, n - 1))}>
-                −
-              </button>
-              <span className={styles.zaehlerWert} aria-live="polite">
-                {etikettAnzahlWahl}
-              </span>
-              <button type="button" className={styles.stufe} aria-label="Ein Etikett mehr" onClick={() => setEtikettAnzahlWahl((n) => Math.min(200, n + 1))}>
-                +
-              </button>
-            </div>
-            <button type="button" className={styles.zweit} onClick={() => drucken(ergebnis, etikettAnzahlWahl)} disabled={!ergebnis.ean}>
-              <Symbol name="drucker" />
-              {etikettAnzahlWahl === 1 ? '1 Etikett drucken' : `${etikettAnzahlWahl} Etiketten drucken`}
-            </button>
-          </div>
-          {etikettZeile}
-
-          <button type="button" className={styles.haupt} onClick={naechster}>
-            Nächster Artikel
-            <Symbol name="pfeil" />
-          </button>
-        </section>
-      ) : (
-        <>
-          {/* ------------------------------------------------------------ Fotos */}
-          <section
-            className={`${styles.karte} ${ziehen ? styles.karteZiehen : ''}`}
-            aria-labelledby="fotos-titel"
-            onDragOver={(e) => {
-              e.preventDefault();
-              setZiehen(true);
-            }}
-            onDragLeave={() => setZiehen(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setZiehen(false);
-              void dateienUebernehmen(e.dataTransfer.files);
-            }}
-          >
-            <div className={styles.karteKopf}>
-              <h2 id="fotos-titel" className={styles.titel}>
-                Fotos
-              </h2>
-              <span className={styles.zaehlerText}>
-                {oben} oben{unterwegs > 0 ? ` · ${unterwegs} unterwegs` : ''}
-              </span>
-            </div>
-
-            <div className={styles.knoepfe}>
-              <button type="button" className={styles.haupt} onClick={() => setKameraOffen(true)} disabled={!artikel || beschaeftigt}>
-                <Symbol name="kamera" />
-                Foto aufnehmen
-              </button>
-              <button type="button" className={styles.zweit} onClick={() => dateiRef.current?.click()} disabled={!artikel || beschaeftigt}>
-                <Symbol name="ordner" />
-                Dateien wählen
-              </button>
-            </div>
-            <p className={styles.hilfe}>Am PC: Fotos einfach hierher ziehen. Das erste Foto wird das Titelbild.</p>
-
-            <input ref={dateiRef} type="file" accept="image/*" multiple hidden onChange={(e) => { void dateienUebernehmen(e.target.files); e.target.value = ''; }} />
-            <input ref={kameraDialogRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { void dateienUebernehmen(e.target.files); e.target.value = ''; }} />
-
-            {fotos.length > 0 && (
-              <ul className={styles.raster}>
-                {fotos.map((f, i) => (
-                  <li key={f.schluessel} className={styles.kachel}>
-                    {f.bild ? <img src={f.bild} alt={`Foto ${i + 1}`} className={styles.vorschau} /> : <div className={styles.vorschauLeer} />}
-                    {i === 0 && <span className={styles.titelbild}>Titelbild</span>}
-                    <span
-                      className={`${styles.punkt} ${f.status === 'oben' ? styles.punktOk : f.status === 'fehler' ? styles.punktFehler : styles.punktLaeuft}`}
-                      title={f.status === 'oben' ? 'hochgeladen' : f.status === 'fehler' ? f.meldung : 'lädt hoch'}
-                    >
-                      {f.status === 'oben' ? <Symbol name="haken" /> : f.status === 'fehler' ? '!' : ''}
-                    </span>
-                    <button type="button" className={styles.entfernen} onClick={() => void fotoEntfernen(f)} aria-label={`Foto ${i + 1} entfernen`} disabled={beschaeftigt}>
-                      <Symbol name="x" />
-                    </button>
-                    {f.status === 'fehler' && f.queueId && (
-                      <button
-                        type="button"
-                        className={styles.kachelNochmal}
-                        onClick={() => void nochmal(f.queueId!)}
-                        disabled={aussichtslos(f.meldung)}
-                      >
-                        {aussichtslos(f.meldung) ? 'nicht hochladbar' : 'erneut senden'}
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          {/* ---------------------------------------------------------- Angaben */}
-          <section className={styles.karte} aria-label="Zustand, Bestand und Gewicht">
-            <ZustandBestand
-              zustand={angaben.zustand}
-              gravierendeSchaeden={angaben.gravierendeSchaeden}
-              bestand={angaben.bestand}
-              gewichtKg={angaben.gewichtKg}
-              packklasse={angaben.packklasse}
-              gesperrt={beschaeftigt}
-              onZustand={(z) => setze('zustand', z)}
-              onGravierendeSchaeden={(w) => setze('gravierendeSchaeden', w)}
-              onBestand={(n) => setze('bestand', n)}
-              onGewicht={(w) => setze('gewichtKg', w)}
-              onPackklasse={(k) => setze('packklasse', k)}
-            />
-            <label className={styles.feldLabel} htmlFor="notiz">
-              Notiz <span className={styles.leiseText}>(optional, bleibt intern)</span>
-            </label>
-            <textarea
-              id="notiz"
-              className={styles.notiz}
-              rows={2}
-              value={angaben.notiz}
-              onChange={(e) => setze('notiz', e.target.value)}
-              disabled={beschaeftigt}
-              placeholder="z. B. Netzteil fehlt"
-            />
-          </section>
-
-          {/* ------------------------------------------------------- Stammwerte */}
-          <details className={styles.karte}>
-            <summary className={styles.zusammenklapp}>Stammwerte und Etiketten</summary>
-            <dl className={styles.stammwerte}>
-              <div><dt>Kategorie</dt><dd>{stammwerte.kategorieId}</dd></div>
-              <div><dt>Besitzer</dt><dd>{stammwerte.ownerId}</dd></div>
-              <div><dt>eBay-Vorlage</dt><dd>{stammwerte.ebayPresetId ?? '—'}</dd></div>
-              <div><dt>Einheit</dt><dd>{stammwerte.unitId}</dd></div>
-              <div><dt>Flag 1 / 2</dt><dd>{stammwerte.flagOne} / {stammwerte.flagTwo}</dd></div>
-              <div><dt>Lager</dt><dd>{stammwerte.warehouseId ?? 'nicht gesetzt'}</dd></div>
-              <div><dt>EAN-Barcode</dt><dd>{stammwerte.eanBarcode ? 'EAN13_2 hinterlegt' : 'nicht gesetzt'}</dd></div>
-            </dl>
-            {etikettZeile}
-          </details>
-
-          {/* --------------------------------------------------------- Fußleiste */}
-          <div className={styles.fuss}>
-            <div className={styles.fussInnen}>
-              <p className={styles.fussText} aria-live="polite">
-                {fortschritt ?? pruefHinweis ?? `${oben} ${oben === 1 ? 'Foto' : 'Fotos'} · ${ZUSTAND_TEXT[angaben.zustand]} · ${kg(angaben.gewichtKg)} · ${angaben.bestand} Stück`}
-              </p>
-              <button type="button" className={`${styles.haupt} ${styles.fussKnopf}`} onClick={anlegen} disabled={!kannAnlegen} aria-busy={beschaeftigt}>
-                {beschaeftigt ? <span className={styles.kreisel} aria-hidden /> : <Symbol name="haken" />}
-                {beschaeftigt ? 'Wird angelegt …' : 'In Plenty anlegen'}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ------------------------------------------------------------- Liste */}
       {liste.length > 0 && (
-        <section className={styles.liste} aria-labelledby="liste-titel">
-          <h2 id="liste-titel" className={styles.titel}>
+        <section className={styles.verlauf} aria-labelledby="verlauf-titel">
+          <h2 id="verlauf-titel" className={styles.verlaufTitel}>
             Zuletzt im Fotostudio
           </h2>
           <ul className={styles.zeilen}>
@@ -791,14 +939,14 @@ export default function Fotostudio({ stammwerte }: { stammwerte: Stammwerte }) {
               const gewicht = a.gewicht_kg == null ? null : Number(a.gewicht_kg);
               return (
                 <li key={a.id} className={styles.zeile}>
-                  {titelbild?.url ? <img src={titelbild.url} alt="" className={styles.zeileBild} /> : <div className={styles.zeileBild} />}
+                  {titelbild?.url ? <img src={titelbild.url} alt="" className={styles.zeileBild} /> : <span className={styles.zeileBild} />}
                   <div className={styles.zeileText}>
                     <p className={styles.zeileTitel}>
-                      {a.plenty_item_id ? `Artikel ${a.plenty_item_id}` : `#${a.nummer}`}
+                      {a.plenty_item_id ?? `#${a.nummer}`}
                       <span className={`${styles.status} ${styles[`status_${s.art}`]}`}>{s.text}</span>
                     </p>
                     <p className={styles.zeileMeta}>
-                      {ZUSTAND_TEXT[a.zustand ?? 'gebraucht']} · {kg(gewicht)} · {a.bestand ?? 1} Stück · {uhrzeit(a.created_at)}
+                      {ZUSTAND_TEXT[a.zustand ?? 'gebraucht']} · {kg(gewicht)} · {a.bestand ?? 1} Stk · {uhrzeit(a.created_at)}
                     </p>
                     {a.plenty_fehler && <p className={styles.zeileFehler}>{fehlerZeile(a.plenty_fehler)}</p>}
                   </div>
