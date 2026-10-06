@@ -240,6 +240,72 @@ erneut laufen.
 Der Status eines Artikels sagt, wo er steht: `offen` → `bereit` → `erkannt`.
 Bleibt einer auf `fehler` stehen, steht die Meldung im Klartext an der Zeile.
 
+## Fotostudio (`/fotostudio`)
+
+Ersetzt die Make-Szenarien **„Automation Fotostudio PC 1"** und **„PC 2"** —
+am PC wie am Handy (als App über „Zum Startbildschirm", Kurzbefehl
+„Fotostudio" am App-Icon).
+
+### Was Make gemacht hat — und warum es zwei Szenarien brauchte
+
+Die Kamera-Software legte Fotos in einen Google-Drive-Ordner, Make holte sie
+ab, schob sie über Cloudinary nach Plenty und legte einen Artikel an
+(Besitzer 128, Kategorie 2246, eBay-Vorlage 30, Einheit 1). **Welche Fotos zu
+welchem Artikel gehören, wurde geraten:** Was innerhalb von 60 Sekunden nach
+dem ersten Foto kam, landete am selben Artikel. Damit sich zwei Plätze nicht
+gegenseitig die Artikel mischen, gab es zwei Kopien des Szenarios mit zwei
+Ordnern, zwei Datenspeichern und zwei Plenty-Zugängen. Zustand, Gewicht und
+Bestand ließen sich gar nicht angeben.
+
+### Wie es jetzt läuft
+
+1. Seite öffnen → ein angefangener Artikel wird fortgesetzt, sonst entsteht
+   ein neuer (mit Nummer). Jedes Foto gehört ab der ersten Sekunde zu ihm —
+   kein Ordner, kein Zeitfenster, beliebig viele Plätze gleichzeitig.
+2. **Fotos**: Kamera in der Seite (Handy/Webcam), „Dateien wählen" oder am PC
+   einfach in die Karte ziehen. Das erste Foto ist das Titelbild. Hochgeladen
+   wird in voller Auflösung direkt in den Speicher, mit Offline-Warteschlange
+   (dieselbe wie bei der Erfassung).
+3. **Zustand, Bestand, Gewicht** (Komma erlaubt), optional eine Notiz.
+4. **„In Plenty anlegen"**:
+   - Artikel inaktiv anlegen mit den Stammwerten aus Make plus Zustand und
+     Gewicht, EAN-13 erzeugen und als Barcode (`PLENTY_EAN_BARCODE_ID`,
+     EAN13_2) an die Variante hängen,
+   - Bestand als Korrekturbuchung ins Lager,
+   - Fotos **einzeln** übertragen (Plenty holt sie über eine signierte
+     Adresse, `uploadUrl` — wie in Make, nur ohne Cloudinary) und mit der
+     Variante verknüpfen,
+   - **je Stück ein Etikett** drucken (EAN-Strichcode, Artikel-ID, Zustand).
+5. Ergebnis: Artikel-ID groß, offene Punkte darunter, „Nächster Artikel".
+
+Jeder Schritt ist wiederholbar: Ein zweiter Anlauf legt keinen zweiten Artikel
+an und hängt kein Bild doppelt an. Fehlt am Ende ein Bild, steht der Artikel
+in „Zuletzt im Fotostudio" als Fehler mit **„Fortsetzen"**. Fertig
+(`in_plenty`) ist er erst, wenn alle Fotos in Plenty liegen.
+
+### Etiketten
+
+Gedruckt wird über das Druckfenster des Browsers, eine Seite je Etikett in
+der Größe der Rolle (57 × 32, 50 × 25, 62 × 29 Brother, 54 × 25 Dymo,
+100 × 50 mm). Größe und „automatisch drucken" merkt sich jedes Gerät. Wer
+das Druckfenster am Fotoplatz überspringen will, startet Chrome mit
+`--kiosk-printing` und stellt den Etikettendrucker als Standard ein.
+Nachdrucken geht aus der Liste.
+
+### Stammwerte
+
+`FOTOSTUDIO_OWNER_ID`, `…_CATEGORY_ID`, `…_EBAY_PRESET_ID`, `…_UNIT_ID`,
+`…_FLAG_ONE`, `…_FLAG_TWO`, `…_WAREHOUSE_ID` — alle optional, leer gelten die
+Werte aus Make (siehe `.env.example`). Die Seite zeigt unter „Stammwerte und
+Etiketten", was gerade gilt.
+
+### Datenbank
+
+Das Fotostudio nutzt dieselben Tabellen wie die Erfassung; die Spalte
+`quelle` (`erfassung` | `fotostudio`) trennt beide Wege. **Vor dem ersten
+Einsatz `supabase/schema.sql` erneut einspielen** (idempotent). Bis dahin
+läuft die Erfassung unverändert weiter, nur das Fotostudio nicht.
+
 ## Lagerplatz-Scan (`/lagerplatz`)
 
 Viele Artikel tragen ihren Lagerplatz bis heute nur im Text — in der

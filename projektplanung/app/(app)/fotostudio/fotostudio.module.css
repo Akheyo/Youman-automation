@@ -1,0 +1,501 @@
+/* Fotostudio — zuerst fürs Handy, am PC mit Drag & Drop.
+   Große Flächen (mind. 48 px hoch), weil am Fotoplatz mit vollen Händen
+   getippt wird. Die Hauptaktion sitzt unten im Daumenbereich. */
+
+.seite {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-bottom: 140px; /* Platz für die feste Fußleiste */
+}
+
+/* ------------------------------------------------------------------ Kopf */
+
+.kopf {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-2) 0 var(--space-4);
+}
+
+.kopfLabel {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.nummer {
+  margin: 0;
+  font-size: 36px;
+  line-height: 1.05;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.kopfRechts { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; justify-content: flex-end; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.chipWarn { background: var(--amber-soft); color: var(--amber); }
+
+.leise {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.leise:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+.leise:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* -------------------------------------------------------------- Meldungen */
+
+.leiste {
+  margin: 0 0 var(--space-3);
+  padding: 12px var(--space-4);
+  border-radius: var(--radius);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.leisteFehler { background: var(--red-soft); color: var(--red); }
+/* Ein Hinweis ist kein Fehler — es geht weiter, es ist nur etwas nachzutragen. */
+.leisteHinweis { background: var(--amber-soft); color: var(--amber); }
+
+/* ------------------------------------------------------------------ Karten */
+
+.karte {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.karteZiehen { border: 2px dashed var(--blue); background: var(--blue-soft); }
+
+.karteKopf { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+
+.titel {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.zaehlerText { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.hilfe { margin: var(--space-2) 0 0; font-size: 13px; color: var(--muted); }
+
+/* ---------------------------------------------------------------- Knöpfe */
+
+.knoepfe {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.haupt,
+.zweit,
+.klein {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+}
+.haupt:active:not(:disabled),
+.zweit:active:not(:disabled),
+.klein:active:not(:disabled) { transform: scale(0.98); }
+
+.haupt {
+  min-height: 56px;
+  padding: 12px 20px;
+  border: 0;
+  background: var(--blue);
+  color: #fff;
+  font-size: 17px;
+}
+.haupt:hover:not(:disabled) { background: var(--blue-h); }
+.haupt:disabled { background: var(--border-strong); color: #fff; cursor: not-allowed; }
+
+.zweit {
+  min-height: 56px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg);
+  color: var(--navy);
+  font-size: 16px;
+}
+.zweit:hover:not(:disabled) { border-color: var(--blue); background: var(--blue-soft); }
+.zweit:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.klein {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--navy);
+  font-size: 14px;
+}
+.klein:hover:not(:disabled) { border-color: var(--blue); background: var(--blue-soft); }
+.klein:disabled { opacity: 0.45; cursor: not-allowed; }
+
+@media (max-width: 420px) {
+  .knoepfe { grid-template-columns: 1fr; }
+}
+
+/* ---------------------------------------------------------------- Fotos */
+
+.raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: var(--space-2);
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+}
+
+.kachel {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+}
+
+.vorschau { width: 100%; height: 100%; object-fit: cover; }
+.vorschauLeer { width: 100%; height: 100%; background: var(--bg-soft); }
+
+/* Unten rechts: oben rechts sitzt das Entfernen, unten links der Status. */
+.titelbild {
+  position: absolute;
+  right: 6px;
+  bottom: 8px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(18, 42, 99, 0.88);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Status je Foto: Haken = oben, Puls = lädt, ! = hängt. Nie nur Farbe. */
+.punkt {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+.punkt svg { width: 14px; height: 14px; }
+.punktOk { background: var(--green); }
+.punktFehler { background: var(--red); }
+.punktLaeuft { background: var(--blue); animation: puls 1.2s ease-in-out infinite; }
+
+@keyframes puls {
+  50% { opacity: 0.45; }
+}
+
+.entfernen {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.62);
+  color: #fff;
+}
+.entfernen svg { width: 16px; height: 16px; }
+.entfernen:disabled { opacity: 0.4; }
+
+.kachelNochmal {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 32px;
+  border: 0;
+  background: var(--red);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.kachelNochmal:disabled { background: var(--muted); }
+
+/* ---------------------------------------------------------------- Felder */
+
+.feldLabel {
+  display: block;
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy);
+}
+.leiseText { font-weight: 400; color: var(--muted); }
+
+.notiz {
+  width: 100%;
+  min-height: 56px;
+  padding: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 16px; /* unter 16 px zoomt iOS beim Antippen */
+  resize: vertical;
+}
+.notiz:focus { outline: 2px solid var(--blue); outline-offset: 1px; border-color: var(--blue); }
+
+.auswahl {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  font-size: 16px;
+}
+
+.haekchen {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  margin-top: var(--space-2);
+  font-size: 15px;
+  cursor: pointer;
+}
+.haekchen input { width: 22px; height: 22px; accent-color: var(--blue); }
+
+/* ----------------------------------------------------------- Stammwerte */
+
+.zusammenklapp {
+  min-height: 32px;
+  font-weight: 600;
+  color: var(--navy);
+  cursor: pointer;
+}
+
+.stammwerte {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-3) 0 0;
+}
+.stammwerte div { display: flex; flex-direction: column; }
+.stammwerte dt { font-size: 12px; color: var(--muted); }
+.stammwerte dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.etikettEinstellung { margin-top: var(--space-2); }
+
+/* -------------------------------------------------------------- Fußleiste */
+
+.fuss {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -6px 20px rgba(15, 23, 42, 0.06);
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+}
+
+.fussInnen {
+  max-width: 760px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.fussText {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.fussKnopf { flex: 0 0 auto; min-width: 220px; }
+
+@media (max-width: 560px) {
+  .fussInnen { flex-direction: column; align-items: stretch; gap: var(--space-2); }
+  .fussText { text-align: center; }
+  .fussKnopf { width: 100%; min-width: 0; }
+  .seite { padding-bottom: 170px; }
+}
+
+.kreisel {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: drehen 0.8s linear infinite;
+}
+@keyframes drehen { to { transform: rotate(360deg); } }
+
+/* --------------------------------------------------------------- Ergebnis */
+
+.ergebnis { text-align: center; padding: var(--space-6) var(--space-4); }
+
+.ergebnisSymbol {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--space-3);
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
+}
+.ergebnisSymbol svg { width: 32px; height: 32px; }
+.ergebnisSymbolWarn { background: var(--amber-soft); color: var(--amber); }
+
+.artikelId {
+  margin: var(--space-2) 0 0;
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+}
+.ean { margin: 4px 0 0; font-size: 16px; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+.zusammenfassung { margin: var(--space-2) 0 var(--space-4); color: var(--muted); }
+
+.offen {
+  text-align: left;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-3) var(--space-6);
+  background: var(--amber-soft);
+  color: var(--amber);
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+
+.druckZeile {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.zaehler {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.stufe {
+  width: 56px;
+  min-height: 56px;
+  border: 0;
+  background: var(--bg-soft);
+  color: var(--navy);
+  font-size: 24px;
+  font-weight: 600;
+}
+.stufe:hover { background: var(--blue-soft); }
+.zaehlerWert {
+  min-width: 56px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ergebnis .etikettEinstellung { max-width: 360px; margin: var(--space-4) auto; text-align: left; }
+.ergebnis > .haupt { width: 100%; max-width: 360px; margin-top: var(--space-2); }
+
+/* ------------------------------------------------------------------ Liste */
+
+.liste { margin-top: var(--space-6); }
+
+.zeilen { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-2); }
+
+.zeile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.zeileBild {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius);
+  object-fit: cover;
+  background: var(--bg-soft);
+}
+
+.zeileText { flex: 1; min-width: 0; }
+.zeileTitel {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.zeileMeta { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.zeileFehler { margin: 4px 0 0; font-size: 13px; color: var(--red); }
+
+.zeileAktionen { display: flex; gap: var(--space-2); flex-wrap: wrap; justify-content: flex-end; }
+
+.status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.status_ok { background: var(--green-soft); color: var(--green); }
+.status_laeuft { background: var(--amber-soft); color: var(--amber); }
+.status_fehler { background: var(--red-soft); color: var(--red); }
+.status_offen { background: var(--bg-soft); color: var(--muted); }
+
+@media (max-width: 560px) {
+  .zeile { flex-wrap: wrap; }
+  .zeileAktionen { width: 100%; justify-content: stretch; }
+  .zeileAktionen .klein { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .punktLaeuft, .kreisel { animation: none; }
+  .haupt, .zweit, .klein, .karte { transition: none; }
+}
