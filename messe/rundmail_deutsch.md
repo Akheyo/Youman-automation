@@ -8,44 +8,47 @@ Sehr geehrte/r {Kontaktperson},
 
 wir sind auf {Firma} und Ihre Produkte aufmerksam geworden und sind überzeugt, dass sie auch in Deutschland und Europa großes Potenzial haben. Gerne möchten wir Ihnen kurz vorstellen, wie wir Sie beim Eintritt in diese Märkte unterstützen können.
 
+**Sie liefern nur die Produkte – ohne eigene Firma in Deutschland.**
+Vertrieb, Logistik, Retouren und technischen Support übernehmen wir.
+
 **Wer wir sind**
 
-Komplett Konzept und MapaTec GmbH sind ein deutsches mittelständisches Unternehmen mit über 30 Jahren Erfahrung im Handel und Onlinehandel – unter anderem mit technischen Produkten, Maschinen, Ersatzteilen, Industriebedarf und Konsumgütern. Wir verfügen über etablierte Online-Vertriebskanäle, ein breites B2B-Netzwerk und 19.000 m² Lagerfläche an mehreren Standorten in Deutschland.
+Komplett Konzept verfügt über mehr als 30 Jahre Erfahrung im Onlinehandel und beliefert B2B- und B2C-Kunden in ganz Deutschland und Europa. Dafür stehen uns 19.000 m² Lagerfläche bundesweit zur Verfügung – darunter unsere eigenen, alarmgesicherten und videoüberwachten Lagerhallen in der Mitte Deutschlands (8.000 m²) und in Frankfurt (4.000 m²) sowie weitere Standorte.
 
-**Ihr Vorteil**
+**Vier Kooperationsmodelle – nach unserer Präferenz**
 
-Sie liefern nur die Produkte – Vertrieb, Lagerung, Versand, Retouren und technischen Support übernehmen wir. Sie brauchen dafür:
+1. **Konsignationsmodell (unsere 1. Wahl)** – Ihre Ware, unser Vertrieb, langfristige Partnerschaft.
+   Sie stellen Ihre Produkte in Deutschland bereit. Wir übernehmen nicht nur Lagerung, aktiven Vertrieb, Versand und Retouren, sondern auch Markenentwicklung und Markenanmeldung.
+2. **Fulfillment + Vertrieb** – Ihre Ware, gemeinsamer Vertrieb, unsere deutsche Logistik.
+   Wir lagern und versenden Ihre Produkte und erschließen zusätzlich über unsere bestehenden Vertriebskanäle neue Kunden.
+3. **Fulfillment** – Ihr Vertrieb, unsere deutsche Logistik.
+   Sie verkaufen selbst, wir übernehmen in Deutschland Lagerung, Kommissionierung, Verpackung und Versand.
+4. **Reine Lagerfläche** – Ihre Ware, unsere Lagerfläche.
+   Sie mieten Lagerfläche in Deutschland – Palettenstellplätze oder ganze Flächen, innen und außen.
 
-- keine eigene Firma in Deutschland
-- kein eigenes Lager und keine eigene Logistik
-- kein eigenes Vertriebs- oder Serviceteam
-- keine Steuerberater, Behördengänge oder hohen deutschen Personal- und Mietkosten
+**Ihre Vorteile auf einen Blick**
 
-Ihre Kunden erhalten Ware, Retouren, Ersatzteile und Support direkt aus Deutschland – ohne Rücksendung nach China.
+- **Keine eigene Firma in Deutschland nötig:** Verkaufen in der EU ohne eigene Gesellschaft, eigenes Lager oder Personal.
+- **19.000 m² Lagerfläche bundesweit:** mehrere Standorte, Palettenware und Einzelpakete.
+- **B2B & B2C Deutschland/Europaweit:** Händler, Firmenkunden, Online-Shops und Marktplätze.
+- **Retouren, technischer Support & Ersatzteile:** direkt aus Deutschland – kein Rückversand nach China.
 
-**Unsere Kooperationsmodelle**
+Erfolg basiert auf Vertrauen – mit uns haben Ihre Kunden einen deutschen Ansprechpartner direkt vor Ort.
 
-1. **Konsignationsmodell (unsere 1. Wahl):** Sie stellen Ihre Ware in Deutschland bereit, wir übernehmen Lagerung, aktiven Vertrieb und Versand. Abgerechnet wird transparent und regelmäßig nach tatsächlich verkaufter Menge. Auf Wunsch vereinbaren wir einen vertraglich geregelten Gebietsschutz für Deutschland oder weitere europäische Märkte.
-2. **Fulfillment + Vertrieb:** Wir lagern und versenden Ihre Ware und erschließen zusätzlich über unsere Vertriebskanäle neue Kunden.
-3. **Fulfillment:** Sie verkaufen selbst – wir übernehmen Lagerung, Kommissionierung, Verpackung und Versand in Deutschland.
-4. **Reine Lagerfläche:** Palettenstellplätze oder ganze Flächen, innen und außen.
+**Komplett Konzept & MapaTec – mit unseren beiden Unternehmen decken Sie alles ab.**
+Sie sind im Import/Export unerfahren? Unsere eigene Importfirma MapaTec unterstützt Sie dabei (Ansprechpartner: Frank Matysik).
 
-Sie sind im Import/Export noch unerfahren? Unsere eigene Importfirma MapaTec GmbH unterstützt Sie dabei.
-
-**Unser Ziel**
-
-Wir suchen keine kurzfristige Lieferbeziehung, sondern eine langfristige strategische Partnerschaft mit qualitativ starken Herstellern: Sie liefern hochwertige Produkte, wir bringen Marktzugang, Vertrieb, Infrastruktur und Logistik ein – gemeinsam bauen wir eine stabile Marktposition in Deutschland und Europa auf.
-
-Im Anhang finden Sie unseren Flyer mit allen Details. Gerne besprechen wir in einem kurzen Gespräch per WeChat oder Videocall, welches Modell am besten zu Ihren Produkten passt. Bitte senden Sie uns dazu gern Ihren aktuellen Produktkatalog und Ihre Preisliste.
+Im Anhang finden Sie unseren Flyer mit allen Details. Gerne besprechen wir per WeChat oder Videocall, welches Modell am besten zu Ihren Produkten passt. Senden Sie uns dafür gern Ihren aktuellen Produktkatalog und Ihre Preisliste.
 
 Wir freuen uns auf Ihre Rückmeldung.
 
 Mit freundlichen Grüßen
 
 Mario Parlitz
-Komplett Konzept & MapaTec GmbH
-WeChat / Tel.: +49 177 2711123
+CEO
+Komplett Konzept & MapaTec
+Tel. / WeChat: +49 177 2711126
 E-Mail: info@mapatec.de
 Web: www.komplett-konzept.de
 
-*Anhang: KomplettKonzept_Flyer.pdf*
+*Anhang: KomplettKonzept_Canton_Fair_Flyer.pdf*
