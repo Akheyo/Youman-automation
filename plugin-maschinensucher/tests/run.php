@@ -852,4 +852,22 @@ $p->gleich('100;10;100;pausiert;;nein;Zwei Zeilen', $liste['teile'][0][0], 'sort
 $p->gleich('300;12;300;aktiv;15.03.2027;ja;Fraese, gross', $liste['teile'][0][1], 'Datum, Preis sichtbar, Semikolon im Titel ersetzt');
 $p->gleich(';11;Thomas 3;pausiert;;nein;Alt', $liste['teile'][1][0], 'ohne Artikel-ID ans Ende');
 
+// --- Zustand ----------------------------------------------------------------------
+$p->gruppe('Zustand');
+$p->gleich(1, $abgebildet['zustandId'], 'die Zustands-ID kommt aus dem Artikel');
+$mitZustand = function ($id) use ($artikelApi, $umgebungApi) {
+    $b = Inseratdaten::bauen(array_merge($artikelApi, array('zustandId' => $id)), $umgebungApi);
+    return isset($b['koerper']['properties']['condition']) ? $b['koerper']['properties']['condition'] : null;
+};
+$p->gleich('new', $mitZustand(0), 'Neu wird new');
+$p->gleich('used', $mitZustand(1), 'Gebraucht wird used');
+$p->gleich('new', $mitZustand(2), 'Neu (Restposten) wird new');
+$p->gleich('refurbished', $mitZustand(3), 'generalueberholt wird refurbished');
+$p->gleich('defective', $mitZustand(4), 'Defekt wird defective');
+$p->gleich(null, $mitZustand(null), 'ohne Zustand kein Feld');
+$p->gleich(null, $mitZustand(99), 'unbekannter Zustand: kein Feld');
+$p->gleich(true, Inseratdaten::fingerabdruck(Inseratdaten::bauen(array_merge($artikelApi, array('zustandId' => 0)), $umgebungApi)['koerper'])
+    !== Inseratdaten::fingerabdruck(Inseratdaten::bauen(array_merge($artikelApi, array('zustandId' => 1)), $umgebungApi)['koerper']),
+    'Zustand aendern aendert den Fingerabdruck');
+
 exit($p->bericht());

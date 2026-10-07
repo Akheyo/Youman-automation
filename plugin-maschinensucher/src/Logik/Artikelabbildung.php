@@ -239,6 +239,7 @@ class Artikelabbildung
             'modell'      => (string) self::wert($variante, 'model', ''),
             'baujahr'     => '',
             'zustand'     => $zustandId !== null && isset(self::$zustandText[(int) $zustandId]) ? self::$zustandText[(int) $zustandId] : '',
+            'zustandId'   => $zustandId !== null && $zustandId !== '' ? (int) $zustandId : null,
             'preis'       => $preis['preis'],
             // Aus welcher Liste er stammt, entscheidet über netto/brutto.
             'preisErsatz' => $preis['ersatz'],
