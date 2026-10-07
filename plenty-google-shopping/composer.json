@@ -1,0 +1,21 @@
+{
+    "name": "komplett-konzept/plenty-shopping-sync",
+    "description": "plentymarkets plugin: Plenty → Google Merchant Center (Merchant API v1). composer.json dient nur den lokalen Tests; Plenty liest plugin.json.",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ShoppingSync\\": "src/",
+            "ShoppingSync\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}

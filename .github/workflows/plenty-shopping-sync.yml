@@ -1,0 +1,41 @@
+name: Plenty Shopping Sync – Tests
+
+on:
+  push:
+    paths:
+      - "plenty-google-shopping/**"
+      - ".github/workflows/plenty-shopping-sync.yml"
+  pull_request:
+    paths:
+      - "plenty-google-shopping/**"
+      - ".github/workflows/plenty-shopping-sync.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plenty-google-shopping
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: openssl, mbstring
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Lint
+        run: find src resources tests -name "*.php" -print0 | xargs -0 -n1 php -l > /dev/null
+
+      - name: Validate JSON
+        run: |
+          php -r 'foreach (["plugin.json","config.json"] as $f) { json_decode(file_get_contents($f)); if (json_last_error()) { fwrite(STDERR, "$f: ".json_last_error_msg()."\n"); exit(1); } }'
+
+      - name: Tests
+        run: vendor/bin/phpunit

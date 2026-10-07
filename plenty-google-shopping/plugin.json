@@ -1,0 +1,30 @@
+{
+    "name": "ShoppingSync",
+    "namespace": "ShoppingSync",
+    "version": "0.1.0",
+    "type": "integration",
+    "marketplaceName": {
+        "de": "Google Shopping Sync (Merchant API)",
+        "en": "Google Shopping Sync (Merchant API)"
+    },
+    "description": "Synchronisiert freigegebene Artikel aus PlentyONE automatisch ins Google Merchant Center (Merchant API v1) – je Land konfigurierbar.",
+    "shortDescription": {
+        "de": "Plenty → Google Merchant Center: freigeben per Tag, Bestand und Preis automatisch aktuell.",
+        "en": "Plenty → Google Merchant Center: release by tag, stock and price kept in sync."
+    },
+    "author": "Komplett Konzept Verwertungs GmbH",
+    "license": "proprietary",
+    "price": 0.00,
+    "keywords": ["google", "shopping", "merchant center", "merchant api", "feed"],
+    "categories": [],
+    "platform": {
+        "php": ">=8.0"
+    },
+    "serviceProvider": "ShoppingSync\\Providers\\ShoppingSyncServiceProvider",
+    "dependencies": {
+        "guzzlehttp/guzzle": "^7.8"
+    },
+    "runOnBuild": [
+        "ShoppingSync\\Migrations\\CreateSyncTables_0_1_0"
+    ]
+}

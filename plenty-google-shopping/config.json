@@ -1,0 +1,185 @@
+{
+    "formatVersion": 1,
+    "menu": {
+        "Config.tabGeneral": {
+            "label": "Config.tabGeneral",
+            "formFields": {
+                "global.enabled": {
+                    "type": "checkBox",
+                    "required": false,
+                    "label": "Config.enabled",
+                    "options": {
+                        "defaultValue": "false"
+                    }
+                },
+                "global.dryRun": {
+                    "type": "checkBox",
+                    "required": false,
+                    "label": "Config.dryRun",
+                    "options": {
+                        "defaultValue": "true"
+                    }
+                },
+                "sync.pilotItemIds": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.pilotItemIds",
+                    "options": {
+                        "defaultValue": "25433"
+                    }
+                },
+                "sync.releaseTag": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.releaseTag",
+                    "options": {
+                        "defaultValue": "shopping_ads"
+                    }
+                }
+            }
+        },
+        "Config.tabGoogle": {
+            "label": "Config.tabGoogle",
+            "formFields": {
+                "google.merchantId": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.merchantId",
+                    "options": {
+                        "defaultValue": ""
+                    }
+                },
+                "google.dataSourceId": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.dataSourceId",
+                    "options": {
+                        "defaultValue": ""
+                    }
+                },
+                "google.serviceAccountJson": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.serviceAccountJson",
+                    "options": {
+                        "defaultValue": ""
+                    }
+                }
+            }
+        },
+        "Config.tabMapping": {
+            "label": "Config.tabMapping",
+            "formFields": {
+                "mapping.types": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.types",
+                    "options": {
+                        "defaultValue": "{\"type_klimakammer\": {\"productType\": \"Klimakammern > Klimaprüfschränke\", \"customLabel0\": \"klimakammer\"}, \"type_laborgeraet\": {\"productType\": \"Laborgeräte\", \"customLabel0\": \"laborgeraet\"}, \"type_sonstiges\": {\"productType\": \"Sonstiges\", \"customLabel0\": \"sonstiges\"}}"
+                    }
+                },
+                "mapping.markets": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.markets",
+                    "options": {
+                        "defaultValue": "[{\"country\": \"DE\", \"active\": true, \"feedLabel\": \"DE\", \"contentLanguage\": \"de\", \"textLanguage\": \"de\", \"currency\": \"EUR\", \"salesPriceId\": 0, \"shopUrl\": \"\", \"linkTemplate\": \"{shopUrl}/{urlPath}_{itemId}_{variationId}\", \"shipping\": {\"type_klimakammer\": {\"shippingLabel\": \"klimakammer\"}}}]"
+                    }
+                },
+                "mapping.conditions": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.conditions",
+                    "options": {
+                        "defaultValue": "{\"0\": \"NEW\", \"1\": \"USED\", \"2\": \"NEW\", \"3\": \"NEW\", \"4\": \"USED\"}"
+                    }
+                },
+                "sync.titleField": {
+                    "type": "selectBox",
+                    "required": false,
+                    "label": "Config.titleField",
+                    "options": {
+                        "defaultValue": "name1",
+                        "selectBoxValues": [
+                            {
+                                "value": "name1",
+                                "caption": "Config.name1"
+                            },
+                            {
+                                "value": "name2",
+                                "caption": "Config.name2"
+                            },
+                            {
+                                "value": "name3",
+                                "caption": "Config.name3"
+                            }
+                        ]
+                    }
+                },
+                "sync.offerIdPrefix": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.offerIdPrefix",
+                    "options": {
+                        "defaultValue": ""
+                    }
+                }
+            }
+        },
+        "Config.tabStock": {
+            "label": "Config.tabStock",
+            "formFields": {
+                "sync.stockZeroAction": {
+                    "type": "selectBox",
+                    "required": false,
+                    "label": "Config.stockZeroAction",
+                    "options": {
+                        "defaultValue": "out_of_stock",
+                        "selectBoxValues": [
+                            {
+                                "value": "out_of_stock",
+                                "caption": "Config.stockZeroOutOfStock"
+                            },
+                            {
+                                "value": "delete",
+                                "caption": "Config.stockZeroDelete"
+                            }
+                        ]
+                    }
+                },
+                "sync.deleteAfterDaysOutOfStock": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.deleteAfterDays",
+                    "options": {
+                        "defaultValue": "30"
+                    }
+                },
+                "sync.warehouseIds": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.warehouseIds",
+                    "options": {
+                        "defaultValue": ""
+                    }
+                },
+                "sync.refreshAfterDays": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.refreshAfterDays",
+                    "options": {
+                        "defaultValue": "20"
+                    }
+                },
+                "sync.maxAdditionalImages": {
+                    "type": "inputText",
+                    "required": false,
+                    "label": "Config.maxAdditionalImages",
+                    "options": {
+                        "defaultValue": "10"
+                    }
+                }
+            }
+        }
+    }
+}
