@@ -154,24 +154,27 @@ def build(lang):
             if 1095 <= e['top'] < 1200: e['top'] += 26
             elif 1200 <= e['top'] < 1320: e['top'] += 6
     # Komplett Konzept & MapaTec box
-    box = find(p2, 'LBJS3p3Rr0HS3tql'); box.update(top=1318 if not cn else 1338, height=150 if not cn else 134)
+    box = find(p2, 'LBJS3p3Rr0HS3tql'); box.update(top=1316 if not cn else 1338, height=158 if not cn else 134)
     bt = box['top']
     logo = find(p2, 'LBVCrYYRs4p2CJms'); lh = box['height'] - 28; lw = lh * 744 / 495
     logo.update(top=bt + 14, left=72, width=lw, height=lh, src=IMG['MAHWlA8t-z4']['file'])
     tx = 72 + lw + 26
     delete(p2, 'LB6fZs1ZkrcDyfrC', 'LBFRLmybQ1QmD80X', 'LBPTC45kV7WqrKkX', 'LBNY4w00HP8lltkh', 'LBGYN2KCP09GkLTN')
-    W = 1073 - 24 - tx
+    qs = box['height'] - 22   # Frank Matysik's WeChat QR on the right of the box
+    p2['elements'].append({'id': 'frankqr', 'type': 'rect', 'top': bt + 11, 'left': 1073 - 14 - qs, 'width': qs, 'height': qs,
+                           'fill': {'media': {}}, 'src': 'img/QR_WeChat_Frank_Matysik.png'})
+    W = 1073 - 14 - qs - 22 - tx
     if cn:
         rows = [(bt + 10, 'Komplett Konzept & MapaTec', 21, '#0b1f4b', 'bold'),
                 (bt + 37, '我们两家公司为您提供全方位服务 · With our two companies you are covered end to end.', 15, '#d62828', 'bold'),
                 (bt + 59, '进出口经验不足？我们自己的进口公司 MapaTec 为您提供支持。', 16, '#0b1f4b', 'normal'),
                 (bt + 82, 'New to import/export? Our own import company MapaTec supports you.', 14, '#4a5a7a', 'normal'),
-                (bt + 103, '联系人 Contact: Frank Matysik', 15, '#d62828', 'bold')]
+                (bt + 103, '联系人 Contact: Frank Matysik · 微信 WeChat →', 15, '#d62828', 'bold')]
     else:
         rows = [(bt + 14, 'Komplett Konzept & MapaTec', 22, '#0b1f4b', 'bold'),
                 (bt + 44, 'Mit unseren beiden Unternehmen decken Sie alles ab.', 17, '#d62828', 'bold'),
                 (bt + 72, 'Unerfahren im Import/Export? Unsere eigene Importfirma MapaTec unterstützt Sie.', 17, '#0b1f4b', 'normal'),
-                (bt + 112, 'Ansprechpartner MapaTec: Frank Matysik', 15, '#0b1f4b', 'bold')]
+                (bt + 124, 'Ansprechpartner MapaTec: Frank Matysik · WeChat →', 15, '#0b1f4b', 'bold')]
     for i, (t, s, sz, col, wt) in enumerate(rows):
         p2['elements'].append(text_el(f'mt{i}', t, tx, W, s, sz, col, wt, 'start', 1.3))
     footer(p2, 'LB9LHPPnPGZssrFY')
