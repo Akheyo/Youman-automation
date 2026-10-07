@@ -105,6 +105,12 @@ def build(lang):
 
     # ---------------- page 1 ----------------
     header(p1, 'LBQdNMdgkMRrQt25', contact)
+    if cn:
+        set_text(p1, 'LBZdpxv2CLTj4bVw', '您只需提供产品，其余一切由我们完成：销售、物流、退货和技术支持。')
+        set_text(p1, 'LBjVlp4PJRWC3fzG', 'You just deliver the products – we take care of everything else: sales, logistics, returns & technical support.')
+    else:
+        set_text(p1, 'LBZdpxv2CLTj4bVw', 'Sie brauchen nur die Produkte zu liefern – wir erledigen den ganzen Rest:\n'
+                                         'Vertrieb, Logistik, Retouren und technischen Support.')
     ban = find(p1, 'LBB21yZr8ZNH5b3G'); ban.update(height=BANNER_H, src='img/banner_strip.jpg')
     # move everything below the banner up (sections keep their inner layout)
     o = 140 + BANNER_H + 24 - 772   # sections start 24px below the banner
@@ -132,12 +138,20 @@ def build(lang):
     # ---------------- page 2 ----------------
     header(p2, 'LBfc3TvJJmJS1P3q' if cn else 'LBDY7qjHbTf6kMpw', contact)
     if cn:
-        set_text(p2, 'LB8dBDLjYK0Tp8Cr', '您在德国备货。我们不仅负责仓储、主动销售、发货和退货，还负责品牌建设与商标注册。')
-        set_text(p2, 'LBt0gHCXX9x0tzrS', 'You stock your products in Germany. We handle not only storage, active sales, shipping and returns, '
-                                         'but also brand development and trademark registration.').update(top=444)
+        set_text(p2, 'LB8dBDLjYK0Tp8Cr', '您在德国备货。我们不仅负责仓储、主动销售、发货和退货，还可应要求负责品牌建设与商标注册。'
+                                         '可签订分销协议，条款可协商。')
+        set_text(p2, 'LBt0gHCXX9x0tzrS', 'You stock your products in Germany. We handle storage, active sales, shipping and returns – and, on request, '
+                                         'brand development and trademark registration. Distribution agreement possible and negotiable.').update(top=470)
+        find(p2, 'LBt8p3w2cX3zPmyZ')['top'] = 548; find(p2, 'LBpXmTT0JjBhzrLP')['top'] = 572
+        set_text(p2, 'LBB7DrNs8nJ756dy', '适合已在德国销售、但希望额外利用我们德国或欧洲销售渠道的制造商。')
+        set_text(p2, 'LB1mk8y8VfTZ1lyM', 'Ideal for manufacturers who already sell here but also want to use our German or European sales channels.')
     else:
         set_text(p2, 'LB8dBDLjYK0Tp8Cr', 'Sie stellen Ihre Produkte in Deutschland bereit. Wir übernehmen nicht nur Lagerung, aktiven Vertrieb, '
-                                         'Versand und Retouren, sondern auch Markenentwicklung und Markenanmeldung.')
+                                         'Versand und Retouren, sondern auf Wunsch auch Markenentwicklung und Markenanmeldung. '
+                                         'Distributionsvertrag möglich und verhandelbar.')
+        find(p2, 'LBt8p3w2cX3zPmyZ')['top'] = 548
+        set_text(p2, 'LBB7DrNs8nJ756dy', 'Ideal für Hersteller, die bereits hier verkaufen, aber zusätzlich unsere deutschen oder europäischen '
+                                         'Vertriebswege nutzen möchten.')
     # advantages: subtitle + rows moved down, "innen und außen" removed
     sub = ('成功源于信任——您的客户在德国本地拥有一位德国联系人。 Success is built on trust – your customers get a German contact person on site.'
            if cn else 'Erfolg basiert auf Vertrauen – mit uns haben Ihre Kunden einen deutschen Ansprechpartner direkt vor Ort.')
