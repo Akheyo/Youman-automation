@@ -17,6 +17,18 @@ class Inseratdaten
     /** Grenzen aus der API-Beschreibung. */
     const TITEL_MAX = 100;
     const TEXT_MIN = 10;
+    /**
+     * Plenty-Zustand (Einrichtung -> Artikel -> Zustand) auf den Zustand bei
+     * Maschinensucher (properties.condition).
+     */
+    public static $zustandMaschinensucher = array(
+        0 => 'new',          // Neu
+        1 => 'used',         // Gebraucht
+        2 => 'new',          // Neu (Restposten)
+        3 => 'refurbished',  // Gebraucht (generalueberholt)
+        4 => 'defective',    // Defekt
+    );
+
     const TEXT_MAX = 3500;
     const REFERENZ_MIN = 3;
     const REFERENZ_MAX = 50;
@@ -108,6 +120,11 @@ class Inseratdaten
         $hersteller = self::saubereZeile(self::wert($artikel, 'hersteller', ''));
         if ($hersteller !== '') {
             $koerper['manufacturer'] = $hersteller;
+        }
+
+        $zustandId = self::wert($artikel, 'zustandId', null);
+        if ($zustandId !== null && isset(self::$zustandMaschinensucher[(int) $zustandId])) {
+            $koerper['properties'] = array('condition' => self::$zustandMaschinensucher[(int) $zustandId]);
         }
 
         $modell = self::saubereZeile(self::wert($artikel, 'modell', ''));
