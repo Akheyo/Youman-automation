@@ -191,7 +191,18 @@ def build(lang):
                 (bt + 124, 'Ansprechpartner MapaTec: Frank Matysik · WeChat →', 15, '#0b1f4b', 'bold')]
     for i, (t, s, sz, col, wt) in enumerate(rows):
         p2['elements'].append(text_el(f'mt{i}', t, tx, W, s, sz, col, wt, 'start', 1.3))
-    footer(p2, 'LB9LHPPnPGZssrFY')
+    # contact bar moved from the page bottom to between the model cards and the advantages
+    delete(p2, 'LB9LHPPnPGZssrFY')
+    BAR_T, BAR_H, S = 1046, 64, 76
+    for e in p2['elements']:
+        if e['top'] >= 1045: e['top'] += S
+    p2['elements'].append({'id': 'cbar', 'type': 'shape', 'top': BAR_T, 'left': 50, 'width': 1023, 'height': BAR_H,
+                           'paths': [{'fill': {'color': {'color': '#16336e'}}, 'cornerRounding': 10}]})
+    who = '您的联系人 Your contact:  ' if cn else 'Ihr Ansprechpartner:  '
+    p2['elements'].append(text_el('cbartx', BAR_T + 17, 60, 945, f'{who}CEO Mario Parlitz  ·  {{PHONE}} {PHONE_NR}  ·  info@mapatec.de',
+                                  20 if cn else 22, '#ffffff', 'bold', 'center', 1.3))
+    p2['elements'].append({'id': 'cbarqr', 'type': 'rect', 'top': BAR_T + 6, 'left': 1073 - 6 - 52, 'width': 52, 'height': 52,
+                           'fill': {'media': {'mediaId': 'MAHWlFIXZ8E'}}, 'src': IMG['MAHWlFIXZ8E']['file']})
 
     bg1 = 'background:linear-gradient(180deg,#07264d 0%,#05224a 55%,#031f44 100%);'
     bg2 = 'background:#0b1f4b;'
