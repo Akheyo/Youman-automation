@@ -68,10 +68,10 @@ class Lagerbestand
             }
         }
 
-        if (!$this->gezeigt) {
-            // Einmal je Lauf zeigen, was das Lager wirklich liefert - der
-            // Suchindex hatte den Warenbestand nicht, und ob die Felder hier
-            // so heissen wie erwartet, zeigt nur das Protokoll.
+        if (!$this->gezeigt && count($gelesen) === 0) {
+            // Nur wenn das Lager nichts liefert, einmal je Lauf zeigen, was
+            // zurueckkam. Der Normalfall ist geprueft und braucht keinen
+            // Eintrag mehr.
             $this->gezeigt = true;
             $this->getLogger(__METHOD__)->info('MaschinensucherMarkt::log.lagerGelesen', array(
                 'variante'   => $variantenId,
