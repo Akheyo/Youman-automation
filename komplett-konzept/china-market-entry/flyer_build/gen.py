@@ -6,7 +6,7 @@ from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__))
 IMG = json.load(open(f'{HERE}/img/map.json'))
 for _m in IMG.values(): _m['file'] = _m['file'].replace('rebuild/', '')
-PHONE_NR = '+49 177 2711126'
+PHONE_NR = '+49 177 2711123'
 PHONE_SVG = ('<svg class="ph" viewBox="0 0 16 24" aria-hidden="true"><rect x="1.5" y="1.5" width="13" height="21" rx="2.5" '
              'fill="none" stroke="currentColor" stroke-width="2.2"/><rect x="5.5" y="4" width="5" height="1.6" rx=".8" '
              'fill="currentColor"/><circle cx="8" cy="18.6" r="1.6" fill="currentColor"/></svg>')
@@ -197,10 +197,10 @@ def build(lang):
     for e in p2['elements']:
         if e['top'] >= 1045: e['top'] += S
     p2['elements'].append({'id': 'cbar', 'type': 'shape', 'top': BAR_T, 'left': 50, 'width': 1023, 'height': BAR_H,
-                           'paths': [{'fill': {'color': {'color': '#16336e'}}, 'cornerRounding': 10}]})
+                           'paths': [{'fill': {'color': {'color': '#ffffff'}}, 'cornerRounding': 10}]})
     who = '您的联系人 Your contact:  ' if cn else 'Ihr Ansprechpartner:  '
     p2['elements'].append(text_el('cbartx', BAR_T + 17, 60, 945, f'{who}CEO Mario Parlitz  ·  {{PHONE}} {PHONE_NR}  ·  info@mapatec.de',
-                                  20 if cn else 22, '#ffffff', 'bold', 'center', 1.3))
+                                  20 if cn else 22, '#0b1f4b', 'bold', 'center', 1.3))
     p2['elements'].append({'id': 'cbarqr', 'type': 'rect', 'top': BAR_T + 6, 'left': 1073 - 6 - 52, 'width': 52, 'height': 52,
                            'fill': {'media': {'mediaId': 'MAHWlFIXZ8E'}}, 'src': IMG['MAHWlFIXZ8E']['file']})
 

@@ -15,7 +15,7 @@ OUT_IMG = os.path.join(HERE, 'img')
 os.makedirs(OUT_IMG, exist_ok=True)
 
 MAIL = 'info@mapatec.de'
-PHONE = '+49 177 2711126'
+PHONE = '+49 177 2711123'
 NAVY, CARD, RED, GOLD, LIGHT = '#0b1f4b', '#16336e', '#d62828', '#ffc857', '#c9d4ea'
 FONT = "Arial,'Helvetica Neue',Helvetica,'PingFang SC','Microsoft YaHei',sans-serif"
 
@@ -154,7 +154,7 @@ def build(lang, src):
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
 <td width="180" valign="middle">{img('logo', 160, 'Komplett Konzept')}<p style="margin:4px 0 0 0;font-family:{FONT};font-size:12px;font-weight:bold;color:{NAVY};text-align:center;width:160px;">www.komplett-konzept.de</p></td>
 <td valign="middle" align="right"><p style="margin:0;font-family:{FONT};font-size:14px;font-weight:bold;color:{NAVY};">CEO Mario Parlitz</p>
-<p style="margin:2px 0 0 0;font-family:{FONT};font-size:14px;color:{NAVY};"><a href="tel:+491772711126" style="color:{NAVY};text-decoration:none;">📱 {PHONE}</a></p>
+<p style="margin:2px 0 0 0;font-family:{FONT};font-size:14px;color:{NAVY};"><a href="tel:+491772711123" style="color:{NAVY};text-decoration:none;">📱 {PHONE}</a></p>
 <p style="margin:2px 0 0 0;font-family:{FONT};font-size:14px;"><a href="mailto:{MAIL}" style="color:{RED};text-decoration:none;">{MAIL}</a></p></td>
 <td width="76" valign="middle" align="right" style="padding-left:12px;">{img('qr_mario', 70, 'WeChat Mario Parlitz')}</td>
 </tr></table></td></tr>''')
@@ -204,8 +204,8 @@ def build(lang, src):
                     + f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0">{"".join(cards)}</table>', pad='8px 28px 10px 28px'))
 
     # contact bar (same as flyer)
-    rows.append(sec(f'''<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{CARD};border-radius:10px;"><tr>
-<td style="padding:12px 16px;font-family:{FONT};font-size:15px;font-weight:bold;color:#ffffff;">{e(t["contact"])}: CEO Mario Parlitz · <a href="tel:+491772711126" style="color:#ffffff;text-decoration:none;">📱 {PHONE}</a> · <a href="mailto:{MAIL}" style="color:{GOLD};text-decoration:none;">{MAIL}</a></td>
+    rows.append(sec(f'''<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;"><tr>
+<td style="padding:12px 16px;font-family:{FONT};font-size:15px;font-weight:bold;color:{NAVY};">{e(t["contact"])}: CEO Mario Parlitz · <a href="tel:+491772711123" style="color:{NAVY};text-decoration:none;">📱 {PHONE}</a> · <a href="mailto:{MAIL}" style="color:{RED};text-decoration:none;">{MAIL}</a></td>
 <td width="64" style="padding:6px 8px 6px 0;">{img("qr_mario", 56, "WeChat")}</td></tr></table>''', pad='0 28px 18px 28px'))
 
     # advantages
