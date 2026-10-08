@@ -7,7 +7,7 @@ Die E-Mail enthält den Inhalt des Flyers und zusätzlich die Anmeldung für ein
 | Datei | Zweck |
 |---|---|
 | `email_CN.eml` | **Zum Versenden** an die Hersteller (Chinesisch/Englisch). Doppelklick öffnet sie als neue Nachricht in Outlook, Apple Mail oder Thunderbird; die Bilder sind eingebettet. |
-| `email_CN.html` | Vorschau im Browser |
+| `email_CN.html` | Vorschau im Browser (Bilder eingebettet, funktioniert als Einzeldatei) |
 | `email_DE.html` / `email_DE.eml` | Deutsche Lesefassung (intern) |
 
 Anmeldung: Der Button „立即登记 · Register now“ öffnet beim Empfänger eine vorausgefüllte Antwort an info@mapatec.de

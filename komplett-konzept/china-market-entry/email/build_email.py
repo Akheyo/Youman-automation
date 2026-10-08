@@ -4,7 +4,7 @@ Outputs per language:
   email_<LANG>.html  – preview in the browser (images as local files)
   email_<LANG>.eml   – ready-to-send draft (images embedded inline via cid:), opens in Outlook/Apple Mail/Thunderbird
 """
-import os, sys, html, urllib.parse, mimetypes
+import os, sys, html, urllib.parse, mimetypes, base64
 from email.message import EmailMessage
 from email.utils import make_msgid
 from PIL import Image
@@ -256,7 +256,8 @@ def build(lang, src):
 def main(langs):
     files = prep_images()
     for lang in langs:
-        rel = {k: 'img/' + os.path.basename(v) for k, v in files.items()}
+        # self-contained preview: images embedded as data URIs, so the file works on its own
+        rel = {k: 'data:%s;base64,%s' % (mimetypes.guess_type(v)[0], base64.b64encode(open(v, 'rb').read()).decode()) for k, v in files.items()}
         subject, doc, txt = build(lang, rel)
         open(os.path.join(HERE, f'email_{lang}.html'), 'w').write(doc)
         cids = {k: make_msgid(domain='komplett-konzept.de') for k in files}
