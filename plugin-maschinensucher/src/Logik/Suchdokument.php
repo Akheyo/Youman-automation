@@ -34,9 +34,19 @@ class Suchdokument
         $artikelId   = (int) self::erstes($artikel, array('id'), self::erstes($variante, array('itemId'), 0));
 
         $hersteller = self::feld($artikel, 'manufacturer', array());
-        $zustand    = self::erstes($artikel, array('condition', 'conditionApi'), null);
-        if (is_array($zustand)) {
-            $zustand = isset($zustand['id']) ? $zustand['id'] : null;
+        // Plenty nennt das Feld je nach Index-Stand unterschiedlich: als Zahl
+        // (conditionId) oder als Objekt mit id (condition). Der Zustand fuer
+        // Marktplaetze (conditionApi) nur, wenn der normale fehlt.
+        $zustand = null;
+        foreach (array('conditionId', 'condition', 'conditionApiId', 'conditionApi') as $feld) {
+            $wert = self::erstes($artikel, array($feld), null);
+            if (is_array($wert)) {
+                $wert = isset($wert['id']) ? $wert['id'] : null;
+            }
+            if ($wert !== null && $wert !== '' && is_numeric($wert)) {
+                $zustand = (int) $wert;
+                break;
+            }
         }
 
         return array(
@@ -91,7 +101,7 @@ class Suchdokument
                 $unter = array();
                 foreach ($wert as $k => $v) {
                     $unter[] = (string) $k;
-                    if (count($unter) >= 15) {
+                    if (count($unter) >= 60) {
                         break;
                     }
                 }

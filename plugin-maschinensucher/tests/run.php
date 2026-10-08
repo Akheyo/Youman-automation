@@ -870,4 +870,11 @@ $p->gleich(true, Inseratdaten::fingerabdruck(Inseratdaten::bauen(array_merge($ar
     !== Inseratdaten::fingerabdruck(Inseratdaten::bauen(array_merge($artikelApi, array('zustandId' => 1)), $umgebungApi)['koerper']),
     'Zustand aendern aendert den Fingerabdruck');
 
+$p->gleich(0, Suchdokument::alsVariante(array('data' => array('item' => array('id' => 5, 'conditionId' => 0), 'variation' => array('id' => 9))))['item']['condition'],
+    'conditionId 0 (Neu) wird gelesen');
+$p->gleich(1, Suchdokument::alsVariante(array('data' => array('item' => array('id' => 5, 'condition' => array('id' => 1)), 'variation' => array('id' => 9))))['item']['condition'],
+    'condition als Objekt wird gelesen');
+$p->gleich(3, Suchdokument::alsVariante(array('data' => array('item' => array('id' => 5, 'conditionApi' => 3), 'variation' => array('id' => 9))))['item']['condition'],
+    'conditionApi nur als Ersatz');
+
 exit($p->bericht());
