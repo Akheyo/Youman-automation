@@ -259,6 +259,7 @@ class Abgleich
                     'warenbestand' => $artikel['warenbestand'],
                     'markiert' => $markiert,
                     'rubrik'   => $rubrik,
+                    'zustandId' => $artikel['zustandId'],
                 );
             }
 
