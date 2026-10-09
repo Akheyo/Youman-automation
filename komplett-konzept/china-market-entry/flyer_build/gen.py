@@ -183,12 +183,12 @@ def build(lang):
                 (bt + 37, '我们两家公司为您提供全方位服务 · With our two companies you are covered end to end.', 15, '#d62828', 'bold'),
                 (bt + 59, '进出口经验不足？我们自己的进口公司 MapaTec 为您提供支持。', 16, '#0b1f4b', 'normal'),
                 (bt + 82, 'New to import/export? Our own import company MapaTec supports you.', 14, '#4a5a7a', 'normal'),
-                (bt + 103, '联系人 Contact: Frank Matysik · 微信 WeChat →', 15, '#d62828', 'bold')]
+                (bt + 103, '联系人 Contact: Frank Matysik · {PHONE} +49 155 67815122 · 微信 WeChat →', 15, '#d62828', 'bold')]
     else:
         rows = [(bt + 14, 'Komplett Konzept & MapaTec', 22, '#0b1f4b', 'bold'),
                 (bt + 44, 'Mit unseren beiden Unternehmen decken Sie alles ab.', 17, '#d62828', 'bold'),
                 (bt + 72, 'Unerfahren im Import/Export? Unsere eigene Importfirma MapaTec unterstützt Sie.', 17, '#0b1f4b', 'normal'),
-                (bt + 124, 'Ansprechpartner MapaTec: Frank Matysik · WeChat →', 15, '#0b1f4b', 'bold')]
+                (bt + 124, 'Ansprechpartner MapaTec: Frank Matysik · {PHONE} +49 155 67815122 · WeChat →', 15, '#0b1f4b', 'bold')]
     for i, (t, s, sz, col, wt) in enumerate(rows):
         p2['elements'].append(text_el(f'mt{i}', t, tx, W, s, sz, col, wt, 'start', 1.3))
     # contact bar moved from the page bottom to between the model cards and the advantages

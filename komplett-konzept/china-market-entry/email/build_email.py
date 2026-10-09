@@ -84,7 +84,7 @@ T = {
     wh=[('德国中部 · 8,000 m²', 'Central Germany'), ('法兰克福 · 4,000 m²', 'Frankfurt')], wh_more='+ 更多仓库遍布德国 · more sites in Germany',
     mt_t='Komplett Konzept & MapaTec', mt_1='我们两家公司为您提供全方位服务 · With our two companies you are covered end to end.',
     mt_2='进出口经验不足？我们自己的进口公司 MapaTec 为您提供支持。 New to import/export? Our own import company MapaTec supports you.',
-    mt_3='联系人 Contact: Frank Matysik · 微信 WeChat',
+    mt_3='联系人 Contact: Frank Matysik · 📱\u00a0+49\u00a0155\u00a067815122 · 微信 WeChat',
     contact='您的联系人 Your contact', wechat='微信扫码 · Scan WeChat',
  ),
  'DE': dict(
@@ -122,7 +122,7 @@ T = {
     wh=[('Mitten in Deutschland', '8.000 m²'), ('Frankfurt', '4.000 m²')], wh_more='+ weitere Standorte in Deutschland',
     mt_t='Komplett Konzept & MapaTec', mt_1='Mit unseren beiden Unternehmen decken Sie alles ab.',
     mt_2='Unerfahren im Import/Export? Unsere eigene Importfirma MapaTec unterstützt Sie.',
-    mt_3='Ansprechpartner MapaTec: Frank Matysik · WeChat',
+    mt_3='Ansprechpartner MapaTec: Frank Matysik · 📱\u00a0+49\u00a0155\u00a067815122 · WeChat',
     contact='Ihr Ansprechpartner', wechat='WeChat scannen',
  ),
 }
