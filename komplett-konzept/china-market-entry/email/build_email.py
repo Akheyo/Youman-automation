@@ -54,8 +54,9 @@ T = {
     visit_p='我们的首席执行官 Mario Parlitz 将亲自拜访您的展位，与您面谈合作。也可以预约晚上在他的酒店面谈。',
     visit_p2='Our CEO Mario Parlitz will personally visit your booth to talk about working together – or you can book an evening meeting at his hotel.',
     fairs=[('广交会 第一期 · Canton Fair Phase 1', '展位拜访 · Booth visit · 广州 Guangzhou', '15.–19.10.'), ('晚间酒店面谈 · Evening meeting at the hotel', 'The Protons Guangzhou · 78 Pazhou Avenue, Haizhu District', '14.–25.10.')],
-    reg_t='登记面谈 · Register for a meeting', reg_p='请告诉我们以下信息，Mario 将前往您的展位或与您在酒店见面：',
-    reg_p2='Please send us the following details – Mario will come to your booth or meet you at the hotel:',
+    call='展会以外的会面（如晚上在酒店）请致电 Mario · For meetings outside the fair (e.g. evenings at the hotel) please call Mario:',
+    reg_t='登记面谈 · Register for a meeting', reg_p='请告诉我们以下信息，Mario 将前往您的展位：',
+    reg_p2='Please send us the following details and Mario will come to your booth:',
     fields=['姓名 Name', '电话 / 微信 Phone / WeChat', '展位号 Booth ID', '行业 Industry'],
     fair_field='',
     button='立即登记 · Register now', reply='或直接回复本邮件并填写以上信息。 · Or simply reply to this e-mail with these details.',
@@ -97,7 +98,8 @@ T = {
     visit_p='Unser CEO Mario Parlitz kommt persönlich an Ihren Stand, um mit Ihnen über eine Zusammenarbeit zu sprechen. Alternativ können Sie einen Abendtermin in seinem Hotel buchen.',
     visit_p2='',
     fairs=[('Canton-Messe, Phase 1', 'Standbesuch · Guangzhou', '15.–19.10.'), ('Abendtermin im Hotel', 'The Protons Guangzhou · 78 Pazhou Avenue, Haizhu District', '14.–25.10.')],
-    reg_t='Gesprächstermin eintragen', reg_p='Schicken Sie uns diese Angaben – Mario kommt an Ihren Stand oder trifft Sie im Hotel:', reg_p2='',
+    call='Für Termine außerhalb der Messe (z. B. abends im Hotel) bitte Mario anrufen:',
+    reg_t='Gesprächstermin eintragen', reg_p='Schicken Sie uns diese Angaben – Mario kommt dann an Ihren Stand:', reg_p2='',
     fields=['Name', 'Telefon / WeChat', 'Stand-Nr. (Booth ID)', 'Branche'],
     fair_field='',
     button='Jetzt eintragen', reply='Oder antworten Sie einfach auf diese E-Mail mit den Angaben.',
@@ -179,6 +181,7 @@ def build(lang, src):
 <p style="margin:0 0 2px 0;font-family:{FONT};font-size:22px;font-weight:bold;color:{NAVY};">🗓 {e(t["visit_t"])}</p>
 {p(t["visit_t2"], 16, NAVY, True, mb=8)}{p(t["visit_p"], 14, NAVY, mb=2)}{p(t["visit_p2"], 13, "#33415c", mb=6)}</td></tr>
 <tr><td style="padding:0 14px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>{fairs}</tr></table></td></tr>
+<tr><td style="padding:8px 20px 0 20px;"><p style="margin:0;font-family:{FONT};font-size:14px;line-height:1.5;color:{NAVY};">📞 {e(t["call"])} <a href="tel:+491772711123" style="color:{RED};font-weight:bold;text-decoration:none;white-space:nowrap;">+49 177 2711123</a> <span style="white-space:nowrap;">(WeChat)</span></p></td></tr>
 <tr><td style="padding:14px 20px 4px 20px;">
 <p style="margin:0 0 4px 0;font-family:{FONT};font-size:18px;font-weight:bold;color:{NAVY};">✍ {e(t["reg_t"])}</p>
 {p(t["reg_p"], 14, NAVY, mb=2)}{p(t["reg_p2"], 13, "#33415c", mb=8)}
@@ -245,7 +248,7 @@ def build(lang, src):
 
     # plain-text alternative
     txt = [t['headline'], t['headline2'], '', t['intro'], t['intro2'], '', t['visit_t'], t['visit_t2'], t['visit_p'], t['visit_p2']]
-    txt += [f'- {n} ({c}): {d}' for n, c, d in t['fairs']] + ['', t['reg_t'], t['reg_p'], t['reg_p2']]
+    txt += [f'- {n} ({c}): {d}' for n, c, d in t['fairs']] + ['', t['call'] + ' ' + PHONE, '', t['reg_t'], t['reg_p'], t['reg_p2']]
     txt += [f'  {f}: ____' for f in t['fields']] + ([f'  {t["fair_field"]}'] if t['fair_field'] else []) + ['', f'-> {MAIL}', t['reply'], '']
     for n, title, rank, tag, d1, d2 in t['models']:
         txt += [f'{n}. {title} ({rank})', tag, d1, d2, '']
