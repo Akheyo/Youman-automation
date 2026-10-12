@@ -45,20 +45,20 @@ def prep_images():
 T = {
  'CN': dict(
     subject='德国/欧洲市场合作 · 预约展位拜访 | Germany/Europe partnership – book a booth visit',
-    preheader='Mario Parlitz 将亲临您的展位：广交会第一期 15.–19.10. · 也可预约晚上在酒店面谈 14.–25.10.',
+    preheader='Mario Parlitz 将亲临您的展位：广交会第一期 15.–19.10. · 锦汉展 21.–23.10. · 也可预约晚上在酒店面谈',
     headline='进入德国及欧洲市场', headline2='Enter the German & European Market',
     intro='您只需提供产品，其余一切由我们完成：销售、物流、退货和技术支持。',
     intro2='You just deliver the products – we take care of everything else: sales, logistics, returns & technical support.',
     badge='30多年电商经验 · 30+ years of e-commerce experience',
-    visit_t='您会再次参加广交会吗？', visit_t2='Will you be at the Canton Fair again?',
-    visit_p='如果您在广交会有展位，我们的首席执行官 Mario Parlitz 可以亲自前来拜访，与您面谈合作。',
-    visit_p2='If you have a booth at the Canton Fair, our CEO Mario Parlitz can come and visit you to talk about working together.',
-    fairs=[('广交会 第一期 · Canton Fair Phase 1', '展位拜访 · Booth visit · 广州 Guangzhou', '15.–19.10.'), ('晚间酒店面谈 · Evening meeting at the hotel', 'The Protons Guangzhou · 78 Pazhou Avenue, Haizhu District', '14.–25.10.')],
+    visit_t='您会参加广交会或锦汉展吗？', visit_t2='Will you be at the Canton Fair or the Jinhan Fair?',
+    visit_p='如果您在广交会或锦汉展有展位，我们的首席执行官 Mario Parlitz 可以亲自前来拜访，与您面谈合作。',
+    visit_p2='If you have a booth at the Canton Fair or the Jinhan Fair, our CEO Mario Parlitz can come and visit you to talk about working together.',
+    fairs=[('广交会 第一期 · Canton Fair Phase 1', '展位拜访 · Booth visit · 广州 Guangzhou', '15.–19.10.'), ('锦汉展 · Jinhan Fair', '展位拜访 · Booth visit · 广州 Guangzhou', '21.–23.10.'), ('晚间酒店面谈 · Evening meeting at the hotel', 'The Protons Guangzhou · 78 Pazhou Avenue, Haizhu District', '14.–25.10.')],
     call='展会以外的会面（如晚上在酒店）请致电 Mario · For meetings outside the fair (e.g. evenings at the hotel) please call Mario:',
     reg_t='登记面谈 · Register for a meeting', reg_p='请告诉我们以下信息，Mario 将前往您的展位：',
     reg_p2='Please send us the following details and Mario will come to your booth:',
     fields=[('姓名 Name', ''), ('公司名称 Company name', ''), ('电话 / 微信 Phone / WeChat', ''),
-            ('展位号 Booth ID', '选填 optional · 例如 e.g. 第140届广交会 140th Canton Fair · 展位 Booth …')],
+            ('展位号 Booth ID', '选填 optional · 例如 e.g. 第140届广交会 140th Canton Fair / 锦汉展 Jinhan Fair · 展位 Booth …')],
     fair_field='',
     button='立即登记 · Register now', reply='或直接回复本邮件并填写以上信息。 · Or simply reply to this e-mail with these details.',
     mail_subject='展位拜访登记 · Booth visit registration',
@@ -91,18 +91,18 @@ T = {
  ),
  'DE': dict(
     subject='Kooperation Deutschland/Europa · Standbesuch vereinbaren',
-    preheader='Mario Parlitz besucht Ihren Stand (Canton-Messe Phase 1, 15.–19.10.) oder trifft Sie abends im Hotel (14.–25.10.)',
+    preheader='Mario Parlitz besucht Ihren Stand: Canton-Messe Phase 1 (15.–19.10.) und Jinhan Fair (21.–23.10.) – oder abends im Hotel',
     headline='Ihr Weg in den deutschen und europäischen Markt', headline2='Deutsche Lesefassung der chinesischen E-Mail (intern)',
     intro='Sie brauchen nur die Produkte zu liefern – wir erledigen den ganzen Rest: Vertrieb, Logistik, Retouren und technischen Support.',
     intro2='', badge='Über 30 Jahre Erfahrung im Onlinehandel',
-    visit_t='Sind Sie wieder auf der Canton Fair?', visit_t2='',
+    visit_t='Sind Sie auf der Canton Fair oder der Jinhan Fair?', visit_t2='',
     visit_p='Wenn Sie dort einen Stand haben, kommt unser CEO Mario Parlitz Sie gern besuchen und spricht mit Ihnen über eine Zusammenarbeit.',
     visit_p2='',
-    fairs=[('Canton-Messe, Phase 1', 'Standbesuch · Guangzhou', '15.–19.10.'), ('Abendtermin im Hotel', 'The Protons Guangzhou · 78 Pazhou Avenue, Haizhu District', '14.–25.10.')],
+    fairs=[('Canton-Messe, Phase 1', 'Standbesuch · Guangzhou', '15.–19.10.'), ('Jinhan Fair', 'Standbesuch · Guangzhou', '21.–23.10.'), ('Abendtermin im Hotel', 'The Protons Guangzhou · 78 Pazhou Avenue, Haizhu District', '14.–25.10.')],
     call='Für Termine außerhalb der Messe (z. B. abends im Hotel) bitte Mario anrufen:',
     reg_t='Gesprächstermin eintragen', reg_p='Schicken Sie uns diese Angaben – Mario kommt dann an Ihren Stand:', reg_p2='',
     fields=[('Name', ''), ('Firmenname', ''), ('Telefon / WeChat', ''),
-            ('Stand-Nr. (Booth ID)', 'optional · z. B. 140. Canton Fair · Stand …')],
+            ('Stand-Nr. (Booth ID)', 'optional · z. B. 140. Canton Fair / Jinhan Fair · Stand …')],
     fair_field='',
     button='Jetzt eintragen', reply='Oder antworten Sie einfach auf diese E-Mail mit den Angaben.',
     mail_subject='Anmeldung Standbesuch',
@@ -170,11 +170,14 @@ def build(lang, src):
         + p(t['intro'], 15, '#ffffff', mb=4) + p(t['intro2'], 13, LIGHT, mb=0), pad='22px 28px 18px 28px'))
 
     # booth visit + registration
-    fairs = ''.join(f'''<td width="{100 // len(t['fairs'])}%" valign="top" style="padding:6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;">
+    # date cards, two per row; an odd last card spans the full width
+    cell = lambda n, c, d, span: f'''<td {'colspan="2"' if span else 'width="50%"'} valign="top" style="padding:6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:10px;">
 <tr><td style="padding:14px 16px;border-left:5px solid {RED};border-radius:10px;">
 <p style="margin:0 0 4px 0;font-family:{FONT};font-size:22px;font-weight:bold;color:{RED};">{e(d)}</p>
 <p style="margin:0 0 2px 0;font-family:{FONT};font-size:14px;font-weight:bold;color:{NAVY};">{e(n)}</p>
-<p style="margin:0;font-family:{FONT};font-size:13px;color:#4a5a7a;">{e(c)}</p></td></tr></table></td>''' for n, c, d in t['fairs'])
+<p style="margin:0;font-family:{FONT};font-size:13px;color:#4a5a7a;">{e(c)}</p></td></tr></table></td>'''
+    fl = t['fairs']
+    fairs = '</tr><tr>'.join(''.join(cell(*f, span=(len(fl[i:i + 2]) == 1)) for f in fl[i:i + 2]) for i in range(0, len(fl), 2))
     fields = ''.join(f'''<tr><td style="padding:4px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
 <td width="38%" style="font-family:{FONT};font-size:14px;font-weight:bold;color:{NAVY};padding:9px 10px;background:#eef2fa;border:1px solid #cfd8ea;border-right:0;border-radius:6px 0 0 6px;">{e(f)}</td>
 <td style="background:#ffffff;border:1px solid #cfd8ea;border-radius:0 6px 6px 0;padding:6px 10px;font-family:{FONT};font-size:12px;font-style:italic;color:#8a94a8;">{e(h) if h else '&nbsp;'}</td></tr></table></td></tr>''' for f, h in t['fields'])

@@ -2,6 +2,7 @@
 
 Die E-Mail enthält den Inhalt des Flyers und zusätzlich die Anmeldung für einen Standbesuch von Mario Parlitz:
 - Canton-Messe, Phase 1 in Guangzhou: 15.–19.10. (Standbesuch)
+- Jinhan Fair in Guangzhou: 21.–23.10. (Standbesuch)
 - Abendtermin im Hotel The Protons Guangzhou, 78 Pazhou Avenue, Haizhu District: 14.–25.10.
 
 
