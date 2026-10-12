@@ -4,10 +4,16 @@ Mandant `p14443` · Kaufland-Konto **(ID 1028) KomplettKonzept** · Länderplatt
 Erhoben am 2026-10-12, ausschließlich lesend.
 
 **Es wurde kein Katalog und keine Konfiguration angelegt.** Weder „WEITER" noch
-„Speichern", „Erstellen" oder „Fertigstellen" wurde geklickt. **Nachgesehen:** die
-Katalog-Übersicht (Daten » Kataloge, `/plenty/terra/data-exchange/export/catalog-v2/catalogs`)
-zählt vor und nach der Erhebung unverändert **„0 von 0"** — der Mandant enthält
-überhaupt keinen Katalog, auch keinen für Kaufland.
+„Speichern", „Erstellen" oder „Fertigstellen" wurde geklickt.
+
+> **Korrektur (12.10.2026).** Hier stand, die Katalog-Übersicht zähle „0 von 0", der
+> Mandant enthalte überhaupt keinen Katalog. **Das war falsch.** Das Raster unter
+> Daten » Kataloge braucht auf diesem Mandanten rund **30 Sekunden** zum Laden;
+> solange steht der Zähler auf „0 von 0". Tatsächlich lagen dort **13 Kataloge**
+> (Amazon, Shopify, Meta und Standardformat-Exporte), keiner davon für Kaufland.
+> Wer die Zahl verlässlich will, fragt
+> `GET /rest/v2/catalogs/catalogs?itemsPerPage=100` ab — `/rest/catalogs` und
+> `/rest/v2/catalogs` antworten beide mit 404.
 
 Verlassen wurde der Assistent über **„VERLASSEN"**. Der Knopf fragt noch einmal nach
 — *„Möchtest du den Assistenten wirklich verlassen? Alle ungespeicherten Änderungen
