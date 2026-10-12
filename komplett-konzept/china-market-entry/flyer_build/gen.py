@@ -97,7 +97,7 @@ def footer(page, old_id):
     delete(page, old_id)
     page['elements'].append(text_el('foot', 1514, 43, 940, f'CEO Mario Parlitz  ·  {{PHONE}} {PHONE_NR}  ·  info@mapatec.de',
                                     20, '#ffffff', 'bold', 'center', 1.3))
-    page['elements'].append({'id': 'footqr', 'type': 'rect', 'top': 1484, 'left': 997, 'width': 86, 'height': 86,
+    page['elements'].append({'id': 'footqr', 'type': 'rect', 'top': 1460, 'left': 995, 'width': 116, 'height': 116,
                              'fill': {'media': {'mediaId': 'MAHWlFIXZ8E'}}, 'src': IMG['MAHWlFIXZ8E']['file']})
 
 
@@ -176,7 +176,7 @@ def build(lang):
             if 1095 <= e['top'] < 1200: e['top'] += 26
             elif 1200 <= e['top'] < 1320: e['top'] += 6
     # Komplett Konzept & MapaTec box
-    box = find(p2, 'LBJS3p3Rr0HS3tql'); box.update(top=1316 if not cn else 1338, height=158 if not cn else 134)
+    box = find(p2, 'LBJS3p3Rr0HS3tql'); box.update(top=1316 if not cn else 1338, height=150 if not cn else 128)
     bt = box['top']
     logo = find(p2, 'LBVCrYYRs4p2CJms'); lh = box['height'] - 28; lw = lh * 744 / 495
     logo.update(top=bt + 14, left=72, width=lw, height=lh, src=IMG['MAHWlA8t-z4']['file'])
@@ -201,15 +201,15 @@ def build(lang):
         p2['elements'].append(text_el(f'mt{i}', t, tx, W, s, sz, col, wt, 'start', 1.3))
     # contact bar moved from the page bottom to between the model cards and the advantages
     delete(p2, 'LB9LHPPnPGZssrFY')
-    BAR_T, BAR_H, S = 1046, 64, 76
+    BAR_T, BAR_H, S = 1043, 108, 111
     for e in p2['elements']:
         if e['top'] >= 1045: e['top'] += S
     p2['elements'].append({'id': 'cbar', 'type': 'shape', 'top': BAR_T, 'left': 50, 'width': 1023, 'height': BAR_H,
                            'paths': [{'fill': {'color': {'color': '#ffffff'}}, 'cornerRounding': 10}]})
     who = '您的联系人 Your contact:  ' if cn else 'Ihr Ansprechpartner:  '
-    p2['elements'].append(text_el('cbartx', BAR_T + 17, 60, 945, f'{who}CEO Mario Parlitz  ·  {{PHONE}} {PHONE_NR}  ·  info@mapatec.de',
+    p2['elements'].append(text_el('cbartx', BAR_T + 39, 60, 900, f'{who}CEO Mario Parlitz  ·  {{PHONE}} {PHONE_NR}  ·  info@mapatec.de',
                                   20 if cn else 22, '#0b1f4b', 'bold', 'center', 1.3))
-    p2['elements'].append({'id': 'cbarqr', 'type': 'rect', 'top': BAR_T + 6, 'left': 1073 - 6 - 52, 'width': 52, 'height': 52,
+    p2['elements'].append({'id': 'cbarqr', 'type': 'rect', 'top': BAR_T + 4, 'left': 1073 - 4 - 100, 'width': 100, 'height': 100,
                            'fill': {'media': {'mediaId': 'MAHWlFIXZ8E'}}, 'src': IMG['MAHWlFIXZ8E']['file']})
 
     bg1 = 'background:#031f44 linear-gradient(180deg,#07264d 0%,#05224a 55%,#031f44 100%) no-repeat 0 0 / 100% 100%;'
