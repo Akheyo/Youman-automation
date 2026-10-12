@@ -9,6 +9,13 @@ Katalog-Übersicht (Daten » Kataloge, `/plenty/terra/data-exchange/export/catal
 zählt vor und nach der Erhebung unverändert **„0 von 0"** — der Mandant enthält
 überhaupt keinen Katalog, auch keinen für Kaufland.
 
+Verlassen wurde der Assistent über **„VERLASSEN"**. Der Knopf fragt noch einmal nach
+— *„Möchtest du den Assistenten wirklich verlassen? Alle ungespeicherten Änderungen
+gehen verloren."* mit **ABBRECHEN** und **ASSISTENTEN VERLASSEN**. Bestätigt wurde
+„ASSISTENTEN VERLASSEN"; dieser Dialog kennt keine Speichern-Möglichkeit, er verwirft
+nur. Danach steht man wieder auf der Assistenten-Übersicht
+(`/plenty/terra/system/assistants/omni-channel`).
+
 **78 Suchbegriffe** — 54 mit Treffern, **24 ohne**.
 **491 Trefferzeilen** auf **476 verschiedene Kategorien**.
 
