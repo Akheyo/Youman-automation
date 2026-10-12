@@ -50,14 +50,15 @@ T = {
     intro='您只需提供产品，其余一切由我们完成：销售、物流、退货和技术支持。',
     intro2='You just deliver the products – we take care of everything else: sales, logistics, returns & technical support.',
     badge='30多年电商经验 · 30+ years of e-commerce experience',
-    visit_t='Mario Parlitz 将亲临您的展位', visit_t2='Mario Parlitz will visit your booth',
-    visit_p='我们的首席执行官 Mario Parlitz 将亲自拜访您的展位，与您面谈合作。也可以预约晚上在他的酒店面谈。',
-    visit_p2='Our CEO Mario Parlitz will personally visit your booth to talk about working together – or you can book an evening meeting at his hotel.',
+    visit_t='您会再次参加广交会吗？', visit_t2='Will you be at the Canton Fair again?',
+    visit_p='如果您在广交会有展位，我们的首席执行官 Mario Parlitz 可以亲自前来拜访，与您面谈合作。',
+    visit_p2='If you have a booth at the Canton Fair, our CEO Mario Parlitz can come and visit you to talk about working together.',
     fairs=[('广交会 第一期 · Canton Fair Phase 1', '展位拜访 · Booth visit · 广州 Guangzhou', '15.–19.10.'), ('晚间酒店面谈 · Evening meeting at the hotel', 'The Protons Guangzhou · 78 Pazhou Avenue, Haizhu District', '14.–25.10.')],
     call='展会以外的会面（如晚上在酒店）请致电 Mario · For meetings outside the fair (e.g. evenings at the hotel) please call Mario:',
     reg_t='登记面谈 · Register for a meeting', reg_p='请告诉我们以下信息，Mario 将前往您的展位：',
     reg_p2='Please send us the following details and Mario will come to your booth:',
-    fields=['姓名 Name', '电话 / 微信 Phone / WeChat', '展位号 Booth ID', '行业 Industry'],
+    fields=[('姓名 Name', ''), ('公司名称 Company name', ''), ('电话 / 微信 Phone / WeChat', ''),
+            ('展位号 Booth ID', '选填 optional · 例如 e.g. 第140届广交会 140th Canton Fair · 展位 Booth …')],
     fair_field='',
     button='立即登记 · Register now', reply='或直接回复本邮件并填写以上信息。 · Or simply reply to this e-mail with these details.',
     mail_subject='展位拜访登记 · Booth visit registration',
@@ -94,13 +95,14 @@ T = {
     headline='Ihr Weg in den deutschen und europäischen Markt', headline2='Deutsche Lesefassung der chinesischen E-Mail (intern)',
     intro='Sie brauchen nur die Produkte zu liefern – wir erledigen den ganzen Rest: Vertrieb, Logistik, Retouren und technischen Support.',
     intro2='', badge='Über 30 Jahre Erfahrung im Onlinehandel',
-    visit_t='Mario Parlitz besucht Ihren Stand', visit_t2='',
-    visit_p='Unser CEO Mario Parlitz kommt persönlich an Ihren Stand, um mit Ihnen über eine Zusammenarbeit zu sprechen. Alternativ können Sie einen Abendtermin in seinem Hotel buchen.',
+    visit_t='Sind Sie wieder auf der Canton Fair?', visit_t2='',
+    visit_p='Wenn Sie dort einen Stand haben, kommt unser CEO Mario Parlitz Sie gern besuchen und spricht mit Ihnen über eine Zusammenarbeit.',
     visit_p2='',
     fairs=[('Canton-Messe, Phase 1', 'Standbesuch · Guangzhou', '15.–19.10.'), ('Abendtermin im Hotel', 'The Protons Guangzhou · 78 Pazhou Avenue, Haizhu District', '14.–25.10.')],
     call='Für Termine außerhalb der Messe (z. B. abends im Hotel) bitte Mario anrufen:',
     reg_t='Gesprächstermin eintragen', reg_p='Schicken Sie uns diese Angaben – Mario kommt dann an Ihren Stand:', reg_p2='',
-    fields=['Name', 'Telefon / WeChat', 'Stand-Nr. (Booth ID)', 'Branche'],
+    fields=[('Name', ''), ('Firmenname', ''), ('Telefon / WeChat', ''),
+            ('Stand-Nr. (Booth ID)', 'optional · z. B. 140. Canton Fair · Stand …')],
     fair_field='',
     button='Jetzt eintragen', reply='Oder antworten Sie einfach auf diese E-Mail mit den Angaben.',
     mail_subject='Anmeldung Standbesuch',
@@ -144,7 +146,7 @@ def p(txt, size=15, color='#ffffff', bold=False, italic=False, mb=8, lh=1.5, ali
 
 def build(lang, src):
     t = T[lang]
-    body_lines = [f'{f}:' for f in t['fields']] + ([t['fair_field']] if t['fair_field'] else [])
+    body_lines = [f'{f} ({h}):' if h else f'{f}:' for f, h in t['fields']] + ([t['fair_field']] if t['fair_field'] else [])
     mailto = 'mailto:%s?subject=%s&body=%s' % (MAIL, urllib.parse.quote(t['mail_subject']),
                                                 urllib.parse.quote('\r\n'.join(body_lines) + '\r\n'))
     img = lambda k, w, alt='', st='': f'<img src="{src[k]}" width="{w}" alt="{e(alt)}" style="display:block;border:0;width:{w}px;max-width:100%;height:auto;{st}">'
@@ -175,7 +177,7 @@ def build(lang, src):
 <p style="margin:0;font-family:{FONT};font-size:13px;color:#4a5a7a;">{e(c)}</p></td></tr></table></td>''' for n, c, d in t['fairs'])
     fields = ''.join(f'''<tr><td style="padding:4px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
 <td width="38%" style="font-family:{FONT};font-size:14px;font-weight:bold;color:{NAVY};padding:9px 10px;background:#eef2fa;border:1px solid #cfd8ea;border-right:0;border-radius:6px 0 0 6px;">{e(f)}</td>
-<td style="background:#ffffff;border:1px solid #cfd8ea;border-radius:0 6px 6px 0;">&nbsp;</td></tr></table></td></tr>''' for f in t['fields'])
+<td style="background:#ffffff;border:1px solid #cfd8ea;border-radius:0 6px 6px 0;padding:6px 10px;font-family:{FONT};font-size:12px;font-style:italic;color:#8a94a8;">{e(h) if h else '&nbsp;'}</td></tr></table></td></tr>''' for f, h in t['fields'])
     rows.append(sec(f'''<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{GOLD};border-radius:14px;">
 <tr><td style="padding:20px 20px 8px 20px;">
 <p style="margin:0 0 2px 0;font-family:{FONT};font-size:22px;font-weight:bold;color:{NAVY};">🗓 {e(t["visit_t"])}</p>
@@ -249,7 +251,7 @@ def build(lang, src):
     # plain-text alternative
     txt = [t['headline'], t['headline2'], '', t['intro'], t['intro2'], '', t['visit_t'], t['visit_t2'], t['visit_p'], t['visit_p2']]
     txt += [f'- {n} ({c}): {d}' for n, c, d in t['fairs']] + ['', t['call'] + ' ' + PHONE, '', t['reg_t'], t['reg_p'], t['reg_p2']]
-    txt += [f'  {f}: ____' for f in t['fields']] + ([f'  {t["fair_field"]}'] if t['fair_field'] else []) + ['', f'-> {MAIL}', t['reply'], '']
+    txt += [f'  {f}: ____' + (f'  ({h})' if h else '') for f, h in t['fields']] + ([f'  {t["fair_field"]}'] if t['fair_field'] else []) + ['', f'-> {MAIL}', t['reply'], '']
     for n, title, rank, tag, d1, d2 in t['models']:
         txt += [f'{n}. {title} ({rank})', tag, d1, d2, '']
     txt += [t['adv_t']] + [f'✓ {h}: {d}' for h, d in t['adv']] + ['', f'{t["contact"]}: CEO Mario Parlitz · {PHONE} · {MAIL}', 'www.komplett-konzept.de']
