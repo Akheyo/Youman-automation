@@ -5,9 +5,9 @@
 @font-face { font-family: 'Arimo'; font-weight: 400; font-style: italic; src: url(file:///usr/share/fonts/truetype/liberation/LiberationSans-Italic.ttf); }
 @font-face { font-family: 'Arimo'; font-weight: 700; font-style: normal; src: url(file:///usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf); }
 @font-face { font-family: 'Arimo'; font-weight: 700; font-style: italic; src: url(file:///usr/share/fonts/truetype/liberation/LiberationSans-BoldItalic.ttf); }
-@page { size: 297mm 420mm; margin: 0; }
+@page { size: 148mm 210mm; margin: 0; }
 html, body { margin: 0; padding: 0; }
-.page { position: relative; width: 297mm; height: 420mm; overflow: hidden; background: #ffffff; page-break-after: always; break-after: page; }
+.page { position: relative; width: 148mm; height: 210mm; overflow: hidden; background: #ffffff; page-break-after: always; break-after: page; }
 .art { position: absolute; width: 297mm; height: 420mm; overflow: hidden; }
 .page:last-child { page-break-after: auto; break-after: auto; }
 .el { position: absolute; margin: 0; }

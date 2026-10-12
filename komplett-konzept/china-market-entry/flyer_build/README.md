@@ -1,7 +1,7 @@
 # Flyer-Build (HTML → PDF)
 
 Canva war nicht mehr verbunden, daher werden die Flyer aus den letzten Canva-Layoutdaten (`*_p1.json`, `*_p2.json`)
-als HTML nachgebaut und mit Chromium als PDF (A3, Vektortext) gedruckt.
+als HTML nachgebaut und mit Chromium als PDF (DIN A5 mit 5 mm Sicherheitsrand, Vektortext) gedruckt.
 
 ```bash
 mkdir -p fonts && for w in Regular Medium Bold; do

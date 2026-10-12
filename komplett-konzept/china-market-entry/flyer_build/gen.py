@@ -18,9 +18,11 @@ strip = Image.open(f'{HERE}/KomplettKonzept_Banner_Luftbild.jpg').crop((0, 100, 
 strip.save(f'{HERE}/img/banner_strip.jpg', quality=93)
 BANNER_H = round(1123 * strip.height / strip.width)
 
-SAFE_MM = 10                                   # white margin left/right (top/bottom follow from the aspect ratio)
-SAFE_S = (297 - 2 * SAFE_MM) / 297
-SAFE_X, SAFE_Y = SAFE_MM, (420 - 420 * SAFE_S) / 2
+# print format DIN A5; the A3-sized design (297 x 420 mm) is zoomed into it with a white safety margin
+PAGE_W, PAGE_H = 148, 210
+SAFE_MM = 5                                    # white margin left/right (top/bottom follow from the aspect ratio)
+SAFE_S = (PAGE_W - 2 * SAFE_MM) / 297
+SAFE_X, SAFE_Y = SAFE_MM, (PAGE_H - 420 * SAFE_S) / 2
 
 
 def text_el(id, top, left, width, txt, size, color='#ffffff', weight='normal', align='start', lh=1.4,
@@ -95,9 +97,9 @@ def header(page, contact_id, contact_txt):
 
 def footer(page, old_id):
     delete(page, old_id)
-    page['elements'].append(text_el('foot', 1514, 43, 940, f'CEO Mario Parlitz  ·  {{PHONE}} {PHONE_NR}  ·  info@mapatec.de',
+    page['elements'].append(text_el('foot', 1514, 43, 900, f'CEO Mario Parlitz  ·  {{PHONE}} {PHONE_NR}  ·  info@mapatec.de',
                                     20, '#ffffff', 'bold', 'center', 1.3))
-    page['elements'].append({'id': 'footqr', 'type': 'rect', 'top': 1460, 'left': 995, 'width': 116, 'height': 116,
+    page['elements'].append({'id': 'footqr', 'type': 'rect', 'top': 1428, 'left': 963, 'width': 150, 'height': 150,
                              'fill': {'media': {'mediaId': 'MAHWlFIXZ8E'}}, 'src': IMG['MAHWlFIXZ8E']['file']})
 
 
@@ -150,7 +152,7 @@ def build(lang):
                                          '可签订分销协议，条款可协商。')
         set_text(p2, 'LBt0gHCXX9x0tzrS', 'You stock your products in Germany. We handle storage, active sales, shipping and returns – and, on request, '
                                          'brand development and trademark registration. Distribution agreement possible and negotiable.').update(top=470)
-        find(p2, 'LBt8p3w2cX3zPmyZ')['top'] = 548; find(p2, 'LBpXmTT0JjBhzrLP')['top'] = 572
+        find(p2, 'LBt8p3w2cX3zPmyZ')['top'] = 566; find(p2, 'LBpXmTT0JjBhzrLP')['top'] = 590
         set_text(p2, 'LBB7DrNs8nJ756dy', '适合已在德国销售、但希望额外利用我们德国或欧洲销售渠道的制造商。')
         set_text(p2, 'LB1mk8y8VfTZ1lyM', 'Ideal for manufacturers who already sell here but also want to use our German or European sales channels.')
     else:
@@ -182,7 +184,7 @@ def build(lang):
     logo.update(top=bt + 14, left=72, width=lw, height=lh, src=IMG['MAHWlA8t-z4']['file'])
     tx = 72 + lw + 26
     delete(p2, 'LB6fZs1ZkrcDyfrC', 'LBFRLmybQ1QmD80X', 'LBPTC45kV7WqrKkX', 'LBNY4w00HP8lltkh', 'LBGYN2KCP09GkLTN')
-    qs = box['height'] - 22   # Frank Matysik's WeChat QR on the right of the box
+    qs = box['height'] - 16   # Frank Matysik's WeChat QR on the right of the box
     p2['elements'].append({'id': 'frankqr', 'type': 'rect', 'top': bt + 11, 'left': 1073 - 14 - qs, 'width': qs, 'height': qs,
                            'fill': {'media': {}}, 'src': 'img/QR_WeChat_Frank_Matysik.png'})
     W = 1073 - 14 - qs - 22 - tx
@@ -201,15 +203,16 @@ def build(lang):
         p2['elements'].append(text_el(f'mt{i}', t, tx, W, s, sz, col, wt, 'start', 1.3))
     # contact bar moved from the page bottom to between the model cards and the advantages
     delete(p2, 'LB9LHPPnPGZssrFY')
-    BAR_T, BAR_H, S = 1043, 108, 111
+    BAR_T, BAR_H, S = 1039, 136, 131
     for e in p2['elements']:
-        if e['top'] >= 1045: e['top'] += S
+        if e['top'] >= 1200: e['top'] += S - 12   # second advantage row and MapaTec box: slightly tighter
+        elif e['top'] >= 1045: e['top'] += S
     p2['elements'].append({'id': 'cbar', 'type': 'shape', 'top': BAR_T, 'left': 50, 'width': 1023, 'height': BAR_H,
                            'paths': [{'fill': {'color': {'color': '#ffffff'}}, 'cornerRounding': 10}]})
     who = '您的联系人 Your contact:  ' if cn else 'Ihr Ansprechpartner:  '
-    p2['elements'].append(text_el('cbartx', BAR_T + 39, 60, 900, f'{who}CEO Mario Parlitz  ·  {{PHONE}} {PHONE_NR}  ·  info@mapatec.de',
+    p2['elements'].append(text_el('cbartx', BAR_T + 53, 60, 880, f'{who}CEO Mario Parlitz  ·  {{PHONE}} {PHONE_NR}  ·  info@mapatec.de',
                                   20 if cn else 22, '#0b1f4b', 'bold', 'center', 1.3))
-    p2['elements'].append({'id': 'cbarqr', 'type': 'rect', 'top': BAR_T + 4, 'left': 1073 - 4 - 100, 'width': 100, 'height': 100,
+    p2['elements'].append({'id': 'cbarqr', 'type': 'rect', 'top': BAR_T + 4, 'left': 1073 - 4 - 128, 'width': 128, 'height': 128,
                            'fill': {'media': {'mediaId': 'MAHWlFIXZ8E'}}, 'src': IMG['MAHWlFIXZ8E']['file']})
 
     bg1 = 'background:#031f44 linear-gradient(180deg,#07264d 0%,#05224a 55%,#031f44 100%) no-repeat 0 0 / 100% 100%;'
