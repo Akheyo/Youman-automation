@@ -1,7 +1,8 @@
 # E-Mail „Kooperation + Standbesuch“
 
 Die E-Mail enthält den Inhalt des Flyers und zusätzlich die Anmeldung für einen Standbesuch von Mario Parlitz:
-- Canton-Messe, Phase 1 in Guangzhou: 15.–19.10.
+- Canton-Messe, Phase 1 in Guangzhou: 15.–19.10. (Standbesuch)
+- Abendtermin im Hotel The Protons Guangzhou, 78 Pazhou Avenue, Haizhu District: 14.–25.10.
 
 
 | Datei | Zweck |
@@ -11,7 +12,7 @@ Die E-Mail enthält den Inhalt des Flyers und zusätzlich die Anmeldung für ein
 | `email_DE.html` / `email_DE.eml` | Deutsche Lesefassung (intern) |
 
 Anmeldung: Der Button „立即登记 · Register now“ öffnet beim Empfänger eine vorausgefüllte Antwort an info@mapatec.de
-mit den Feldern Name, Telefon/WeChat, Stand-Nr. (Booth ID), Branche.
+mit den Feldern Name, Telefon/WeChat, Stand-Nr. (Booth ID), Branche, Wunschtermin (Stand oder Hotel).
 Alternativ antworten die Empfänger einfach auf die E-Mail.
 
 Neu erzeugen: `python3 build_email.py` (Texte stehen in `T` in `build_email.py`).
