@@ -4,7 +4,10 @@ Mandant `p14443` · Kaufland-Konto **(ID 1028) KomplettKonzept** · Länderplatt
 Erhoben am 2026-10-12, ausschließlich lesend.
 
 **Es wurde kein Katalog und keine Konfiguration angelegt.** Weder „WEITER" noch
-„Speichern", „Erstellen" oder „Fertigstellen" wurde geklickt.
+„Speichern", „Erstellen" oder „Fertigstellen" wurde geklickt. **Nachgesehen:** die
+Katalog-Übersicht (Daten » Kataloge, `/plenty/terra/data-exchange/export/catalog-v2/catalogs`)
+zählt vor und nach der Erhebung unverändert **„0 von 0"** — der Mandant enthält
+überhaupt keinen Katalog, auch keinen für Kaufland.
 
 **78 Suchbegriffe** — 54 mit Treffern, **24 ohne**.
 **491 Trefferzeilen** auf **476 verschiedene Kategorien**.
@@ -560,10 +563,21 @@ Formularfelds und legt nichts an. Die Antwort enthält **5.230** Einträge der F
 Der Filter der Oberfläche ist ein **Teilwort-Vergleich ohne Groß-/Kleinschreibung**
 auf `caption`. Genau dieser Vergleich ist für die Tabelle oben nachgebildet.
 
-**Gegengeprüft.** Parallel wurden 35 der 78 Begriffe im Assistenten tatsächlich
-eingetippt und die Dropdown-Einträge abgelesen. Alle 35 stimmen mit der Filterung
-aus der Rohliste **restlos** überein — gleiche Anzahl, gleiche Namen. Das Dropdown
-ist nicht virtualisiert; bei einem Test mit `e` rendert es alle 5.230 Einträge.
+**Gegengeprüft — alle 78 Begriffe.** Jeder der 78 Begriffe wurde im Assistenten
+(Konto **(ID 1028) KomplettKonzept**, Länderplattform **DE**) tatsächlich ins Feld
+„Kaufland-Produktkategorie" getippt und die Dropdown-Einträge abgelesen. Alle 78
+stimmen mit der Filterung aus der Rohliste **restlos** überein — gleiche Anzahl,
+gleiche Namen, keine einzige Abweichung. Damit ist jede Zeile der Tabelle oben nicht
+nur gerechnet, sondern **in der Oberfläche gesehen**.
+
+Das Dropdown ist nicht virtualisiert: bei einem Test mit `e` rendert es alle 5.230
+Einträge, ein Nachladen durch Scrollen gibt es nicht. Deshalb war das Eintippen aller
+Begriffe billig und ohne Risiko einer Drosselung (HTTP 429) — es entsteht dabei kein
+einziger weiterer Server-Aufruf.
+
+Der eine lesende Aufruf oben wurde für diese Gegenprobe **nicht selbst abgesetzt**,
+sondern nur mitgelesen, als der Assistent ihn beim Wählen von „DE" von sich aus
+auslöste.
 
 ---
 
