@@ -3,7 +3,7 @@
 Mandant `https://p14443.my.plentysystems.com` · Kaufland-Konto **(ID 1028) KomplettKonzept** ·
 Länderplattform **DE** · erhoben am 2026-10-12
 
-> **Zwischenstand — unvollständig.** 10 von 78 Suchbegriffen abgearbeitet.
+> **Zwischenstand — unvollständig.** 35 von 78 Suchbegriffen abgearbeitet.
 
 **Es wurde kein Katalog angelegt.** Der Assistent wurde nur geöffnet und eine Konfiguration
 *begonnen* (Konto + Länderplattform gewählt, ins Suchfeld getippt). Weder „WEITER" noch
@@ -76,6 +76,107 @@ Eine Zeile je Treffer. Die Schreibweise ist die des Systems, einschließlich `(D
 | Kabel | Sonstige Kabel (DE) |
 | Leitung | Kraftstoffleitungen (DE) |
 | Kabelverschraubung | keine Treffer |
+| Taster | Hochentaster (DE) |
+| Schalter | Schalter fürs Auto (DE) |
+| Schalter | Bremslichtschalter (DE) |
+| Schalter | KFZ-Schalter (DE) |
+| Schalter | Lenkerschalter (DE) |
+| Schalter | Magnetschalter (DE) |
+| Schalter | Sicherungen & Schutzschalter (DE) |
+| Schalter | Wandschalter (DE) |
+| Leuchtmelder | keine Treffer |
+| Signalleuchte | keine Treffer |
+| Leistungsschalter | keine Treffer |
+| Schutzschalter | Sicherungen & Schutzschalter (DE) |
+| Sicherung | Kippsicherungen (DE) |
+| Sicherung | Schubladen- & Schranksicherungen (DE) |
+| Sicherung | KFZ-Sicherungskästen (DE) |
+| Sicherung | Sicherungen & Schutzschalter (DE) |
+| Sicherung | Sicherungsringzangen (DE) |
+| Sicherung | Absturzsicherungen (DE) |
+| Schütz | Faustschützer (DE) |
+| Relais | Blinkrelais (DE) |
+| Relais | Relais (DE) |
+| Netzteil | Spielkonsolen-Netzteile (DE) |
+| Netzteil | Laptop-Netzteile (DE) |
+| Netzteil | Netzteile (DE) |
+| Stromversorgung | Unterbrechungsfreie Stromversorgung (DE) |
+| Schaltschrank | keine Treffer |
+| Gehäuse | Gehäusedeckel (DE) |
+| Gehäuse | Unterwassergehäuse (DE) |
+| Gehäuse | Festplattengehäuse (DE) |
+| Gehäuse | Gehäuse (DE) |
+| Gehäuse | Gehäuselüfter (DE) |
+| Gehäuse | PC- & Gehäuseschrauben (DE) |
+| Pneumatik | keine Treffer |
+| Ventil | Deckenventilatoren (DE) |
+| Ventil | Standventilatoren (DE) |
+| Ventil | Tischventilatoren (DE) |
+| Ventil | Turmventilatoren (DE) |
+| Ventil | Handventilatoren (DE) |
+| Ventil | Einbauventilatoren (DE) |
+| Ventil | Hydro- & Ventilstößel (DE) |
+| Ventil | Ventile (KFZ) (DE) |
+| Ventil | Ventildeckel (DE) |
+| Ventil | AGR-Ventile (DE) |
+| Ventil | Ventile (Haustechnik) (DE) |
+| Druckluft | Druckluftbohrmaschinen (DE) |
+| Druckluft | Druckluftnagler (DE) |
+| Druckluft | Druckluftpistolen (DE) |
+| Zylinder | Kupplungszylinder (DE) |
+| Zylinder | Zylinderköpfe (DE) |
+| Zylinder | Hauptbremszylinder (DE) |
+| Zylinder | Radbremszylinder (DE) |
+| Zylinder | Schließzylinder (DE) |
+| Schleifpapier | Schleifpapier (DE) |
+| Schleifscheibe | Schleifscheiben (DE) |
+| Trennscheibe | Trennscheiben (DE) |
+| Bohrer | Hand-Erdbohrer (DE) |
+| Bohrer | Erdbohrer (DE) |
+| Bohrer | Allzweckbohrer (DE) |
+| Bohrer | Betonbohrer (DE) |
+| Bohrer | Dosenbohrer (DE) |
+| Bohrer | Durchbruchbohrer (DE) |
+| Bohrer | Flachfräsbohrer (DE) |
+| Bohrer | Forstnerbohrer (DE) |
+| Bohrer | Gewindebohrer (DE) |
+| Bohrer | Hammerbohrer (DE) |
+| Bohrer | Keramikbohrer (DE) |
+| Bohrer | Kernbohrer (DE) |
+| Bohrer | Kreuzkopfbohrer (DE) |
+| Bohrer | Schalungsbohrer (DE) |
+| Bohrer | Schlangenbohrer (DE) |
+| Bohrer | Spiralbohrer (DE) |
+| Bohrer | Steinbohrer (DE) |
+| Bohrer | Stufenbohrer (DE) |
+| Bohrer | Zentrierbohrer (DE) |
+| Bohrer | Bohrersätze (DE) |
+| Bohrer | Diamantbohrer (DE) |
+| Fräser | keine Treffer |
+| Wendeschneidplatte | keine Treffer |
+| Spannzange | Spannzangen (DE) |
+| Werkzeug | Kinderwerkzeug (DE) |
+| Werkzeug | Arretierwerkzeuge (DE) |
+| Werkzeug | Ausbeulwerkzeuge (DE) |
+| Werkzeug | Falz- & Bördelwerkzeuge (DE) |
+| Werkzeug | Scheibeneinbauwerkzeuge (DE) |
+| Werkzeug | Zahnriemenwerkzeuge (DE) |
+| Werkzeug | Sonstige KFZ-Werkzeuge (DE) |
+| Werkzeug | Werkzeugkoffer (DE) |
+| Werkzeug | Werkzeughalter (DE) |
+| Werkzeug | Werkzeugschränke (DE) |
+| Werkzeug | Werkzeuggürtel (DE) |
+| Werkzeug | Werkzeugtaschen (DE) |
+| Werkzeug | Rotationswerkzeuge (DE) |
+| Werkzeug | Rotationswerkzeuge-Zubehör (DE) |
+| Werkzeug | Sonstige Handwerkzeuge (DE) |
+| Werkzeug | Werkzeugschlüssel-Zubehör (DE) |
+| Werkzeug | Werkzeugakkus (DE) |
+| Werkzeug | Sonstige Werkzeuge (DE) |
+| Werkzeug | Werkzeugsets (DE) |
+| Werkzeug | Werkzeugzubehör (DE) |
+| Werkzeug | Flickwerkzeuge (DE) |
+| Werkzeug | Sonstige Fahrradwerkzeuge (DE) |
 
 ---
 
@@ -115,7 +216,7 @@ des Aufrufs gestellt. Das Dropdown ist **nicht** virtualisiert: bei einem Test m
 Suchbegriff `e` rendert es alle 5230 Einträge, ein Nachladen durch Scrollen
 gibt es nicht. Der Filter ist ein **einfacher Teilwort-Vergleich ohne
 Groß-/Kleinschreibung** auf der `caption`.
-Für alle 10 geprüften Begriffe stimmten Dropdown und Rohliste **restlos** überein.
+Für alle 35 geprüften Begriffe stimmten Dropdown und Rohliste **restlos** überein.
 
 Der Assistent liegt unter
 `/plenty/terra/system/assistants/run/kaufland_categories_wizard?topic=omni-channel`
@@ -126,33 +227,38 @@ Der Assistent liegt unter
 
 ## 3. Auffälligkeiten
 
-**Zahlen.** 10 Suchbegriffe geprüft: **6 mit Treffern**,
-**4 ohne**. Zusammen **58 Trefferzeilen** auf
-**52 verschiedene Kategorien**.
+**Zahlen.** 35 Suchbegriffe geprüft: **24 mit Treffern**,
+**11 ohne**. Zusammen **159 Trefferzeilen** auf
+**144 verschiedene Kategorien**.
 
 **Begriffe mit sehr vielen Treffern.**
 
 | Suchbegriff | Treffer |
 | --- | --- |
 | Kabel | 40 |
+| Werkzeug | 22 |
+| Bohrer | 21 |
+| Ventil | 11 |
 
-**Begriffe ohne jeden Treffer (4).**
-`Wälzlager`, `Reihenklemme`, `Steckverbinder`, `Kabelverschraubung`.
+**Begriffe ohne jeden Treffer (11).**
+`Wälzlager`, `Reihenklemme`, `Steckverbinder`, `Kabelverschraubung`, `Leuchtmelder`, `Signalleuchte`, `Leistungsschalter`, `Schaltschrank`, `Pneumatik`, `Fräser`, `Wendeschneidplatte`.
 
 Das sind durchweg Begriffe aus dem Industrie-/Elektrotechnik-Sortiment.
 Kaufland ist ein Verbrauchermarktplatz; sein Kategoriebaum kennt solche Bauteile nicht
 als eigene Kategorie. Für diese Artikel gibt es auf DE keine passende Zielkategorie.
 
-**Kategorien, die zu mehreren Suchbegriffen auftauchen (2).**
+**Kategorien, die zu mehreren Suchbegriffen auftauchen (3).**
 
 | Kaufland-Kategorie | Suchbegriffe |
 | --- | --- |
+| Sicherungen & Schutzschalter (DE) | Schalter, Schutzschalter, Sicherung |
 | Kugellager (DE) | Kugellager, Lager |
 | Kabelklemmen (DE) | Klemme, Kabel |
 
 **Mehrdeutige Namen.** Mehrere Suchbegriffe treffen Kategorien aus einer
 ganz anderen Warenwelt als gemeint — der Teilwort-Filter unterscheidet nicht:
 
+- `Schalter` → **Schalter fürs Auto (DE)**, **Bremslichtschalter (DE)**, **KFZ-Schalter (DE)**, **Lenkerschalter (DE)**, **Magnetschalter (DE)**, **Sicherungen & Schutzschalter (DE)**, **Wandschalter (DE)**
 - `Leitung` → **Kraftstoffleitungen (DE)**
 
 Wer die Liste zum Anlegen von Katalogen nutzt, muss diese Zeilen also von Hand
