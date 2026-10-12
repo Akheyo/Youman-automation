@@ -12,7 +12,7 @@ Die E-Mail enthält den Inhalt des Flyers und zusätzlich die Anmeldung für ein
 | `email_DE.html` / `email_DE.eml` | Deutsche Lesefassung (intern) |
 
 Anmeldung: Der Button „立即登记 · Register now“ öffnet beim Empfänger eine vorausgefüllte Antwort an info@mapatec.de
-mit den Feldern Name, Telefon/WeChat, Stand-Nr. (Booth ID), Branche, Wunschtermin (Stand oder Hotel).
+mit den Feldern Name, Telefon/WeChat, Stand-Nr. (Booth ID), Branche.
 Alternativ antworten die Empfänger einfach auf die E-Mail.
 
 Neu erzeugen: `python3 build_email.py` (Texte stehen in `T` in `build_email.py`).
