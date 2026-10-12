@@ -18,6 +18,10 @@ strip = Image.open(f'{HERE}/KomplettKonzept_Banner_Luftbild.jpg').crop((0, 100, 
 strip.save(f'{HERE}/img/banner_strip.jpg', quality=93)
 BANNER_H = round(1123 * strip.height / strip.width)
 
+SAFE_MM = 10                                   # white margin left/right (top/bottom follow from the aspect ratio)
+SAFE_S = (297 - 2 * SAFE_MM) / 297
+SAFE_X, SAFE_Y = SAFE_MM, (420 - 420 * SAFE_S) / 2
+
 
 def text_el(id, top, left, width, txt, size, color='#ffffff', weight='normal', align='start', lh=1.4,
             font='YACgEZ1cb1Q', italic=False):
@@ -59,7 +63,11 @@ def render(page, page_bg):
             out.append(f'<div class="el tx" style="{st}">{"".join(parts)}</div>')
         elif e['type'] == 'html':
             out.append(f'<div class="el" style="{st}{e.get("style","")}">{e["html"]}</div>')
-    return f'<section class="page" style="{page_bg}">{"".join(out)}</section>'
+    # whole design scaled into a white safety margin so nothing falls into the printer's unprintable edge
+    bg = f'<div class="el" style="left:0;top:0;width:100%;height:100%;{page_bg}"></div>'
+    # CSS zoom instead of transform: Chromium's PDF output clipped the transformed page-1 background
+    return (f'<section class="page"><div class="art" style="left:{SAFE_X / SAFE_S:.3f}mm;top:{SAFE_Y / SAFE_S:.3f}mm;'
+            f'zoom:{SAFE_S:.4f};">{bg}{"".join(out)}</div></section>')
 
 
 def find(page, id):
@@ -204,7 +212,7 @@ def build(lang):
     p2['elements'].append({'id': 'cbarqr', 'type': 'rect', 'top': BAR_T + 6, 'left': 1073 - 6 - 52, 'width': 52, 'height': 52,
                            'fill': {'media': {'mediaId': 'MAHWlFIXZ8E'}}, 'src': IMG['MAHWlFIXZ8E']['file']})
 
-    bg1 = 'background:linear-gradient(180deg,#07264d 0%,#05224a 55%,#031f44 100%);'
+    bg1 = 'background:#031f44 linear-gradient(180deg,#07264d 0%,#05224a 55%,#031f44 100%) no-repeat 0 0 / 100% 100%;'
     bg2 = 'background:#0b1f4b;'
     css = open(f'{HERE}/flyer.css').read()
     doc = f'<!doctype html><html><head><meta charset="utf-8"><style>{css}</style></head><body>{render(p1,bg1)}{render(p2,bg2)}</body></html>'
