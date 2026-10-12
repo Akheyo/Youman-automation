@@ -1,7 +1,7 @@
 # E-Mail „Kooperation + Standbesuch“
 
 Die E-Mail enthält den Inhalt des Flyers und zusätzlich die Anmeldung für einen Standbesuch von Mario Parlitz:
-- Kanton-Messe, Phase 1 (Guangzhou): 15.–19.10.
+- Canton-Messe, Phase 1 (Guangzhou): 15.–19.10.
 - Shanghai: 21.–25.10.
 
 | Datei | Zweck |
