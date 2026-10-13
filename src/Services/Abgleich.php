@@ -393,6 +393,13 @@ class Abgleich
             if ($markierungUnsicher && !$markiert && $tat === Entscheidung::PAUSIEREN) {
                 $tat = Entscheidung::NICHTS;
             }
+            // Namentlich freigegeben: Der Inhalt bei Maschinensucher (etwa
+            // eine von Hand gekuerzte Beschreibung) wird nie ueberschrieben,
+            // auch wenn der Artikel markiert ist. Pausieren, Aktivieren,
+            // Loeschen und Verlaengern laufen weiter.
+            if ($tat === Entscheidung::AENDERN && $this->einstellungen->freigegebenNamentlich($artikelId)) {
+                $tat = Entscheidung::NICHTS;
+            }
 
             // Einmal markiert gesehen: Ab jetzt nimmt eine entfernte
             // Markierung das Inserat vom Markt. Nicht im Probelauf - der

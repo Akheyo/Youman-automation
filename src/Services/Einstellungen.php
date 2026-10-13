@@ -282,6 +282,20 @@ class Einstellungen
         if (strtolower($wert) === 'alle') {
             return true;
         }
+        return $this->freigegebenNamentlich($artikelId);
+    }
+
+    /**
+     * Steht die Artikel-ID ausdruecklich im Feld Freigeben (nicht ueber
+     * "alle")? Dann wird ihr Inhalt bei Maschinensucher nie ueberschrieben,
+     * auch wenn der Artikel markiert ist.
+     */
+    public function freigegebenNamentlich($artikelId)
+    {
+        $wert = trim((string) $this->wert('freigeben', ''));
+        if ($wert === '' || strtolower($wert) === 'alle') {
+            return false;
+        }
         $wert = str_replace(array(';', ' ', "\n", "\r", "\t"), ',', $wert);
         foreach (explode(',', $wert) as $teil) {
             if (trim($teil) !== '' && (int) trim($teil) === (int) $artikelId) {
