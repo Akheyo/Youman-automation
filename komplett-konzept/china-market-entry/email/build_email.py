@@ -184,8 +184,8 @@ def build(lang, src):
     fl = t['fairs']
     fairs = '</tr><tr>'.join(''.join(cell(*f, span=(len(fl[i:i + 2]) == 1)) for f in fl[i:i + 2]) for i in range(0, len(fl), 2))
     names = ['contact', 'company', 'phone', 'booth']
-    fields = ''.join(f'''<tr><td style="padding:5px 0;"><p style="margin:0 0 3px 0;font-family:{FONT};font-size:14px;font-weight:bold;color:{NAVY};">{e(f)}</p>
-<input type="text" name="{n}" placeholder="{e(h)}" style="width:100%;box-sizing:border-box;padding:10px 12px;font-family:{FONT};font-size:15px;color:{NAVY};background:#ffffff;border:1px solid #cfd8ea;border-radius:6px;"></td></tr>''' for n, (f, h) in zip(names, t['fields']))
+    fields = ''.join(f'''<tr><td style="padding:5px 0;"><p style="margin:0 0 3px 0;font-family:{FONT};font-size:14px;font-weight:bold;color:{NAVY};">{e(f)}{f' <span style="font-size:12px;font-weight:normal;font-style:italic;color:#4a5a7a;">({e(h)})</span>' if h else ''}</p>
+<input type="text" name="{n}" style="width:100%;box-sizing:border-box;padding:10px 12px;font-family:{FONT};font-size:15px;color:{NAVY};background:#ffffff;border:1px solid #cfd8ea;border-radius:6px;"></td></tr>''' for n, (f, h) in zip(names, t['fields']))
     rows.append(sec(f'''<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{GOLD};border-radius:14px;">
 <tr><td style="padding:20px 20px 8px 20px;">
 <p style="margin:0 0 2px 0;font-family:{FONT};font-size:22px;font-weight:bold;color:{NAVY};">🗓 {e(t["visit_t"])}</p>
