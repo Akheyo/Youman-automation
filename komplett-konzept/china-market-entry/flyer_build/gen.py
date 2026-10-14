@@ -18,11 +18,8 @@ strip = Image.open(f'{HERE}/KomplettKonzept_Banner_Luftbild.jpg').crop((0, 100, 
 strip.save(f'{HERE}/img/banner_strip.jpg', quality=93)
 BANNER_H = round(1123 * strip.height / strip.width)
 
-# print format DIN A5; the A3-sized design (297 x 420 mm) is zoomed into it with a white safety margin
-PAGE_W, PAGE_H = 148, 210
-SAFE_MM = 5                                    # white margin left/right (top/bottom follow from the aspect ratio)
-SAFE_S = (PAGE_W - 2 * SAFE_MM) / 297
-SAFE_X, SAFE_Y = SAFE_MM, (PAGE_H - 420 * SAFE_S) / 2
+# print format DIN A5, edge to edge: the A3-sized design (297 x 420 mm) is laid out at full size on a 296 x 420 mm
+# page (0.5 mm cropped, centred) and print.js scales it by 0.5 to 148 x 210 mm
 
 
 def text_el(id, top, left, width, txt, size, color='#ffffff', weight='normal', align='start', lh=1.4,
@@ -65,11 +62,8 @@ def render(page, page_bg):
             out.append(f'<div class="el tx" style="{st}">{"".join(parts)}</div>')
         elif e['type'] == 'html':
             out.append(f'<div class="el" style="{st}{e.get("style","")}">{e["html"]}</div>')
-    # whole design scaled into a white safety margin so nothing falls into the printer's unprintable edge
     bg = f'<div class="el" style="left:0;top:0;width:100%;height:100%;{page_bg}"></div>'
-    # CSS zoom instead of transform: Chromium's PDF output clipped the transformed page-1 background
-    return (f'<section class="page"><div class="art" style="left:{SAFE_X / SAFE_S:.3f}mm;top:{SAFE_Y / SAFE_S:.3f}mm;'
-            f'zoom:{SAFE_S:.4f};">{bg}{"".join(out)}</div></section>')
+    return f'<section class="page"><div class="art" style="left:-0.5mm;top:0;">{bg}{"".join(out)}</div></section>'
 
 
 def find(page, id):
