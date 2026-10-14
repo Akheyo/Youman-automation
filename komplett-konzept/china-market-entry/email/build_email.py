@@ -15,6 +15,7 @@ OUT_IMG = os.path.join(HERE, 'img')
 os.makedirs(OUT_IMG, exist_ok=True)
 
 MAIL = 'info@mapatec.de'
+FORM_URL = 'https://hook.eu1.make.com/pm3ok2jn4g4ko7erbgw6op2cjitlmap2'  # Make webhook -> Google Sheet
 PHONE = '+49 177 2711123'
 NAVY, CARD, RED, GOLD, LIGHT = '#0b1f4b', '#16336e', '#d62828', '#ffc857', '#c9d4ea'
 FONT = "Arial,'Helvetica Neue',Helvetica,'PingFang SC','Microsoft YaHei',sans-serif"
@@ -60,8 +61,8 @@ T = {
     fields=[('联系人 Contact person', ''), ('公司名称 Company name', ''), ('电话 / 微信 Phone / WeChat', ''),
             ('展位号 Booth ID', '选填 optional · 例如 e.g. 第140届广交会 140th Canton Fair / 锦汉展 Jinhan Fair · 展位 Booth …')],
     fair_field='',
-    steps='① 点击下方按钮 → ② 自动打开一封回复邮件 → ③ 在冒号后填写您的信息 → ④ 发送',
-    steps2='① Click the button below → ② a reply e-mail opens → ③ fill in your details after the colons → ④ send',
+    steps='请直接在上方栏中填写，然后点击按钮。 · Simply fill in the fields above and click the button.',
+    fallback='无法填写？请点击这里通过邮件登记 · Fields not working? Register by e-mail here',
     button='立即登记 · Register now', reply='或直接回复本邮件并填写以上信息。 · Or simply reply to this e-mail with these details.',
     mail_subject='展位拜访登记 · Booth visit registration',
     models_t='四种合作模式 · 按优先顺序排列', models_t2='Four ways to work with us – in order of our preference',
@@ -106,8 +107,8 @@ T = {
     fields=[('Ansprechpartner', ''), ('Firmenname', ''), ('Telefon / WeChat', ''),
             ('Stand-Nr. (Booth ID)', 'optional · z. B. 140. Canton Fair / Jinhan Fair · Stand …')],
     fair_field='',
-    steps='① Button unten klicken → ② eine Antwort-Mail öffnet sich → ③ Angaben hinter den Doppelpunkten eintragen → ④ senden',
-    steps2='',
+    steps='Einfach oben in die Felder eintragen und auf den Button klicken.',
+    fallback='Felder funktionieren nicht? Hier per E-Mail eintragen',
     button='Jetzt eintragen', reply='Oder antworten Sie einfach auf diese E-Mail mit den Angaben.',
     mail_subject='Anmeldung Standbesuch',
     models_t='Vier Kooperationsmodelle – nach unserer Präferenz', models_t2='1 = unsere erste Wahl',
@@ -182,7 +183,9 @@ def build(lang, src):
 <p style="margin:0;font-family:{FONT};font-size:13px;color:#4a5a7a;">{e(c)}</p></td></tr></table></td>'''
     fl = t['fairs']
     fairs = '</tr><tr>'.join(''.join(cell(*f, span=(len(fl[i:i + 2]) == 1)) for f in fl[i:i + 2]) for i in range(0, len(fl), 2))
-    fields = ''.join(f'''<tr><td style="padding:3px 0;font-family:{FONT};font-size:14px;line-height:1.4;color:{NAVY};">✔ <b>{e(f)}</b>{f' <span style="font-size:12px;font-style:italic;color:#4a5a7a;">({e(h)})</span>' if h else ''}</td></tr>''' for f, h in t['fields'])
+    names = ['contact', 'company', 'phone', 'booth']
+    fields = ''.join(f'''<tr><td style="padding:5px 0;"><p style="margin:0 0 3px 0;font-family:{FONT};font-size:14px;font-weight:bold;color:{NAVY};">{e(f)}</p>
+<input type="text" name="{n}" placeholder="{e(h)}" style="width:100%;box-sizing:border-box;padding:10px 12px;font-family:{FONT};font-size:15px;color:{NAVY};background:#ffffff;border:1px solid #cfd8ea;border-radius:6px;"></td></tr>''' for n, (f, h) in zip(names, t['fields']))
     rows.append(sec(f'''<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{GOLD};border-radius:14px;">
 <tr><td style="padding:20px 20px 8px 20px;">
 <p style="margin:0 0 2px 0;font-family:{FONT};font-size:22px;font-weight:bold;color:{NAVY};">🗓 {e(t["visit_t"])}</p>
@@ -192,12 +195,12 @@ def build(lang, src):
 <tr><td style="padding:14px 20px 4px 20px;">
 <p style="margin:0 0 4px 0;font-family:{FONT};font-size:18px;font-weight:bold;color:{NAVY};">✍ {e(t["reg_t"])}</p>
 {p(t["reg_p"], 14, NAVY, mb=2)}{p(t["reg_p2"], 13, "#33415c", mb=8)}
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff8e6;border-radius:8px;"><tr><td style="padding:8px 12px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">{fields}</table></td></tr></table></td></tr>
-<tr><td style="padding:12px 20px 0 20px;">{p(t["steps"], 14, NAVY, True, align="center", mb=2)}{p(t["steps2"], 13, "#33415c", align="center", mb=0)}</td></tr>
-<tr><td align="center" style="padding:12px 20px 6px 20px;">
-<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:{RED};border-radius:26px;">
-<a href="{e(mailto)}" style="display:inline-block;padding:14px 34px;font-family:{FONT};font-size:18px;font-weight:bold;color:#ffffff;text-decoration:none;">{e(t["button"])} →</a></td></tr></table></td></tr>
-<tr><td style="padding:4px 20px 18px 20px;">{p(t["reply"], 13, NAVY, align="center", mb=0)}</td></tr>
+<form action="{FORM_URL}" method="post" target="_blank" style="margin:0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">{fields}</table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:16px 0 6px 0;">
+<input type="submit" value="{e(t["button"])} →" style="padding:14px 34px;font-family:{FONT};font-size:18px;font-weight:bold;color:#ffffff;background:{RED};border:0;border-radius:26px;cursor:pointer;"></td></tr></table>
+</form></td></tr>
+<tr><td style="padding:2px 20px 18px 20px;">{p(t["steps"], 13, NAVY, align="center", mb=6)}<p style="margin:0;font-family:{FONT};font-size:13px;text-align:center;"><a href="{e(mailto)}" style="color:{RED};font-weight:bold;">{e(t["fallback"])} →</a></p></td></tr>
 </table>''', pad='8px 20px 20px 20px'))
 
     # four models
@@ -257,7 +260,6 @@ def build(lang, src):
     # plain-text alternative
     txt = [t['headline'], t['headline2'], '', t['intro'], t['intro2'], '', t['visit_t'], t['visit_t2'], t['visit_p'], t['visit_p2']]
     txt += [f'- {n} ({c}): {d}' for n, c, d in t['fairs']] + ['', t['call'] + ' ' + PHONE, '', t['reg_t'], t['reg_p'], t['reg_p2']]
-    txt += [t['steps'], t['steps2']]
     txt += [f'  {f}: ____' + (f'  ({h})' if h else '') for f, h in t['fields']] + ([f'  {t["fair_field"]}'] if t['fair_field'] else []) + ['', f'-> {MAIL}', t['reply'], '']
     for n, title, rank, tag, d1, d2 in t['models']:
         txt += [f'{n}. {title} ({rank})', tag, d1, d2, '']
