@@ -877,4 +877,18 @@ $p->gleich(1, Suchdokument::alsVariante(array('data' => array('item' => array('i
 $p->gleich(3, Suchdokument::alsVariante(array('data' => array('item' => array('id' => 5, 'conditionApi' => 3), 'variation' => array('id' => 9))))['item']['condition'],
     'conditionApi nur als Ersatz');
 
+// --- Beschreibung: HTML-Aufbau wird zu Zeilen -------------------------------------
+$p->gruppe('Beschreibung Zeilen');
+$html = '<h2>Weiss Typ: WT3-600/70/5</h2><div>Weiss Temperaturpruefschrank WT3-600/70/5</div>'
+    . '<h3>Stellfuesse</h3><p>Zum Ausgleich von Bodenunebenheiten.</p>'
+    . '<table><tr><td>Pruefrauminhalt:</td><td>ca. 600 Liter</td></tr><tr><td>Hoehe:</td><td>1995 mm</td></tr></table>'
+    . '<ul><li>Funktionspruefung</li><li>Dichtigkeitspruefung</li></ul>Zustand: gebraucht<BR style="x">Lieferumfang: siehe Bild';
+$zeilen = Inseratdaten::bauen(array_merge($artikelApi, array('beschreibung' => $html)), $umgebungApi)['koerper']['description']['de'];
+$p->gleich(true, strpos($zeilen, "WT3-600/70/5\nWeiss Temperaturpruefschrank") !== false, 'Ueberschrift und Block getrennt');
+$p->gleich(true, strpos($zeilen, "Stellfuesse\nZum Ausgleich") !== false, 'Zwischenueberschrift eigene Zeile');
+$p->gleich(true, strpos($zeilen, "Pruefrauminhalt: ca. 600 Liter\nHoehe: 1995 mm") !== false, 'Tabellenzeilen je Zeile, Zellen mit Leerzeichen');
+$p->gleich(true, strpos($zeilen, "- Funktionspruefung\n- Dichtigkeitspruefung") !== false, 'Aufzaehlung mit Strichen ohne Leerzeilen');
+$p->gleich(true, strpos($zeilen, "Zustand: gebraucht\nLieferumfang") !== false, 'BR mit Attributen und Grossschreibung');
+$p->gleich(false, strpos($zeilen, "\n\n\n") !== false, 'nie mehr als eine Leerzeile');
+
 exit($p->bericht());
