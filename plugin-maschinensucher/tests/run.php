@@ -889,6 +889,9 @@ $p->gleich(true, strpos($zeilen, "Stellfuesse\nZum Ausgleich") !== false, 'Zwisc
 $p->gleich(true, strpos($zeilen, "Pruefrauminhalt: ca. 600 Liter\nHoehe: 1995 mm") !== false, 'Tabellenzeilen je Zeile, Zellen mit Leerzeichen');
 $p->gleich(true, strpos($zeilen, "- Funktionspruefung\n- Dichtigkeitspruefung") !== false, 'Aufzaehlung mit Strichen ohne Leerzeilen');
 $p->gleich(true, strpos($zeilen, "Zustand: gebraucht\nLieferumfang") !== false, 'BR mit Attributen und Grossschreibung');
-$p->gleich(false, strpos($zeilen, "\n\n\n") !== false, 'nie mehr als eine Leerzeile');
+$p->gleich(false, strpos($zeilen, "\n\n") !== false, 'keine ganz leeren Zeilen');
+$p->gleich(true, strpos($zeilen, "\n\xC2\xA0\nStellfuesse") !== false, 'Leerzeile vor Ueberschrift bleibt sichtbar (geschuetztes Leerzeichen)');
+$absaetze = Inseratdaten::bauen(array_merge($artikelApi, array('beschreibung' => '<p>Ausstattung:</p><p>&nbsp;</p><p>Lieferumfang:</p>')), $umgebungApi)['koerper']['description']['de'];
+$p->gleich("Ausstattung:\n\xC2\xA0\nLieferumfang:", $absaetze, 'leerer Absatz aus Plenty wird sichtbare Leerzeile');
 
 exit($p->bericht());

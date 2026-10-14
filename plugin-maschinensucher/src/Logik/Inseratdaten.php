@@ -362,7 +362,12 @@ class Inseratdaten
         while (strpos($text, "\n\n\n") !== false) {
             $text = str_replace("\n\n\n", "\n\n", $text);
         }
-        return trim($text);
+        // Leerzeilen sichtbar halten: Maschinensucher laesst ganz leere
+        // Zeilen weg, dann steht alles ohne Absatz untereinander. Eine Zeile
+        // mit einem geschuetzten Leerzeichen zeigt es als Leerzeile - so kam
+        // es frueher aus Plenty (<p>&nbsp;</p>) und sah richtig aus.
+        $text = str_replace("\n\n", "\n\xC2\xA0\n", trim($text));
+        return $text;
     }
 
     /**
