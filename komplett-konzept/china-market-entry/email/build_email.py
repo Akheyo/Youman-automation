@@ -53,7 +53,7 @@ T = {
     visit_t='您今年会再次参展吗？', visit_t2='Will you be exhibiting again this year?',
     visit_p='如果您在广交会或锦汉展有展位，我们的首席执行官 Mario Parlitz 可以亲自前来拜访，与您面谈合作。没有展位也没关系——您同样可以登记，我们与您另约时间面谈。',
     visit_p2='If you have a booth at the Canton Fair or the Jinhan Fair, our CEO Mario Parlitz can come and visit you to talk about working together. No booth this time? No problem – register anyway and we will arrange a meeting with you.',
-    fairs=[('广交会 第一期 · Canton Fair Phase 1', '展位拜访 · Booth visit · 广州 Guangzhou', '15.–19.10.'), ('锦汉展 · Jinhan Fair', '展位拜访 · Booth visit · 广州 Guangzhou', '21.–23.10.'), ('晚间酒店面谈 · Evening meeting at the hotel', 'The Protons Guangzhou · 78 Pazhou Avenue, Haizhu District', '14.–25.10.')],
+    fairs=[('广交会 第一期 · Canton Fair Phase\u00a01', '展位拜访 · Booth visit · 广州 Guangzhou', '15.–19.10.'), ('锦汉展 · Jinhan Fair', '展位拜访 · Booth visit · 广州 Guangzhou', '21.–23.10.'), ('晚间酒店面谈 · Evening meeting at the hotel', 'The Protons Guangzhou · 78 Pazhou Avenue, Haizhu District', '14.–25.10.')],
     call='展会以外的会面（如晚上在酒店）请致电 Mario · For meetings outside the fair (e.g. evenings at the hotel) please call Mario:',
     reg_t='登记面谈 · Register for a meeting', reg_p='请告诉我们以下信息——有展位，Mario 前往您的展位；没有展位，我们与您另约面谈：',
     reg_p2='Please send us the following details – with a booth, Mario comes to you; without one, we arrange a meeting with you:',
