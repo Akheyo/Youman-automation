@@ -339,12 +339,26 @@ class Inseratdaten
         $text = preg_replace('/<(style|script|xml|head|title)\b[^>]*>.*?<\/\1\s*>/is', '', $text);
         $text = preg_replace('/<(\w+)\b[^>]*style\s*=\s*"[^"]*(display\s*:\s*none|visibility\s*:\s*hidden|font-size\s*:\s*0(px|pt)?\s*[;"])[^"]*"[^>]*>.*?<\/\1\s*>/is', '', $text);
         $text = preg_replace('/<(\w+)\b[^>]*\shidden(?=[\s>=\/])[^>]*>.*?<\/\1\s*>/is', '', $text);
-        $text = str_replace(array('<br>', '<br/>', '<br />', '</p>', '</li>'), "\n", $text);
+        // Zeilen und Absaetze aus dem HTML-Aufbau: Ohne diese kleben
+        // Ueberschriften, Bloecke und Tabellenzeilen direkt am naechsten Wort
+        // ("WT3-600/70/5Weiss", "mmPruefrauminhalt").
+        $text = preg_replace('/<br\b[^>]*>/i', "\n", $text);
+        $text = preg_replace('/<li\b[^>]*>/i', "\n- ", $text);
+        $text = preg_replace('/<(h[1-6])\b[^>]*>/i', "\n\n", $text);
+        $text = preg_replace('/<\/(h[1-6])\s*>/i', "\n", $text);
+        $text = preg_replace('/<\/(p|div|tr|table|ul|ol|section|article|blockquote|header|footer|dt|dd|pre)\s*>/i', "\n", $text);
+        $text = preg_replace('/<\/(td|th)\s*>/i', " ", $text);
         // Eigener Abbau der HTML-Tags: Der Plugin-Build laesst die dafuer uebliche
         // Funktion nicht zu.
         $text = preg_replace('/<[^>]*>/', '', $text);
         $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
         $text = str_replace(array("\r\n", "\r"), "\n", $text);
+        // Leerraum je Zeile aufraeumen: mehrfache Leerzeichen und Tabs zu
+        // einem, Zeilen ohne fuehrende und haengende Leerzeichen.
+        // Mit /u - bei kaputtem UTF-8 liefert das null; dann ohne weiter.
+        $sauber = preg_replace('/[ \t\x{00A0}]+/u', ' ', $text);
+        $text = $sauber !== null ? $sauber : preg_replace('/[ \t]+/', ' ', $text);
+        $text = preg_replace('/ *\n */', "\n", $text);
         while (strpos($text, "\n\n\n") !== false) {
             $text = str_replace("\n\n\n", "\n\n", $text);
         }
