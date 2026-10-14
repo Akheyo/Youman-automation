@@ -45,12 +45,12 @@ def prep_images():
 
 T = {
  'CN': dict(
-    subject='您想进军德国和欧洲市场吗？ | Do you want to conquer the German / European market?',
+    subject='您想进军德国和欧洲市场吗？ | Do you want to conquer the German / European market? · Canton Fair 2026',
     preheader='Mario Parlitz 将亲临您的展位：广交会第一期 15.–19.10. · 锦汉展 21.–23.10. · 也可预约晚上在酒店面谈',
     headline='进入德国及欧洲市场', headline2='Enter the German & European Market',
     intro='您只需提供产品，其余一切由我们完成：销售、物流、退货和技术支持。',
     intro2='You just deliver the products – we take care of everything else: sales, logistics, returns & technical support.',
-    badge='30多年电商经验 · 30+ years of e-commerce experience',
+    badge='30多年线上零售经验 · 30+ years of online retail experience',
     visit_t='您今年会再次参展吗？', visit_t2='Will you be exhibiting again this year?',
     visit_p='如果您在广交会或锦汉展有展位，我们的首席执行官 Mario Parlitz 可以亲自前来拜访，与您面谈合作。没有展位也没关系——您同样可以登记，我们与您另约时间面谈。',
     visit_p2='If you have a booth at the Canton Fair or the Jinhan Fair, our CEO Mario Parlitz can come and visit you to talk about working together. No booth this time? No problem – register anyway and we will arrange a meeting with you.',
@@ -69,7 +69,7 @@ T = {
     models=[
      ('1', '寄售模式 · Consignment', '★ 首选 · 1st choice', '您的货物 · 我们的销售 · 长期合作',
       '您在德国备货。我们不仅负责仓储、主动销售、发货和退货，还可应要求负责品牌建设与商标注册。可签订分销协议，条款可协商。',
-      'You stock your products in Germany. We handle storage, active sales, shipping and returns – and, on request, brand development and trademark registration. Distribution agreement possible and negotiable.'),
+      'You place your products in our warehouse in Germany. We handle storage, active sales, shipping and returns – and, on request, brand development and trademark registration. Distribution agreement possible and negotiable.'),
      ('2', '代发货 + 销售 · Fulfillment + Sales', '第二选择 · 2nd choice', '您的货物 · 共同销售 · 我们的德国物流',
       '您提供货物。我们负责仓储和发货，并通过现有销售渠道为您开发新客户。',
       'You provide the goods. We store and ship your products and win new customers through our existing sales channels.'),
@@ -83,7 +83,7 @@ T = {
     adv_sub='成功源于信任——您的客户在德国本地拥有一位德国联系人。 Success is built on trust – your customers get a German contact person on site.',
     adv=[('无需德国公司 · No German company needed', '无需在德国注册公司、租仓库或招聘员工。 No company, warehouse or staff of your own needed in Germany.'),
          ('19,000 m² 仓储 · 19,000 m² storage', '德国多个基地，整托及单件。 Several sites in Germany – pallets and single items.'),
-         ('B2B & B2C · Germany/Europe-wide', '面向经销商、企业客户、网店及电商平台。 Dealers, business customers, online shops and marketplaces.'),
+         ('B2B & B2C · Germany/Europe-wide', '面向经销商、企业客户、网店及线上销售平台。 Dealers, business customers, online shops and marketplaces.'),
          ('退货 · 技术支持 · 备件 · Returns, support, parts', '均在德国本地完成。 Handled locally in Germany – no return shipping to China.')],
     wh_t='精选自有仓库 · 报警防护及视频监控 · Our own warehouses – alarm-secured & video-monitored',
     wh=[('德国中部 · 8,000 m²', 'Central Germany'), ('法兰克福 · 4,000 m²', 'Frankfurt')], wh_more='+ 更多仓库遍布德国 · more sites in Germany',
