@@ -62,7 +62,7 @@ T = {
             ('展位号 Booth ID', '选填 optional · 例如 e.g. 第140届广交会 140th Canton Fair / 锦汉展 Jinhan Fair · 展位 Booth …')],
     fair_field='',
     steps='请直接在上方栏中填写，然后点击按钮。 · Simply fill in the fields above and click the button.',
-    fallback='无法填写？请点击这里通过邮件登记 · Fields not working? Register by e-mail here',
+    fallback='上方没有显示输入栏？请点击这里在线登记 · No fields shown above? Register online here',
     button='立即登记 · Register now', reply='或直接回复本邮件并填写以上信息。 · Or simply reply to this e-mail with these details.',
     mail_subject='展位拜访登记 · Booth visit registration',
     models_t='四种合作模式 · 按优先顺序排列', models_t2='Four ways to work with us – in order of our preference',
@@ -108,7 +108,7 @@ T = {
             ('Stand-Nr. (Booth ID)', 'optional · z. B. 140. Canton Fair / Jinhan Fair · Stand …')],
     fair_field='',
     steps='Einfach oben in die Felder eintragen und auf den Button klicken.',
-    fallback='Felder funktionieren nicht? Hier per E-Mail eintragen',
+    fallback='Oben keine Felder zu sehen? Hier online eintragen',
     button='Jetzt eintragen', reply='Oder antworten Sie einfach auf diese E-Mail mit den Angaben.',
     mail_subject='Anmeldung Standbesuch',
     models_t='Vier Kooperationsmodelle – nach unserer Präferenz', models_t2='1 = unsere erste Wahl',
@@ -200,7 +200,8 @@ def build(lang, src):
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:16px 0 6px 0;">
 <input type="submit" value="{e(t["button"])} →" style="padding:14px 34px;font-family:{FONT};font-size:18px;font-weight:bold;color:#ffffff;background:{RED};border:0;border-radius:26px;cursor:pointer;"></td></tr></table>
 </form></td></tr>
-<tr><td style="padding:2px 20px 18px 20px;">{p(t["steps"], 13, NAVY, align="center", mb=6)}<p style="margin:0;font-family:{FONT};font-size:13px;text-align:center;"><a href="{e(mailto)}" style="color:{RED};font-weight:bold;">{e(t["fallback"])} →</a></p></td></tr>
+<tr><td style="padding:2px 20px 18px 20px;">{p(t["steps"], 13, NAVY, align="center", mb=6)}<table role="presentation" align="center" cellpadding="0" cellspacing="0" style="margin:4px auto 0 auto;"><tr><td style="background:#ffffff;border:2px solid {RED};border-radius:24px;">
+<a href="{FORM_URL}" target="_blank" style="display:inline-block;padding:11px 26px;font-family:{FONT};font-size:15px;font-weight:bold;color:{RED};text-decoration:none;">{e(t["fallback"])} →</a></td></tr></table></td></tr>
 </table>''', pad='8px 20px 20px 20px'))
 
     # four models
