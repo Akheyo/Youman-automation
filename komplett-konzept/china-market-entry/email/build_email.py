@@ -44,7 +44,7 @@ def prep_images():
 
 T = {
  'CN': dict(
-    subject='德国/欧洲市场合作 · 预约展位拜访 | Germany/Europe partnership – book a booth visit',
+    subject='您想进军德国和欧洲市场吗？ | Do you want to conquer the German / European market?',
     preheader='Mario Parlitz 将亲临您的展位：广交会第一期 15.–19.10. · 锦汉展 21.–23.10. · 也可预约晚上在酒店面谈',
     headline='进入德国及欧洲市场', headline2='Enter the German & European Market',
     intro='您只需提供产品，其余一切由我们完成：销售、物流、退货和技术支持。',
@@ -90,7 +90,7 @@ T = {
     contact='您的联系人 Your contact', wechat='微信扫码 · Scan WeChat',
  ),
  'DE': dict(
-    subject='Kooperation Deutschland/Europa · Standbesuch vereinbaren',
+    subject='Sie wollen den deutschen/europäischen Markt erobern?',
     preheader='Mario Parlitz besucht Ihren Stand: Canton-Messe Phase 1 (15.–19.10.) und Jinhan Fair (21.–23.10.) – oder abends im Hotel',
     headline='Ihr Weg in den deutschen und europäischen Markt', headline2='Deutsche Lesefassung der chinesischen E-Mail (intern)',
     intro='Sie brauchen nur die Produkte zu liefern – wir erledigen den ganzen Rest: Vertrieb, Logistik, Retouren und technischen Support.',
