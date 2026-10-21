@@ -141,6 +141,15 @@
           "options": {
             "defaultValue": "EUR"
           }
+        },
+        "preisVerhandelbar": {
+          "type": "inputText",
+          "required": false,
+          "label": "Config.preisVerhandelbarLabel",
+          "options": {
+            "defaultValue": "ja",
+            "tooltip": "Config.preisVerhandelbarTooltip"
+          }
         }
       }
     },
