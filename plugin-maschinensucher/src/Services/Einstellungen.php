@@ -144,6 +144,7 @@ class Einstellungen
             'nummernQuelle' => $this->nummernQuelle(),
             'mwst' => $this->zahl('mwst', 19),
             'waehrung' => (string) $this->wert('waehrung', 'EUR'),
+            'preisVerhandelbar' => $this->preisVerhandelbar(),
             'land' => (string) $this->wert('land', 'DE'),
             'plz' => (string) $this->wert('plz', ''),
             'ort' => (string) $this->wert('ort', ''),
@@ -155,6 +156,19 @@ class Einstellungen
             'kategorieZuordnung' => $this->zuordnung(),
             'shopBasisUrl' => (string) $this->wert('shopBasisUrl', ''),
         );
+    }
+
+    /**
+     * Preis als Verhandlungsbasis (VB, Standard) oder als Festpreis?
+     * "nein", "fest" oder "0" heisst Festpreis.
+     */
+    public function preisVerhandelbar()
+    {
+        $wert = strtolower(trim((string) $this->wert('preisVerhandelbar', 'ja')));
+        if ($wert === '0' || substr($wert, 0, 1) === 'n' || substr($wert, 0, 4) === 'fest') {
+            return false;
+        }
+        return true;
     }
 
     /**

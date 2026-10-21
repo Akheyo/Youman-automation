@@ -894,4 +894,12 @@ $p->gleich(true, strpos($zeilen, "\n\xC2\xA0\nStellfuesse") !== false, 'Leerzeil
 $absaetze = Inseratdaten::bauen(array_merge($artikelApi, array('beschreibung' => '<p>Ausstattung:</p><p>&nbsp;</p><p>Lieferumfang:</p>')), $umgebungApi)['koerper']['description']['de'];
 $p->gleich("Ausstattung:\n\xC2\xA0\nLieferumfang:", $absaetze, 'leerer Absatz aus Plenty wird sichtbare Leerzeile');
 
+// --- Festpreis --------------------------------------------------------------------
+$p->gruppe('Festpreis');
+$fest = Inseratdaten::bauen($artikelApi, array_merge($umgebungApi, array('preisVerhandelbar' => false)))['koerper'];
+$p->gleich(false, $fest['priceNegotiable'], 'Festpreis: priceNegotiable false');
+$vb = Inseratdaten::bauen($artikelApi, array_merge($umgebungApi, array('preisVerhandelbar' => true)))['koerper'];
+$p->gleich(true, $vb['priceNegotiable'], 'VB: priceNegotiable true');
+$p->gleich(true, Inseratdaten::fingerabdruck($fest) !== Inseratdaten::fingerabdruck($vb), 'Umstellen aendert den Fingerabdruck - Inserate gehen neu raus');
+
 exit($p->bericht());
