@@ -90,15 +90,19 @@ Projekt nicht verbinden. Zwei Möglichkeiten:
 5. **Deploy**.
 
 ### 3.3 URL `projektplanungkk.vercel.app` übernehmen
-Eine `*.vercel.app`-Adresse kann nur **ein** Projekt belegen:
-1. Im alten Konto das Projekt umbenennen (**Settings → General → Project
-   Name**, z. B. `projektplanungkk-alt`) oder löschen.
-2. Im neuen Konto das Projekt auf `projektplanungkk` umbenennen.
+**So entschieden:** die Adresse bleibt, die kurze Unterbrechung wird in Kauf
+genommen. Eine `*.vercel.app`-Adresse kann nur **ein** Projekt belegen, also:
 
-Zwischen 1. und 2. ist die alte URL kurz nicht erreichbar. Wer das vermeiden
-will: das neue Projekt unter neuer Adresse laufen lassen
-(z. B. `projektplanung-kk.vercel.app`) oder gleich eine eigene Domain
-(`projektplanung.komplett-konzept.de`) aufschalten — dann gibt es keinen Bruch.
+1. Das neue Projekt zuerst unter einem Zwischennamen anlegen und vollständig
+   testen (z. B. `projektplanung-neu` → `projektplanung-neu.vercel.app`).
+2. Erst wenn es läuft: im **alten** Konto **Settings → General → Project Name**
+   auf `projektplanungkk-alt` ändern.
+3. Sofort danach im **neuen** Konto den Namen auf `projektplanungkk` setzen.
+
+Zwischen 2. und 3. ist die gewohnte Adresse ein paar Minuten nicht erreichbar —
+deshalb am besten außerhalb der Arbeitszeit umschalten. Das alte Projekt erst
+löschen, wenn das neue ein paar Tage sauber läuft; bis dahin ist es die
+Rückfalloption.
 
 ### 3.4 Umgebungsvariablen
 Die aktuellen Werte stehen im alten Konto unter **Settings → Environment
@@ -107,11 +111,24 @@ Variables** (Auge-Symbol zum Einblenden) oder lassen sich ziehen:
 ```bash
 npx vercel login          # mit dem ALTEN Konto
 npx vercel link           # das alte Projekt wählen
-npx vercel env pull .env.production.local --environment=production
+npx vercel env pull .env.umzug.local --environment=production
 ```
 
-Diese Datei enthält Klartext-Zugangsdaten — nach dem Übertragen löschen und
-**nie committen** (`.env*.local` steht in `.gitignore`).
+Ins neue Projekt schiebt sie das beiliegende Skript, damit zwei Dutzend
+Felder nicht von Hand abgetippt werden müssen:
+
+```bash
+npx vercel logout && npx vercel login    # NEUES Konto
+npx vercel link                          # neues Projekt wählen
+./scripts/env-uebertragen.sh .env.umzug.local production
+```
+
+Es legt nur an und löscht nichts; was im Ziel schon existiert, bleibt
+unangetastet und wird am Ende aufgelistet. Danach einmal neu deployen.
+
+Die Datei `.env.umzug.local` enthält Klartext-Zugangsdaten — nach dem
+Übertragen löschen. Committen kann sie nicht werden (`.env*.local` steht in
+`.gitignore`).
 
 **Projektplanung (Kern):**
 
