@@ -98,3 +98,8 @@ Stellen sind in [`lib/plenty/client.ts`](lib/plenty/client.ts) klar gekapselt
 und leicht anzupassen. Fehler beim Sync sind **nicht blockierend** – das Projekt
 inkl. EAN wird immer im Verlauf gespeichert, der Plenty-Status wird pro Eintrag
 angezeigt (`Plenty ✓`, `nur EAN`, `Fehler`).
+
+## Umzug auf ein anderes Vercel-Konto
+
+Schritt-für-Schritt-Anleitung inkl. vollständiger Variablenliste:
+[`UMZUG-VERCEL.md`](./UMZUG-VERCEL.md)
