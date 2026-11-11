@@ -41,19 +41,32 @@ export async function GET(request: Request) {
   const parameter = new URL(request.url).searchParams;
   const status = parameter.get('status');
   const nurEigene = parameter.get('mein') === '1';
+  // Erfassung und Fotostudio teilen sich die Tabelle; ohne Angabe sieht jeder
+  // Weg nur seine eigenen Artikel.
+  const quelle = parameter.get('quelle') === 'fotostudio' ? 'fotostudio' : 'erfassung';
 
-  let query = supabase
-    .from('erfassung_artikel')
-    .select('id, nummer, status, notiz, erfasst_von, created_at, fertig_am, fehler, plenty_item_id, plenty_variation_id, erkennung, treffer, erkannt_am, erkennung_fehler, zustand, zustand_bestaetigt, gravierende_schaeden, bestand, gewicht_kg, packklasse, preis, preis_am, preis_fehler, listing, listing_am, listing_fehler, plenty, plenty_am, plenty_fehler, bilder:erfassung_bilder (id, rolle, rolle_erkannt, position, pfad, hochgeladen)')
-    .order('created_at', { ascending: false })
-    .limit(LISTE_LIMIT);
-  if (status) query = query.eq('status', status);
-  if (nurEigene) query = query.eq('user_id', user.id);
+  const abfrage = (mitQuelle: boolean) => {
+    // Als string typisiert: Den zusammengesetzten Text will der Typ-Parser von
+    // supabase-js sonst bis in die letzte Spalte auflösen und gibt auf.
+    const spalten: string = `id, nummer, status, ${mitQuelle ? 'quelle, ' : ''}ean, notiz, erfasst_von, created_at, fertig_am, fehler, plenty_item_id, plenty_variation_id, erkennung, treffer, erkannt_am, erkennung_fehler, zustand, zustand_bestaetigt, gravierende_schaeden, bestand, gewicht_kg, packklasse, preis, preis_am, preis_fehler, listing, listing_am, listing_fehler, plenty, plenty_am, plenty_fehler, bilder:erfassung_bilder (id, rolle, rolle_erkannt, position, pfad, hochgeladen)`;
+    let query = supabase
+      .from('erfassung_artikel')
+      .select(spalten)
+      .order('created_at', { ascending: false })
+      .limit(LISTE_LIMIT);
+    if (mitQuelle) query = query.eq('quelle', quelle);
+    if (status) query = query.eq('status', status);
+    if (nurEigene) query = query.eq('user_id', user.id);
+    return query;
+  };
 
-  const { data, error } = await query;
+  let { data, error } = await abfrage(true);
+  // Spalte "quelle" fehlt, solange schema.sql nicht neu eingespielt ist. Die
+  // Erfassung soll daran nicht hängen — vor dem Fotostudio gab es nur sie.
+  if (error?.code === '42703' && quelle === 'erfassung') ({ data, error } = await abfrage(false));
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  const artikel = (data ?? []) as ArtikelZeile[];
+  const artikel = (data ?? []) as unknown as ArtikelZeile[];
 
   // Vorschaulinks nachreichen. Der Bucket ist privat, also braucht jedes Bild
   // einen signierten Link — ohne den bliebe die Kachel grundlos leer, wenn
@@ -68,7 +81,7 @@ export async function GET(request: Request) {
   return NextResponse.json({ artikel });
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const supabase = createClient();
   if (!supabase) return NextResponse.json({ error: 'Supabase nicht konfiguriert.' }, { status: 503 });
   const {
@@ -76,9 +89,14 @@ export async function POST() {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Bitte anmelden.' }, { status: 401 });
 
+  const body = (await request.json().catch(() => ({}))) as { quelle?: string };
+  const quelle = body.quelle === 'fotostudio' ? 'fotostudio' : 'erfassung';
+
   const { data, error } = await supabase
     .from('erfassung_artikel')
-    .insert({ user_id: user.id, erfasst_von: user.email ?? null, status: 'offen' })
+    // "quelle" nur fürs Fotostudio mitschicken; die Erfassung nimmt den
+    // Spaltenstandard und läuft damit auch vor der Schema-Erweiterung.
+    .insert({ user_id: user.id, erfasst_von: user.email ?? null, status: 'offen', ...(quelle === 'fotostudio' ? { quelle } : {}) })
     .select('id, nummer, status, created_at')
     .single();
 

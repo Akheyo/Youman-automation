@@ -316,3 +316,26 @@ alter table public.erfassung_artikel
 
 create unique index if not exists erfassung_artikel_ean_idx
   on public.erfassung_artikel (ean) where ean is not null;
+
+-- ---------------------------------------------------------------------------
+-- Fotostudio: Artikel, die am Fotoplatz entstehen
+--
+-- Ersetzt die Make-Szenarien „Automation Fotostudio PC 1/2". Dieselben
+-- Tabellen wie die Erfassung (Fotos, Warteschlange, Speicher sind identisch),
+-- aber ein eigener Weg: keine Bilderkennung und keine Preisrecherche, sondern
+-- direkt nach Plenty mit Zustand, Gewicht und Bestand vom Menschen.
+--
+-- "quelle" hält beide Wege auseinander. Ohne sie würde die Erfassung einen
+-- angefangenen Fotostudio-Artikel als ihren eigenen fortsetzen — und der
+-- Durchlauf ihn durch Erkennung und Preis schicken.
+--
+-- Zusätzliche Status im Fotostudio:
+--   anlage    → Artikel steht in Plenty, Bilder werden übertragen
+--   in_plenty → fertig, alle Bilder oben
+--   fehler    → Bilder fehlen, in der Liste erneut anstoßen
+-- ---------------------------------------------------------------------------
+alter table public.erfassung_artikel
+  add column if not exists quelle text not null default 'erfassung';
+
+create index if not exists erfassung_artikel_quelle_idx
+  on public.erfassung_artikel (quelle, created_at desc);
