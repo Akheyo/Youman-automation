@@ -24,8 +24,12 @@ class Bilder
 {
     use Loggable;
 
-    /** Die API nimmt hoechstens acht Bilder je Inserat sinnvoll an. */
-    const HOECHSTENS = 8;
+    /**
+     * Die API nimmt hoechstens 50 Bilder je Inserat an (listing.images,
+     * maxItems 50). Bis 12.11. stand hier faelschlich 8 - Inserate mit mehr
+     * Bildern in Plenty wurden nach dem achten abgeschnitten.
+     */
+    const HOECHSTENS = 50;
 
     /** @var ItemImageRepositoryContract */
     private $bilder;
@@ -41,6 +45,9 @@ class Bilder
 
     /** @var string warum das letzte Bild nicht ladbar war */
     private $letzterFehler = '';
+
+    /** @var int wie viele Bilder in diesem Lauf schon hochgeladen wurden */
+    private $hochgeladen = 0;
 
     public function __construct(
         ItemImageRepositoryContract $bilder,
@@ -96,6 +103,7 @@ class Bilder
                 continue;
             }
 
+            $this->hochgeladen++;
             $name = isset($antwort['daten']['image']) ? (string) $antwort['daten']['image'] : '';
             if ($name !== '') {
                 $namen[] = $name;
@@ -106,7 +114,17 @@ class Bilder
     }
 
     /**
-     * Die Bildadressen eines Artikels, hoechstens acht, in der in Plenty
+     * Wie viele Bilder in diesem Lauf schon hochgeladen wurden. Der Abgleich
+     * bremst danach, damit ein Lauf mit vielen bebilderten Inseraten nicht
+     * an Plentys Zeitgrenze stirbt.
+     */
+    public function hochgeladen()
+    {
+        return $this->hochgeladen;
+    }
+
+    /**
+     * Die Bildadressen eines Artikels, hoechstens 50, in der in Plenty
      * gepflegten Reihenfolge.
      */
     public function adressen($itemId)
