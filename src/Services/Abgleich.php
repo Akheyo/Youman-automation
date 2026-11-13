@@ -46,6 +46,14 @@ class Abgleich
      */
     const SCHREIBGRENZE = 60;
 
+    /**
+     * Hoechstens so viele Bilder je Lauf. Jedes Bild ist ein Download aus
+     * Plenty und ein Upload zu Maschinensucher; mit bis zu 50 Bildern je
+     * Inserat waeren 60 Inserate zu viel fuer einen Lauf. Was liegen
+     * bleibt, kommt im naechsten Lauf (5 Minuten spaeter).
+     */
+    const BILDGRENZE = 300;
+
     /** @var Artikelsuche */
     private $suche;
 
@@ -418,7 +426,9 @@ class Abgleich
                 $faellig[(int) $bekannt->inseratId] = array('artikel' => $artikelId, 'zeile' => $bekannt);
             }
 
-            if (Entscheidung::schreibt($tat) && $geschrieben >= self::SCHREIBGRENZE) {
+            if (Entscheidung::schreibt($tat) && ($geschrieben >= self::SCHREIBGRENZE
+                || (($tat === Entscheidung::ANLEGEN || $tat === Entscheidung::AENDERN)
+                    && $this->bilder->hochgeladen() >= self::BILDGRENZE))) {
                 // Nicht weiterzaehlen: Was hier liegen bleibt, ist beim
                 // naechsten Lauf immer noch faellig.
                 $gebremst = true;
